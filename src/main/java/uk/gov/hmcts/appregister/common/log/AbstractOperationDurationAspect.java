@@ -34,6 +34,8 @@ public class AbstractOperationDurationAspect {
                         + "."
                         + pjp.getSignature().getName();
 
+        String previousOperation = MDC.get(OPERATION);
+
         // add the operation to the MDC
         MDC.put(OPERATION, operation);
         long start = System.nanoTime();
@@ -50,11 +52,26 @@ public class AbstractOperationDurationAspect {
 
             return result;
         } catch (Throwable t) {
-            log.error("Exception occurred during execution", t);
+            if (!isExpectedRequestValidationException(t)) {
+                log.error("Exception occurred during execution", t);
+            }
             throw t;
         } finally {
-            MDC.remove(OPERATION);
+            if (previousOperation != null) {
+                MDC.put(OPERATION, previousOperation);
+            } else {
+                MDC.remove(OPERATION);
+            }
         }
+    }
+
+    private boolean isExpectedRequestValidationException(Throwable throwable) {
+        return throwable instanceof ConstraintViolationException
+                || throwable instanceof MethodArgumentTypeMismatchException
+                || throwable instanceof MissingServletRequestParameterException
+                || throwable instanceof HttpMessageNotReadableException
+                || throwable instanceof HandlerMethodValidationException
+                || throwable instanceof MethodValidationException;
     }
 
     /**

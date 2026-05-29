@@ -4,12 +4,19 @@ import nl.altindag.log.LogCaptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class ServiceLogAspectTest {
 
     private final LogCaptor serviceAspectLog = LogCaptor.forClass(ServiceLogAspect.class);
+
+    @BeforeEach
+    void beforeEach() {
+        serviceAspectLog.clearLogs();
+        serviceAspectLog.setLogLevelToDebug();
+    }
 
     @Test
     void logService() throws Throwable {
@@ -73,5 +80,25 @@ public class ServiceLogAspectTest {
         Assertions.assertTrue(serviceAspectLog.getDebugLogs().get(1).endsWith(" ms"));
 
         Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+    }
+
+    @Test
+    void logServiceWhenDebugDisabledDoesNotLogDebugMessages() throws Throwable {
+        serviceAspectLog.setLogLevelToInfo();
+
+        ServiceLogAspect serviceLogAspect = new ServiceLogAspect();
+        Signature signature = Mockito.mock(Signature.class);
+
+        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn("Test Result");
+        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getDeclaringType()).thenReturn((Class) ServiceLogAspectTest.class);
+        Mockito.when(signature.getName()).thenReturn("testMethod");
+
+        String result = (String) serviceLogAspect.logDuration(customProceedingJoinPoint);
+
+        Assertions.assertEquals("Test Result", result);
+        Assertions.assertTrue(serviceAspectLog.getDebugLogs().isEmpty());
     }
 }

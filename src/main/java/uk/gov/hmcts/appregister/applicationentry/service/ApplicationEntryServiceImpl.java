@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +24,17 @@ import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperatio
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateFeesPayload;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
@@ -75,7 +81,10 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -92,6 +101,16 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
+
+    private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
+            "appregister.application_entry.bulk_fee_update.requests";
+    private static final String BULK_FEE_UPDATE_ENTRIES_METRIC =
+            "appregister.application_entry.bulk_fee_update.entries";
+    private static final String BULK_FEE_UPDATE_DURATION_METRIC =
+            "appregister.application_entry.bulk_fee_update.duration";
+    private static final String METRIC_STATUS_TAG = "status";
+    private static final String METRIC_SUCCEEDED = "succeeded";
+    private static final String METRIC_FAILED = "failed";
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -110,6 +129,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final MoveEntriesValidator moveEntriesValidator;
 
     private final BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
+
+    private final BulkUpdateFeesValidator bulkUpdateFeesValidator;
 
     // Services
     private final MatchService matchService;
@@ -140,6 +161,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final BusinessDateProvider businessDateProvider;
 
     private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
@@ -529,6 +551,101 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 });
     }
 
+    @Override
+    @Transactional
+    public BulkUpdateResponseDto bulkUpdateFees(UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto) {
+        var payload = new BulkUpdateFeesPayload(listId, bulkFeesUpdateDto);
+        int requestedCount = requestedBulkFeeUpdateCount(bulkFeesUpdateDto);
+        long startNanos = System.nanoTime();
+
+        log.info("Starting bulk fee update listId={} requestedCount={}", listId, requestedCount);
+
+        try {
+            BulkUpdateResponseDto response =
+                    bulkUpdateFeesValidator.validate(
+                            payload,
+                            (req, success) -> {
+                                List<ApplicationListEntry> entries =
+                                        new ArrayList<>(success.getEntries());
+                                entries.sort(
+                                        Comparator.comparing(
+                                                ApplicationListEntry::getSequenceNumber));
+                                Supplier<Fee> offsiteFeeSupplier =
+                                        offsiteFeeSupplier(
+                                                req.data().getFeeDetails().getHasOffsiteFee());
+
+                                for (ApplicationListEntry entry : entries) {
+                                    replaceFeeDetailsForEntry(
+                                            entry, req.data().getFeeDetails(), offsiteFeeSupplier);
+                                }
+
+                                int updatedCount = entries.size();
+
+                                return new BulkUpdateResponseDto()
+                                        .totalCount(req.data().getEntryIds().size())
+                                        .updatedCount(updatedCount)
+                                        .status(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+                            });
+
+            long durationNanos = System.nanoTime() - startNanos;
+            recordBulkFeeUpdateMetrics(
+                    METRIC_SUCCEEDED, response.getUpdatedCount(), Duration.ofNanos(durationNanos));
+            log.info(
+                    "Completed bulk fee update listId={} requestedCount={} updatedCount={} status={} durationMs={}",
+                    listId,
+                    requestedCount,
+                    response.getUpdatedCount(),
+                    response.getStatus(),
+                    Duration.ofNanos(durationNanos).toMillis());
+
+            return response;
+        } catch (RuntimeException exception) {
+            long durationNanos = System.nanoTime() - startNanos;
+            recordBulkFeeUpdateMetrics(METRIC_FAILED, null, Duration.ofNanos(durationNanos));
+            log.warn(
+                    "Failed bulk fee update listId={} requestedCount={} status=FAILED errorType={} durationMs={}",
+                    listId,
+                    requestedCount,
+                    exception.getClass().getSimpleName(),
+                    Duration.ofNanos(durationNanos).toMillis());
+
+            throw exception;
+        }
+    }
+
+    private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
+        if (bulkFeesUpdateDto == null || bulkFeesUpdateDto.getEntryIds() == null) {
+            return 0;
+        }
+
+        return bulkFeesUpdateDto.getEntryIds().size();
+    }
+
+    private void recordBulkFeeUpdateMetrics(
+            String status, Integer updatedCount, Duration duration) {
+        meterRegistry
+                .counter(BULK_FEE_UPDATE_REQUESTS_METRIC, METRIC_STATUS_TAG, status)
+                .increment();
+        meterRegistry
+                .timer(BULK_FEE_UPDATE_DURATION_METRIC, METRIC_STATUS_TAG, status)
+                .record(duration);
+
+        if (METRIC_SUCCEEDED.equals(status) && updatedCount != null) {
+            meterRegistry
+                    .summary(BULK_FEE_UPDATE_ENTRIES_METRIC, METRIC_STATUS_TAG, status)
+                    .record(updatedCount);
+        }
+    }
+
+    private void replaceFeeDetailsForEntry(
+            ApplicationListEntry entry,
+            BulkFeeDetailsDto feeDetails,
+            Supplier<Fee> offsiteFeeSupplier) {
+        deleteFeeStatusesForEntry(entry.getUuid());
+        saveFeeStatus(createBulkFeeStatus(entry, feeDetails), new ArrayList<>());
+        updateOffsiteFeeMapping(entry, feeDetails.getHasOffsiteFee(), offsiteFeeSupplier);
+    }
+
     /**
      * creates the fees for the entry.
      *
@@ -676,6 +793,18 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return feeStatus;
     }
 
+    private AppListEntryFeeStatus createBulkFeeStatus(
+            ApplicationListEntry entry, BulkFeeDetailsDto feeDetails) {
+        AppListEntryFeeStatus feeStatus = new AppListEntryFeeStatus();
+        feeStatus.setAppListEntry(entry);
+        feeStatus.setAlefsFeeStatus(
+                ApplicationListEntryEntityMapper.toStatus(feeDetails.getPaymentStatus()));
+        feeStatus.setAlefsFeeStatusDate(feeDetails.getStatusDate());
+        feeStatus.setAlefsPaymentReference(feeDetails.getPaymentReference());
+        feeStatus.setAlefsStatusCreationDate(OffsetDateTime.now(clock));
+        return feeStatus;
+    }
+
     private void saveFeeStatus(
             AppListEntryFeeStatus appListEntryFeeStatus, List<AppListEntryFeeStatus> statusList) {
         auditService.processAudit(
@@ -689,6 +818,105 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             createdAppListStatus.getId());
                     return Optional.of(new AuditableResult<>(null, createdAppListStatus));
                 });
+    }
+
+    private void deleteFeeStatusesForEntry(UUID entryId) {
+        List<AppListEntryFeeStatus> feeStatuses =
+                appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId);
+
+        for (AppListEntryFeeStatus feeStatus : feeStatuses) {
+            auditService.processAudit(
+                    feeStatus,
+                    AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY,
+                    req -> {
+                        appListEntryFeeStatusRepository.delete(feeStatus);
+                        return Optional.empty();
+                    });
+        }
+
+        if (!feeStatuses.isEmpty()) {
+            appListEntryFeeStatusRepository.flush();
+        }
+    }
+
+    private Supplier<Fee> offsiteFeeSupplier(boolean hasOffsiteFee) {
+        if (!hasOffsiteFee) {
+            return () -> null;
+        }
+
+        return new Supplier<>() {
+            private Fee offsiteFee;
+
+            @Override
+            public Fee get() {
+                if (offsiteFee == null) {
+                    offsiteFee = resolveActiveOffsiteFee();
+                }
+                return offsiteFee;
+            }
+        };
+    }
+
+    private Fee resolveActiveOffsiteFee() {
+        return feeRepository.findOffsite(businessDateProvider.currentUkDate()).stream()
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new AppRegistryException(
+                                        AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
+                                        "Offsite fee does not exist"));
+    }
+
+    private void updateOffsiteFeeMapping(
+            ApplicationListEntry entry, boolean hasOffsiteFee, Supplier<Fee> offsiteFeeSupplier) {
+        List<AppListEntryFeeId> existingOffsiteMappings =
+                appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId());
+
+        if (!hasOffsiteFee) {
+            deleteOffsiteFeeMappings(existingOffsiteMappings);
+            return;
+        }
+
+        if (!existingOffsiteMappings.isEmpty()) {
+            return;
+        }
+
+        Fee offsiteFee = offsiteFeeSupplier.get();
+
+        auditService.processAudit(
+                AppListEntryAuditOperation.CREATE_FEE_ENTRY,
+                req -> {
+                    AppListEntryFeeId offsiteEntryFee = new AppListEntryFeeId();
+                    offsiteEntryFee.setAppListEntryId(entry.getId());
+                    offsiteEntryFee.setFeeId(offsiteFee.getId());
+
+                    AppListEntryFeeId savedOffsiteEntryFee =
+                            appListEntryFeeRepository.save(offsiteEntryFee);
+
+                    log.debug(
+                            "Created Offsite Fee: {} to Entry: {} mapping: {}",
+                            savedOffsiteEntryFee.getFeeId(),
+                            savedOffsiteEntryFee.getAppListEntryId(),
+                            savedOffsiteEntryFee.getId());
+
+                    return Optional.of(new AuditableResult<>(null, savedOffsiteEntryFee));
+                });
+    }
+
+    private void deleteOffsiteFeeMappings(List<AppListEntryFeeId> existingOffsiteMappings) {
+        for (AppListEntryFeeId existingOffsiteMapping : existingOffsiteMappings) {
+            auditService.processAudit(
+                    existingOffsiteMapping,
+                    AppListEntryAuditOperation.DELETE_FEE_ENTRY,
+                    req -> {
+                        appListEntryFeeRepository.delete(existingOffsiteMapping);
+                        return Optional.empty();
+                    });
+        }
+
+        if (!existingOffsiteMappings.isEmpty()) {
+            appListEntryFeeRepository.flush();
+        }
     }
 
     /**
@@ -885,23 +1113,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             PayloadForUpdateEntry updateEntry, UpdateApplicationEntryValidationSuccess success) {
         log.debug("Updating fee status");
 
-        // gets all of the existing status
-        List<AppListEntryFeeStatus> feeStatuses =
-                appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(updateEntry.getEntryId());
-
-        // This ensures we don't keep old rows
-        if (!feeStatuses.isEmpty()) {
-            for (AppListEntryFeeStatus feeStatus : feeStatuses) {
-                auditService.processAudit(
-                        feeStatus,
-                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY,
-                        req -> {
-                            appListEntryFeeStatusRepository.delete(feeStatus);
-                            return Optional.empty();
-                        });
-            }
-            appListEntryFeeStatusRepository.flush();
-        }
+        deleteFeeStatusesForEntry(updateEntry.getEntryId());
 
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 

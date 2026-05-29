@@ -1,0 +1,39 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: ID of the Application List that owns the entries whose fee details will be updated.
+    example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
+
+put:
+  operationId: bulkUpdateApplicationListEntryFees
+  tags: [ application-list-entries ]
+  summary: Bulk update fee details for multiple Application List Entries.
+  description: >
+    Atomically updates the fee details for each specified entry in the source list (path `listId`).
+    If any entry cannot be updated, no fee details are changed.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/application-list-entries/bulk-fees-update-dto.yaml"
+  responses:
+    "200":
+      description: Fee details updated for all entries.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/application-list-entries/bulk-update-response-dto.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
