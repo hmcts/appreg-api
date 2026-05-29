@@ -77,6 +77,13 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 new URI(ApplicationCodeError.CODE_NOT_FOUND.getCode().getAppCode()),
                 problemDetail.getBody().getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[404]: Application code not found (Test message)")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -105,6 +112,35 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(400, problemDetail.getBody().getStatus());
         Assertions.assertEquals(customMessage, problemDetail.getBody().getDetail());
         Assertions.assertEquals(new URI(customType), problemDetail.getBody().getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(log -> log.contains("[400]: Custom message (Test message)")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void givenServerSideAppRegisterException_whenHandled_thenErrorIsLoggedWithStatusAndDetail() {
+        AppRegistryException exception =
+                new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR, "Report output file failed");
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleAppRegisterApiException(exception);
+
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertEquals(500, problemDetail.getBody().getStatus());
+        Assertions.assertEquals(
+                CommonAppError.INTERNAL_SERVER_ERROR.getCode().getMessage(),
+                problemDetail.getBody().getDetail());
+        Assertions.assertTrue(logCaptor.getWarnLogs().isEmpty());
+        Assertions.assertTrue(
+                logCaptor.getErrorLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[500]: General unexpected failure"
+                                                        + " (Report output file failed)")));
     }
 
     @Test
