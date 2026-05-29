@@ -214,6 +214,9 @@ fi
   sed -n '1,200p' "${final_message_path}"
 } >>"${pr_body_path}"
 
+echo "Applying Java formatting before creating the Codex patch."
+run_sanitized ./gradlew --no-daemon spotlessApply
+
 if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   echo "Codex did not produce any committable changes." >&2
   exit 1
