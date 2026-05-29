@@ -26,10 +26,9 @@ properties:
     description: >
       Location information for filtering workload reports.
       Location filters for legacy MIS reports. Blank fields will be rejected,
-      nulls should be used instead. When no cjaCode is supplied,
-      courtLocationCode and otherLocationDescription are case-insensitive contains
-      matches and can be combined. A cjaCode-only filter includes rows explicitly
+      nulls should be used instead. courtLocationCode must be supplied on its
+      own. otherLocationDescription is a case-insensitive contains match. A
+      cjaCode-only filter includes rows explicitly
       stored against that CJA and court rows whose court code maps to that CJA.
       A cjaCode with otherLocationDescription and no courtLocationCode matches
-      explicit CJA other-location rows. Other location combinations are accepted
-      for legacy compatibility and may return no rows.
+      explicit CJA other-location rows.
