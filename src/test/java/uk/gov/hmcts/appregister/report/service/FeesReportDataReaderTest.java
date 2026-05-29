@@ -127,6 +127,40 @@ class FeesReportDataReaderTest {
     }
 
     @Test
+    void givenOtherLocationOnly_whenReadData_thenBindsOtherLocationWithoutCja() throws IOException {
+        NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
+        List<MapSqlParameterSource> parameterSources = new ArrayList<>();
+
+        when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
+        when(jdbcTemplate.query(
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<FeesReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            parameterSources.add(invocation.getArgument(1));
+                            return List.of();
+                        });
+
+        FeesReportFilterDto filter =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().otherLocationDescription("Town Hall"));
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
+        PageReader<FeesReportRow> pageReader =
+                (rows, context) -> Assertions.fail("No rows expected");
+
+        reader.readData(new ReadPagePosition(25, 5), pageReader, mock(JobContext.class));
+
+        MapSqlParameterSource parameters = parameterSources.getFirst();
+        Assertions.assertNull(parameters.getValue("cjaCode"));
+        Assertions.assertEquals("Town Hall", parameters.getValue("otherCourthouse"));
+        Assertions.assertNull(parameters.getValue("courthouseCode"));
+    }
+
+    @Test
     void givenShortPage_whenReadData_thenStopsWithoutEmptyRead() throws Exception {
         NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);

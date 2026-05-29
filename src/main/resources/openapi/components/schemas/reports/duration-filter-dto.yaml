@@ -4,10 +4,11 @@ description: >
   Both dateFrom and dateTo are required inclusive bounds.
   If dateFrom is later than dateTo, the API treats the earlier date as the
   inclusive start and the later date as the inclusive end.
-  Location is optional. When provided, use either courtLocationCode on its own,
-  or both cjaCode and otherLocationDescription together. When supplied,
-  cjaCode must match an existing Criminal Justice Area and courtLocationCode
-  must match an active Court. Blank fields will be rejected; use null instead.
+  Location is optional. When provided, use courtLocationCode on its own,
+  cjaCode on its own, otherLocationDescription on its own, or cjaCode with
+  otherLocationDescription. When supplied, cjaCode must match an existing
+  Criminal Justice Area and courtLocationCode must match an active Court.
+  Blank fields will be rejected; use null instead.
 additionalProperties: false
 required:
   - dateFrom
