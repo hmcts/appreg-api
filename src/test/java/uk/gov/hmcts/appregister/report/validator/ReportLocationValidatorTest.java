@@ -83,14 +83,12 @@ class ReportLocationValidatorTest {
     }
 
     @Test
-    void givenOtherLocationWithoutCja_whenValidating_thenThrowsInvalidCombinationError() {
+    void givenOtherLocationOnly_whenValidating_thenSucceedsWithoutReferenceDataLookup() {
         LegacyReportLocation location =
                 new LegacyReportLocation().otherLocationDescription("Town Hall");
 
-        AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+        assertDoesNotThrow(() -> validator.validate(location));
 
-        assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
         verifyNoInteractions(
                 criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
     }
