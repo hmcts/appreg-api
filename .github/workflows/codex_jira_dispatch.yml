@@ -28,9 +28,6 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-
 jobs:
   codex-generate:
     runs-on: codex-pilot-azure-aks
@@ -687,6 +684,7 @@ jobs:
       needs.verify-codex-output-2.outputs.passed != 'true' &&
       needs.verify-codex-output-3.outputs.passed != 'true'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Fail after repair attempts
         run: |
