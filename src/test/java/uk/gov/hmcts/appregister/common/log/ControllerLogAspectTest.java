@@ -113,9 +113,12 @@ public class ControllerLogAspectTest {
                 (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
 
         Assertions.assertEquals("Test Result", result.getBody());
-        Assertions.assertEquals(
-                "Finish: Executed and returned \"Test Result\"",
-                controllerAspectLog.getDebugLogs().get(1));
+        Assertions.assertTrue(
+                controllerAspectLog
+                        .getDebugLogs()
+                        .get(1)
+                        .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
+        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
     }
 
     @Test

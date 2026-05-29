@@ -1,9 +1,15 @@
 package uk.gov.hmcts.appregister.common.log;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.MDC;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.MethodValidationException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * An aspect that stores the operation name in the MDC for logging purposes. The class logs the
