@@ -256,6 +256,21 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
+            givenOtherLocationOnly_whenCreatingFeesReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2026, 1, 1))
+                        .dateTo(LocalDate.of(2026, 4, 1))
+                        .location(new LegacyReportLocation().otherLocationDescription("test"));
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+    }
+
+    @Test
+    public void
             givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 5, 18);
@@ -361,9 +376,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createResponse
                         .asString()
                         .contains(
-                                "Either 'courtLocation' must be provided, or both "
-                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
-                                        + "must be supplied."));
+                                "Use 'courtLocation' by itself, or use 'criminalJusticeArea' "
+                                        + "and/or 'otherLocationDescription' without "
+                                        + "'courtLocation'."));
     }
 
     @Test

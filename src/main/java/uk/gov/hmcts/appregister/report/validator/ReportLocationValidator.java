@@ -33,16 +33,11 @@ public class ReportLocationValidator {
         boolean hasCja = StringUtils.hasText(location.getCjaCode());
         boolean hasOtherLocation = StringUtils.hasText(location.getOtherLocationDescription());
 
-        boolean hasNoLocation = !hasCourt && !hasCja && !hasOtherLocation;
-        boolean hasCourtOnly = hasCourt && !hasCja && !hasOtherLocation;
-        boolean hasCjaAndOtherLocation = !hasCourt && hasCja && hasOtherLocation;
-        boolean hasCjaOnly = !hasCourt && hasCja && !hasOtherLocation;
-
-        if (!(hasNoLocation || hasCourtOnly || hasCjaAndOtherLocation || hasCjaOnly)) {
+        if (hasCourt && (hasCja || hasOtherLocation)) {
             throw new AppRegistryException(
                     ReportError.INVALID_LOCATION_COMBINATION,
-                    "Provide either 'courtLocationCode' or both 'cjaCode' and "
-                            + "'otherLocationDescription'.");
+                    "Provide 'courtLocationCode' by itself, or use 'cjaCode' and/or "
+                            + "'otherLocationDescription' without 'courtLocationCode'.");
         }
     }
 
