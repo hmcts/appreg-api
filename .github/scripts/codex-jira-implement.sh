@@ -198,7 +198,8 @@ PY
 echo "Running Codex for ${ISSUE_KEY}; publish will use ${branch_name}"
 run_codex codex exec \
   --cd "${PWD}" \
-  --dangerously-bypass-approvals-and-sandbox \
+  --sandbox workspace-write \
+  --ephemeral \
   --output-last-message "${final_message_path}" \
   - <"${prompt_path}"
 

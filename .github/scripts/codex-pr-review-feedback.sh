@@ -373,7 +373,8 @@ unset GH_TOKEN
 echo "Running Codex review feedback for PR #${PR_NUMBER} on ${HEAD_REF}"
 run_codex codex exec \
   --cd "${PWD}" \
-  --dangerously-bypass-approvals-and-sandbox \
+  --sandbox workspace-write \
+  --ephemeral \
   --output-last-message "${final_message_path}" \
   - <"${prompt_path}"
 
