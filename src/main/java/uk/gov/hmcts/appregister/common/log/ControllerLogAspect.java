@@ -22,43 +22,5 @@ public class ControllerLogAspect extends AbstractOperationDurationAspect {
                 (name, duration, result) ->
                         log.debug("Finish: Executed {} in {} ms", name, duration),
                 pjp);
-        //                (op) -> {
-        //                    // Dont do anything here as we want to log
-        //                    // the duration in the after callback only
-        //                },
-        //                (name, duration, result) -> {
-        //                    log.debug("Duration of {} operation {} ms", name, duration);
-        //                    if (result != null) {
-        //
-        //                        // check the response type and mime header
-        //                        if (result instanceof ResponseEntity) {
-        //                            List<String> headers =
-        //                                    ((ResponseEntity<?>)
-        // result).getHeaders().get("Content-Type");
-        //
-        //                            boolean isJson = headers != null &&
-        // headers.contains(JSON_CONTENT_TYPE);
-        //
-        //                            // we only log content if json
-        //                            if (isJson) {
-        //                                log.debug(
-        //                                        "Finish: Executed and returned {}",
-        //                                        getLogStringForOutputObject(
-        //                                                ((ResponseEntity<?>) result).getBody()));
-        //                            } else {
-        //                                log.debug(
-        //                                        "Finish: Executed. Not logging response as it is
-        // not Json");
-        //                            }
-        //                        } else {
-        //                            log.debug(
-        //                                    "Finish: Executed. Not logging response as it is not a
-        // ResponseEntity or Json");
-        //                        }
-        //                    } else {
-        //                        log.debug("Finish: Executed and returned null");
-        //                    }
-        //                },
-        //                pjp);
     }
 }

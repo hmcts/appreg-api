@@ -64,64 +64,6 @@ public class AbstractOperationDurationAspect {
      * @return The string to log with arguments. By default, it logs the method signature and the
      *     arguments, but it ignores any pageable arguments as they can be very large
      */
-    /*    protected String getLogStringForInputs(ProceedingJoinPoint proceedingJoinPoint) {
-            return proceedingJoinPoint.getSignature()
-                    + " with arguments: "
-                    + Arrays.toString(getIgnorePageArguments(proceedingJoinPoint));
-        }
-    */
-    /**
-     * gets the arguments for logging, but ignores any pageable arguments as they can be very large.
-     *
-     * @param proceedingJoinPoint the join point
-     * @return The arguments to log excluding any pageable arguments
-     */
-    /*     private Object[] getIgnorePageArguments(ProceedingJoinPoint proceedingJoinPoint) {
-            return Arrays.stream(
-                            Arrays.stream(proceedingJoinPoint.getArgs())
-                                    .filter(
-                                            arg ->
-                                                    !(arg instanceof Pageable)
-                                                            && !(arg instanceof PagingWrapper))
-                                    // ensure that the non primitive objects are obfuscated to avoid
-                                    // logging PII information
-                                    .toArray())
-                    .map(
-                            o -> {
-                                if (isPrimitiveOrString(o)) {
-                                    return o;
-                                } else {
-                                    return ObfuscationUtil.getObfuscatedString(o);
-                                }
-                            })
-                    .toArray();
-        }
-    */
-    /*
-        public static boolean isPrimitiveOrString(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-
-            Class<?> clazz = obj.getClass();
-
-            return clazz.isPrimitive()
-                    || obj instanceof String
-                    || obj instanceof Number
-                    || obj instanceof Boolean
-                    || obj instanceof Character;
-        }
-    */
-    /**
-     * gets an obfuscated string for output logging.
-     *
-     * @param object the object to log
-     * @return The obfuscated string where PII information is obfuscated.
-     */
-    /*    protected String getLogStringForOutputObject(Object object) {
-            return ObfuscationUtil.getObfuscatedString(object);
-        }
-    */
     /** A consumer that takes three arguments. */
     public interface TriConsumer<K, V, S> {
         void accept(K k, V v, S s);

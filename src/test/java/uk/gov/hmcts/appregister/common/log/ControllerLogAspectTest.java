@@ -65,7 +65,7 @@ public class ControllerLogAspectTest {
         String result = (String) controllerLogAspect.logDuration(customProceedingJoinPoint);
 
         // assert the log messages are correct and the result is correct
-        //        Assertions.assertNull(result);
+        Assertions.assertNull(result);
         Assertions.assertEquals(
                 "Start: Executing ControllerLogAspectTest.testMethod",
                 controllerAspectLog.getDebugLogs().get(0));

@@ -601,30 +601,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 createdDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
 
-        /*         Response responseFindEntrySpec =
-                        restAssuredClient.executeGetRequestWithPaging(
-                                Optional.of(10),
-                                Optional.of(0),
-                                List.of(),
-                                getLocalUrl(WEB_CONTEXT),
-                                tokenGenerator.fetchTokenForRole(),
-                                new ApplicationEntryFilterByApplicationId(
-                                        createdDto.getId(),
-                                        Optional.empty(),
-                                        Optional.empty(),
-                                        Optional.empty(),
-                                        Optional.empty(),
-                                        Optional.empty(),
-                                        Optional.empty(),
-                                        Optional.empty()),
-                                new OpenApiPageMetaData());
-
-                responseFindEntrySpec.then().statusCode(200);
-
-                EntryPage page = responseFindEntrySpec.as(EntryPage.class);
-                PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
-                Assertions.assertEquals(createdDto.getId(), page.getContent().getFirst().getId());
-        */
         Response responseGetEntrySpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(
