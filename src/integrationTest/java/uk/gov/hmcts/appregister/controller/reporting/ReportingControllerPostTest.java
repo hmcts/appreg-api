@@ -188,6 +188,37 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    void givenActivityAuditReportRequestHasUnsupportedField_whenCreatingReport_thenBadRequest()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+        String request =
+                """
+                {
+                  "dateFrom": "2025-10-01",
+                  "dateTo": "2025-10-31",
+                  "activityTypes": [
+                    "CREATE_APPLICATION_LIST"
+                  ],
+                  "courtCode": "LOC123"
+                }
+                """;
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(ACTIVITY_AUDIT_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(
+                createResponse
+                        .getBody()
+                        .asString()
+                        .contains("Unsupported request field: courtCode"));
+    }
+
+    @Test
     public void
             givenValidFeesReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {

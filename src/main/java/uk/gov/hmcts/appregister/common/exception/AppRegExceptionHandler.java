@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -210,6 +211,8 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             WebRequest request) {
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        UnrecognizedPropertyException unrecognizedPropertyException =
+                findCause(ex, UnrecognizedPropertyException.class);
         ValueInstantiationException valueInstantiationException =
                 findCause(ex, ValueInstantiationException.class);
 
@@ -218,6 +221,12 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         // if we have a date exception use that as it gives us a more specific error message
         if (dateException != null) {
             problemDetail.setDetail(dateException.getMessage());
+        } else if (unrecognizedPropertyException != null) {
+            problemDetail.setDetail(
+                    "Unsupported request field: "
+                            + Optional.ofNullable(unrecognizedPropertyException.getPropertyName())
+                                    .filter(propertyName -> !propertyName.isBlank())
+                                    .orElse(UNKNOWN_FIELD));
         } else if (isEnumInstantiationProblem(valueInstantiationException)) {
             problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
         } else if (invalidFormatException != null) {

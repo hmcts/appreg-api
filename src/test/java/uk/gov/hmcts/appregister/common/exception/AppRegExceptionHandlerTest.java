@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.lang.reflect.Method;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
@@ -478,6 +480,46 @@ class AppRegExceptionHandlerTest {
                                                         + " Accepted values are: MAGISTRATE,"
                                                         + " CLERK")));
         Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void
+            givenHttpMessageNotReadableUnknownPropertyException_whenThrown_thenProblemDetailIsReturned()
+                    throws Exception {
+        try (var parser = new ObjectMapper().getFactory().createParser("{}")) {
+            UnrecognizedPropertyException cause =
+                    UnrecognizedPropertyException.from(
+                            parser,
+                            ActivityAuditFilterDto.class,
+                            "courtCode",
+                            List.<Object>of("dateFrom", "dateTo", "username", "activityTypes"));
+
+            HttpMessageNotReadableException exception =
+                    new HttpMessageNotReadableException(
+                            "Unsupported request field: courtCode", cause, null);
+
+            ResponseEntity<Object> problemDetail =
+                    exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+            Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+            Assertions.assertNotNull(problemDetail.getBody());
+            Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+            Assertions.assertEquals(
+                    "Unsupported request field: courtCode",
+                    ((ProblemDetail) problemDetail.getBody()).getDetail());
+            Assertions.assertEquals(
+                    CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                    ((ProblemDetail) problemDetail.getBody()).getType());
+            Assertions.assertTrue(
+                    logCaptor.getWarnLogs().stream()
+                            .anyMatch(
+                                    log ->
+                                            log.contains(
+                                                    "[400]: Unsupported request field:"
+                                                            + " courtCode")));
+            Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        }
     }
 
     @Test
