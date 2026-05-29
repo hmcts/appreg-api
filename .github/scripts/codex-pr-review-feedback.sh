@@ -382,6 +382,9 @@ if [[ ! -s "${final_message_path}" ]]; then
   echo "Codex completed without writing a final message." >"${final_message_path}"
 fi
 
+echo "Applying Java formatting before creating the Codex review patch."
+run_sanitized ./gradlew --no-daemon spotlessApply
+
 if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   {
     echo "Codex reviewed this feedback but did not produce any committable changes."
