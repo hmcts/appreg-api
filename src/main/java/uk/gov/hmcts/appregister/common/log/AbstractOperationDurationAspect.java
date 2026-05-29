@@ -10,7 +10,6 @@ import org.springframework.validation.method.MethodValidationException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 /**
