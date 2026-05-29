@@ -9,36 +9,218 @@ on:
     types: [created]
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
+  pull-requests: read
+  issues: read
 
 jobs:
-  codex-review-feedback:
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+  detect-codex-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    outputs:
+      is_codex_pr: ${{ steps.detect.outputs.is_codex_pr }}
+      pr_number: ${{ steps.detect.outputs.pr_number }}
+      head_ref: ${{ steps.detect.outputs.head_ref }}
+    steps:
+      - name: Detect Codex PR
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pr_number=""
+          head_ref=""
+          head_repo=""
+          body=""
+          actor_login=""
+          actor_permission=""
+          review_state=""
+
+          write_skip() {
+            local reason="$1"
+            echo "Skipping Codex review feedback: ${reason}"
+            {
+              echo "is_codex_pr=false"
+              echo "pr_number=${pr_number}"
+              echo "head_ref=${head_ref}"
+            } >>"$GITHUB_OUTPUT"
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request_review|pull_request_review_comment)
+              pr_number="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
+              head_ref="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+              head_repo="$(jq -r '.pull_request.head.repo.full_name' "$GITHUB_EVENT_PATH")"
+              if [[ "$GITHUB_EVENT_NAME" == "pull_request_review" ]]; then
+                body="$(jq -r '.review.body // ""' "$GITHUB_EVENT_PATH")"
+                actor_login="$(jq -r '.review.user.login // ""' "$GITHUB_EVENT_PATH")"
+                review_state="$(jq -r '.review.state // ""' "$GITHUB_EVENT_PATH")"
+              else
+                body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
+                actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
+              fi
+              ;;
+            issue_comment)
+              is_pr="$(jq -r '.issue | has("pull_request")' "$GITHUB_EVENT_PATH")"
+              if [[ "$is_pr" != "true" ]]; then
+                write_skip "comment is not on a pull request"
+                exit 0
+              fi
+              pr_number="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
+              pull_request_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}")"
+              head_ref="$(jq -r '.head.ref' <<<"${pull_request_json}")"
+              head_repo="$(jq -r '.head.repo.full_name' <<<"${pull_request_json}")"
+              body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
+              actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
+              ;;
+            *)
+              write_skip "unsupported event: ${GITHUB_EVENT_NAME}"
+              exit 0
+              ;;
+          esac
+
+          if [[ "$head_ref" != codex/* ]]; then
+            write_skip "PR branch ${head_ref} is not a Codex branch"
+            exit 0
+          fi
+
+          if [[ "$head_repo" != "$GITHUB_REPOSITORY" ]]; then
+            write_skip "PR head repo ${head_repo} is not ${GITHUB_REPOSITORY}"
+            exit 0
+          fi
+
+          if [[ "$review_state" == "approved" ]]; then
+            write_skip "review was approved"
+            exit 0
+          fi
+
+          if ! grep -Eiq '(^|[[:space:]])/(codex-review|codex review)([[:space:]]|$)' <<<"$body"; then
+            write_skip "missing explicit /codex-review command"
+            exit 0
+          fi
+
+          if [[ -z "$actor_login" || "$actor_login" == "null" ]]; then
+            write_skip "comment author could not be determined"
+            exit 0
+          fi
+
+          case "$actor_login" in
+            github-actions[bot]|app/github-actions)
+              write_skip "ignoring GitHub Actions bot comment"
+              exit 0
+              ;;
+          esac
+
+          actor_permission="$(
+            gh api "repos/${GITHUB_REPOSITORY}/collaborators/${actor_login}/permission" \
+              --jq '.permission' 2>/dev/null || true
+          )"
+
+          case "$actor_permission" in
+            write|maintain|admin)
+              ;;
+            *)
+              write_skip "actor ${actor_login} does not have repository write permission"
+              exit 0
+              ;;
+          esac
+
+          {
+            echo "is_codex_pr=true"
+            echo "pr_number=${pr_number}"
+            echo "head_ref=${head_ref}"
+          } >>"$GITHUB_OUTPUT"
+
+  codex-review-generate:
+    needs: detect-codex-pr
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
     runs-on: codex-pilot-azure-aks
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
     timeout-minutes: 120
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       GH_TOKEN: ${{ github.token }}
-      CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout default branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
+          ref: ${{ env.DEFAULT_BRANCH }}
           fetch-depth: 0
-          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
 
       - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Run Codex on review feedback
+      - name: Run Codex on review feedback and create patch artifact
         id: codex
         env:
-          PROMPT_PATH: ${{ runner.temp }}/codex-review-feedback-prompt.md
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-pr-review-feedback.sh
+
+      - name: Upload Codex review output
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-review-output
+          path: ${{ runner.temp }}/codex-output
+          if-no-files-found: error
+          retention-days: 1
+
+  codex-review-publish:
+    needs: [detect-codex-pr, codex-review-generate, codex-review-verify]
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    timeout-minutes: 30
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
+      EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Copy trusted publish script
+        run: |
+          cp .github/scripts/codex-pr-review-publish.sh "$RUNNER_TEMP/codex-pr-review-publish.sh"
+          chmod +x "$RUNNER_TEMP/codex-pr-review-publish.sh"
+
+      - name: Download Codex review output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-review-output
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Download verified Codex review output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-review-verified
+          path: ${{ runner.temp }}/codex-verified
+
+      - name: Publish Codex review feedback
+        id: publish
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
+        run: "$RUNNER_TEMP/codex-pr-review-publish.sh"
 
       - name: Write workflow summary
         if: always()
@@ -47,7 +229,52 @@ jobs:
             echo "## Codex PR Review Feedback"
             echo
             echo "- Event: $GITHUB_EVENT_NAME"
-            echo "- Pull request: ${{ steps.codex.outputs.pr_number }}"
-            echo "- Branch: ${{ steps.codex.outputs.branch_name }}"
-            echo "- Commit: ${{ steps.codex.outputs.commit_sha }}"
+            echo "- Pull request: ${{ steps.publish.outputs.pr_number }}"
+            echo "- Branch: ${{ steps.publish.outputs.branch_name }}"
+            echo "- Commit: ${{ steps.publish.outputs.commit_sha }}"
           } >>"$GITHUB_STEP_SUMMARY"
+
+  codex-review-verify:
+    needs: [detect-codex-pr, codex-review-generate]
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    timeout-minutes: 30
+    env:
+      EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
+      EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: checks-only
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Codex review output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-review-output
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex review patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-pr-review-verify.sh
+
+      - name: Upload verified Codex review output
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-review-verified
+          path: |
+            ${{ runner.temp }}/codex-output/codex-review-comment.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1

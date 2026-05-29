@@ -15,30 +15,105 @@ required_env "ISSUE_KEY"
 required_env "ISSUE_SUMMARY"
 required_env "ISSUE_DESCRIPTION"
 required_env "ISSUE_URL"
-required_env "GH_TOKEN"
-required_env "PAYLOAD_PATH"
-required_env "PROMPT_PATH"
-required_env "PR_BODY_PATH"
+required_env "OUTPUT_DIR"
 
-default_branch="${DEFAULT_BRANCH:-master}"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
-artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-${run_id}-${run_attempt}"
-payload_path="${PAYLOAD_PATH}"
-prompt_path="${PROMPT_PATH}"
-final_message_path="${artifact_dir}/codex-final-message.md"
-pr_body_path="${PR_BODY_PATH}"
-reviewer="${CODEX_REVIEWER:-}"
-reviewer="${reviewer#@}"
+artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-generate-${run_id}-${run_attempt}"
+runner_home="${HOME:-/home/runner}"
+codex_home="${artifact_dir}/codex-home"
+codex_tmp="${artifact_dir}/codex-tmp"
+codex_runner_temp="${artifact_dir}/codex-runner-temp"
+sanitized_home="${artifact_dir}/sanitized-home"
+sanitized_tmp="${artifact_dir}/sanitized-tmp"
+output_dir="${OUTPUT_DIR}"
+prompt_path="${artifact_dir}/codex-prompt.md"
+final_message_path="${output_dir}/codex-final-message.md"
+pr_body_path="${output_dir}/codex-pr-body.md"
+patch_path="${output_dir}/changes.patch"
+metadata_path="${output_dir}/metadata.env"
 
-mkdir -p \
-  "${artifact_dir}" \
-  "$(dirname "${payload_path}")" \
-  "$(dirname "${prompt_path}")" \
-  "$(dirname "${pr_body_path}")"
+prepare_codex_home() {
+  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
+
+  if [[ -f "${runner_home}/.codex/auth.json" ]]; then
+    cp "${runner_home}/.codex/auth.json" "${codex_home}/.codex/auth.json"
+    chmod 600 "${codex_home}/.codex/auth.json"
+  fi
+
+  if [[ -f "${runner_home}/.codex/config.toml" ]]; then
+    cp "${runner_home}/.codex/config.toml" "${codex_home}/.codex/config.toml"
+    chmod 600 "${codex_home}/.codex/config.toml"
+  fi
+}
+
+run_codex() {
+  local codex_env=(
+    env -i
+    "HOME=${codex_home}"
+    "CODEX_HOME=${codex_home}/.codex"
+    "XDG_CACHE_HOME=${codex_home}/.cache"
+    "XDG_CONFIG_HOME=${codex_home}/.config"
+    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+    "SHELL=${SHELL:-/bin/bash}"
+    "USER=${USER:-runner}"
+    "LOGNAME=${LOGNAME:-${USER:-runner}}"
+    "LANG=${LANG:-C.UTF-8}"
+    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
+    "TERM=${TERM:-xterm}"
+    "TMPDIR=${codex_tmp}"
+    "RUNNER_TEMP=${codex_runner_temp}"
+    "CI=${CI:-true}"
+    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
+    "GIT_CONFIG_GLOBAL=/dev/null"
+    "GIT_CONFIG_NOSYSTEM=1"
+    "GIT_TERMINAL_PROMPT=0"
+  )
+
+  if [[ -n "${JAVA_HOME:-}" ]]; then
+    codex_env+=("JAVA_HOME=${JAVA_HOME}")
+  fi
+
+  "${codex_env[@]}" "$@"
+}
+
+run_sanitized() {
+  local sanitized_env=(
+    env -i
+    "HOME=${sanitized_home}"
+    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+    "SHELL=${SHELL:-/bin/bash}"
+    "USER=${USER:-runner}"
+    "LOGNAME=${LOGNAME:-${USER:-runner}}"
+    "LANG=${LANG:-C.UTF-8}"
+    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
+    "TERM=${TERM:-xterm}"
+    "TMPDIR=${sanitized_tmp}"
+    "GIT_CONFIG_GLOBAL=/dev/null"
+    "GIT_CONFIG_NOSYSTEM=1"
+    "GIT_TERMINAL_PROMPT=0"
+  )
+
+  if [[ -n "${JAVA_HOME:-}" ]]; then
+    sanitized_env+=("JAVA_HOME=${JAVA_HOME}")
+  fi
+
+  "${sanitized_env[@]}" "$@"
+}
+
+git_sanitized() {
+  run_sanitized git \
+    -c core.hooksPath=/dev/null \
+    -c credential.helper= \
+    -c protocol.file.allow=never \
+    "$@"
+}
+
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${output_dir}"
+prepare_codex_home
 
 branch_slug="$(
-  python3 - <<'PY'
+  python3 -I - <<'PY'
 import os
 import re
 
@@ -49,8 +124,7 @@ PY
 )"
 branch_name="codex/${branch_slug}-${run_id}-${run_attempt}"
 
-python3 - <<'PY'
-import json
+PROMPT_PATH="${prompt_path}" PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
 import os
 from pathlib import Path
 
@@ -62,14 +136,6 @@ payload = {
     "assignee": os.environ.get("ISSUE_ASSIGNEE", ""),
     "issueUrl": os.environ["ISSUE_URL"],
 }
-reviewer = os.environ.get("CODEX_REVIEWER", "").strip().lstrip("@")
-review_request = (
-    f"\nReview requested from @{reviewer}.\n" if reviewer else ""
-)
-
-payload_path = Path(os.environ["PAYLOAD_PATH"])
-payload_path.parent.mkdir(parents=True, exist_ok=True)
-payload_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 prompt = f"""You are Codex running non-interactively in GitHub Actions on a self-hosted runner.
 
@@ -81,9 +147,9 @@ Operational rules:
 - Follow the repository's existing patterns and style.
 - Add or update tests where the behavior changes.
 - Run the most relevant targeted verification commands you can reasonably run in this CI job.
-- `./bin/codex-local-pipeline.sh fast` runs lightweight repository guardrails and unit tests only; use `full` only when the change genuinely needs integration, functional, smoke, or coverage verification.
-- Do not push branches, open pull requests, or modify GitHub Actions runner setup. The workflow handles Git and PR creation after you finish.
+- Do not push branches or open pull requests. The workflow handles Git and PR creation in a separate trusted job after you finish.
 - Leave the working tree containing only the intended code/test/documentation changes.
+- In your final message, include a concise change summary and the exact testing or verification commands you ran with their outcomes. This final message is added to the pull request description.
 
 Jira issue:
 - Key: {payload["issueKey"]}
@@ -96,45 +162,50 @@ Description:
 {payload["description"]}
 """
 
-prompt_path = Path(os.environ["PROMPT_PATH"])
-prompt_path.write_text(prompt, encoding="utf-8")
+Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 
-pr_body = f"""## Jira
+pr_body = f"""### Jira link
 
-- Issue: {payload["issueKey"]}
-- URL: {payload["issueUrl"]}
-- Summary: {payload["summary"]}
+See [{payload["issueKey"]}]({payload["issueUrl"]})
 
-## Codex Notes
+### Change description
 
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira payload above. See the workflow logs for the full execution trace and verification output.
-{review_request}
+Implements Jira issue {payload["issueKey"]}: {payload["summary"]}
+
+Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context. See the Codex final message below for the implementation summary.
+
+### Testing done
+
+Codex may run targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
+
+### Security Vulnerability Assessment ###
+
+**CVE Suppression:** Are there any CVEs present in the codebase (either newly introduced or pre-existing) that are being intentionally suppressed or ignored by this commit?
+  * [ ] Yes
+  * [x] No
+
+### Checklist
+
+- [x] commit messages are meaningful and follow good commit message guidelines
+- [ ] README and other documentation has been updated / added (if needed)
+- [ ] tests have been updated / new tests has been added (if needed)
+- [ ] Does this PR introduce a breaking change
 """
 
-pr_body_path = Path(os.environ["PR_BODY_PATH"])
-pr_body_path.write_text(pr_body, encoding="utf-8")
+Path(os.environ["PR_BODY_PATH"]).write_text(pr_body, encoding="utf-8")
 PY
 
-git fetch origin "${default_branch}"
-git checkout -B "${default_branch}" "origin/${default_branch}"
-git checkout -B "${branch_name}"
-
-git config user.name "github-actions[bot]"
-git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-echo "Running Codex for ${ISSUE_KEY} on ${branch_name}"
-codex exec \
+echo "Running Codex for ${ISSUE_KEY}; publish will use ${branch_name}"
+run_codex codex exec \
   --cd "${PWD}" \
-  --dangerously-bypass-approvals-and-sandbox \
+  --sandbox workspace-write \
+  --ephemeral \
   --output-last-message "${final_message_path}" \
   - <"${prompt_path}"
 
 if [[ ! -s "${final_message_path}" ]]; then
   echo "Codex completed without writing a final message." >"${final_message_path}"
 fi
-
-echo "Codex final message:"
-sed -n '1,200p' "${final_message_path}"
 
 {
   echo
@@ -143,82 +214,27 @@ sed -n '1,200p' "${final_message_path}"
   sed -n '1,200p' "${final_message_path}"
 } >>"${pr_body_path}"
 
-echo "Git status after Codex:"
-git status --short --untracked-files=normal
-
-if [[ -z "$(git status --short --untracked-files=normal)" ]]; then
+if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   echo "Codex did not produce any committable changes." >&2
-  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-    {
-      echo "branch_name=${branch_name}"
-      echo "has_changes=false"
-    } >>"${GITHUB_OUTPUT}"
-  fi
   exit 1
 fi
 
-local_pipeline_mode="${LOCAL_PIPELINE_MODE:-fast}"
-if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
-  echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
-else
-  echo "Running local pipeline before opening PR: ${local_pipeline_mode}"
-  ./bin/codex-local-pipeline.sh "${local_pipeline_mode}" --base "${default_branch}"
-fi
-
-git add -A
-
-if git diff --cached --quiet; then
-  echo "Codex produced changes, but none were staged for commit." >&2
+git_sanitized add -A
+if git_sanitized diff --cached --quiet; then
+  echo "Codex produced changes, but none were staged for patch output." >&2
   exit 1
 fi
 
-commit_subject="$(
-  python3 - <<'PY'
-import os
+git_sanitized diff --cached --binary >"${patch_path}"
 
-issue_key = os.environ["ISSUE_KEY"].strip()
-summary = " ".join(os.environ["ISSUE_SUMMARY"].split())
-subject = f"{issue_key}: {summary}"
-print(subject[:72].rstrip())
-PY
-)"
-
-git commit \
-  -m "${commit_subject}" \
-  -m "Jira: ${ISSUE_URL}" \
-  -m "Generated by Codex self-hosted runner for ${ISSUE_KEY}."
-
-git push --set-upstream origin "${branch_name}"
-
-pr_url="$(gh pr list --head "${branch_name}" --state open --json url --jq '.[0].url // empty')"
-if [[ -z "${pr_url}" ]]; then
-  pr_url="$(
-    gh pr create \
-      --base "${default_branch}" \
-      --head "${branch_name}" \
-      --title "${ISSUE_KEY}: ${ISSUE_SUMMARY}" \
-      --body-file "${pr_body_path}"
-  )"
-fi
-
-echo "Opened pull request: ${pr_url}"
-
-if [[ -n "${reviewer}" ]]; then
-  gh pr edit "${pr_url}" --add-reviewer "${reviewer}" || {
-    echo "::warning::Unable to request review from ${reviewer}"
-  }
-fi
+{
+  echo "branch_name=${branch_name}"
+  echo "has_changes=true"
+} >"${metadata_path}"
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "branch_name=${branch_name}"
-    echo "commit_sha=$(git rev-parse HEAD)"
     echo "has_changes=true"
-    echo "pr_url=${pr_url}"
   } >>"${GITHUB_OUTPUT}"
 fi
-
-python3 .github/scripts/notify-jira-automation.py \
-  --pr-url "${pr_url}" \
-  --branch-name "${branch_name}" \
-  --commit-sha "$(git rev-parse HEAD)"
