@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -119,6 +120,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.template.SubstitutedSentence;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -142,6 +144,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
@@ -2245,6 +2248,7 @@ public class ApplicationEntryServiceImplTest {
                 captorEntry.getValue().getNotes());
     }
 
+    @Test
     void deleteEntrySuccess() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
 
@@ -2483,5 +2487,138 @@ public class ApplicationEntryServiceImplTest {
                         validateSuccess) {
             return validateSuccess.apply(validatable, success);
         }
+    }
+
+    @Test
+    void given_filter_when_getEntryIds_then_return_ids() {
+        EntryGetFilterDto filterDto = new EntryGetFilterDto();
+        filterDto.setStatus(ApplicationListStatus.OPEN);
+        filterDto.setCourtCode("COURT1");
+        filterDto.setCjaCode("CJA1");
+        filterDto.setApplicantOrganisation("Applicant Org");
+        filterDto.setApplicantSurname("ApplicantSurname");
+        filterDto.setStandardApplicantCode("STD1");
+        filterDto.setRespondentOrganisation("Respondent Org");
+        filterDto.setRespondentSurname("RespondentSurname");
+        filterDto.setRespondentPostcode("AB1 2CD");
+        filterDto.setAccountReference("ACC123");
+        filterDto.setApplicationTitle("Title");
+
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+
+        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
+                .thenReturn(Status.OPEN);
+        when(applicationListEntryRepository.searchForGetSummaryIds(
+                        eq(null),
+                        eq(false),
+                        eq(null),
+                        eq("COURT1"),
+                        eq(null),
+                        eq("CJA1"),
+                        eq("Applicant Org"),
+                        eq("ApplicantSurname"),
+                        eq(null),
+                        eq("STD1"),
+                        eq(Status.OPEN),
+                        eq("Respondent Org"),
+                        eq("RespondentSurname"),
+                        eq(null),
+                        eq("AB1 2CD"),
+                        eq("ACC123"),
+                        eq("Title"),
+                        eq(null),
+                        eq(null),
+                        eq(null)))
+                .thenReturn(List.of(id1, id2));
+
+        EntryIdsDto response = service.getEntryIds(filterDto);
+
+        Assertions.assertEquals(List.of(id1, id2), response.getIds());
+        verify(applicationListEntryRepository)
+                .searchForGetSummaryIds(
+                        eq(null),
+                        eq(false),
+                        eq(null),
+                        eq("COURT1"),
+                        eq(null),
+                        eq("CJA1"),
+                        eq("Applicant Org"),
+                        eq("ApplicantSurname"),
+                        eq(null),
+                        eq("STD1"),
+                        eq(Status.OPEN),
+                        eq("Respondent Org"),
+                        eq("RespondentSurname"),
+                        eq(null),
+                        eq("AB1 2CD"),
+                        eq("ACC123"),
+                        eq("Title"),
+                        eq(null),
+                        eq(null),
+                        eq(null));
+    }
+
+    @Test
+    void given_nullFilter_when_getEntryIds_then_use_empty_filter() {
+        UUID id = UUID.randomUUID();
+
+        when(applicationListEntryMapStructMapper.toStatus((ApplicationListStatus) null))
+                .thenReturn(null);
+        when(applicationListEntryRepository.searchForGetSummaryIds(
+                        eq(null), eq(false), eq(null), eq(null), eq(null), eq(null), eq(null),
+                        eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null),
+                        eq(null), eq(null), eq(null), eq(null), eq(null), eq(null)))
+                .thenReturn(List.of(id));
+
+        EntryIdsDto response = service.getEntryIds(null);
+
+        Assertions.assertEquals(List.of(id), response.getIds());
+    }
+
+    @Test
+    void given_validPayload_when_updateEntry_then_save_and_return_response() {
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+
+        EntryUpdateDto dto = new EntryUpdateDto();
+        dto.setWordingFields(List.of());
+
+        final PayloadForUpdateEntry payload = new PayloadForUpdateEntry(dto, listId, entryId);
+
+        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+        applicationListEntry.setUuid(entryId);
+        applicationListEntry.setId(123L);
+        applicationListEntry.setVersion(1L);
+
+        ApplicationList applicationList = new ApplicationList();
+        applicationList.setUuid(listId);
+
+        WordingTemplateSentence wordingTemplateSentence = mock(WordingTemplateSentence.class);
+        SubstitutedSentence substitutedSentence = mock(SubstitutedSentence.class);
+        when(wordingTemplateSentence.substitute(anyList())).thenReturn(substitutedSentence);
+        when(substitutedSentence.getSubstitutedString()).thenReturn("wording");
+
+        updateSuccess =
+                new UpdateApplicationEntryValidationSuccess(
+                        wordingTemplateSentence,
+                        new ApplicationCode(),
+                        null,
+                        null,
+                        applicationList,
+                        applicationListEntry);
+
+        when(applicationListEntryRepository.save(any(ApplicationListEntry.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        eq(applicationListEntry), anyList(), eq(null), anyList(), eq(null)))
+                .thenReturn(entryGetDetailDto);
+
+        MatchResponse<EntryGetDetailDto> response = service.updateEntry(payload);
+
+        Assertions.assertNotNull(response);
+        verify(applicationListEntryRepository, atLeastOnce()).save(eq(applicationListEntry));
     }
 }
