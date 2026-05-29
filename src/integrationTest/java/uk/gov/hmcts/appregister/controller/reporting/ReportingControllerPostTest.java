@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
@@ -53,6 +54,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private static final String DOWNLOAD_WEB_CONTEXT = "reports/jobs/%s/download";
 
     @Autowired private JdbcTemplate jdbcTemplate;
+
+    @Autowired private AsyncJobRepository asyncJobRepository;
 
     @Autowired private DataAuditRepository dataAuditRepository;
 
@@ -203,6 +206,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                   "courtCode": "LOC123"
                 }
                 """;
+        long activityAuditReportJobCount = countJobs(JobType.ACTIVITY_AUDIT_REPORT);
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -216,6 +220,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .getBody()
                         .asString()
                         .contains("Unsupported request field: courtCode"));
+        Assertions.assertEquals(
+                activityAuditReportJobCount,
+                countJobs(JobType.ACTIVITY_AUDIT_REPORT),
+                "Rejected activity-audit report request should not create an async job");
     }
 
     @Test
@@ -2822,6 +2830,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
         return dataAuditRepository.findAll().stream()
                 .filter(row -> operation.getEventName().equals(row.getEventName()))
                 .toList();
+    }
+
+    private long countJobs(JobType jobType) {
+        return asyncJobRepository.findAll().stream()
+                .filter(job -> jobType.getValue().equals(job.getJobType()))
+                .count();
     }
 
     private String createFeesReportAndDownload(FeesReportFilterDto request) throws Exception {
