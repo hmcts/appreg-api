@@ -31,6 +31,7 @@ class AuditOperationSlf4jLoggerTest {
         Assertions.assertEquals(
                 "Completion fail audit\s" + AuditOperationSlf4jLogger.getLog(auditRequest),
                 logCaptor.getInfoLogs().getFirst());
+        Assertions.assertFalse(logCaptor.getInfoLogs().getFirst().contains("p_messagecontent"));
     }
 
     @Test
@@ -43,6 +44,7 @@ class AuditOperationSlf4jLoggerTest {
         Assertions.assertEquals(
                 "Start audit\s" + AuditOperationSlf4jLogger.getLog(startEvent),
                 logCaptor.getInfoLogs().getFirst());
+        Assertions.assertFalse(logCaptor.getInfoLogs().getFirst().contains("p_messagecontent"));
     }
 
     @Test
@@ -56,5 +58,6 @@ class AuditOperationSlf4jLoggerTest {
         Assertions.assertEquals(
                 "Completion audit\s" + AuditOperationSlf4jLogger.getLog(auditRequest),
                 logCaptor.getInfoLogs().getFirst());
+        Assertions.assertFalse(logCaptor.getInfoLogs().getFirst().contains("p_messagecontent"));
     }
 }

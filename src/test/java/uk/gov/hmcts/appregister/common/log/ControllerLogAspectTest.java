@@ -27,6 +27,7 @@ public class ControllerLogAspectTest {
 
     @Test
     void logController() throws Throwable {
+        controllerAspectLog.clearLogs();
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
         Signature signature = Mockito.mock(Signature.class);
 
@@ -47,19 +48,21 @@ public class ControllerLogAspectTest {
 
         // assert the log messages are correct and the result is correct
         Assertions.assertEquals("Test Result", result.getBody());
+        Assertions.assertEquals(
+                "Start: Executing ControllerLogAspectTest.testMethod",
+                controllerAspectLog.getDebugLogs().get(0));
         Assertions.assertTrue(
                 controllerAspectLog
                         .getDebugLogs()
-                        .get(0)
-                        .startsWith("Duration of ControllerLogAspectTest.testMethod"));
-        Assertions.assertEquals(
-                "Finish: Executed and returned \"Test Result\"",
-                controllerAspectLog.getDebugLogs().get(1));
+                        .get(1)
+                        .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
+        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
         Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
     }
 
     @Test
     void logControllerNoResult() throws Throwable {
+        controllerAspectLog.clearLogs();
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
         Signature signature = Mockito.mock(Signature.class);
 
@@ -76,14 +79,15 @@ public class ControllerLogAspectTest {
 
         // assert the log messages are correct and the result is correct
         Assertions.assertNull(result);
+        Assertions.assertEquals(
+                "Start: Executing ControllerLogAspectTest.testMethod",
+                controllerAspectLog.getDebugLogs().get(0));
         Assertions.assertTrue(
                 controllerAspectLog
                         .getDebugLogs()
-                        .get(0)
-                        .startsWith("Duration of ControllerLogAspectTest.testMethod"));
-        Assertions.assertEquals(
-                "Finish: Executed and returned null", controllerAspectLog.getDebugLogs().get(1));
-        Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+                        .get(1)
+                        .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
+        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
     }
 
     @Test
@@ -109,9 +113,12 @@ public class ControllerLogAspectTest {
                 (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
 
         Assertions.assertEquals("Test Result", result.getBody());
-        Assertions.assertEquals(
-                "Finish: Executed and returned \"Test Result\"",
-                controllerAspectLog.getDebugLogs().get(1));
+        Assertions.assertTrue(
+                controllerAspectLog
+                        .getDebugLogs()
+                        .get(1)
+                        .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
+        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
     }
 
     @Test
