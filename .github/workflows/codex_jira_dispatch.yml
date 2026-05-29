@@ -115,12 +115,17 @@ jobs:
           name: codex-jira-verified
           path: ${{ runner.temp }}/codex-verified
 
+      - name: Copy trusted publish script
+        run: |
+          cp .github/scripts/codex-jira-publish.sh "$RUNNER_TEMP/codex-jira-publish.sh"
+          chmod +x "$RUNNER_TEMP/codex-jira-publish.sh"
+
       - name: Publish pull request and notify Jira
         id: publish
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
-        run: ./.github/scripts/codex-jira-publish.sh
+        run: "$RUNNER_TEMP/codex-jira-publish.sh"
 
       - name: Write workflow summary
         if: always()
