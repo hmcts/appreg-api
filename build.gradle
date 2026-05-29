@@ -435,7 +435,7 @@ dependencies {
 
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
 
-  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3'
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.4'
 
   implementation 'org.flywaydb:flyway-database-postgresql:12.6.1'
 
