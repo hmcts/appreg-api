@@ -246,7 +246,7 @@ jobs:
       EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
       GH_TOKEN: ${{ github.token }}
-      LOCAL_PIPELINE_MODE: checks-only
+      LOCAL_PIPELINE_MODE: fast
 
     steps:
       - name: Checkout default branch
@@ -255,6 +255,12 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
 
       - name: Download Codex review output
         uses: actions/download-artifact@v4
