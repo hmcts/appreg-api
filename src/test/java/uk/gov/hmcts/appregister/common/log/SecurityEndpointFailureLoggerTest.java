@@ -80,6 +80,25 @@ class SecurityEndpointFailureLoggerTest {
                         "user=" + SAFE_USER_ID);
     }
 
+    @Test
+    void givenRequestUnavailable_whenLogged_thenFallsBackToMdcContext() {
+        SecurityEndpointFailureLogger logger =
+                new SecurityEndpointFailureLogger(emptyUserProvider());
+        MDC.put(LogMdcFilter.METHOD, "POST");
+        MDC.put(LogMdcFilter.PATH, "/from-mdc");
+        MDC.put(LogMdcFilter.USER, "anonymous");
+
+        logger.logFailure(null, 401, SecurityEndpointFailureLogger.AUTHENTICATION_FAILURE);
+
+        assertThat(logCaptor.getWarnLogs().getFirst())
+                .contains(
+                        "method=POST",
+                        "path=/from-mdc",
+                        "status=401",
+                        "category=authentication_failure",
+                        "user=anonymous");
+    }
+
     private static ObjectProvider<UserProvider> emptyUserProvider() {
         return mockUserProvider(null);
     }

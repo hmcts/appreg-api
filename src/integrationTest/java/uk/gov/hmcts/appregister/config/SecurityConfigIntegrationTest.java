@@ -59,6 +59,8 @@ class SecurityConfigIntegrationTest extends BaseIntegration {
 
         mvc.perform(get("/user/hello").header(HttpHeaders.AUTHORIZATION, "Bearer user-token"))
                 .andExpect(status().isOk());
+
+        assertNoSecurityFailureLog();
     }
 
     @Test
@@ -68,6 +70,8 @@ class SecurityConfigIntegrationTest extends BaseIntegration {
 
         mvc.perform(get("/user/hello").header(HttpHeaders.AUTHORIZATION, "Bearer admin-token"))
                 .andExpect(status().isOk());
+
+        assertNoSecurityFailureLog();
     }
 
     @Test
@@ -93,7 +97,7 @@ class SecurityConfigIntegrationTest extends BaseIntegration {
         mvc.perform(get("/admin/hello").header(HttpHeaders.AUTHORIZATION, "Bearer admin-token"))
                 .andExpect(status().isOk());
 
-        assertThat(securityFailureLogCaptor.getWarnLogs()).isEmpty();
+        assertNoSecurityFailureLog();
     }
 
     @Test
@@ -164,6 +168,10 @@ class SecurityConfigIntegrationTest extends BaseIntegration {
                         "category=" + category,
                         expectedUser);
         return log;
+    }
+
+    private void assertNoSecurityFailureLog() {
+        assertThat(securityFailureLogCaptor.getWarnLogs()).isEmpty();
     }
 
     // ---- Test-only controllers registered in this slice ----
