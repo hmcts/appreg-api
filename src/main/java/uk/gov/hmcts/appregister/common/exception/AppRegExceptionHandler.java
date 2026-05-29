@@ -49,11 +49,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         // getss the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
-        log.error("A app register exception occurred", exception);
-
         ProblemDetail problemDetail = getDetailFromEnum(exception.getCode(), exception);
+        HttpStatus httpStatus = error.getCode().getHttpCode();
+        logAppRegistryException(httpStatus, problemDetail, exception);
 
-        return new ResponseEntity<>(problemDetail, error.getCode().getHttpCode());
+        return new ResponseEntity<>(problemDetail, httpStatus);
     }
 
     /**
@@ -363,6 +363,25 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
     private void logExpectedClientError(int responseCode, String detail) {
         log.warn("[{}]: {}", responseCode, detail);
+    }
+
+    private void logAppRegistryException(
+            HttpStatus httpStatus, ProblemDetail problemDetail, AppRegistryException exception) {
+        String detail = problemDetail.getDetail();
+        String exceptionMessage = exception.getMessage();
+
+        if (exceptionMessage != null
+                && !exceptionMessage.isBlank()
+                && !exceptionMessage.equals(detail)) {
+            detail = detail + " (" + exceptionMessage + ")";
+        }
+
+        if (httpStatus.is4xxClientError()) {
+            logExpectedClientError(httpStatus.value(), detail);
+            return;
+        }
+
+        log.error("[{}]: {}", httpStatus.value(), detail, exception);
     }
 
     private int resolveStatusCode(HttpStatusCode status, ProblemDetail problemDetail) {
