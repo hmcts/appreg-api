@@ -37,13 +37,13 @@ class SecurityEndpointFailureLoggerTest {
 
     @Test
     void givenAuthenticationFailure_whenLogged_thenLogContainsSafeEndpointContext() {
-        SecurityEndpointFailureLogger logger =
-                new SecurityEndpointFailureLogger(emptyUserProvider());
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/admin/hello");
         request.setQueryString("token=" + SENSITIVE_TOKEN);
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + SENSITIVE_TOKEN);
         request.addHeader(HttpHeaders.COOKIE, "APPREG_SESSION=" + SENSITIVE_SESSION);
 
+        SecurityEndpointFailureLogger logger =
+                new SecurityEndpointFailureLogger(emptyUserProvider());
         logger.logFailure(request, 401, SecurityEndpointFailureLogger.AUTHENTICATION_FAILURE);
 
         String log = logCaptor.getWarnLogs().getFirst();
@@ -82,12 +82,12 @@ class SecurityEndpointFailureLoggerTest {
 
     @Test
     void givenRequestUnavailable_whenLogged_thenFallsBackToMdcContext() {
-        SecurityEndpointFailureLogger logger =
-                new SecurityEndpointFailureLogger(emptyUserProvider());
         MDC.put(LogMdcFilter.METHOD, "POST");
         MDC.put(LogMdcFilter.PATH, "/from-mdc");
         MDC.put(LogMdcFilter.USER, "anonymous");
 
+        SecurityEndpointFailureLogger logger =
+                new SecurityEndpointFailureLogger(emptyUserProvider());
         logger.logFailure(null, 401, SecurityEndpointFailureLogger.AUTHENTICATION_FAILURE);
 
         assertThat(logCaptor.getWarnLogs().getFirst())
