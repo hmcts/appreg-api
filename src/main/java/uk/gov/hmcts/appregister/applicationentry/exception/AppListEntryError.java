@@ -204,7 +204,19 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     OFFSITE_FEE_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "hasOffsiteFee must be provided", "ALE-41"));
+                    HttpStatus.BAD_REQUEST, "hasOffsiteFee must be provided", "ALE-41")),
+
+    OFFICIAL_TITLE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Official title must be provided", "ALE-42")),
+
+    OFFICIAL_FORENAME_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Official forename must be provided", "ALE-43")),
+
+    OFFICIAL_SURNAME_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

@@ -12,7 +12,8 @@ post:
   summary: Replace officials for multiple Application List Entries.
   description: >
     Atomically replaces the full officials array for each specified entry in the source list
-    (path `listId`). If any entry cannot be updated, no officials are changed.
+    (path `listId`). If any entry cannot be updated, no officials are changed.  
+    NOTE: Duplicate entryIds will result in an error
   requestBody:
     required: true
     content:

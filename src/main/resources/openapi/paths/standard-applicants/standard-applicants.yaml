@@ -17,7 +17,7 @@ get:
       example: "SA"
     - in: query
       name: name
-      description: Filter by name (contains, case-insensitive). For people, this is searched as "{forename} {surname}".
+      description: Filter by name (contains, case-insensitive). For people, this is searched as "{firstName} {lastName}".
       schema:
         type: string
         maxLength: 100

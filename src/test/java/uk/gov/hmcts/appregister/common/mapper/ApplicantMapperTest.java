@@ -12,7 +12,6 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Person;
 
-@SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicantMapperTest {
 
     private final ApplicantMapper mapper = new ApplicantMapperImpl();
@@ -38,24 +37,24 @@ class ApplicantMapperTest {
 
     @Test
     void getNameForNameAddress_formatsPartialAndMissingPersonNames() {
-        var surnameOnly = new NameAddress();
-        surnameOnly.setSurname("Doe");
+        var lastNameOnly = new NameAddress();
+        lastNameOnly.setLastName("Doe");
 
-        var forenameOnly = new NameAddress();
-        forenameOnly.setForename1("Jane");
+        var firstNameOnly = new NameAddress();
+        firstNameOnly.setFirstName("Jane");
 
         var noPersonName = new NameAddress();
 
-        assertEquals("Doe", mapper.getNameForNameAddress(surnameOnly));
-        assertEquals("Jane", mapper.getNameForNameAddress(forenameOnly));
+        assertEquals("Doe", mapper.getNameForNameAddress(lastNameOnly));
+        assertEquals("Jane", mapper.getNameForNameAddress(firstNameOnly));
         assertEquals("", mapper.getNameForNameAddress(noPersonName));
     }
 
     @Test
     void getNameForApplicant_fallsBackToNameAddressWhenStandardApplicantMissing() {
         var applicant = new NameAddress();
-        applicant.setForename1("Sarah");
-        applicant.setSurname("Johnson");
+        applicant.setFirstName("Sarah");
+        applicant.setLastName("Johnson");
 
         assertEquals("Sarah Johnson", mapper.getNameForApplicant(null, applicant));
     }
@@ -82,29 +81,7 @@ class ApplicantMapperTest {
     }
 
     @Test
-    void toApplicantNameAddress_stillAcceptsLegacyNameFields() {
-        final var person = new Person();
-        var name = new FullName();
-        name.setFirstForename("Ada");
-        name.setSecondForename(JsonNullable.of("Augusta"));
-        name.setThirdForename(JsonNullable.of("Byron"));
-        name.setSurname("Lovelace");
-        person.setName(name);
-        person.setContactDetails(new ContactDetails().addressLine1("1 High Street"));
-
-        var mapped = mapper.toApplicantNameAddress(new Applicant().person(person));
-
-        assertEquals("Ada", mapped.getFirstName());
-        assertEquals("Augusta Byron", mapped.getMiddleName());
-        assertEquals("Lovelace", mapped.getLastName());
-        assertEquals("Ada", mapped.getForename1());
-        assertEquals("Augusta Byron", mapped.getForename2());
-        assertNull(mapped.getForename3());
-        assertEquals("Lovelace", mapped.getSurname());
-    }
-
-    @Test
-    void toFullName_populatesGdsAndLegacyFieldsFromCanonicalColumns() {
+    void toFullName_populatesGdsFieldsFromCanonicalColumns() {
         var entity = new NameAddress();
         entity.setTitle("Ms");
         entity.setFirstName("Ada");
@@ -116,9 +93,5 @@ class ApplicantMapperTest {
         assertEquals("Ada", fullName.getFirstName());
         assertEquals(JsonNullable.of("Byron"), fullName.getMiddleName());
         assertEquals("Lovelace", fullName.getLastName());
-        assertEquals("Ada", fullName.getFirstForename());
-        assertEquals(JsonNullable.of("Byron"), fullName.getSecondForename());
-        assertEquals(JsonNullable.of(null), fullName.getThirdForename());
-        assertEquals("Lovelace", fullName.getSurname());
     }
 }

@@ -428,13 +428,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
-        entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -885,7 +881,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.setStandardApplicantCode(null);
         String surnameToLookup = UUID.randomUUID().toString();
         entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
-        entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
@@ -1064,17 +1060,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getApplicant().getPerson().getName().setFirstForename("vålid");
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of("valid"));
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of("vœlid"));
+        entryCreateDto.getApplicant().getPerson().getName().setFirstName("vålid");
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of("valid"));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of("vœlid"));
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -1268,17 +1256,17 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setApplicant(null);
-        entryCreateDto.getRespondent().getPerson().getName().setFirstForename("invalid\0");
+        entryCreateDto.getRespondent().getPerson().getName().setFirstName("invalid\0");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("inv\nalid"));
+                .setMiddleName(JsonNullable.of("inv\nalid"));
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setThirdForename(JsonNullable.of("\t lastname"));
+                .setMiddleName(JsonNullable.of("\t lastname"));
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -1512,17 +1500,17 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
-        entryCreateDto.getApplicant().getPerson().getName().setFirstForename("invalid\0");
+        entryCreateDto.getApplicant().getPerson().getName().setFirstName("invalid\0");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("inv\nalid"));
+                .setMiddleName(JsonNullable.of("inv\nalid"));
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getName()
-                .setThirdForename(JsonNullable.of("\t lastname"));
+                .setMiddleName(JsonNullable.of("\t lastname"));
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -2006,23 +1994,23 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         EntryCreateDto dto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String firstSurname = "SEQ-" + UUID.randomUUID();
         dto1.getApplicant().getPerson().getName().setLastName(firstSurname);
-        dto1.getApplicant().getPerson().getName().setSurname(firstSurname);
+        dto1.getApplicant().getPerson().getName().setLastName(firstSurname);
 
         EntryCreateDto dto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String secondSurname = "SEQ-" + UUID.randomUUID();
         dto2.getApplicant().getPerson().getName().setLastName(secondSurname);
-        dto2.getApplicant().getPerson().getName().setSurname(secondSurname);
+        dto2.getApplicant().getPerson().getName().setLastName(secondSurname);
 
         SuccessCreateEntryResponse created1 =
                 createEntryWithUniqueSurname(
                         tokenGenerator,
                         dto1,
-                        dto1.getApplicant().getPerson().getName().getSurname());
+                        dto1.getApplicant().getPerson().getName().getLastName());
         SuccessCreateEntryResponse created2 =
                 createEntryWithUniqueSurname(
                         tokenGenerator,
                         dto2,
-                        dto2.getApplicant().getPerson().getName().getSurname());
+                        dto2.getApplicant().getPerson().getName().getLastName());
 
         UUID entryUuid1 = created1.getDetailDto().getId();
         UUID entryUuid2 = created2.getDetailDto().getId();
@@ -2059,7 +2047,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         EntryCreateDto dto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String firstListSurname = "SEQ-L1-" + UUID.randomUUID();
         dto1.getApplicant().getPerson().getName().setLastName(firstListSurname);
-        dto1.getApplicant().getPerson().getName().setSurname(firstListSurname);
+        dto1.getApplicant().getPerson().getName().setLastName(firstListSurname);
         TokenGenerator tokenGenerator = createAdminToken();
         Response r1 =
                 restAssuredClient.executePostRequest(
@@ -2073,7 +2061,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         EntryCreateDto dto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String secondListSurname = "SEQ-L2-" + UUID.randomUUID();
         dto2.getApplicant().getPerson().getName().setLastName(secondListSurname);
-        dto2.getApplicant().getPerson().getName().setSurname(secondListSurname);
+        dto2.getApplicant().getPerson().getName().setLastName(secondListSurname);
         Response r2 =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list2.getUuid() + "/entries"),
@@ -2118,7 +2106,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         EntryCreateDto entryReq = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String entrySurname = "SEQ-FIRST-" + UUID.randomUUID();
         entryReq.getApplicant().getPerson().getName().setLastName(entrySurname);
-        entryReq.getApplicant().getPerson().getName().setSurname(entrySurname);
+        entryReq.getApplicant().getPerson().getName().setLastName(entrySurname);
 
         Response createEntryResp =
                 restAssuredClient.executePostRequest(
@@ -2477,7 +2465,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getName().setLastName("RespondentAudit");
-        entryCreateDto.getRespondent().getPerson().getName().setSurname("RespondentAudit");
+        entryCreateDto.getRespondent().getPerson().getName().setLastName("RespondentAudit");
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("RS1 1RS");
 
         val official = new Official();
@@ -2674,12 +2662,12 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getPerson()
                 .getContactDetails()
                 .setMobile(JsonNullable.of("2".repeat(21)));
-        entryCreateDto.getApplicant().getPerson().getName().setFirstForename("a".repeat(101));
+        entryCreateDto.getApplicant().getPerson().getName().setFirstName("a".repeat(101));
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("b".repeat(101)));
+                .setMiddleName(JsonNullable.of("b".repeat(101)));
 
         var tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -2701,8 +2689,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         "applicant.person.contactDetails.mobile",
                         "applicant.person.contactDetails.phone",
                         "applicant.person.contactDetails.postcode",
-                        "applicant.person.name.firstForename",
-                        "applicant.person.name.secondForename"),
+                        "applicant.person.name.firstName",
+                        "applicant.person.name.middleName"),
                 new ArrayList<>(errors.keySet()));
     }
 

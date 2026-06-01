@@ -18,7 +18,7 @@ properties:
 
   applicantName:
     type: string
-    description: The applicant display name. For people this uses the format "firstForename surname"; for organisations this uses the organisation name. This can be Partial.
+    description: The applicant display name. For people this uses the format "firstName lastName"; for organisations this uses the organisation name. This can be Partial.
     pattern: |-
       ^[a-zA-Z0-9\-\+\.,£@\?'\(\)/%_ &!:]*$
     example: "John Turner"
@@ -26,7 +26,7 @@ properties:
 
   respondentName:
     type: string
-    description: The respondent display name. For people this uses the format "firstForename surname"; for organisations this uses the organisation name. This can be Partial.
+    description: The respondent display name. For people this uses the format "firstName lastName"; for organisations this uses the organisation name. This can be Partial.
     pattern: |-
       ^[a-zA-Z0-9\-\+\.,£@\?'\(\)/%_ &!:]*$
     example: "Sarah Johnson"

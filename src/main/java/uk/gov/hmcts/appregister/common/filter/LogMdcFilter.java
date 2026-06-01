@@ -48,10 +48,10 @@ public class LogMdcFilter extends OncePerRequestFilter {
                 MDC.put(USER, "anonymous");
             }
 
-            // add the context path
-            String contextPath = request.getContextPath();
-            if (contextPath.length() > 0) {
-                MDC.put(PATH, contextPath);
+            // add the request path without query parameters
+            String requestPath = request.getRequestURI();
+            if (requestPath != null && !requestPath.isBlank()) {
+                MDC.put(PATH, requestPath);
             } else {
                 MDC.put(PATH, "/");
             }

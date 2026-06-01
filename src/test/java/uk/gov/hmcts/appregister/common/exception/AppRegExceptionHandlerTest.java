@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.lang.reflect.Method;
@@ -36,16 +37,19 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
     private AppRegExceptionHandler exceptionHandler;
+    private SecurityEndpointFailureLogger securityEndpointFailureLogger;
     private LogCaptor logCaptor;
 
     @BeforeEach
     void beforeEach() {
-        exceptionHandler = new AppRegExceptionHandler();
+        securityEndpointFailureLogger = Mockito.mock(SecurityEndpointFailureLogger.class);
+        exceptionHandler = new AppRegExceptionHandler(securityEndpointFailureLogger);
         logCaptor = LogCaptor.forClass(AppRegExceptionHandler.class);
         logCaptor.clearLogs();
     }
@@ -75,6 +79,13 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 new URI(ApplicationCodeError.CODE_NOT_FOUND.getCode().getAppCode()),
                 problemDetail.getBody().getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[404]: Application code not found (Test message)")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -103,6 +114,35 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(400, problemDetail.getBody().getStatus());
         Assertions.assertEquals(customMessage, problemDetail.getBody().getDetail());
         Assertions.assertEquals(new URI(customType), problemDetail.getBody().getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(log -> log.contains("[400]: Custom message (Test message)")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void givenServerSideAppRegisterException_whenHandled_thenErrorIsLoggedWithStatusAndDetail() {
+        AppRegistryException exception =
+                new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR, "Report output file failed");
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleAppRegisterApiException(exception);
+
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertEquals(500, problemDetail.getBody().getStatus());
+        Assertions.assertEquals(
+                CommonAppError.INTERNAL_SERVER_ERROR.getCode().getMessage(),
+                problemDetail.getBody().getDetail());
+        Assertions.assertTrue(logCaptor.getWarnLogs().isEmpty());
+        Assertions.assertTrue(
+                logCaptor.getErrorLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[500]: General unexpected failure"
+                                                        + " (Report output file failed)")));
     }
 
     @Test
@@ -679,16 +719,19 @@ class AppRegExceptionHandlerTest {
             givenAccessDeniedException_whenTheExceptionIsThrown_thenForbiddenProblemDetailIsReturned() {
         // setup
         AccessDeniedException exception = new AccessDeniedException("Forbidden");
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
-                exceptionHandler.handleAccessDenied(exception);
+                exceptionHandler.handleAccessDenied(exception, request);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(403), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertEquals(403, problemDetail.getBody().getStatus());
         Assertions.assertEquals("Access denied", problemDetail.getBody().getDetail());
+        Mockito.verify(securityEndpointFailureLogger)
+                .logFailure(request, 403, SecurityEndpointFailureLogger.ACCESS_DENIED);
     }
 
     @Test

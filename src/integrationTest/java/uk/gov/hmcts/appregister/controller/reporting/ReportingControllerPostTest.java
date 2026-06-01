@@ -13,14 +13,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.val;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ProblemDetail;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.exception.AppRegExceptionHandler;
+import uk.gov.hmcts.appregister.common.log.AbstractOperationDurationAspect;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
@@ -525,6 +529,58 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
             Assertions.assertTrue(report.contains("Search Warrants Report"));
         }
+    }
+
+    @Test
+    public void
+            givenInvalidLocationCombination_whenCreatingSearchWarrantsReport_thenBadRequestIsLoggedWithProblemDetail()
+                    throws Exception {
+        LogCaptor exceptionHandlerLogs = LogCaptor.forClass(AppRegExceptionHandler.class);
+        LogCaptor durationAspectLogs = LogCaptor.forClass(AbstractOperationDurationAspect.class);
+        exceptionHandlerLogs.clearLogs();
+        durationAspectLogs.clearLogs();
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        SearchWarrantsReportFilterDto request =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2025, 10, 1))
+                        .dateTo(LocalDate.of(2025, 10, 31))
+                        .location(
+                                new LegacyReportLocation()
+                                        .courtLocationCode("LOC123")
+                                        .otherLocationDescription("Test Other Location"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(SEARCH_WARRANTS_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+
+        ProblemDetail problemDetail = createResponse.as(ProblemDetail.class);
+        Assertions.assertEquals(400, problemDetail.getStatus());
+        Assertions.assertEquals(
+                "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
+                        + " and 'otherLocationDescription' must be supplied.",
+                problemDetail.getDetail());
+
+        Assertions.assertTrue(
+                exceptionHandlerLogs.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                        "[400]: Either 'courtLocation' must be"
+                                                                + " provided")
+                                                && log.contains(
+                                                        "Provide either 'courtLocationCode' or"
+                                                                + " both 'cjaCode' and"
+                                                                + " 'otherLocationDescription'.")));
+        Assertions.assertTrue(
+                durationAspectLogs.getErrorLogs().stream()
+                        .noneMatch(log -> log.contains("Exception occurred during execution")));
     }
 
     @Test

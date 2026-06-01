@@ -52,7 +52,7 @@ ext {
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.4.2'
+  toolVersion = '13.5.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
@@ -437,7 +437,7 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.4'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.6.2'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.7.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 

@@ -30,11 +30,10 @@ public class PersonDtoTest {
     void testPersonEmptyStrings() throws Exception {
         JsonNullable<String> emptyNullable = JsonNullable.of("");
         FullName fullName = new FullName();
-        fullName.setSurname("");
-        fullName.setFirstForename("");
+        fullName.setFirstName("");
+        fullName.setMiddleName(emptyNullable);
+        fullName.setLastName("");
         fullName.setTitle("");
-        fullName.setThirdForename(emptyNullable);
-        fullName.setSecondForename(emptyNullable);
 
         Person person = new Person();
         person.setName(fullName);
@@ -61,24 +60,20 @@ public class PersonDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertEquals(13, constraintValidator.size());
+        Assertions.assertEquals(12, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "name.surname", "size must be between 1 and 100");
+                listConstraint, "name.firstName", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "name.secondForename", "size must be between 1 and 100");
+                listConstraint, "name.middleName", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "name.firstForename", "size must be between 1 and 100");
+                listConstraint, "name.lastName", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.addressLine4", "size must be between 1 and 35");
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint, "name.thirdForename", "size must be between 1 and 100");
 
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.postcode", "size must be between 1 and 8");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.email", "size must be between 1 and 253");
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint, "name.surname", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "name.title", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
@@ -258,10 +253,9 @@ public class PersonDtoTest {
     @Test
     void testPersonFullNameRegexFailure() throws Exception {
         FullName fullName = new FullName();
-        fullName.setFirstForename("Test First Forename\t");
-        fullName.setSecondForename(JsonNullable.of("Test Second Forename\n"));
-        fullName.setThirdForename(JsonNullable.of("Test Third Forename\r"));
-        fullName.setSurname("Test Surname\0");
+        fullName.setFirstName("Test First Name\t");
+        fullName.setMiddleName(JsonNullable.of("Test Middle Name\n"));
+        fullName.setLastName("Test Last Name\0");
         fullName.setTitle("Test Title\r\n");
 
         // validate the dto using Bean Validation
@@ -275,21 +269,15 @@ public class PersonDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertEquals(5, constraintValidator.size());
+        Assertions.assertEquals(4, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "firstName", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint,
-                "firstForename",
+                "middleName",
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
-                listConstraint,
-                "secondForename",
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint,
-                "thirdForename",
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint, "surname", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint, "lastName", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "title", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
     }
@@ -297,10 +285,9 @@ public class PersonDtoTest {
     @Test
     void testPersonFullNamePartialRegexFailure() throws Exception {
         FullName fullName = new FullName();
-        fullName.setFirstForename("Test First Forename");
-        fullName.setSecondForename(JsonNullable.of("Test Second Forename"));
-        fullName.setThirdForename(JsonNullable.of("Test Third Forename"));
-        fullName.setSurname("Test Surname\0");
+        fullName.setFirstName("Test First Name");
+        fullName.setMiddleName(JsonNullable.of("Test Middle Name"));
+        fullName.setLastName("Test Last Name\0");
         fullName.setTitle("Test Title");
 
         // validate the dto using Bean Validation
@@ -316,7 +303,7 @@ public class PersonDtoTest {
         // assert
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "surname", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint, "lastName", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
     }
 
     @Test

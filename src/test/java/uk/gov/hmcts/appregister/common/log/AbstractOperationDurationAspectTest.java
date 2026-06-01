@@ -16,6 +16,8 @@ import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 class AbstractOperationDurationAspectTest {
 
@@ -99,6 +101,12 @@ class AbstractOperationDurationAspectTest {
                                 aspect, new HandlerMethodValidationException(validationResult)));
         Assertions.assertTrue(
                 (boolean) method.invoke(aspect, new MethodValidationException(validationResult)));
+        Assertions.assertTrue(
+                (boolean)
+                        method.invoke(
+                                aspect,
+                                new AppRegistryException(
+                                        CommonAppError.SORT_NOT_SUITABLE, "bad sort")));
     }
 
     @Test
@@ -109,6 +117,12 @@ class AbstractOperationDurationAspectTest {
         method.setAccessible(true);
 
         Assertions.assertFalse((boolean) method.invoke(aspect, new RuntimeException("boom")));
+        Assertions.assertFalse(
+                (boolean)
+                        method.invoke(
+                                aspect,
+                                new AppRegistryException(
+                                        CommonAppError.INTERNAL_SERVER_ERROR, "server failure")));
     }
 
     private ProceedingJoinPoint joinPoint(String methodName, Object result) throws Throwable {

@@ -409,18 +409,13 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getApplicant().getPerson().getName().setFirstForename("TEST\tSURNAME");
+        entryCreateDto.getApplicant().getPerson().getName().setFirstName("TEST\tSURNAME");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("TEST\rSURNAME"));
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of("TEST\nThird Forename"));
-        entryCreateDto.getApplicant().getPerson().getName().setSurname("TEST SURNAME \0");
+                .setMiddleName(JsonNullable.of("TEST\rSURNAME"));
+        entryCreateDto.getApplicant().getPerson().getName().setLastName("TEST SURNAME \0");
 
         entryCreateDto
                 .getApplicant()
@@ -482,16 +477,13 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
         // Name validation assertions
         Assertions.assertEquals(
-                errorNode.get("errors").get("applicant.person.name.surname").asText(),
+                errorNode.get("errors").get("applicant.person.name.lastName").asText(),
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         Assertions.assertEquals(
-                errorNode.get("errors").get("applicant.person.name.firstForename").asText(),
+                errorNode.get("errors").get("applicant.person.name.firstName").asText(),
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         Assertions.assertEquals(
-                errorNode.get("errors").get("applicant.person.name.secondForename").asText(),
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
-        Assertions.assertEquals(
-                errorNode.get("errors").get("applicant.person.name.thirdForename").asText(),
+                errorNode.get("errors").get("applicant.person.name.middleName").asText(),
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
 
         // Address validation assertions
@@ -535,18 +527,13 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getRespondent().getPerson().getName().setFirstForename("TEST\tSURNAME");
+        entryCreateDto.getRespondent().getPerson().getName().setFirstName("TEST\tSURNAME");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("TEST\rSURNAME"));
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of("TEST\nThird Forename"));
-        entryCreateDto.getRespondent().getPerson().getName().setSurname("TEST SURNAME \0");
+                .setMiddleName(JsonNullable.of("TEST\rSURNAME"));
+        entryCreateDto.getRespondent().getPerson().getName().setLastName("TEST SURNAME \0");
 
         entryCreateDto
                 .getRespondent()
@@ -608,16 +595,13 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
         // Name validation assertions
         Assertions.assertEquals(
-                errorNode.get("errors").get("respondent.person.name.surname").asText(),
+                errorNode.get("errors").get("respondent.person.name.lastName").asText(),
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         Assertions.assertEquals(
-                errorNode.get("errors").get("respondent.person.name.firstForename").asText(),
+                errorNode.get("errors").get("respondent.person.name.firstName").asText(),
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         Assertions.assertEquals(
-                errorNode.get("errors").get("respondent.person.name.secondForename").asText(),
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
-        Assertions.assertEquals(
-                errorNode.get("errors").get("respondent.person.name.thirdForename").asText(),
+                errorNode.get("errors").get("respondent.person.name.middleName").asText(),
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
 
         // Address validation assertions
