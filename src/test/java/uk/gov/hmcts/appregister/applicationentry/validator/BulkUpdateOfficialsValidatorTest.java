@@ -215,6 +215,20 @@ class BulkUpdateOfficialsValidatorTest {
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST);
     }
 
+    @Test
+    void validate_whenEntryIdsContainDuplicates_thenThrowsEntryIdsMustBeUnique() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId, entryId))
+                                .officials(validOfficials()));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE);
+    }
+
     private BulkUpdateOfficialsPayload validPayload(UUID entryId) {
         return validPayload(listId, entryId);
     }
