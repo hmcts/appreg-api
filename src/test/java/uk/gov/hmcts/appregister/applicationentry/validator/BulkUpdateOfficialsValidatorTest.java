@@ -220,6 +220,50 @@ class BulkUpdateOfficialsValidatorTest {
     }
 
     @Test
+    void validate_whenOfficialTitleIsNull_thenThrowsOfficialTitleRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .officials(List.of(official(OfficialType.MAGISTRATE).title(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
+    }
+
+    @Test
+    void validate_whenOfficialForenameIsNull_thenThrowsOfficialForenameRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .officials(
+                                        List.of(official(OfficialType.MAGISTRATE).forename(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_FORENAME_REQUIRED);
+    }
+
+    @Test
+    void validate_whenOfficialSurnameIsNull_thenThrowsOfficialSurnameRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .officials(
+                                        List.of(official(OfficialType.MAGISTRATE).surname(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_SURNAME_REQUIRED);
+    }
+
+    @Test
     void validate_whenOfficialTypeIsMissing_thenThrowsOfficialTypeRequired() {
         BulkUpdateOfficialsPayload payload =
                 new BulkUpdateOfficialsPayload(
