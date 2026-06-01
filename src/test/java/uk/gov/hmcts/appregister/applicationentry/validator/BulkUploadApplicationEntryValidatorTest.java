@@ -59,7 +59,7 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 3,
-                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME",
+                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME/RESP_FIRST_NAME/RESP_LAST_NAME",
                                 null,
                                 "Respondent cannot be both organisation and person"));
     }
@@ -75,7 +75,7 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 4,
-                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME",
+                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME/RESP_FIRST_NAME/RESP_LAST_NAME",
                                 null,
                                 "Respondent details must be provided"));
     }
@@ -97,7 +97,7 @@ class BulkUploadApplicationEntryValidatorTest {
                                 5, "APPLICATION_CODE", null, "Application code is required"),
                         new BulkUploadError(
                                 5,
-                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME",
+                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME/RESP_FIRST_NAME/RESP_LAST_NAME",
                                 null,
                                 "Respondent details must be provided"));
     }

@@ -1,0 +1,23 @@
+type: object
+description: Update fee details for multiple Application List Entries in one atomic operation.
+required:
+  - entryIds
+  - feeDetails
+
+properties:
+
+  entryIds:
+    type: array
+    description: >
+      Array of entry IDs whose fee details should be updated. All must belong to the list in the path.
+      Requests with more than 500 entry IDs are rejected with 400 Bad Request.
+    minItems: 1
+    maxItems: 500
+    uniqueItems: true
+    items:
+      type: string
+      format: uuid
+    example: [ "3fa85f64-5717-4562-b3fc-2c963f66afa6", "3fa85f64-5717-4562-b3fc-2c963f66afa7" ]
+
+  feeDetails:
+    $ref: "./bulk-fee-details-dto.yaml"

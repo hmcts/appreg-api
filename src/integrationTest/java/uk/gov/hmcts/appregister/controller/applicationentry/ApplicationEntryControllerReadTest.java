@@ -523,8 +523,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Turner");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getMiddleName().get())
                 .isEqualTo("Francis Michael");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getMiddleName().get())
-                .isNull();
 
         assertThat(
                         entryGetSummaryDto
@@ -642,8 +640,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Turner");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getMiddleName().get())
                 .isEqualTo("Francis Michael");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getMiddleName().get())
-                .isNull();
 
         assertThat(
                         entryGetSummaryDto

@@ -128,7 +128,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> create(ApplicationListCreateDto dto) {
-        log.debug("Start: Request to create application list : {}", dto);
+        log.debug("Started create application list");
 
         return auditService.processAudit(
                 AppListAuditOperation.CREATE_APP_LIST,
@@ -156,7 +156,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> update(
             PayloadForUpdate<ApplicationListUpdateDto> dto) {
-        log.debug("Start: Request to update application list : {}", dto);
+        log.debug("Started update application list {}", dto.getId());
 
         MatchResponse<ApplicationListGetDetailDto> response =
                 applicationUpdateListLocationValidator.validate(
@@ -175,7 +175,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                         auditLifecycleListeners.toArray(
                                                 new AuditOperationLifecycleListener[0])));
 
-        log.debug("Finish: Request to update application list : {}", response.getPayload());
+        log.debug("Finished update application list {}", dto.getId());
         return response;
     }
 

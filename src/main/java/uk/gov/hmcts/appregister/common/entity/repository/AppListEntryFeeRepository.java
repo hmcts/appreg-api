@@ -44,4 +44,20 @@ public interface AppListEntryFeeRepository extends JpaRepository<AppListEntryFee
         WHERE fee.appListEntryId = :id AND fee.feeId = :fee
         """)
     Optional<AppListEntryFeeId> getEntryFeesForFee(Long id, Long fee);
+
+    /**
+     * Gets offsite fee mappings for an application list entry.
+     *
+     * @param entryId the application list entry database id
+     * @return offsite fee mappings for the entry
+     */
+    @Query(
+            """
+        SELECT entryFee
+        FROM AppListEntryFeeId entryFee
+        JOIN Fee fee ON entryFee.feeId = fee.id
+        WHERE entryFee.appListEntryId = :entryId
+        AND fee.isOffsite = true
+        """)
+    List<AppListEntryFeeId> getOffsiteEntryFeesForEntry(Long entryId);
 }

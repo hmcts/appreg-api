@@ -1,0 +1,29 @@
+type: object
+description: Fee details to apply to every selected Application List Entry.
+required:
+  - paymentStatus
+  - statusDate
+  - hasOffsiteFee
+
+properties:
+
+  paymentStatus:
+    $ref: "../fee-status/payment-status.yaml"
+
+  statusDate:
+    type: string
+    format: date
+    description: The date when the fee status was updated. Must not be in the future.
+    example: "2025-12-01"
+
+  paymentReference:
+    type: string
+    description: Optional reference used to identify the payment.
+    example: "PAY-001"
+    maxLength: 100
+    minLength: 1
+
+  hasOffsiteFee:
+    type: boolean
+    description: Indicates whether an off-site fee applies.
+    example: true

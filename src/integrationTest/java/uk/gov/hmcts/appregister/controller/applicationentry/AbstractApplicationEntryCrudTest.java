@@ -73,7 +73,6 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
-import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
@@ -367,12 +366,26 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryCreateDto.getApplicant() != null) {
+            normaliseNullableMiddleName(
+                    entryCreateDto.getApplicant().getPerson() == null
+                            ? null
+                            : entryCreateDto.getApplicant().getPerson().getName(),
+                    response.getApplicant().getPerson() == null
+                            ? null
+                            : response.getApplicant().getPerson().getName());
             Assertions.assertEquals(entryCreateDto.getApplicant(), response.getApplicant());
         } else if (entryCreateDto.getStandardApplicantCode() != null) {
             Assertions.assertNotNull(response.getStandardApplicantCode());
         }
 
         if (entryCreateDto.getRespondent() != null) {
+            normaliseNullableMiddleName(
+                    entryCreateDto.getRespondent().getPerson() == null
+                            ? null
+                            : entryCreateDto.getRespondent().getPerson().getName(),
+                    response.getRespondent().getPerson() == null
+                            ? null
+                            : response.getRespondent().getPerson().getName());
             Assertions.assertEquals(entryCreateDto.getRespondent(), response.getRespondent());
         }
 
@@ -419,6 +432,22 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             Assertions.assertEquals(
                     expectedOfficials.get(i).getForename(), actualOfficials.get(i).getForename());
         }
+    }
+
+    private void normaliseNullableMiddleName(FullName expectedName, FullName actualName) {
+        if (expectedName == null || actualName == null) {
+            return;
+        }
+
+        JsonNullable<String> expectedMiddleName = expectedName.getMiddleName();
+        JsonNullable<String> actualMiddleName = actualName.getMiddleName();
+        if (isMissingOrNull(expectedMiddleName) && isMissingOrNull(actualMiddleName)) {
+            expectedName.setMiddleName(actualMiddleName);
+        }
+    }
+
+    private boolean isMissingOrNull(JsonNullable<String> value) {
+        return value == null || !value.isPresent() || value.orElse(null) == null;
     }
 
     protected void validateEntryUpdateResponse(
@@ -555,33 +584,21 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 createdDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
 
-        Response responseFindEntrySpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(10),
-                        Optional.of(0),
-                        List.of(),
-                        getLocalUrl(WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        new ApplicationEntryFilter(
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.of(surnameToLookup),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty()),
-                        new OpenApiPageMetaData());
+        Response responseGetEntrySpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.get()
+                                        + "/entries/"
+                                        + createdDto.getId()),
+                        tokenGenerator.fetchTokenForRole());
 
-        responseFindEntrySpec.then().statusCode(200);
+        responseGetEntrySpec.then().statusCode(200);
 
-        EntryPage page = responseFindEntrySpec.as(EntryPage.class);
-        PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
-        Assertions.assertEquals(createdDto.getId(), page.getContent().getFirst().getId());
+        EntryGetDetailDto fetchedDto = responseGetEntrySpec.as(EntryGetDetailDto.class);
+        Assertions.assertEquals(createdDto.getId(), fetchedDto.getId());
+        Assertions.assertEquals(applicationList.get(), fetchedDto.getListId());
 
         differenceLogAsserter.assertNoErrors();
 

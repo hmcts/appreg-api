@@ -1,0 +1,30 @@
+type: object
+description: Result of a bulk update operation.
+required:
+  - totalCount
+  - updatedCount
+  - status
+
+properties:
+
+  totalCount:
+    type: integer
+    format: int32
+    minimum: 0
+    description: Total number of records requested for update.
+    example: 2
+
+  updatedCount:
+    type: integer
+    format: int32
+    minimum: 0
+    description: Number of records updated.
+    example: 2
+
+  status:
+    type: string
+    description: Overall status of the bulk update operation.
+    enum:
+      - SUCCEEDED
+      - FAILED
+    example: SUCCEEDED

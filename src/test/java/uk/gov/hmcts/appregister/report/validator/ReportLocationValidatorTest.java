@@ -55,24 +55,24 @@ class ReportLocationValidatorTest {
     }
 
     @Test
+    void givenExistingCjaOnly_whenValidating_thenSucceeds() {
+        final LegacyReportLocation location = new LegacyReportLocation().cjaCode("52");
+        when(criminalJusticeAreaRepository.findByCode("52"))
+                .thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(location));
+
+        verify(criminalJusticeAreaRepository).findByCode("52");
+        verifyNoInteractions(courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
     void givenCourtAndCjaLocation_whenValidating_thenThrowsInvalidCombinationError() {
         LegacyReportLocation location =
                 new LegacyReportLocation()
                         .courtLocationCode("LOC123")
                         .cjaCode("52")
                         .otherLocationDescription("Town Hall");
-
-        AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(location));
-
-        assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
-        verifyNoInteractions(
-                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
-    }
-
-    @Test
-    void givenCjaWithoutOtherLocation_whenValidating_thenThrowsInvalidCombinationError() {
-        LegacyReportLocation location = new LegacyReportLocation().cjaCode("52");
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> validator.validate(location));

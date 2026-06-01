@@ -21,8 +21,11 @@ import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,6 +52,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 
+@ExtendWith(OutputCaptureExtension.class)
 public class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "standard-applicants";
 
@@ -255,6 +259,67 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                                 .name(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getEventName()));
+    }
+
+    @Test
+    void givenMalformedDate_whenGetStandardApplicantByCodeAndDate_thenReturn400AndLogWarning(
+            CapturedOutput output) throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("date", "01-01-2026"));
+
+        responseSpec.then().statusCode(400);
+
+        Assertions.assertTrue(
+                output.getOut()
+                        .contains("[400]: Problem with value 01-01-2026 for parameter date"));
+    }
+
+    @Test
+    void givenOversizedCode_whenGetStandardApplicantByCodeAndDate_thenReturn400AndLogWarning(
+            CapturedOutput output) throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + "ABCDEFGHIJK"),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(LocalDate.now()));
+
+        responseSpec.then().statusCode(400);
+
+        Assertions.assertTrue(
+                output.getOut()
+                        .contains(
+                                "[400]: getStandardApplicantByCodeAndDate.code: size must be"
+                                        + " between 0 and 10"));
+    }
+
+    @Test
+    void givenInvalidPageSize_whenGetStandardApplicants_thenReturn400AndLogWarning(
+            CapturedOutput output) throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("pageSize", 101));
+
+        responseSpec.then().statusCode(400);
+
+        Assertions.assertTrue(
+                output.getOut()
+                        .contains(
+                                "[400]: getStandardApplicants.pageSize: must be less than or"
+                                        + " equal to 100"));
     }
 
     @Test

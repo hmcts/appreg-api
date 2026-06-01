@@ -8,6 +8,7 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 
 @Component
 public class ReportFilterNormaliser {
@@ -72,6 +73,18 @@ public class ReportFilterNormaliser {
     }
 
     public PrivateProsecutorsIndexFilterDto normalise(PrivateProsecutorsIndexFilterDto filter) {
+        LocalDate dateFrom = filter.getDateFrom();
+        LocalDate dateTo = filter.getDateTo();
+
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            filter.setDateFrom(dateTo);
+            filter.setDateTo(dateFrom);
+        }
+
+        return filter;
+    }
+
+    public WorkloadFilterDto normalise(WorkloadFilterDto filter) {
         LocalDate dateFrom = filter.getDateFrom();
         LocalDate dateTo = filter.getDateTo();
 

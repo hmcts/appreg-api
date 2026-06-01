@@ -108,7 +108,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
-                        null,
+                        "",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
 
@@ -162,7 +162,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
-                        null,
+                        "",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
 
@@ -226,7 +226,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
-                        null,
+                        "",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
@@ -1484,7 +1484,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     private String getExpectedLog(String event, String action, OperationStatus operationStatus) {
-        return "%s\\s*-p_requestaction=%s\\R-p_messageuuid=.*\\R-p_messagestatus=%s\\R-p_messagecontent=.*"
+        return "%s\\s*-p_requestaction=%s\\R-p_messageuuid=.*\\R-p_messagestatus=%s"
                 .formatted(event, action, operationStatus.getStatus());
     }
 

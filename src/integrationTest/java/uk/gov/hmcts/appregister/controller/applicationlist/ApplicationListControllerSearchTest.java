@@ -980,6 +980,14 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
                 .isEqualTo(AppListAuditOperation.GET_APP_LIST.getEventName());
         assertThat(dataAudit.getLink()).isNotBlank();
         assertThat(dataAudit.getCreatedUser()).isNotBlank();
+        assertThat(
+                        dataAuditRepository.findAll().stream()
+                                .filter(
+                                        audit ->
+                                                AppListAuditOperation.GET_APP_LIST
+                                                        .getType()
+                                                        .equals(audit.getUpdateType())))
+                .allMatch(audit -> !audit.getNewValue().isEmpty());
     }
 
     @Test
