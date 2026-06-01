@@ -128,7 +128,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of())
+                                .entryIds(List.of())
                                 .officials(validOfficials()));
 
         AppRegistryException exception = validateAndCapture(payload);
@@ -140,11 +140,127 @@ class BulkUpdateOfficialsValidatorTest {
     void validate_whenOfficialsAreMissing_thenThrowsOfficialsNotProvided() {
         BulkUpdateOfficialsPayload payload =
                 new BulkUpdateOfficialsPayload(
-                        listId, new BulkOfficialsUpdateDto().entryIds(Set.of(entryId)));
+                        listId, new BulkOfficialsUpdateDto().entryIds(List.of(entryId)));
 
         AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIALS_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenPayloadDataIsNull_thenThrowsEntryNotProvided() {
+        BulkUpdateOfficialsPayload payload = new BulkUpdateOfficialsPayload(listId, null);
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenOfficialTitleIsBlank_thenThrowsOfficialTitleRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(List.of(official(OfficialType.MAGISTRATE).title(" "))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
+    }
+
+    @Test
+    void validate_whenOfficialForenameIsBlank_thenThrowsOfficialForenameRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(
+                                        List.of(official(OfficialType.MAGISTRATE).forename(" "))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_FORENAME_REQUIRED);
+    }
+
+    @Test
+    void validate_whenOfficialSurnameIsBlank_thenThrowsOfficialSurnameRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(
+                                        List.of(official(OfficialType.MAGISTRATE).surname(" "))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_SURNAME_REQUIRED);
+    }
+
+    @Test
+    void validate_whenMultipleOfficialsHaveBlankTitle_thenReportsAllInvalidIndexes() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(
+                                        List.of(
+                                                official(OfficialType.MAGISTRATE).title(" "),
+                                                official(OfficialType.CLERK),
+                                                official(OfficialType.MAGISTRATE).title(" "))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
+        assertThat(exception.getMessage()).contains("[0, 2]");
+    }
+
+    @Test
+    void validate_whenOfficialTitleIsNull_thenThrowsOfficialTitleRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(List.of(official(OfficialType.MAGISTRATE).title(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
+    }
+
+    @Test
+    void validate_whenOfficialForenameIsNull_thenThrowsOfficialForenameRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(
+                                        List.of(official(OfficialType.MAGISTRATE).forename(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_FORENAME_REQUIRED);
+    }
+
+    @Test
+    void validate_whenOfficialSurnameIsNull_thenThrowsOfficialSurnameRequired() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(
+                                        List.of(official(OfficialType.MAGISTRATE).surname(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_SURNAME_REQUIRED);
     }
 
     @Test
@@ -153,7 +269,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(Arrays.asList(null, official(null))));
 
         AppRegistryException exception = validateAndCapture(payload);
@@ -167,7 +283,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(
                                         List.of(
                                                 official(OfficialType.MAGISTRATE),
@@ -186,7 +302,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(
                                         List.of(
                                                 official(OfficialType.CLERK),
@@ -207,12 +323,26 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId, missingEntryId))
+                                .entryIds(List.of(entryId, missingEntryId))
                                 .officials(validOfficials()));
 
         AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST);
+    }
+
+    @Test
+    void validate_whenEntryIdsContainDuplicates_thenThrowsEntryIdsMustBeUnique() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId, entryId))
+                                .officials(validOfficials()));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE);
     }
 
     private BulkUpdateOfficialsPayload validPayload(UUID entryId) {
@@ -222,7 +352,9 @@ class BulkUpdateOfficialsValidatorTest {
     private BulkUpdateOfficialsPayload validPayload(UUID listId, UUID entryId) {
         return new BulkUpdateOfficialsPayload(
                 listId,
-                new BulkOfficialsUpdateDto().entryIds(Set.of(entryId)).officials(validOfficials()));
+                new BulkOfficialsUpdateDto()
+                        .entryIds(List.of(entryId))
+                        .officials(validOfficials()));
     }
 
     private AppRegistryException validateAndCapture(BulkUpdateOfficialsPayload payload) {
@@ -234,6 +366,6 @@ class BulkUpdateOfficialsValidatorTest {
     }
 
     private Official official(OfficialType type) {
-        return new Official().forename("Ada").surname("Bench").type(type);
+        return new Official().title("Mr").forename("Ada").surname("Bench").type(type);
     }
 }

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
@@ -39,7 +38,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         tokenGenerator,
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(firstEntry.getId(), secondEntry.getId()))
+                                .entryIds(List.of(firstEntry.getId(), secondEntry.getId()))
                                 .officials(replacementOfficials));
 
         response.then().statusCode(204);
@@ -64,7 +63,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         tokenGenerator,
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entry.getId(), UUID.randomUUID()))
+                                .entryIds(List.of(entry.getId(), UUID.randomUUID()))
                                 .officials(
                                         List.of(
                                                 official(
@@ -126,7 +125,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         tokenGenerator,
                         getOpenApplicationListId(),
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of())
+                                .entryIds(List.of())
                                 .officials(
                                         List.of(
                                                 official(
@@ -149,7 +148,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         tokenGenerator,
                         entry.getListId(),
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entry.getId()))
+                                .entryIds(List.of(entry.getId()))
                                 .officials(List.of(official("Ms", "No", "Type", null))));
 
         response.then().statusCode(400);
@@ -168,7 +167,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         tokenGenerator,
                         entry.getListId(),
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entry.getId()))
+                                .entryIds(List.of(entry.getId()))
                                 .officials(
                                         List.of(
                                                 official(
@@ -213,7 +212,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         tokenGenerator,
                         entry.getListId(),
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entry.getId()))
+                                .entryIds(List.of(entry.getId()))
                                 .officials(
                                         List.of(
                                                 official(
@@ -273,6 +272,32 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         "Problem setting value for officials[0].type. Accepted values are: MAGISTRATE, CLERK");
     }
 
+    @Test
+    void givenDuplicateEntryIds_whenReplaceOfficials_thenReturns400() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        List.of(official("Mr", "Original", "DuplicateIds", OfficialType.CLERK)));
+
+        Response response =
+                replaceOfficials(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entry.getId(), entry.getId()))
+                                .officials(
+                                        List.of(
+                                                official(
+                                                        "Ms",
+                                                        "Ada",
+                                                        "Bench",
+                                                        OfficialType.MAGISTRATE))));
+
+        response.then().statusCode(400);
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE.getCode(), response);
+    }
+
     private EntryGetDetailDto createEntry(List<Official> officials) throws Exception {
         Response response = createListEntryWithAllData(dto -> dto.setOfficials(officials));
         response.then().statusCode(201);
@@ -300,7 +325,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
 
     private BulkOfficialsUpdateDto validBulkOfficialsUpdateDto(UUID entryId) {
         return new BulkOfficialsUpdateDto()
-                .entryIds(Set.of(entryId))
+                .entryIds(List.of(entryId))
                 .officials(List.of(official("Ms", "Ada", "Bench", OfficialType.MAGISTRATE)));
     }
 

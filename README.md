@@ -102,6 +102,23 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
   ```
 
+## Authentication and Authorisation Failure Logging
+
+Protected endpoint responses returning `401` or `403` are logged at `WARN` using the existing App
+Reg logging pattern.
+
+The log message includes non-sensitive investigation fields:
+- HTTP method
+- request path without query string
+- response status code
+- failure category, for example `authentication_failure` or `access_denied`
+- safe user identifier where already available, otherwise `anonymous`
+
+Correlation/trace context is provided through the existing MDC/logback pattern.
+
+Security failure logs must not include bearer tokens, cookies, session identifiers, request bodies,
+raw authentication headers, passwords, or raw exception messages.
+
 ## Jacoco Coverage
 
 Run the following gradle command to determine coverage for unit tests:-

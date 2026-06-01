@@ -10,6 +10,7 @@ import org.springframework.validation.method.MethodValidationException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 /**
  * An aspect that stores the operation name in the MDC for logging purposes. The class logs the
@@ -77,7 +78,13 @@ public class AbstractOperationDurationAspect {
                 || throwable instanceof MissingServletRequestParameterException
                 || throwable instanceof HttpMessageNotReadableException
                 || throwable instanceof HandlerMethodValidationException
-                || throwable instanceof MethodValidationException;
+                || throwable instanceof MethodValidationException
+                || isExpectedAppRegistryException(throwable);
+    }
+
+    private boolean isExpectedAppRegistryException(Throwable throwable) {
+        return throwable instanceof AppRegistryException appRegistryException
+                && appRegistryException.getCode().getCode().getHttpCode().is4xxClientError();
     }
 
     /**
