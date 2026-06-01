@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
@@ -33,9 +35,11 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
@@ -43,17 +47,19 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
+    private final SecurityEndpointFailureLogger securityEndpointFailureLogger;
+
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
         // getss the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
-        log.error("A app register exception occurred", exception);
-
         ProblemDetail problemDetail = getDetailFromEnum(exception.getCode(), exception);
+        HttpStatus httpStatus = error.getCode().getHttpCode();
+        logAppRegistryException(httpStatus, problemDetail, exception);
 
-        return new ResponseEntity<>(problemDetail, error.getCode().getHttpCode());
+        return new ResponseEntity<>(problemDetail, httpStatus);
     }
 
     /**
@@ -365,6 +371,25 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("[{}]: {}", responseCode, detail);
     }
 
+    private void logAppRegistryException(
+            HttpStatus httpStatus, ProblemDetail problemDetail, AppRegistryException exception) {
+        String detail = problemDetail.getDetail();
+        String exceptionMessage = exception.getMessage();
+
+        if (exceptionMessage != null
+                && !exceptionMessage.isBlank()
+                && !exceptionMessage.equals(detail)) {
+            detail = detail + " (" + exceptionMessage + ")";
+        }
+
+        if (httpStatus.is4xxClientError()) {
+            logExpectedClientError(httpStatus.value(), detail);
+            return;
+        }
+
+        log.error("[{}]: {}", httpStatus.value(), detail, exception);
+    }
+
     private int resolveStatusCode(HttpStatusCode status, ProblemDetail problemDetail) {
         if (status != null) {
             return status.value();
@@ -373,8 +398,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex) {
-        log.warn("Access denied", ex);
+    public ResponseEntity<ProblemDetail> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest request) {
+        securityEndpointFailureLogger.logFailure(
+                request, HttpStatus.FORBIDDEN.value(), SecurityEndpointFailureLogger.ACCESS_DENIED);
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied"));
