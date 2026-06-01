@@ -560,8 +560,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
         ProblemDetail problemDetail = createResponse.as(ProblemDetail.class);
         Assertions.assertEquals(400, problemDetail.getStatus());
         Assertions.assertEquals(
-                "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
-                        + " and 'otherLocationDescription' must be supplied.",
+                "'courtLocationCode' must be supplied on its own; 'cjaCode' and "
+                        + "'otherLocationDescription' can be supplied independently or together.",
                 problemDetail.getDetail());
 
         Assertions.assertTrue(
@@ -569,12 +569,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .anyMatch(
                                 log ->
                                         log.contains(
-                                                        "[400]: Either 'courtLocation' must be"
-                                                                + " provided")
+                                                        "[400]: 'courtLocationCode' must be supplied on"
+                                                                + " its own")
                                                 && log.contains(
-                                                        "Provide either 'courtLocationCode' or"
-                                                                + " both 'cjaCode' and"
-                                                                + " 'otherLocationDescription'.")));
+                                                        "'cjaCode' and 'otherLocationDescription'"
+                                                                + " can be supplied independently or"
+                                                                + " together.")));
         Assertions.assertTrue(
                 durationAspectLogs.getErrorLogs().stream()
                         .noneMatch(log -> log.contains("Exception occurred during execution")));
