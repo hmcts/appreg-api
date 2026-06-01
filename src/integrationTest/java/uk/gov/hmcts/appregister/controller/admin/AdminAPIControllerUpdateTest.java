@@ -56,9 +56,12 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
         assertEquals(200, responseSpec.getStatusCode());
         assertEquals(
                 "365",
-                retentionPolicyConfigurationRepository
-                        .findConfigValueByJobNameAndConfigKey(jobName, "RETENTION_PERIOD_DAYS")
-                        .orElseThrow());
+                retentionPolicyRepository
+                        .findByJobNameAndConfigKeyOrderByIdAsc(jobName, "RETENTION_PERIOD_DAYS")
+                        .stream()
+                        .findFirst()
+                        .orElseThrow()
+                        .getConfigValue());
 
         Response getResponseSpec =
                 restAssuredClient.executeGetRequest(

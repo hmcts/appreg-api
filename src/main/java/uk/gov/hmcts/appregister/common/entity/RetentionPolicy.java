@@ -32,4 +32,13 @@ public class RetentionPolicy {
 
     @Column(name = "dj_dj_id", nullable = false)
     private Long databaseJobId;
+
+    @Column(name = "config_key")
+    private String configKey;
+
+    @Column(name = "config_value")
+    private String configValue;
+
+    @Column(name = "config_notes")
+    private String configNotes;
 }

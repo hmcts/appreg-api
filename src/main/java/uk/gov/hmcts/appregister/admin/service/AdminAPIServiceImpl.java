@@ -11,8 +11,9 @@ import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapper;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.entity.RetentionPolicy;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyConfigurationRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -27,7 +28,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     private static final String RETENTION_PERIOD_DAYS = "RETENTION_PERIOD_DAYS";
 
     private final DatabaseJobRepository databaseJobRepository;
-    private final RetentionPolicyConfigurationRepository retentionPolicyConfigurationRepository;
+    private final RetentionPolicyRepository retentionPolicyRepository;
     private final DatabaseJobsMapper databaseJobsMapper;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
@@ -55,36 +56,44 @@ public class AdminAPIServiceImpl implements AdminAPIService {
 
     @Override
     public JobRetentionPolicy getDatabaseJobRetentionPeriodByName(AdminJobType jobName) {
-        var retentionPeriodDays =
-                retentionPolicyConfigurationRepository
-                        .findConfigValueByJobNameAndConfigKey(
-                                jobName.getValue(), RETENTION_PERIOD_DAYS)
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                CommonAppError.INTERNAL_SERVER_ERROR,
-                                                ("Retention configuration %s was not found for"
-                                                                + " administrative job %s")
-                                                        .formatted(
-                                                                RETENTION_PERIOD_DAYS,
-                                                                jobName.getValue())));
+        var retentionPolicy = getRetentionPolicyByJobName(jobName);
 
-        return new JobRetentionPolicy().retentionPeriodDays(Integer.valueOf(retentionPeriodDays));
+        return new JobRetentionPolicy()
+                .retentionPeriodDays(Integer.valueOf(retentionPolicy.getConfigValue()));
     }
 
     @Override
     @Transactional
     public void updateDatabaseJobRetentionPeriodByName(
             AdminJobType jobName, Integer retentionPeriodDays) {
-        var updatedRows =
-                retentionPolicyConfigurationRepository.updateConfigValueByJobNameAndConfigKey(
-                        jobName.getValue(), RETENTION_PERIOD_DAYS, retentionPeriodDays.toString());
+        var retentionPolicy = getRetentionPolicyByJobName(jobName);
+        retentionPolicy.setConfigValue(retentionPeriodDays.toString());
+        retentionPolicyRepository.save(retentionPolicy);
+    }
 
-        if (updatedRows == 0) {
-            throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Retention configuration %s was not found for administrative job %s"
-                            .formatted(RETENTION_PERIOD_DAYS, jobName.getValue()));
+    private RetentionPolicy getRetentionPolicyByJobName(AdminJobType jobName) {
+        var duplicatePolicies =
+                retentionPolicyRepository.countByJobNameAndConfigKey(
+                        jobName.getValue(), RETENTION_PERIOD_DAYS);
+        if (duplicatePolicies > 1) {
+            log.warn(
+                    "Multiple retention policy rows found for job {} and key {}; using first by rp_id",
+                    jobName.getValue(),
+                    RETENTION_PERIOD_DAYS);
         }
+
+        var retentionPolicies =
+                retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        jobName.getValue(), RETENTION_PERIOD_DAYS);
+        return retentionPolicies.stream()
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new AppRegistryException(
+                                        CommonAppError.INTERNAL_SERVER_ERROR,
+                                        "Retention configuration %s was not found for administrative job %s"
+                                                .formatted(
+                                                        RETENTION_PERIOD_DAYS,
+                                                        jobName.getValue())));
     }
 }
