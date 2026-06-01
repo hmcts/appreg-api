@@ -50,7 +50,7 @@ put:
       description: Flag to enable (true) or disable (false) the database job.
       example: true
   responses:
-    "201":
+    "200":
       description: Job enabled/disabled successfully.
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
