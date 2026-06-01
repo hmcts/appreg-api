@@ -162,7 +162,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(List.of(official(OfficialType.MAGISTRATE).title(" "))));
 
         AppRegistryException exception = validateAndCapture(payload);
@@ -176,7 +176,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(
                                         List.of(official(OfficialType.MAGISTRATE).forename(" "))));
 
@@ -206,7 +206,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(
                                         List.of(
                                                 official(OfficialType.MAGISTRATE).title(" "),
@@ -225,7 +225,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(List.of(official(OfficialType.MAGISTRATE).title(null))));
 
         AppRegistryException exception = validateAndCapture(payload);
@@ -239,7 +239,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(
                                         List.of(official(OfficialType.MAGISTRATE).forename(null))));
 
@@ -254,7 +254,7 @@ class BulkUpdateOfficialsValidatorTest {
                 new BulkUpdateOfficialsPayload(
                         listId,
                         new BulkOfficialsUpdateDto()
-                                .entryIds(Set.of(entryId))
+                                .entryIds(List.of(entryId))
                                 .officials(
                                         List.of(official(OfficialType.MAGISTRATE).surname(null))));
 
@@ -317,7 +317,7 @@ class BulkUpdateOfficialsValidatorTest {
     void validate_whenSomeEntriesAreNotInSourceList_thenThrowsEntryNotInSourceList() {
         UUID missingEntryId = UUID.randomUUID();
         when(applicationListEntryRepository.findByUuidsInSourceList(
-                        listId, Set.of(entryId, missingEntryId)))
+                        listId, List.of(entryId, missingEntryId)))
                 .thenReturn(List.of(applicationListEntry));
         BulkUpdateOfficialsPayload payload =
                 new BulkUpdateOfficialsPayload(
