@@ -14,7 +14,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -46,13 +45,11 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
  *
  * <ul>
  *   <li>{@code @RestController} - Marks this as a REST controller.
- *   <li>{@code @Validated} - Enables validation on method parameters.
  *   <li>{@code @RequiredArgsConstructor} - Generates a constructor for final fields.
  *   <li>{@code @Slf4j} - Provides logging support.
  * </ul>
  */
 @RestController
-@Validated
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationListController implements ApplicationListsApi {

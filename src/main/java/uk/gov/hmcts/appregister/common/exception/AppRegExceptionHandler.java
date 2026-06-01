@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -12,7 +13,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -21,16 +25,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.MethodValidationException;
+import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
@@ -38,17 +47,19 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
+    private final SecurityEndpointFailureLogger securityEndpointFailureLogger;
+
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
         // getss the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
-        log.error("A app register exception occurred", exception);
-
         ProblemDetail problemDetail = getDetailFromEnum(exception.getCode(), exception);
+        HttpStatus httpStatus = error.getCode().getHttpCode();
+        logAppRegistryException(httpStatus, problemDetail, exception);
 
-        return new ResponseEntity<>(problemDetail, error.getCode().getHttpCode());
+        return new ResponseEntity<>(problemDetail, httpStatus);
     }
 
     /**
@@ -100,7 +111,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     @SuppressWarnings({"java:S2259", "java:S1185"})
     protected ResponseEntity<ProblemDetail> handleConstraintViolationException(
             ConstraintViolationException ex) {
-        log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
 
         problemDetail.setDetail("Constraints failed for fields:" + System.lineSeparator());
@@ -115,18 +125,19 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
+        logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ProblemDetail> mismatchType(MethodArgumentTypeMismatchException ex) {
-        log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.TYPE_MISMATCH_ERROR, ex);
 
         // Add a custom detail message by extracting the relevant information from the exception
         problemDetail.setDetail(
                 "Problem with value " + ex.getValue() + " for parameter " + ex.getName());
+        logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -137,7 +148,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
-        log.error("An exception occurred", ex);
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
@@ -172,8 +182,30 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                         });
 
         problemDetail.setProperty("errors", errors);
+        logExpectedClientError(
+                resolveStatusCode(status, problemDetail), summariseBindingErrors(errors));
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        logExpectedClientError(status.value(), summariseMethodValidation(ex));
+        return super.handleHandlerMethodValidationException(ex, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodValidationException(
+            MethodValidationException ex,
+            HttpHeaders headers,
+            HttpStatus status,
+            WebRequest request) {
+        logExpectedClientError(status.value(), summariseMethodValidation(ex));
+        return super.handleMethodValidationException(ex, headers, status, request);
     }
 
     @Override
@@ -182,8 +214,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
-        log.error("An exception occurred", ex);
-
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
         ValueInstantiationException valueInstantiationException =
@@ -210,6 +240,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
         }
+        logExpectedClientError(resolveStatusCode(status, problemDetail), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -257,11 +288,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
-        log.error("An exception occurred", ex);
-
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.PARAMETER_REQUIRED, ex);
         problemDetail.setDetail(
                 "Required request parameter '" + ex.getParameterName() + "' is missing");
+        logExpectedClientError(resolveStatusCode(status, problemDetail), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -284,9 +314,94 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         return null;
     }
 
+    private String summariseBindingErrors(Map<String, Object> errors) {
+        return "Validation failed for fields: "
+                + errors.entrySet().stream()
+                        .map(entry -> entry.getKey() + "=" + entry.getValue())
+                        .collect(Collectors.joining("; "));
+    }
+
+    private String summariseMethodValidation(MethodValidationResult validationResult) {
+        String parameterErrors =
+                validationResult.getParameterValidationResults().stream()
+                        .flatMap(
+                                result ->
+                                        result.getResolvableErrors().stream()
+                                                .map(
+                                                        error ->
+                                                                formatValidationMessage(
+                                                                        result.getMethodParameter()
+                                                                                .getParameterName(),
+                                                                        error)))
+                        .collect(Collectors.joining("; "));
+
+        String crossParameterErrors =
+                validationResult.getCrossParameterValidationResults().stream()
+                        .map(error -> formatValidationMessage("method", error))
+                        .collect(Collectors.joining("; "));
+
+        String combined =
+                Arrays.stream(new String[] {parameterErrors, crossParameterErrors})
+                        .filter(value -> value != null && !value.isBlank())
+                        .collect(Collectors.joining("; "));
+
+        if (combined.isBlank()) {
+            return "Validation failed for handler method arguments";
+        }
+
+        return "Validation failed for handler method arguments: " + combined;
+    }
+
+    private String formatValidationMessage(String parameterName, MessageSourceResolvable error) {
+        String safeParameterName =
+                parameterName != null && !parameterName.isBlank() ? parameterName : UNKNOWN_FIELD;
+        String message = error.getDefaultMessage();
+        if ((message == null || message.isBlank())
+                && error.getCodes() != null
+                && error.getCodes().length > 0) {
+            message = error.getCodes()[0];
+        }
+        if (message == null || message.isBlank()) {
+            message = error.toString();
+        }
+        return safeParameterName + "=" + message;
+    }
+
+    private void logExpectedClientError(int responseCode, String detail) {
+        log.warn("[{}]: {}", responseCode, detail);
+    }
+
+    private void logAppRegistryException(
+            HttpStatus httpStatus, ProblemDetail problemDetail, AppRegistryException exception) {
+        String detail = problemDetail.getDetail();
+        String exceptionMessage = exception.getMessage();
+
+        if (exceptionMessage != null
+                && !exceptionMessage.isBlank()
+                && !exceptionMessage.equals(detail)) {
+            detail = detail + " (" + exceptionMessage + ")";
+        }
+
+        if (httpStatus.is4xxClientError()) {
+            logExpectedClientError(httpStatus.value(), detail);
+            return;
+        }
+
+        log.error("[{}]: {}", httpStatus.value(), detail, exception);
+    }
+
+    private int resolveStatusCode(HttpStatusCode status, ProblemDetail problemDetail) {
+        if (status != null) {
+            return status.value();
+        }
+        return problemDetail.getStatus();
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex) {
-        log.warn("Access denied", ex);
+    public ResponseEntity<ProblemDetail> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest request) {
+        securityEndpointFailureLogger.logFailure(
+                request, HttpStatus.FORBIDDEN.value(), SecurityEndpointFailureLogger.ACCESS_DENIED);
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied"));

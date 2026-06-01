@@ -2,6 +2,9 @@ package uk.gov.hmcts.appregister.common.entity.aspect;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.IntStream;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -16,6 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class LikeAspect {
 
+    private final ConcurrentMap<Method, int[]> likeParamIndexesByMethod = new ConcurrentHashMap<>();
+
     /**
      * Escape the parameter that has been marked with the annotation {@link LikeParam} in the
      * repository layer. This allows to escape the special characters in the like query and prevent
@@ -28,17 +33,30 @@ public class LikeAspect {
     public Object escapeLikeParams(ProceedingJoinPoint pjp) throws Throwable {
         MethodSignature sig = (MethodSignature) pjp.getSignature();
         Method method = sig.getMethod();
+        int[] likeParamIndexes =
+                likeParamIndexesByMethod.computeIfAbsent(method, this::getLikeParamIndexes);
 
-        Annotation[][] paramAnns = method.getParameterAnnotations();
+        if (likeParamIndexes.length == 0) {
+            return pjp.proceed();
+        }
+
         Object[] args = pjp.getArgs();
 
         // find and escape the relevant value
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof String s && hasLikeParam(paramAnns[i])) {
-                args[i] = escapeLike(s);
+        for (int index : likeParamIndexes) {
+            if (args[index] instanceof String s) {
+                args[index] = escapeLike(s);
             }
         }
         return pjp.proceed(args);
+    }
+
+    private int[] getLikeParamIndexes(Method method) {
+        Annotation[][] paramAnns = method.getParameterAnnotations();
+
+        return IntStream.range(0, paramAnns.length)
+                .filter(index -> hasLikeParam(paramAnns[index]))
+                .toArray();
     }
 
     /**

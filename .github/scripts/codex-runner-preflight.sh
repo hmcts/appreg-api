@@ -35,8 +35,7 @@ if [[ -n "${OPENAI_API_KEY:-}" ]]; then
   echo "Authenticating Codex CLI with repository secret."
   printf '%s' "$OPENAI_API_KEY" | codex login --with-api-key >/dev/null
 else
-  echo "::warning::OPENAI_API_KEY secret not set; relying on existing runner login."
-  echo "::warning::Use this only as a temporary workaround; set OPENAI_API_KEY for unattended runs."
+  echo "::notice::OPENAI_API_KEY not set; using runner-provisioned Codex auth."
 fi
 
 codex login status

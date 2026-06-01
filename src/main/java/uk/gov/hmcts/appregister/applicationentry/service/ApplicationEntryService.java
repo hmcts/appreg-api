@@ -8,7 +8,9 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -86,6 +88,15 @@ public interface ApplicationEntryService {
      * @param bulkOfficialsUpdateDto the entry ids and replacement officials
      */
     void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto);
+
+    /**
+     * Handles a bulk fee update request.
+     *
+     * @param listId the application list that owns all supplied entries
+     * @param bulkFeesUpdateDto the entry ids and shared fee details
+     * @return the bulk update response
+     */
+    BulkUpdateResponseDto bulkUpdateFees(UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto);
 
     /**
      * Retrieves an entry representation based on the entry details provided which contains the list

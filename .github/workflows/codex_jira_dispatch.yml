@@ -28,14 +28,15 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
-  codex-dispatch:
+  codex-generate:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.codex.outputs.branch_name }}
+      has_changes: ${{ steps.codex.outputs.has_changes }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -44,29 +45,618 @@ jobs:
       ISSUE_STATUS: ${{ inputs.status }}
       ISSUE_ASSIGNEE: ${{ inputs.assignee }}
       ISSUE_URL: ${{ inputs.issueUrl }}
-      GH_TOKEN: ${{ github.token }}
-      CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
-      CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
-      CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout default branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
+          ref: ${{ env.DEFAULT_BRANCH }}
           fetch-depth: 0
-          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
 
       - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Run Codex and open pull request
+      - name: Run Codex and create patch artifact
         id: codex
         env:
-          PAYLOAD_PATH: build/codex/jira-ticket.json
-          PROMPT_PATH: ${{ runner.temp }}/codex-prompt.md
-          PR_BODY_PATH: ${{ runner.temp }}/codex-pr-body.md
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-implement.sh
+
+      - name: Upload Codex output
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-jira-output
+          path: ${{ runner.temp }}/codex-output
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-codex-output:
+    needs: codex-generate
+    if: needs.codex-generate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: codex-jira-output
+      verified_artifact: codex-jira-verified-0
+      failure_artifact: codex-jira-verification-failure-0
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output
+      CODEX_VERIFIED_ARTIFACT: codex-jira-verified-0
+      CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-0
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-verification-failure"
+            cp "$RUNNER_TEMP/codex-verification.log" "$RUNNER_TEMP/codex-verification-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-verification.log" >"$RUNNER_TEMP/codex-verification-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload verified Codex output
+        if: steps.verify.outputs.passed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: |
+            ${{ runner.temp }}/codex-output/codex-pr-body.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload verification failure
+        if: steps.verify.outputs.passed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  repair-codex-output-1:
+    needs: [codex-generate, verify-codex-output]
+    if: needs.codex-generate.outputs.has_changes == 'true' && needs.verify-codex-output.outputs.passed != 'true'
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      REPAIR_ATTEMPT: "1"
+      MAX_CODEX_REPAIR_ATTEMPTS: "3"
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output.outputs.output_artifact }}
+      CODEX_FAILURE_ARTIFACT: ${{ needs.verify-codex-output.outputs.failure_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Download Codex output to repair
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Download verification failure
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-failure
+
+      - name: Repair Codex patch
+        id: repair
+        env:
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Upload repaired Codex output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-codex-output-1:
+    needs: [codex-generate, repair-codex-output-1]
+    if: needs.repair-codex-output-1.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: codex-jira-output-repair-1
+      verified_artifact: codex-jira-verified-1
+      failure_artifact: codex-jira-verification-failure-1
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
+      CODEX_VERIFIED_ARTIFACT: codex-jira-verified-1
+      CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-1
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-verification-failure"
+            cp "$RUNNER_TEMP/codex-verification.log" "$RUNNER_TEMP/codex-verification-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-verification.log" >"$RUNNER_TEMP/codex-verification-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload verified Codex output
+        if: steps.verify.outputs.passed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: |
+            ${{ runner.temp }}/codex-output/codex-pr-body.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload verification failure
+        if: steps.verify.outputs.passed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  repair-codex-output-2:
+    needs: [codex-generate, verify-codex-output-1]
+    if: needs.verify-codex-output-1.outputs.passed == 'false'
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      REPAIR_ATTEMPT: "2"
+      MAX_CODEX_REPAIR_ATTEMPTS: "3"
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-1.outputs.output_artifact }}
+      CODEX_FAILURE_ARTIFACT: ${{ needs.verify-codex-output-1.outputs.failure_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Download Codex output to repair
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Download verification failure
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-failure
+
+      - name: Repair Codex patch
+        id: repair
+        env:
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Upload repaired Codex output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-codex-output-2:
+    needs: [codex-generate, repair-codex-output-2]
+    if: needs.repair-codex-output-2.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: codex-jira-output-repair-2
+      verified_artifact: codex-jira-verified-2
+      failure_artifact: codex-jira-verification-failure-2
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
+      CODEX_VERIFIED_ARTIFACT: codex-jira-verified-2
+      CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-2
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-verification-failure"
+            cp "$RUNNER_TEMP/codex-verification.log" "$RUNNER_TEMP/codex-verification-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-verification.log" >"$RUNNER_TEMP/codex-verification-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload verified Codex output
+        if: steps.verify.outputs.passed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: |
+            ${{ runner.temp }}/codex-output/codex-pr-body.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload verification failure
+        if: steps.verify.outputs.passed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  repair-codex-output-3:
+    needs: [codex-generate, verify-codex-output-2]
+    if: needs.verify-codex-output-2.outputs.passed == 'false'
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      REPAIR_ATTEMPT: "3"
+      MAX_CODEX_REPAIR_ATTEMPTS: "3"
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-2.outputs.output_artifact }}
+      CODEX_FAILURE_ARTIFACT: ${{ needs.verify-codex-output-2.outputs.failure_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Download Codex output to repair
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Download verification failure
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-failure
+
+      - name: Repair Codex patch
+        id: repair
+        env:
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Upload repaired Codex output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-codex-output-3:
+    needs: [codex-generate, repair-codex-output-3]
+    if: needs.repair-codex-output-3.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: codex-jira-output-repair-3
+      verified_artifact: codex-jira-verified-3
+      failure_artifact: codex-jira-verification-failure-3
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
+      CODEX_VERIFIED_ARTIFACT: codex-jira-verified-3
+      CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-3
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-verification-failure"
+            cp "$RUNNER_TEMP/codex-verification.log" "$RUNNER_TEMP/codex-verification-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-verification.log" >"$RUNNER_TEMP/codex-verification-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload verified Codex output
+        if: steps.verify.outputs.passed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: |
+            ${{ runner.temp }}/codex-output/codex-pr-body.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload verification failure
+        if: steps.verify.outputs.passed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-pr:
+    needs:
+      - codex-generate
+      - verify-codex-output
+      - verify-codex-output-1
+      - verify-codex-output-2
+      - verify-codex-output-3
+    if: |
+      always() &&
+      needs.codex-generate.outputs.has_changes == 'true' &&
+      (
+        needs.verify-codex-output.outputs.passed == 'true' ||
+        needs.verify-codex-output-1.outputs.passed == 'true' ||
+        needs.verify-codex-output-2.outputs.passed == 'true' ||
+        needs.verify-codex-output-3.outputs.passed == 'true'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.output_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.output_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.output_artifact || needs.verify-codex-output.outputs.output_artifact }}
+      CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.verified_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.verified_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.verified_artifact || needs.verify-codex-output.outputs.verified_artifact }}
+      CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
+      CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Download verified Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-verified
+
+      - name: Copy trusted publish script
+        run: |
+          cp .github/scripts/codex-jira-publish.sh "$RUNNER_TEMP/codex-jira-publish.sh"
+          chmod +x "$RUNNER_TEMP/codex-jira-publish.sh"
+
+      - name: Publish pull request and notify Jira
+        id: publish
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
+        run: "$RUNNER_TEMP/codex-jira-publish.sh"
 
       - name: Write workflow summary
         if: always()
@@ -74,12 +664,29 @@ jobs:
           {
             echo "## Codex Jira Dispatch"
             echo
-            echo "- Issue: $ISSUE_KEY"
-            echo "- Summary: $ISSUE_SUMMARY"
-            echo "- Status: $ISSUE_STATUS"
-            echo "- Assignee: $ISSUE_ASSIGNEE"
-            echo "- URL: $ISSUE_URL"
-            echo "- Payload file: build/codex/jira-ticket.json"
-            echo "- Branch: ${{ steps.codex.outputs.branch_name }}"
-            echo "- Pull request: ${{ steps.codex.outputs.pr_url }}"
+            echo "- Issue: [$ISSUE_KEY]($ISSUE_URL)"
+            echo "- Branch: ${{ steps.publish.outputs.branch_name }}"
+            echo "- Pull request: ${{ steps.publish.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
+
+  codex-verification-failed:
+    needs:
+      - codex-generate
+      - verify-codex-output
+      - verify-codex-output-1
+      - verify-codex-output-2
+      - verify-codex-output-3
+    if: |
+      always() &&
+      needs.codex-generate.outputs.has_changes == 'true' &&
+      needs.verify-codex-output.outputs.passed != 'true' &&
+      needs.verify-codex-output-1.outputs.passed != 'true' &&
+      needs.verify-codex-output-2.outputs.passed != 'true' &&
+      needs.verify-codex-output-3.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail after repair attempts
+        run: |
+          echo "Codex verification failed after 3 repair attempt(s)."
+          exit 1

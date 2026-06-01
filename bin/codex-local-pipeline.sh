@@ -10,7 +10,7 @@ Runs a local approximation of the checks that matter before a Codex PR is opened
 
 Modes:
   checks-only  Validate workflow/script syntax and repository PR guardrails only.
-  fast         Run checks-only plus unit tests only. Default.
+  fast         Run checks-only plus Gradle check. Default.
   codex        Run the Codex runner preflight plus fast mode.
   full         Run fast mode plus full Gradle checks, integration, functional,
                smoke, coverage, and dependency checks.
@@ -26,7 +26,7 @@ Environment:
   OPENAI_API_KEY               Used by codex mode if present; otherwise existing
                               Codex CLI login is used.
   GRADLE_FAST_TASKS            Space-separated Gradle tasks for fast mode.
-                              Default: clean test.
+                              Default: clean check.
   REQUIRE_DOCKER               Set true to require Docker outside full mode.
 EOF
 }
@@ -198,7 +198,7 @@ if [[ "${mode}" == "full" ]]; then
     jacocoIntegrationCoverageVerification
   )
 else
-  read -r -a gradle_fast_tasks <<<"${GRADLE_FAST_TASKS:-clean test}"
+  read -r -a gradle_fast_tasks <<<"${GRADLE_FAST_TASKS:-clean check}"
   gradle_args=(--no-daemon "${gradle_fast_tasks[@]}")
 fi
 

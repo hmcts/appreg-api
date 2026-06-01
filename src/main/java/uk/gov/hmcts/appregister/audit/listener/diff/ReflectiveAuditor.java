@@ -93,7 +93,7 @@ public class ReflectiveAuditor implements Auditor {
                 // else ignore the method
                 if (!useAnnotations
                         || (!isFieldAnnotatedForCrudAuditOperation(method.field(), crudEnum))) {
-                    log.debug(
+                    log.trace(
                             "Skipping method {} as not annotated for {}",
                             method.method().getName(),
                             crudEnum);
@@ -140,11 +140,11 @@ public class ReflectiveAuditor implements Auditor {
         // process the complex objects
         // if we have object reursion turned on
         if (!isCollection(method.method().getReturnType()) && recurseNestedObjects) {
-            log.debug("Method {}", method.method().getName());
+            log.trace("Method {}", method.method().getName());
 
             Object newValRet = invokeMethodForNew(method, val, processed);
 
-            log.debug("New Value Ret {}", newValRet);
+            log.trace("New Value Ret {}", newValRet);
 
             // recurse and get the differences in the complex object containing in the
             // list
@@ -171,17 +171,17 @@ public class ReflectiveAuditor implements Auditor {
             List<AuditableData> differenceList,
             ReflectionCaches.MethodData method,
             Set<String> processed) {
-        log.debug("Method {}", method.method().getName());
+        log.trace("Method {}", method.method().getName());
 
         Object valRet = val != null ? invokeMethodForNew(method, val, processed) : "";
 
         // if the value is null then set to empty string for comparison purposes
         String valueString = valRet != null ? valRet.toString() : "";
 
-        log.debug("Value Ret {}", val);
+        log.trace("Value Ret {}", val);
 
         // detect diff
-        log.debug(
+        log.trace(
                 "Difference detected in field: {} value: {}",
                 method.field().getName(),
                 valueString);
@@ -212,7 +212,7 @@ public class ReflectiveAuditor implements Auditor {
                     Object m = method.method().invoke(target);
                     processed.add(method.method().toString() + hash);
 
-                    log.debug("Processed {} on {}", method.method(), target);
+                    log.trace("Processed {} on {}", method.method(), target);
                     return m;
                 } catch (IllegalArgumentException
                         | IllegalAccessException
@@ -234,7 +234,7 @@ public class ReflectiveAuditor implements Auditor {
      * @return True or false
      */
     public static boolean isComplexWrapper(Class<?> type) {
-        log.debug("Is complex : {} {}", type.toString(), Keyable.class.isAssignableFrom(type));
+        log.trace("Is complex : {} {}", type.toString(), Keyable.class.isAssignableFrom(type));
         return isCollection(type) || Keyable.class.isAssignableFrom(type);
     }
 
@@ -245,7 +245,7 @@ public class ReflectiveAuditor implements Auditor {
      * @return True or false
      */
     public static boolean isCollection(Class<?> type) {
-        log.debug("Is complex : {} {}", type.toString(), Keyable.class.isAssignableFrom(type));
+        log.trace("Is complex : {} {}", type.toString(), Keyable.class.isAssignableFrom(type));
         return List.class.isAssignableFrom(type);
     }
 

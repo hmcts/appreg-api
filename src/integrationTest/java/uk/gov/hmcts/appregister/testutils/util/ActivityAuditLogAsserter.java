@@ -20,14 +20,12 @@ public class ActivityAuditLogAsserter {
      * @param action The action
      * @param messageId The message id
      * @param messageStatus The message status
-     * @param messageContent The message content
      */
     public void assertCompletedLogContains(
             String action, String messageId, String messageStatus, String messageContent) {
 
         String completed =
-                AuditOperationSlf4jLogger.getCompletedLog(
-                        action, messageId, messageStatus, messageContent);
+                AuditOperationSlf4jLogger.getCompletedLog(action, messageId, messageStatus);
         boolean asserted = false;
         for (String logs : operationLogger.getInfoLogs()) {
             if (logs.equals(completed)) {
@@ -43,13 +41,12 @@ public class ActivityAuditLogAsserter {
      *
      * @param action The action
      * @param messageStatus The message status
-     * @param messageContent The message content
      */
     public void assertCompletedLogContainsWithUnknownMessageId(
             String action, String messageStatus, String messageContent) {
         String completed =
                 AuditOperationSlf4jLogger.getCompletedLogWithUnknownMessageIdRegEx(
-                        action, messageStatus, escapeRegex(messageContent));
+                        action, messageStatus);
         boolean asserted = false;
         for (String logs : operationLogger.getInfoLogs()) {
             if (Pattern.matches(completed, logs)) {
@@ -58,15 +55,5 @@ public class ActivityAuditLogAsserter {
         }
 
         Assertions.assertTrue(asserted);
-    }
-
-    /**
-     * escapes regex.
-     *
-     * @param input the input string regex
-     * @return The escaped regex
-     */
-    protected String escapeRegex(String input) {
-        return input.replaceAll("[\\\\.^$|?*+()\\[\\]{}]", "\\\\$0");
     }
 }

@@ -40,7 +40,7 @@ spring:
   application:
     name: Application Registration API
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}?reWriteBatchedInserts=true
     username: ${POSTGRES_USER:app_reg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
@@ -56,6 +56,8 @@ spring:
         default_schema: ${spring.sql.init.schema-locations}
         jdbc:
           time_zone: UTC
+          batch_size: 25
+        order_inserts: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: ${ENABLE_DB_MIGRATE:false}
@@ -94,4 +96,3 @@ appreg:
     page-size: 10
   report:
     page-size: 500
-
