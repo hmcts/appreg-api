@@ -72,7 +72,6 @@ public abstract class ApplicantMapper {
      * @param applicant The standard applicant name and address
      * @return The full name
      */
-    @SuppressWarnings({"deprecation", "java:S1874"})
     public FullName toFullName(NameAddress applicant) {
         String firstName = firstNonBlank(applicant.getFirstName(), applicant.getForename1());
         String middleName =
@@ -86,11 +85,6 @@ public abstract class ApplicantMapper {
         fullName.setFirstName(firstName);
         fullName.setMiddleName(JsonNullable.of(middleName));
         fullName.setLastName(lastName);
-        // Phase 2: drop the deprecated legacy echo fields once callers consume canonical names.
-        fullName.setFirstForename(firstName);
-        fullName.setSecondForename(JsonNullable.of(middleName));
-        fullName.setThirdForename(JsonNullable.of(null));
-        fullName.setSurname(lastName);
         return fullName;
     }
 
@@ -128,7 +122,6 @@ public abstract class ApplicantMapper {
         nameAddress.setFirstName(firstName);
         nameAddress.setMiddleName(middleName);
         nameAddress.setLastName(lastName);
-        // Phase 2: stop backfilling the deprecated legacy person-name columns from canonical input.
         nameAddress.setForename1(firstName);
         nameAddress.setForename2(middleName);
         nameAddress.setForename3(null);
@@ -256,13 +249,13 @@ public abstract class ApplicantMapper {
      * @param applicant The person to use. This can be null.
      * @return The name that should be used for the applicant or respondent depending. If both are
      *     present then the organisation name will be used. If a person, the name is in the format
-     *     forename1 surname. If an organisation the name is used. If all else fails then an empty
+     *     firstName lastName. If an organisation the name is used. If all else fails then an empty
      *     string is returned.
      */
     public String getNameForApplicant(StandardApplicant sa, NameAddress applicant) {
         if (sa != null) {
 
-            // if the name is not set i.e. not an org then use forename and surname
+            // if the name is not set i.e. not an org then use person name fields
             if (sa.getName() == null) {
                 return formatPersonName(sa.getApplicantForename1(), sa.getApplicantSurname());
             } else {
@@ -281,7 +274,7 @@ public abstract class ApplicantMapper {
      * not.
      *
      * @param nameAddress The name address to get the name. This can be null.
-     * @return The name string for the address in the format forename1 surname if a person or the
+     * @return The name string for the address in the format firstName lastName if a person or the
      *     name if an organisation. If all else fails then an empty string is returned.
      */
     public String getNameForNameAddress(NameAddress nameAddress) {
@@ -318,31 +311,25 @@ public abstract class ApplicantMapper {
         return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
     }
 
-    @SuppressWarnings({"deprecation", "java:S1874"})
     public String firstName(FullName name) {
         if (name == null) {
             return null;
         }
-        return firstNonBlank(name.getFirstName(), name.getFirstForename());
+        return StringUtils.trimToNull(name.getFirstName());
     }
 
-    @SuppressWarnings({"deprecation", "java:S1874"})
     public String middleName(FullName name) {
         if (name == null) {
             return null;
         }
-        // Phase 2: remove the deprecated legacy fallback once all inbound payloads use middleName.
-        return firstNonBlank(
-                map(name.getMiddleName()),
-                combineMiddleName(map(name.getSecondForename()), map(name.getThirdForename())));
+        return StringUtils.trimToNull(map(name.getMiddleName()));
     }
 
-    @SuppressWarnings({"deprecation", "java:S1874"})
     public String lastName(FullName name) {
         if (name == null) {
             return null;
         }
-        return firstNonBlank(name.getLastName(), name.getSurname());
+        return StringUtils.trimToNull(name.getLastName());
     }
 
     public static String combineMiddleName(String secondForename, String thirdForename) {

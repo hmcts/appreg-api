@@ -289,22 +289,14 @@ class ApplicationListEntryEntityMapperTest {
     }
 
     private String expectedFirstName(FullName name) {
-        return firstNonNull(name.getFirstName(), name.getFirstForename());
+        return name.getFirstName();
     }
 
     private String expectedMiddleName(FullName name) {
-        return firstNonNull(
-                name.getMiddleName().orElse(null),
-                ApplicantMapper.combineMiddleName(
-                        name.getSecondForename().orElse(null),
-                        name.getThirdForename().orElse(null)));
+        return name.getMiddleName().orElse(null);
     }
 
     private String expectedLastName(FullName name) {
-        return firstNonNull(name.getLastName(), name.getSurname());
-    }
-
-    private String firstNonNull(String first, String second) {
-        return first == null ? second : first;
+        return name.getLastName();
     }
 }

@@ -16,15 +16,14 @@ public class ApplicantAssertion {
 
         // assert applicant
         Assertions.assertEquals(
-                applicant.getName().getSurname(), standardApplicant.getApplicantSurname());
+                applicant.getName().getLastName(), standardApplicant.getApplicantSurname());
         Assertions.assertEquals(
-                applicant.getName().getThirdForename().orElse(null),
-                standardApplicant.getApplicantForename3());
+                applicant.getName().getMiddleName().orElse(null),
+                ApplicantMapper.combineMiddleName(
+                        standardApplicant.getApplicantForename2(),
+                        standardApplicant.getApplicantForename3()));
         Assertions.assertEquals(
-                applicant.getName().getSecondForename().orElse(null),
-                standardApplicant.getApplicantForename2());
-        Assertions.assertEquals(
-                applicant.getName().getFirstForename(), standardApplicant.getApplicantForename1());
+                applicant.getName().getFirstName(), standardApplicant.getApplicantForename1());
         Assertions.assertEquals(
                 applicant.getContactDetails().getPostcode(), standardApplicant.getPostcode());
         Assertions.assertEquals(
@@ -56,17 +55,9 @@ public class ApplicantAssertion {
     public static void validatePerson(Person applicant, NameAddress applicationListEntry) {
         Assertions.assertNull(applicationListEntry.getName());
 
-        String expectedFirstName =
-                firstNonNull(
-                        applicant.getName().getFirstName(), applicant.getName().getFirstForename());
-        String expectedMiddleName =
-                firstNonNull(
-                        applicant.getName().getMiddleName().orElse(null),
-                        ApplicantMapper.combineMiddleName(
-                                applicant.getName().getSecondForename().orElse(null),
-                                applicant.getName().getThirdForename().orElse(null)));
-        String expectedLastName =
-                firstNonNull(applicant.getName().getLastName(), applicant.getName().getSurname());
+        String expectedFirstName = applicant.getName().getFirstName();
+        String expectedMiddleName = applicant.getName().getMiddleName().orElse(null);
+        String expectedLastName = applicant.getName().getLastName();
 
         // assert applicant
         Assertions.assertEquals(expectedLastName, applicationListEntry.getSurname());
@@ -102,10 +93,6 @@ public class ApplicantAssertion {
         Assertions.assertEquals(
                 applicant.getContactDetails().getEmail().orElse(null),
                 applicationListEntry.getEmailAddress());
-    }
-
-    private static String firstNonNull(String first, String second) {
-        return first != null ? first : second;
     }
 
     public static void validateOrganisation(

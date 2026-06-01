@@ -1,14 +1,8 @@
 type: object
 description: A persons full name. Blank fields will be rejected, nulls should be used instead.
-# Phase 1 transitional contract: callers must provide either the canonical firstName/lastName pair
-# or the deprecated firstForename/surname pair. Both pairs may be supplied during migration.
-anyOf:
-  - required:
-      - firstName
-      - lastName
-  - required:
-      - firstForename
-      - surname
+required:
+  - firstName
+  - lastName
 properties:
 
   title:
@@ -49,53 +43,5 @@ properties:
     pattern: |-
       ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "Smith"
-    maxLength: 100
-    minLength: 1
-
-  surname:
-    type: string
-    # TODO(ARCPOC-1341 Phase 2): remove legacy compatibility field once FE no longer depends on it.
-    description: Deprecated legacy family name. Use lastName instead.
-    deprecated: true
-    # Name regex from legacy.
-    pattern: |-
-      ^[^\u0000-\u001F\u007F-\u009F]*$
-    example: "Smith"
-    maxLength: 100
-    minLength: 1
-
-  firstForename:
-    type: string
-    # TODO(ARCPOC-1341 Phase 2): remove legacy compatibility field once FE no longer depends on it.
-    description: Deprecated legacy first forename. Use firstName instead.
-    deprecated: true
-    # Name regex from legacy.
-    pattern: |-
-      ^[^\u0000-\u001F\u007F-\u009F]*$
-    example: "John"
-    maxLength: 100
-    minLength: 1
-
-  secondForename:
-    type: string
-    # TODO(ARCPOC-1341 Phase 2): remove legacy compatibility field once FE no longer depends on it.
-    description: Deprecated legacy second forename. Use middleName instead.
-    deprecated: true
-    nullable: true
-    # Name regex from legacy.
-    pattern: |-
-      ^[^\u0000-\u001F\u007F-\u009F]*$
-    maxLength: 100
-    minLength: 1
-
-  thirdForename:
-    type: string
-    # TODO(ARCPOC-1341 Phase 2): remove legacy compatibility field once FE no longer depends on it.
-    description: Deprecated legacy third forename. Use middleName instead.
-    deprecated: true
-    nullable: true
-    # Name regex from legacy.
-    pattern: |-
-      ^[^\u0000-\u001F\u007F-\u009F]*$
     maxLength: 100
     minLength: 1

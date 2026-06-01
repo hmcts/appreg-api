@@ -27,3 +27,8 @@ applicationinsights-agent-*.jar
 
 .vscode
 .env
+
+/.run/
+/.gradle-home/
+
+/*.hprof
