@@ -204,6 +204,10 @@ class PrivateProsecutorsIndexReportDataReaderTest {
     private void assertLegacyPrivateProsecutorsIndexQueryShape(String query) {
         Assertions.assertTrue(query.contains("JOIN name_address app_na"));
         Assertions.assertTrue(query.contains("JOIN standard_applicants sa"));
+        Assertions.assertTrue(query.contains("NULLIF(TRIM(sa.name), '')"));
+        Assertions.assertTrue(
+                query.contains(
+                        "TRIM(COALESCE(sa.forename_1, '') || ' ' || COALESCE(sa.surname, ''))"));
         Assertions.assertTrue(query.contains("al.application_list_status = 'CLOSED'"));
         Assertions.assertTrue(query.contains("ac.application_code = 'MX99010'"));
         Assertions.assertTrue(query.contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'"));

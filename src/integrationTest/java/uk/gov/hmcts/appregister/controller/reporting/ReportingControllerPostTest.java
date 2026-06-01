@@ -1220,7 +1220,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
-            givenValidPrivateProsecutorsIndexRequestForStandardApplicant_whenCreatingReport_thenCsvCanBeDownloaded()
+            givenIndividualStandardApplicant_whenCreatingPrivateProsecutorsIndexReport_thenCsvContainsApplicantName()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 12);
         insertPrivateProsecutorsIndexStandardApplicantApplication(listDate);
@@ -1299,12 +1299,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
             Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
             Assertions.assertTrue(report.contains("12/04/2026"));
             Assertions.assertTrue(report.contains("XCD998 - Standard Private Court"));
-            Assertions.assertTrue(report.contains("Private Standards Body"));
+            Assertions.assertTrue(report.contains("Private Standards"));
             Assertions.assertTrue(report.contains("Standard Respondent Ltd"));
             Assertions.assertTrue(report.contains("Standard private wording"));
             Assertions.assertTrue(report.contains("PIS"));
             Assertions.assertTrue(report.contains("Standard private notes"));
-            Assertions.assertTrue(report.contains("CD,,,Private Standards Body,"));
+            Assertions.assertTrue(report.contains("CD,,,Private Standards,"));
         }
     }
 
@@ -2080,7 +2080,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private void insertPrivateProsecutorsIndexStandardApplicantApplication(LocalDate listDate) {
-        long standardApplicantId = insertStandardApplicantRow("Private Standards Body");
+        long standardApplicantId = insertStandardApplicantRow("Private", "Standards");
         long respondentId =
                 insertNameAddressRow("Standard Respondent Ltd", null, null, "Respondent Street");
         long listId =
@@ -2281,7 +2281,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 addressLine1);
     }
 
-    private long insertStandardApplicantRow(String name) {
+    private long insertStandardApplicantRow(String forename, String surname) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
@@ -2294,6 +2294,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         changed_date,
                         user_name,
                         name,
+                        forename_1,
+                        surname,
                         address_l1
                     )
                     VALUES (
@@ -2304,6 +2306,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         0,
                         CURRENT_TIMESTAMP,
                         'report-integration-test',
+                        NULL,
+                        ?,
                         ?,
                         'Standard applicant street'
                     )
@@ -2312,7 +2316,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         schema, schema),
                 Long.class,
                 "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
-                name);
+                forename,
+                surname);
     }
 
     private long applicationCodeIdOrInsert(String applicationCode) {

@@ -138,7 +138,13 @@ class PrivateProsecutorsIndexReportDataReader
                     cja.cja_code,
                     NULL AS applicant_name_or_surname,
                     NULL AS applicant_first_name,
-                    sa.name AS standard_applicant_name,
+                    COALESCE(
+                        NULLIF(TRIM(sa.name), ''),
+                        NULLIF(
+                            TRIM(COALESCE(sa.forename_1, '') || ' ' || COALESCE(sa.surname, '')),
+                            ''
+                        )
+                    ) AS standard_applicant_name,
                     resp_na.forename_1 AS respondent_first_name,
                     resp_na.surname AS respondent_surname,
                     resp_na.name AS respondent_organisation_name,
@@ -166,7 +172,19 @@ class PrivateProsecutorsIndexReportDataReader
                     AND :applicantOrganisationName IS NULL
                     AND (
                         :standardApplicantName IS NULL
-                        OR UPPER(sa.name) LIKE '%' || UPPER(:standardApplicantName) || '%'
+                        OR UPPER(
+                            COALESCE(
+                                NULLIF(TRIM(sa.name), ''),
+                                NULLIF(
+                                    TRIM(
+                                        COALESCE(sa.forename_1, '')
+                                        || ' '
+                                        || COALESCE(sa.surname, '')
+                                    ),
+                                    ''
+                                )
+                            )
+                        ) LIKE '%' || UPPER(:standardApplicantName) || '%'
                     )
                     AND (
                         :respondentFirstName IS NULL
