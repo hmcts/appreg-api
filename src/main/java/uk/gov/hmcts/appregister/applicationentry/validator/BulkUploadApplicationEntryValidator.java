@@ -75,7 +75,11 @@ public class BulkUploadApplicationEntryValidator {
     private static String columnNames() {
         return Arrays.stream(
                         new String[] {
-                            "respondentOrganisationName", "respondentForename1", "respondentSurname"
+                            "respondentOrganisationName",
+                            "respondentForename1",
+                            "respondentSurname",
+                            "respondentFirstName",
+                            "respondentLastName"
                         })
                 .map(BulkUploadApplicationEntryValidator::columnName)
                 .collect(Collectors.joining("/"));

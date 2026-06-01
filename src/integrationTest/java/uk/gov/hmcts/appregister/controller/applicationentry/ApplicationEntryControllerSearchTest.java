@@ -1230,7 +1230,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
         EntryGetSummaryDto entry = page.getContent().getFirst();
 
-        assertThat(entry.getApplicant().getPerson().getName().getSurname()).isEqualTo("Turner");
+        assertThat(entry.getApplicant().getPerson().getName().getLastName()).isEqualTo("Turner");
         assertThat(entry.getIsFeeRequired()).isTrue();
         assertThat(entry.getIsResulted()).isTrue();
     }

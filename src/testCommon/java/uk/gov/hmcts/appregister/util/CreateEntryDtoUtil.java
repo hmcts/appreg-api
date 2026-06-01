@@ -89,17 +89,6 @@ public class CreateEntryDtoUtil {
         entryCreateDto
                 .getRespondent()
                 .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of(null));
-
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
                 .getContactDetails()
                 .setAddressLine2(JsonNullable.of(Instancio.gen().string().get()));
         entryCreateDto
@@ -135,12 +124,6 @@ public class CreateEntryDtoUtil {
                 .getContactDetails()
                 .setPhone(JsonNullable.of(null));
 
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto
                 .getApplicant()
                 .getPerson()

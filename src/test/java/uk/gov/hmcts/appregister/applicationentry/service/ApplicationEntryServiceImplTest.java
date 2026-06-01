@@ -1996,11 +1996,12 @@ public class ApplicationEntryServiceImplTest {
 
         val official = new Official();
         official.setType(OfficialType.MAGISTRATE);
+        official.setTitle("Mr");
         official.setForename("Ada");
         official.setSurname("Lovelace");
 
         val dto = new BulkOfficialsUpdateDto();
-        dto.setEntryIds(Set.of(entryId1, entryId2));
+        dto.setEntryIds(List.of(entryId1, entryId2));
         dto.setOfficials(List.of(official));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
@@ -2042,12 +2043,15 @@ public class ApplicationEntryServiceImplTest {
         entry1.setSequenceNumber((short) 1);
         entry1.setApplicationList(applicationList);
 
-        val entryId2 = UUID.randomUUID();
+        final UUID entryId2 = UUID.randomUUID();
         val official = new Official();
         official.setType(OfficialType.MAGISTRATE);
+        official.setTitle("Mr");
+        official.setForename("Ada");
+        official.setSurname("Lovelace");
 
         val dto = new BulkOfficialsUpdateDto();
-        dto.setEntryIds(Set.of(entryId1, entryId2));
+        dto.setEntryIds(List.of(entryId1, entryId2));
         dto.setOfficials(List.of(official));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))

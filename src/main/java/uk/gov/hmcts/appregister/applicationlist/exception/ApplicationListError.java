@@ -86,7 +86,10 @@ public enum ApplicationListError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "A closed application list is not allowed to be updated",
-                    "AL-20"));
+                    "AL-20")),
+    ENTRY_IDS_MUST_BE_UNIQUE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "'entryIds' must not contain duplicates", "AL-21"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
