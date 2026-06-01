@@ -27,9 +27,6 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
     /** The message status. */
     private static final String STATUS = "p_messagestatus";
 
-    /** The message content. */
-    private static final String CONTENT = "p_messagecontent";
-
     /** The action. */
     private static final String ACTION = "p_requestaction";
 
@@ -58,8 +55,7 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
         return getLog(
                 event.getRequestAction().getEventName(),
                 event.getMessageUuid(),
-                Integer.valueOf(event.getMessageStatus().getStatus()).toString(),
-                event.getMessageContent());
+                Integer.valueOf(event.getMessageStatus().getStatus()).toString());
     }
 
     /**
@@ -68,10 +64,8 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
      * @param eventName The event name
      * @param messageUuid The message uuid
      * @param status The status
-     * @param messageContent The message content
      */
-    public static String getLog(
-            String eventName, String messageUuid, String status, String messageContent) {
+    public static String getLog(String eventName, String messageUuid, String status) {
         return System.lineSeparator()
                 + "-"
                 + ACTION
@@ -86,12 +80,7 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
                 + "-"
                 + STATUS
                 + "="
-                + status
-                + System.lineSeparator()
-                + "-"
-                + CONTENT
-                + "="
-                + messageContent;
+                + status;
     }
 
     /**
@@ -100,11 +89,9 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
      * @param eventName The event name
      * @param messageUuid The message id to log
      * @param status The status
-     * @param messageContent The message content
      */
-    public static String getCompletedLog(
-            String eventName, String messageUuid, String status, String messageContent) {
-        return COMPLETION_AUDIT_LOG + " " + getLog(eventName, messageUuid, status, messageContent);
+    public static String getCompletedLog(String eventName, String messageUuid, String status) {
+        return COMPLETION_AUDIT_LOG + " " + getLog(eventName, messageUuid, status);
     }
 
     /**
@@ -112,10 +99,8 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
      *
      * @param eventName The event name
      * @param status The status
-     * @param messageContent The message content
      */
-    public static String getCompletedLogWithUnknownMessageIdRegEx(
-            String eventName, String status, String messageContent) {
-        return COMPLETION_AUDIT_LOG + " " + getLog(eventName, ".*", status, messageContent);
+    public static String getCompletedLogWithUnknownMessageIdRegEx(String eventName, String status) {
+        return COMPLETION_AUDIT_LOG + " " + getLog(eventName, ".*", status);
     }
 }

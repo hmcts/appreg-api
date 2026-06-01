@@ -232,7 +232,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                             .formatted(getApplicant(dto)));
         }
 
-        log.debug("Validated mutual exclusivity of applicant {}", getApplicant(dto));
+        log.debug("Validated applicant mutual exclusivity");
     }
 
     /**
@@ -369,7 +369,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             }
         }
 
-        log.debug("Validated mutual exclusivity of respondent {}", getRespondent(dto));
+        log.debug("Validated respondent mutual exclusivity");
     }
 
     /**

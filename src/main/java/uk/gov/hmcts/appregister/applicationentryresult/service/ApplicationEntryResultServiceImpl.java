@@ -173,9 +173,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     @Override
     @Transactional
     public MatchResponse<ResultGetDto> update(PayloadForUpdateEntryResult updateEntryResult) {
-        log.debug("Started: Update Application Entry Result: {}", updateEntryResult);
         log.debug(
-                "Updating application entry result with id: {} in entry {} in list {}",
+                "Started update application entry result {} for entry {} in list {}",
                 updateEntryResult.getResultId(),
                 updateEntryResult.getEntryId(),
                 updateEntryResult.getId());
@@ -249,7 +248,11 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                             success.getAppListEntryResult()));
                         });
 
-        log.debug("Finish: Update Application Entry Result: {}", updateEntryResult);
+        log.debug(
+                "Finished update application entry result {} for entry {} in list {}",
+                updateEntryResult.getResultId(),
+                updateEntryResult.getEntryId(),
+                updateEntryResult.getId());
 
         return getDto;
     }
