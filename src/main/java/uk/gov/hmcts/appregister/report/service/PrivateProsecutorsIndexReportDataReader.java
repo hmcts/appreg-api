@@ -21,7 +21,24 @@ class PrivateProsecutorsIndexReportDataReader
         implements DataReader<PrivateProsecutorsIndexReportRow> {
     private static final String REPORT_QUERY =
             """
-            WITH candidate_apps AS (
+            WITH standard_applicant_names AS (
+                SELECT
+                    sa.sa_id,
+                    COALESCE(
+                        NULLIF(TRIM(sa.name), ''),
+                        NULLIF(
+                            TRIM(
+                                COALESCE(sa.forename_1, '')
+                                || ' '
+                                || COALESCE(sa.surname, '')
+                            ),
+                            ''
+                        ),
+                        sa.standard_applicant_code
+                    ) AS standard_applicant_name
+                FROM standard_applicants sa
+            ),
+            candidate_apps AS (
                 SELECT
                     ale.ale_id,
                     al.application_list_date,
@@ -58,6 +75,7 @@ class PrivateProsecutorsIndexReportDataReader
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                     AND (al.is_deleted IS NULL OR al.is_deleted <> 'Y')
                     AND (ale.is_deleted IS NULL OR ale.is_deleted <> 'Y')
+                    AND ale.sa_sa_id IS NULL
                     AND :standardApplicantName IS NULL
                     AND (
                         :applicantFirstName IS NULL
@@ -138,7 +156,7 @@ class PrivateProsecutorsIndexReportDataReader
                     cja.cja_code,
                     NULL AS applicant_name_or_surname,
                     NULL AS applicant_first_name,
-                    sa.name AS standard_applicant_name,
+                    sa.standard_applicant_name,
                     resp_na.forename_1 AS respondent_first_name,
                     resp_na.surname AS respondent_surname,
                     resp_na.name AS respondent_organisation_name,
@@ -149,7 +167,7 @@ class PrivateProsecutorsIndexReportDataReader
                     ON ale.al_al_id = al.al_id
                 JOIN application_codes ac
                     ON ale.ac_ac_id = ac.ac_id
-                JOIN standard_applicants sa
+                JOIN standard_applicant_names sa
                     ON ale.sa_sa_id = sa.sa_id
                 LEFT JOIN name_address resp_na
                     ON ale.r_na_id = resp_na.na_id
@@ -166,7 +184,8 @@ class PrivateProsecutorsIndexReportDataReader
                     AND :applicantOrganisationName IS NULL
                     AND (
                         :standardApplicantName IS NULL
-                        OR UPPER(sa.name) LIKE '%' || UPPER(:standardApplicantName) || '%'
+                        OR UPPER(sa.standard_applicant_name)
+                            LIKE '%' || UPPER(:standardApplicantName) || '%'
                     )
                     AND (
                         :respondentFirstName IS NULL
