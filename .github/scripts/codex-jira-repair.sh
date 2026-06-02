@@ -42,6 +42,12 @@ final_message_path="${output_dir}/codex-repair-${REPAIR_ATTEMPT}-final-message.m
 pr_body_path="${output_dir}/codex-pr-body.md"
 patch_path="${output_dir}/changes.patch"
 metadata_path="${output_dir}/metadata.env"
+usage_events_path="${artifact_dir}/codex-events.jsonl"
+usage_summary_path="${output_dir}/codex-usage-summary.json"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=.github/scripts/codex-usage-metrics.sh
+source "${script_dir}/codex-usage-metrics.sh"
 
 metadata_value() {
   local key="$1"
@@ -197,7 +203,9 @@ Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
 echo "Running Codex repair attempt ${REPAIR_ATTEMPT} for ${ISSUE_KEY}; publish will use ${branch_name}"
-run_codex codex exec \
+run_codex_exec_with_usage "jira-repair-${REPAIR_ATTEMPT}" "${usage_events_path}" "${usage_summary_path}" \
+  run_codex codex exec \
+  --json \
   --cd "${PWD}" \
   --sandbox workspace-write \
   --ephemeral \
