@@ -1,0 +1,363 @@
+name: Codex Merge Conflict Resolution
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  detect-conflicted-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+    outputs:
+      should_run: ${{ steps.detect.outputs.should_run }}
+      pr_number: ${{ steps.detect.outputs.pr_number }}
+      head_ref: ${{ steps.detect.outputs.head_ref }}
+      base_ref: ${{ steps.detect.outputs.base_ref }}
+      head_sha: ${{ steps.detect.outputs.head_sha }}
+      base_sha: ${{ steps.detect.outputs.base_sha }}
+      conflicted_files: ${{ steps.detect.outputs.conflicted_files }}
+    steps:
+      - name: Detect authorised conflicted PR
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          pr_number=""
+          head_ref=""
+          base_ref="${DEFAULT_BRANCH}"
+
+          write_skip() {
+            local reason="$1"
+            echo "Skipping Codex merge-conflict resolution: ${reason}"
+            {
+              echo "should_run=false"
+              echo "pr_number=${pr_number}"
+              echo "head_ref=${head_ref}"
+              echo "base_ref=${base_ref}"
+            } >>"$GITHUB_OUTPUT"
+          }
+
+          comment_body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
+          actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
+          is_pr="$(jq -r '.issue | has("pull_request")' "$GITHUB_EVENT_PATH")"
+
+          if [[ "$is_pr" != "true" ]]; then
+            write_skip "comment is not on a pull request"
+            exit 0
+          fi
+
+          if ! grep -Eiq '(^|[[:space:]])/(codex-resolve-conflicts|codex resolve conflicts)([[:space:]]|$)' <<<"$comment_body"; then
+            write_skip "missing explicit /codex-resolve-conflicts command"
+            exit 0
+          fi
+
+          pr_number="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
+
+          if [[ -z "$actor_login" || "$actor_login" == "null" ]]; then
+            write_skip "comment author could not be determined"
+            exit 0
+          fi
+
+          case "$actor_login" in
+            github-actions[bot]|app/github-actions)
+              write_skip "ignoring GitHub Actions bot comment"
+              exit 0
+              ;;
+          esac
+
+          actor_permission="$(
+            gh api "repos/${GITHUB_REPOSITORY}/collaborators/${actor_login}/permission" \
+              --jq '.permission' 2>/dev/null || true
+          )"
+
+          case "$actor_permission" in
+            write|maintain|admin)
+              ;;
+            *)
+              write_skip "actor ${actor_login} does not have repository write permission"
+              exit 0
+              ;;
+          esac
+
+          pull_request_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}")"
+          pr_state="$(jq -r '.state' <<<"$pull_request_json")"
+          head_ref="$(jq -r '.head.ref' <<<"$pull_request_json")"
+          head_repo="$(jq -r '.head.repo.full_name' <<<"$pull_request_json")"
+          pr_base_ref="$(jq -r '.base.ref' <<<"$pull_request_json")"
+
+          if [[ "$pr_state" != "open" ]]; then
+            write_skip "PR #${pr_number} is not open"
+            exit 0
+          fi
+
+          if [[ "$head_repo" != "$GITHUB_REPOSITORY" ]]; then
+            write_skip "forked PR branches are not supported"
+            gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "Codex merge-conflict resolution was not started because this PR branch is from a fork. Only branches in this repository are supported."
+            exit 0
+          fi
+
+          if [[ "$pr_base_ref" != "$DEFAULT_BRANCH" ]]; then
+            write_skip "PR base is ${pr_base_ref}, not ${DEFAULT_BRANCH}"
+            gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "Codex merge-conflict resolution was not started because this PR targets \`${pr_base_ref}\`, not \`${DEFAULT_BRANCH}\`."
+            exit 0
+          fi
+
+          if [[ "$head_ref" == -* || "$head_ref" == *..* || "$head_ref" == *$'\n'* || "$head_ref" == *$'\r'* ]]; then
+            write_skip "unsafe PR branch name"
+            exit 0
+          fi
+
+          work_dir="$(mktemp -d)"
+          cleanup() {
+            rm -rf "$work_dir"
+          }
+          trap cleanup EXIT
+
+          cd "$work_dir"
+          git init --quiet .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -c credential.helper= \
+            -c credential.helper='!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f' \
+            fetch --no-tags --prune origin \
+            "refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}" \
+            "refs/heads/${head_ref}:refs/remotes/origin/pr-head"
+          git checkout --quiet -B pr-head refs/remotes/origin/pr-head
+
+          set +e
+          git merge --no-commit --no-ff "refs/remotes/origin/${DEFAULT_BRANCH}" >/tmp/codex-merge-check.log 2>&1
+          merge_status=$?
+          set -e
+
+          conflicted_files="$(git diff --name-only --diff-filter=U | sort -u)"
+          if [[ "$merge_status" -eq 0 || -z "$conflicted_files" ]]; then
+            git merge --abort >/dev/null 2>&1 || true
+            gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "Codex merge-conflict resolution was not started because this PR does not currently have merge conflicts with \`${DEFAULT_BRANCH}\`."
+            write_skip "PR #${pr_number} has no actual merge conflicts with ${DEFAULT_BRANCH}"
+            exit 0
+          fi
+
+          head_sha="$(git rev-parse refs/remotes/origin/pr-head)"
+          base_sha="$(git rev-parse "refs/remotes/origin/${DEFAULT_BRANCH}")"
+
+          {
+            echo "should_run=true"
+            echo "pr_number=${pr_number}"
+            echo "head_ref=${head_ref}"
+            echo "base_ref=${DEFAULT_BRANCH}"
+            echo "head_sha=${head_sha}"
+            echo "base_sha=${base_sha}"
+            echo "conflicted_files<<EOF"
+            printf '%s\n' "$conflicted_files"
+            echo "EOF"
+          } >>"$GITHUB_OUTPUT"
+
+  codex-conflict-generate:
+    needs: detect-conflicted-pr
+    if: needs.detect-conflicted-pr.outputs.should_run == 'true'
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
+      HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
+      BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
+      HEAD_SHA: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+      BASE_SHA: ${{ needs.detect-conflicted-pr.outputs.base_sha }}
+      CONFLICTED_FILES: ${{ needs.detect-conflicted-pr.outputs.conflicted_files }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Run Codex and create conflict-resolution patch
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
+        run: ./.github/scripts/codex-merge-conflict-implement.sh
+
+      - name: Upload Codex conflict-resolution output
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-conflict-output
+          path: ${{ runner.temp }}/codex-conflict-output
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-conflict-resolution:
+    needs: [detect-conflicted-pr, codex-conflict-generate]
+    if: needs.detect-conflicted-pr.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
+      EXPECTED_HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
+      EXPECTED_BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
+      EXPECTED_HEAD_SHA: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+      EXPECTED_BASE_SHA: ${{ needs.detect-conflicted-pr.outputs.base_sha }}
+      LOCAL_PIPELINE_MODE: fast
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Codex conflict-resolution output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-conflict-output
+          path: ${{ runner.temp }}/codex-conflict-output
+
+      - name: Verify Codex conflict-resolution patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
+        run: |
+          set +e
+          ./.github/scripts/codex-merge-conflict-verify.sh >"$RUNNER_TEMP/codex-conflict-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-conflict-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload verified conflict-resolution output
+        if: steps.verify.outputs.passed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-conflict-verified
+          path: |
+            ${{ runner.temp }}/codex-conflict-output/changes.patch
+            ${{ runner.temp }}/codex-conflict-output/codex-conflict-comment.md
+            ${{ runner.temp }}/codex-conflict-output/verification.env
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-conflict-resolution:
+    needs: [detect-conflicted-pr, verify-conflict-resolution]
+    if: needs.detect-conflicted-pr.outputs.should_run == 'true' && needs.verify-conflict-resolution.outputs.passed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
+      EXPECTED_HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
+      EXPECTED_BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
+      EXPECTED_HEAD_SHA: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+      EXPECTED_BASE_SHA: ${{ needs.detect-conflicted-pr.outputs.base_sha }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Codex conflict-resolution output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-conflict-output
+          path: ${{ runner.temp }}/codex-conflict-output
+
+      - name: Download verified conflict-resolution output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-conflict-verified
+          path: ${{ runner.temp }}/codex-conflict-verified
+
+      - name: Copy trusted publish script
+        run: |
+          cp .github/scripts/codex-merge-conflict-publish.sh "$RUNNER_TEMP/codex-merge-conflict-publish.sh"
+          chmod +x "$RUNNER_TEMP/codex-merge-conflict-publish.sh"
+
+      - name: Publish conflict-resolution commit
+        id: publish
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
+          VERIFICATION_DIR: ${{ runner.temp }}/codex-conflict-verified
+        run: "$RUNNER_TEMP/codex-merge-conflict-publish.sh"
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          {
+            echo "## Codex Merge Conflict Resolution"
+            echo
+            echo "- Pull request: #${{ steps.publish.outputs.pr_number }}"
+            echo "- Branch: ${{ steps.publish.outputs.branch_name }}"
+            echo "- Commit: ${{ steps.publish.outputs.commit_sha }}"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  conflict-resolution-failed:
+    needs:
+      - detect-conflicted-pr
+      - codex-conflict-generate
+      - verify-conflict-resolution
+      - publish-conflict-resolution
+    if: |
+      always() &&
+      needs.detect-conflicted-pr.outputs.should_run == 'true' &&
+      (
+        needs.codex-conflict-generate.result == 'failure' ||
+        needs.verify-conflict-resolution.outputs.passed != 'true' ||
+        needs.publish-conflict-resolution.result == 'failure'
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
+    steps:
+      - name: Comment with failure result
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Codex attempted to resolve merge conflicts for this PR, but the workflow failed before a verified resolution could be pushed. See ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
