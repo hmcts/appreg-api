@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -60,6 +61,7 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "al_al_id")
     @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ, CrudEnum.DELETE})
+    @JsonIgnore
     private ApplicationList applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)
