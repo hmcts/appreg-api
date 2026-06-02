@@ -20,7 +20,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.5.1'
+  id 'com.diffplug.spotless' version '8.6.0'
   id 'org.openrewrite.rewrite' version '7.33.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.2'
@@ -435,20 +435,20 @@ dependencies {
 
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
 
-  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.4'
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 
   implementation 'org.flywaydb:flyway-database-postgresql:12.7.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-core
-  implementation 'tools.jackson.core:jackson-core:3.1.3'
+  implementation 'tools.jackson.core:jackson-core:3.1.4'
 
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
-  implementation 'tools.jackson.core:jackson-databind:3.1.3'
+  implementation 'tools.jackson.core:jackson-databind:3.1.4'
 
   // Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
-  implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21'
+  implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
 
   // Source: https://mvnrepository.com/artifact/com.opencsv/opencsv
   implementation 'com.opencsv:opencsv:5.12.0'
