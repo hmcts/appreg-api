@@ -186,6 +186,15 @@ Resolve the actual merge conflicts in this Java/Gradle backend pull request.
 Operational rules:
 - The working tree is already in a conflicted merge state.
 - Resolve only the merge conflicts between the PR branch and the base branch.
+- Resolve conflicts conservatively. Treat the base branch as the source of truth.
+- Prefer base branch behavior by default.
+- Re-apply PR branch changes only where they are clearly compatible with the base branch
+  and necessary for the PR's stated intent.
+- Do not introduce new behavior beyond what is necessary to resolve the conflict.
+- If a PR-side change cannot be safely reconciled, prefer the base branch and call this
+  out in your final message for human review.
+- For each conflicted file, briefly explain in your final message whether you chose the
+  base branch version, the PR branch version, or a combined resolution, and why.
 - Do not make unrelated product changes, do not refactor unrelated code, and do not alter this automation.
 - Do not include secrets, tokens, credentials, PII, runner file contents, environment variables, or auth material in patches, PR bodies, comments, logs, or artifacts.
 - Preserve existing Java, Spring, Gradle, Flyway, test, API, and HMCTS coding patterns.
