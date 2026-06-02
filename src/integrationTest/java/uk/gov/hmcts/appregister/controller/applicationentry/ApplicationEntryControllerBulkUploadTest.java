@@ -173,10 +173,10 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         ContactDetails contactDetails = person.getContactDetails();
         return personRespondent(
                 person.getName().getTitle(),
-                person.getName().getFirstForename(),
-                valueOrNull(person.getName().getSecondForename()),
-                valueOrNull(person.getName().getThirdForename()),
-                person.getName().getSurname(),
+                person.getName().getFirstName(),
+                valueOrNull(person.getName().getMiddleName()),
+                null,
+                person.getName().getLastName(),
                 contactDetails.getAddressLine1(),
                 valueOrNull(contactDetails.getAddressLine2()),
                 valueOrNull(contactDetails.getAddressLine3()),

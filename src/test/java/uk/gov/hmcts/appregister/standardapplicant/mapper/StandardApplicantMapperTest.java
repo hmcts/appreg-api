@@ -36,13 +36,6 @@ public class StandardApplicantMapperTest {
                 standardApplicantGetDetailDto.getApplicant().getPerson().getName().getTitle());
         Assertions.assertNotNull(
                 standardApplicant.getApplicantForename1(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getFirstForename());
-        Assertions.assertEquals(
-                standardApplicant.getApplicantForename1(),
                 standardApplicantGetDetailDto.getApplicant().getPerson().getName().getFirstName());
         Assertions.assertEquals(
                 "%s %s"
@@ -58,27 +51,6 @@ public class StandardApplicantMapperTest {
         Assertions.assertEquals(
                 standardApplicant.getApplicantSurname(),
                 standardApplicantGetDetailDto.getApplicant().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                "%s %s"
-                        .formatted(
-                                standardApplicant.getApplicantForename2(),
-                                standardApplicant.getApplicantForename3()),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getSecondForename()
-                        .get());
-        Assertions.assertNull(
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getThirdForename()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getApplicantSurname(),
-                standardApplicantGetDetailDto.getApplicant().getPerson().getName().getSurname());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine1(),
                 standardApplicantGetDetailDto

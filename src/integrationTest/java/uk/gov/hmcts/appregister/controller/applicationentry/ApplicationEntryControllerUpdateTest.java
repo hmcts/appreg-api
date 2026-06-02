@@ -59,8 +59,6 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         differenceLogAsserter.assertNoErrors();
 
         Response responseSpecCreate = createListEntryWithAllData();
-        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
-        LocalDate createdDate = createdDetail.getLodgementDate();
 
         var tokenGenerator = createAdminToken();
         Response responseSpecUpdate =
@@ -70,8 +68,11 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         entryUpdateDto);
 
         responseSpecUpdate.then().statusCode(200);
+        Assertions.assertFalse(responseSpecUpdate.asString().contains("\"applicationList\""));
+        Assertions.assertFalse(responseSpecUpdate.asString().contains("\"entries\""));
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        LocalDate createdDate = responseSpecCreate.as(EntryGetDetailDto.class).getLodgementDate();
 
         // make sure the update does not change the lodgement date and the
         // date it was created persists
@@ -103,7 +104,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                                                 .getRespondent()
                                                 .getPerson()
                                                 .getName()
-                                                .getSurname()),
+                                                .getLastName()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
@@ -184,7 +185,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                                                 .getRespondent()
                                                 .getPerson()
                                                 .getName()
-                                                .getSurname()),
+                                                .getLastName()),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty()),
@@ -484,18 +485,18 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setNumberOfRespondents(null);
-        entryUpdateDto.getRespondent().getPerson().getName().setSurname("test");
-        entryUpdateDto.getRespondent().getPerson().getName().setFirstForename("François");
+        entryUpdateDto.getRespondent().getPerson().getName().setLastName("test");
+        entryUpdateDto.getRespondent().getPerson().getName().setFirstName("François");
         entryUpdateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("Joséphine"));
+                .setMiddleName(JsonNullable.of("Joséphine"));
         entryUpdateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setThirdForename(JsonNullable.of("Sørina"));
+                .setMiddleName(JsonNullable.of("Sørina"));
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -653,18 +654,18 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.getRespondent().getPerson().getName().setTitle("m\r");
-        entryUpdateDto.getRespondent().getPerson().getName().setFirstForename("invalid\0name");
+        entryUpdateDto.getRespondent().getPerson().getName().setFirstName("invalid\0name");
         entryUpdateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setSecondForename(JsonNullable.of("invalid\0 secondname"));
+                .setMiddleName(JsonNullable.of("invalid\0 secondname"));
         entryUpdateDto
                 .getRespondent()
                 .getPerson()
                 .getName()
-                .setThirdForename(JsonNullable.of("invalid\0 thirdname"));
-        entryUpdateDto.getRespondent().getPerson().getName().setSurname("invalid\0surname");
+                .setMiddleName(JsonNullable.of("invalid\0 thirdname"));
+        entryUpdateDto.getRespondent().getPerson().getName().setLastName("invalid\0surname");
 
         // test the functionality
         Response responseSpecUpdate =
@@ -1042,7 +1043,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.getRespondent().getPerson().getName().setLastName("RespondentUpdated");
-        entryUpdateDto.getRespondent().getPerson().getName().setSurname("RespondentUpdated");
+        entryUpdateDto.getRespondent().getPerson().getName().setLastName("RespondentUpdated");
 
         val updatedOfficial = new Official();
         updatedOfficial.setTitle("Mrs");
@@ -1079,7 +1080,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 .setEmail(JsonNullable.of(null));
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getName().setLastName("RespondentOriginal");
-        entryCreateDto.getRespondent().getPerson().getName().setSurname("RespondentOriginal");
+        entryCreateDto.getRespondent().getPerson().getName().setLastName("RespondentOriginal");
 
         val originalOfficial = new Official();
         originalOfficial.setTitle("Mr");

@@ -13,13 +13,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.val;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ProblemDetail;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.exception.AppRegExceptionHandler;
+import uk.gov.hmcts.appregister.common.log.AbstractOperationDurationAspect;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
@@ -309,6 +313,43 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    public void
+            givenFeesReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 20);
+        insertFeesReportApplication(
+                listDate,
+                null,
+                "ArcPerson",
+                "IncludedOtherLocation",
+                "ARC included fee wording",
+                "Temporary Fees Hall");
+        insertFeesReportApplication(
+                listDate,
+                null,
+                "ArcPerson",
+                "ExcludedOtherLocation",
+                "ARC excluded fee wording",
+                "Permanent Fees Hall");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .location(
+                                new LegacyReportLocation()
+                                        .otherLocationDescription("temporary fees"));
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("ArcPerson IncludedOtherLocation"));
+        Assertions.assertTrue(report.contains("Temporary Fees Hall"));
+        Assertions.assertFalse(report.contains("ArcPerson ExcludedOtherLocation"));
+        Assertions.assertFalse(report.contains("Permanent Fees Hall"));
+    }
+
+    @Test
     public void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
@@ -361,9 +402,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createResponse
                         .asString()
                         .contains(
-                                "Either 'courtLocation' must be provided, or both "
-                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
-                                        + "must be supplied."));
+                                "Invalid location filter combination. Use 'courtLocationCode' "
+                                        + "on its own, 'cjaCode' on its own, "
+                                        + "'otherLocationDescription' on its own"));
     }
 
     @Test
@@ -486,6 +527,60 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
             Assertions.assertTrue(report.contains("Search Warrants Report"));
         }
+    }
+
+    @Test
+    public void
+            givenInvalidLocationCombination_whenCreatingSearchWarrantsReport_thenBadRequestIsLoggedWithProblemDetail()
+                    throws Exception {
+        LogCaptor exceptionHandlerLogs = LogCaptor.forClass(AppRegExceptionHandler.class);
+        LogCaptor durationAspectLogs = LogCaptor.forClass(AbstractOperationDurationAspect.class);
+        exceptionHandlerLogs.clearLogs();
+        durationAspectLogs.clearLogs();
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        SearchWarrantsReportFilterDto request =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2025, 10, 1))
+                        .dateTo(LocalDate.of(2025, 10, 31))
+                        .location(
+                                new LegacyReportLocation()
+                                        .courtLocationCode("LOC123")
+                                        .otherLocationDescription("Test Other Location"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(SEARCH_WARRANTS_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+
+        ProblemDetail problemDetail = createResponse.as(ProblemDetail.class);
+        Assertions.assertEquals(400, problemDetail.getStatus());
+        Assertions.assertEquals(
+                "Invalid location filter combination. Use 'courtLocationCode' on its own, "
+                        + "'cjaCode' on its own, 'otherLocationDescription' on its own, "
+                        + "both 'cjaCode' and 'otherLocationDescription', or no location fields.",
+                problemDetail.getDetail());
+
+        Assertions.assertTrue(
+                exceptionHandlerLogs.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                        "[400]: Invalid location filter"
+                                                                + " combination")
+                                                && log.contains(
+                                                        "Use 'courtLocationCode' on its own,"
+                                                                + " 'cjaCode' on its own,"
+                                                                + " 'otherLocationDescription' on"
+                                                                + " its own")));
+        Assertions.assertTrue(
+                durationAspectLogs.getErrorLogs().stream()
+                        .noneMatch(log -> log.contains("Exception occurred during execution")));
     }
 
     @Test
@@ -881,28 +976,55 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
-            givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+            givenWorkloadReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
                     throws Exception {
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+        val listDate = LocalDate.of(2026, 6, 18);
+        val includedApplicant = "ARCPOC 1403 Workload Included";
+        val excludedApplicant = "ARCPOC 1403 Workload Excluded";
+        val includedLocation = "ARCPOC 1403 Workload Hall";
+        val excludedLocation = "ARCPOC 1403 Different Hall";
 
-        LegacyReportLocation location = new LegacyReportLocation();
-        location.setOtherLocationDescription("Some other location");
-        location.setCjaCode(null);
+        val includedListId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "WLD140",
+                        includedLocation,
+                        "Workload Report - Other Location Only Included",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
+        insertEntry(listDate, includedListId, includedApplicant, 1);
+
+        val excludedListId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "WLD141",
+                        excludedLocation,
+                        "Workload Report - Other Location Only Excluded",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
+        insertEntry(listDate, excludedListId, excludedApplicant, 1);
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
-                        .location(location);
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .location(
+                                new LegacyReportLocation()
+                                        .otherLocationDescription("arcpoc 1403 workload"));
 
-        Response createResponse =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        request);
+        val report = createAndDownloadWorkloadReport(request);
 
-        createResponse.then().statusCode(400);
+        Assertions.assertTrue(report.contains("Workload Report"));
+        Assertions.assertTrue(report.contains(includedApplicant));
+        Assertions.assertTrue(report.contains(includedLocation));
+        Assertions.assertFalse(report.contains(excludedApplicant));
+        Assertions.assertFalse(report.contains(excludedLocation));
     }
 
     @Test
@@ -1249,6 +1371,67 @@ public class ReportingControllerPostTest extends BaseIntegration {
             Assertions.assertTrue(report.contains("PIS"));
             Assertions.assertTrue(report.contains("Standard private notes"));
             Assertions.assertTrue(report.contains("CD,,,Private Standards Body,"));
+        }
+    }
+
+    @Test
+    public void
+            givenDateOnlyPrivateProsecutorsIndexRequest_whenCreatingReport_thenStandardApplicantNameIsPopulated()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 13);
+        insertPrivateProsecutorsIndexIndividualStandardApplicantApplication(listDate);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto().dateFrom(listDate).dateTo(listDate);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(
+                            JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertTrue(report.contains("13/04/2026"));
+            Assertions.assertTrue(report.contains("XCD997 - Individual Standard Private Court"));
+            Assertions.assertTrue(report.contains("Private Citizen"));
+            Assertions.assertTrue(report.contains("CD,,,Private Citizen,"));
         }
     }
 
@@ -2051,12 +2234,58 @@ public class ReportingControllerPostTest extends BaseIntegration {
         insertApplicationListEntryResolution(entryId, resolutionCodeId);
     }
 
+    private void insertPrivateProsecutorsIndexIndividualStandardApplicantApplication(
+            LocalDate listDate) {
+        long standardApplicantId = insertStandardApplicantRow(null, "Private", "Citizen");
+        long respondentId =
+                insertNameAddressRow(
+                        "Individual Standard Respondent Ltd", null, null, "Respondent Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD997",
+                        "Individual Standard Private Hall",
+                        "Private prosecution individual standard applicant integration list",
+                        "Individual Standard Private Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertStandardApplicantApplicationListEntryRow(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        standardApplicantId,
+                        respondentId,
+                        "Individual standard private {wording}",
+                        "Individual standard private notes",
+                        listDate);
+        long resolutionCodeId = insertResolutionCode("PII");
+        insertApplicationListEntryResolution(entryId, resolutionCodeId);
+    }
+
     private void insertFeesReportApplication(
             LocalDate listDate,
             String applicantOrganisation,
             String applicantForename,
             String applicantSurname,
             String wording) {
+        insertFeesReportApplication(
+                listDate,
+                applicantOrganisation,
+                applicantForename,
+                applicantSurname,
+                wording,
+                "Fees Hall");
+    }
+
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String wording,
+            String otherCourthouse) {
         long applicantId =
                 insertNameAddressRow(
                         applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
@@ -2065,7 +2294,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         "CLOSED",
                         listDate,
                         "XCD997",
-                        "Fees Hall",
+                        otherCourthouse,
                         "Fees report integration list",
                         "Fees Court",
                         0,
@@ -2226,6 +2455,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private long insertStandardApplicantRow(String name) {
+        return insertStandardApplicantRow(name, null, null);
+    }
+
+    private long insertStandardApplicantRow(String name, String firstName, String surname) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
@@ -2238,6 +2471,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         changed_date,
                         user_name,
                         name,
+                        forename_1,
+                        surname,
                         address_l1
                     )
                     VALUES (
@@ -2249,6 +2484,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         CURRENT_TIMESTAMP,
                         'report-integration-test',
                         ?,
+                        ?,
+                        ?,
                         'Standard applicant street'
                     )
                     RETURNING sa_id
@@ -2256,7 +2493,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         schema, schema),
                 Long.class,
                 "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
-                name);
+                name,
+                firstName,
+                surname);
     }
 
     private long applicationCodeIdOrInsert(String applicationCode) {

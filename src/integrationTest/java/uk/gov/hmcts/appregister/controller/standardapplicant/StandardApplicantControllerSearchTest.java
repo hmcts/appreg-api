@@ -106,13 +106,13 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Assertions.assertNotNull(returnedSa.getApplicant().getPerson().getName());
         Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
         Assertions.assertEquals(
-                "John", returnedSa.getApplicant().getPerson().getName().getFirstForename());
+                "John", returnedSa.getApplicant().getPerson().getName().getFirstName());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getName().getSecondForename().get());
+                returnedSa.getApplicant().getPerson().getName().getMiddleName().get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getName().getThirdForename().get());
+                returnedSa.getApplicant().getPerson().getName().getMiddleName().get());
         Assertions.assertEquals(
-                "Smith", returnedSa.getApplicant().getPerson().getName().getSurname());
+                "Smith", returnedSa.getApplicant().getPerson().getName().getLastName());
         Assertions.assertEquals(
                 "123 High Street",
                 returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());
@@ -601,8 +601,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         StandardApplicantGetSummaryDto firstEntry = response.getContent().get(0);
 
         assertEquals("APP001", firstEntry.getCode());
-        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
-        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstName());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getLastName());
         assertEquals(
                 "123 High Street",
                 firstEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
@@ -611,8 +611,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
         StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
         assertEquals("APP002", secondEntry.getCode());
-        assertEquals("Jane", secondEntry.getApplicant().getPerson().getName().getFirstForename());
-        assertEquals("Doe", secondEntry.getApplicant().getPerson().getName().getSurname());
+        assertEquals("Jane", secondEntry.getApplicant().getPerson().getName().getFirstName());
+        assertEquals("Doe", secondEntry.getApplicant().getPerson().getName().getLastName());
         assertEquals(
                 "456 Elm Road",
                 secondEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
@@ -978,37 +978,22 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
         Assertions.assertEquals(
                 "Alex",
-                response.getContent()
-                        .get(0)
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getFirstForename());
+                response.getContent().get(0).getApplicant().getPerson().getName().getFirstName());
         Assertions.assertEquals(
                 "Dunn",
-                response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+                response.getContent().get(0).getApplicant().getPerson().getName().getLastName());
         Assertions.assertEquals(
                 "Alex",
-                response.getContent()
-                        .get(1)
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getFirstForename());
+                response.getContent().get(1).getApplicant().getPerson().getName().getFirstName());
         Assertions.assertEquals(
                 "Dunn",
-                response.getContent().get(1).getApplicant().getPerson().getName().getSurname());
+                response.getContent().get(1).getApplicant().getPerson().getName().getLastName());
         Assertions.assertEquals(
                 "Jane",
-                response.getContent()
-                        .get(2)
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getFirstForename());
+                response.getContent().get(2).getApplicant().getPerson().getName().getFirstName());
         Assertions.assertEquals(
                 "Doe",
-                response.getContent().get(2).getApplicant().getPerson().getName().getSurname());
+                response.getContent().get(2).getApplicant().getPerson().getName().getLastName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1065,26 +1050,16 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
         Assertions.assertEquals(
                 "Alex",
-                response.getContent()
-                        .get(0)
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getFirstForename());
+                response.getContent().get(0).getApplicant().getPerson().getName().getFirstName());
         Assertions.assertEquals(
                 "Dunn",
-                response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+                response.getContent().get(0).getApplicant().getPerson().getName().getLastName());
         Assertions.assertEquals(
                 "Alex",
-                response.getContent()
-                        .get(0)
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getFirstForename());
+                response.getContent().get(0).getApplicant().getPerson().getName().getFirstName());
         Assertions.assertEquals(
                 "Dunn",
-                response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+                response.getContent().get(0).getApplicant().getPerson().getName().getLastName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1138,8 +1113,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("APP001", firstEntry.getCode());
-        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
-        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstName());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getLastName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1191,8 +1166,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
         StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("APP001", firstEntry.getCode());
-        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
-        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstName());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getLastName());
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1741,12 +1716,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         val firstName =
                 first.getApplicant().getOrganisation() != null
                         ? first.getApplicant().getOrganisation().getName()
-                        : first.getApplicant().getPerson().getName().getFirstForename();
+                        : first.getApplicant().getPerson().getName().getFirstName();
 
         val secondName =
                 second.getApplicant().getOrganisation() != null
                         ? second.getApplicant().getOrganisation().getName()
-                        : second.getApplicant().getPerson().getName().getFirstForename();
+                        : second.getApplicant().getPerson().getName().getFirstName();
 
         Assertions.assertEquals("John", firstName);
         Assertions.assertEquals("Organisation 1", secondName);

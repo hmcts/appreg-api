@@ -31,7 +31,7 @@ get:
         Sort order. Supported properties are sequenceNumber, applicationTitle, applicantName,
         respondentName, respondentPostcode, accountReference, feeRequired, and resulted.
         applicantName sorts by organisation name for organisation applicants, otherwise by
-        first forename and surname.
+        first name and last name.
       style: form
       explode: true
       schema:

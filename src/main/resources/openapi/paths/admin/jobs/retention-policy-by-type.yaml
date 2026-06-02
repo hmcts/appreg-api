@@ -1,0 +1,60 @@
+get:
+  tags: [ admin ]
+  summary: Get a database job retention period by its name.
+  description: Returns the RETENTION_PERIOD_DAYS configuration for the specified database job.
+  operationId: getDatabaseJobRetentionPeriodByName
+  parameters:
+    - name: jobType
+      in: path
+      required: true
+      schema: {
+        $ref: "../../../components/schemas/admin/admin-job-type.yaml"
+      }
+      description: The name of the database job to read.
+      example: "APPLICATION_LISTS_DATABASE_JOB"
+  responses:
+    "200":
+      description: Retention period retrieved successfully.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string }
+          example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../../components/schemas/admin/job-retention-policy.yaml"
+    "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../../components/responses/internal-server-error.yaml" }
+put:
+  tags: [ admin ]
+  summary: Update a database job retention period by its name.
+  description: Updates the RETENTION_PERIOD_DAYS configuration for the specified database job.
+  operationId: updateDatabaseJobRetentionPeriodByName
+  parameters:
+    - name: jobType
+      in: path
+      required: true
+      schema: {
+        $ref: "../../../components/schemas/admin/admin-job-type.yaml"
+      }
+      description: The name of the database job to update.
+      example: "APPLICATION_LISTS_DATABASE_JOB"
+    - name: retentionPeriodDays
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      description: Number of days to retain closed application lists before deletion.
+      example: 1825
+  responses:
+    "200":
+      description: Retention period updated successfully.
+    "400": { $ref: "../../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../../components/responses/internal-server-error.yaml" }

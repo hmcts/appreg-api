@@ -47,6 +47,15 @@ public class BulkUploadRow implements CsvPojo {
     @CsvBindByName(column = "RESP_SURNAME")
     private String respondentSurname;
 
+    @CsvBindByName(column = "RESP_FIRST_NAME")
+    private String respondentFirstName;
+
+    @CsvBindByName(column = "RESP_MIDDLE_NAME")
+    private String respondentMiddleName;
+
+    @CsvBindByName(column = "RESP_LAST_NAME")
+    private String respondentLastName;
+
     @CsvBindByName(column = "RESP_ADDLINE1")
     private String respondentAddressLine1;
 
@@ -95,8 +104,23 @@ public class BulkUploadRow implements CsvPojo {
 
     public static boolean hasRespondentPerson(BulkUploadRow row) {
         return row != null
-                && (StringUtils.isNotBlank(row.getRespondentForename1())
-                        || StringUtils.isNotBlank(row.getRespondentSurname()));
+                && (StringUtils.isNotBlank(row.getRespondentFirstNameValue())
+                        || StringUtils.isNotBlank(row.getRespondentLastNameValue()));
+    }
+
+    public String getRespondentFirstNameValue() {
+        return firstNonBlank(respondentFirstName, respondentForename1);
+    }
+
+    public String getRespondentMiddleNameValue() {
+        return firstNonBlank(
+                respondentMiddleName,
+                uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName(
+                        respondentForename2, respondentForename3));
+    }
+
+    public String getRespondentLastNameValue() {
+        return firstNonBlank(respondentLastName, respondentSurname);
     }
 
     public List<String> getApplicationTextValues() {
@@ -117,5 +141,10 @@ public class BulkUploadRow implements CsvPojo {
         }
 
         return Integer.parseInt(matcher.group(1));
+    }
+
+    private static String firstNonBlank(String primary, String fallback) {
+        String value = StringUtils.trimToNull(primary);
+        return value != null ? value : StringUtils.trimToNull(fallback);
     }
 }

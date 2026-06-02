@@ -517,20 +517,12 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertEquals(1, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstForename())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstName())
                 .isEqualTo("John");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getLastName())
                 .isEqualTo("Turner");
-        assertThat(
-                        entryGetSummaryDto
-                                .getApplicant()
-                                .getPerson()
-                                .getName()
-                                .getSecondForename()
-                                .get())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getMiddleName().get())
                 .isEqualTo("Francis Michael");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename().get())
-                .isNull();
 
         assertThat(
                         entryGetSummaryDto
@@ -642,20 +634,12 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertEquals(1, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstForename())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstName())
                 .isEqualTo("John");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getLastName())
                 .isEqualTo("Turner");
-        assertThat(
-                        entryGetSummaryDto
-                                .getApplicant()
-                                .getPerson()
-                                .getName()
-                                .getSecondForename()
-                                .get())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getMiddleName().get())
                 .isEqualTo("Francis Michael");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename().get())
-                .isNull();
 
         assertThat(
                         entryGetSummaryDto
@@ -780,9 +764,9 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertEquals(10, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstForename())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstName())
                 .isEqualTo("Jane");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getLastName())
                 .isEqualTo("Doe");
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
                 .isEqualTo("Legal Aid Board");
@@ -818,9 +802,9 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = page.getContent().get(4);
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstForename())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstName())
                 .isEqualTo("John");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getLastName())
                 .isEqualTo("Turner");
 
         assertThat(
@@ -1711,8 +1695,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .body("content[0].listId", Matchers.equalTo(applicationList.getUuid().toString()))
                 .body("content[0].sequenceNumber", Matchers.equalTo(3))
                 .body("content[0].applicant.person.name.title", Matchers.equalTo("Ms"))
-                .body("content[0].applicant.person.name.firstForename", Matchers.equalTo("Jane"))
-                .body("content[0].applicant.person.name.surname", Matchers.equalTo("Doe"));
+                .body("content[0].applicant.person.name.firstName", Matchers.equalTo("Jane"))
+                .body("content[0].applicant.person.name.lastName", Matchers.equalTo("Doe"));
     }
 
     @Test

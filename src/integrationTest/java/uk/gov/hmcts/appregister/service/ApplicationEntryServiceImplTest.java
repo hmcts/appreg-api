@@ -99,12 +99,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.parse("2016-01-01"));
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -199,12 +195,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -298,12 +290,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setLodgementDate(LocalDate.parse("2015-01-01"));
 
@@ -392,12 +380,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setLodgementDate(LocalDate.now());
 
@@ -493,16 +477,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().setPerson(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.getRespondent().setOrganisation(null);
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setNumberOfRespondents(0);
         entryCreateDto.setWordingFields(List.of(substitution));
@@ -575,12 +551,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setLodgementDate(LocalDate.now());
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -588,10 +560,10 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         FullName name = new FullName();
         name.setTitle("Mr");
-        name.setFirstForename("John");
-        name.setSecondForename(JsonNullable.of(null));
-        name.setThirdForename(JsonNullable.of(null));
-        name.setSurname("Smith");
+        name.setFirstName("John");
+        name.setMiddleName(JsonNullable.of(null));
+        name.setMiddleName(JsonNullable.of(null));
+        name.setLastName("Smith");
 
         entryCreateDto.getRespondent().getPerson().setName(name);
 
@@ -703,12 +675,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -716,10 +684,10 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         FullName name = new FullName();
         name.setTitle("Mr");
-        name.setFirstForename("John");
-        name.setSecondForename(JsonNullable.of(null));
-        name.setThirdForename(JsonNullable.of(null));
-        name.setSurname("Smith");
+        name.setFirstName("John");
+        name.setMiddleName(JsonNullable.of(null));
+        name.setMiddleName(JsonNullable.of(null));
+        name.setLastName("Smith");
 
         entryCreateDto.getRespondent().getPerson().setName(name);
 
@@ -843,12 +811,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // build the payload
         EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
-        entryUpdateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -959,12 +923,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // build the payload
         EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
-        entryUpdateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -1133,16 +1093,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
         entryUpdateDto.setHasOffsiteFee(true);
         entryUpdateDto.getRespondent().setOrganisation(null);
-        entryUpdateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
@@ -1257,12 +1209,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         final EntryUpdateDto updateDto = createEntryUpdateDto(settings);
         updateDto.getApplicant().setOrganisation(null);
-        updateDto.getApplicant().getPerson().getName().setSecondForename(JsonNullable.of(null));
-        updateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        updateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        updateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         updateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.getRespondent().setOrganisation(null);
-        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
-        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         updateDto.setHasOffsiteFee(false);
@@ -1382,8 +1334,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getApplicant().setPerson(null);
         updateDto.setFeeStatuses(null);
         updateDto.getRespondent().setOrganisation(null);
-        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
-        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.setNumberOfRespondents(0);
 
@@ -1471,12 +1423,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // build the payload
         EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
-        entryUpdateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
@@ -1580,17 +1528,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.getRespondent().setOrganisation(null);
-        entryUpdateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
-        entryUpdateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
@@ -1711,25 +1651,13 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
 
         entryUpdateDto.getApplicant().setOrganisation(null);
-        entryUpdateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.getRespondent().setOrganisation(null);
-        entryUpdateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryUpdateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryUpdateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -1767,12 +1695,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -1825,12 +1749,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setLodgementDate(lodgementDate);
 
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -1864,16 +1784,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 .setMobile(JsonNullable.of(null));
         entryCreateDto.getRespondent().setOrganisation(null);
 
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getName()
-                .setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto
                 .getRespondent()
                 .getPerson()
@@ -1979,12 +1891,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
