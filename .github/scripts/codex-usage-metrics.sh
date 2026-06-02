@@ -26,6 +26,7 @@ token_keys = {
     "cached_input_tokens",
     "cached_output_tokens",
     "reasoning_tokens",
+    "reasoning_output_tokens",
     "total_tokens",
     "prompt_tokens",
     "completion_tokens",
@@ -36,6 +37,7 @@ aliases = {
     "prompt_tokens": "input_tokens",
     "completion_tokens": "output_tokens",
     "cached_tokens": "cached_input_tokens",
+    "reasoning_output_tokens": "reasoning_tokens",
 }
 
 event_count = 0
@@ -89,6 +91,12 @@ for usage in usage_objects:
 
 last_usage = usage_objects[-1] if usage_objects else {}
 preferred_usage = last_usage or max_usage
+if preferred_usage and "total_tokens" not in preferred_usage:
+    input_tokens = preferred_usage.get("input_tokens")
+    output_tokens = preferred_usage.get("output_tokens")
+    if input_tokens is not None and output_tokens is not None:
+        preferred_usage = dict(preferred_usage)
+        preferred_usage["total_tokens"] = input_tokens + output_tokens
 
 summary = {
     "schemaVersion": 1,
