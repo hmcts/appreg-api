@@ -59,8 +59,6 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         differenceLogAsserter.assertNoErrors();
 
         Response responseSpecCreate = createListEntryWithAllData();
-        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
-        LocalDate createdDate = createdDetail.getLodgementDate();
 
         var tokenGenerator = createAdminToken();
         Response responseSpecUpdate =
@@ -70,8 +68,11 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         entryUpdateDto);
 
         responseSpecUpdate.then().statusCode(200);
+        Assertions.assertFalse(responseSpecUpdate.asString().contains("\"applicationList\""));
+        Assertions.assertFalse(responseSpecUpdate.asString().contains("\"entries\""));
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        LocalDate createdDate = responseSpecCreate.as(EntryGetDetailDto.class).getLodgementDate();
 
         // make sure the update does not change the lodgement date and the
         // date it was created persists

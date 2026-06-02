@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -119,6 +120,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     private Long version;
 
     @OneToMany(mappedBy = "applicationList")
+    @JsonIgnore
     private Set<ApplicationListEntry> entries;
 
     public boolean isOpen() {
