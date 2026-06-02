@@ -6,7 +6,7 @@ get:
     Returns a paginated list of Standard Applicants.
     - Filters:
       - `code` – case-insensitive partial match
-      - `name` – case-insensitive partial match
+      - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3
   parameters:
     - in: query
       name: code
@@ -17,7 +17,7 @@ get:
       example: "SA"
     - in: query
       name: name
-      description: Filter by name (contains, case-insensitive). For people, this is searched as "{forename} {surname}".
+      description: Filter by name (contains, case-insensitive). Searches organisation/name, surname, forename 1, forename 2 and forename 3.
       schema:
         type: string
         maxLength: 100

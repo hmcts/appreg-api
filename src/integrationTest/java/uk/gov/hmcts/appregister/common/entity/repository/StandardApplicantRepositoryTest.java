@@ -246,6 +246,74 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testSearchFiltersIndividualBySecondForename() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now();
+
+                    StandardApplicant matching = new StandardApplicantTestData().someComplete();
+                    matching.setApplicantCode("APP-FN2");
+                    matching.setName(null);
+                    matching.setApplicantForename1("Alice");
+                    matching.setApplicantForename2("Beatrice");
+                    matching.setApplicantForename3(null);
+                    matching.setApplicantSurname("Clarke");
+                    matching.setApplicantStartDate(activeDate.minusDays(1));
+                    matching.setApplicantEndDate(null);
+
+                    StandardApplicant savedApplicant = persistance.save(matching);
+
+                    var page =
+                            repository.search(
+                                    null,
+                                    "beat",
+                                    null,
+                                    null,
+                                    null,
+                                    activeDate,
+                                    PageRequest.of(0, 10));
+
+                    assertThat(page.getContent())
+                            .extracting(projection -> projection.getStandardApplicant().getId())
+                            .contains(savedApplicant.getId());
+                });
+    }
+
+    @Test
+    public void testSearchFiltersIndividualByThirdForename() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now();
+
+                    StandardApplicant matching = new StandardApplicantTestData().someComplete();
+                    matching.setApplicantCode("APP-FN3");
+                    matching.setName(null);
+                    matching.setApplicantForename1("Charles");
+                    matching.setApplicantForename2(null);
+                    matching.setApplicantForename3("Everleigh");
+                    matching.setApplicantSurname("Mason");
+                    matching.setApplicantStartDate(activeDate.minusDays(1));
+                    matching.setApplicantEndDate(null);
+
+                    StandardApplicant savedApplicant = persistance.save(matching);
+
+                    var page =
+                            repository.search(
+                                    null,
+                                    "LEIGH",
+                                    null,
+                                    null,
+                                    null,
+                                    activeDate,
+                                    PageRequest.of(0, 10));
+
+                    assertThat(page.getContent())
+                            .extracting(projection -> projection.getStandardApplicant().getId())
+                            .contains(savedApplicant.getId());
+                });
+    }
+
+    @Test
     public void testSearchFiltersByAddressLine1AndDateRange() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
