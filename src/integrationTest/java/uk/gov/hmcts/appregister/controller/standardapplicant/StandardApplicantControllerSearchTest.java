@@ -1214,6 +1214,40 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantWithNameFilterForSecondForename_thenReturn200()
+                    throws Exception {
+        String code = "SAFN2001";
+        savePersonStandardApplicant(
+                code, "Amelia", "Rosemarie", null, "Walker", LocalDate.now().minusDays(1), null);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("rosemarie"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertNotNull(page.getContent());
+        Assertions.assertTrue(
+                page.getContent().stream().anyMatch(item -> code.equals(item.getCode())));
+    }
+
+    @Test
     @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()
@@ -1863,6 +1897,36 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
             standardApplicant.setApplicantForename2(null);
             standardApplicant.setApplicantForename3(null);
             standardApplicant.setApplicantSurname(null);
+            standardApplicant.setApplicantStartDate(startDate);
+            standardApplicant.setApplicantEndDate(endDate);
+            persistance.save(standardApplicant);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private void savePersonStandardApplicant(
+            String code,
+            String forename1,
+            String forename2,
+            String forename3,
+            String surname,
+            LocalDate startDate,
+            LocalDate endDate)
+            throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+            standardApplicant.setApplicantCode(code);
+            standardApplicant.setName(null);
+            standardApplicant.setApplicantTitle("Ms");
+            standardApplicant.setApplicantForename1(forename1);
+            standardApplicant.setApplicantForename2(forename2);
+            standardApplicant.setApplicantForename3(forename3);
+            standardApplicant.setApplicantSurname(surname);
             standardApplicant.setApplicantStartDate(startDate);
             standardApplicant.setApplicantEndDate(endDate);
             persistance.save(standardApplicant);
