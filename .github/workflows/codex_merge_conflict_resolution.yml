@@ -70,7 +70,7 @@ jobs:
           fi
 
           case "$actor_login" in
-            github-actions[bot]|app/github-actions)
+            github-actions\[bot\]|app/github-actions)
               write_skip "ignoring GitHub Actions bot comment"
               exit 0
               ;;
