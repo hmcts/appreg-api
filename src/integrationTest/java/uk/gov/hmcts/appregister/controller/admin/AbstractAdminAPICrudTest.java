@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -14,6 +15,8 @@ public class AbstractAdminAPICrudTest extends BaseIntegration {
     @Autowired protected DatabaseJobRepository databaseJobRepository;
 
     @Autowired protected DataAuditRepository dataAuditRepository;
+
+    @Autowired protected RetentionPolicyRepository retentionPolicyRepository;
 
     protected TokenGenerator createAdminToken() {
         return getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();

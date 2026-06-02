@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.admin.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -25,9 +26,14 @@ import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
+import uk.gov.hmcts.appregister.common.entity.RetentionPolicy;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
+import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +41,7 @@ public class DatabaseJobsServiceImplTest {
     private AdminAPIServiceImpl service;
 
     @Mock private DatabaseJobRepository databaseJobRepository;
+    @Mock private RetentionPolicyRepository retentionPolicyRepository;
 
     @Spy private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
 
@@ -46,6 +53,7 @@ public class DatabaseJobsServiceImplTest {
         service =
                 new AdminAPIServiceImpl(
                         databaseJobRepository,
+                        retentionPolicyRepository,
                         mapper,
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
                         List.of());
@@ -68,6 +76,7 @@ public class DatabaseJobsServiceImplTest {
         service =
                 new AdminAPIServiceImpl(
                         databaseJobRepository,
+                        retentionPolicyRepository,
                         mapper,
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
                         List.of());
@@ -95,6 +104,7 @@ public class DatabaseJobsServiceImplTest {
         when(databaseJobRepository.findByName(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
                 .thenReturn(testJob);
+
         service.enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, true);
 
         val status =
@@ -104,32 +114,92 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testDisableDatabaseJobByName() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
+    public void testUpdateDatabaseJobRetentionPeriodByName() {
+        var retentionPolicyEntity = new RetentionPolicy();
+        retentionPolicyEntity.setConfigValue("1825");
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(1L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of(retentionPolicyEntity));
 
-        val testJob = new DatabaseJob();
-        testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
-        testJob.setLastRan(OffsetDateTime.now(clock));
-        testJob.setId(1L);
-        testJob.setEnabled(YesOrNo.YES);
+        service.updateDatabaseJobRetentionPeriodByName(
+                AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365);
+        assertEquals("365", retentionPolicyEntity.getConfigValue());
+    }
 
-        when(databaseJobRepository.findByName(
-                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
-                .thenReturn(testJob);
-        service =
-                new AdminAPIServiceImpl(
-                        databaseJobRepository,
-                        mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
-                        List.of());
+    @Test
+    public void testGetDatabaseJobRetentionPeriodByName() {
+        var retentionPolicy = new RetentionPolicy();
+        retentionPolicy.setConfigValue("1825");
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(1L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of(retentionPolicy));
 
-        service.enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, false);
+        JobRetentionPolicy retentionPolicyResponse =
+                service.getDatabaseJobRetentionPeriodByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
 
-        val status =
-                service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
-        assertNotNull(status);
-        assertEquals(false, status.getEnabled());
+        assertNotNull(retentionPolicyResponse);
+        assertEquals(Integer.valueOf(1825), retentionPolicyResponse.getRetentionPeriodDays());
+    }
+
+    @Test
+    public void testGetDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(0L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of());
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.getDatabaseJobRetentionPeriodByName(
+                                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB));
+
+        assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+        assertEquals(
+                "Retention configuration RETENTION_PERIOD_DAYS was not found for"
+                        + " administrative job APPLICATION_LISTS_DATABASE_JOB",
+                exception.getMessage());
+    }
+
+    @Test
+    public void testUpdateDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(0L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of());
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.updateDatabaseJobRetentionPeriodByName(
+                                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365));
+
+        assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+        assertEquals(
+                "Retention configuration RETENTION_PERIOD_DAYS was not found for"
+                        + " administrative job APPLICATION_LISTS_DATABASE_JOB",
+                exception.getMessage());
     }
 
     @Test
@@ -144,6 +214,7 @@ public class DatabaseJobsServiceImplTest {
         service =
                 new AdminAPIServiceImpl(
                         databaseJobRepository,
+                        retentionPolicyRepository,
                         mapper,
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
                         List.of(listener));

@@ -1,8 +1,8 @@
 get:
-  operationId: getJobStatus
   tags: [ admin ]
-  summary: Get the status of a background job being processed in an administrative context.
-  description: Returns the current status and details of a background job.
+  summary: Get a database job retention period by its name.
+  description: Returns the RETENTION_PERIOD_DAYS configuration for the specified database job.
+  operationId: getDatabaseJobRetentionPeriodByName
   parameters:
     - name: jobType
       in: path
@@ -10,10 +10,11 @@ get:
       schema: {
         $ref: "../../../components/schemas/admin/admin-job-type.yaml"
       }
-      description: The type of the job we are determining the status of.
+      description: The name of the database job to read.
+      example: "APPLICATION_LISTS_DATABASE_JOB"
   responses:
     "200":
-      description: Job status retrieved successfully.
+      description: Retention period retrieved successfully.
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -22,17 +23,16 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../../components/schemas/admin/job-status.yaml"
+            $ref: "../../../components/schemas/admin/job-retention-policy.yaml"
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
-    "409": { $ref: "../../../components/responses/conflict-error.yaml" }
     "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../../components/responses/not-found-error.yaml" }
     "500": { $ref: "../../../components/responses/internal-server-error.yaml" }
 put:
   tags: [ admin ]
-  summary: Enable/Disable a database job by its name.
-  description: Enables or disables a database job by its name.
-  operationId: enableDisableDatabaseJobByName
+  summary: Update a database job retention period by its name.
+  description: Updates the RETENTION_PERIOD_DAYS configuration for the specified database job.
+  operationId: updateDatabaseJobRetentionPeriodByName
   parameters:
     - name: jobType
       in: path
@@ -40,18 +40,20 @@ put:
       schema: {
         $ref: "../../../components/schemas/admin/admin-job-type.yaml"
       }
-      description: The name of the database job to trigger.
+      description: The name of the database job to update.
       example: "APPLICATION_LISTS_DATABASE_JOB"
-    - name: enable
+    - name: retentionPeriodDays
       in: query
       required: true
       schema:
-        type: boolean
-      description: Flag to enable (true) or disable (false) the database job.
-      example: true
+        type: integer
+        minimum: 1
+      description: Number of days to retain closed application lists before deletion.
+      example: 1825
   responses:
     "200":
-      description: Job enabled/disabled successfully.
+      description: Retention period updated successfully.
+    "400": { $ref: "../../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../../components/responses/not-found-error.yaml" }
