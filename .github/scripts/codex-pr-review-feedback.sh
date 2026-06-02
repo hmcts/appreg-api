@@ -35,6 +35,12 @@ codex_tmp="${artifact_dir}/codex-tmp"
 codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
+usage_events_path="${artifact_dir}/codex-events.jsonl"
+usage_summary_path="${output_dir}/codex-usage-summary.json"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=.github/scripts/codex-usage-metrics.sh
+source "${script_dir}/codex-usage-metrics.sh"
 
 prepare_codex_home() {
   mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
@@ -371,7 +377,9 @@ git_sanitized checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
 unset GH_TOKEN
 
 echo "Running Codex review feedback for PR #${PR_NUMBER} on ${HEAD_REF}"
-run_codex codex exec \
+run_codex_exec_with_usage "pr-review-feedback" "${usage_events_path}" "${usage_summary_path}" \
+  run_codex codex exec \
+  --json \
   --cd "${PWD}" \
   --sandbox workspace-write \
   --ephemeral \

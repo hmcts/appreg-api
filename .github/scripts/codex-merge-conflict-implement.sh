@@ -30,12 +30,18 @@ final_message_path="${output_dir}/codex-final-message.md"
 comment_body_path="${output_dir}/codex-conflict-comment.md"
 patch_path="${output_dir}/changes.patch"
 metadata_path="${output_dir}/metadata.env"
+usage_events_path="${artifact_dir}/codex-events.jsonl"
+usage_summary_path="${output_dir}/codex-usage-summary.json"
 runner_home="${HOME:-/home/runner}"
 codex_home="${artifact_dir}/codex-home"
 codex_tmp="${artifact_dir}/codex-tmp"
 codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=.github/scripts/codex-usage-metrics.sh
+source "${script_dir}/codex-usage-metrics.sh"
 
 prepare_codex_home() {
   mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
@@ -250,7 +256,9 @@ write_prompt
 unset GH_TOKEN
 
 echo "Running Codex merge-conflict resolution for PR #${PR_NUMBER} on ${HEAD_REF}"
-run_codex codex exec \
+run_codex_exec_with_usage "merge-conflict-resolution" "${usage_events_path}" "${usage_summary_path}" \
+  run_codex codex exec \
+  --json \
   --cd "${PWD}" \
   --sandbox workspace-write \
   --ephemeral \

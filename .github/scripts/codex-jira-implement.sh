@@ -32,6 +32,12 @@ final_message_path="${output_dir}/codex-final-message.md"
 pr_body_path="${output_dir}/codex-pr-body.md"
 patch_path="${output_dir}/changes.patch"
 metadata_path="${output_dir}/metadata.env"
+usage_events_path="${artifact_dir}/codex-events.jsonl"
+usage_summary_path="${output_dir}/codex-usage-summary.json"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=.github/scripts/codex-usage-metrics.sh
+source "${script_dir}/codex-usage-metrics.sh"
 
 prepare_codex_home() {
   mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
@@ -196,7 +202,9 @@ Path(os.environ["PR_BODY_PATH"]).write_text(pr_body, encoding="utf-8")
 PY
 
 echo "Running Codex for ${ISSUE_KEY}; publish will use ${branch_name}"
-run_codex codex exec \
+run_codex_exec_with_usage "jira-generate" "${usage_events_path}" "${usage_summary_path}" \
+  run_codex codex exec \
+  --json \
   --cd "${PWD}" \
   --sandbox workspace-write \
   --ephemeral \
