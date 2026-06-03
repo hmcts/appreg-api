@@ -34,6 +34,9 @@ public final class ApplicationListEntryPrintProjectionUtil {
         private String respondentForename1;
         private String respondentForename2;
         private String respondentForename3;
+        private String respondentFirstName;
+        private String respondentMiddleName;
+        private String respondentLastName;
         private String respondentAddressLine1;
         private String respondentAddressLine2;
         private String respondentAddressLine3;
@@ -162,6 +165,21 @@ public final class ApplicationListEntryPrintProjectionUtil {
             return this;
         }
 
+        public Builder respondentFirstName(String respondentFirstName) {
+            this.respondentFirstName = respondentFirstName;
+            return this;
+        }
+
+        public Builder respondentMiddleName(String respondentMiddleName) {
+            this.respondentMiddleName = respondentMiddleName;
+            return this;
+        }
+
+        public Builder respondentLastName(String respondentLastName) {
+            this.respondentLastName = respondentLastName;
+            return this;
+        }
+
         public Builder respondentAddressLine1(String respondentAddressLine1) {
             this.respondentAddressLine1 = respondentAddressLine1;
             return this;
@@ -272,6 +290,9 @@ public final class ApplicationListEntryPrintProjectionUtil {
                     respondentForename1,
                     respondentForename2,
                     respondentForename3,
+                    respondentFirstName,
+                    respondentMiddleName,
+                    respondentLastName,
                     respondentAddressLine1,
                     respondentAddressLine2,
                     respondentAddressLine3,
@@ -316,6 +337,9 @@ public final class ApplicationListEntryPrintProjectionUtil {
         private final String respondentForename1;
         private final String respondentForename2;
         private final String respondentForename3;
+        private final String respondentFirstName;
+        private final String respondentMiddleName;
+        private final String respondentLastName;
         private final String respondentAddressLine1;
         private final String respondentAddressLine2;
         private final String respondentAddressLine3;
@@ -358,6 +382,9 @@ public final class ApplicationListEntryPrintProjectionUtil {
                 String respondentForename1,
                 String respondentForename2,
                 String respondentForename3,
+                String respondentFirstName,
+                String respondentMiddleName,
+                String respondentLastName,
                 String respondentAddressLine1,
                 String respondentAddressLine2,
                 String respondentAddressLine3,
@@ -398,6 +425,9 @@ public final class ApplicationListEntryPrintProjectionUtil {
             this.respondentForename1 = respondentForename1;
             this.respondentForename2 = respondentForename2;
             this.respondentForename3 = respondentForename3;
+            this.respondentFirstName = respondentFirstName;
+            this.respondentMiddleName = respondentMiddleName;
+            this.respondentLastName = respondentLastName;
             this.respondentAddressLine1 = respondentAddressLine1;
             this.respondentAddressLine2 = respondentAddressLine2;
             this.respondentAddressLine3 = respondentAddressLine3;
@@ -530,6 +560,21 @@ public final class ApplicationListEntryPrintProjectionUtil {
         @Override
         public String getRespondentForename3() {
             return respondentForename3;
+        }
+
+        @Override
+        public String getRespondentFirstName() {
+            return respondentFirstName;
+        }
+
+        @Override
+        public String getRespondentMiddleName() {
+            return respondentMiddleName;
+        }
+
+        @Override
+        public String getRespondentLastName() {
+            return respondentLastName;
         }
 
         @Override

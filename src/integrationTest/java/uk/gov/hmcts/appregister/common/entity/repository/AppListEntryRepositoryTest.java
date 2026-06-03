@@ -303,25 +303,20 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         .getFirst()
                         .getRespondentTitle());
         assertEquals(
-                data.getRnameaddress().getSurname(),
+                data.getRnameaddress().getLastName(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getRespondentSurname());
+                        .getRespondentLastName());
         assertEquals(
-                data.getRnameaddress().getForename1(),
+                data.getRnameaddress().getFirstName(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getRespondentForename1());
+                        .getRespondentFirstName());
         assertEquals(
-                data.getRnameaddress().getForename2(),
+                data.getRnameaddress().getMiddleName(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getRespondentForename2());
-        assertEquals(
-                data.getRnameaddress().getForename3(),
-                applicationListEntryPrintProjectionsToAssertAgainst
-                        .getFirst()
-                        .getRespondentForename3());
+                        .getRespondentMiddleName());
         assertEquals(
                 data.getRnameaddress().getAddress1(),
                 applicationListEntryPrintProjectionsToAssertAgainst

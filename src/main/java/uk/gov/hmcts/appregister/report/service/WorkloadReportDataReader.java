@@ -25,10 +25,10 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     code,
                     name,
                     title,
-                    forename_1,
-                    forename_2,
-                    forename_3,
-                    surname,
+                    first_name as forename_1,
+                    middle_name as forename_2,
+                    middle_name as forename_3,
+                    last_name as surname,
                     FALSE AS is_standard_applicant
                 FROM
                     name_address na

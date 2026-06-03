@@ -51,6 +51,12 @@ public interface ApplicationListEntryPrintProjection {
 
     String getRespondentForename3();
 
+    String getRespondentFirstName();
+
+    String getRespondentMiddleName();
+
+    String getRespondentLastName();
+
     String getRespondentAddressLine1();
 
     String getRespondentAddressLine2();

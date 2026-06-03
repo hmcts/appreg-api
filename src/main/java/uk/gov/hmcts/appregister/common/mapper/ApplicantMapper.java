@@ -73,12 +73,9 @@ public abstract class ApplicantMapper {
      * @return The full name
      */
     public FullName toFullName(NameAddress applicant) {
-        String firstName = firstNonBlank(applicant.getFirstName(), applicant.getForename1());
-        String middleName =
-                firstNonBlank(
-                        applicant.getMiddleName(),
-                        combineMiddleName(applicant.getForename2(), applicant.getForename3()));
-        String lastName = firstNonBlank(applicant.getLastName(), applicant.getSurname());
+        String firstName = firstNonBlank(applicant.getFirstName(), applicant.getFirstName());
+        String middleName = firstNonBlank(applicant.getMiddleName(), applicant.getMiddleName());
+        String lastName = firstNonBlank(applicant.getLastName(), applicant.getLastName());
 
         FullName fullName = new FullName();
         fullName.setTitle(applicant.getTitle());
@@ -122,10 +119,8 @@ public abstract class ApplicantMapper {
         nameAddress.setFirstName(firstName);
         nameAddress.setMiddleName(middleName);
         nameAddress.setLastName(lastName);
-        nameAddress.setForename1(firstName);
-        nameAddress.setForename2(middleName);
-        nameAddress.setForename3(null);
-        nameAddress.setSurname(lastName);
+        nameAddress.setFirstName(firstName);
+        nameAddress.setMiddleName(middleName);
 
         ContactDetails contactDetails = person.getContactDetails();
         nameAddress.setAddress1(contactDetails.getAddressLine1());
@@ -221,10 +216,6 @@ public abstract class ApplicantMapper {
      */
     @Mapping(target = "code", ignore = true)
     @Mapping(target = "title", source = "applicantTitle")
-    @Mapping(target = "forename1", source = "applicantForename1")
-    @Mapping(target = "forename2", source = "applicantForename2")
-    @Mapping(target = "forename3", source = "applicantForename3")
-    @Mapping(target = "surname", source = "applicantSurname")
     @Mapping(target = "firstName", source = "applicantForename1")
     @Mapping(
             target = "middleName",
@@ -238,6 +229,10 @@ public abstract class ApplicantMapper {
     @Mapping(target = "address4", source = "addressLine4")
     @Mapping(target = "address5", source = "addressLine5")
     @Mapping(target = "userName", source = "createdUser")
+    @Mapping(target = "forename1", source = "applicantForename1")
+    @Mapping(target = "forename2", source = "applicantForename2")
+    @Mapping(target = "forename3", source = "applicantForename3")
+    @Mapping(target = "surname", source = "applicantSurname")
     @Mapping(target = "dateOfBirth", ignore = true)
     @Mapping(target = "dmsId", ignore = true)
     public abstract NameAddress toApplicantEntity(StandardApplicant standardApplicant);
@@ -282,8 +277,8 @@ public abstract class ApplicantMapper {
         if (nameAddress != null && nameAddress.getName() == null) {
             name =
                     formatPersonName(
-                            firstNonBlank(nameAddress.getFirstName(), nameAddress.getForename1()),
-                            firstNonBlank(nameAddress.getLastName(), nameAddress.getSurname()));
+                            firstNonBlank(nameAddress.getFirstName(), nameAddress.getFirstName()),
+                            firstNonBlank(nameAddress.getLastName(), nameAddress.getLastName()));
         } else if (nameAddress != null) {
             name = nameAddress.getName();
         }

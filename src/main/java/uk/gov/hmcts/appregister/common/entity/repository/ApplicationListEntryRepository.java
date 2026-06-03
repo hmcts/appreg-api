@@ -183,11 +183,11 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.status AS status,
                     al.date as dateOfAl,
                     ana.name as applicationorganisation,
-                    ana.surname as applicantSurname,
+                    ana.lastName as applicantSurname,
                     CASE WHEN ana.name IS NOT NULL THEN
                          ana.name
-                    WHEN ana.surname IS NOT NULL OR ana.forename1 IS NOT NULL THEN
-                        FUNCTION('concat_ws', ' ', ana.forename1, ana.surname)
+                    WHEN ana.lastName IS NOT NULL OR ana.firstName IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)
                     WHEN sa.name IS NOT NULL THEN
                          sa.name
                     WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
@@ -195,11 +195,11 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     END as applicantName,
                     CASE WHEN rna.name IS NOT NULL THEN
                          rna.name
-                    WHEN rna.surname IS NOT NULL OR rna.forename1 IS NOT NULL THEN
-                        FUNCTION('concat_ws', ' ', rna.forename1, rna.surname)
+                    WHEN rna.lastName IS NOT NULL OR rna.firstName IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)
                     END as respondentName,
                     rna.name as respondentOrganisation,
-                    rna.surname as respondentSurname,
+                    rna.lastName as respondentSurname,
                     rna.postcode as respondentPostcode,
                     ale.accountNumber as  accountReference,
                     sa as standardApplicant,
@@ -234,7 +234,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                     ana.code = 'NA'
                                     AND LOWER(COALESCE(
                                             ana.name,
-                                            FUNCTION('concat_ws', ' ', ana.forename1, ana.surname)))
+                                            FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)))
                                             LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
                                                     ESCAPE '\\'
                             )
@@ -251,7 +251,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
-                    AND (:applicantSurname IS NULL OR LOWER(ana.surname)
+                    AND (:applicantSurname IS NULL OR LOWER(ana.lastName)
                              LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)) , '%')  ESCAPE '\\'
                             AND ana.code='NA')
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
@@ -260,12 +260,12 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:respondentName IS NULL OR
                                 LOWER(COALESCE(
                                         rna.name,
-                                        FUNCTION('concat_ws', ' ', rna.forename1, rna.surname)))
+                                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)))
                                         LIKE CONCAT('%', LOWER(cast(:respondentName AS string )), '%')
                                             ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
                             LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
-                    AND (:respondentSurname IS NULL OR LOWER(rna.surname) LIKE CONCAT('%',
+                    AND (:respondentSurname IS NULL OR LOWER(rna.lastName) LIKE CONCAT('%',
                             LOWER(cast(:respondentSurname AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
                     AND (:accountReference IS NULL OR  LOWER(ale.accountNumber)
                             LIKE CONCAT('%', LOWER(cast(:accountReference AS string)), '%')
@@ -336,7 +336,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                     ana.code = 'NA'
                                     AND LOWER(COALESCE(
                                             ana.name,
-                                            FUNCTION('concat_ws', ' ', ana.forename1, ana.surname)))
+                                            FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)))
                                             LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
                                                     ESCAPE '\\'
                             )
@@ -353,8 +353,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
-                    AND (:applicantSurname IS NULL OR LOWER(ana.surname)
-                             LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)) , '%')  ESCAPE '\\'
+                    AND (:applicantLastName IS NULL OR LOWER(ana.lastName)
+                             LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)) , '%')  ESCAPE '\\'
                             AND ana.code='NA')
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
@@ -362,13 +362,13 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:respondentName IS NULL OR
                                 LOWER(COALESCE(
                                         rna.name,
-                                        FUNCTION('concat_ws', ' ', rna.forename1, rna.surname)))
+                                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)))
                                         LIKE CONCAT('%', LOWER(cast(:respondentName AS string )), '%')
                                             ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
                             LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
-                    AND (:respondentSurname IS NULL OR LOWER(rna.surname) LIKE CONCAT('%',
-                            LOWER(cast(:respondentSurname AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
+                    AND (:respondentLastName IS NULL OR LOWER(rna.lastName) LIKE CONCAT('%',
+                            LOWER(cast(:respondentLastName AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
                     AND (:accountReference IS NULL OR  LOWER(ale.accountNumber)
                             LIKE CONCAT('%', LOWER(cast(:accountReference AS string)), '%')
                                          ESCAPE '\\')
@@ -402,12 +402,12 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             @LikeParam @Param("otherLocationDescription") String otherLocationDescription,
             @Param("cjaCode") String cjaCode,
             @LikeParam @Param("applicantOrganisation") String applicantOrganisation,
-            @LikeParam @Param("applicantSurname") String applicantSurname,
+            @LikeParam @Param("applicantLastName") String applicantLastName,
             @LikeParam @Param("applicantName") String applicantName,
             @LikeParam @Param("standardApplicantCode") String standardApplicantCode,
             @Param("status") Status status,
             @LikeParam @Param("respondentOrganisation") String respondentOrganisation,
-            @LikeParam @Param("respondentSurname") String respondentSurname,
+            @LikeParam @Param("respondentLastName") String respondentLastName,
             @LikeParam @Param("respondentName") String respondentName,
             @LikeParam @Param("respondentPostcode") String respondentPostcode,
             @LikeParam @Param("accountReference") String accountReference,
@@ -447,10 +447,10 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             ale.uuid AS uuid,
             ale.sequenceNumber AS sequenceNumber,
             COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
-            COALESCE(ana.surname, sa.applicantSurname) AS applicantSurname,
-            COALESCE(ana.forename1, sa.applicantForename1) AS applicantForename1,
-            COALESCE(ana.forename2, sa.applicantForename2) AS applicantForename2,
-            COALESCE(ana.forename3, sa.applicantForename3) AS applicantForename3,
+            COALESCE(ana.lastName, sa.applicantSurname) AS applicantSurname,
+            COALESCE(ana.firstName, sa.applicantForename1) AS applicantForename1,
+            COALESCE(ana.middleName, sa.applicantForename2) AS applicantForename2,
+            COALESCE(ana.middleName, sa.applicantForename3) AS applicantForename3,
             COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
             COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
             COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
@@ -462,10 +462,9 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             COALESCE(ana.emailAddress, sa.emailAddress) AS applicantEmail,
             COALESCE(ana.name, sa.name) AS applicantName,
             rna.title AS respondentTitle,
-            rna.surname AS respondentSurname,
-            rna.forename1 AS respondentForename1,
-            rna.forename2 AS respondentForename2,
-            rna.forename3 AS respondentForename3,
+            rna.lastName AS respondentLastName,
+            rna.firstName AS respondentFirstName,
+            rna.middleName AS respondentMiddleName,
             rna.address1 AS respondentAddressLine1,
             rna.address2 AS respondentAddressLine2,
             rna.address3 AS respondentAddressLine3,

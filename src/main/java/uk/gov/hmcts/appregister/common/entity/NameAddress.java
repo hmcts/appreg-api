@@ -65,26 +65,6 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
     private String title;
 
-    @Column(name = "forename_1")
-    @Size(max = 100)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
-    private String forename1;
-
-    @Column(name = "forename_2")
-    @Size(max = 100)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
-    private String forename2;
-
-    @Column(name = "forename_3")
-    @Size(max = 100)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
-    private String forename3;
-
-    @Column(name = "surname")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
-    // Phase 2: remove this deprecated legacy compatibility column usage after clients migrate.
-    private String surname;
-
     @Column(name = "first_name")
     @Size(max = 100)
     @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
@@ -164,6 +144,105 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     @Override
     public String getCreatedUser() {
         return userName;
+    }
+
+    public String getForename1() {
+        return firstName;
+    }
+
+    public void setForename1(String forename1) {
+        this.firstName = forename1;
+    }
+
+    public String getForename2() {
+        if (middleName == null) {
+            return null;
+        }
+        String[] parts = middleName.split("\\s+", 2);
+        return parts[0];
+    }
+
+    public void setForename2(String forename2) {
+        String third = getForename3();
+        this.middleName = joinMiddleNames(forename2, third);
+    }
+
+    public String getForename3() {
+        if (middleName == null) {
+            return null;
+        }
+        String[] parts = middleName.split("\\s+", 2);
+        return parts.length > 1 ? parts[1] : null;
+    }
+
+    public void setForename3(String forename3) {
+        String second = getForename2();
+        this.middleName = joinMiddleNames(second, forename3);
+    }
+
+    public String getSurname() {
+        return lastName;
+    }
+
+    public void setSurname(String surname) {
+        this.lastName = surname;
+    }
+
+    private static String extractFirstMiddleName(String middleName) {
+        if (middleName == null || middleName.isBlank()) {
+            return null;
+        }
+        String[] parts = middleName.split("\\s+", 2);
+        return parts[0];
+    }
+
+    private static String extractSecondMiddleName(String middleName) {
+        if (middleName == null || middleName.isBlank()) {
+            return null;
+        }
+        String[] parts = middleName.split("\\s+", 2);
+        return parts.length > 1 ? parts[1] : null;
+    }
+
+    private static String joinMiddleNames(String forename2, String forename3) {
+        if (forename2 == null || forename2.isBlank()) {
+            return (forename3 == null || forename3.isBlank()) ? null : forename3;
+        }
+        if (forename3 == null || forename3.isBlank()) {
+            return forename2;
+        }
+        return forename2 + " " + forename3;
+    }
+
+    public static class NameAddressBuilder {
+        private String forename1;
+        private String forename2;
+        private String forename3;
+        private String surname;
+
+        public NameAddressBuilder forename1(String forename1) {
+            this.forename1 = forename1;
+            this.firstName = forename1;
+            return this;
+        }
+
+        public NameAddressBuilder forename2(String forename2) {
+            this.forename2 = forename2;
+            this.middleName = joinMiddleNames(forename2, this.forename3);
+            return this;
+        }
+
+        public NameAddressBuilder forename3(String forename3) {
+            this.forename3 = forename3;
+            this.middleName = joinMiddleNames(this.forename2, forename3);
+            return this;
+        }
+
+        public NameAddressBuilder surname(String surname) {
+            this.surname = surname;
+            this.lastName = surname;
+            return this;
+        }
     }
 
     @Override
