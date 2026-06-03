@@ -13,13 +13,11 @@ public interface ApplicationListEntryPrintProjection {
 
     String getApplicantTitle();
 
-    String getApplicantSurname();
+    String getApplicantLastName();
 
-    String getApplicantForename1();
+    String getApplicantFirstName();
 
-    String getApplicantForename2();
-
-    String getApplicantForename3();
+    String getApplicantMiddleName();
 
     String getApplicantAddressLine1();
 
@@ -43,19 +41,11 @@ public interface ApplicationListEntryPrintProjection {
 
     String getRespondentTitle();
 
-    String getRespondentSurname();
-
-    String getRespondentForename1();
-
-    String getRespondentForename2();
-
-    String getRespondentForename3();
+    String getRespondentLastName();
 
     String getRespondentFirstName();
 
     String getRespondentMiddleName();
-
-    String getRespondentLastName();
 
     String getRespondentAddressLine1();
 

@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -60,7 +59,7 @@ class ApplicantMapperTest {
     }
 
     @Test
-    void toApplicantNameAddress_mapsGdsNameFieldsToCanonicalAndLegacyColumns() {
+    void toApplicantNameAddress_mapsGdsNameFieldsToCanonicalColumns() {
         final var person = new Person();
         var name = new FullName();
         name.setFirstName("Ada");
@@ -74,10 +73,6 @@ class ApplicantMapperTest {
         assertEquals("Ada", mapped.getFirstName());
         assertEquals("Byron", mapped.getMiddleName());
         assertEquals("Lovelace", mapped.getLastName());
-        assertEquals("Ada", mapped.getForename1());
-        assertEquals("Byron", mapped.getForename2());
-        assertNull(mapped.getForename3());
-        assertEquals("Lovelace", mapped.getSurname());
     }
 
     @Test

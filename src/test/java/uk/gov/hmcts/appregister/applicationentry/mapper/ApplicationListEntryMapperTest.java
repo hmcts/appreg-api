@@ -86,6 +86,7 @@ import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
@@ -251,8 +252,8 @@ class ApplicationListEntryMapperTest {
 
         NameAddress respondent = new NameAddress();
         respondent.setTitle("His Majesty");
-        respondent.setForename1("Ahmed");
-        respondent.setSurname("Mustafa");
+        respondent.setFirstName("Ahmed");
+        respondent.setLastName("Mustafa");
 
         var postCode = "SW1A 1AA";
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
@@ -333,15 +334,15 @@ class ApplicationListEntryMapperTest {
 
         NameAddress respondent1 = new NameAddress();
         respondent1.setTitle("His Majesty");
-        respondent1.setSurname("Mustafa");
-        respondent1.setForename1("Ahmed");
+        respondent1.setLastName("Mustafa");
+        respondent1.setFirstName("Ahmed");
 
         NameAddress applicant2 = new NameAddress();
         applicant2.setName("Mustafa's Org");
 
         NameAddress respondent2 = new NameAddress();
-        respondent2.setForename1("Sarah");
-        respondent2.setSurname("Johnson");
+        respondent2.setFirstName("Sarah");
+        respondent2.setLastName("Johnson");
 
         var accountNumber2 = "1234567891";
         var postCode2 = "EH1 3QR";
@@ -427,10 +428,11 @@ class ApplicationListEntryMapperTest {
                         .id(1L)
                         .sequenceNumber(1)
                         .applicantTitle(MR)
-                        .applicantSurname(PERSON4_SURNAME)
-                        .applicantForename1(PERSON4_FORENAME1)
-                        .applicantForename2(PERSON4_FORENAME2)
-                        .applicantForename3(PERSON4_FORENAME3)
+                        .applicantLastName(PERSON4_SURNAME)
+                        .applicantFirstName(PERSON4_FORENAME1)
+                        .applicantMiddleName(
+                                ApplicantMapper.combineMiddleName(
+                                        PERSON4_FORENAME2, PERSON4_FORENAME3))
                         .applicantAddressLine1(PERSON4_ADDRESSLINE1)
                         .applicantAddressLine2(PERSON4_ADDRESSLINE2)
                         .applicantAddressLine3(PERSON4_ADDRESSLINE3)
@@ -441,10 +443,11 @@ class ApplicationListEntryMapperTest {
                         .applicantMobile(PERSON4_MOBILE)
                         .applicantEmail(PERSON4_EMAIL)
                         .respondentTitle(MRS)
-                        .respondentSurname(PERSON5_SURNAME)
-                        .respondentForename1(PERSON5_FORENAME1)
-                        .respondentForename2(PERSON5_FORENAME2)
-                        .respondentForename3(PERSON5_FORENAME3)
+                        .respondentLastName(PERSON5_SURNAME)
+                        .respondentFirstName(PERSON5_FORENAME1)
+                        .respondentMiddleName(
+                                ApplicantMapper.combineMiddleName(
+                                        PERSON5_FORENAME2, PERSON5_FORENAME3))
                         .respondentAddressLine1(PERSON5_ADDRESSLINE1)
                         .respondentAddressLine2(PERSON5_ADDRESSLINE2)
                         .respondentAddressLine3(PERSON5_ADDRESSLINE3)
@@ -574,6 +577,72 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void testToPrintDto_provideCanonicalisedStandardApplicantPerson_validDtoGenerated() {
+        var projection =
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicantTitle(MR)
+                        .applicantFirstName(PERSON4_FORENAME1)
+                        .applicantMiddleName(
+                                ApplicantMapper.combineMiddleName(
+                                        PERSON4_FORENAME2, PERSON4_FORENAME3))
+                        .applicantLastName(PERSON4_SURNAME)
+                        .applicantAddressLine1(PERSON4_ADDRESSLINE1)
+                        .applicantAddressLine2(PERSON4_ADDRESSLINE2)
+                        .applicantAddressLine3(PERSON4_ADDRESSLINE3)
+                        .applicantAddressLine4(PERSON4_ADDRESSLINE4)
+                        .applicantAddressLine5(PERSON4_ADDRESSLINE5)
+                        .applicantPostcode(PERSON4_POSTCODE)
+                        .applicantPhone(PERSON4_PHONE)
+                        .applicantMobile(PERSON4_MOBILE)
+                        .applicantEmail(PERSON4_EMAIL)
+                        .respondentAddressLine1(ORGANISATION2_ADDRESSLINE1)
+                        .respondentAddressLine2(ORGANISATION2_ADDRESSLINE2)
+                        .respondentAddressLine3(ORGANISATION2_ADDRESSLINE3)
+                        .respondentAddressLine4(ORGANISATION2_ADDRESSLINE4)
+                        .respondentAddressLine5(ORGANISATION2_ADDRESSLINE5)
+                        .respondentPostcode(ORGANISATION2_POSTCODE)
+                        .respondentPhone(ORGANISATION2_PHONE)
+                        .respondentMobile(ORGANISATION2_MOBILE)
+                        .respondentEmail(ORGANISATION2_EMAIL)
+                        .respondentName(ORGANISATION2_NAME)
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
+
+        var dto = new ApplicationListEntryMapperImpl().toPrintDto(projection);
+
+        Assertions.assertEquals(
+                PERSON4_FORENAME1, dto.getApplicant().getPerson().getName().getFirstName());
+        Assertions.assertEquals(
+                PERSON4_FORENAME2 + " " + PERSON4_FORENAME3,
+                dto.getApplicant().getPerson().getName().getMiddleName().orElse(null));
+        Assertions.assertEquals(
+                PERSON4_SURNAME, dto.getApplicant().getPerson().getName().getLastName());
+        Assertions.assertEquals(
+                ORGANISATION2_NAME, dto.getRespondent().getOrganisation().getName());
+
+        assertContactDetailsEqual(
+                dto.getApplicant().getPerson().getContactDetails(),
+                PERSON4_ADDRESSLINE1,
+                PERSON4_ADDRESSLINE2,
+                PERSON4_ADDRESSLINE3,
+                PERSON4_ADDRESSLINE4,
+                PERSON4_ADDRESSLINE5,
+                PERSON4_POSTCODE,
+                PERSON4_PHONE,
+                PERSON4_MOBILE,
+                PERSON4_EMAIL);
+
+        assertApplicationDetailsEqual(dto);
+    }
+
+    @Test
     public void toEntrySummary() {
         // the applicant does have a name so is an organisation
         NameAddress applicant = new NameAddress();
@@ -591,7 +660,7 @@ class ApplicationListEntryMapperTest {
 
         // the respondent is a person
         NameAddress respondent = new NameAddress();
-        respondent.setSurname("rsurname");
+        respondent.setLastName("rsurname");
         respondent.setCode(NameAddressCodeType.RESPONDENT);
         respondent.setAddress1("raddress1");
         respondent.setAddress2("raddress2");
@@ -602,9 +671,8 @@ class ApplicationListEntryMapperTest {
         respondent.setTelephoneNumber("rtel");
         respondent.setMobileNumber("rmobile");
         respondent.setPostcode("rpostcode");
-        respondent.setForename1("rforename1");
-        respondent.setForename2("rforename2");
-        respondent.setForename3("rforename3");
+        respondent.setFirstName("rforename1");
+        respondent.setMiddleName("rforename2 rforename3");
 
         ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
                 mock(ApplicationListEntryGetSummaryProjection.class);
@@ -1815,19 +1883,14 @@ class ApplicationListEntryMapperTest {
     }
 
     private String expectedFirstName(NameAddress entity) {
-        return entity.getFirstName() == null ? entity.getForename1() : entity.getFirstName();
+        return entity.getFirstName();
     }
 
     private String expectedMiddleName(NameAddress entity) {
-        if (entity.getMiddleName() != null) {
-            return entity.getMiddleName();
-        }
-
-        return uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName(
-                entity.getForename2(), entity.getForename3());
+        return entity.getMiddleName();
     }
 
     private String expectedLastName(NameAddress entity) {
-        return entity.getLastName() == null ? entity.getSurname() : entity.getLastName();
+        return entity.getLastName();
     }
 }

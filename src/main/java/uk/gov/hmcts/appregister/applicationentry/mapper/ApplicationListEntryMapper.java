@@ -93,24 +93,14 @@ public abstract class ApplicationListEntryMapper {
 
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
-    @Mapping(target = "applicant.person.name.firstName", source = "applicantForename1")
-    @Mapping(
-            target = "applicant.person.name.middleName",
-            expression =
-                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
-                            + "applicationListEntryPrintProjection.getApplicantForename2(), "
-                            + "applicationListEntryPrintProjection.getApplicantForename3())))")
-    @Mapping(target = "applicant.person.name.lastName", source = "applicantSurname")
+    @Mapping(target = "applicant.person.name.firstName", source = "applicantFirstName")
+    @Mapping(target = "applicant.person.name.middleName", source = "applicantMiddleName")
+    @Mapping(target = "applicant.person.name.lastName", source = "applicantLastName")
     @Mapping(target = "applicant.organisation.name", source = "applicantName")
     @Mapping(target = "respondent.person.name.title", source = "respondentTitle")
-    @Mapping(target = "respondent.person.name.firstName", source = "respondentForename1")
-    @Mapping(
-            target = "respondent.person.name.middleName",
-            expression =
-                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
-                            + "applicationListEntryPrintProjection.getRespondentForename2(), "
-                            + "applicationListEntryPrintProjection.getRespondentForename3())))")
-    @Mapping(target = "respondent.person.name.lastName", source = "respondentSurname")
+    @Mapping(target = "respondent.person.name.firstName", source = "respondentFirstName")
+    @Mapping(target = "respondent.person.name.middleName", source = "respondentMiddleName")
+    @Mapping(target = "respondent.person.name.lastName", source = "respondentLastName")
     @Mapping(target = "respondent.person.dateOfBirth", source = "respondentDateOfBirth")
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
     @Mapping(target = "resultWordings", ignore = true)
@@ -304,13 +294,13 @@ public abstract class ApplicationListEntryMapper {
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
         if (applicationListEntryPrintProjection.getApplicantName() != null) {
             return EntityType.ORGANISATION;
-        } else if (applicationListEntryPrintProjection.getApplicantForename1() != null
-                && applicationListEntryPrintProjection.getApplicantSurname() != null) {
+        } else if (applicationListEntryPrintProjection.getApplicantFirstName() != null
+                && applicationListEntryPrintProjection.getApplicantLastName() != null) {
             return EntityType.PERSON;
         } else {
             log.warn(
                     "Unable to determine applicant entity type for application list entry ID {}: no name or"
-                            + "forename/surname provided.",
+                            + " firstName/lastName provided.",
                     applicationListEntryPrintProjection.getId());
 
             return EntityType.UNKNOWN;
@@ -321,13 +311,13 @@ public abstract class ApplicationListEntryMapper {
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
         if (applicationListEntryPrintProjection.getRespondentName() != null) {
             return EntityType.ORGANISATION;
-        } else if (applicationListEntryPrintProjection.getRespondentForename1() != null
-                && applicationListEntryPrintProjection.getRespondentSurname() != null) {
+        } else if (applicationListEntryPrintProjection.getRespondentFirstName() != null
+                && applicationListEntryPrintProjection.getRespondentLastName() != null) {
             return EntityType.PERSON;
         } else {
             log.warn(
                     "Unable to determine respondent entity type for application list entry ID {}: no name or"
-                            + "forename/surname provided.",
+                            + " firstName/lastName provided.",
                     applicationListEntryPrintProjection.getId());
 
             return EntityType.UNKNOWN;

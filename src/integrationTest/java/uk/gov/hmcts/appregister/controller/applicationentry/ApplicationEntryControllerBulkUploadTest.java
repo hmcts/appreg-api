@@ -207,10 +207,10 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         return new PersistedRespondent(
                 respondent.getName(),
                 respondent.getTitle(),
-                respondent.getForename1(),
+                respondent.getFirstName(),
                 respondent.getMiddleName(),
                 null,
-                respondent.getSurname(),
+                respondent.getLastName(),
                 respondent.getAddress1(),
                 respondent.getAddress2(),
                 respondent.getAddress3(),

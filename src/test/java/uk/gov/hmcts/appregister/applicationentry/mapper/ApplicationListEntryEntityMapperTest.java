@@ -142,12 +142,8 @@ class ApplicationListEntryEntityMapperTest {
         FullName name = applicant.getPerson().getName();
         Assertions.assertEquals(NameAddressCodeType.APPLICANT, nameAddress.getCode());
         Assertions.assertEquals(expectedFirstName(name), nameAddress.getFirstName());
-        Assertions.assertEquals(expectedFirstName(name), nameAddress.getForename1());
         Assertions.assertEquals(expectedMiddleName(name), nameAddress.getMiddleName());
-        Assertions.assertEquals(expectedMiddleName(name), nameAddress.getForename2());
-        Assertions.assertNull(nameAddress.getForename3());
         Assertions.assertEquals(expectedLastName(name), nameAddress.getLastName());
-        Assertions.assertEquals(expectedLastName(name), nameAddress.getSurname());
         Assertions.assertEquals(
                 applicant.getPerson().getContactDetails().getPhone().orElse(null),
                 nameAddress.getTelephoneNumber());
@@ -220,12 +216,8 @@ class ApplicationListEntryEntityMapperTest {
         FullName name = respondent.getPerson().getName();
         Assertions.assertEquals(NameAddressCodeType.RESPONDENT, nameAddress.getCode());
         Assertions.assertEquals(expectedFirstName(name), nameAddress.getFirstName());
-        Assertions.assertEquals(expectedFirstName(name), nameAddress.getForename1());
         Assertions.assertEquals(expectedMiddleName(name), nameAddress.getMiddleName());
-        Assertions.assertEquals(expectedMiddleName(name), nameAddress.getForename2());
-        Assertions.assertNull(nameAddress.getForename3());
         Assertions.assertEquals(expectedLastName(name), nameAddress.getLastName());
-        Assertions.assertEquals(expectedLastName(name), nameAddress.getSurname());
         Assertions.assertEquals(
                 respondent.getPerson().getContactDetails().getPhone().orElse(null),
                 nameAddress.getTelephoneNumber());
