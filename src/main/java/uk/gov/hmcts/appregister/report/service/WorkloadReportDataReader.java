@@ -27,7 +27,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     title,
                     first_name as forename_1,
                     middle_name as forename_2,
-                    middle_name as forename_3,
+                    null as forename_3,
                     last_name as surname,
                     FALSE AS is_standard_applicant
                 FROM

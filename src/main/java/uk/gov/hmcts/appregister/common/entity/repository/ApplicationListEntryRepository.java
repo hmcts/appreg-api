@@ -449,8 +449,14 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
             COALESCE(ana.lastName, sa.applicantSurname) AS applicantSurname,
             COALESCE(ana.firstName, sa.applicantForename1) AS applicantForename1,
-            COALESCE(ana.middleName, sa.applicantForename2) AS applicantForename2,
-            COALESCE(ana.middleName, sa.applicantForename3) AS applicantForename3,
+            CASE
+                WHEN ana.id IS NOT NULL THEN ana.middleName
+                ELSE sa.applicantForename2
+            END AS applicantForename2,
+            CASE
+                WHEN ana.id IS NOT NULL THEN null
+                ELSE sa.applicantForename3
+            END AS applicantForename3,
             COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
             COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
             COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
@@ -462,6 +468,10 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             COALESCE(ana.emailAddress, sa.emailAddress) AS applicantEmail,
             COALESCE(ana.name, sa.name) AS applicantName,
             rna.title AS respondentTitle,
+            rna.lastName AS respondentSurname,
+            rna.firstName AS respondentForename1,
+            rna.middleName AS respondentForename2,
+            null AS respondentForename3,
             rna.lastName AS respondentLastName,
             rna.firstName AS respondentFirstName,
             rna.middleName AS respondentMiddleName,

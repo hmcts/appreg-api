@@ -32,3 +32,6 @@ ALTER TABLE name_address
 -- of dj_dj_id and config_key
 CREATE UNIQUE INDEX IF NOT EXISTS retention_policy_dj_config_key_uix 
 ON retention_policy (dj_dj_id, config_key);
+
+-- Recreate the dropped index
+CREATE INDEX na_upp_s_idx ON name_address (upper(last_name));
