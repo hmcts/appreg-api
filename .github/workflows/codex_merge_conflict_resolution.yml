@@ -48,6 +48,14 @@ jobs:
             } >>"$GITHUB_OUTPUT"
           }
 
+          post_pr_comment() {
+            local body="$1"
+
+            if ! gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "$body"; then
+              echo "::warning::Failed to add PR comment; continuing without blocking detection."
+            fi
+          }
+
           comment_body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
           actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
           is_pr="$(jq -r '.issue | has("pull_request")' "$GITHUB_EVENT_PATH")"
@@ -70,7 +78,7 @@ jobs:
           fi
 
           case "$actor_login" in
-            github-actions[bot]|app/github-actions)
+            github-actions\[bot\]|app/github-actions)
               write_skip "ignoring GitHub Actions bot comment"
               exit 0
               ;;
@@ -103,13 +111,13 @@ jobs:
 
           if [[ "$head_repo" != "$GITHUB_REPOSITORY" ]]; then
             write_skip "forked PR branches are not supported"
-            gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "Codex merge-conflict resolution was not started because this PR branch is from a fork. Only branches in this repository are supported."
+            post_pr_comment "Codex merge-conflict resolution was not started because this PR branch is from a fork. Only branches in this repository are supported."
             exit 0
           fi
 
           if [[ "$pr_base_ref" != "$DEFAULT_BRANCH" ]]; then
             write_skip "PR base is ${pr_base_ref}, not ${DEFAULT_BRANCH}"
-            gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "Codex merge-conflict resolution was not started because this PR targets \`${pr_base_ref}\`, not \`${DEFAULT_BRANCH}\`."
+            post_pr_comment "Codex merge-conflict resolution was not started because this PR targets \`${pr_base_ref}\`, not \`${DEFAULT_BRANCH}\`."
             exit 0
           fi
 
@@ -139,10 +147,25 @@ jobs:
           merge_status=$?
           set -e
 
-          conflicted_files="$(git diff --name-only --diff-filter=U | sort -u)"
+          echo "Merge status: ${merge_status}"
+          echo "Merge check output:"
+          sed -n '1,160p' /tmp/codex-merge-check.log
+
+          conflicted_files="$(git diff --name-only --diff-filter=U --relative | sort -u)"
+          if [[ -z "$conflicted_files" ]]; then
+            conflicted_files="$(git ls-files -u | awk '{print $4}' | sort -u)"
+          fi
+
+          echo "Conflicted files:"
+          if [[ -n "$conflicted_files" ]]; then
+            printf '%s\n' "$conflicted_files"
+          else
+            echo "(none)"
+          fi
+
           if [[ "$merge_status" -eq 0 || -z "$conflicted_files" ]]; then
             git merge --abort >/dev/null 2>&1 || true
-            gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body "Codex merge-conflict resolution was not started because this PR does not currently have merge conflicts with \`${DEFAULT_BRANCH}\`."
+            post_pr_comment "Codex merge-conflict resolution was not started because this PR does not currently have merge conflicts with \`${DEFAULT_BRANCH}\`."
             write_skip "PR #${pr_number} has no actual merge conflicts with ${DEFAULT_BRANCH}"
             exit 0
           fi
