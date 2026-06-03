@@ -1,0 +1,175 @@
+name: Apps Reg Legacy Parity Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      issueKey:
+        description: Jira issue key
+        required: true
+        type: string
+      summary:
+        description: Jira issue summary
+        required: true
+        type: string
+      description:
+        description: Jira issue description
+        required: true
+        type: string
+      status:
+        description: Jira issue status
+        required: true
+        type: string
+      assignee:
+        description: Jira assignee
+        required: true
+        type: string
+      issueUrl:
+        description: Jira issue URL
+        required: true
+        type: string
+      workflowType:
+        description: Dispatch workflow type
+        required: true
+        type: string
+
+jobs:
+  parity-check:
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      WORKFLOW_TYPE: ${{ inputs.workflowType }}
+      OUTPUT_DIR: ${{ runner.temp }}/parity-output
+
+    steps:
+      - name: Validate workflow type
+        run: |
+          if [[ "${WORKFLOW_TYPE}" != "parity-check" ]]; then
+            echo "Unexpected workflowType: ${WORKFLOW_TYPE}" >&2
+            exit 1
+          fi
+
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Download and verify legacy snapshot
+        env:
+          APPREG_LEGACY_SNAPSHOT_URL: ${{ secrets.APPREG_LEGACY_SNAPSHOT_URL }}
+          APPREG_LEGACY_SNAPSHOT_SHA256: ${{ secrets.APPREG_LEGACY_SNAPSHOT_SHA256 }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${APPREG_LEGACY_SNAPSHOT_URL}" ]]; then
+            echo "APPREG_LEGACY_SNAPSHOT_URL secret is required." >&2
+            exit 1
+          fi
+
+          if [[ -z "${APPREG_LEGACY_SNAPSHOT_SHA256}" ]]; then
+            echo "APPREG_LEGACY_SNAPSHOT_SHA256 secret is required." >&2
+            exit 1
+          fi
+
+          snapshot_archive="${RUNNER_TEMP}/appreg-legacy.tar.gz"
+          snapshot_extract_dir="${RUNNER_TEMP}/appreg-legacy-extract"
+
+          curl --fail --silent --show-error --location \
+            "${APPREG_LEGACY_SNAPSHOT_URL}" \
+            --output "${snapshot_archive}"
+
+          printf '%s  %s\n' "${APPREG_LEGACY_SNAPSHOT_SHA256}" "${snapshot_archive}" | sha256sum -c -
+
+          mkdir -p "${snapshot_extract_dir}"
+          tar -xzf "${snapshot_archive}" -C "${snapshot_extract_dir}"
+
+          if [[ -d "${snapshot_extract_dir}/appreg-legacy" ]]; then
+            legacy_snapshot_dir="${snapshot_extract_dir}/appreg-legacy"
+          else
+            legacy_snapshot_dir="${snapshot_extract_dir}"
+          fi
+
+          if [[ ! -s "${legacy_snapshot_dir}/manifest.json" ]]; then
+            echo "Legacy snapshot must contain manifest.json." >&2
+            exit 1
+          fi
+
+          echo "LEGACY_SNAPSHOT_DIR=${legacy_snapshot_dir}" >>"${GITHUB_ENV}"
+
+      - name: Run report-only parity check
+        run: ./.github/scripts/codex-parity-check.sh
+
+      - name: Verify no tracked files changed
+        run: |
+          changed="$(git status --short --untracked-files=no)"
+          if [[ -n "${changed}" ]]; then
+            echo "Parity checker must not modify tracked files:" >&2
+            echo "${changed}" >&2
+            exit 1
+          fi
+
+      - name: Upload parity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appreg-parity-report
+          path: |
+            ${{ runner.temp }}/parity-output/parity-report.json
+            ${{ runner.temp }}/parity-output/parity-comment.md
+            ${{ runner.temp }}/parity-output/codex-usage-summary.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  notify-jira:
+    if: always()
+    needs: parity-check
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      OUTPUT_DIR: ${{ runner.temp }}/parity-output
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Download parity report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: appreg-parity-report
+          path: ${{ env.OUTPUT_DIR }}
+
+      - name: Notify Jira parity result
+        env:
+          CODEX_JIRA_PARITY_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PARITY_NOTIFY_URL }}
+          CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS || '10' }}
+        run: |
+          report_path="${OUTPUT_DIR}/parity-report.json"
+          if [[ ! -s "${report_path}" ]]; then
+            echo "::warning::Parity report was not produced; skipping Jira parity notification."
+            exit 0
+          fi
+
+          ./.github/scripts/notify-jira-parity-result.py --report "${report_path}"
