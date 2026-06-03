@@ -188,22 +188,6 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
         this.lastName = surname;
     }
 
-    private static String extractFirstMiddleName(String middleName) {
-        if (middleName == null || middleName.isBlank()) {
-            return null;
-        }
-        String[] parts = middleName.split("\\s+", 2);
-        return parts[0];
-    }
-
-    private static String extractSecondMiddleName(String middleName) {
-        if (middleName == null || middleName.isBlank()) {
-            return null;
-        }
-        String[] parts = middleName.split("\\s+", 2);
-        return parts.length > 1 ? parts[1] : null;
-    }
-
     private static String joinMiddleNames(String forename2, String forename3) {
         if (forename2 == null || forename2.isBlank()) {
             return (forename3 == null || forename3.isBlank()) ? null : forename3;
