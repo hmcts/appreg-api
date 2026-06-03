@@ -1380,6 +1380,67 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
+            givenDateOnlyPrivateProsecutorsIndexRequest_whenCreatingReport_thenStandardApplicantNameIsPopulated()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 13);
+        insertPrivateProsecutorsIndexIndividualStandardApplicantApplication(listDate);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto().dateFrom(listDate).dateTo(listDate);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(
+                            JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertTrue(report.contains("13/04/2026"));
+            Assertions.assertTrue(report.contains("XCD997 - Individual Standard Private Court"));
+            Assertions.assertTrue(report.contains("Private Citizen"));
+            Assertions.assertTrue(report.contains("CD,,,Private Citizen,"));
+        }
+    }
+
+    @Test
+    public void
             givenWhitespaceOnlyPrivateProsecutorsIndexFilters_whenCreatingReport_thenBadRequestIsReturned()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -2179,6 +2240,36 @@ public class ReportingControllerPostTest extends BaseIntegration {
         insertApplicationListEntryResolution(entryId, resolutionCodeId);
     }
 
+    private void insertPrivateProsecutorsIndexIndividualStandardApplicantApplication(
+            LocalDate listDate) {
+        long standardApplicantId = insertStandardApplicantRow(null, "Private", "Citizen");
+        long respondentId =
+                insertNameAddressRow(
+                        "Individual Standard Respondent Ltd", null, null, "Respondent Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD997",
+                        "Individual Standard Private Hall",
+                        "Private prosecution individual standard applicant integration list",
+                        "Individual Standard Private Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertStandardApplicantApplicationListEntryRow(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        standardApplicantId,
+                        respondentId,
+                        "Individual standard private {wording}",
+                        "Individual standard private notes",
+                        listDate);
+        long resolutionCodeId = insertResolutionCode("PII");
+        insertApplicationListEntryResolution(entryId, resolutionCodeId);
+    }
+
     private void insertFeesReportApplication(
             LocalDate listDate,
             String applicantOrganisation,
@@ -2381,6 +2472,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private long insertStandardApplicantRow(String name) {
+        return insertStandardApplicantRow(name, null, null);
+    }
+
+    private long insertStandardApplicantRow(String name, String firstName, String surname) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
@@ -2393,6 +2488,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         changed_date,
                         user_name,
                         name,
+                        forename_1,
+                        surname,
                         address_l1
                     )
                     VALUES (
@@ -2404,6 +2501,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         CURRENT_TIMESTAMP,
                         'report-integration-test',
                         ?,
+                        ?,
+                        ?,
                         'Standard applicant street'
                     )
                     RETURNING sa_id
@@ -2411,7 +2510,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         schema, schema),
                 Long.class,
                 "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
-                name);
+                name,
+                firstName,
+                surname);
     }
 
     private long applicationCodeIdOrInsert(String applicationCode) {
