@@ -1,25 +1,8 @@
 package uk.gov.hmcts.appregister.controller.reporting;
 
-import com.opencsv.CSVReader;
 import io.restassured.response.Response;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import lombok.val;
 import nl.altindag.log.LogCaptor;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ProblemDetail;
-import org.springframework.jdbc.core.JdbcTemplate;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegExceptionHandler;
@@ -42,6 +25,26 @@ import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ProblemDetail;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.opencsv.CSVReader;
 
 public class ReportingControllerPostTest extends BaseIntegration {
     private static final String FEES_REPORT_WEB_CONTEXT = "reports/fees/jobs";
@@ -2245,7 +2248,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
         long standardApplicantId = insertStandardApplicantRow(null, "Private", "Citizen");
         long respondentId =
                 insertNameAddressRow(
-                        "Individual Standard Respondent Ltd", null, null, "Respondent Street");
+                        "Individual Standard Respondent Ltd", "", "", "", "Respondent Street");
         long listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
