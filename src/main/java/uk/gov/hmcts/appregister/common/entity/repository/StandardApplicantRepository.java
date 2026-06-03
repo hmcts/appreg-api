@@ -55,7 +55,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      *
      * <p>Name can represent either the organisation name or a person name. For person records, the
      * effective display/sort value is based on {@code applicantForename1 + " " + applicantSurname}.
-     * Search continues to match organisation name, first forename, and surname fields.
+     * Search matches organisation name, surname, and all three forename fields.
      *
      * @param code optional partial code filter (case-insensitive)
      * @param name optional partial applicant display-name filter (case-insensitive)
@@ -121,6 +121,16 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
               OR (
                   c.name IS NOT NULL
                   AND LOWER(c.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR (
+                  c.applicantForename2 IS NOT NULL
+                  AND LOWER(c.applicantForename2)
+                      LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR (
+                  c.applicantForename3 IS NOT NULL
+                  AND LOWER(c.applicantForename3)
+                      LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
               )
               OR LOWER(FUNCTION('concat_ws', ' ', c.applicantForename1, c.applicantSurname))
                   LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
