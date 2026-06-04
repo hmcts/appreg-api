@@ -372,7 +372,10 @@ public class ApplicationEntryResultServiceImplTest {
         bulkResultEntry.setSuccess(bulkApplicationEntryResultCreationSuccess);
 
         // make the call
-        service.bulkCreate(PayloadForCreateResults.<BulkResultDto>builder().build());
+        List<ResultGetDto> createdResults =
+                service.bulkCreate(PayloadForCreateResults.<BulkResultDto>builder().build());
+
+        Assertions.assertEquals(List.of(resultGetDto), createdResults);
     }
 
     @Setter

@@ -8,6 +8,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEq
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -347,7 +348,7 @@ public class ApplicationEntryResultControllerCreateTest
 
     @Test
     public void
-            givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessNoContentResponse()
+            givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessOkResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
         val entry = createEntry(list);
@@ -376,7 +377,34 @@ public class ApplicationEntryResultControllerCreateTest
         // create the app entry
         Response resp = createBulkResult(list.getUuid(), token, bulkResultDto);
 
-        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+        resp.then().statusCode(HttpStatus.OK.value());
+
+        ResultGetDto[] createdResults = resp.as(ResultGetDto[].class);
+        Assertions.assertEquals(2, createdResults.length);
+
+        ResultGetDto createdResult = findResultForEntry(createdResults, entry.getUuid());
+        Assertions.assertNotNull(createdResult.getId());
+        Assertions.assertEquals(RTC_CODE, createdResult.getResultCode());
+        Assertions.assertEquals(
+                2, createdResult.getWording().getSubstitutionKeyConstraints().size());
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                createdResult.getWording());
+
+        ResultGetDto createdResult1 = findResultForEntry(createdResults, entry2.getUuid());
+        Assertions.assertNotNull(createdResult1.getId());
+        Assertions.assertEquals(RTC_CODE, createdResult1.getResultCode());
+        Assertions.assertEquals(
+                2, createdResult1.getWording().getSubstitutionKeyConstraints().size());
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                createdResult1.getWording());
 
         // get the information that we should have created
         Response response = getEntryResult(token, list.getUuid(), entry.getUuid(), 1, 0);
@@ -384,6 +412,7 @@ public class ApplicationEntryResultControllerCreateTest
         // now assert the result has been applied against the first entry for the result code
         ResultPage page = response.as(ResultPage.class);
         Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(createdResult.getId(), page.getContent().getFirst().getId());
         Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getEntryId());
         Assertions.assertEquals(
                 2,
@@ -402,6 +431,7 @@ public class ApplicationEntryResultControllerCreateTest
         // now assert the result has been applied against the entry for the result code
         ResultPage page1 = response1.as(ResultPage.class);
         Assertions.assertEquals(1, page1.getContent().size());
+        Assertions.assertEquals(createdResult1.getId(), page1.getContent().getFirst().getId());
         Assertions.assertEquals(entry2.getUuid(), page1.getContent().getFirst().getEntryId());
         Assertions.assertEquals(
                 2,
@@ -691,7 +721,7 @@ public class ApplicationEntryResultControllerCreateTest
 
     @Test
     public void
-            givenAValidBulkResultWithNoListRequest_whenACallIsMadeWithTwoEntries_thenSuccessNoContentResponse()
+            givenAValidBulkResultWithNoListRequest_whenACallIsMadeWithTwoEntries_thenSuccessOkResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
         val entry = createEntry(list);
@@ -720,7 +750,34 @@ public class ApplicationEntryResultControllerCreateTest
         // create the app entry
         Response resp = createBulkResult(token, bulkResultDto);
 
-        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+        resp.then().statusCode(HttpStatus.OK.value());
+
+        ResultGetDto[] createdResults = resp.as(ResultGetDto[].class);
+        Assertions.assertEquals(2, createdResults.length);
+
+        ResultGetDto createdResult = findResultForEntry(createdResults, entry.getUuid());
+        Assertions.assertNotNull(createdResult.getId());
+        Assertions.assertEquals(RTC_CODE, createdResult.getResultCode());
+        Assertions.assertEquals(
+                2, createdResult.getWording().getSubstitutionKeyConstraints().size());
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                createdResult.getWording());
+
+        ResultGetDto createdResult1 = findResultForEntry(createdResults, entry2.getUuid());
+        Assertions.assertNotNull(createdResult1.getId());
+        Assertions.assertEquals(RTC_CODE, createdResult1.getResultCode());
+        Assertions.assertEquals(
+                2, createdResult1.getWording().getSubstitutionKeyConstraints().size());
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                createdResult1.getWording());
 
         // get the information that we should have created
         Response response = getEntryResult(token, list.getUuid(), entry.getUuid(), 1, 0);
@@ -728,6 +785,7 @@ public class ApplicationEntryResultControllerCreateTest
         // now assert the result has been applied against the first entry for the result code
         ResultPage page = response.as(ResultPage.class);
         Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(createdResult.getId(), page.getContent().getFirst().getId());
         Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getEntryId());
         Assertions.assertEquals(
                 2,
@@ -746,6 +804,7 @@ public class ApplicationEntryResultControllerCreateTest
         // now assert the result has been applied against the entry for the result code
         ResultPage page1 = response1.as(ResultPage.class);
         Assertions.assertEquals(1, page1.getContent().size());
+        Assertions.assertEquals(createdResult1.getId(), page1.getContent().getFirst().getId());
         Assertions.assertEquals(entry2.getUuid(), page1.getContent().getFirst().getEntryId());
         Assertions.assertEquals(
                 2,
@@ -1006,5 +1065,13 @@ public class ApplicationEntryResultControllerCreateTest
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode(),
                 "valueSize=1\n" + "templateSize=2\n",
                 resp);
+    }
+
+    private static ResultGetDto findResultForEntry(ResultGetDto[] createdResults, UUID entryId) {
+        return Arrays.stream(createdResults)
+                .filter(result -> entryId.equals(result.getEntryId()))
+                .findFirst()
+                .orElseThrow(
+                        () -> new AssertionError("Expected result response for entry " + entryId));
     }
 }
