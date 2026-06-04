@@ -331,9 +331,11 @@ tasks.register('jacocoIntegrationCoverageVerification', JacocoCoverageVerificati
   )
 }
 
-tasks.named('sonarqube') {
-  dependsOn tasks.named('jacocoIntegrationCoverageVerification')
-  dependsOn tasks.named('jacocoUnitCoverageVerification')
+['sonar', 'sonarqube'].each { sonarTaskName ->
+  tasks.named(sonarTaskName) {
+    dependsOn tasks.named('jacocoIntegrationCoverageVerification')
+    dependsOn tasks.named('jacocoUnitCoverageVerification')
+  }
 }
 
 tasks.named('check') {
