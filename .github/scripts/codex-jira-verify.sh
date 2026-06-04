@@ -164,6 +164,36 @@ append_guardrail_warning() {
   } >>"${pr_body_path}"
 }
 
+run_backend_sonar_analysis() {
+  if [[ "${RUN_SONAR:-true}" != "true" ]]; then
+    echo "Skipping Sonar analysis because RUN_SONAR is not true."
+    return
+  fi
+
+  if [[ -z "${SONAR_TOKEN:-}" ]]; then
+    echo "::error::SONAR_TOKEN is required for Codex verification Sonar analysis." >&2
+    exit 1
+  fi
+
+  local sonar_host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+  local sonar_organization="${SONAR_ORGANIZATION:-hmcts}"
+  local sonar_branch_name="${SONAR_BRANCH_NAME:-${branch_name}}"
+  local sonar_args=(
+    --no-daemon
+    sonar
+    "-Dsonar.host.url=${sonar_host_url}"
+    "-Dsonar.branch.name=${sonar_branch_name}"
+  )
+
+  if [[ -n "${sonar_organization}" ]]; then
+    sonar_args+=("-Dsonar.organization=${sonar_organization}")
+  fi
+
+  echo "Running Sonar analysis for Codex branch ${sonar_branch_name}."
+  run_sanitized env "SONAR_TOKEN=${SONAR_TOKEN}" \
+    ./gradlew "${sonar_args[@]}"
+}
+
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}"
 
 branch_name="$(metadata_value branch_name)"
@@ -197,6 +227,8 @@ else
   verify_trusted_file "${trusted_pipeline_path}" "${trusted_pipeline_sha}" "pipeline wrapper"
   run_sanitized "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${default_branch}" --no-fetch
 fi
+
+run_backend_sonar_analysis
 
 {
   echo "branch_name=${branch_name}"
