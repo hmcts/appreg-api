@@ -41,8 +41,7 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "startDate", source = "standardApplicant.applicantStartDate")
     @Mapping(
             target = "endDate",
-            source = "standardApplicant.applicantEndDate",
-            qualifiedByName = "toEndDate")
+            expression = "java(toEndDate(projection.getStandardApplicant().getApplicantEndDate()))")
     public abstract StandardApplicantGetSummaryDto toReadGetSummaryDto(
             StandardApplicantEnrichedProjection projection);
 
@@ -52,7 +51,7 @@ public abstract class StandardApplicantMapper {
             expression =
                     "java(applicantMapper.toApplicant(applicantMapper.toApplicantEntity(entity)))")
     @Mapping(target = "startDate", source = "applicantStartDate")
-    @Mapping(target = "endDate", source = "applicantEndDate", qualifiedByName = "toEndDate")
+    @Mapping(target = "endDate", expression = "java(toEndDate(entity.getApplicantEndDate()))")
     public abstract StandardApplicantGetDetailDto toReadGetDto(StandardApplicant entity);
 
     @Mapping(target = "id", constant = "0L")
@@ -106,7 +105,7 @@ public abstract class StandardApplicantMapper {
         if (date != null) {
             return JsonNullable.of(date);
         } else {
-            return JsonNullable.undefined();
+            return JsonNullable.of(null);
         }
     }
 
@@ -162,42 +161,21 @@ public abstract class StandardApplicantMapper {
 
         contactDetails.setAddressLine1(standardApplicant.getAddressLine1());
 
-        contactDetails.setAddressLine2(
-                standardApplicant.getAddressLine2() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getAddressLine2()));
+        contactDetails.setAddressLine2(JsonNullable.of(standardApplicant.getAddressLine2()));
 
-        contactDetails.setAddressLine3(
-                standardApplicant.getAddressLine3() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getAddressLine3()));
+        contactDetails.setAddressLine3(JsonNullable.of(standardApplicant.getAddressLine3()));
 
-        contactDetails.setAddressLine4(
-                standardApplicant.getAddressLine4() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getAddressLine4()));
+        contactDetails.setAddressLine4(JsonNullable.of(standardApplicant.getAddressLine4()));
 
-        contactDetails.setAddressLine5(
-                standardApplicant.getAddressLine5() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getAddressLine5()));
+        contactDetails.setAddressLine5(JsonNullable.of(standardApplicant.getAddressLine5()));
 
         contactDetails.setPostcode(standardApplicant.getPostcode());
 
-        contactDetails.setPhone(
-                standardApplicant.getTelephoneNumber() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getTelephoneNumber()));
+        contactDetails.setPhone(JsonNullable.of(standardApplicant.getTelephoneNumber()));
 
-        contactDetails.setMobile(
-                standardApplicant.getMobileNumber() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getMobileNumber()));
+        contactDetails.setMobile(JsonNullable.of(standardApplicant.getMobileNumber()));
 
-        contactDetails.setEmail(
-                standardApplicant.getEmailAddress() == null
-                        ? JsonNullable.undefined()
-                        : JsonNullable.of(standardApplicant.getEmailAddress()));
+        contactDetails.setEmail(JsonNullable.of(standardApplicant.getEmailAddress()));
 
         return contactDetails;
     }
