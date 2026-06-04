@@ -89,6 +89,20 @@ class BulkUpdateFeesValidatorTest {
     }
 
     @Test
+    void validate_whenMultipleFeeDetailsAreValid_thenCompletes() {
+        BulkFeeDetailsDto secondFeeDetails =
+                new BulkFeeDetailsDto()
+                        .paymentStatus(PaymentStatus.REMITTED)
+                        .statusDate(TODAY)
+                        .paymentReference("PAY-002")
+                        .hasOffsiteFee(true);
+
+        validator.validate(
+                validPayload(
+                        listId, Set.of(entryId), List.of(validFeeDetails(), secondFeeDetails)));
+    }
+
+    @Test
     void validate_whenApplicationListDoesNotExist_thenThrowsApplicationListDoesNotExist() {
         UUID missingListId = UUID.randomUUID();
         when(applicationListRepository.findByUuidIncludingDelete(missingListId))
@@ -127,7 +141,7 @@ class BulkUpdateFeesValidatorTest {
     void validate_whenEntryIdsAreMissing_thenThrowsEntryNotProvided() {
         BulkUpdateFeesPayload payload =
                 new BulkUpdateFeesPayload(
-                        listId, new BulkFeesUpdateDto().feeDetails(validFeeDetails()));
+                        listId, new BulkFeesUpdateDto().feeDetails(List.of(validFeeDetails())));
 
         AppRegistryException exception = validateAndCapture(payload);
 
@@ -139,6 +153,32 @@ class BulkUpdateFeesValidatorTest {
         BulkUpdateFeesPayload payload =
                 new BulkUpdateFeesPayload(
                         listId, new BulkFeesUpdateDto().entryIds(Set.of(entryId)));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenFeeDetailsAreEmpty_thenThrowsFeeDetailsNotProvided() {
+        BulkUpdateFeesPayload payload =
+                new BulkUpdateFeesPayload(
+                        listId,
+                        new BulkFeesUpdateDto().entryIds(Set.of(entryId)).feeDetails(List.of()));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenFeeDetailIsNull_thenThrowsFeeDetailsNotProvided() {
+        BulkUpdateFeesPayload payload =
+                new BulkUpdateFeesPayload(
+                        listId,
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .feeDetails(java.util.Collections.singletonList(null)));
 
         AppRegistryException exception = validateAndCapture(payload);
 
@@ -259,6 +299,11 @@ class BulkUpdateFeesValidatorTest {
 
     private BulkUpdateFeesPayload validPayload(
             UUID listId, Set<UUID> entryIds, BulkFeeDetailsDto feeDetails) {
+        return validPayload(listId, entryIds, List.of(feeDetails));
+    }
+
+    private BulkUpdateFeesPayload validPayload(
+            UUID listId, Set<UUID> entryIds, List<BulkFeeDetailsDto> feeDetails) {
         return new BulkUpdateFeesPayload(
                 listId, new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(feeDetails));
     }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -76,6 +77,66 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 PaymentStatus.REMITTED,
                 UPDATED_STATUS_DATE,
                 UPDATED_PAYMENT_REFERENCE,
+                true);
+    }
+
+    @Test
+    void givenMultipleFeeDetails_whenBulkUpdateFees_thenAllFeeDetailsAreAppliedToEveryEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto firstEntry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        EntryGetDetailDto secondEntry =
+                createEntry(
+                        Optional.of(firstEntry.getListId()),
+                        PaymentStatus.DUE,
+                        ORIGINAL_STATUS_DATE,
+                        null,
+                        false);
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        firstEntry.getListId(),
+                        bulkFeesUpdateDto(
+                                Set.of(firstEntry.getId(), secondEntry.getId()),
+                                List.of(
+                                        feeDetails(
+                                                PaymentStatus.PAID,
+                                                UPDATED_STATUS_DATE,
+                                                UPDATED_PAYMENT_REFERENCE,
+                                                false),
+                                        feeDetails(
+                                                PaymentStatus.REMITTED,
+                                                UPDATED_STATUS_DATE,
+                                                "PAY-SECOND",
+                                                true))));
+
+        response.then().statusCode(200);
+        BulkUpdateResponseDto responseDto = response.as(BulkUpdateResponseDto.class);
+        assertThat(responseDto.getTotalCount()).isEqualTo(2);
+        assertThat(responseDto.getUpdatedCount()).isEqualTo(2);
+        assertThat(responseDto.getStatus()).isEqualTo(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+
+        List<FeeStatus> expectedFeeStatuses =
+                List.of(
+                        feeStatus(
+                                PaymentStatus.PAID, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE),
+                        feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, "PAY-SECOND"));
+
+        assertFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
+                expectedFeeStatuses,
+                true);
+        assertFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()),
+                expectedFeeStatuses,
                 true);
     }
 
@@ -203,7 +264,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         entry.getListId(),
                         new BulkFeesUpdateDto()
                                 .entryIds(Set.of(entry.getId()))
-                                .feeDetails(feeDetails));
+                                .feeDetails(List.of(feeDetails)));
 
         response.then().statusCode(400);
         ProblemAssertUtil.assertEquals(
@@ -321,14 +382,19 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
     }
 
     private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
-        return new BulkFeesUpdateDto()
-                .entryIds(entryIds)
-                .feeDetails(
+        return bulkFeesUpdateDto(
+                entryIds,
+                List.of(
                         feeDetails(
                                 PaymentStatus.REMITTED,
                                 UPDATED_STATUS_DATE,
                                 UPDATED_PAYMENT_REFERENCE,
-                                true));
+                                true)));
+    }
+
+    private BulkFeesUpdateDto bulkFeesUpdateDto(
+            Set<UUID> entryIds, List<BulkFeeDetailsDto> feeDetails) {
+        return new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(feeDetails);
     }
 
     private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
@@ -368,11 +434,29 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
             LocalDate expectedStatusDate,
             String expectedPaymentReference,
             boolean expectedHasOffsiteFee) {
-        assertThat(entry.getFeeStatuses()).hasSize(1);
-        FeeStatus feeStatus = entry.getFeeStatuses().getFirst();
-        assertThat(feeStatus.getPaymentStatus()).isEqualTo(expectedStatus);
-        assertThat(feeStatus.getStatusDate()).isEqualTo(expectedStatusDate);
-        assertThat(feeStatus.getPaymentReference()).isEqualTo(expectedPaymentReference);
+        assertFeeDetails(
+                entry,
+                List.of(feeStatus(expectedStatus, expectedStatusDate, expectedPaymentReference)),
+                expectedHasOffsiteFee);
+    }
+
+    private void assertFeeDetails(
+            EntryGetDetailDto entry,
+            List<FeeStatus> expectedFeeStatuses,
+            boolean expectedHasOffsiteFee) {
+        assertThat(entry.getFeeStatuses()).hasSize(expectedFeeStatuses.size());
+        for (FeeStatus expectedFeeStatus : expectedFeeStatuses) {
+            assertThat(entry.getFeeStatuses())
+                    .anySatisfy(
+                            actualFeeStatus -> {
+                                assertThat(actualFeeStatus.getPaymentStatus())
+                                        .isEqualTo(expectedFeeStatus.getPaymentStatus());
+                                assertThat(actualFeeStatus.getStatusDate())
+                                        .isEqualTo(expectedFeeStatus.getStatusDate());
+                                assertThat(actualFeeStatus.getPaymentReference())
+                                        .isEqualTo(expectedFeeStatus.getPaymentReference());
+                            });
+        }
         assertThat(entry.getHasOffsiteFee()).isEqualTo(expectedHasOffsiteFee);
     }
 }

@@ -754,16 +754,19 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     @Test
     public void testSearchForFilterByApplicantSurname() {
         // Given: an application list with entries that have distinct applicant surnames
+        String targetApplicantSurname = "TargetApplicantSurname";
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
 
         ApplicationListEntry savedEntry =
                 saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
-        savedEntry.getAnamedaddress().setLastName("TargetApplicantSurname");
+        savedEntry.getAnamedaddress().setLastName(targetApplicantSurname);
+        persistance.save(savedEntry.getAnamedaddress());
 
         ApplicationListEntry otherEntry =
                 saveApplicationListEntry(entityManager, persistance, list, (short) 2, false);
         otherEntry.getAnamedaddress().setLastName("OtherApplicantSurname");
+        persistance.save(otherEntry.getAnamedaddress());
 
         entityManager.flush();
         entityManager.clear();
@@ -778,7 +781,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        savedEntry.getAnamedaddress().getLastName(),
+                        targetApplicantSurname,
                         null,
                         null,
                         null,

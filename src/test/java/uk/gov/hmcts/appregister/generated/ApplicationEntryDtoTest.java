@@ -130,6 +130,21 @@ public class ApplicationEntryDtoTest {
     }
 
     @Test
+    void testBulkFeesUpdateDtoAllowsMultipleFeeDetails() {
+        BulkFeesUpdateDto dto =
+                new BulkFeesUpdateDto()
+                        .entryIds(entryIds(1))
+                        .feeDetails(
+                                List.of(
+                                        validBulkFeeDetailsDto(PaymentStatus.PAID, "PAY-001"),
+                                        validBulkFeeDetailsDto(PaymentStatus.REMITTED, "PAY-002")));
+
+        Set<ConstraintViolation<Object>> constraintValidator = validate(dto);
+
+        Assertions.assertEquals(0, constraintValidator.size());
+    }
+
+    @Test
     void testBulkFeesUpdateDtoRejectsEntryIdsAboveOperationalLimit() {
         BulkFeesUpdateDto dto = validBulkFeesUpdateDto(entryIds(501));
 
@@ -152,12 +167,16 @@ public class ApplicationEntryDtoTest {
     private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
-                .feeDetails(
-                        new BulkFeeDetailsDto()
-                                .paymentStatus(PaymentStatus.PAID)
-                                .statusDate(LocalDate.of(2025, 10, 7))
-                                .paymentReference("PAY-001")
-                                .hasOffsiteFee(false));
+                .feeDetails(List.of(validBulkFeeDetailsDto(PaymentStatus.PAID, "PAY-001")));
+    }
+
+    private BulkFeeDetailsDto validBulkFeeDetailsDto(
+            PaymentStatus paymentStatus, String paymentReference) {
+        return new BulkFeeDetailsDto()
+                .paymentStatus(paymentStatus)
+                .statusDate(LocalDate.of(2025, 10, 7))
+                .paymentReference(paymentReference)
+                .hasOffsiteFee(false);
     }
 
     private Set<UUID> entryIds(int totalCount) {
