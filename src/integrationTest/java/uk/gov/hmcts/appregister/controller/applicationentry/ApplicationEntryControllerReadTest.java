@@ -2,8 +2,10 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
@@ -98,6 +101,79 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         uuids[0].toString(),
                         AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
                         AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
+    }
+
+    @Test
+    void givenSparseParticipantData_whenGetApplicationEntry_thenReturnExplicitNullsAndEmptyLists()
+            throws Exception {
+        val list = createAndSaveList(OPEN);
+        val applicationCode = buildApplicationCode("APPNULLS");
+        applicationCode.setApplicationListEntryList(null);
+        val persistedApplicationCode = persistance.save(applicationCode);
+
+        val applicantAddress =
+                createSparsePersonNameAddress(NameAddressCodeType.APPLICANT, "Applicant");
+        val respondentAddress =
+                createSparsePersonNameAddress(NameAddressCodeType.RESPONDENT, "Respondent");
+        respondentAddress.setDateOfBirth(null);
+
+        val persistedApplicantAddress = persistance.save(applicantAddress);
+        val persistedRespondentAddress = persistance.save(respondentAddress);
+
+        val entry = createEntry(list);
+        entry.setApplicationCode(persistedApplicationCode);
+        entry.setStandardApplicant(null);
+        entry.setAnamedaddress(persistedApplicantAddress);
+        entry.setRnameaddress(persistedRespondentAddress);
+        entry.setCaseReference(null);
+        entry.setAccountNumber(null);
+        entry.setNotes(null);
+        val persistedEntry = persistance.save(entry);
+
+        val token = createAdminToken().fetchTokenForRole();
+        val responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + list.getUuid()
+                                        + "/entries/"
+                                        + persistedEntry.getUuid()),
+                        token);
+
+        responseSpec.then().statusCode(HttpStatus.OK.value());
+
+        JsonNode responseBody = mapper.readTree(responseSpec.asString());
+
+        Assertions.assertEquals(
+                persistedEntry.getUuid().toString(), responseBody.path("id").asText());
+        Assertions.assertEquals(list.getUuid().toString(), responseBody.path("listId").asText());
+        Assertions.assertEquals("APPNULLS", responseBody.path("applicationCode").asText());
+        assertExplicitNull(responseBody, "standardApplicantCode");
+        assertExplicitNull(responseBody, "caseReference");
+        assertExplicitNull(responseBody, "accountNumber");
+        assertExplicitNull(responseBody, "notes");
+        assertExplicitNull(responseBody, "applicant.person.name.title");
+        assertExplicitNull(responseBody, "applicant.person.name.middleName");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine2");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine3");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine4");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine5");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.phone");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.mobile");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.email");
+        assertExplicitNull(responseBody, "respondent.person.name.title");
+        assertExplicitNull(responseBody, "respondent.person.name.middleName");
+        assertExplicitNull(responseBody, "respondent.person.dateOfBirth");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.addressLine2");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.addressLine3");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.addressLine4");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.addressLine5");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.phone");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.mobile");
+        assertExplicitNull(responseBody, "respondent.person.contactDetails.email");
+        assertEmptyArray(responseBody, "feeStatuses");
+        assertEmptyArray(responseBody, "officials");
     }
 
     @Test
@@ -466,6 +542,43 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(row.getOldValue()).isEmpty();
         assertThat(row.getLink()).isNotBlank();
         assertThat(row.getCreatedUser()).isNotBlank();
+    }
+
+    private NameAddress createSparsePersonNameAddress(
+            NameAddressCodeType codeType, String surnameSuffix) {
+        NameAddress address = new NameAddressTestData().somePerson();
+        address.setCode(codeType);
+        address.setName(null);
+        address.setTitle(null);
+        address.setFirstName("Sparse");
+        address.setMiddleName(null);
+        address.setLastName(surnameSuffix);
+        address.setAddress1("1 Sparse Street");
+        address.setAddress2(null);
+        address.setAddress3(null);
+        address.setAddress4(null);
+        address.setAddress5(null);
+        address.setPostcode("SP1 1AA");
+        address.setTelephoneNumber(null);
+        address.setMobileNumber(null);
+        address.setEmailAddress(null);
+        return address;
+    }
+
+    private void assertExplicitNull(JsonNode root, String dottedPath) {
+        JsonNode current = root;
+        for (String segment : dottedPath.split("\\.")) {
+            assertTrue(current.has(segment), "Expected JSON field to be present: " + dottedPath);
+            current = current.get(segment);
+        }
+        assertTrue(current.isNull(), "Expected JSON field to be explicit null: " + dottedPath);
+    }
+
+    private void assertEmptyArray(JsonNode root, String fieldName) {
+        assertTrue(root.has(fieldName), "Expected JSON field to be present: " + fieldName);
+        JsonNode current = root.get(fieldName);
+        assertTrue(current.isArray(), "Expected JSON field to be an array: " + fieldName);
+        Assertions.assertEquals(0, current.size(), "Expected JSON array to be empty: " + fieldName);
     }
 
     @StabilityTest
