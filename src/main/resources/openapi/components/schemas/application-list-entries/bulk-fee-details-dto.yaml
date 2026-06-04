@@ -1,5 +1,5 @@
 type: object
-description: Fee details to apply to every selected Application List Entry.
+description: Fee details to apply as part of a bulk update.
 required:
   - paymentStatus
   - statusDate

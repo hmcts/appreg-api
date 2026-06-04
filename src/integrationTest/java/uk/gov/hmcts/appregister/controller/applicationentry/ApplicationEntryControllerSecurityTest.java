@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -132,10 +133,11 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
         return new BulkFeesUpdateDto()
                 .entryIds(Set.of(UUID.randomUUID()))
                 .feeDetails(
-                        new BulkFeeDetailsDto()
-                                .paymentStatus(PaymentStatus.PAID)
-                                .statusDate(LocalDate.now())
-                                .paymentReference("PAY-001")
-                                .hasOffsiteFee(false));
+                        List.of(
+                                new BulkFeeDetailsDto()
+                                        .paymentStatus(PaymentStatus.PAID)
+                                        .statusDate(LocalDate.now())
+                                        .paymentReference("PAY-001")
+                                        .hasOffsiteFee(false)));
     }
 }

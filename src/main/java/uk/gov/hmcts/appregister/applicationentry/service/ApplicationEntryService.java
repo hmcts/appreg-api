@@ -93,7 +93,7 @@ public interface ApplicationEntryService {
      * Handles a bulk fee update request.
      *
      * @param listId the application list that owns all supplied entries
-     * @param bulkFeesUpdateDto the entry ids and shared fee details
+     * @param bulkFeesUpdateDto the entry ids and fee details
      * @return the bulk update response
      */
     BulkUpdateResponseDto bulkUpdateFees(UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto);
