@@ -50,11 +50,11 @@ class PrivateProsecutorsIndexReportDataReader
                     al.other_courthouse,
                     al.courthouse_code,
                     cja.cja_code,
-                    COALESCE(app_na.surname, app_na.name) AS applicant_name_or_surname,
-                    app_na.forename_1 AS applicant_first_name,
+                    COALESCE(app_na.last_name, app_na.name) AS applicant_name_or_surname,
+                    app_na.first_name AS applicant_first_name,
                     NULL AS standard_applicant_name,
-                    resp_na.forename_1 AS respondent_first_name,
-                    resp_na.surname AS respondent_surname,
+                    resp_na.first_name AS respondent_first_name,
+                    resp_na.last_name AS respondent_surname,
                     resp_na.name AS respondent_organisation_name,
                     ale.application_list_entry_wording,
                     ale.notes
@@ -79,12 +79,12 @@ class PrivateProsecutorsIndexReportDataReader
                     AND :standardApplicantName IS NULL
                     AND (
                         :applicantFirstName IS NULL
-                        OR UPPER(app_na.forename_1)
+                        OR UPPER(app_na.first_name)
                             LIKE '%' || UPPER(:applicantFirstName) || '%'
                     )
                     AND (
                         :applicantSurname IS NULL
-                        OR UPPER(app_na.surname) LIKE '%' || UPPER(:applicantSurname) || '%'
+                        OR UPPER(app_na.last_name) LIKE '%' || UPPER(:applicantSurname) || '%'
                         OR UPPER(app_na.name) LIKE '%' || UPPER(:applicantSurname) || '%'
                     )
                     AND (
@@ -93,12 +93,12 @@ class PrivateProsecutorsIndexReportDataReader
                     )
                     AND (
                         :respondentFirstName IS NULL
-                        OR UPPER(resp_na.forename_1)
+                        OR UPPER(resp_na.first_name)
                             LIKE '%' || UPPER(:respondentFirstName) || '%'
                     )
                     AND (
                         :respondentSurname IS NULL
-                        OR UPPER(resp_na.surname) LIKE '%' || UPPER(:respondentSurname) || '%'
+                        OR UPPER(resp_na.last_name) LIKE '%' || UPPER(:respondentSurname) || '%'
                     )
                     AND (
                         :respondentOrganisationName IS NULL
@@ -157,8 +157,8 @@ class PrivateProsecutorsIndexReportDataReader
                     NULL AS applicant_name_or_surname,
                     NULL AS applicant_first_name,
                     sa.standard_applicant_name,
-                    resp_na.forename_1 AS respondent_first_name,
-                    resp_na.surname AS respondent_surname,
+                    resp_na.first_name AS respondent_first_name,
+                    resp_na.last_name AS respondent_surname,
                     resp_na.name AS respondent_organisation_name,
                     ale.application_list_entry_wording,
                     ale.notes
@@ -189,12 +189,12 @@ class PrivateProsecutorsIndexReportDataReader
                     )
                     AND (
                         :respondentFirstName IS NULL
-                        OR UPPER(resp_na.forename_1)
+                        OR UPPER(resp_na.first_name)
                             LIKE '%' || UPPER(:respondentFirstName) || '%'
                     )
                     AND (
                         :respondentSurname IS NULL
-                        OR UPPER(resp_na.surname) LIKE '%' || UPPER(:respondentSurname) || '%'
+                        OR UPPER(resp_na.last_name) LIKE '%' || UPPER(:respondentSurname) || '%'
                     )
                     AND (
                         :respondentOrganisationName IS NULL

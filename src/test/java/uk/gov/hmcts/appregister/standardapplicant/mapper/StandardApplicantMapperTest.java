@@ -248,4 +248,24 @@ public class StandardApplicantMapperTest {
         Assertions.assertEquals(LocalDate.of(2026, 4, 1), entity.getApplicantStartDate());
         Assertions.assertEquals(LocalDate.of(2026, 12, 31), entity.getApplicantEndDate());
     }
+
+    @Test
+    void testStandardApplicantHydratesCanonicalMiddleNameFromLegacyForenames() {
+        val standardApplicant = new StandardApplicantTestData().someComplete();
+        standardApplicant.setName(null);
+        standardApplicant.setApplicantForename1("Ada");
+        standardApplicant.setApplicantForename2("Byron");
+        standardApplicant.setApplicantForename3("King");
+        standardApplicant.setApplicantSurname("Lovelace");
+
+        val standardApplicantMapper = new StandardApplicantMapperImpl();
+        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
+
+        val dto = standardApplicantMapper.toReadGetDto(standardApplicant);
+
+        Assertions.assertEquals("Ada", dto.getApplicant().getPerson().getName().getFirstName());
+        Assertions.assertEquals(
+                "Byron King", dto.getApplicant().getPerson().getName().getMiddleName().get());
+        Assertions.assertEquals("Lovelace", dto.getApplicant().getPerson().getName().getLastName());
+    }
 }

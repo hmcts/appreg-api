@@ -33,8 +33,8 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     cja.cja_code,
                     sa.standard_applicant_code,
                     COALESCE(na.name, sa.name) AS name,
-                    COALESCE(na.forename_1, sa.forename_1) AS forename_1,
-                    COALESCE(na.surname, sa.surname) AS surname,
+                    COALESCE(na.first_name, sa.forename_1) AS forename_1,
+                    COALESCE(na.last_name, sa.surname) AS surname,
                     ac.application_code,
                     ac.application_code_title,
                     ale.ale_id

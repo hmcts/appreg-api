@@ -1086,8 +1086,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         appListId,
                         insertApplicationCodeRow(),
                         insertNameAddress(
-                                "Workload Multiple Magistrates Applicant", null, null, "Test Road"),
-                        insertNameAddress("", "Test", "Respondent", "Test Road"),
+                                "Workload Multiple Magistrates Applicant",
+                                null,
+                                null,
+                                null,
+                                "Test Road"),
+                        insertNameAddress("", "Test", null, "Respondent", "Test Road"),
                         listDate); // creates first list entry
         insertOfficial(entryId, "M", "Mr", "First", "Magistrate"); // adds first magistrate
         insertOfficial(entryId, "M", "Mr", "Second", "Magistrate"); // adds second magistrate
@@ -1164,9 +1168,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                     throws Exception {
         val listDate = LocalDate.of(2026, 8, 17);
         val applicantName = "Workload Multi Resolution Applicant";
-        val applicantId = insertNameAddress(applicantName, null, null, "Workload Street");
+        val applicantId = insertNameAddress(applicantName, null, null, null, "Workload Street");
         val respondentId =
-                insertNameAddress("Workload Respondent", null, null, "Respondent Street");
+                insertNameAddress("Workload Respondent", null, null, null, "Respondent Street");
         val listId =
                 insertApplicationList(
                         listDate, "WLD001", "Workload multi resolution list", "Workload Court");
@@ -2195,9 +2199,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private void insertPrivateProsecutorsIndexApplication(LocalDate listDate) {
-        long applicantId = insertNameAddressRow(null, "Private", "Legacy", "Applicant Street");
+        long applicantId =
+                insertNameAddressRow(null, "Private", "Middle", "Legacy", "Applicant Street");
         long respondentId =
-                insertNameAddressRow("Respondent Org Ltd", null, null, "Respondent Street");
+                insertNameAddressRow("Respondent Org Ltd", null, null, null, "Respondent Street");
         long listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
@@ -2227,7 +2232,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private void insertPrivateProsecutorsIndexStandardApplicantApplication(LocalDate listDate) {
         long standardApplicantId = insertStandardApplicantRow("Private Standards Body");
         long respondentId =
-                insertNameAddressRow("Standard Respondent Ltd", null, null, "Respondent Street");
+                insertNameAddressRow(
+                        "Standard Respondent Ltd", null, null, null, "Respondent Street");
         long listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
@@ -2257,7 +2263,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
         long standardApplicantId = insertStandardApplicantRow(null, "Private", "Citizen");
         long respondentId =
                 insertNameAddressRow(
-                        "Individual Standard Respondent Ltd", null, null, "Respondent Street");
+                        "Individual Standard Respondent Ltd", "", "", "", "Respondent Street");
         long listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
@@ -2306,7 +2312,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String otherCourthouse) {
         long applicantId =
                 insertNameAddressRow(
-                        applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
+                        applicantOrganisation,
+                        applicantForename,
+                        null,
+                        applicantSurname,
+                        "Fees Street");
         long listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
@@ -2436,15 +2446,20 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private long insertNameAddressRow(
-            String name, String firstName, String surname, String addressLine1) {
+            String name,
+            String firstName,
+            String middleName,
+            String lastName,
+            String addressLine1) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
                     INSERT INTO %s.name_address (
                         na_id,
                         name,
-                        forename_1,
-                        surname,
+                        first_name,
+                        middle_name,
+                        last_name,
                         address_l1,
                         version,
                         changed_by,
@@ -2453,6 +2468,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                     )
                     VALUES (
                         nextval('%s.na_seq'),
+                        ?,
                         ?,
                         ?,
                         ?,
@@ -2468,7 +2484,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 Long.class,
                 name,
                 firstName,
-                surname,
+                middleName,
+                lastName,
                 addressLine1);
     }
 
@@ -2664,20 +2681,22 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 courtName);
     }
 
-    private long insertNameAddress(String name, String firstName, String surname, String address) {
+    private long insertNameAddress(
+            String name, String firstName, String middleName, String lastName, String address) {
         return jdbcTemplate.queryForObject(
                 """
                 INSERT INTO %s.name_address (
-                    na_id, name, forename_1, surname, address_l1, version, changed_by,
+                    na_id, name, first_name, middle_name, last_name, address_l1, version, changed_by,
                     changed_date, user_name
-                ) VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, 1, 0, CURRENT_TIMESTAMP, 'report-integration-test')
+                ) VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, 1, 0, CURRENT_TIMESTAMP, 'report-integration-test')
                 RETURNING na_id
                 """
                         .formatted(schema, schema),
                 Long.class,
                 name,
                 firstName,
-                surname,
+                middleName,
+                lastName,
                 address);
     }
 
@@ -2904,10 +2923,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     private long insertEntry(
             LocalDate listDate, long appListId, String applicantName, int sequenceNumber) {
-        val applicantId = insertNameAddress(applicantName, null, null, "Applicant Street");
+        val applicantId = insertNameAddress(applicantName, null, null, null, "Applicant Street");
         val respondentId =
                 insertNameAddress(
-                        null, "Respondent " + applicantName, "Surname", "Respondent Street");
+                        null, "Respondent " + applicantName, null, "Surname", "Respondent Street");
         return jdbcTemplate.queryForObject(
                 """
                 INSERT INTO %s.application_list_entries (

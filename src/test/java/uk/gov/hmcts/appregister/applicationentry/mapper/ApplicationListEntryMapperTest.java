@@ -63,6 +63,8 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import lombok.val;
@@ -86,6 +88,7 @@ import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
@@ -96,6 +99,7 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -103,6 +107,7 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
@@ -251,8 +256,8 @@ class ApplicationListEntryMapperTest {
 
         NameAddress respondent = new NameAddress();
         respondent.setTitle("His Majesty");
-        respondent.setForename1("Ahmed");
-        respondent.setSurname("Mustafa");
+        respondent.setFirstName("Ahmed");
+        respondent.setLastName("Mustafa");
 
         var postCode = "SW1A 1AA";
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
@@ -327,21 +332,129 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void testToApplicationListEntry_mapsAuditEntryFilterDto() {
+        var filterDto = new EntryGetFilterDto();
+        filterDto.setAccountReference("ACC-456");
+        filterDto.setStandardApplicantCode("STD001");
+        filterDto.setApplicantOrganisation("Applicant Org");
+        filterDto.setApplicantSurname("Applicant Surname");
+        filterDto.setRespondentOrganisation("Respondent Org");
+        filterDto.setRespondentSurname("Respondent Surname");
+        filterDto.setRespondentPostcode("AA1 1AA");
+        filterDto.setCourtCode("COURT1");
+        filterDto.setOtherLocationDescription("Room 4");
+        filterDto.setDate(LocalDate.of(2026, 6, 4));
+        filterDto.setCjaCode("CJA01");
+        filterDto.setStatus(ApplicationListStatus.CLOSED);
+        filterDto.setApplicationTitle("Application Title");
+
+        var mappedResult = mapper.toApplicationListEntry(filterDto);
+
+        Assertions.assertEquals(0L, mappedResult.getId());
+        Assertions.assertEquals("ACC-456", mappedResult.getAccountNumber());
+        Assertions.assertEquals("STD001", mappedResult.getStandardApplicant().getApplicantCode());
+        Assertions.assertEquals("Applicant Org", mappedResult.getAnamedaddress().getName());
+        Assertions.assertEquals("Applicant Surname", mappedResult.getAnamedaddress().getLastName());
+        Assertions.assertEquals("Respondent Org", mappedResult.getRnameaddress().getName());
+        Assertions.assertEquals("Respondent Surname", mappedResult.getRnameaddress().getLastName());
+        Assertions.assertEquals("AA1 1AA", mappedResult.getRnameaddress().getPostcode());
+        Assertions.assertEquals("COURT1", mappedResult.getApplicationList().getCourtCode());
+        Assertions.assertEquals("Room 4", mappedResult.getApplicationList().getOtherLocation());
+        Assertions.assertEquals(
+                LocalDate.of(2026, 6, 4), mappedResult.getApplicationList().getDate());
+        Assertions.assertEquals("CJA01", mappedResult.getApplicationList().getCja().getCode());
+        Assertions.assertEquals(Status.CLOSED, mappedResult.getApplicationList().getStatus());
+    }
+
+    @Test
+    void testToApplicationListEntry_mapsPayloadForAuditEntryLookup() {
+        val listId = UUID.randomUUID();
+        val entryId = UUID.randomUUID();
+        val payload = PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
+
+        var mappedResult = mapper.toApplicationListEntry(payload);
+
+        Assertions.assertEquals(0L, mappedResult.getId());
+        Assertions.assertEquals(listId, mappedResult.getApplicationList().getUuid());
+        Assertions.assertEquals(entryId, mappedResult.getUuid());
+    }
+
+    @Test
+    void testToApplicant_usesStandardApplicantWhenNamedApplicantMissing() {
+        var projection = mock(ApplicationListEntryGetSummaryProjection.class);
+        var standardApplicant = new StandardApplicantTestData().someComplete();
+        var applicantMapper = new ApplicantMapperImpl();
+
+        when(projection.getAnameAddress()).thenReturn(null);
+        when(projection.getStandardApplicant()).thenReturn(standardApplicant);
+
+        var expectedApplicant =
+                applicantMapper.toApplicant(applicantMapper.toApplicantEntity(standardApplicant));
+
+        var mappedApplicant = mapper.toApplicant(projection);
+
+        assertThat(mappedApplicant).usingRecursiveComparison().isEqualTo(expectedApplicant);
+    }
+
+    @Test
+    void testToApplicant_returnsNullWhenNoApplicantSourceExists() {
+        var projection = mock(ApplicationListEntryGetSummaryProjection.class);
+
+        when(projection.getAnameAddress()).thenReturn(null);
+        when(projection.getStandardApplicant()).thenReturn(null);
+
+        assertThat(mapper.toApplicant(projection)).isNull();
+    }
+
+    @Test
+    void testMapOffsetDateTime_returnsLocalDateAndHandlesNull() {
+        Assertions.assertNull(mapper.map((OffsetDateTime) null));
+        Assertions.assertEquals(
+                LocalDate.of(2026, 6, 4),
+                mapper.map(OffsetDateTime.of(2026, 6, 4, 9, 30, 0, 0, ZoneOffset.UTC)));
+    }
+
+    @Test
+    void testMapBooleanAndInteger_handleNullsAndValues() {
+        Assertions.assertNull(mapper.map((Boolean) null));
+        Assertions.assertEquals(YesOrNo.YES, mapper.map(Boolean.TRUE));
+        Assertions.assertEquals(YesOrNo.NO, mapper.map(Boolean.FALSE));
+
+        Assertions.assertNull(mapper.map((Integer) null));
+        Assertions.assertEquals(Short.valueOf((short) 12), mapper.map(Integer.valueOf(12)));
+    }
+
+    @Test
+    void testToStatus_mapsGeneratedStatusAndHandlesNull() {
+        Assertions.assertNull(mapper.toStatus((ApplicationListStatus) null));
+        Assertions.assertEquals(Status.CLOSED, mapper.toStatus(ApplicationListStatus.CLOSED));
+    }
+
+    @Test
+    void testGetTemplateKeys_extractsWordingPlaceholders() {
+        var applicationCode = new ApplicationCode();
+        applicationCode.setWording("One {TEXT|First label|11} then {TEXT|Second label|11}");
+
+        assertThat(mapper.getTemplateKeys(applicationCode))
+                .containsExactly("First label", "Second label");
+    }
+
+    @Test
     void testToSummaryModelList_provideValidData_validModelListGenerated() {
         NameAddress applicant1 = new NameAddress();
         applicant1.setName("Mustafa's Org");
 
         NameAddress respondent1 = new NameAddress();
         respondent1.setTitle("His Majesty");
-        respondent1.setSurname("Mustafa");
-        respondent1.setForename1("Ahmed");
+        respondent1.setLastName("Mustafa");
+        respondent1.setFirstName("Ahmed");
 
         NameAddress applicant2 = new NameAddress();
         applicant2.setName("Mustafa's Org");
 
         NameAddress respondent2 = new NameAddress();
-        respondent2.setForename1("Sarah");
-        respondent2.setSurname("Johnson");
+        respondent2.setFirstName("Sarah");
+        respondent2.setLastName("Johnson");
 
         var accountNumber2 = "1234567891";
         var postCode2 = "EH1 3QR";
@@ -427,10 +540,11 @@ class ApplicationListEntryMapperTest {
                         .id(1L)
                         .sequenceNumber(1)
                         .applicantTitle(MR)
-                        .applicantSurname(PERSON4_SURNAME)
-                        .applicantForename1(PERSON4_FORENAME1)
-                        .applicantForename2(PERSON4_FORENAME2)
-                        .applicantForename3(PERSON4_FORENAME3)
+                        .applicantLastName(PERSON4_SURNAME)
+                        .applicantFirstName(PERSON4_FORENAME1)
+                        .applicantMiddleName(
+                                ApplicantMapper.combineMiddleName(
+                                        PERSON4_FORENAME2, PERSON4_FORENAME3))
                         .applicantAddressLine1(PERSON4_ADDRESSLINE1)
                         .applicantAddressLine2(PERSON4_ADDRESSLINE2)
                         .applicantAddressLine3(PERSON4_ADDRESSLINE3)
@@ -441,10 +555,11 @@ class ApplicationListEntryMapperTest {
                         .applicantMobile(PERSON4_MOBILE)
                         .applicantEmail(PERSON4_EMAIL)
                         .respondentTitle(MRS)
-                        .respondentSurname(PERSON5_SURNAME)
-                        .respondentForename1(PERSON5_FORENAME1)
-                        .respondentForename2(PERSON5_FORENAME2)
-                        .respondentForename3(PERSON5_FORENAME3)
+                        .respondentLastName(PERSON5_SURNAME)
+                        .respondentFirstName(PERSON5_FORENAME1)
+                        .respondentMiddleName(
+                                ApplicantMapper.combineMiddleName(
+                                        PERSON5_FORENAME2, PERSON5_FORENAME3))
                         .respondentAddressLine1(PERSON5_ADDRESSLINE1)
                         .respondentAddressLine2(PERSON5_ADDRESSLINE2)
                         .respondentAddressLine3(PERSON5_ADDRESSLINE3)
@@ -574,6 +689,107 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void testToPrintDto_provideCanonicalisedStandardApplicantPerson_validDtoGenerated() {
+        var projection =
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicantTitle(MR)
+                        .applicantFirstName(PERSON4_FORENAME1)
+                        .applicantMiddleName(
+                                ApplicantMapper.combineMiddleName(
+                                        PERSON4_FORENAME2, PERSON4_FORENAME3))
+                        .applicantLastName(PERSON4_SURNAME)
+                        .applicantAddressLine1(PERSON4_ADDRESSLINE1)
+                        .applicantAddressLine2(PERSON4_ADDRESSLINE2)
+                        .applicantAddressLine3(PERSON4_ADDRESSLINE3)
+                        .applicantAddressLine4(PERSON4_ADDRESSLINE4)
+                        .applicantAddressLine5(PERSON4_ADDRESSLINE5)
+                        .applicantPostcode(PERSON4_POSTCODE)
+                        .applicantPhone(PERSON4_PHONE)
+                        .applicantMobile(PERSON4_MOBILE)
+                        .applicantEmail(PERSON4_EMAIL)
+                        .respondentAddressLine1(ORGANISATION2_ADDRESSLINE1)
+                        .respondentAddressLine2(ORGANISATION2_ADDRESSLINE2)
+                        .respondentAddressLine3(ORGANISATION2_ADDRESSLINE3)
+                        .respondentAddressLine4(ORGANISATION2_ADDRESSLINE4)
+                        .respondentAddressLine5(ORGANISATION2_ADDRESSLINE5)
+                        .respondentPostcode(ORGANISATION2_POSTCODE)
+                        .respondentPhone(ORGANISATION2_PHONE)
+                        .respondentMobile(ORGANISATION2_MOBILE)
+                        .respondentEmail(ORGANISATION2_EMAIL)
+                        .respondentName(ORGANISATION2_NAME)
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
+
+        var dto = new ApplicationListEntryMapperImpl().toPrintDto(projection);
+
+        Assertions.assertEquals(
+                PERSON4_FORENAME1, dto.getApplicant().getPerson().getName().getFirstName());
+        Assertions.assertEquals(
+                PERSON4_FORENAME2 + " " + PERSON4_FORENAME3,
+                dto.getApplicant().getPerson().getName().getMiddleName().orElse(null));
+        Assertions.assertEquals(
+                PERSON4_SURNAME, dto.getApplicant().getPerson().getName().getLastName());
+        Assertions.assertEquals(
+                ORGANISATION2_NAME, dto.getRespondent().getOrganisation().getName());
+
+        assertContactDetailsEqual(
+                dto.getApplicant().getPerson().getContactDetails(),
+                PERSON4_ADDRESSLINE1,
+                PERSON4_ADDRESSLINE2,
+                PERSON4_ADDRESSLINE3,
+                PERSON4_ADDRESSLINE4,
+                PERSON4_ADDRESSLINE5,
+                PERSON4_POSTCODE,
+                PERSON4_PHONE,
+                PERSON4_MOBILE,
+                PERSON4_EMAIL);
+
+        assertApplicationDetailsEqual(dto);
+    }
+
+    @Test
+    void
+            testToPrintDto_whenApplicantAndRespondentTypesCannotBeDetermined_thenNoContactDetailsAreSet() {
+        var projection =
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
+
+        var dto = new ApplicationListEntryMapperImpl().toPrintDto(projection);
+
+        assertThat(dto.getApplicant()).isNotNull();
+        if (dto.getApplicant().getPerson() != null) {
+            assertThat(dto.getApplicant().getPerson().getContactDetails()).isNull();
+        }
+        if (dto.getApplicant().getOrganisation() != null) {
+            assertThat(dto.getApplicant().getOrganisation().getContactDetails()).isNull();
+        }
+        assertThat(dto.getRespondent()).isNotNull();
+        if (dto.getRespondent().getPerson() != null) {
+            assertThat(dto.getRespondent().getPerson().getContactDetails()).isNull();
+        }
+        if (dto.getRespondent().getOrganisation() != null) {
+            assertThat(dto.getRespondent().getOrganisation().getContactDetails()).isNull();
+        }
+
+        assertApplicationDetailsEqual(dto);
+    }
+
+    @Test
     public void toEntrySummary() {
         // the applicant does have a name so is an organisation
         NameAddress applicant = new NameAddress();
@@ -591,7 +807,7 @@ class ApplicationListEntryMapperTest {
 
         // the respondent is a person
         NameAddress respondent = new NameAddress();
-        respondent.setSurname("rsurname");
+        respondent.setLastName("rsurname");
         respondent.setCode(NameAddressCodeType.RESPONDENT);
         respondent.setAddress1("raddress1");
         respondent.setAddress2("raddress2");
@@ -602,9 +818,8 @@ class ApplicationListEntryMapperTest {
         respondent.setTelephoneNumber("rtel");
         respondent.setMobileNumber("rmobile");
         respondent.setPostcode("rpostcode");
-        respondent.setForename1("rforename1");
-        respondent.setForename2("rforename2");
-        respondent.setForename3("rforename3");
+        respondent.setFirstName("rforename1");
+        respondent.setMiddleName("rforename2 rforename3");
 
         ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
                 mock(ApplicationListEntryGetSummaryProjection.class);
@@ -1815,19 +2030,14 @@ class ApplicationListEntryMapperTest {
     }
 
     private String expectedFirstName(NameAddress entity) {
-        return entity.getFirstName() == null ? entity.getForename1() : entity.getFirstName();
+        return entity.getFirstName();
     }
 
     private String expectedMiddleName(NameAddress entity) {
-        if (entity.getMiddleName() != null) {
-            return entity.getMiddleName();
-        }
-
-        return uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName(
-                entity.getForename2(), entity.getForename3());
+        return entity.getMiddleName();
     }
 
     private String expectedLastName(NameAddress entity) {
-        return entity.getLastName() == null ? entity.getSurname() : entity.getLastName();
+        return entity.getLastName();
     }
 }
