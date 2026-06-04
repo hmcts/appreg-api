@@ -127,7 +127,7 @@ class BulkUpdateFeesValidatorTest {
     void validate_whenEntryIdsAreMissing_thenThrowsEntryNotProvided() {
         BulkUpdateFeesPayload payload =
                 new BulkUpdateFeesPayload(
-                        listId, new BulkFeesUpdateDto().feeDetails(validFeeDetails()));
+                        listId, new BulkFeesUpdateDto().feeDetails(List.of(validFeeDetails())));
 
         AppRegistryException exception = validateAndCapture(payload);
 
@@ -139,6 +139,18 @@ class BulkUpdateFeesValidatorTest {
         BulkUpdateFeesPayload payload =
                 new BulkUpdateFeesPayload(
                         listId, new BulkFeesUpdateDto().entryIds(Set.of(entryId)));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenFeeDetailsAreEmpty_thenThrowsFeeDetailsNotProvided() {
+        BulkUpdateFeesPayload payload =
+                new BulkUpdateFeesPayload(
+                        listId,
+                        new BulkFeesUpdateDto().entryIds(Set.of(entryId)).feeDetails(List.of()));
 
         AppRegistryException exception = validateAndCapture(payload);
 
@@ -184,6 +196,18 @@ class BulkUpdateFeesValidatorTest {
         AppRegistryException exception = validateAndCapture(validPayload(entryId, feeDetails));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.PAYMENT_REFERENCE_TOO_LONG);
+    }
+
+    @Test
+    void validate_whenAnyFeeDetailsItemIsInvalid_thenThrowsMatchingFeeDetailsError() {
+        BulkFeeDetailsDto invalidFeeDetails = validFeeDetails();
+        invalidFeeDetails.setStatusDate(null);
+
+        AppRegistryException exception =
+                validateAndCapture(
+                        validPayload(entryId, List.of(validFeeDetails(), invalidFeeDetails)));
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_STATUS_DATE_REQUIRED);
     }
 
     @Test
@@ -254,11 +278,20 @@ class BulkUpdateFeesValidatorTest {
     }
 
     private BulkUpdateFeesPayload validPayload(UUID entryId, BulkFeeDetailsDto feeDetails) {
+        return validPayload(entryId, List.of(feeDetails));
+    }
+
+    private BulkUpdateFeesPayload validPayload(UUID entryId, List<BulkFeeDetailsDto> feeDetails) {
         return validPayload(listId, Set.of(entryId), feeDetails);
     }
 
     private BulkUpdateFeesPayload validPayload(
             UUID listId, Set<UUID> entryIds, BulkFeeDetailsDto feeDetails) {
+        return validPayload(listId, entryIds, List.of(feeDetails));
+    }
+
+    private BulkUpdateFeesPayload validPayload(
+            UUID listId, Set<UUID> entryIds, List<BulkFeeDetailsDto> feeDetails) {
         return new BulkUpdateFeesPayload(
                 listId, new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(feeDetails));
     }

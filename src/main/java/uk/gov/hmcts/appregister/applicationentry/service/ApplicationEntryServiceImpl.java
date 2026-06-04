@@ -570,13 +570,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 entries.sort(
                                         Comparator.comparing(
                                                 ApplicationListEntry::getSequenceNumber));
+                                List<BulkFeeDetailsDto> feeDetails = req.data().getFeeDetails();
+                                boolean hasOffsiteFee = hasOffsiteFee(feeDetails);
                                 Supplier<Fee> offsiteFeeSupplier =
-                                        offsiteFeeSupplier(
-                                                req.data().getFeeDetails().getHasOffsiteFee());
+                                        offsiteFeeSupplier(hasOffsiteFee);
 
                                 for (ApplicationListEntry entry : entries) {
                                     replaceFeeDetailsForEntry(
-                                            entry, req.data().getFeeDetails(), offsiteFeeSupplier);
+                                            entry, feeDetails, hasOffsiteFee, offsiteFeeSupplier);
                                 }
 
                                 int updatedCount = entries.size();
@@ -639,11 +640,20 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private void replaceFeeDetailsForEntry(
             ApplicationListEntry entry,
-            BulkFeeDetailsDto feeDetails,
+            List<BulkFeeDetailsDto> feeDetails,
+            boolean hasOffsiteFee,
             Supplier<Fee> offsiteFeeSupplier) {
         deleteFeeStatusesForEntry(entry.getUuid());
-        saveFeeStatus(createBulkFeeStatus(entry, feeDetails), new ArrayList<>());
-        updateOffsiteFeeMapping(entry, feeDetails.getHasOffsiteFee(), offsiteFeeSupplier);
+        List<AppListEntryFeeStatus> statusList = new ArrayList<>();
+        for (BulkFeeDetailsDto feeDetail : feeDetails) {
+            saveFeeStatus(createBulkFeeStatus(entry, feeDetail), statusList);
+        }
+        updateOffsiteFeeMapping(entry, hasOffsiteFee, offsiteFeeSupplier);
+    }
+
+    private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
+        return feeDetails.stream()
+                .anyMatch(feeDetail -> Boolean.TRUE.equals(feeDetail.getHasOffsiteFee()));
     }
 
     /**

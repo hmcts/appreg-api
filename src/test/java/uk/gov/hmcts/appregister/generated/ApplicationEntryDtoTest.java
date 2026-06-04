@@ -141,6 +141,33 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "entryIds", "size must be between 1 and 500");
     }
 
+    @Test
+    void testBulkFeesUpdateDtoAllowsMultipleFeeDetails() {
+        BulkFeesUpdateDto dto =
+                new BulkFeesUpdateDto()
+                        .entryIds(entryIds(1))
+                        .feeDetails(
+                                List.of(
+                                        validBulkFeeDetails("PAY-001"),
+                                        validBulkFeeDetails("PAY-002")));
+
+        Set<ConstraintViolation<Object>> constraintValidator = validate(dto);
+
+        Assertions.assertEquals(0, constraintValidator.size());
+    }
+
+    @Test
+    void testBulkFeesUpdateDtoRejectsEmptyFeeDetails() {
+        BulkFeesUpdateDto dto = new BulkFeesUpdateDto().entryIds(entryIds(1)).feeDetails(List.of());
+
+        Set<ConstraintViolation<Object>> constraintValidator = validate(dto);
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        Assertions.assertEquals(1, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "feeDetails", "size must be between 1 and 2147483647");
+    }
+
     private Set<ConstraintViolation<Object>> validate(Object value) {
         return Validation.byDefaultProvider()
                 .configure()
@@ -152,12 +179,15 @@ public class ApplicationEntryDtoTest {
     private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
-                .feeDetails(
-                        new BulkFeeDetailsDto()
-                                .paymentStatus(PaymentStatus.PAID)
-                                .statusDate(LocalDate.of(2025, 10, 7))
-                                .paymentReference("PAY-001")
-                                .hasOffsiteFee(false));
+                .feeDetails(List.of(validBulkFeeDetails("PAY-001")));
+    }
+
+    private BulkFeeDetailsDto validBulkFeeDetails(String paymentReference) {
+        return new BulkFeeDetailsDto()
+                .paymentStatus(PaymentStatus.PAID)
+                .statusDate(LocalDate.of(2025, 10, 7))
+                .paymentReference(paymentReference)
+                .hasOffsiteFee(false);
     }
 
     private Set<UUID> entryIds(int totalCount) {

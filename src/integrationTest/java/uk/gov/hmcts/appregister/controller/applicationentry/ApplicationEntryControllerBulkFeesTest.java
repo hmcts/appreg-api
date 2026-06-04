@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -77,6 +79,54 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 UPDATED_STATUS_DATE,
                 UPDATED_PAYMENT_REFERENCE,
                 true);
+    }
+
+    @Test
+    void givenValidEntriesAndMultipleFeeDetails_whenBulkUpdateFees_thenEveryFeeDetailIsApplied()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto firstEntry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        EntryGetDetailDto secondEntry =
+                createEntry(
+                        Optional.of(firstEntry.getListId()),
+                        PaymentStatus.DUE,
+                        ORIGINAL_STATUS_DATE,
+                        null,
+                        false);
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        firstEntry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(firstEntry.getId(), secondEntry.getId()))
+                                .feeDetails(
+                                        List.of(
+                                                feeDetails(
+                                                        PaymentStatus.PAID,
+                                                        UPDATED_STATUS_DATE,
+                                                        "PAY-001",
+                                                        false),
+                                                feeDetails(
+                                                        PaymentStatus.REMITTED,
+                                                        UPDATED_STATUS_DATE.minusDays(1),
+                                                        "PAY-002",
+                                                        true))));
+
+        response.then().statusCode(200);
+        BulkUpdateResponseDto responseDto = response.as(BulkUpdateResponseDto.class);
+        assertThat(responseDto.getTotalCount()).isEqualTo(2);
+        assertThat(responseDto.getUpdatedCount()).isEqualTo(2);
+        assertMultipleFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()));
+        assertMultipleFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()));
     }
 
     @Test
@@ -203,7 +253,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         entry.getListId(),
                         new BulkFeesUpdateDto()
                                 .entryIds(Set.of(entry.getId()))
-                                .feeDetails(feeDetails));
+                                .feeDetails(List.of(feeDetails)));
 
         response.then().statusCode(400);
         ProblemAssertUtil.assertEquals(
@@ -324,11 +374,12 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
                 .feeDetails(
-                        feeDetails(
-                                PaymentStatus.REMITTED,
-                                UPDATED_STATUS_DATE,
-                                UPDATED_PAYMENT_REFERENCE,
-                                true));
+                        List.of(
+                                feeDetails(
+                                        PaymentStatus.REMITTED,
+                                        UPDATED_STATUS_DATE,
+                                        UPDATED_PAYMENT_REFERENCE,
+                                        true)));
     }
 
     private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
@@ -374,5 +425,18 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         assertThat(feeStatus.getStatusDate()).isEqualTo(expectedStatusDate);
         assertThat(feeStatus.getPaymentReference()).isEqualTo(expectedPaymentReference);
         assertThat(entry.getHasOffsiteFee()).isEqualTo(expectedHasOffsiteFee);
+    }
+
+    private void assertMultipleFeeDetails(EntryGetDetailDto entry) {
+        assertThat(entry.getFeeStatuses()).hasSize(2);
+        assertThat(entry.getFeeStatuses())
+                .extracting(
+                        FeeStatus::getPaymentStatus,
+                        FeeStatus::getStatusDate,
+                        FeeStatus::getPaymentReference)
+                .containsExactlyInAnyOrder(
+                        tuple(PaymentStatus.PAID, UPDATED_STATUS_DATE, "PAY-001"),
+                        tuple(PaymentStatus.REMITTED, UPDATED_STATUS_DATE.minusDays(1), "PAY-002"));
+        assertThat(entry.getHasOffsiteFee()).isTrue();
     }
 }
