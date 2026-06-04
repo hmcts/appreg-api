@@ -419,7 +419,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
-                        "surname",
+                        "last_name",
                         null,
                         "Turner",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
@@ -455,7 +455,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
-                        "surname",
+                        "last_name",
                         null,
                         "Turner",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
@@ -633,7 +633,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
-                        "surname",
+                        "last_name",
                         null,
                         "rn",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
@@ -669,7 +669,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
-                        "surname",
+                        "last_name",
                         null,
                         "",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
@@ -936,10 +936,10 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
             String applicationCodeValue,
             String applicationTitle,
             YesOrNo feeRequired,
-            String applicantForename,
-            String applicantSurname,
-            String respondentForename,
-            String respondentSurname,
+            String applicantFirstName,
+            String applicantLastName,
+            String respondentFirstName,
+            String respondentLastName,
             String resultCode) {
         ApplicationList list = createAndSaveList(status);
         list.setDate(date);
@@ -955,8 +955,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         ApplicationListEntry entry = createEntry(list);
         entry.setApplicationCode(applicationCode);
         entry.setAccountNumber(accountReference);
-        setApplicantName(entry, "Mx", applicantForename, applicantSurname);
-        setRespondentName(entry, "Mx", respondentForename, respondentSurname);
+        setApplicantName(entry, "Mx", applicantFirstName, applicantLastName);
+        setRespondentName(entry, "Mx", respondentFirstName, respondentLastName);
         entry.getAnamedaddress().setName(null);
         entry.getRnameaddress().setName(null);
         persistance.save(entry.getAnamedaddress());
@@ -1365,7 +1365,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
-                        "surname",
+                        "last_name",
                         null,
                         "",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),

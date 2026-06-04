@@ -178,6 +178,10 @@ public class WorkloadReportDataReaderTest {
 
     private void assertLegacyWorkloadsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
+        Assertions.assertTrue(normalisedQuery.contains("first_name as forename_1"));
+        Assertions.assertTrue(normalisedQuery.contains("middle_name as forename_2"));
+        Assertions.assertTrue(normalisedQuery.contains("null as forename_3"));
+        Assertions.assertTrue(normalisedQuery.contains("last_name as surname"));
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(al.other_courthouse) "

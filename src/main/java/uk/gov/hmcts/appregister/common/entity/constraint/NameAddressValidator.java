@@ -14,10 +14,6 @@ public class NameAddressValidator implements ConstraintValidator<ValidNameAddres
     public boolean isValid(NameAddress nameAddress, ConstraintValidatorContext context) {
         if (nameAddress.getName() != null
                 && nameAddress.getTitle() == null
-                && nameAddress.getForename1() == null
-                && nameAddress.getForename2() == null
-                && nameAddress.getForename3() == null
-                && nameAddress.getSurname() == null
                 && nameAddress.getFirstName() == null
                 && nameAddress.getMiddleName() == null
                 && nameAddress.getLastName() == null) {

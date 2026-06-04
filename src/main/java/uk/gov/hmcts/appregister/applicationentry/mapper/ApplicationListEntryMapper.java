@@ -93,24 +93,14 @@ public abstract class ApplicationListEntryMapper {
 
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
-    @Mapping(target = "applicant.person.name.firstName", source = "applicantForename1")
-    @Mapping(
-            target = "applicant.person.name.middleName",
-            expression =
-                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
-                            + "applicationListEntryPrintProjection.getApplicantForename2(), "
-                            + "applicationListEntryPrintProjection.getApplicantForename3())))")
-    @Mapping(target = "applicant.person.name.lastName", source = "applicantSurname")
+    @Mapping(target = "applicant.person.name.firstName", source = "applicantFirstName")
+    @Mapping(target = "applicant.person.name.middleName", source = "applicantMiddleName")
+    @Mapping(target = "applicant.person.name.lastName", source = "applicantLastName")
     @Mapping(target = "applicant.organisation.name", source = "applicantName")
     @Mapping(target = "respondent.person.name.title", source = "respondentTitle")
-    @Mapping(target = "respondent.person.name.firstName", source = "respondentForename1")
-    @Mapping(
-            target = "respondent.person.name.middleName",
-            expression =
-                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
-                            + "applicationListEntryPrintProjection.getRespondentForename2(), "
-                            + "applicationListEntryPrintProjection.getRespondentForename3())))")
-    @Mapping(target = "respondent.person.name.lastName", source = "respondentSurname")
+    @Mapping(target = "respondent.person.name.firstName", source = "respondentFirstName")
+    @Mapping(target = "respondent.person.name.middleName", source = "respondentMiddleName")
+    @Mapping(target = "respondent.person.name.lastName", source = "respondentLastName")
     @Mapping(target = "respondent.person.dateOfBirth", source = "respondentDateOfBirth")
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
     @Mapping(target = "resultWordings", ignore = true)
@@ -304,13 +294,13 @@ public abstract class ApplicationListEntryMapper {
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
         if (applicationListEntryPrintProjection.getApplicantName() != null) {
             return EntityType.ORGANISATION;
-        } else if (applicationListEntryPrintProjection.getApplicantForename1() != null
-                && applicationListEntryPrintProjection.getApplicantSurname() != null) {
+        } else if (applicationListEntryPrintProjection.getApplicantFirstName() != null
+                && applicationListEntryPrintProjection.getApplicantLastName() != null) {
             return EntityType.PERSON;
         } else {
             log.warn(
                     "Unable to determine applicant entity type for application list entry ID {}: no name or"
-                            + "forename/surname provided.",
+                            + " firstName/lastName provided.",
                     applicationListEntryPrintProjection.getId());
 
             return EntityType.UNKNOWN;
@@ -321,13 +311,13 @@ public abstract class ApplicationListEntryMapper {
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
         if (applicationListEntryPrintProjection.getRespondentName() != null) {
             return EntityType.ORGANISATION;
-        } else if (applicationListEntryPrintProjection.getRespondentForename1() != null
-                && applicationListEntryPrintProjection.getRespondentSurname() != null) {
+        } else if (applicationListEntryPrintProjection.getRespondentFirstName() != null
+                && applicationListEntryPrintProjection.getRespondentLastName() != null) {
             return EntityType.PERSON;
         } else {
             log.warn(
                     "Unable to determine respondent entity type for application list entry ID {}: no name or"
-                            + "forename/surname provided.",
+                            + " firstName/lastName provided.",
                     applicationListEntryPrintProjection.getId());
 
             return EntityType.UNKNOWN;
@@ -697,9 +687,9 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "standardApplicant", ignore = true)
     @Mapping(target = "anamedaddress.code", ignore = true)
     @Mapping(target = "anamedaddress.id", ignore = true)
-    @Mapping(target = "anamedaddress.forename1", ignore = true)
-    @Mapping(target = "anamedaddress.forename2", ignore = true)
-    @Mapping(target = "anamedaddress.forename3", ignore = true)
+    @Mapping(target = "anamedaddress.firstName", ignore = true)
+    @Mapping(target = "anamedaddress.middleName", ignore = true)
+    @Mapping(target = "anamedaddress.lastName", ignore = true)
     @Mapping(target = "anamedaddress.title", ignore = true)
     @Mapping(target = "anamedaddress.address1", ignore = true)
     @Mapping(target = "anamedaddress.address2", ignore = true)
@@ -715,9 +705,9 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "anamedaddress.dmsId", ignore = true)
     @Mapping(target = "rnameaddress.code", ignore = true)
     @Mapping(target = "rnameaddress.id", ignore = true)
-    @Mapping(target = "rnameaddress.forename1", ignore = true)
-    @Mapping(target = "rnameaddress.forename2", ignore = true)
-    @Mapping(target = "rnameaddress.forename3", ignore = true)
+    @Mapping(target = "rnameaddress.firstName", ignore = true)
+    @Mapping(target = "rnameaddress.middleName", ignore = true)
+    @Mapping(target = "rnameaddress.lastName", ignore = true)
     @Mapping(target = "rnameaddress.title", ignore = true)
     @Mapping(target = "rnameaddress.address1", ignore = true)
     @Mapping(target = "rnameaddress.address2", ignore = true)
@@ -744,9 +734,9 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "accountNumber", source = "filterDto.accountReference")
     @Mapping(target = "standardApplicant.applicantCode", source = "filterDto.standardApplicantCode")
     @Mapping(target = "anamedaddress.name", source = "filterDto.applicantOrganisation")
-    @Mapping(target = "anamedaddress.surname", source = "filterDto.applicantSurname")
+    @Mapping(target = "anamedaddress.lastName", source = "filterDto.applicantSurname")
     @Mapping(target = "rnameaddress.name", source = "filterDto.respondentOrganisation")
-    @Mapping(target = "rnameaddress.surname", source = "filterDto.respondentSurname")
+    @Mapping(target = "rnameaddress.lastName", source = "filterDto.respondentSurname")
     @Mapping(target = "rnameaddress.postcode", source = "filterDto.respondentPostcode")
     @Mapping(target = "applicationList.courtCode", source = "filterDto.courtCode")
     @Mapping(

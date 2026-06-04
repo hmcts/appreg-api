@@ -206,9 +206,16 @@ class FeesReportDataReaderTest {
     private void assertLegacyFeesQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
         Assertions.assertTrue(
+                normalisedQuery.contains("COALESCE(na.first_name, sa.forename_1) AS forename_1"));
+        Assertions.assertTrue(
+                normalisedQuery.contains("COALESCE(na.last_name, sa.surname) AS surname"));
+        Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(sa.standard_applicant_code) "
                                 + "LIKE '%' || UPPER(:standardApplicantCode) || '%'"));
+        Assertions.assertTrue(normalisedQuery.contains("COALESCE(b.forename_1, '')"));
+        Assertions.assertTrue(normalisedQuery.contains("COALESCE(b.surname, '')"));
+        Assertions.assertTrue(normalisedQuery.contains("NULLIF(TRIM("));
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(b.applicant_display_name) "

@@ -959,8 +959,8 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         }
 
         applicant.setTitle(title);
-        applicant.setForename1(forename);
-        applicant.setSurname(surname);
+        applicant.setFirstName(forename);
+        applicant.setLastName(surname);
     }
 
     public void setRespondentName(
@@ -974,8 +974,8 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         }
 
         respondent.setTitle(title);
-        respondent.setForename1(forename);
-        respondent.setSurname(surname);
+        respondent.setFirstName(forename);
+        respondent.setLastName(surname);
     }
 
     public String renderApplicantName(EntryGetSummaryDto dto) {

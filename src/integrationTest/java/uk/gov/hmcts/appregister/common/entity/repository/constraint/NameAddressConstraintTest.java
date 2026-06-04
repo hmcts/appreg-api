@@ -21,7 +21,7 @@ public class NameAddressConstraintTest extends BaseRepositoryTest {
     public void testOrganisationWithForenameFailure() {
         NameAddress nameAddress = new NameAddressTestData().someComplete();
         nameAddress.setName("Test Name");
-        nameAddress.setForename1("Test Forename");
+        nameAddress.setFirstName("Test Forename");
         TransactionSystemException rollbackException =
                 Assertions.assertThrows(
                         TransactionSystemException.class,
