@@ -755,6 +755,41 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void
+            testToPrintDto_whenApplicantAndRespondentTypesCannotBeDetermined_thenNoContactDetailsAreSet() {
+        var projection =
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
+
+        var dto = new ApplicationListEntryMapperImpl().toPrintDto(projection);
+
+        assertThat(dto.getApplicant()).isNotNull();
+        if (dto.getApplicant().getPerson() != null) {
+            assertThat(dto.getApplicant().getPerson().getContactDetails()).isNull();
+        }
+        if (dto.getApplicant().getOrganisation() != null) {
+            assertThat(dto.getApplicant().getOrganisation().getContactDetails()).isNull();
+        }
+        assertThat(dto.getRespondent()).isNotNull();
+        if (dto.getRespondent().getPerson() != null) {
+            assertThat(dto.getRespondent().getPerson().getContactDetails()).isNull();
+        }
+        if (dto.getRespondent().getOrganisation() != null) {
+            assertThat(dto.getRespondent().getOrganisation().getContactDetails()).isNull();
+        }
+
+        assertApplicationDetailsEqual(dto);
+    }
+
+    @Test
     public void toEntrySummary() {
         // the applicant does have a name so is an organisation
         NameAddress applicant = new NameAddress();

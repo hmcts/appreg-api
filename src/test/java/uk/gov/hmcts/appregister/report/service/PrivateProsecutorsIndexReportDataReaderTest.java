@@ -205,6 +205,8 @@ class PrivateProsecutorsIndexReportDataReaderTest {
         Assertions.assertTrue(query.contains("JOIN name_address app_na"));
         Assertions.assertTrue(query.contains("FROM standard_applicants sa"));
         Assertions.assertTrue(query.contains("NULLIF(TRIM(sa.name), '')"));
+        Assertions.assertTrue(query.contains("app_na.first_name"));
+        Assertions.assertTrue(query.contains("app_na.last_name"));
         Assertions.assertTrue(query.contains("COALESCE(sa.forename_1, '')"));
         Assertions.assertTrue(query.contains("COALESCE(sa.surname, '')"));
         Assertions.assertTrue(query.contains("sa.standard_applicant_code"));
