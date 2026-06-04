@@ -390,7 +390,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         return response.as(EntryGetDetailDto.class);
     }
 
-    private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
+    private static BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
                 .feeDetails(
@@ -402,7 +402,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                                         true)));
     }
 
-    private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
+    private static Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
         Set<UUID> entryIds = new LinkedHashSet<>();
         entryIds.add(entryId);
 
@@ -413,7 +413,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         return entryIds;
     }
 
-    private BulkFeeDetailsDto feeDetails(
+    private static BulkFeeDetailsDto feeDetails(
             PaymentStatus paymentStatus,
             LocalDate statusDate,
             String paymentReference,
@@ -425,7 +425,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 .hasOffsiteFee(hasOffsiteFee);
     }
 
-    private FeeStatus feeStatus(
+    private static FeeStatus feeStatus(
             PaymentStatus paymentStatus, LocalDate statusDate, String paymentReference) {
         return new FeeStatus()
                 .paymentStatus(paymentStatus)
@@ -433,7 +433,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 .paymentReference(paymentReference);
     }
 
-    private void assertFeeDetails(
+    private static void assertFeeDetails(
             EntryGetDetailDto entry,
             PaymentStatus expectedStatus,
             LocalDate expectedStatusDate,
@@ -447,7 +447,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         assertThat(entry.getHasOffsiteFee()).isEqualTo(expectedHasOffsiteFee);
     }
 
-    private void assertFeeDetails(
+    private static void assertFeeDetails(
             EntryGetDetailDto entry,
             List<FeeStatus> expectedFeeStatuses,
             boolean expectedHasOffsiteFee) {

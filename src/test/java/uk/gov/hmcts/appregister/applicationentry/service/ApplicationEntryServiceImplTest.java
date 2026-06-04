@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -165,6 +166,10 @@ public class ApplicationEntryServiceImplTest {
     private static final String BULK_FEE_UPDATE_DURATION_METRIC =
             "appregister.application_entry.bulk_fee_update.duration";
     private static final String METRIC_STATUS_TAG = "status";
+    private static final LocalDate BULK_FEE_STATUS_DATE = LocalDate.of(2025, 10, 7);
+    private static final LocalDate REMITTED_FEE_STATUS_DATE = LocalDate.of(2025, 10, 6);
+    private static final String PAYMENT_REFERENCE_ONE = "PAY-001";
+    private static final String PAYMENT_REFERENCE_TWO = "PAY-002";
 
     @Mock private FeeRepository feeRepository;
 
@@ -291,7 +296,7 @@ public class ApplicationEntryServiceImplTest {
     void setUp() {
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-        when(businessDateProvider.currentUkDate()).thenReturn(LocalDate.of(2025, 10, 7));
+        when(businessDateProvider.currentUkDate()).thenReturn(BULK_FEE_STATUS_DATE);
         bulkUpdateOfficialsValidator =
                 new BulkUpdateOfficialsValidator(
                         applicationListRepository, applicationListEntryRepository);
@@ -838,7 +843,7 @@ public class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(applicationListEntry, savedFeeStatus.getAppListEntry());
         Assertions.assertEquals(FeeStatusType.DUE, savedFeeStatus.getAlefsFeeStatus());
         Assertions.assertNull(savedFeeStatus.getAlefsPaymentReference());
-        Assertions.assertEquals(LocalDate.of(2025, 10, 7), savedFeeStatus.getAlefsFeeStatusDate());
+        Assertions.assertEquals(BULK_FEE_STATUS_DATE, savedFeeStatus.getAlefsFeeStatusDate());
         Assertions.assertNotNull(savedFeeStatus.getAlefsStatusCreationDate());
     }
 
@@ -1713,11 +1718,14 @@ public class ApplicationEntryServiceImplTest {
                 savedStatuses.stream()
                         .allMatch(
                                 status ->
-                                        LocalDate.of(2025, 10, 7)
-                                                .equals(status.getAlefsFeeStatusDate())));
+                                        BULK_FEE_STATUS_DATE.equals(
+                                                status.getAlefsFeeStatusDate())));
         Assertions.assertTrue(
                 savedStatuses.stream()
-                        .allMatch(status -> "PAY-001".equals(status.getAlefsPaymentReference())));
+                        .allMatch(
+                                status ->
+                                        PAYMENT_REFERENCE_ONE.equals(
+                                                status.getAlefsPaymentReference())));
         Assertions.assertTrue(
                 savedStatuses.stream()
                         .allMatch(status -> status.getAlefsStatusCreationDate() != null));
@@ -1767,11 +1775,14 @@ public class ApplicationEntryServiceImplTest {
                 bulkFeesUpdateDto(
                         Set.of(entryId1, entryId2),
                         bulkFeeDetails(
-                                PaymentStatus.PAID, LocalDate.of(2025, 10, 7), "PAY-001", false),
+                                PaymentStatus.PAID,
+                                BULK_FEE_STATUS_DATE,
+                                PAYMENT_REFERENCE_ONE,
+                                false),
                         bulkFeeDetails(
                                 PaymentStatus.REMITTED,
-                                LocalDate.of(2025, 10, 6),
-                                "PAY-002",
+                                REMITTED_FEE_STATUS_DATE,
+                                PAYMENT_REFERENCE_TWO,
                                 false));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
@@ -1802,11 +1813,15 @@ public class ApplicationEntryServiceImplTest {
                         FeeStatusType.REMITTED),
                 savedStatuses.stream().map(AppListEntryFeeStatus::getAlefsFeeStatus).toList());
         Assertions.assertEquals(
-                List.of("PAY-001", "PAY-002", "PAY-001", "PAY-002"),
+                List.of(
+                        PAYMENT_REFERENCE_ONE,
+                        PAYMENT_REFERENCE_TWO,
+                        PAYMENT_REFERENCE_ONE,
+                        PAYMENT_REFERENCE_TWO),
                 savedStatuses.stream()
                         .map(AppListEntryFeeStatus::getAlefsPaymentReference)
                         .toList());
-        verify(feeRepository, times(0)).findOffsite(any(LocalDate.class));
+        verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
 
     @Test
@@ -1839,7 +1854,7 @@ public class ApplicationEntryServiceImplTest {
                         .find(BULK_FEE_UPDATE_ENTRIES_METRIC)
                         .tag(METRIC_STATUS_TAG, "failed")
                         .summary());
-        verify(appListEntryFeeStatusRepository, times(0)).save(any(AppListEntryFeeStatus.class));
+        verify(appListEntryFeeStatusRepository, never()).save(any(AppListEntryFeeStatus.class));
     }
 
     @Test
@@ -1877,7 +1892,7 @@ public class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(listId), anySet());
         verify(appListEntryFeeStatusRepository, times(500)).save(any(AppListEntryFeeStatus.class));
-        verify(feeRepository, times(0)).findOffsite(any(LocalDate.class));
+        verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
 
     @Test
@@ -1899,7 +1914,7 @@ public class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of());
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId()))
                 .thenReturn(List.of());
-        when(feeRepository.findOffsite(LocalDate.of(2025, 10, 7))).thenReturn(List.of(offsiteFee));
+        when(feeRepository.findOffsite(BULK_FEE_STATUS_DATE)).thenReturn(List.of(offsiteFee));
         when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         stubFeeStatusSave();
@@ -1923,11 +1938,14 @@ public class ApplicationEntryServiceImplTest {
                 bulkFeesUpdateDto(
                         Set.of(entryId),
                         bulkFeeDetails(
-                                PaymentStatus.PAID, LocalDate.of(2025, 10, 7), "PAY-001", false),
+                                PaymentStatus.PAID,
+                                BULK_FEE_STATUS_DATE,
+                                PAYMENT_REFERENCE_ONE,
+                                false),
                         bulkFeeDetails(
                                 PaymentStatus.REMITTED,
-                                LocalDate.of(2025, 10, 6),
-                                "PAY-002",
+                                REMITTED_FEE_STATUS_DATE,
+                                PAYMENT_REFERENCE_TWO,
                                 true));
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
@@ -1941,7 +1959,7 @@ public class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of());
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId()))
                 .thenReturn(List.of());
-        when(feeRepository.findOffsite(LocalDate.of(2025, 10, 7))).thenReturn(List.of(offsiteFee));
+        when(feeRepository.findOffsite(BULK_FEE_STATUS_DATE)).thenReturn(List.of(offsiteFee));
         when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         stubFeeStatusSave();
@@ -1977,7 +1995,7 @@ public class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of());
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(any(Long.class)))
                 .thenReturn(List.of());
-        when(feeRepository.findOffsite(LocalDate.of(2025, 10, 7))).thenReturn(List.of(offsiteFee));
+        when(feeRepository.findOffsite(BULK_FEE_STATUS_DATE)).thenReturn(List.of(offsiteFee));
         when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         stubFeeStatusSave();
@@ -1986,7 +2004,7 @@ public class ApplicationEntryServiceImplTest {
 
         ArgumentCaptor<AppListEntryFeeId> feeMappingCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeId.class);
-        verify(feeRepository, times(1)).findOffsite(LocalDate.of(2025, 10, 7));
+        verify(feeRepository, times(1)).findOffsite(BULK_FEE_STATUS_DATE);
         verify(appListEntryFeeRepository, times(2)).save(feeMappingCaptor.capture());
         Assertions.assertEquals(
                 Set.of(entry1.getId(), entry2.getId()),
@@ -2025,7 +2043,7 @@ public class ApplicationEntryServiceImplTest {
         verify(appListEntryFeeRepository).flush();
     }
 
-    private ApplicationList openApplicationList(UUID listId) {
+    private static ApplicationList openApplicationList(UUID listId) {
         val applicationList = new ApplicationList();
         applicationList.setId(10L);
         applicationList.setUuid(listId);
@@ -2033,7 +2051,7 @@ public class ApplicationEntryServiceImplTest {
         return applicationList;
     }
 
-    private ApplicationListEntry applicationListEntry(
+    private static ApplicationListEntry applicationListEntry(
             ApplicationList applicationList, UUID entryId, Long id, short sequenceNumber) {
         val entry = new ApplicationListEntry();
         entry.setId(id);
@@ -2043,14 +2061,15 @@ public class ApplicationEntryServiceImplTest {
         return entry;
     }
 
-    private BulkFeesUpdateDto bulkFeesUpdateDto(
+    private static BulkFeesUpdateDto bulkFeesUpdateDto(
             Set<UUID> entryIds, PaymentStatus paymentStatus, boolean hasOffsiteFee) {
         return bulkFeesUpdateDto(
                 entryIds,
-                bulkFeeDetails(paymentStatus, LocalDate.of(2025, 10, 7), "PAY-001", hasOffsiteFee));
+                bulkFeeDetails(
+                        paymentStatus, BULK_FEE_STATUS_DATE, PAYMENT_REFERENCE_ONE, hasOffsiteFee));
     }
 
-    private BulkFeesUpdateDto bulkFeesUpdateDto(
+    private static BulkFeesUpdateDto bulkFeesUpdateDto(
             Set<UUID> entryIds, BulkFeeDetailsDto... feeDetails) {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(entryIds);
@@ -2058,7 +2077,7 @@ public class ApplicationEntryServiceImplTest {
         return dto;
     }
 
-    private BulkFeeDetailsDto bulkFeeDetails(
+    private static BulkFeeDetailsDto bulkFeeDetails(
             PaymentStatus paymentStatus,
             LocalDate statusDate,
             String paymentReference,

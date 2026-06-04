@@ -129,7 +129,7 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                         .build());
     }
 
-    private BulkFeesUpdateDto validBulkFeesUpdateDto() {
+    private static BulkFeesUpdateDto validBulkFeesUpdateDto() {
         return new BulkFeesUpdateDto()
                 .entryIds(Set.of(UUID.randomUUID()))
                 .feeDetails(

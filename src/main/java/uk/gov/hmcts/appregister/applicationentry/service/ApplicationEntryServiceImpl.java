@@ -651,7 +651,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         updateOffsiteFeeMapping(entry, hasOffsiteFee, offsiteFeeSupplier);
     }
 
-    private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
+    private static boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
         return feeDetails.stream()
                 .anyMatch(feeDetail -> Boolean.TRUE.equals(feeDetail.getHasOffsiteFee()));
     }

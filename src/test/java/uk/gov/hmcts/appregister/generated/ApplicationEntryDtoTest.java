@@ -22,6 +22,11 @@ import utils.ConstraintAssertion;
 
 public class ApplicationEntryDtoTest {
 
+    private static final LocalDate BULK_FEE_STATUS_DATE = LocalDate.of(2025, 10, 7);
+    private static final LocalDate SECOND_BULK_FEE_STATUS_DATE = LocalDate.of(2025, 10, 8);
+    private static final String PAYMENT_REFERENCE_ONE = "PAY-001";
+    private static final String PAYMENT_REFERENCE_TWO = "PAY-002";
+
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -136,16 +141,16 @@ public class ApplicationEntryDtoTest {
                         .entryIds(entryIds(1))
                         .feeDetails(
                                 List.of(
-                                        new BulkFeeDetailsDto()
-                                                .paymentStatus(PaymentStatus.PAID)
-                                                .statusDate(LocalDate.of(2025, 10, 7))
-                                                .paymentReference("PAY-001")
-                                                .hasOffsiteFee(false),
-                                        new BulkFeeDetailsDto()
-                                                .paymentStatus(PaymentStatus.REMITTED)
-                                                .statusDate(LocalDate.of(2025, 10, 8))
-                                                .paymentReference("PAY-002")
-                                                .hasOffsiteFee(true)));
+                                        feeDetails(
+                                                PaymentStatus.PAID,
+                                                BULK_FEE_STATUS_DATE,
+                                                PAYMENT_REFERENCE_ONE,
+                                                false),
+                                        feeDetails(
+                                                PaymentStatus.REMITTED,
+                                                SECOND_BULK_FEE_STATUS_DATE,
+                                                PAYMENT_REFERENCE_TWO,
+                                                true)));
 
         Set<ConstraintViolation<Object>> constraintValidator = validate(dto);
 
@@ -177,7 +182,7 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "feeDetails", "size must be between 1 and 2147483647");
     }
 
-    private Set<ConstraintViolation<Object>> validate(Object value) {
+    private static Set<ConstraintViolation<Object>> validate(Object value) {
         return Validation.byDefaultProvider()
                 .configure()
                 .buildValidatorFactory()
@@ -185,19 +190,31 @@ public class ApplicationEntryDtoTest {
                 .validate(value);
     }
 
-    private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
+    private static BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
                 .feeDetails(
                         List.of(
-                                new BulkFeeDetailsDto()
-                                        .paymentStatus(PaymentStatus.PAID)
-                                        .statusDate(LocalDate.of(2025, 10, 7))
-                                        .paymentReference("PAY-001")
-                                        .hasOffsiteFee(false)));
+                                feeDetails(
+                                        PaymentStatus.PAID,
+                                        BULK_FEE_STATUS_DATE,
+                                        PAYMENT_REFERENCE_ONE,
+                                        false)));
     }
 
-    private Set<UUID> entryIds(int totalCount) {
+    private static BulkFeeDetailsDto feeDetails(
+            PaymentStatus paymentStatus,
+            LocalDate statusDate,
+            String paymentReference,
+            boolean hasOffsiteFee) {
+        return new BulkFeeDetailsDto()
+                .paymentStatus(paymentStatus)
+                .statusDate(statusDate)
+                .paymentReference(paymentReference)
+                .hasOffsiteFee(hasOffsiteFee);
+    }
+
+    private static Set<UUID> entryIds(int totalCount) {
         Set<UUID> entryIds = new LinkedHashSet<>();
 
         for (long index = 1; entryIds.size() < totalCount; index++) {

@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 
 @Component
 public class BulkUpdateFeesValidator
@@ -55,8 +56,9 @@ public class BulkUpdateFeesValidator
             BulkUpdateFeesPayload payload,
             BiFunction<BulkUpdateFeesPayload, BulkUpdateFeesValidationSuccess, R> validateSuccess) {
         validateApplicationList(payload.listId());
-        Set<UUID> requestedIds = validateEntryIds(payload);
-        validateFeeDetails(payload);
+        BulkFeesUpdateDto data = validateData(payload.data());
+        Set<UUID> requestedIds = validateEntryIds(data.getEntryIds());
+        validateFeeDetails(data.getFeeDetails());
 
         List<ApplicationListEntry> entries =
                 applicationListEntryRepository.findByUuidsInSourceList(
@@ -88,25 +90,32 @@ public class BulkUpdateFeesValidator
         }
     }
 
-    private Set<UUID> validateEntryIds(BulkUpdateFeesPayload payload) {
-        if (payload.data() == null || isNullOrEmpty(payload.data().getEntryIds())) {
+    private static BulkFeesUpdateDto validateData(BulkFeesUpdateDto data) {
+        if (data == null) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
-        Set<UUID> requestedIds = new HashSet<>(payload.data().getEntryIds());
-        return requestedIds;
+        return data;
     }
 
-    @SuppressWarnings("java:S2583")
-    private void validateFeeDetails(BulkUpdateFeesPayload payload) {
-        if (payload.data() == null || isNullOrEmpty(payload.data().getFeeDetails())) {
+    private static Set<UUID> validateEntryIds(Set<UUID> entryIds) {
+        if (isNullOrEmpty(entryIds)) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
+        }
+
+        return new HashSet<>(entryIds);
+    }
+
+    private void validateFeeDetails(List<BulkFeeDetailsDto> feeDetails) {
+        if (isNullOrEmpty(feeDetails)) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_DETAILS_NOT_PROVIDED, "No fee details provided");
         }
 
-        for (BulkFeeDetailsDto feeDetails : payload.data().getFeeDetails()) {
-            validateFeeDetail(feeDetails);
+        for (BulkFeeDetailsDto feeDetail : feeDetails) {
+            validateFeeDetail(feeDetail);
         }
     }
 
@@ -153,7 +162,7 @@ public class BulkUpdateFeesValidator
         }
     }
 
-    private boolean isPaymentReferenceProvided(BulkFeeDetailsDto feeDetails) {
+    private static boolean isPaymentReferenceProvided(BulkFeeDetailsDto feeDetails) {
         return feeDetails.getPaymentReference() != null
                 && !feeDetails.getPaymentReference().trim().isEmpty();
     }
@@ -195,7 +204,7 @@ public class BulkUpdateFeesValidator
                 Map.of("invalid_entry_ids", missingIds.toString()));
     }
 
-    private boolean isNullOrEmpty(Collection<?> values) {
+    private static boolean isNullOrEmpty(Collection<?> values) {
         return values == null || values.isEmpty();
     }
 }

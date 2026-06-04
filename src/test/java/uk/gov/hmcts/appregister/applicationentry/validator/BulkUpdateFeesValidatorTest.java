@@ -290,18 +290,18 @@ class BulkUpdateFeesValidatorTest {
         return validPayload(listId, Set.of(entryId), feeDetails);
     }
 
-    private BulkUpdateFeesPayload validPayload(
+    private static BulkUpdateFeesPayload validPayload(
             UUID listId, Set<UUID> entryIds, BulkFeeDetailsDto... feeDetails) {
         return validPayload(listId, entryIds, List.of(feeDetails));
     }
 
-    private BulkUpdateFeesPayload validPayload(
+    private static BulkUpdateFeesPayload validPayload(
             UUID listId, Set<UUID> entryIds, List<BulkFeeDetailsDto> feeDetails) {
         return new BulkUpdateFeesPayload(
                 listId, new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(feeDetails));
     }
 
-    private BulkUpdateFeesPayload validPayloadForList(UUID listId, UUID entryId) {
+    private static BulkUpdateFeesPayload validPayloadForList(UUID listId, UUID entryId) {
         return validPayload(listId, Set.of(entryId), validFeeDetails());
     }
 
@@ -309,7 +309,7 @@ class BulkUpdateFeesValidatorTest {
         return assertThrows(AppRegistryException.class, () -> validator.validate(payload));
     }
 
-    private BulkFeeDetailsDto validFeeDetails() {
+    private static BulkFeeDetailsDto validFeeDetails() {
         return new BulkFeeDetailsDto()
                 .paymentStatus(PaymentStatus.PAID)
                 .statusDate(TODAY)
