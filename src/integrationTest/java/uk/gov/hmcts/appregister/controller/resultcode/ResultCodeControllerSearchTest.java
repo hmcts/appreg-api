@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller.resultcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -51,6 +52,10 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     private static final String DUPLICATE_TITLE_1 = "Duplicate Entry 1";
     private static final String DUPLICATE_TITLE_2 = "Duplicate Entry 2";
     private static final LocalDate DUPLICATE_END_DATE = LocalDate.of(2099, 1, 1);
+    private static final String NULL_END_DATE_CODE = "NULEND01";
+    private static final String NULL_END_DATE_TITLE = "Null End Date Result";
+    private static final String SUMMARY_CODE = "PAGETST01";
+    private static final String SUMMARY_TITLE = "Paged Summary Result";
 
     private static final LocalDate SEED_START = LocalDate.of(2016, 1, 1);
     private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, 1, 1);
@@ -84,7 +89,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
         assertThat(dto.getResultCode()).isEqualTo(APPC_CODE);
         assertThat(dto.getTitle()).isEqualTo(APPC_TITLE);
         assertThat(dto.getStartDate()).isEqualTo(SEED_START);
-        assertThat(dto.getEndDate().isPresent()).isFalse();
+        assertThat(dto.getEndDate().get()).isNull();
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
@@ -130,7 +135,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
         assertThat(dto.getResultCode()).isEqualTo(AUTH_CODE);
         assertThat(dto.getTitle()).isEqualTo(AUTH_TITLE);
         assertThat(dto.getStartDate()).isEqualTo(SEED_START);
-        assertThat(dto.getEndDate().isPresent()).isFalse();
+        assertThat(dto.getEndDate().get()).isNull();
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
@@ -184,7 +189,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
         var dto = resp.as(ResultCodeGetDetailDto.class);
         assertThat(dto.getResultCode()).isEqualTo(DUPLICATE_CODE);
         assertThat(dto.getTitle()).isEqualTo(DUPLICATE_TITLE_2);
-        assertThat(dto.getEndDate().isPresent()).isFalse();
+        assertThat(dto.getEndDate().get()).isNull();
     }
 
     @Test
@@ -215,6 +220,31 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
         assertThat(page.getContent().getFirst().getResultCode()).isEqualTo(DUPLICATE_CODE);
         assertThat(page.getContent().getFirst().getTitle()).isEqualTo(DUPLICATE_TITLE_1);
         assertThat(page.getContent().get(1).getTitle()).isEqualTo(DUPLICATE_TITLE_2);
+    }
+
+    @Test
+    void givenOpenEndedResultCode_whenGetResultCodeByCodeAndDate_thenEndDateIsExplicitNull()
+            throws Exception {
+        createResultCode(NULL_END_DATE_CODE, NULL_END_DATE_TITLE, SEED_START, null);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response response =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + NULL_END_DATE_CODE + "?date=" + ACTIVE_DAY),
+                        token);
+
+        response.then().statusCode(200);
+
+        JsonNode body = mapper.readTree(response.asString());
+        assertThat(body.path("resultCode").asText()).isEqualTo(NULL_END_DATE_CODE);
+        assertThat(body.path("title").asText()).isEqualTo(NULL_END_DATE_TITLE);
+        assertThat(body.path("startDate").asText()).isEqualTo(SEED_START.toString());
+        assertExplicitNull(body, "endDate");
     }
 
     @Test
@@ -656,6 +686,39 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
     }
 
+    @Test
+    void givenCreatedActiveResultCode_whenGetResultCodes_thenSummaryFieldsAreReturned()
+            throws Exception {
+        createResultCode(SUMMARY_CODE, SUMMARY_TITLE, SEED_START, null);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response response =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        new ResultCodeFilter(Optional.of(SUMMARY_CODE), Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        response.then().statusCode(200);
+
+        var page = response.as(ResultCodePage.class);
+        assertThat(page.getContent())
+                .singleElement()
+                .satisfies(
+                        summary -> {
+                            assertThat(summary.getResultCode()).isEqualTo(SUMMARY_CODE);
+                            assertThat(summary.getTitle()).isEqualTo(SUMMARY_TITLE);
+                        });
+    }
+
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
@@ -717,19 +780,31 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     private void createDuplicateActiveRows() throws Exception {
+        createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
+        createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null);
+    }
+
+    private void createResultCode(String code, String title, LocalDate startDate, LocalDate endDate)
+            throws Exception {
         var jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         try {
-            persistance.save(
-                    createResolutionCode(
-                            DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE));
-            persistance.save(
-                    createResolutionCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null));
+            persistance.save(createResolutionCode(code, title, startDate, endDate));
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private void assertExplicitNull(JsonNode root, String dottedPath) {
+        JsonNode current = root;
+        for (String pathElement : dottedPath.split("\\.")) {
+            current = current.path(pathElement);
+        }
+
+        assertThat(current.isMissingNode()).as(dottedPath + " should be present").isFalse();
+        assertThat(current.isNull()).as(dottedPath + " should be explicitly null").isTrue();
     }
 
     private ResolutionCode createResolutionCode(
