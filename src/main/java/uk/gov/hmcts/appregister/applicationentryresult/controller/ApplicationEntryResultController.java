@@ -48,26 +48,36 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<Void> bulkResultApplicationListEntries(
+    public ResponseEntity<List<ResultGetDto>> bulkResultApplicationListEntries(
             UUID listId, BulkResultDto bulkResultDto) {
         // call the service to process the bulk result for the list of entries
-        service.bulkCreate(
-                PayloadForCreateResults.<BulkResultDto>builder()
-                        .payload(bulkResultDto)
-                        .listId(listId)
-                        .build());
+        List<ResultGetDto> createdResults =
+                service.bulkCreate(
+                        PayloadForCreateResults.<BulkResultDto>builder()
+                                .payload(bulkResultDto)
+                                .listId(listId)
+                                .build());
 
-        return ResponseEntity.noContent().varyBy(HttpHeaders.ACCEPT).build();
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(createdResults);
     }
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<Void> bulkResultEntries(BulkResultDto bulkResultDto) {
+    public ResponseEntity<List<ResultGetDto>> bulkResultEntries(BulkResultDto bulkResultDto) {
         // call the service to process the bulk result for the list of entries
-        service.bulkCreate(
-                PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build());
+        List<ResultGetDto> createdResults =
+                service.bulkCreate(
+                        PayloadForCreateResults.<BulkResultDto>builder()
+                                .payload(bulkResultDto)
+                                .build());
 
-        return ResponseEntity.noContent().varyBy(HttpHeaders.ACCEPT).build();
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(createdResults);
     }
 
     /**

@@ -312,18 +312,19 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
     @Override
     @Transactional
-    public void bulkCreate(PayloadForCreateResults<BulkResultDto> bulkResultDto) {
-        bulkApplicationEntryResultCreationValidator.validate(
+    public List<ResultGetDto> bulkCreate(PayloadForCreateResults<BulkResultDto> bulkResultDto) {
+        return bulkApplicationEntryResultCreationValidator.validate(
                 bulkResultDto,
                 (validate, success) -> {
+                    List<ResultGetDto> createdResults = new ArrayList<>();
 
                     // loop through each successful validation result and create the entry result
                     for (PayloadForCreateEntryResult<ResultCreateDto> createValidationSuccesses :
                             success.getResults()) {
-                        create(createValidationSuccesses);
+                        createdResults.add(create(createValidationSuccesses).getPayload());
                     }
 
-                    return null;
+                    return createdResults;
                 });
     }
 
