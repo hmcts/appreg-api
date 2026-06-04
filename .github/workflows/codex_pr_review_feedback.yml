@@ -241,12 +241,16 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'true'
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
 
     steps:
       - name: Checkout default branch
