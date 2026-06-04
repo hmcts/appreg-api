@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
+import java.util.List;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
@@ -57,9 +58,10 @@ public interface ApplicationEntryResultService {
             PayloadGetEntryResultInList payloadGetEntryResultInList, PagingWrapper pageable);
 
     /**
-     * bulk results a group of entries within a list with a result code.
+     * Bulk results a group of entries with a result code.
      *
      * @param bulkResultDto The bulk result dto.
+     * @return The created application list entry results.
      */
-    void bulkCreate(PayloadForCreateResults<BulkResultDto> bulkResultDto);
+    List<ResultGetDto> bulkCreate(PayloadForCreateResults<BulkResultDto> bulkResultDto);
 }
