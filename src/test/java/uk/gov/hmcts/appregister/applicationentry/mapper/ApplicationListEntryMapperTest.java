@@ -63,6 +63,8 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import lombok.val;
@@ -97,6 +99,7 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -104,6 +107,7 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
@@ -325,6 +329,114 @@ class ApplicationListEntryMapperTest {
                 "Read audit application title", mappedResult.getApplicationCode().getTitle());
         Assertions.assertEquals(YesOrNo.YES, mappedResult.getApplicationCode().getFeeDue());
         Assertions.assertEquals(Short.valueOf((short) 7), mappedResult.getSequenceNumber());
+    }
+
+    @Test
+    void testToApplicationListEntry_mapsAuditEntryFilterDto() {
+        var filterDto = new EntryGetFilterDto();
+        filterDto.setAccountReference("ACC-456");
+        filterDto.setStandardApplicantCode("STD001");
+        filterDto.setApplicantOrganisation("Applicant Org");
+        filterDto.setApplicantSurname("Applicant Surname");
+        filterDto.setRespondentOrganisation("Respondent Org");
+        filterDto.setRespondentSurname("Respondent Surname");
+        filterDto.setRespondentPostcode("AA1 1AA");
+        filterDto.setCourtCode("COURT1");
+        filterDto.setOtherLocationDescription("Room 4");
+        filterDto.setDate(LocalDate.of(2026, 6, 4));
+        filterDto.setCjaCode("CJA01");
+        filterDto.setStatus(ApplicationListStatus.CLOSED);
+        filterDto.setApplicationTitle("Application Title");
+
+        var mappedResult = mapper.toApplicationListEntry(filterDto);
+
+        Assertions.assertEquals(0L, mappedResult.getId());
+        Assertions.assertEquals("ACC-456", mappedResult.getAccountNumber());
+        Assertions.assertEquals("STD001", mappedResult.getStandardApplicant().getApplicantCode());
+        Assertions.assertEquals("Applicant Org", mappedResult.getAnamedaddress().getName());
+        Assertions.assertEquals("Applicant Surname", mappedResult.getAnamedaddress().getLastName());
+        Assertions.assertEquals("Respondent Org", mappedResult.getRnameaddress().getName());
+        Assertions.assertEquals("Respondent Surname", mappedResult.getRnameaddress().getLastName());
+        Assertions.assertEquals("AA1 1AA", mappedResult.getRnameaddress().getPostcode());
+        Assertions.assertEquals("COURT1", mappedResult.getApplicationList().getCourtCode());
+        Assertions.assertEquals("Room 4", mappedResult.getApplicationList().getOtherLocation());
+        Assertions.assertEquals(
+                LocalDate.of(2026, 6, 4), mappedResult.getApplicationList().getDate());
+        Assertions.assertEquals("CJA01", mappedResult.getApplicationList().getCja().getCode());
+        Assertions.assertEquals(Status.CLOSED, mappedResult.getApplicationList().getStatus());
+    }
+
+    @Test
+    void testToApplicationListEntry_mapsPayloadForAuditEntryLookup() {
+        val listId = UUID.randomUUID();
+        val entryId = UUID.randomUUID();
+        val payload = PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
+
+        var mappedResult = mapper.toApplicationListEntry(payload);
+
+        Assertions.assertEquals(0L, mappedResult.getId());
+        Assertions.assertEquals(listId, mappedResult.getApplicationList().getUuid());
+        Assertions.assertEquals(entryId, mappedResult.getUuid());
+    }
+
+    @Test
+    void testToApplicant_usesStandardApplicantWhenNamedApplicantMissing() {
+        var projection = mock(ApplicationListEntryGetSummaryProjection.class);
+        var standardApplicant = new StandardApplicantTestData().someComplete();
+        var applicantMapper = new ApplicantMapperImpl();
+
+        when(projection.getAnameAddress()).thenReturn(null);
+        when(projection.getStandardApplicant()).thenReturn(standardApplicant);
+
+        var expectedApplicant =
+                applicantMapper.toApplicant(applicantMapper.toApplicantEntity(standardApplicant));
+
+        var mappedApplicant = mapper.toApplicant(projection);
+
+        assertThat(mappedApplicant).usingRecursiveComparison().isEqualTo(expectedApplicant);
+    }
+
+    @Test
+    void testToApplicant_returnsNullWhenNoApplicantSourceExists() {
+        var projection = mock(ApplicationListEntryGetSummaryProjection.class);
+
+        when(projection.getAnameAddress()).thenReturn(null);
+        when(projection.getStandardApplicant()).thenReturn(null);
+
+        assertThat(mapper.toApplicant(projection)).isNull();
+    }
+
+    @Test
+    void testMapOffsetDateTime_returnsLocalDateAndHandlesNull() {
+        Assertions.assertNull(mapper.map((OffsetDateTime) null));
+        Assertions.assertEquals(
+                LocalDate.of(2026, 6, 4),
+                mapper.map(OffsetDateTime.of(2026, 6, 4, 9, 30, 0, 0, ZoneOffset.UTC)));
+    }
+
+    @Test
+    void testMapBooleanAndInteger_handleNullsAndValues() {
+        Assertions.assertNull(mapper.map((Boolean) null));
+        Assertions.assertEquals(YesOrNo.YES, mapper.map(Boolean.TRUE));
+        Assertions.assertEquals(YesOrNo.NO, mapper.map(Boolean.FALSE));
+
+        Assertions.assertNull(mapper.map((Integer) null));
+        Assertions.assertEquals(Short.valueOf((short) 12), mapper.map(Integer.valueOf(12)));
+    }
+
+    @Test
+    void testToStatus_mapsGeneratedStatusAndHandlesNull() {
+        Assertions.assertNull(mapper.toStatus((ApplicationListStatus) null));
+        Assertions.assertEquals(Status.CLOSED, mapper.toStatus(ApplicationListStatus.CLOSED));
+    }
+
+    @Test
+    void testGetTemplateKeys_extractsWordingPlaceholders() {
+        var applicationCode = new ApplicationCode();
+        applicationCode.setWording("One {TEXT|First label|11} then {TEXT|Second label|11}");
+
+        assertThat(mapper.getTemplateKeys(applicationCode))
+                .containsExactly("First label", "Second label");
     }
 
     @Test
