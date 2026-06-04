@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller.courtlocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
@@ -12,7 +13,6 @@ import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -164,6 +164,37 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         assertThat(dto.getName()).isEqualTo("Newer Court");
         assertThat(dto.getLocationCode()).isEqualTo(code);
         assertThat(dto.getStartDate()).isEqualTo(queryDate.minusDays(1));
+    }
+
+    @Test
+    void
+            givenCreatedOpenEndedCourtLocation_whenGetCourtLocationByCodeAndDate_thenDetailFieldsReturned()
+                    throws Exception {
+        var code = "CLDET001";
+        var name = "Created Detail Court";
+        var startDate = LocalDate.of(2025, 2, 3);
+        createCourtLocation(code, name, startDate, null);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + code + "?date=2025-02-10"), token);
+
+        resp.then().statusCode(200);
+
+        CourtLocationGetDetailDto dto = resp.as(CourtLocationGetDetailDto.class);
+        assertThat(dto.getName()).isEqualTo(name);
+        assertThat(dto.getLocationCode()).isEqualTo(code);
+        assertThat(dto.getStartDate()).isEqualTo(startDate);
+        assertThat(dto.getEndDate().get()).isNull();
+
+        JsonNode root = mapper.readTree(resp.asString());
+        assertExplicitNull(root, "endDate");
     }
 
     @Test
@@ -336,6 +367,42 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         assertThat(page.getContent().get(0).getLocationCode()).isEqualTo(code);
         assertThat(page.getContent().get(0).getName()).isEqualTo("Older Court");
         assertThat(page.getContent().get(1).getName()).isEqualTo("Newer Court");
+    }
+
+    @Test
+    void givenCreatedActiveCourtLocation_whenGetCourtLocations_thenSummaryFieldsReturned()
+            throws Exception {
+        var code = "CLSUM001";
+        var name = "Created Summary Court";
+        createCourtLocation(code, name, LocalDate.of(2025, 3, 4), null);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        new CourtLocationFilter(Optional.empty(), Optional.of(code)),
+                        new OpenApiPageMetaData());
+
+        resp.then().statusCode(200);
+
+        CourtLocationPage page = resp.as(CourtLocationPage.class);
+        PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 1);
+        assertThat(page.getContent())
+                .singleElement()
+                .satisfies(
+                        summary -> {
+                            assertThat(summary.getLocationCode()).isEqualTo(code);
+                            assertThat(summary.getName()).isEqualTo(name);
+                        });
     }
 
     @Test
@@ -679,15 +746,25 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     }
 
     private void saveActiveCourt(String code, String name, LocalDate startDate) {
-        NationalCourtHouse nationalCourtHouse =
+        createCourtLocation(code, name, startDate, null);
+    }
+
+    private void createCourtLocation(
+            String code, String name, LocalDate startDate, LocalDate endDate) {
+        var nationalCourtHouse =
                 new NationalCourtHouseData()
                         .someMinimal()
                         .courtLocationCode(code)
                         .name(name)
                         .startDate(startDate)
-                        .endDate(null)
+                        .endDate(endDate)
                         .courtType("CHOA")
                         .build();
         persistance.save(nationalCourtHouse);
+    }
+
+    private void assertExplicitNull(JsonNode root, String fieldName) {
+        assertThat(root.has(fieldName)).isTrue();
+        assertThat(root.get(fieldName).isNull()).isTrue();
     }
 }
