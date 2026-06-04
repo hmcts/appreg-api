@@ -178,11 +178,14 @@ run_backend_sonar_analysis() {
   local sonar_host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
   local sonar_organization="${SONAR_ORGANIZATION:-hmcts}"
   local sonar_branch_name="${SONAR_BRANCH_NAME:-${branch_name}}"
+  local sonar_quality_gate_timeout="${SONAR_QUALITY_GATE_TIMEOUT_SECONDS:-300}"
   local sonar_args=(
     --no-daemon
     sonar
     "-Dsonar.host.url=${sonar_host_url}"
     "-Dsonar.branch.name=${sonar_branch_name}"
+    "-Dsonar.qualitygate.wait=true"
+    "-Dsonar.qualitygate.timeout=${sonar_quality_gate_timeout}"
   )
 
   if [[ -n "${sonar_organization}" ]]; then
