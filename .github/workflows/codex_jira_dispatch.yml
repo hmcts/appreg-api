@@ -91,7 +91,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
       RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output
@@ -241,7 +241,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
       RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
@@ -391,7 +391,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
       RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
@@ -541,7 +541,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
       RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
