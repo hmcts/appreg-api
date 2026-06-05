@@ -1,0 +1,85 @@
+@startuml
+
+title GET /application-lists/{id}/print sequence
+
+actor UI
+participant ApplicationListController
+participant ApplicationListServiceImpl
+participant AuditOperationServiceImpl
+database ApplicationListRepository
+database ApplicationListEntryRepository
+database AppListEntryResolutionRepository
+database ApplicationListEntryOfficialRepository
+participant ApplicationListEntryMapper
+participant ApplicationListOfficialMapper
+participant ApplicationListMapper
+
+UI -> ApplicationListController : GET /application-lists/{id}/print
+activate ApplicationListController
+
+ApplicationListController -> ApplicationListServiceImpl : print(id)
+activate ApplicationListServiceImpl
+
+ApplicationListServiceImpl -> AuditOperationServiceImpl : processAudit(null, PRINT_APP_LIST, execution, listeners)
+activate AuditOperationServiceImpl
+
+AuditOperationServiceImpl -> ApplicationListRepository : findByUuid(id)
+activate ApplicationListRepository
+ApplicationListRepository --> AuditOperationServiceImpl : ApplicationList
+deactivate ApplicationListRepository
+
+AuditOperationServiceImpl -> ApplicationListEntryRepository : findByIdForPrinting(id)
+activate ApplicationListEntryRepository
+ApplicationListEntryRepository --> AuditOperationServiceImpl : List<ApplicationListEntryPrintProjection>
+deactivate ApplicationListEntryRepository
+
+alt no entry projections
+    AuditOperationServiceImpl -> ApplicationListMapper : toGetPrintDto(list)
+    activate ApplicationListMapper
+    ApplicationListMapper --> AuditOperationServiceImpl : ApplicationListGetPrintDto
+    deactivate ApplicationListMapper
+else entry projections found
+    AuditOperationServiceImpl -> AppListEntryResolutionRepository : findByApplicationListUuidForPrinting(id)
+    activate AppListEntryResolutionRepository
+    AppListEntryResolutionRepository --> AuditOperationServiceImpl : resolution projections
+    deactivate AppListEntryResolutionRepository
+
+    AuditOperationServiceImpl -> ApplicationListEntryOfficialRepository : findByApplicationListUuidForPrinting(id, PRINTABLE_CODES)
+    activate ApplicationListEntryOfficialRepository
+    ApplicationListEntryOfficialRepository --> AuditOperationServiceImpl : official projections
+    deactivate ApplicationListEntryOfficialRepository
+
+    loop for each official projection
+        AuditOperationServiceImpl -> ApplicationListOfficialMapper : toOfficialDto(projection)
+        activate ApplicationListOfficialMapper
+        ApplicationListOfficialMapper --> AuditOperationServiceImpl : Official
+        deactivate ApplicationListOfficialMapper
+    end
+
+    loop for each entry projection
+        AuditOperationServiceImpl -> ApplicationListEntryMapper : toPrintDto(entryProjection)
+        activate ApplicationListEntryMapper
+        ApplicationListEntryMapper --> AuditOperationServiceImpl : EntryGetPrintDto
+        deactivate ApplicationListEntryMapper
+        note right of AuditOperationServiceImpl
+          Result wordings and mapped officials are attached
+          from the pre-fetched grouped data
+        end note
+    end
+
+    AuditOperationServiceImpl -> ApplicationListMapper : toGetPrintDto(list)
+    activate ApplicationListMapper
+    ApplicationListMapper --> AuditOperationServiceImpl : ApplicationListGetPrintDto
+    deactivate ApplicationListMapper
+end
+
+AuditOperationServiceImpl --> ApplicationListServiceImpl : ApplicationListGetPrintDto
+deactivate AuditOperationServiceImpl
+
+ApplicationListServiceImpl --> ApplicationListController : ApplicationListGetPrintDto
+deactivate ApplicationListServiceImpl
+
+ApplicationListController --> UI : 200 OK\nApplicationListGetPrintDto
+deactivate ApplicationListController
+
+@enduml

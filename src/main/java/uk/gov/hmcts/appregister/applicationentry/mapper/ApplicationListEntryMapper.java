@@ -153,8 +153,7 @@ public abstract class ApplicationListEntryMapper {
      * the specified {@link PartyType}.
      *
      * <p>This method extracts address lines, postcode, phone, mobile, and email information for
-     * either the applicant or respondent, depending on the given {@code partyType}. All fields are
-     * initialized to empty strings before mapping to ensure null safety.
+     * either the applicant or respondent, depending on the given {@code partyType}.
      *
      * @param applicationListEntryPrintProjection the projection object containing applicant and
      *     respondent contact information
@@ -168,15 +167,15 @@ public abstract class ApplicationListEntryMapper {
             PartyType partyType) {
         ContactDetails details = new ContactDetails();
 
-        String address1 = "";
-        String address2 = "";
-        String address3 = "";
-        String address4 = "";
-        String address5 = "";
-        String postcode = "";
-        String phone = "";
-        String mobile = "";
-        String email = "";
+        String address1 = null;
+        String address2 = null;
+        String address3 = null;
+        String address4 = null;
+        String address5 = null;
+        String postcode = null;
+        String phone = null;
+        String mobile = null;
+        String email = null;
 
         if (partyType == PartyType.APPLICANT) {
             address1 = applicationListEntryPrintProjection.getApplicantAddressLine1();

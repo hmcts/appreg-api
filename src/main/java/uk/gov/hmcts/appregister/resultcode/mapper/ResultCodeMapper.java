@@ -38,7 +38,7 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "resultCode", source = "resultCode")
     @Mapping(target = "title", source = "title")
     @Mapping(target = "startDate", source = "startDate")
-    @Mapping(target = "endDate", source = "endDate")
+    @Mapping(target = "endDate", expression = "java(toEndDate(entity.getEndDate()))")
     @Mapping(
             target = "wording",
             expression =
@@ -62,7 +62,7 @@ public abstract class ResultCodeMapper {
     @BeanMapping(ignoreByDefault = true)
     public abstract ResolutionCode toEntity(CodeAndTitle record);
 
-    JsonNullable<LocalDate> map(LocalDate value) {
-        return value != null ? JsonNullable.of(value) : JsonNullable.undefined();
+    static JsonNullable<LocalDate> toEndDate(LocalDate value) {
+        return value != null ? JsonNullable.of(value) : JsonNullable.of(null);
     }
 }

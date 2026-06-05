@@ -68,7 +68,7 @@ public class ResultCodeMapperTest {
     }
 
     @Test
-    void toDetailDto_withNullEndDate_mapsToUndefined() {
+    void toDetailDto_withNullEndDate_mapsToExplicitNull() {
         var code = "RC456";
         var title = "Dismissed";
         var wording = "Case dismissed";
@@ -88,8 +88,10 @@ public class ResultCodeMapperTest {
         Assertions.assertEquals(title, dto.getTitle());
         Assertions.assertEquals(startDate, dto.getStartDate());
 
-        Assertions.assertFalse(
-                dto.getEndDate().isPresent(), "endDate should be undefined when source is null");
+        Assertions.assertTrue(
+                dto.getEndDate().isPresent(), "endDate should be present when source is null");
+        Assertions.assertNull(
+                dto.getEndDate().get(), "endDate should be explicitly null when source is null");
     }
 
     @Test

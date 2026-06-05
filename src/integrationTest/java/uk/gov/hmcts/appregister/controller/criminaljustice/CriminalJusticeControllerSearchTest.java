@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
+import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -126,6 +127,27 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREA_AUDIT_ACTION, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertFailCompleted(
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREA_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
+    }
+
+    @Test
+    public void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreaByCode_thenReturnFields()
+            throws Exception {
+        var code = "K1";
+        var description = "Created CJA";
+        createCriminalJusticeArea(code, description);
+
+        var token = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + code), token.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        CriminalJusticeAreaGetDto responseContent =
+                responseSpec.as(CriminalJusticeAreaGetDto.class);
+        Assertions.assertEquals(code, responseContent.getCode());
+        Assertions.assertEquals(description, responseContent.getDescription());
     }
 
     @Test
@@ -258,6 +280,35 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
                                 .name(),
                         CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
                                 .getEventName()));
+    }
+
+    @Test
+    public void
+            givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreas_thenReturnSummaryFields()
+                    throws Exception {
+        var code = "K2";
+        var description = "Created Summary CJA";
+        createCriminalJusticeArea(code, description);
+
+        var token = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token.fetchTokenForRole(),
+                        new CriminalJusticeAreaFilter(
+                                Optional.of(code.toLowerCase()), Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        CriminalJusticeAreaPage responseContent = responseSpec.as(CriminalJusticeAreaPage.class);
+        PagingAssertionUtil.assertPageDetails(responseContent, DEFAULT_PAGE_SIZE, 0, 1, 1);
+        Assertions.assertEquals(code, responseContent.getContent().get(0).getCode());
+        Assertions.assertEquals(description, responseContent.getContent().get(0).getDescription());
     }
 
     @Test
@@ -746,5 +797,15 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
             }
             return rs;
         }
+    }
+
+    private void createCriminalJusticeArea(String code, String description) {
+        var criminalJusticeArea =
+                new CriminalJusticeTestData()
+                        .someMinimal()
+                        .code(code)
+                        .description(description)
+                        .build();
+        persistance.save(criminalJusticeArea);
     }
 }
