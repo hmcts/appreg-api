@@ -76,7 +76,7 @@ class ActivityAuditReportDataReaderTest {
         Assertions.assertEquals("new", row.getNewValue());
         Assertions.assertEquals(LocalDate.of(2026, 4, 1), row.getCreatedDate());
         Assertions.assertEquals(LocalDateTime.of(2026, 4, 1, 10, 15), row.getCreatedDateTime());
-        Assertions.assertEquals("caseworker", row.getUserName());
+        Assertions.assertEquals("caseworker@example.com", row.getUserName());
 
         Assertions.assertEquals(2, parameterSources.size());
         assertParameters(parameterSources.getFirst(), false);
@@ -124,7 +124,7 @@ class ActivityAuditReportDataReaderTest {
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
         Assertions.assertEquals(LocalDate.of(2026, 4, 1), parameters.getValue("dateFrom"));
         Assertions.assertEquals(LocalDate.of(2026, 4, 30), parameters.getValue("dateTo"));
-        Assertions.assertEquals("caseworker", parameters.getValue("username"));
+        Assertions.assertEquals("caseworker@example.com", parameters.getValue("username"));
         Assertions.assertEquals(
                 List.of(
                         "Add Application",
@@ -174,6 +174,10 @@ class ActivityAuditReportDataReaderTest {
                         "CASE da.event_name WHEN :eventName0 THEN 0 WHEN :eventName1 THEN 1"));
         Assertions.assertTrue(query.contains("da.created_date >= :dateFrom"));
         Assertions.assertTrue(query.contains("da.event_name IN (:eventNames)"));
+        Assertions.assertTrue(
+                query.contains("COALESCE(NULLIF(da.user_id, ''), da.user_name) AS user_name"));
+        Assertions.assertTrue(
+                query.contains("OR COALESCE(NULLIF(da.user_id, ''), da.user_name) = :username"));
         Assertions.assertTrue(query.contains("POSITION('_ID' IN UPPER(da.column_name)) = 0"));
         Assertions.assertTrue(
                 query.contains("Maintains legacy MIS Activity Audit report ordering"));
@@ -192,7 +196,7 @@ class ActivityAuditReportDataReaderTest {
         return new ActivityAuditFilterDto()
                 .dateFrom(LocalDate.of(2026, 4, 1))
                 .dateTo(LocalDate.of(2026, 4, 30))
-                .username("caseworker")
+                .username("caseworker@example.com")
                 .activityTypes(
                         List.of(
                                 ActivityType.ADD_APPLICATION,
@@ -229,7 +233,7 @@ class ActivityAuditReportDataReaderTest {
                 .thenReturn(LocalDate.of(2026, 4, 1));
         when(resultSet.getObject("created_date_time", LocalDateTime.class))
                 .thenReturn(LocalDateTime.of(2026, 4, 1, 10, 15));
-        when(resultSet.getString("user_name")).thenReturn("caseworker");
+        when(resultSet.getString("user_name")).thenReturn("caseworker@example.com");
         return resultSet;
     }
 }
