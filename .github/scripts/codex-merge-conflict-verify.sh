@@ -27,6 +27,7 @@ verification_path="${output_dir}/verification.env"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-conflict-verify-${GITHUB_RUN_ID:-manual}-${GITHUB_RUN_ATTEMPT:-1}"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
+sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
 trusted_pipeline_sha=""
 
@@ -47,7 +48,7 @@ run_sanitized() {
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
     "TERM=${TERM:-xterm}"
     "TMPDIR=${sanitized_tmp}"
-    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
+    "RUNNER_TEMP=${sanitized_runner_temp}"
     "CI=${CI:-true}"
     "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
     "GRADLE_USER_HOME=${sanitized_home}/.gradle"
@@ -147,7 +148,7 @@ restore_ours_for_patch() {
   done
 }
 
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}"
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}"
 
 has_changes="$(metadata_value has_changes)"
 pr_number="$(metadata_value pr_number)"
@@ -208,6 +209,16 @@ fi
 
 echo "Applying Java formatting before verifying and publishing the conflict-resolution patch."
 run_sanitized ./gradlew --no-daemon spotlessApply
+echo "Running backend Checkstyle probe before creating the conflict-resolution patch."
+if ! run_sanitized ./gradlew --no-daemon \
+  checkstyleMain \
+  checkstyleTest \
+  checkstyleTestCommon \
+  checkstyleIntegrationTest \
+  checkstyleFunctionalTest \
+  checkstyleSmokeTest; then
+  echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure."
+fi
 git_sanitized add -A -- "${conflicted_files[@]}"
 
 if grep -R -n -E '^(<<<<<<<|=======|>>>>>>>)' -- "${conflicted_files[@]}" >/tmp/codex-conflict-markers.txt 2>/dev/null; then

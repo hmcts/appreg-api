@@ -706,8 +706,13 @@ jobs:
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
       SONAR_PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
       SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-pr.outputs.output_artifact }}
       CODEX_FAILURE_ARTIFACT: codex-jira-pr-verification-failure-0
 
@@ -743,7 +748,19 @@ jobs:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
           set +e
-          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
+          (
+            ./.github/scripts/codex-jira-verify.sh
+            status=$?
+            if [[ "${status}" -eq 0 ]]; then
+              ./.github/scripts/codex-check-sonar-quality-gate.sh
+              status=$?
+            fi
+            if [[ "${status}" -eq 0 ]]; then
+              ./.github/scripts/codex-wait-pr-status.sh
+              status=$?
+            fi
+            exit "${status}"
+          ) >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
           status=$?
           cat "$RUNNER_TEMP/codex-pr-verification.log"
           if [[ "${status}" -eq 0 ]]; then
@@ -1003,8 +1020,13 @@ jobs:
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
       SONAR_PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
       SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-published-pr-repair-1.outputs.output_artifact }}
 
     steps:
@@ -1033,6 +1055,8 @@ jobs:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
           ./.github/scripts/codex-jira-verify.sh
+          ./.github/scripts/codex-check-sonar-quality-gate.sh
+          ./.github/scripts/codex-wait-pr-status.sh
           echo "passed=true" >>"$GITHUB_OUTPUT"
 
   codex-published-pr-verification-failed:

@@ -35,6 +35,7 @@ codex_tmp="${artifact_dir}/codex-tmp"
 codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
+sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 usage_events_path="${artifact_dir}/codex-events.jsonl"
 usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -68,7 +69,7 @@ run_sanitized() {
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
     "TERM=${TERM:-xterm}"
     "TMPDIR=${sanitized_tmp}"
-    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
+    "RUNNER_TEMP=${sanitized_runner_temp}"
     "CI=${CI:-true}"
     "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
     "GRADLE_USER_HOME=${sanitized_home}/.gradle"
@@ -145,7 +146,7 @@ git_read_authenticated() {
     "$@"
 }
 
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${output_dir}"
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
 prepare_codex_home
 
 python3 - <<'PY' >"${feedback_env_path}"
@@ -341,6 +342,8 @@ Operational rules:
 - Preserve the repository's existing Java, Spring, Gradle, test, and HMCTS patterns.
 - Run the most relevant targeted verification commands you can reasonably run.
 - `./bin/codex-local-pipeline.sh fast` runs repository guardrails and Gradle `check`, including formatting, unit, and integration tests. Use `full` only when the feedback genuinely needs functional, smoke, coverage, or dependency verification.
+- Backend formatting is not fully covered by Spotless. Before finishing, check Java Checkstyle-sensitive formatting manually.
+- In particular, Checkstyle `RightCurlyAlone` requires closing braces to be alone on their own line, including lambda and assertion blocks.
 - Do not push branches, open pull requests, or request reviews. The workflow handles Git and PR updates in a separate trusted job after you finish.
 - Leave the working tree containing only intended changes for this review feedback.
 
@@ -392,6 +395,16 @@ fi
 
 echo "Applying Java formatting before creating the Codex review patch."
 run_sanitized ./gradlew --no-daemon spotlessApply
+echo "Running backend Checkstyle probe before creating the Codex review patch."
+if ! run_sanitized ./gradlew --no-daemon \
+  checkstyleMain \
+  checkstyleTest \
+  checkstyleTestCommon \
+  checkstyleIntegrationTest \
+  checkstyleFunctionalTest \
+  checkstyleSmokeTest; then
+  echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure."
+fi
 
 if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   {
