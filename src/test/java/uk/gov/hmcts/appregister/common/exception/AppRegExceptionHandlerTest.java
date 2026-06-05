@@ -521,6 +521,50 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void
+            givenHttpMessageNotReadableUnknownPropertyException_whenThrown_thenProblemDetailIsReturned()
+                    throws Exception {
+        String content = "Not Readable Error";
+        String body =
+                """
+                {
+                  "dateFrom": "2025-10-01",
+                  "courtCode": "LOC123"
+                }
+                """;
+
+        Exception cause =
+                Assertions.assertThrows(
+                        Exception.class,
+                        () -> new ObjectMapper().readValue(body, StrictRequestDto.class));
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, cause, null);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
+        Assertions.assertEquals(
+                "Unsupported request field: courtCode",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Unsupported request field: courtCode")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
     void givenMissingRequestParameter_whenHandled_thenWarnIsLoggedWithoutError() {
         MissingServletRequestParameterException exception =
                 new MissingServletRequestParameterException("date", "LocalDate");
@@ -707,6 +751,18 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(500, problemDetail.getBody().getStatus());
         Assertions.assertEquals(
                 "An unexpected error occurred", problemDetail.getBody().getDetail());
+    }
+
+    private static class StrictRequestDto {
+        private String dateFrom;
+
+        public String getDateFrom() {
+            return dateFrom;
+        }
+
+        public void setDateFrom(String dateFrom) {
+            this.dateFrom = dateFrom;
+        }
     }
 
     @SuppressWarnings("unused")
