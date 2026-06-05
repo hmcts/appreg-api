@@ -20,6 +20,8 @@ public final class SecurityConstants {
     public static final String OPENAPI_DOCS = "/v3/api-docs/**";
     public static final String OPENAPI = "/specs/**";
     public static final String HEALTH = "/health";
+    public static final String HEALTH_LIVENESS = "/health/liveness";
+    public static final String HEALTH_READINESS = "/health/readiness";
 
     // Error codes
     public static final int ERR_AUTH_REQUIRED = 401;
