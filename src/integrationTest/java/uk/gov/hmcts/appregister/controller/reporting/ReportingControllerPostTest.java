@@ -55,6 +55,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
             "reports/private-prosecutors-index/jobs";
     private static final String JOB_WEB_CONTEXT = "jobs/%s";
     private static final String DOWNLOAD_WEB_CONTEXT = "reports/jobs/%s/download";
+    private static final String ALICE_DISPLAY_USERNAME = "alice@example.com";
+    private static final String ALICE_USER_ID =
+            "00000000-0000-0000-0000-000000000001:11111111-1111-1111-1111-111111111111";
+    private static final String BOB_DISPLAY_USERNAME = "bob@example.com";
+    private static final String BOB_USER_ID =
+            "00000000-0000-0000-0000-000000000002:22222222-2222-2222-2222-222222222222";
 
     @Autowired private JdbcTemplate jdbcTemplate;
 
@@ -74,7 +80,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "",
                 "{AW62958}",
                 OffsetDateTime.now(),
-                "alice");
+                ALICE_DISPLAY_USERNAME,
+                ALICE_USER_ID);
         insertDataAuditRow(
                 "Bulk Application Upload",
                 "APPLICATION_LIST_ENTRIES",
@@ -82,7 +89,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "",
                 "Second page value",
                 OffsetDateTime.now().plusSeconds(1),
-                "alice");
+                ALICE_DISPLAY_USERNAME,
+                ALICE_USER_ID);
         insertDataAuditRow(
                 "Bulk Application Upload",
                 "APPLICATION_LIST_ENTRIES",
@@ -90,7 +98,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "",
                 "Third page value",
                 OffsetDateTime.now().plusSeconds(2),
-                "alice");
+                ALICE_DISPLAY_USERNAME,
+                ALICE_USER_ID);
         insertDataAuditRow(
                 "Update Application",
                 "APPLICATION_LIST_ENTRIES",
@@ -98,7 +107,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "AW62958",
                 "AW62959",
                 OffsetDateTime.now(),
-                "alice");
+                ALICE_DISPLAY_USERNAME,
+                ALICE_USER_ID);
         insertDataAuditRow(
                 "Bulk Application Upload",
                 "APPLICATION_LIST_ENTRIES",
@@ -106,7 +116,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "",
                 "Hidden",
                 OffsetDateTime.now(),
-                "bob");
+                BOB_DISPLAY_USERNAME,
+                BOB_USER_ID);
         insertDataAuditRow(
                 "Bulk Application Upload",
                 "APPLICATION_LIST_ENTRIES",
@@ -114,7 +125,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "",
                 "12345",
                 OffsetDateTime.now(),
-                "alice");
+                ALICE_DISPLAY_USERNAME,
+                ALICE_USER_ID);
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -123,7 +135,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new ActivityAuditFilterDto()
                         .dateFrom(today)
                         .dateTo(today)
-                        .username("alice")
+                        .username(ALICE_DISPLAY_USERNAME)
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
 
         Response createResponse =
@@ -142,7 +154,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "dateTo",
                 today.toString());
         assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT, "username", "alice");
+                ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
+                "username",
+                ALICE_DISPLAY_USERNAME);
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
                 "activityTypes",
@@ -184,9 +198,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
             Assertions.assertTrue(report.contains("AW62958"));
             Assertions.assertTrue(report.contains("Second page value"));
             Assertions.assertTrue(report.contains("Third page value"));
+            Assertions.assertTrue(report.contains(ALICE_DISPLAY_USERNAME));
+            Assertions.assertFalse(report.contains(ALICE_USER_ID));
             Assertions.assertFalse(report.contains("{AW62958}"));
             Assertions.assertFalse(report.contains("Update Application"));
             Assertions.assertFalse(report.contains("Hidden"));
+            Assertions.assertFalse(report.contains(BOB_DISPLAY_USERNAME));
             Assertions.assertFalse(report.contains("12345"));
         }
     }
@@ -1907,7 +1924,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String oldValue,
             String newValue,
             OffsetDateTime createdDate,
-            String userName) {
+            String displayUserName,
+            String userId) {
         jdbcTemplate.update(
                 String.format(
                         """
@@ -1959,10 +1977,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 columnName,
                 oldValue,
                 newValue,
-                userName,
+                displayUserName,
                 createdDate,
                 eventName,
-                userName);
+                userId);
     }
 
     private void insertDuplicateCjaRows(String code) {

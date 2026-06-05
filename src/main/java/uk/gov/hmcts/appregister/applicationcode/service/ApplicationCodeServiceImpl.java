@@ -48,22 +48,27 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
     @Override
     @Transactional
-    public ApplicationCodePage findAll(String appCode, String appTitle, PagingWrapper pageable) {
+    public ApplicationCodePage findAll(
+            String appCode, String appTitle, LocalDate effectiveDate, PagingWrapper pageable) {
 
-        // Use today's date to ensure we only return Result Codes that are currently active.
-        var todayUk = LocalDate.now(clock.withZone(ukZone));
+        // Use today's date when no effective date is supplied to preserve existing search
+        // behaviour.
+        var searchDate =
+                effectiveDate != null ? effectiveDate : LocalDate.now(clock.withZone(ukZone));
 
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
                     log.debug(
-                            "Start: Find Application List for: app code: {} app title: {} with paging: {}",
+                            "Start: Find Application Codes for code: {} title: {} date: {} paging: {}",
                             appCode,
                             appTitle,
+                            searchDate,
                             pageable);
 
                     final Page<ApplicationCode> applicationCodeList =
-                            repository.search(appCode, appTitle, todayUk, pageable.getPageable());
+                            repository.search(
+                                    appCode, appTitle, searchDate, pageable.getPageable());
 
                     ApplicationCodePage newPage = new ApplicationCodePage();
                     pageMapper.toPage(applicationCodeList, newPage, pageable.getSortStrings());
@@ -79,9 +84,10 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             });
 
                     log.debug(
-                            "Finished: Find Application List for: app code: {} app title: {} with paging: {}",
+                            "Finished: Find Application Codes for code: {} title: {} date: {} paging: {}",
                             appCode,
                             appTitle,
+                            searchDate,
                             pageable);
 
                     CodeAndTitle record = new CodeAndTitle(appCode, appTitle);

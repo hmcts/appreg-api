@@ -77,7 +77,7 @@ jobs:
     needs: codex-generate
     if: needs.codex-generate.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
     outputs:
@@ -90,6 +90,7 @@ jobs:
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-0
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-0
@@ -223,7 +224,7 @@ jobs:
     needs: [codex-generate, repair-codex-output-1]
     if: needs.repair-codex-output-1.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
     outputs:
@@ -236,6 +237,7 @@ jobs:
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-1
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-1
@@ -369,7 +371,7 @@ jobs:
     needs: [codex-generate, repair-codex-output-2]
     if: needs.repair-codex-output-2.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
     outputs:
@@ -382,6 +384,7 @@ jobs:
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-2
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-2
@@ -515,7 +518,7 @@ jobs:
     needs: [codex-generate, repair-codex-output-3]
     if: needs.repair-codex-output-3.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
     outputs:
@@ -528,6 +531,7 @@ jobs:
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-3
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-3
@@ -614,6 +618,13 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+    outputs:
+      branch_name: ${{ steps.publish.outputs.branch_name }}
+      commit_sha: ${{ steps.publish.outputs.commit_sha }}
+      pr_url: ${{ steps.publish.outputs.pr_url }}
+      pr_number: ${{ steps.publish.outputs.pr_number }}
+      output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
+      verified_artifact: ${{ steps.selected-artifacts.outputs.verified_artifact }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -633,6 +644,12 @@ jobs:
           ref: ${{ env.DEFAULT_BRANCH }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Record selected Codex artifacts
+        id: selected-artifacts
+        run: |
+          echo "output_artifact=${CODEX_OUTPUT_ARTIFACT}" >>"$GITHUB_OUTPUT"
+          echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
       - name: Download Codex output
         uses: actions/download-artifact@v4
@@ -668,6 +685,400 @@ jobs:
             echo "- Branch: ${{ steps.publish.outputs.branch_name }}"
             echo "- Pull request: ${{ steps.publish.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
+
+  verify-published-pr:
+    needs: [codex-generate, publish-pr]
+    if: always() && needs.publish-pr.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
+      failure_artifact: ${{ steps.selected-artifacts.outputs.failure_artifact }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.publish-pr.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'true'
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
+      SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+      CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-pr.outputs.output_artifact }}
+      CODEX_FAILURE_ARTIFACT: codex-jira-pr-verification-failure-0
+
+    steps:
+      - name: Record selected Codex artifacts
+        id: selected-artifacts
+        run: |
+          echo "output_artifact=${CODEX_OUTPUT_ARTIFACT}" >>"$GITHUB_OUTPUT"
+          echo "failure_artifact=${CODEX_FAILURE_ARTIFACT}" >>"$GITHUB_OUTPUT"
+
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify published PR with Sonar
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          set +e
+          (
+            ./.github/scripts/codex-jira-verify.sh
+            status=$?
+            if [[ "${status}" -eq 0 ]]; then
+              ./.github/scripts/codex-check-sonar-quality-gate.sh
+              status=$?
+            fi
+            if [[ "${status}" -eq 0 ]]; then
+              ./.github/scripts/codex-wait-pr-status.sh
+              status=$?
+            fi
+            exit "${status}"
+          ) >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-pr-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-pr-verification-failure"
+            cp "$RUNNER_TEMP/codex-pr-verification.log" "$RUNNER_TEMP/codex-pr-verification-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-pr-verification.log" >"$RUNNER_TEMP/codex-pr-verification-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload PR verification failure
+        if: steps.verify.outputs.passed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-pr-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  repair-published-pr-1:
+    needs: [codex-generate, publish-pr, verify-published-pr]
+    if: always() && needs.verify-published-pr.outputs.passed == 'false'
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      REPAIR_ATTEMPT: '1'
+      MAX_CODEX_REPAIR_ATTEMPTS: '1'
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-published-pr.outputs.output_artifact }}
+      CODEX_FAILURE_ARTIFACT: ${{ needs.verify-published-pr.outputs.failure_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Download Codex output to repair
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Download PR verification failure
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-failure
+
+      - name: Repair Codex patch from PR verification
+        id: repair
+        env:
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Upload repaired Codex output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-published-pr-repair-1:
+    needs: [codex-generate, repair-published-pr-1]
+    if: needs.repair-published-pr-1.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
+      verified_artifact: ${{ steps.selected-artifacts.outputs.verified_artifact }}
+      failure_artifact: ${{ steps.selected-artifacts.outputs.failure_artifact }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'false'
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
+      CODEX_VERIFIED_ARTIFACT: codex-jira-pr-repair-verified-1
+      CODEX_FAILURE_ARTIFACT: codex-jira-pr-repair-verification-failure-1
+
+    steps:
+      - name: Record selected Codex artifacts
+        id: selected-artifacts
+        run: |
+          echo "output_artifact=${CODEX_OUTPUT_ARTIFACT}" >>"$GITHUB_OUTPUT"
+          echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
+          echo "failure_artifact=${CODEX_FAILURE_ARTIFACT}" >>"$GITHUB_OUTPUT"
+
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download repaired Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify repaired Codex patch before re-publish
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-pr-repair-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-pr-repair-verification.log"
+          if [[ "${status}" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-pr-repair-verification-failure"
+            cp "$RUNNER_TEMP/codex-pr-repair-verification.log" "$RUNNER_TEMP/codex-pr-repair-verification-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-pr-repair-verification.log" >"$RUNNER_TEMP/codex-pr-repair-verification-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Upload verified repaired Codex output
+        if: steps.verify.outputs.passed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: |
+            ${{ runner.temp }}/codex-output/codex-pr-body.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload repaired verification failure
+        if: steps.verify.outputs.passed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CODEX_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-pr-repair-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-published-pr-repair-1:
+    needs: [codex-generate, publish-pr, verify-published-pr-repair-1]
+    if: always() && needs.verify-published-pr-repair-1.outputs.passed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      branch_name: ${{ steps.publish.outputs.branch_name }}
+      commit_sha: ${{ steps.publish.outputs.commit_sha }}
+      pr_url: ${{ steps.publish.outputs.pr_url }}
+      pr_number: ${{ steps.publish.outputs.pr_number }}
+      output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
+      verified_artifact: ${{ steps.selected-artifacts.outputs.verified_artifact }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.output_artifact }}
+      CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.verified_artifact }}
+      CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
+      CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Record selected Codex artifacts
+        id: selected-artifacts
+        run: |
+          echo "output_artifact=${CODEX_OUTPUT_ARTIFACT}" >>"$GITHUB_OUTPUT"
+          echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
+
+      - name: Download repaired Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Download verified repaired Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-verified
+
+      - name: Copy trusted publish script
+        run: |
+          cp .github/scripts/codex-jira-publish.sh "$RUNNER_TEMP/codex-jira-publish.sh"
+          chmod +x "$RUNNER_TEMP/codex-jira-publish.sh"
+
+      - name: Re-publish repaired pull request
+        id: publish
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
+        run: "$RUNNER_TEMP/codex-jira-publish.sh"
+
+  verify-published-pr-1:
+    needs: [publish-pr, publish-published-pr-repair-1]
+    if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.publish-published-pr-repair-1.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: fast
+      RUN_SONAR: 'true'
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
+      SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+      CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-published-pr-repair-1.outputs.output_artifact }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Download repaired Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify repaired published PR with Sonar
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: |
+          ./.github/scripts/codex-jira-verify.sh
+          ./.github/scripts/codex-check-sonar-quality-gate.sh
+          ./.github/scripts/codex-wait-pr-status.sh
+          echo "passed=true" >>"$GITHUB_OUTPUT"
+
+  codex-published-pr-verification-failed:
+    needs:
+      - publish-pr
+      - verify-published-pr
+      - repair-published-pr-1
+      - verify-published-pr-repair-1
+      - publish-published-pr-repair-1
+      - verify-published-pr-1
+    if: |
+      always() &&
+      needs.publish-pr.outputs.pr_number != '' &&
+      needs.verify-published-pr.outputs.passed != 'true' &&
+      needs.verify-published-pr-1.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail after published PR repair attempt
+        run: |
+          echo "Published PR Sonar verification failed after the post-PR repair attempt."
+          exit 1
 
   codex-verification-failed:
     needs:

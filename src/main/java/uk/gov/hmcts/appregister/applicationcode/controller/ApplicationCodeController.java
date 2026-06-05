@@ -33,7 +33,12 @@ public class ApplicationCodeController implements ApplicationCodesApi {
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationCodePage> getApplicationCodes(
-            String code, String title, Integer page, Integer size, List<String> sort) {
+            String code,
+            String title,
+            LocalDate date,
+            Integer page,
+            Integer size,
+            List<String> sort) {
         sort = sort == null || sort.isEmpty() ? List.of() : sort;
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
@@ -46,7 +51,7 @@ public class ApplicationCodeController implements ApplicationCodesApi {
                         Sort.Direction.ASC,
                         ApplicationCodeSortFieldEnum::getEntityValue);
 
-        ApplicationCodePage codePage = service.findAll(code, title, pageable);
+        ApplicationCodePage codePage = service.findAll(code, title, date, pageable);
 
         return ResponseEntity.ok().body(codePage);
     }

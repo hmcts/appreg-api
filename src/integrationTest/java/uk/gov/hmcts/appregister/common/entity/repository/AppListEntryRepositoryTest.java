@@ -753,19 +753,25 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void testSearchForFilterByApplicantSurname() {
-        // Given: an application list and an entry
+        // Given: an application list with entries that have distinct applicant surnames
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
 
         ApplicationListEntry savedEntry =
                 saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
+        savedEntry.getAnamedaddress().setLastName("TargetApplicantSurname");
 
-        saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
+        ApplicationListEntry otherEntry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 2, false);
+        otherEntry.getAnamedaddress().setLastName("OtherApplicantSurname");
+
+        entityManager.flush();
+        entityManager.clear();
 
         // When: calling the repository method for the surname of the first applicant
         Page<ApplicationListEntryGetSummaryProjection> applicationListEntryList =
                 applicationListEntryRepository.searchForGetSummary(
-                        null,
+                        list.getUuid(),
                         false,
                         null,
                         null,
@@ -788,7 +794,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         Pageable.ofSize(10));
 
         // Then: the entry added is the entry returned
-        Assertions.assertThat(applicationListEntryList.getPageable().getPageSize() == 1);
+        Assertions.assertThat(applicationListEntryList.getTotalElements()).isEqualTo(1);
         Assertions.assertThat(savedEntry.getUuid().toString())
                 .isEqualTo(applicationListEntryList.stream().findFirst().get().getUuid());
     }
