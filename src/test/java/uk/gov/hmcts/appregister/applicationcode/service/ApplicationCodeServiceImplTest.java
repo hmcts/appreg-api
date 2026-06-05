@@ -225,7 +225,8 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(code, null, PagingWrapper.of(List.of(), criteria));
+                applicationCodeService.findAll(
+                        code, null, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -275,7 +276,8 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(null, title, PagingWrapper.of(List.of(), criteria));
+                applicationCodeService.findAll(
+                        null, title, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -319,14 +321,16 @@ public class ApplicationCodeServiceImplTest {
 
         String title = "title";
         String code = "code";
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(eq(code), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
+        LocalDate effectiveDate = LocalDate.of(2021, 6, 15);
+        when(repository.search(eq(code), eq(title), eq(effectiveDate), eq(criteria)))
+                .thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(code, title, PagingWrapper.of(List.of(), criteria));
+                applicationCodeService.findAll(
+                        code, title, effectiveDate, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -375,7 +379,7 @@ public class ApplicationCodeServiceImplTest {
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
                 applicationCodeService.findAll(
-                        null, null, PagingWrapper.of(List.of(), criteria.withPage(0)));
+                        null, null, null, PagingWrapper.of(List.of(), criteria.withPage(0)));
 
         // make assertion
         Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());

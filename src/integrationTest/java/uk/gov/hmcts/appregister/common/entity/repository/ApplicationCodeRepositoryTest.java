@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
@@ -134,22 +136,123 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchIncludesCodeStartingOnActiveDate() {
-        LocalDate today = LocalDate.now();
-        String code = "ZZ90013";
-
-        ApplicationCode startsToday = new ApplicationCodeTestData().someComplete();
-        startsToday.setCode(code);
-        startsToday.setTitle("Starts Today");
-        startsToday.setStartDate(today);
-        startsToday.setEndDate(null);
-        startsToday = persistance.save(startsToday);
+    public void testSearchExcludesCodeBeforeStartDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, 1, 1);
+        ApplicationCode applicationCode =
+                saveApplicationCode(
+                        "ZZ90101", "Starts after search date", effectiveDate.plusDays(1), null);
 
         var results =
                 applicationCodeRepository.search(
-                        code, null, today, org.springframework.data.domain.PageRequest.of(0, 10));
+                        applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
+
+        Assertions.assertEquals(0, results.getTotalElements());
+        Assertions.assertTrue(results.getContent().isEmpty());
+    }
+
+    @Test
+    public void testSearchIncludesCodeStartingOnActiveDate() {
+        LocalDate today = LocalDate.now();
+
+        ApplicationCode startsToday = saveApplicationCode("ZZ90013", "Starts Today", today, null);
+
+        var results =
+                applicationCodeRepository.search(
+                        startsToday.getCode(), null, today, PageRequest.of(0, 10));
 
         Assertions.assertEquals(1, results.getTotalElements());
         Assertions.assertEquals(startsToday.getId(), results.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testSearchIncludesCodeBetweenStartAndEndDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        ApplicationCode applicationCode =
+                saveApplicationCode(
+                        "ZZ90102",
+                        "Effective between dates",
+                        effectiveDate.minusDays(10),
+                        effectiveDate.plusDays(10));
+
+        var results =
+                applicationCodeRepository.search(
+                        applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
+
+        Assertions.assertEquals(1, results.getTotalElements());
+        Assertions.assertEquals(applicationCode.getId(), results.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testSearchExcludesCodeAfterEndDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        ApplicationCode applicationCode =
+                saveApplicationCode(
+                        "ZZ90103",
+                        "Ended before search date",
+                        effectiveDate.minusDays(10),
+                        effectiveDate.minusDays(1));
+
+        var results =
+                applicationCodeRepository.search(
+                        applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
+
+        Assertions.assertEquals(0, results.getTotalElements());
+        Assertions.assertTrue(results.getContent().isEmpty());
+    }
+
+    @Test
+    public void testSearchIncludesCodeWithNullEndDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        ApplicationCode applicationCode =
+                saveApplicationCode(
+                        "ZZ90104", "Open ended effective code", effectiveDate.minusDays(10), null);
+
+        var results =
+                applicationCodeRepository.search(
+                        applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
+
+        Assertions.assertEquals(1, results.getTotalElements());
+        Assertions.assertEquals(applicationCode.getId(), results.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testSearchPaginationCountsAreBasedOnDateFilteredResults() {
+        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        String code = "ZZ90105";
+
+        saveApplicationCode(
+                code,
+                "Date filtered alpha",
+                effectiveDate.minusDays(10),
+                effectiveDate.plusDays(10));
+        final ApplicationCode sortedFirst =
+                saveApplicationCode(
+                        code,
+                        "Date filtered zebra",
+                        effectiveDate.minusDays(10),
+                        effectiveDate.plusDays(10));
+        saveApplicationCode(code, "Date filtered future", effectiveDate.plusDays(1), null);
+
+        var results =
+                applicationCodeRepository.search(
+                        code,
+                        null,
+                        effectiveDate,
+                        PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "title")));
+
+        Assertions.assertEquals(1, results.getContent().size());
+        Assertions.assertEquals(sortedFirst.getId(), results.getContent().getFirst().getId());
+        Assertions.assertEquals(2, results.getTotalElements());
+        Assertions.assertEquals(2, results.getTotalPages());
+    }
+
+    private ApplicationCode saveApplicationCode(
+            String code, String title, LocalDate startDate, LocalDate endDate) {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode(code);
+        applicationCode.setTitle(title);
+        applicationCode.setStartDate(startDate);
+        applicationCode.setEndDate(endDate);
+        return persistance.save(applicationCode);
     }
 }

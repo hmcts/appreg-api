@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import java.time.LocalDate;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -9,7 +10,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
  * Service interface for managing application codes.
  */
 public interface ApplicationCodeService {
-    ApplicationCodePage findAll(String appCode, String appTitle, PagingWrapper pageable);
+    ApplicationCodePage findAll(
+            String appCode, String appTitle, LocalDate effectiveDate, PagingWrapper pageable);
 
     /**
      * find the application code details by code.
