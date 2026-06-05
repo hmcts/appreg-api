@@ -3,8 +3,9 @@ package uk.gov.hmcts.appregister.config;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRED;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH_LIVENESS;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH_READINESS;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.REST_IMPLEMENTATION_HEALTH;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
@@ -30,8 +31,8 @@ public class SecurityConfig {
     /**
      * Defines the main Spring Security filter chain for the API. - Disables CSRF (not needed for
      * stateless JWT-based APIs). - Secures endpoints based on roles from the "roles" claim. -
-     * Exposes Swagger/OpenAPI/health endpoints without authentication. - Configures JWT as the auth
-     * mechanism. - Maps authentication failures (401) and authorization failures (403).
+     * Configures JWT as the auth mechanism. - Maps authentication failures (401) and authorization
+     * failures (403).
      */
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -46,7 +47,8 @@ public class SecurityConfig {
                                                 SWAGGER_UI,
                                                 OPENAPI,
                                                 HEALTH,
-                                                REST_IMPLEMENTATION_HEALTH)
+                                                HEALTH_LIVENESS,
+                                                HEALTH_READINESS)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
