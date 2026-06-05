@@ -164,11 +164,24 @@ append_guardrail_warning() {
   } >>"${comment_body_path}"
 }
 
+block_sonar_for_guardrail_changes() {
+  if [[ "${guardrail_review_required}" != "true" ]]; then
+    return
+  fi
+
+  echo "::error::Refusing to run Sonar with SONAR_TOKEN because Codex changed verification-sensitive files." >&2
+  echo "Manual review is required before exposing Sonar credentials to changed Gradle, workflow, runner, or verification tooling." >&2
+  sed 's/^/- /' "${guardrail_changes_path}" >&2
+  exit 1
+}
+
 run_backend_sonar_analysis() {
   if [[ "${RUN_SONAR:-true}" != "true" ]]; then
     echo "Skipping Sonar analysis because RUN_SONAR is not true."
     return
   fi
+
+  block_sonar_for_guardrail_changes
 
   if [[ -z "${SONAR_TOKEN:-}" ]]; then
     echo "::error::SONAR_TOKEN is required for Codex review verification Sonar analysis." >&2
