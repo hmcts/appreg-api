@@ -38,6 +38,7 @@ codex_tmp="${artifact_dir}/codex-tmp"
 codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
+sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=.github/scripts/codex-usage-metrics.sh
@@ -69,7 +70,7 @@ run_sanitized() {
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
     "TERM=${TERM:-xterm}"
     "TMPDIR=${sanitized_tmp}"
-    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
+    "RUNNER_TEMP=${sanitized_runner_temp}"
     "CI=${CI:-true}"
     "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
     "GRADLE_USER_HOME=${sanitized_home}/.gradle"
@@ -224,7 +225,7 @@ Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 }
 
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${output_dir}"
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
 prepare_codex_home
 read_conflicted_files
 printf '%s\n' "${conflicted_files[@]}" >"${conflicted_files_path}"

@@ -26,6 +26,7 @@ codex_tmp="${artifact_dir}/codex-tmp"
 codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
+sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 output_dir="${OUTPUT_DIR}"
 prompt_path="${artifact_dir}/codex-prompt.md"
 final_message_path="${output_dir}/codex-final-message.md"
@@ -95,7 +96,7 @@ run_sanitized() {
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
     "TERM=${TERM:-xterm}"
     "TMPDIR=${sanitized_tmp}"
-    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
+    "RUNNER_TEMP=${sanitized_runner_temp}"
     "CI=${CI:-true}"
     "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
     "GRADLE_USER_HOME=${sanitized_home}/.gradle"
@@ -132,7 +133,7 @@ run_backend_checkstyle_probe() {
   fi
 }
 
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${output_dir}"
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
 prepare_codex_home
 
 branch_slug="$(
