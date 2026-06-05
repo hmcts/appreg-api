@@ -478,6 +478,102 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
+    public void givenHistoricDate_whenGetApplicationCodes_thenReturnEmptyPage() throws Exception {
+        String code = "ZZDATE01";
+        saveApplicationCodeWithFees(
+                code,
+                "ZZFEE01",
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 1, 1));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        int pageSize = 10;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationCodeRequestFilter(
+                                Optional.of(code), Optional.empty(), Optional.of("1000-01-01")),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 0, 0);
+        Assertions.assertTrue(page.getContent() == null || page.getContent().isEmpty());
+    }
+
+    @Test
+    public void givenCodeTitleAndDate_whenGetApplicationCodes_thenReturnDateFilteredPage()
+            throws Exception {
+        String code = "ZZDATE02";
+        saveApplicationCodeWithFees(
+                code,
+                "ZZFEE02",
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 1, 1));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        int pageSize = 10;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("title"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationCodeRequestFilter(
+                                Optional.of(code),
+                                Optional.of("Copy documents"),
+                                Optional.of("2020-06-01")),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        assertEquals(code, page.getContent().getFirst().getApplicationCode());
+    }
+
+    @Test
+    public void givenInvalidDate_whenGetApplicationCodes_thenReturn400() throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationCodeRequestFilter(
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of("invalid-date-format")),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(400);
+
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        assertEquals(
+                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getHttpCode().value(),
+                problemDetail.getStatus());
+        assertEquals(
+                "Problem with value invalid-date-format for parameter date",
+                problemDetail.getDetail());
+    }
+
+    @Test
     @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithoutExplicitSort_thenReturn200()
@@ -1539,10 +1635,21 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
      * A request specification that knows what query filters can be applied to get application
      * codes.
      */
-    @RequiredArgsConstructor
     static class ApplicationCodeRequestFilter implements UnaryOperator<RequestSpecification> {
         private final Optional<String> appCode;
         private final Optional<String> appTitle;
+        private final Optional<String> dateValue;
+
+        ApplicationCodeRequestFilter(Optional<String> appCode, Optional<String> appTitle) {
+            this(appCode, appTitle, Optional.empty());
+        }
+
+        ApplicationCodeRequestFilter(
+                Optional<String> appCode, Optional<String> appTitle, Optional<String> dateValue) {
+            this.appCode = appCode;
+            this.appTitle = appTitle;
+            this.dateValue = dateValue;
+        }
 
         @Override
         public RequestSpecification apply(RequestSpecification rs) {
@@ -1552,6 +1659,10 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
             if (appTitle.isPresent()) {
                 rs = rs.queryParam("title", appTitle.get());
+            }
+
+            if (dateValue.isPresent()) {
+                rs = rs.queryParam("date", dateValue.get());
             }
 
             return rs;

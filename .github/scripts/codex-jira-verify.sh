@@ -164,11 +164,24 @@ append_guardrail_warning() {
   } >>"${pr_body_path}"
 }
 
+block_sonar_for_guardrail_changes() {
+  if [[ "${guardrail_review_required}" != "true" ]]; then
+    return
+  fi
+
+  echo "::error::Refusing to run Sonar with SONAR_TOKEN because Codex changed verification-sensitive files." >&2
+  echo "Manual review is required before exposing Sonar credentials to changed Gradle, workflow, runner, or verification tooling." >&2
+  sed 's/^/- /' "${guardrail_changes_path}" >&2
+  exit 1
+}
+
 run_backend_sonar_analysis() {
   if [[ "${RUN_SONAR:-true}" != "true" ]]; then
     echo "Skipping Sonar analysis because RUN_SONAR is not true."
     return
   fi
+
+  block_sonar_for_guardrail_changes
 
   if [[ -z "${SONAR_TOKEN:-}" ]]; then
     echo "::error::SONAR_TOKEN is required for Codex verification Sonar analysis." >&2
@@ -178,21 +191,36 @@ run_backend_sonar_analysis() {
   local sonar_host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
   local sonar_organization="${SONAR_ORGANIZATION:-hmcts}"
   local sonar_branch_name="${SONAR_BRANCH_NAME:-${branch_name}}"
+  local sonar_pr_number="${SONAR_PR_NUMBER:-}"
+  local sonar_pr_base="${SONAR_PR_BASE:-${default_branch}}"
   local sonar_quality_gate_timeout="${SONAR_QUALITY_GATE_TIMEOUT_SECONDS:-300}"
   local sonar_args=(
     --no-daemon
     sonar
     "-Dsonar.host.url=${sonar_host_url}"
-    "-Dsonar.branch.name=${sonar_branch_name}"
     "-Dsonar.qualitygate.wait=true"
     "-Dsonar.qualitygate.timeout=${sonar_quality_gate_timeout}"
   )
+
+  if [[ -n "${sonar_pr_number}" ]]; then
+    sonar_args+=(
+      "-Dsonar.pullrequest.key=${sonar_pr_number}"
+      "-Dsonar.pullrequest.branch=${sonar_branch_name}"
+      "-Dsonar.pullrequest.base=${sonar_pr_base}"
+    )
+  else
+    sonar_args+=("-Dsonar.branch.name=${sonar_branch_name}")
+  fi
 
   if [[ -n "${sonar_organization}" ]]; then
     sonar_args+=("-Dsonar.organization=${sonar_organization}")
   fi
 
-  echo "Running Sonar analysis for Codex branch ${sonar_branch_name}."
+  if [[ -n "${sonar_pr_number}" ]]; then
+    echo "Running Sonar PR analysis for Codex PR #${sonar_pr_number} (${sonar_branch_name} -> ${sonar_pr_base})."
+  else
+    echo "Running Sonar analysis for Codex branch ${sonar_branch_name}."
+  fi
   run_sanitized env "SONAR_TOKEN=${SONAR_TOKEN}" \
     ./gradlew "${sonar_args[@]}"
 }
