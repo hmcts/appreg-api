@@ -752,6 +752,10 @@ jobs:
             ./.github/scripts/codex-jira-verify.sh
             status=$?
             if [[ "${status}" -eq 0 ]]; then
+              ./.github/scripts/codex-check-sonar-quality-gate.sh
+              status=$?
+            fi
+            if [[ "${status}" -eq 0 ]]; then
               ./.github/scripts/codex-wait-pr-status.sh
               status=$?
             fi
@@ -1051,6 +1055,7 @@ jobs:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
           ./.github/scripts/codex-jira-verify.sh
+          ./.github/scripts/codex-check-sonar-quality-gate.sh
           ./.github/scripts/codex-wait-pr-status.sh
           echo "passed=true" >>"$GITHUB_OUTPUT"
 
