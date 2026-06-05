@@ -66,7 +66,11 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
 
 - **Dependency vulnerability scan (OWASP Dependency-Check)**
   ```bash
-  ./gradlew dependencyCheck
+  ./gradlew dependencyCheckAnalyze
+  ```
+  Optionally, you can obtain a key from https://nvd.nist.gov/developers/request-an-api-key and set `NVD_API_KEY`, in your environment, to improve NVD API throughput:
+  ```bash
+  NVD_API_KEY=your-key ./gradlew dependencyCheckAnalyze
   ```
 
 - **Code coverage report (JaCoCo)**
@@ -90,6 +94,7 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./bin/codex-local-pipeline.sh fast
   ```
   Use `./bin/codex-local-pipeline.sh full` when Docker/Testcontainers-backed verification is needed.
+
 
 - **Enable P6Spy SQL logging**
   Run the local-only SQL debug task. This adds P6Spy to the local runtime and enables the local-only

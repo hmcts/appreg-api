@@ -6,6 +6,19 @@ import com.github.benmanes.gradle.versions.updates.resolutionstrategy.ComponentS
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
 
+buildscript {
+  configurations.classpath {
+    resolutionStrategy.eachDependency { details ->
+      if (!System.getProperty('data.connection_string')
+        && details.requested.group == 'org.owasp'
+        && details.requested.name.startsWith('dependency-check')) {
+        details.useVersion '12.2.2'
+        details.because '12.2.0 fails importing some NVD CVE reference URLs into the local H2 store'
+      }
+    }
+  }
+}
+
 plugins {
   id 'application'
   id 'jacoco'
@@ -384,13 +397,6 @@ dependencyCheck {
     // Disable scanning of .NET related binaries
     assemblyEnabled = false
   }
-  skipConfigurations = [
-    'compileOnly',
-    'pmd',
-    'integrationTest',
-    'functionalTest',
-    'smokeTest'
-  ]
 }
 
 repositories {
