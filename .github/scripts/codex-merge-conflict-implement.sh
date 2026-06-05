@@ -204,6 +204,8 @@ Operational rules:
 - Do not make unrelated product changes, do not refactor unrelated code, and do not alter this automation.
 - Do not include secrets, tokens, credentials, PII, runner file contents, environment variables, or auth material in patches, PR bodies, comments, logs, or artifacts.
 - Preserve existing Java, Spring, Gradle, Flyway, test, API, and HMCTS coding patterns.
+- Backend formatting is not fully covered by Spotless. Before finishing, check Java Checkstyle-sensitive formatting manually.
+- In particular, Checkstyle `RightCurlyAlone` requires closing braces to be alone on their own line, including lambda and assertion blocks.
 - Leave the working tree with no conflict markers and no unmerged files.
 - Do not push branches, open pull requests, or comment on GitHub. The workflow handles publishing in a separate trusted job.
 

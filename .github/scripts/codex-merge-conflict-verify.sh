@@ -208,6 +208,16 @@ fi
 
 echo "Applying Java formatting before verifying and publishing the conflict-resolution patch."
 run_sanitized ./gradlew --no-daemon spotlessApply
+echo "Running backend Checkstyle probe before creating the conflict-resolution patch."
+if ! run_sanitized ./gradlew --no-daemon \
+  checkstyleMain \
+  checkstyleTest \
+  checkstyleTestCommon \
+  checkstyleIntegrationTest \
+  checkstyleFunctionalTest \
+  checkstyleSmokeTest; then
+  echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure."
+fi
 git_sanitized add -A -- "${conflicted_files[@]}"
 
 if grep -R -n -E '^(<<<<<<<|=======|>>>>>>>)' -- "${conflicted_files[@]}" >/tmp/codex-conflict-markers.txt 2>/dev/null; then

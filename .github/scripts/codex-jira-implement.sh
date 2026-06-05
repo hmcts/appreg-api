@@ -95,6 +95,10 @@ run_sanitized() {
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
     "TERM=${TERM:-xterm}"
     "TMPDIR=${sanitized_tmp}"
+    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
+    "CI=${CI:-true}"
+    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
+    "GRADLE_USER_HOME=${sanitized_home}/.gradle"
     "GIT_CONFIG_GLOBAL=/dev/null"
     "GIT_CONFIG_NOSYSTEM=1"
     "GIT_TERMINAL_PROMPT=0"
@@ -113,6 +117,19 @@ git_sanitized() {
     -c credential.helper= \
     -c protocol.file.allow=never \
     "$@"
+}
+
+run_backend_checkstyle_probe() {
+  echo "Running backend Checkstyle probe before creating the Codex patch."
+  if ! run_sanitized ./gradlew --no-daemon \
+    checkstyleMain \
+    checkstyleTest \
+    checkstyleTestCommon \
+    checkstyleIntegrationTest \
+    checkstyleFunctionalTest \
+    checkstyleSmokeTest; then
+    echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure and trigger the repair loop."
+  fi
 }
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${output_dir}"
@@ -153,6 +170,8 @@ Operational rules:
 - Follow the repository's existing patterns and style.
 - Add or update tests where the behavior changes.
 - Run the most relevant targeted verification commands you can reasonably run in this CI job.
+- Backend formatting is not fully covered by Spotless. Before finishing, check Java Checkstyle-sensitive formatting manually.
+- In particular, Checkstyle `RightCurlyAlone` requires closing braces to be alone on their own line, including lambda and assertion blocks.
 - Do not push branches or open pull requests. The workflow handles Git and PR creation in a separate trusted job after you finish.
 - Leave the working tree containing only the intended code/test/documentation changes.
 - In your final message, include a concise change summary and the exact testing or verification commands you ran with their outcomes. This final message is added to the pull request description.
@@ -224,6 +243,7 @@ fi
 
 echo "Applying Java formatting before creating the Codex patch."
 run_sanitized ./gradlew --no-daemon spotlessApply
+run_backend_checkstyle_probe
 
 if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   echo "Codex did not produce any committable changes." >&2
