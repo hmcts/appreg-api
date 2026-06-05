@@ -1,0 +1,65 @@
+@startuml
+
+title GET /application-lists/{id} sequence
+
+actor UI
+participant ApplicationListController
+participant PageableMapper
+participant ApplicationListServiceImpl
+participant AuditOperationServiceImpl
+database ApplicationListRepository
+database ApplicationListEntryRepository
+participant ApplicationListEntryMapper
+participant ApplicationListMapper
+
+UI -> ApplicationListController : GET /application-lists/{id}\n(pageNumber, pageSize, sort)
+activate ApplicationListController
+
+ApplicationListController -> PageableMapper : from(page, size, sort,\ndefaultSort=SEQUENCE_NUMBER, ASC)
+activate PageableMapper
+PageableMapper --> ApplicationListController : PagingWrapper
+deactivate PageableMapper
+
+ApplicationListController -> ApplicationListServiceImpl : get(id, pagingWrapper)
+activate ApplicationListServiceImpl
+
+ApplicationListServiceImpl -> AuditOperationServiceImpl : processAudit(null, GET_APP_LIST, execution, listeners)
+activate AuditOperationServiceImpl
+
+AuditOperationServiceImpl -> ApplicationListRepository : findByUuid(id)
+activate ApplicationListRepository
+ApplicationListRepository --> AuditOperationServiceImpl : ApplicationList
+deactivate ApplicationListRepository
+
+AuditOperationServiceImpl -> ApplicationListEntryRepository : findSummariesById(id, pageable)
+activate ApplicationListEntryRepository
+ApplicationListEntryRepository --> AuditOperationServiceImpl : Page<ApplicationListEntrySummaryProjection>
+deactivate ApplicationListEntryRepository
+
+loop for each entry summary projection
+    AuditOperationServiceImpl -> ApplicationListEntryMapper : toSummaryDto(projection)
+    activate ApplicationListEntryMapper
+    ApplicationListEntryMapper --> AuditOperationServiceImpl : ApplicationListEntrySummary
+    deactivate ApplicationListEntryMapper
+end
+
+AuditOperationServiceImpl -> ApplicationListEntryRepository : countByApplicationListUuids([id])
+activate ApplicationListEntryRepository
+ApplicationListEntryRepository --> AuditOperationServiceImpl : entry counts
+deactivate ApplicationListEntryRepository
+
+AuditOperationServiceImpl -> ApplicationListMapper : toGetDetailDto(list, list.cja, entryCount, summaries)
+activate ApplicationListMapper
+ApplicationListMapper --> AuditOperationServiceImpl : ApplicationListGetDetailDto
+deactivate ApplicationListMapper
+
+AuditOperationServiceImpl --> ApplicationListServiceImpl : ApplicationListGetDetailDto
+deactivate AuditOperationServiceImpl
+
+ApplicationListServiceImpl --> ApplicationListController : ApplicationListGetDetailDto
+deactivate ApplicationListServiceImpl
+
+ApplicationListController --> UI : 200 OK\nApplicationListGetDetailDto
+deactivate ApplicationListController
+
+@enduml

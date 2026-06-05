@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
@@ -29,6 +30,70 @@ import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationEntryResultControllerSearchTest
         extends AbstractApplicationEntryResultCrudTest {
+
+    @Test
+    void givenCreatedEntryResults_whenGetEntryResults_thenReturnedFieldsAreCorrect()
+            throws Exception {
+        var appcCreateDto = new ResultCreateDto();
+        appcCreateDto.setResultCode(APPC_CODE);
+        appcCreateDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution()
+                                .key(APPC_WORDING_KEY)
+                                .value("Leeds Crown Court")));
+
+        var caseCreateDto = new ResultCreateDto();
+        caseCreateDto.setResultCode("CASE");
+
+        UUID appList =
+                UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createAppList(null)[0]));
+        EntryGetDetailDto entry = createEntry(appList).getDetailDto();
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var appcCreateResponse = createResult(appList, entry.getId(), token, appcCreateDto);
+        var caseCreateResponse = createResult(appList, entry.getId(), token, caseCreateDto);
+
+        Assertions.assertEquals(201, appcCreateResponse.getStatusCode());
+        Assertions.assertEquals(201, caseCreateResponse.getStatusCode());
+
+        var createdAppc = appcCreateResponse.as(ResultGetDto.class);
+        var createdCase = caseCreateResponse.as(ResultGetDto.class);
+
+        Response response = getEntryResult(token, appList, entry.getId(), 10, 0);
+
+        Assertions.assertEquals(200, response.getStatusCode());
+
+        ResultPage page = response.as(ResultPage.class);
+        Assertions.assertEquals(2, page.getContent().size());
+        Assertions.assertEquals(2, page.getTotalElements());
+
+        var first = page.getContent().get(0);
+        var second = page.getContent().get(1);
+
+        Assertions.assertEquals(createdAppc.getId(), first.getId());
+        Assertions.assertEquals(entry.getId(), first.getEntryId());
+        Assertions.assertEquals(APPC_CODE, first.getResultCode());
+        Assertions.assertEquals(
+                "Appeal forwarded to {{Name of Crown Court}}.", first.getWording().getTemplate());
+        Assertions.assertEquals(
+                "Leeds Crown Court",
+                first.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+        Assertions.assertEquals(
+                APPC_WORDING_KEY,
+                first.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+
+        Assertions.assertEquals(createdCase.getId(), second.getId());
+        Assertions.assertEquals(entry.getId(), second.getEntryId());
+        Assertions.assertEquals("CASE", second.getResultCode());
+        Assertions.assertEquals(
+                "Court agrees to state a case for the opinion of the High Court.",
+                second.getWording().getTemplate());
+        Assertions.assertEquals(0, second.getWording().getSubstitutionKeyConstraints().size());
+    }
 
     @StabilityTest
     public void givenApplicationListEntryResult_whenSearchForResults_thenSuccessResponse()
