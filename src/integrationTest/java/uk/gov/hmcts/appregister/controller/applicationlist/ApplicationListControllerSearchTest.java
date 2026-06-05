@@ -2,7 +2,9 @@ package uk.gov.hmcts.appregister.controller.applicationlist;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -16,15 +18,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -1264,6 +1272,63 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @Test
+    @DisplayName(
+            "Print Application List: optional contact fields use null for sparse participant data")
+    void
+            givenSparseParticipantContactDetails_whenPrintApplicationList_thenOptionalFieldsAreExplicitNull()
+                    throws Exception {
+        var token = getToken();
+        UUID listId = createApplicationList(token, uniquePrefix("print-null-contacts"));
+
+        EntryGetDetailDto createdEntry = createEntry(listId);
+        ApplicationListEntry persistedEntry =
+                aleRepository.findByUuid(createdEntry.getId()).orElseThrow();
+
+        NameAddress applicantAddress =
+                createPrintableSparsePersonNameAddress(NameAddressCodeType.APPLICANT, "Applicant");
+        NameAddress respondentAddress =
+                createPrintableSparsePersonNameAddress(
+                        NameAddressCodeType.RESPONDENT, "Respondent");
+
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            persistedEntry.setStandardApplicant(null);
+            persistedEntry.setAnamedaddress(persistance.save(applicantAddress));
+            persistedEntry.setRnameaddress(persistance.save(respondentAddress));
+            aleRepository.saveAndFlush(persistedEntry);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+
+        Response response =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/print"), token);
+
+        response.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+
+        JsonNode body = mapper.readTree(response.asString());
+        JsonNode firstEntry = body.path("entries").get(0);
+
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.addressLine2");
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.addressLine3");
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.addressLine4");
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.addressLine5");
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.phone");
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.mobile");
+        assertExplicitNull(firstEntry, "applicant.person.contactDetails.email");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.addressLine2");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.addressLine3");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.addressLine4");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.addressLine5");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.phone");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.mobile");
+        assertExplicitNull(firstEntry, "respondent.person.contactDetails.email");
+    }
+
+    @Test
     @DisplayName("Print Application List")
     void givenValidRequest_whenPrintApplicationList_then200AndBody() throws Exception {
         var token =
@@ -1343,5 +1408,35 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         Assertions.assertEquals(
                 ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
+    }
+
+    private NameAddress createPrintableSparsePersonNameAddress(
+            NameAddressCodeType codeType, String surname) {
+        NameAddress address = new NameAddressTestData().somePerson();
+        address.setCode(codeType);
+        address.setName(null);
+        address.setTitle(null);
+        address.setFirstName("Sparse");
+        address.setMiddleName(null);
+        address.setLastName(surname);
+        address.setAddress1("1 Sparse Street");
+        address.setAddress2(null);
+        address.setAddress3(null);
+        address.setAddress4(null);
+        address.setAddress5(null);
+        address.setPostcode("SP1 1AA");
+        address.setTelephoneNumber(null);
+        address.setMobileNumber(null);
+        address.setEmailAddress(null);
+        return address;
+    }
+
+    private void assertExplicitNull(JsonNode root, String dottedPath) {
+        JsonNode current = root;
+        for (String segment : dottedPath.split("\\.")) {
+            assertTrue(current.has(segment), "Expected JSON field to be present: " + dottedPath);
+            current = current.get(segment);
+        }
+        assertTrue(current.isNull(), "Expected JSON field to be explicit null: " + dottedPath);
     }
 }

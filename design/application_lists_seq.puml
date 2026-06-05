@@ -1,0 +1,77 @@
+@startuml
+
+title GET /application-lists sequence
+
+actor UI
+participant ApplicationListController
+participant PageableMapper
+participant ApplicationListServiceImpl
+participant AuditOperationServiceImpl
+participant ApplicationListGetValidator
+participant CriminalJusticeAreaRepository
+database ApplicationListRepository
+participant ApplicationListMapper
+participant ApplicationListPageMapper
+
+UI -> ApplicationListController : GET /application-lists\n(filter, pageNumber, pageSize, sort)
+activate ApplicationListController
+
+ApplicationListController -> PageableMapper : from(page, size, sort,\ndefaultSort=DESCRIPTION, ASC)
+activate PageableMapper
+PageableMapper --> ApplicationListController : PagingWrapper
+deactivate PageableMapper
+
+ApplicationListController -> ApplicationListServiceImpl : getPage(filter, pageInfo)
+activate ApplicationListServiceImpl
+ApplicationListServiceImpl -> ApplicationListServiceImpl : computeTimeWindow(filter.time)
+
+ApplicationListServiceImpl -> AuditOperationServiceImpl : processAudit(null, GET_APP_LIST, execution, listeners)
+activate AuditOperationServiceImpl
+
+AuditOperationServiceImpl -> ApplicationListGetValidator : validateCja(filter, callback, true)
+activate ApplicationListGetValidator
+
+alt cjaCode supplied
+    ApplicationListGetValidator -> CriminalJusticeAreaRepository : findByCode(cjaCode)
+    activate CriminalJusticeAreaRepository
+    CriminalJusticeAreaRepository --> ApplicationListGetValidator : matching CJA records
+    deactivate CriminalJusticeAreaRepository
+else no cjaCode supplied
+    note right of ApplicationListGetValidator
+      Validation is skipped for a missing CJA because
+      getPage() calls validateCja(..., true)
+    end note
+end
+
+ApplicationListGetValidator --> AuditOperationServiceImpl : validated filter + resolved CJA
+deactivate ApplicationListGetValidator
+
+AuditOperationServiceImpl -> ApplicationListRepository : findAllByFilter(status, courtCode, cja,\ndate, start, end, wrapsMidnight,\ndescription, otherLocationDescription, pageable)
+activate ApplicationListRepository
+ApplicationListRepository --> AuditOperationServiceImpl : Page<ApplicationListSummaryProjection>
+deactivate ApplicationListRepository
+
+AuditOperationServiceImpl -> ApplicationListServiceImpl : assembleResponsePage(dbPage, pageable)
+ApplicationListServiceImpl -> ApplicationListPageMapper : toPage(dbPage, responsePage, sortStrings)
+activate ApplicationListPageMapper
+ApplicationListPageMapper --> ApplicationListServiceImpl
+deactivate ApplicationListPageMapper
+
+loop for each application list summary
+    ApplicationListServiceImpl -> ApplicationListMapper : toGetSummaryDto(projection, entryCount, location)
+    activate ApplicationListMapper
+    ApplicationListMapper --> ApplicationListServiceImpl : ApplicationListGetSummaryDto
+    deactivate ApplicationListMapper
+end
+
+ApplicationListServiceImpl --> AuditOperationServiceImpl : ApplicationListPage
+AuditOperationServiceImpl --> ApplicationListServiceImpl : ApplicationListPage
+deactivate AuditOperationServiceImpl
+
+ApplicationListServiceImpl --> ApplicationListController : ApplicationListPage
+deactivate ApplicationListServiceImpl
+
+ApplicationListController --> UI : 200 OK\nApplicationListPage
+deactivate ApplicationListController
+
+@enduml

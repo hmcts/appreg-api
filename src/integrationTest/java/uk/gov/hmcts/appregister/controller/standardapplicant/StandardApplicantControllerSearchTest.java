@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.controller.standardapplicant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Clock;
@@ -102,7 +104,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         // assert the data
         Assertions.assertEquals("APP001", returnedSa.getCode());
         Assertions.assertEquals(LocalDate.now(), returnedSa.getStartDate());
-        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+        Assertions.assertTrue(returnedSa.getEndDate().isPresent());
+        assertNull(returnedSa.getEndDate().get());
         Assertions.assertNotNull(returnedSa.getApplicant().getPerson().getName());
         Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
         Assertions.assertEquals(
@@ -165,6 +168,41 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     public void
+            givenSparsePersonStandardApplicant_whenGetStandardApplicantByCodeAndDate_thenReturnExplicitNulls()
+                    throws Exception {
+        LocalDate activeDate = LocalDate.now();
+        String sparseCode = "A1348SA1";
+        saveSparsePersonStandardApplicant(sparseCode, activeDate.minusDays(1), null);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + sparseCode),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(activeDate));
+
+        responseSpec.then().statusCode(200);
+
+        JsonNode responseBody = mapper.readTree(responseSpec.asString());
+
+        Assertions.assertEquals(sparseCode, responseBody.path("code").asText());
+        Assertions.assertEquals(
+                activeDate.minusDays(1).toString(), responseBody.path("startDate").asText());
+        assertExplicitNull(responseBody, "endDate");
+        assertExplicitNull(responseBody, "applicant.person.name.middleName");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine2");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine3");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine4");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine5");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.phone");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.mobile");
+        assertExplicitNull(responseBody, "applicant.person.contactDetails.email");
+    }
+
+    @Test
+    public void
             givenValidRequest_whenGetStandardApplicantByCodeAndDateForOrganisation_thenReturn200()
                     throws Exception {
         // create the token
@@ -187,7 +225,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         // assert the data
         Assertions.assertEquals(APPCODE_CODE_ORGANISATION, returnedSa.getCode());
         Assertions.assertEquals(LocalDate.now().minusDays(1), returnedSa.getStartDate());
-        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+        Assertions.assertTrue(returnedSa.getEndDate().isPresent());
+        assertNull(returnedSa.getEndDate().get());
         Assertions.assertEquals(
                 "Organisation 1", returnedSa.getApplicant().getOrganisation().getName());
         Assertions.assertEquals(
@@ -405,7 +444,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Assertions.assertEquals(code, returnedSa.getCode());
         Assertions.assertEquals(
                 "Open-Ended Applicant", returnedSa.getApplicant().getOrganisation().getName());
-        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+        Assertions.assertTrue(returnedSa.getEndDate().isPresent());
+        assertNull(returnedSa.getEndDate().get());
     }
 
     @Test
@@ -607,7 +647,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 "123 High Street",
                 firstEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
         assertNotNull(firstEntry.getStartDate());
-        assertFalse(firstEntry.getEndDate().isPresent());
+        assertTrue(firstEntry.getEndDate().isPresent());
+        assertNull(firstEntry.getEndDate().get());
 
         StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
         assertEquals("APP002", secondEntry.getCode());
@@ -617,7 +658,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 "456 Elm Road",
                 secondEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
         assertNotNull(secondEntry.getStartDate());
-        assertFalse(secondEntry.getEndDate().isPresent());
+        assertTrue(secondEntry.getEndDate().isPresent());
+        assertNull(secondEntry.getEndDate().get());
 
         StandardApplicantGetSummaryDto org = response.getContent().get(6);
         assertEquals("APP006", org.getCode());
@@ -632,7 +674,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 "Cityville",
                 org.getApplicant().getOrganisation().getContactDetails().getAddressLine4().get());
         assertNotNull(secondEntry.getStartDate());
-        assertFalse(secondEntry.getEndDate().isPresent());
+        assertTrue(secondEntry.getEndDate().isPresent());
+        assertNull(secondEntry.getEndDate().get());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -690,7 +733,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 "456 Elm Road",
                 firstEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         assertNotNull(firstEntry.getStartDate());
-        assertFalse(firstEntry.getEndDate().isPresent());
+        assertTrue(firstEntry.getEndDate().isPresent());
+        assertNull(firstEntry.getEndDate().get());
 
         StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
         assertEquals("APP004", secondEntry.getCode());
@@ -699,7 +743,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 "123 High Street",
                 secondEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         assertNotNull(secondEntry.getStartDate());
-        assertFalse(secondEntry.getEndDate().isPresent());
+        assertTrue(secondEntry.getEndDate().isPresent());
+        assertNull(secondEntry.getEndDate().get());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1908,6 +1953,47 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private void saveSparsePersonStandardApplicant(
+            String code, LocalDate startDate, LocalDate endDate) throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+            standardApplicant.setApplicantCode(code);
+            standardApplicant.setName(null);
+            standardApplicant.setApplicantTitle("Mx");
+            standardApplicant.setApplicantForename1("Sparse");
+            standardApplicant.setApplicantForename2(null);
+            standardApplicant.setApplicantForename3(null);
+            standardApplicant.setApplicantSurname("Person");
+            standardApplicant.setApplicantStartDate(startDate);
+            standardApplicant.setApplicantEndDate(endDate);
+            standardApplicant.setAddressLine1("1 Sparse Street");
+            standardApplicant.setAddressLine2(null);
+            standardApplicant.setAddressLine3(null);
+            standardApplicant.setAddressLine4(null);
+            standardApplicant.setAddressLine5(null);
+            standardApplicant.setPostcode("SP1 1AA");
+            standardApplicant.setTelephoneNumber(null);
+            standardApplicant.setMobileNumber(null);
+            standardApplicant.setEmailAddress(null);
+            persistance.save(standardApplicant);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private void assertExplicitNull(JsonNode root, String dottedPath) {
+        JsonNode current = root;
+        for (String segment : dottedPath.split("\\.")) {
+            assertTrue(current.has(segment), "Expected JSON field to be present: " + dottedPath);
+            current = current.get(segment);
+        }
+        assertTrue(current.isNull(), "Expected JSON field to be explicit null: " + dottedPath);
     }
 
     @Override
