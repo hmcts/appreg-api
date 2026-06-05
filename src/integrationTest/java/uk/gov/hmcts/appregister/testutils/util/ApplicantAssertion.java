@@ -60,10 +60,6 @@ public class ApplicantAssertion {
         String expectedLastName = applicant.getName().getLastName();
 
         // assert applicant
-        Assertions.assertEquals(expectedLastName, applicationListEntry.getSurname());
-        Assertions.assertNull(applicationListEntry.getForename3());
-        Assertions.assertEquals(expectedFirstName, applicationListEntry.getForename1());
-        Assertions.assertEquals(expectedMiddleName, applicationListEntry.getForename2());
         Assertions.assertEquals(expectedFirstName, applicationListEntry.getFirstName());
         Assertions.assertEquals(expectedMiddleName, applicationListEntry.getMiddleName());
         Assertions.assertEquals(expectedLastName, applicationListEntry.getLastName());

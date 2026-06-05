@@ -51,10 +51,9 @@ public class NameAddressRepositoryTest extends BaseRepositoryTest {
                         .isEqual(nameAddressToAssertAgainst.get().getDateOfBirth()));
         assertEquals(
                 nameAddress.getEmailAddress(), nameAddressToAssertAgainst.get().getEmailAddress());
-        assertEquals(nameAddress.getForename1(), nameAddressToAssertAgainst.get().getForename1());
-        assertEquals(nameAddress.getForename2(), nameAddressToAssertAgainst.get().getForename2());
-        assertEquals(nameAddress.getForename3(), nameAddressToAssertAgainst.get().getForename3());
-        assertEquals(nameAddress.getSurname(), nameAddressToAssertAgainst.get().getSurname());
+        assertEquals(nameAddress.getFirstName(), nameAddressToAssertAgainst.get().getFirstName());
+        assertEquals(nameAddress.getMiddleName(), nameAddressToAssertAgainst.get().getMiddleName());
+        assertEquals(nameAddress.getLastName(), nameAddressToAssertAgainst.get().getLastName());
         assertEquals(
                 nameAddress.getTelephoneNumber(),
                 nameAddressToAssertAgainst.get().getTelephoneNumber());

@@ -73,18 +73,11 @@ public abstract class ApplicantMapper {
      * @return The full name
      */
     public FullName toFullName(NameAddress applicant) {
-        String firstName = firstNonBlank(applicant.getFirstName(), applicant.getForename1());
-        String middleName =
-                firstNonBlank(
-                        applicant.getMiddleName(),
-                        combineMiddleName(applicant.getForename2(), applicant.getForename3()));
-        String lastName = firstNonBlank(applicant.getLastName(), applicant.getSurname());
-
         FullName fullName = new FullName();
         fullName.setTitle(applicant.getTitle());
-        fullName.setFirstName(firstName);
-        fullName.setMiddleName(JsonNullable.of(middleName));
-        fullName.setLastName(lastName);
+        fullName.setFirstName(applicant.getFirstName());
+        fullName.setMiddleName(JsonNullable.of(applicant.getMiddleName()));
+        fullName.setLastName(applicant.getLastName());
         return fullName;
     }
 
@@ -122,10 +115,6 @@ public abstract class ApplicantMapper {
         nameAddress.setFirstName(firstName);
         nameAddress.setMiddleName(middleName);
         nameAddress.setLastName(lastName);
-        nameAddress.setForename1(firstName);
-        nameAddress.setForename2(middleName);
-        nameAddress.setForename3(null);
-        nameAddress.setSurname(lastName);
 
         ContactDetails contactDetails = person.getContactDetails();
         nameAddress.setAddress1(contactDetails.getAddressLine1());
@@ -158,10 +147,6 @@ public abstract class ApplicantMapper {
     @Mapping(target = "code", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "title", ignore = true)
-    @Mapping(target = "surname", ignore = true)
-    @Mapping(target = "forename1", ignore = true)
-    @Mapping(target = "forename2", ignore = true)
-    @Mapping(target = "forename3", ignore = true)
     @Mapping(target = "firstName", ignore = true)
     @Mapping(target = "middleName", ignore = true)
     @Mapping(target = "lastName", ignore = true)
@@ -221,10 +206,6 @@ public abstract class ApplicantMapper {
      */
     @Mapping(target = "code", ignore = true)
     @Mapping(target = "title", source = "applicantTitle")
-    @Mapping(target = "forename1", source = "applicantForename1")
-    @Mapping(target = "forename2", source = "applicantForename2")
-    @Mapping(target = "forename3", source = "applicantForename3")
-    @Mapping(target = "surname", source = "applicantSurname")
     @Mapping(target = "firstName", source = "applicantForename1")
     @Mapping(
             target = "middleName",
@@ -280,10 +261,7 @@ public abstract class ApplicantMapper {
     public String getNameForNameAddress(NameAddress nameAddress) {
         String name = "";
         if (nameAddress != null && nameAddress.getName() == null) {
-            name =
-                    formatPersonName(
-                            firstNonBlank(nameAddress.getFirstName(), nameAddress.getForename1()),
-                            firstNonBlank(nameAddress.getLastName(), nameAddress.getSurname()));
+            name = formatPersonName(nameAddress.getFirstName(), nameAddress.getLastName());
         } else if (nameAddress != null) {
             name = nameAddress.getName();
         }
@@ -338,10 +316,5 @@ public abstract class ApplicantMapper {
                         " ",
                         StringUtils.defaultString(StringUtils.trimToNull(secondForename)),
                         StringUtils.defaultString(StringUtils.trimToNull(thirdForename))));
-    }
-
-    private String firstNonBlank(String primary, String fallback) {
-        String value = StringUtils.trimToNull(primary);
-        return value != null ? value : StringUtils.trimToNull(fallback);
     }
 }

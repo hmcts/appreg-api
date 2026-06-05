@@ -237,22 +237,19 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 data.getStandardApplicant().getApplicantSurname(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getApplicantSurname());
+                        .getApplicantLastName());
         assertEquals(
                 data.getStandardApplicant().getApplicantForename1(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getApplicantForename1());
+                        .getApplicantFirstName());
         assertEquals(
-                data.getStandardApplicant().getApplicantForename2(),
+                uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName(
+                        data.getStandardApplicant().getApplicantForename2(),
+                        data.getStandardApplicant().getApplicantForename3()),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getApplicantForename2());
-        assertEquals(
-                data.getStandardApplicant().getApplicantForename3(),
-                applicationListEntryPrintProjectionsToAssertAgainst
-                        .getFirst()
-                        .getApplicantForename3());
+                        .getApplicantMiddleName());
         assertEquals(
                 data.getStandardApplicant().getAddressLine1(),
                 applicationListEntryPrintProjectionsToAssertAgainst
@@ -303,25 +300,20 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         .getFirst()
                         .getRespondentTitle());
         assertEquals(
-                data.getRnameaddress().getSurname(),
+                data.getRnameaddress().getLastName(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getRespondentSurname());
+                        .getRespondentLastName());
         assertEquals(
-                data.getRnameaddress().getForename1(),
+                data.getRnameaddress().getFirstName(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getRespondentForename1());
+                        .getRespondentFirstName());
         assertEquals(
-                data.getRnameaddress().getForename2(),
+                data.getRnameaddress().getMiddleName(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
-                        .getRespondentForename2());
-        assertEquals(
-                data.getRnameaddress().getForename3(),
-                applicationListEntryPrintProjectionsToAssertAgainst
-                        .getFirst()
-                        .getRespondentForename3());
+                        .getRespondentMiddleName());
         assertEquals(
                 data.getRnameaddress().getAddress1(),
                 applicationListEntryPrintProjectionsToAssertAgainst
@@ -544,7 +536,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getTotalPages()).isEqualTo(1);
         assertThat(page0.getContent().get(0).getCjaCode()).isEqualTo("CJ");
         assertThat(page0.getContent().get(0).getStatus()).isEqualTo(Status.OPEN);
-        assertThat(page0.getContent().get(0).getAnameAddress().getSurname()).isEqualTo("Turner");
+        assertThat(page0.getContent().get(0).getAnameAddress().getLastName()).isEqualTo("Turner");
         assertThat(page0.getContent().get(0).getAnameAddress().getAddress1())
                 .isEqualTo("1 Market Street");
         assertThat(page0.getContent().get(0).getAnameAddress().getEmailAddress())
@@ -553,7 +545,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getAnameAddress().getTelephoneNumber())
                 .isEqualTo("01234567890");
 
-        assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isNull();
+        assertThat(page0.getContent().get(0).getRnameAddress().getLastName()).isNull();
         assertThat(page0.getContent().get(0).getRnameAddress().getName())
                 .isEqualTo("Sarah Johnson");
         assertThat(page0.getContent().get(0).getRnameAddress().getCode())
@@ -609,8 +601,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         assertThat(page0.getContent().get(0).getRnameAddress().getAddress1())
                 .isEqualTo("1 Market Street");
-        assertThat(page0.getContent().get(0).getRnameAddress().getForename1()).isEqualTo("John");
-        assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Turner");
+        assertThat(page0.getContent().get(0).getRnameAddress().getFirstName()).isEqualTo("John");
+        assertThat(page0.getContent().get(0).getRnameAddress().getLastName()).isEqualTo("Turner");
 
         assertThat(page0.getContent().get(0).getRnameAddress().getName()).isNull();
         assertThat(page0.getContent().get(0).getRnameAddress().getCode())
@@ -761,26 +753,32 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void testSearchForFilterByApplicantSurname() {
-        // Given: an application list and an entry
+        // Given: an application list with entries that have distinct applicant surnames
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
 
         ApplicationListEntry savedEntry =
                 saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
+        savedEntry.getAnamedaddress().setLastName("TargetApplicantSurname");
 
-        saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
+        ApplicationListEntry otherEntry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 2, false);
+        otherEntry.getAnamedaddress().setLastName("OtherApplicantSurname");
+
+        entityManager.flush();
+        entityManager.clear();
 
         // When: calling the repository method for the surname of the first applicant
         Page<ApplicationListEntryGetSummaryProjection> applicationListEntryList =
                 applicationListEntryRepository.searchForGetSummary(
-                        null,
+                        list.getUuid(),
                         false,
                         null,
                         null,
                         null,
                         null,
                         null,
-                        savedEntry.getAnamedaddress().getSurname(),
+                        savedEntry.getAnamedaddress().getLastName(),
                         null,
                         null,
                         null,
@@ -796,7 +794,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         Pageable.ofSize(10));
 
         // Then: the entry added is the entry returned
-        Assertions.assertThat(applicationListEntryList.getPageable().getPageSize() == 1);
+        Assertions.assertThat(applicationListEntryList.getTotalElements()).isEqualTo(1);
         Assertions.assertThat(savedEntry.getUuid().toString())
                 .isEqualTo(applicationListEntryList.stream().findFirst().get().getUuid());
     }

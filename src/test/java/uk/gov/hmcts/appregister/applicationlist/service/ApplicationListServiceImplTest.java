@@ -970,8 +970,8 @@ public class ApplicationListServiceImplTest {
                         .id(1L)
                         .sequenceNumber(1)
                         .applicantTitle(MR)
-                        .applicantSurname(PERSON4_SURNAME)
-                        .applicantForename1(PERSON4_FORENAME1)
+                        .applicantLastName(PERSON4_SURNAME)
+                        .applicantFirstName(PERSON4_FORENAME1)
                         .build();
         when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of(entryProjection));
 
@@ -1067,17 +1067,17 @@ public class ApplicationListServiceImplTest {
     }
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {
-        var uuid = UUID.randomUUID();
-        short sequenceNumber = 1;
-        var accountNumber = "1234567890";
+        final var uuid = UUID.randomUUID();
+        final short sequenceNumber = 1;
+        final var accountNumber = "1234567890";
 
         NameAddress applicant = new NameAddress();
         applicant.setName("Mustafa's Org");
 
         NameAddress respondent = new NameAddress();
-        applicant.setSurname("Ahmed");
-        applicant.setForename1("Mustafa");
-        applicant.setTitle("His Majesty");
+        respondent.setLastName("Ahmed");
+        respondent.setFirstName("Mustafa");
+        respondent.setTitle("His Majesty");
 
         var postCode = "SW1A 1AA";
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
