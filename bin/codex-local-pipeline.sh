@@ -207,7 +207,7 @@ log "Running Gradle verification: ./gradlew ${gradle_args[*]}"
 
 if [[ "${include_dependency_check}" == "true" ]]; then
   log "Running OWASP dependency check"
-  ./gradlew --no-daemon dependencyCheck
+  ./gradlew --no-daemon dependencyCheckAnalyze
 fi
 
 log "Local pipeline completed"
