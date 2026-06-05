@@ -20,4 +20,20 @@ properties:
     example: [ "3fa85f64-5717-4562-b3fc-2c963f66afa6", "3fa85f64-5717-4562-b3fc-2c963f66afa7" ]
 
   feeDetails:
-    $ref: "./bulk-fee-details-dto.yaml"
+    type: array
+    description: >
+      Fee detail records to apply to every selected Application List Entry.
+      Requests with no fee details are rejected with 400 Bad Request.
+      If any fee detail has hasOffsiteFee set to true, each selected entry is linked to the active off-site fee.
+    minItems: 1
+    items:
+      $ref: "./bulk-fee-details-dto.yaml"
+    example:
+      - paymentStatus: "PAID"
+        statusDate: "2025-10-07"
+        paymentReference: "PAY-001"
+        hasOffsiteFee: false
+      - paymentStatus: "REMITTED"
+        statusDate: "2025-10-07"
+        paymentReference: "PAY-002"
+        hasOffsiteFee: true

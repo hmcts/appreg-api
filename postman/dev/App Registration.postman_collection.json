@@ -949,7 +949,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"entryIds\": [\r\n    \"{{CREATED_ENTRY_ID}}\"\r\n  ],\r\n  \"feeDetails\": {\r\n    \"paymentStatus\": \"PAID\",\r\n    \"statusDate\": \"2025-10-07\",\r\n    \"paymentReference\": \"POSTMAN-BULK-FEE-001\",\r\n    \"hasOffsiteFee\": false\r\n  }\r\n}",
+              "raw": "{\r\n  \"entryIds\": [\r\n    \"{{CREATED_ENTRY_ID}}\"\r\n  ],\r\n  \"feeDetails\": [\r\n    {\r\n      \"paymentStatus\": \"PAID\",\r\n      \"statusDate\": \"2025-10-07\",\r\n      \"paymentReference\": \"POSTMAN-BULK-FEE-001\",\r\n      \"hasOffsiteFee\": false\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"

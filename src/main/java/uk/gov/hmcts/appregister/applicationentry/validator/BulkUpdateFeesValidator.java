@@ -100,12 +100,21 @@ public class BulkUpdateFeesValidator
 
     @SuppressWarnings("java:S2583")
     private void validateFeeDetails(BulkUpdateFeesPayload payload) {
-        if (payload.data() == null || payload.data().getFeeDetails() == null) {
+        if (payload.data() == null || isNullOrEmpty(payload.data().getFeeDetails())) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_DETAILS_NOT_PROVIDED, "No fee details provided");
         }
 
-        BulkFeeDetailsDto feeDetails = payload.data().getFeeDetails();
+        for (BulkFeeDetailsDto feeDetails : payload.data().getFeeDetails()) {
+            validateFeeDetails(feeDetails);
+        }
+    }
+
+    private void validateFeeDetails(BulkFeeDetailsDto feeDetails) {
+        if (feeDetails == null) {
+            throw new AppRegistryException(
+                    AppListEntryError.FEE_DETAILS_NOT_PROVIDED, "No fee details provided");
+        }
 
         if (feeDetails.getPaymentStatus() == null) {
             throw new AppRegistryException(
