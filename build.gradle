@@ -9,7 +9,8 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 buildscript {
   configurations.classpath {
     resolutionStrategy.eachDependency { details ->
-      if (details.requested.group == 'org.owasp'
+      if (!System.getProperty('data.connection_string')
+        && details.requested.group == 'org.owasp'
         && details.requested.name.startsWith('dependency-check')) {
         details.useVersion '12.2.2'
         details.because '12.2.0 fails importing some NVD CVE reference URLs into the local H2 store'
