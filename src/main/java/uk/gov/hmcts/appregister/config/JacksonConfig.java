@@ -12,15 +12,15 @@ import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.boot.jackson2.autoconfigure.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeDeserializer;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
-import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 
 /**
  * This class sets up the Jackson 2 Object Mapper with the required modules for OpenAPI Dto
@@ -31,11 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 @Deprecated
 @SuppressWarnings("removal")
 @Configuration
-@RequiredArgsConstructor
 public class JacksonConfig {
-    private static final Set<Class<?>> STRICT_REQUEST_BODY_TYPES =
-            Set.of(ActivityAuditFilterDto.class);
-
     /**
      * Registers Jackson modules required for OpenAPI-generated models. JsonNullableModule: supports
      * fields of type JsonNullable
@@ -45,24 +41,51 @@ public class JacksonConfig {
      */
     @Bean
     Jackson2ObjectMapperBuilderCustomizer jsonNullableCustomizer() {
+        return jsonNullableCustomizer(new PathMatchingResourcePatternResolver());
+    }
+
+    Jackson2ObjectMapperBuilderCustomizer jsonNullableCustomizer(
+            ResourcePatternResolver resourcePatternResolver) {
         JavaTimeModule module = new JavaTimeModule();
         module.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
         module.addDeserializer(LocalTime.class, new StrictLocalTimeDeserializer());
 
-        return builder -> configureBuilder(builder, module);
+        Set<Class<?>> requestBodyTypesDisallowingAdditionalProperties =
+                new OpenApiAdditionalPropertiesResolver(resourcePatternResolver)
+                        .requestBodyTypesDisallowingAdditionalProperties();
+
+        return builder ->
+                configureBuilder(builder, module, requestBodyTypesDisallowingAdditionalProperties);
     }
 
     private void configureBuilder(
-            Jackson2ObjectMapperBuilder builder, JavaTimeModule javaTimeModule) {
+            Jackson2ObjectMapperBuilder builder,
+            JavaTimeModule javaTimeModule,
+            Set<Class<?>> requestBodyTypesDisallowingAdditionalProperties) {
         builder.modulesToInstall(new JsonNullableModule(), javaTimeModule);
-        builder.postConfigurer(JacksonConfig::configureObjectMapper);
+        builder.postConfigurer(
+                objectMapper ->
+                        configureObjectMapper(
+                                objectMapper, requestBodyTypesDisallowingAdditionalProperties));
     }
 
-    private static void configureObjectMapper(ObjectMapper objectMapper) {
-        objectMapper.addHandler(new StrictRequestBodyPropertyHandler());
+    private static void configureObjectMapper(
+            ObjectMapper objectMapper,
+            Set<Class<?>> requestBodyTypesDisallowingAdditionalProperties) {
+        objectMapper.addHandler(
+                new StrictRequestBodyPropertyHandler(
+                        requestBodyTypesDisallowingAdditionalProperties));
     }
 
     private static class StrictRequestBodyPropertyHandler extends DeserializationProblemHandler {
+        private final Set<Class<?>> requestBodyTypesDisallowingAdditionalProperties;
+
+        StrictRequestBodyPropertyHandler(
+                Set<Class<?>> requestBodyTypesDisallowingAdditionalProperties) {
+            this.requestBodyTypesDisallowingAdditionalProperties =
+                    requestBodyTypesDisallowingAdditionalProperties;
+        }
+
         @Override
         public boolean handleUnknownProperty(
                 DeserializationContext context,
@@ -72,7 +95,7 @@ public class JacksonConfig {
                 String propertyName)
                 throws IOException {
             Class<?> targetClass = resolveTargetClass(beanOrClass);
-            if (STRICT_REQUEST_BODY_TYPES.contains(targetClass)) {
+            if (requestBodyTypesDisallowingAdditionalProperties.contains(targetClass)) {
                 throw UnrecognizedPropertyException.from(
                         parser, targetClass, propertyName, knownProperties(deserializer));
             }
