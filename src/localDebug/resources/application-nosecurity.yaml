@@ -13,3 +13,9 @@ app:
       email: nosecurity@appreg.local
       roles:
       - LOCAL_NO_SECURITY
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,rest-implementation-status

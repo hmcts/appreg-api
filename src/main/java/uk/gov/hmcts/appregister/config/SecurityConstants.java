@@ -19,8 +19,7 @@ public final class SecurityConstants {
     public static final String SWAGGER_UI = "/swagger-ui/**";
     public static final String OPENAPI_DOCS = "/v3/api-docs/**";
     public static final String OPENAPI = "/specs/**";
-    public static final String HEALTH = "/health/**";
-    public static final String REST_IMPLEMENTATION_HEALTH = "/rest-implementation-status/**";
+    public static final String HEALTH = "/health";
 
     // Error codes
     public static final int ERR_AUTH_REQUIRED = 401;

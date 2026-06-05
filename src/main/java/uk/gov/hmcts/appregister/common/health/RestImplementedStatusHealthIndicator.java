@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.health;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -228,10 +229,17 @@ public class RestImplementedStatusHealthIndicator {
 
         methods.addAll(
                 Arrays.stream(clzz.getDeclaredMethods())
+                        .filter(RestImplementedStatusHealthIndicator::isCandidateControllerMethod)
                         .filter(method -> ApiMethod.isHttpExposedMethod(method))
                         .map(ApiMethod::new)
                         .collect(Collectors.toList()));
         return methods;
+    }
+
+    static boolean isCandidateControllerMethod(Method method) {
+        return Modifier.isPublic(method.getModifiers())
+                && !method.isBridge()
+                && !method.isSynthetic();
     }
 
     /**

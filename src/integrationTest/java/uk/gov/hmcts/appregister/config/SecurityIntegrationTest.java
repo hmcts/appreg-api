@@ -7,7 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 
 public class SecurityIntegrationTest extends BasePostgresIntegrationTest {
@@ -17,9 +16,15 @@ public class SecurityIntegrationTest extends BasePostgresIntegrationTest {
     private transient MockMvc mockMvc;
 
     @Test
-    @DisplayName("Should allow unauthenticated access to /health")
+    @DisplayName("Should allow unauthenticated access to minimal /health")
     void healthEndpoint_shouldAllowAnonymousAccess() throws Exception {
-        MvcResult result = mockMvc.perform(get("/health")).andExpect(status().isOk()).andReturn();
+        mockMvc.perform(get("/health")).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should block unauthenticated access to /rest-implementation-status")
+    void restImplementationStatusEndpoint_shouldRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/rest-implementation-status")).andExpect(status().isUnauthorized());
     }
 
     @Test
