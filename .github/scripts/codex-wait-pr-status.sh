@@ -14,6 +14,8 @@ required_env() {
 required_env "GH_TOKEN"
 required_env "GITHUB_REPOSITORY"
 required_env "PUBLISHED_COMMIT_SHA"
+
+PR_NUMBER="${PR_NUMBER:-${SONAR_PR_NUMBER:-}}"
 required_env "PR_NUMBER"
 
 status_context="${REQUIRED_STATUS_CONTEXT:-continuous-integration/jenkins/pr-head}"
