@@ -2987,7 +2987,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 INSERT INTO %s.application_list_entries (
                     ale_id, al_al_id, ac_ac_id, a_na_id, r_na_id, application_list_entry_wording,
                     entry_rescheduled, notes, version, changed_by, changed_date, user_name,
-                    sequence_number, lodgement_date, is_deleted
+                    sequence_number, lodgement_date
                 ) VALUES (
                     nextval('%s.ale_seq'), ?, ?, ?, ?, 'Workload wording', 'N', 'Workload notes',
                     1, 0, CURRENT_TIMESTAMP, 'report-integration-test', 1, ?
