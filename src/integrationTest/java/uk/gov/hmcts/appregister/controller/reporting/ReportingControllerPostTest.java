@@ -829,6 +829,73 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
+            givenValidWorkloadReportRequest_AppListAppListEntryIsDeletedNullCheck_ReportCanBeDownloaded()
+                    throws Exception {
+
+        // Setup
+        long id = insertApplicationList(LocalDate.of(2026, 1, 1), "", "", "", null);
+        insertEntry(LocalDate.of(2026, 1, 1), id, "Test applicant", 1, "N");
+        insertEntry(LocalDate.of(2026, 1, 1), id, "Test applicant 2", 2, null);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 1, 1))
+                        .dateTo(LocalDate.of(2026, 1, 31));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateFrom", "2026-01-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateTo", "2026-01-31");
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response response =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+                    if (response.statusCode() != 200) {
+                        return false;
+                    }
+                    JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Workload Report"));
+            Assertions.assertTrue(report.contains("Test applicant"));
+            Assertions.assertTrue(report.contains("Test applicant 2"));
+        }
+    }
+
+    @Test
+    public void
             givenValidWorkloadReportWithOtherLocationFilter_whenCreatingReport_thenJobIsMadeAndReportCanBeDownloaded()
                     throws Exception {
 
@@ -845,7 +912,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         3);
 
         val entryId =
-                insertEntry(LocalDate.of(2026, 4, 15), listId, "Workload Report Applicant", 1);
+                insertEntry(LocalDate.of(2026, 4, 15), listId, "Workload Report Applicant", 1, "N");
         insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
         insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
         insertOfficial(entryId, "M", "Mr", "Test", "Workload");
@@ -927,7 +994,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         3);
 
         val entryId =
-                insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1);
+                insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1, "N");
         insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
         insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
         insertOfficial(entryId, "M", "Mr", "Test", "Workload");
@@ -1012,7 +1079,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         0,
                         0,
                         3);
-        insertEntry(listDate, includedListId, includedApplicant, 1);
+        insertEntry(listDate, includedListId, includedApplicant, 1, "N");
 
         val excludedListId =
                 insertApplicationListRowReturningId(
@@ -1025,7 +1092,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         0,
                         0,
                         3);
-        insertEntry(listDate, excludedListId, excludedApplicant, 1);
+        insertEntry(listDate, excludedListId, excludedApplicant, 1, "N");
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
@@ -1053,8 +1120,13 @@ public class ReportingControllerPostTest extends BaseIntegration {
         val applicantName = "Workload Second Entry Applicant"; // identifies target row
         val listId =
                 insertApplicationList(
-                        listDate, "WLD001", "Workload multi resolution list", "Workload Court");
-        val entryId = insertEntry(listDate, listId, applicantName, 2); // creates second list entry
+                        listDate,
+                        "WLD001",
+                        "Workload multi resolution list",
+                        "Workload Court",
+                        "N");
+        val entryId =
+                insertEntry(listDate, listId, applicantName, 2, "N"); // creates second list entry
         insertOfficial(entryId, "M", "Mr", "Solo", "Magistrate"); // adds one magistrate
 
         val row =
@@ -1080,7 +1152,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         listDate,
                         "WLD002",
                         "Workload Court",
-                        applicantName); // creates list// identifies target row
+                        applicantName,
+                        "N"); // creates list// identifies target row
         val entryId =
                 insertApplicationListEntry(
                         appListId,
@@ -1173,7 +1246,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 insertNameAddress("Workload Respondent", null, null, null, "Respondent Street");
         val listId =
                 insertApplicationList(
-                        listDate, "WLD001", "Workload multi resolution list", "Workload Court");
+                        listDate,
+                        "WLD001",
+                        "Workload multi resolution list",
+                        "Workload Court",
+                        "N");
         val entryId =
                 insertApplicationListEntry(
                         listId,
@@ -2659,16 +2736,20 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private long insertApplicationList(
-            LocalDate listDate, String courtCode, String description, String courtName) {
+            LocalDate listDate,
+            String courtCode,
+            String description,
+            String courtName,
+            String isDeleted) {
         return jdbcTemplate.queryForObject(
                 """
                 INSERT INTO %s.application_lists (
                     al_id, application_list_status, application_list_date, application_list_time,
                     courthouse_code, list_description, version, changed_by, changed_date,
-                    user_name, courthouse_name, duration_hour, duration_minute, cja_cja_id
+                    user_name, courthouse_name, duration_hour, duration_minute, cja_cja_id, is_deleted
                 ) VALUES (
                     nextval('%s.al_seq'), 'CLOSED', ?, ?, ?, ?, 1, 0, CURRENT_TIMESTAMP,
-                    'report-integration-test', ?, 0, 0, 3
+                    'report-integration-test', ?, 0, 0, 3, ?
                 )
                 RETURNING al_id
                 """
@@ -2678,7 +2759,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 listDate.atTime(10, 0),
                 courtCode,
                 description,
-                courtName);
+                courtName,
+                isDeleted);
     }
 
     private long insertNameAddress(
@@ -2922,7 +3004,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private long insertEntry(
-            LocalDate listDate, long appListId, String applicantName, int sequenceNumber) {
+            LocalDate listDate,
+            long appListId,
+            String applicantName,
+            int sequenceNumber,
+            String isDeleted) {
         val applicantId = insertNameAddress(applicantName, null, null, null, "Applicant Street");
         val respondentId =
                 insertNameAddress(
@@ -2932,10 +3018,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 INSERT INTO %s.application_list_entries (
                     ale_id, al_al_id, ac_ac_id, a_na_id, r_na_id, application_list_entry_wording,
                     entry_rescheduled, notes, version, changed_by, changed_date, user_name,
-                    sequence_number, lodgement_date
+                    sequence_number, lodgement_date, is_deleted
                 ) VALUES (
                     nextval('%s.ale_seq'), ?, ?, ?, ?, 'Workload wording', 'N', 'Workload notes',
-                    1, 0, CURRENT_TIMESTAMP, 'report-integration-test', ?, ?
+                    1, 0, CURRENT_TIMESTAMP, 'report-integration-test', ?, ?, ?
                 )
                 RETURNING ale_id
                 """
@@ -2946,7 +3032,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 applicantId,
                 respondentId,
                 sequenceNumber,
-                listDate.atStartOfDay());
+                listDate.atStartOfDay(),
+                isDeleted);
     }
 
     private String createAndDownloadWorkloadReport(WorkloadFilterDto request) throws Exception {
