@@ -16,9 +16,21 @@ public class SecurityIntegrationTest extends BasePostgresIntegrationTest {
     private transient MockMvc mockMvc;
 
     @Test
+    @DisplayName("Should block unauthenticated access to OpenAPI spec")
+    void openApiSpec_shouldRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/specs/openapi.json")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("Should allow unauthenticated access to minimal /health")
     void healthEndpoint_shouldAllowAnonymousAccess() throws Exception {
         mockMvc.perform(get("/health")).andExpect(status().isOk());
+    }
+
+    @DisplayName("Should require authentication for OpenAPI documentation")
+    @Test
+    void openApiDocs_shouldRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/specs/openapi.json")).andExpect(status().isUnauthorized());
     }
 
     @Test
