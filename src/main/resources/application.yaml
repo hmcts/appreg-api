@@ -77,8 +77,6 @@ spring:
           - ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
           - ${AZURE_AUDIENCE_ID_URI:api://${AZURE_AUDIENCE_ID}}
           tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
-  mvc:
-    static-path-pattern: /specs/**
 
 app:
   timezone: "Europe/London"

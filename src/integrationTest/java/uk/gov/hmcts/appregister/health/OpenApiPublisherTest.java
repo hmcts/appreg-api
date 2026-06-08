@@ -1,11 +1,6 @@
 package uk.gov.hmcts.appregister.health;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -24,12 +19,5 @@ class OpenApiPublisherTest extends BaseIntegration {
     public static void before() {
         // stop so that when started functional data is inserted
         postgresCommand.stop();
-    }
-
-    @DisplayName("Generate swagger documentation")
-    @Test
-    @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
-    void generateDocs() throws Exception {
-        mvc.perform(get("/specs/openapi.json")).andExpect(status().isOk());
     }
 }

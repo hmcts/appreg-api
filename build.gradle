@@ -39,25 +39,6 @@ plugins {
   id 'com.github.jk1.dependency-license-report' version '3.1.2'
 }
 
-/**
- * a task that bundles the OpenAPI spec as json file
- */
-tasks.register('bundleOpenApi', GenerateTask) {
-  generatorName = 'openapi'
-  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
-  outputDir = layout.buildDirectory.dir('specmerge')
-  inputs.files(fileTree('src/main/resources/openapi'))
-}
-
-/**
- * A task that copies the generated OpenAPI spec into the main resources static folder
- */
-tasks.register('copySpecIntoMainResources', Copy) {
-  dependsOn tasks.named('bundleOpenApi')
-  from layout.buildDirectory.file('specmerge/openapi.json')
-  into layout.buildDirectory.file('resources/main/static')
-}
-
 ext {
   releaseTrainVersion = '2025.1.1' // Example: '2021.0.x' corresponds to Spring Boot 2.6.x or 2.7.x
 }
@@ -251,9 +232,13 @@ tasks.register('bootRunLocalDev', BootRun) {
   description = 'Runs the application locally with no security and P6Spy SQL logging enabled'
   group = 'Application'
   mainClass = application.mainClass
+
+  dependsOn tasks.named('copySpecIntoLocalDebugResources')
+
   classpath = sourceSets.main.runtimeClasspath +
     configurations.localDebugRuntimeOnly +
-    files('src/localDebug/resources')
+    files('src/localDebug/resources') +
+    files(layout.buildDirectory.dir('localDebug/resources'))
 
   def activeProfiles = providers.gradleProperty('springProfiles')
     .orElse(providers.systemProperty('spring.profiles.active'))
@@ -538,8 +523,6 @@ tasks.named('processResources', Copy) {
   dependsOn tasks.named('openApiGenerate')
   dependsOn tasks.named('openapiJarArtefact')
   dependsOn tasks.named('flywayArtefact')
-  dependsOn tasks.named('bundleOpenApi')
-  dependsOn tasks.named('copySpecIntoMainResources')
 
   inputs.property('version', artifactVersion)
 
@@ -595,6 +578,19 @@ tasks.register('flywayArtefact', Jar) {
   archiveClassifier = 'flyway'
   from new File('./flyway/migrations'), new File('./flyway/data_population')
 }
+
+  tasks.register('bundleOpenApi', GenerateTask) {                                                                                               
+    generatorName = 'openapi'                                                                                                                   
+    inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')                                                         
+    outputDir = layout.buildDirectory.dir('specmerge')                                                                                          
+    inputs.files(fileTree('src/main/resources/openapi'))                                                                                        
+  }                                                                                                                                             
+                                                                                                                                                
+  tasks.register('copySpecIntoLocalDebugResources', Copy) {                                                                                     
+    dependsOn tasks.named('bundleOpenApi')                                                                                                      
+    from layout.buildDirectory.file('specmerge/openapi.json')                                                                                   
+    into layout.buildDirectory.dir('localDebug/resources/static/specs')                                                                         
+  } 
 
 tasks.named('compileJava') {
   dependsOn tasks.named('openApiGenerate')
