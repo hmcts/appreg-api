@@ -20,6 +20,7 @@ public abstract class DatabaseJobsMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "enabled", ignore = true)
     @Mapping(target = "lastRan", ignore = true)
+    @Mapping(target = "metadata", ignore = true)
     @Mapping(target = "name", source = "jobType.value")
     public abstract DatabaseJob toEntity(AdminJobType jobType);
 
