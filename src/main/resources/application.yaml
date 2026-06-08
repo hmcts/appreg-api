@@ -92,6 +92,16 @@ appreg:
   audit:
     diff:
       enable-complex-diff: true
+  csds:
+    ingress:
+      enabled: false
+      access-key-header: x-api-key
+      lease-duration: PT5M
+      connect-timeout: PT10S
+      read-timeout: PT30S
+      processors:
+        dummy-logging:
+          enabled: false
   job:
     page-size: 10
   report:
