@@ -262,6 +262,21 @@ tasks.register('bootRunLocalDev', BootRun) {
   systemProperty 'spring.profiles.active', activeProfiles.get()
 }
 
+tasks.register('bootRunLocalDevWithCSDSMock', BootRun) {
+  description = 'Runs the application locally with no security, P6Spy SQL logging enabled and a mocked CSDs service'
+  group = 'Application'
+  mainClass = application.mainClass
+  classpath = sourceSets.main.runtimeClasspath +
+    configurations.localDebugRuntimeOnly +
+    files('src/localDebug/resources')
+
+  def activeProfiles = providers.gradleProperty('springProfiles')
+    .orElse(providers.systemProperty('spring.profiles.active'))
+    .orElse('nosecurity,p6spy,csds-mock')
+
+  systemProperty 'spring.profiles.active', activeProfiles.get()
+}
+
 def commonCoverageExclusions = [
   '**/uk/gov/hmcts/appregister/generated/**/*.class'
 ]
@@ -464,6 +479,8 @@ dependencies {
   // Source: https://mvnrepository.com/artifact/commons-io/commons-io
   implementation 'commons-io:commons-io:2.22.0'
 
+  implementation "org.wiremock:wiremock-standalone:3.9.1"
+
   // A hibernate library that generates column constants
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.0.Final'
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.0.Final'
@@ -489,6 +506,7 @@ dependencies {
   testImplementation 'org.testcontainers:testcontainers:2.0.5'
   testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
+
   testImplementation 'org.instancio:instancio-junit:5.6.0'
 
   testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'

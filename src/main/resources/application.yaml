@@ -96,3 +96,8 @@ appreg:
     page-size: 10
   report:
     page-size: 500
+  csds:
+    wiremock:
+      stubs:
+        - classpath:/stubs/csds-stubs.json
+      port: 4551
