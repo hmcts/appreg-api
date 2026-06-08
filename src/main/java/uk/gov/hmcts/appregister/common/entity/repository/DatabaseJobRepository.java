@@ -6,7 +6,10 @@ import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 
 @Repository
-public interface DatabaseJobRepository extends JpaRepository<DatabaseJob, Long> {
+public interface DatabaseJobRepository
+        extends JpaRepository<DatabaseJob, Long>, DatabaseJobLockRepositoryCustom {
     @Query("SELECT j FROM DatabaseJob j WHERE j.name = :name")
     DatabaseJob findByName(String name);
+
+    boolean existsByName(String name);
 }
