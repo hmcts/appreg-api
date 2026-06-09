@@ -49,6 +49,9 @@ public class DatabaseJob implements Keyable {
     @Column(name = "job_last_ran")
     private OffsetDateTime lastRan;
 
+    @Column(name = "job_metadata", length = 64)
+    private String metadata;
+
     @Override
     public Long getId() {
         return id;

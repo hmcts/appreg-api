@@ -112,8 +112,8 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     oa.ale_ale_id = ale.ale_id
                 WHERE
                     al.application_list_status = 'CLOSED'
-                    AND al.is_deleted = 'N'
-                    AND ale.is_deleted = 'N'
+                    AND (al.is_deleted = 'N' OR al.is_deleted IS NULL)
+                    AND (ale.is_deleted = 'N' OR ale.is_deleted IS NULL)
                     AND al.application_list_date >= :dateFrom
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                     AND(:courthouseCode IS NULL
