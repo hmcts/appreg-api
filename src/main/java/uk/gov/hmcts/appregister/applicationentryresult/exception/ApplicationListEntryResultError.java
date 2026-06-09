@@ -46,7 +46,11 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Not all of the application entries are present",
-                    "ALER-8"));
+                    "ALER-8")),
+
+    DUPLICATE_ENTRY_IDS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Duplicate entry IDs are not allowed", "ALER-9"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

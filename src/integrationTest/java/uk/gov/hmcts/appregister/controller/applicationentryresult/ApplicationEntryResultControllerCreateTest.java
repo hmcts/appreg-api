@@ -589,6 +589,31 @@ public class ApplicationEntryResultControllerCreateTest
 
     @Test
     public void
+            givenBulkResultRequestWithDuplicateEntryIds_whenACallIsMadeWithAList_thenFailureBadRequestResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+        persistance.save(entry);
+
+        String payload =
+                """
+                {
+                  "entryIds": ["%s", "%s"],
+                  "result": {
+                    "resultCode": "%s"
+                  }
+                }
+                """
+                        .formatted(entry.getUuid(), entry.getUuid(), RTC_CODE);
+
+        Response resp = createBulkResult(list.getUuid(), getToken(), payload);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.DUPLICATE_ENTRY_IDS.getCode(), resp);
+    }
+
+    @Test
+    public void
             givenAValidBulkResultRequest_whenACallIsMadeWithAListThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         // create the payload to result 2 entries against the list
