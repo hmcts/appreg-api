@@ -33,7 +33,7 @@ STANDARD_REFERENCE_URLS=(
 )
 
 # Create the output folder if it doesn't exist
-OUTPUT_FOLDER="output"
+OUTPUT_FOLDER="__files"
 mkdir -p "$OUTPUT_FOLDER"
 
 # Loop through the standard reference tables and retrieve data
@@ -45,7 +45,7 @@ for i in "${!STANDARD_REFERENCE_TABLES[@]}"; do
     if [ $TABLE_NAME = "Address" ]; then
         echo "Will retrieve after getting applicant data"
         continue
-        
+
     fi
     if [ $TABLE_NAME = "ContactInformation" ]; then
         echo "Will retrieve after getting applicant data..."
@@ -101,5 +101,4 @@ if [ -f "$APPLICANTS_FILE" ]; then
         sleep 5s
     done
 fi
-        
-    
+
