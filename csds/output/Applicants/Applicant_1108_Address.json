@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2884,
+    "StartDate" : "2016-06-01",
+    "EndDate" : null,
+    "Address" : "55 Vastern Road - Reading - RG1 8BU",
+    "Address.AddressLine1" : "55 Vastern Road",
+    "Address.AddressLine2" : "Reading",
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "RG1 8BU",
+    "FID_StandardApplicant" : 1108,
+    "FID_Court" : null
+  } ]
+}

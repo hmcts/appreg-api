@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2873,
+    "StartDate" : "2016-12-10",
+    "EndDate" : null,
+    "Address" : "24 George Square - Glasgow - G2 1EG",
+    "Address.AddressLine1" : "24 George Square",
+    "Address.AddressLine2" : "Glasgow",
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "G2 1EG",
+    "FID_StandardApplicant" : 1097,
+    "FID_Court" : null
+  } ]
+}

@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2863,
+    "StartDate" : "2017-04-01",
+    "EndDate" : null,
+    "Address" : "20-24 MATHEW STREET - LIVERPOOL - L2 6RE",
+    "Address.AddressLine1" : "20-24 MATHEW STREET",
+    "Address.AddressLine2" : "LIVERPOOL",
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "L2 6RE",
+    "FID_StandardApplicant" : 1087,
+    "FID_Court" : null
+  } ]
+}

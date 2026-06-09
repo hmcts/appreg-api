@@ -1,0 +1,13 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2462,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "01737 275800",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1093,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2845,
+    "StartDate" : "2016-08-30",
+    "EndDate" : null,
+    "Address" : "1 Rivergate - Temple Quay - Bristol - BS1 6ED",
+    "Address.AddressLine1" : "1 Rivergate",
+    "Address.AddressLine2" : "Temple Quay",
+    "Address.AddressLine3" : "Bristol",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "BS1 6ED",
+    "FID_StandardApplicant" : 1069,
+    "FID_Court" : null
+  } ]
+}

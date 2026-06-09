@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2850,
+    "StartDate" : "2016-12-10",
+    "EndDate" : null,
+    "Address" : "BAUHAUS - 5TH FLOOR - 27 QUAY STREET - MANCHESTER",
+    "Address.AddressLine1" : "BAUHAUS",
+    "Address.AddressLine2" : "5TH FLOOR",
+    "Address.AddressLine3" : "27 QUAY STREET",
+    "Address.AddressLine4" : "MANCHESTER",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : null,
+    "FID_StandardApplicant" : 1074,
+    "FID_Court" : null
+  } ]
+}

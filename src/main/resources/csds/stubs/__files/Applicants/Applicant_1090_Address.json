@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2866,
+    "StartDate" : "2018-06-01",
+    "EndDate" : null,
+    "Address" : "Unit 2, Franklin Court - Priory Business Park - Bedford - MK44 3JZ",
+    "Address.AddressLine1" : "Unit 2, Franklin Court",
+    "Address.AddressLine2" : "Priory Business Park",
+    "Address.AddressLine3" : "Bedford",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "MK44 3JZ",
+    "FID_StandardApplicant" : 1090,
+    "FID_Court" : null
+  } ]
+}

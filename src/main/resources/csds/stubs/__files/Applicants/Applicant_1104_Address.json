@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2880,
+    "StartDate" : "2017-06-09",
+    "EndDate" : null,
+    "Address" : "Grafton House - 15-17 Russell Road - Ipswich - Suffolk - IP1 2DE",
+    "Address.AddressLine1" : "Grafton House",
+    "Address.AddressLine2" : "15-17 Russell Road",
+    "Address.AddressLine3" : "Ipswich",
+    "Address.AddressLine4" : "Suffolk",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "IP1 2DE",
+    "FID_StandardApplicant" : 1104,
+    "FID_Court" : null
+  } ]
+}

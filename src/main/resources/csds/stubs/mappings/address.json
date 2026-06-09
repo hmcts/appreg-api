@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/csds/Address/GD",
+    "queryParameters": {
+      "$f": {
+        "matches": "FID_StandardApplicant=(\\d+)"
+      }
+    }
+  },
+  "response": {
+    "status":200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "Applicants/Applicant_{{regexExtract request.url '([0-9]+)'}}_Address.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
+

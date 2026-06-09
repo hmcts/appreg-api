@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2851,
+    "StartDate" : "2017-03-14",
+    "EndDate" : null,
+    "Address" : "Civic Office - Waterdale - Doncaster - DN1 3BU",
+    "Address.AddressLine1" : "Civic Office",
+    "Address.AddressLine2" : "Waterdale",
+    "Address.AddressLine3" : "Doncaster",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "DN1 3BU",
+    "FID_StandardApplicant" : 1075,
+    "FID_Court" : null
+  } ]
+}

@@ -1,13 +1,13 @@
 {
   "request": {
     "method": "GET",
-    "url": "/csds/health"
+    "url": "/csds/Applicant/GD"
   },
   "response": {
     "status": 200,
     "headers": {
       "Content-Type": "application/json"
     },
-    "bodyFileName":"healthcheck.json"
+    "bodyFileName":"Applicant.json"
   }
 }

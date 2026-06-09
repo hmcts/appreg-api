@@ -20,6 +20,8 @@ public class CSDSMockConfig {
     @Value("${appreg.csds.wiremock.port:0}")
     private int wireMockPort;
 
+    private final String STUBS_PATH = "csds/stubs";
+
     // This class is used to activate the csds-wiremock profile which will start a WireMock server with the CSDS stubs
     @Bean(initMethod = "start", destroyMethod = "stop")
     public WireMockServer csdsWireMockServer() {
@@ -27,18 +29,18 @@ public class CSDSMockConfig {
 
         WireMockConfiguration config = new WireMockConfiguration();
         config.port(wireMockPort);
-        config.fileSource(fileSource("csds/stubs"));
+        config.fileSource(fileSource());
         return new WireMockServer(config);
     }
 
-    private FileSource fileSource(String path) {
-        FileSource fs = null;
+    private FileSource fileSource() {
+        FileSource fs;
         try {
-            fs = new ClasspathFileSource(path);
+            fs = new ClasspathFileSource(STUBS_PATH);
         }
         catch(Exception x) {
             log.debug("Running via executable jar; using BOOT-INF folder.");
-            fs = new ClasspathFileSource("BOOT-INF/classes/" + path);
+            fs = new ClasspathFileSource("BOOT-INF/classes/" + STUBS_PATH);
         }
         return fs;
     }

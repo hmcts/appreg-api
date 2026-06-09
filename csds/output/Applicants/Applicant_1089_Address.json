@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2865,
+    "StartDate" : "2019-01-01",
+    "EndDate" : null,
+    "Address" : "PO Box 290 - Petersfield - GU32 8GN",
+    "Address.AddressLine1" : "PO Box 290",
+    "Address.AddressLine2" : "Petersfield",
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "GU32 8GN",
+    "FID_StandardApplicant" : 1089,
+    "FID_Court" : null
+  } ]
+}

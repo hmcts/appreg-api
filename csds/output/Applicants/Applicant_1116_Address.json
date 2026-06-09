@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2892,
+    "StartDate" : "2016-06-01",
+    "EndDate" : null,
+    "Address" : "Millstream - Maidenhead Road - Windsor - Berkshire - SL4 5GD",
+    "Address.AddressLine1" : "Millstream",
+    "Address.AddressLine2" : "Maidenhead Road",
+    "Address.AddressLine3" : "Windsor",
+    "Address.AddressLine4" : "Berkshire",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "SL4 5GD",
+    "FID_StandardApplicant" : 1116,
+    "FID_Court" : null
+  } ]
+}

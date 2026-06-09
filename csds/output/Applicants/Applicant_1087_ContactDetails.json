@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2352,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "INDO@GADLIP.CO.UK",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1087,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2458,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "0151 236 5000",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1087,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

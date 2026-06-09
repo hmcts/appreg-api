@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2351,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "enquiries@enwl.co.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1086,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2457,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "08001954141",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1086,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

@@ -1,0 +1,13 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2469,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "08000963080",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1111,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

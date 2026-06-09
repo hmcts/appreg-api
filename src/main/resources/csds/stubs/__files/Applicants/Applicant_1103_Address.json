@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2879,
+    "StartDate" : "2017-05-22",
+    "EndDate" : null,
+    "Address" : "1",
+    "Address.AddressLine1" : "1",
+    "Address.AddressLine2" : null,
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : null,
+    "FID_StandardApplicant" : 1103,
+    "FID_Court" : null
+  } ]
+}

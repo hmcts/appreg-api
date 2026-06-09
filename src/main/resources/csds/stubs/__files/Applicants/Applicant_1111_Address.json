@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2887,
+    "StartDate" : "2016-11-29",
+    "EndDate" : null,
+    "Address" : "Avonbank - Feeder Road - Bristol - BS2 0TB",
+    "Address.AddressLine1" : "Avonbank",
+    "Address.AddressLine2" : "Feeder Road",
+    "Address.AddressLine3" : "Bristol",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "BS2 0TB",
+    "FID_StandardApplicant" : 1111,
+    "FID_Court" : null
+  } ]
+}

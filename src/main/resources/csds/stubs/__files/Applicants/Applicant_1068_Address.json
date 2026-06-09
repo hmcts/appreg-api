@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2844,
+    "StartDate" : "2016-07-11",
+    "EndDate" : null,
+    "Address" : "Knowle - Sidmouth - EX10 8HL",
+    "Address.AddressLine1" : "Knowle",
+    "Address.AddressLine2" : "Sidmouth",
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "EX10 8HL",
+    "FID_StandardApplicant" : 1068,
+    "FID_Court" : null
+  } ]
+}

@@ -15,7 +15,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=app_reg_user
       - SPRING_DATASOURCE_PASSWORD=password
       - POSTGRES_HOST=postgres
-      - SPRING_PROFILES_ACTIVE=functional
+      - SPRING_PROFILES_ACTIVE=functional,csds-mock
       - APP_REG_SCHEMA=functionalschema
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_AUDIENCE_ID=${AZURE_AUDIENCE_ID}
@@ -42,7 +42,7 @@ services:
       - POSTGRES_HOST=postgres
       - SPRING_DATASOURCE_USERNAME=app_reg_user
       - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_PROFILES_ACTIVE=testing
+      - SPRING_PROFILES_ACTIVE=testing,csds-mock
       - APP_REG_SCHEMA=testingschema
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_AUDIENCE_ID=${AZURE_AUDIENCE_ID}

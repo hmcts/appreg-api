@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2886,
+    "StartDate" : "2016-11-29",
+    "EndDate" : null,
+    "Address" : "St David's House - 11 Drake House Crescent - Sheffield - S20 7HT",
+    "Address.AddressLine1" : "St David's House",
+    "Address.AddressLine2" : "11 Drake House Crescent",
+    "Address.AddressLine3" : "Sheffield",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "S20 7HT",
+    "FID_StandardApplicant" : 1110,
+    "FID_Court" : null
+  } ]
+}

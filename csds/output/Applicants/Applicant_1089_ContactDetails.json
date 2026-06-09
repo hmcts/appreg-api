@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2354,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "support@hasteltd.co.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1089,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2460,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "01730897100",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 1089,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

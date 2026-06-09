@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2857,
+    "StartDate" : "2016-12-10",
+    "EndDate" : null,
+    "Address" : "PARKSIDE STAND - FLEETWOOD TOWN FOOTBALL CLUB - PARK AVENUE - FLEETWOOD - FY7 6TX",
+    "Address.AddressLine1" : "PARKSIDE STAND",
+    "Address.AddressLine2" : "FLEETWOOD TOWN FOOTBALL CLUB",
+    "Address.AddressLine3" : "PARK AVENUE",
+    "Address.AddressLine4" : "FLEETWOOD",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "FY7 6TX",
+    "FID_StandardApplicant" : 1081,
+    "FID_Court" : null
+  } ]
+}

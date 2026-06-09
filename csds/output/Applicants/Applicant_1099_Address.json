@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 2875,
+    "StartDate" : "2017-02-26",
+    "EndDate" : null,
+    "Address" : "Kent Police Headquarters - Sutton Road - Maidstone - Kent - ME15 9BZ",
+    "Address.AddressLine1" : "Kent Police Headquarters",
+    "Address.AddressLine2" : "Sutton Road",
+    "Address.AddressLine3" : "Maidstone",
+    "Address.AddressLine4" : "Kent",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "ME15 9BZ",
+    "FID_StandardApplicant" : 1099,
+    "FID_Court" : null
+  } ]
+}
