@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.model.EntryToList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -64,7 +65,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         BulkResultDto bulkResultDto = new BulkResultDto();
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(Set.of(appEntry, appEntry2, appEntry3));
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
         bulkResultDto.setResult(new ResultCreateDto());
 
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
@@ -134,7 +135,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         BulkResultDto bulkResultDto = new BulkResultDto();
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(Set.of(appEntry, appEntry2, appEntry3));
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
         bulkResultDto.setResult(new ResultCreateDto());
 
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
@@ -196,7 +197,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         UUID appEntry = UUID.randomUUID();
         UUID appEntry2 = UUID.randomUUID();
 
-        payloadForCreateEntryResult.getPayload().setEntryIds(Set.of(appEntry, appEntry2));
+        payloadForCreateEntryResult.getPayload().setEntryIds(List.of(appEntry, appEntry2));
 
         when(applicationListRepository.findByUuid(appList))
                 .thenReturn(Optional.of(new ApplicationList()));
@@ -236,7 +237,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         UUID appEntry = UUID.randomUUID();
         UUID appEntry2 = UUID.randomUUID();
 
-        payloadForCreateEntryResult.getPayload().setEntryIds(Set.of(appEntry, appEntry2));
+        payloadForCreateEntryResult.getPayload().setEntryIds(List.of(appEntry, appEntry2));
         OrderIndependantUuidMatcher uuidMatcher =
                 new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2));
 
@@ -260,6 +261,43 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         Assertions.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRIES_NOT_ALL_EXIST.getCode(),
                 exception.getCode().getCode());
+    }
+
+    @Test
+    void givenDuplicateEntryIds_whenValidate_thenThrowsEntryIdsMustBeUnique() {
+        UUID entryId = UUID.randomUUID();
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(List.of(entryId, entryId));
+        bulkResultDto.setResult(new ResultCreateDto());
+
+        PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
+                PayloadForCreateResults.<BulkResultDto>builder()
+                        .listId(UUID.randomUUID())
+                        .payload(bulkResultDto)
+                        .build();
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payloadForCreateEntryResult));
+
+        Assertions.assertEquals(ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE, exception.getCode());
+    }
+
+    @Test
+    void givenMissingEntryIds_whenValidate_thenThrowsEntryNotProvided() {
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setResult(new ResultCreateDto());
+
+        PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
+                PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build();
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payloadForCreateEntryResult));
+
+        Assertions.assertEquals(ApplicationListError.ENTRY_NOT_PROVIDED, exception.getCode());
     }
 
     /**

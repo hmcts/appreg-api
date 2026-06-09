@@ -10,7 +10,6 @@ import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
@@ -20,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -362,7 +362,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -589,11 +589,37 @@ public class ApplicationEntryResultControllerCreateTest
 
     @Test
     public void
+            givenBulkResultRequestWithDuplicateEntryIds_whenACallIsMadeWithAList_thenFailureBadRequestResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        persistance.save(entry);
+
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        Response resp = createBulkResult(list.getUuid(), getToken(), bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE.getCode(), resp);
+    }
+
+    @Test
+    public void
             givenAValidBulkResultRequest_whenACallIsMadeWithAListThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(UUID.randomUUID(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(UUID.randomUUID(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -630,7 +656,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -665,7 +691,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode("NOTEXIST");
@@ -702,7 +728,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -735,7 +761,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -978,7 +1004,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -1013,7 +1039,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode("NOTEXIST");
@@ -1050,7 +1076,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);

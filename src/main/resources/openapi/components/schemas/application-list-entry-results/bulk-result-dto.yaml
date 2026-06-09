@@ -10,7 +10,6 @@ properties:
     type: array
     description: Array of entry IDs to result. All must belong to the list in the path.
     minItems: 1
-    uniqueItems: true
     items:
       type: string
       format: uuid
