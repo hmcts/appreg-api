@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.time.LocalDate;
-import lombok.Setter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -17,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -31,10 +31,20 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
  * AppListEntryOfficial}.
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-@Setter
 public abstract class ApplicationListEntryEntityMapper {
 
-    @Autowired OfficialMapper officialMapper;
+    OfficialMapper officialMapper;
+    private BusinessDateProvider businessDateProvider;
+
+    @Autowired
+    public void setOfficialMapper(OfficialMapper officialMapper) {
+        this.officialMapper = officialMapper;
+    }
+
+    @Autowired
+    public void setBusinessDateProvider(BusinessDateProvider businessDateProvider) {
+        this.businessDateProvider = businessDateProvider;
+    }
 
     public ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,
@@ -180,6 +190,6 @@ public abstract class ApplicationListEntryEntityMapper {
         if (entryCreateDto.getLodgementDate() != null) {
             return entryCreateDto.getLodgementDate();
         }
-        return LocalDate.now();
+        return businessDateProvider.currentUkDate();
     }
 }

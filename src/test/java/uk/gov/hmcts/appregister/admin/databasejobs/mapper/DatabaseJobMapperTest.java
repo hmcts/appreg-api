@@ -11,6 +11,8 @@ import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
 public class DatabaseJobMapperTest {
+    private static final OffsetDateTime LAST_RAN = OffsetDateTime.parse("2025-01-02T03:04:05Z");
+
     private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
 
     @Test
@@ -35,7 +37,7 @@ public class DatabaseJobMapperTest {
     public void testToDatabaseJobStatus() {
         // Given
         var databaseJob = new DatabaseJob();
-        databaseJob.setLastRan(OffsetDateTime.now());
+        databaseJob.setLastRan(LAST_RAN);
         databaseJob.setEnabled(YesOrNo.YES);
 
         // When

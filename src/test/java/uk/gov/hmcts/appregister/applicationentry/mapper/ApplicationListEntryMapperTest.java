@@ -118,6 +118,7 @@ import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilde
 
 @SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryMapperTest {
+    private static final LocalDate APPLICATION_LIST_DATE = LocalDate.of(2025, 10, 7);
 
     private ApplicationListEntryMapper mapper;
 
@@ -829,7 +830,8 @@ class ApplicationListEntryMapperTest {
         when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
         when(applicationListEntryGetSummaryProjection.getAnameAddress()).thenReturn(applicant);
         when(applicationListEntryGetSummaryProjection.getRnameAddress()).thenReturn(respondent);
-        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl())
+                .thenReturn(APPLICATION_LIST_DATE);
 
         when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
         when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
@@ -849,7 +851,8 @@ class ApplicationListEntryMapperTest {
         UUID listId = UUID.randomUUID();
         when(applicationListEntryGetSummaryProjection.getListId()).thenReturn(listId.toString());
 
-        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl())
+                .thenReturn(APPLICATION_LIST_DATE);
 
         // run test
         EntryGetSummaryDto mappedResult =
@@ -999,7 +1002,7 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
         Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());
         Assertions.assertEquals(listId.toString(), mappedResult.getListId().toString());
-        Assertions.assertEquals(LocalDate.now(), mappedResult.getDate());
+        Assertions.assertEquals(APPLICATION_LIST_DATE, mappedResult.getDate());
         Assertions.assertEquals("accref", mappedResult.getAccountNumber().get());
     }
 

@@ -21,6 +21,7 @@ import jakarta.validation.Validation;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -166,6 +167,8 @@ public class ApplicationEntryServiceImplTest {
     private static final String BULK_FEE_UPDATE_DURATION_METRIC =
             "appregister.application_entry.bulk_fee_update.duration";
     private static final String METRIC_STATUS_TAG = "status";
+    private static final Instant FIXED_INSTANT = Instant.parse("2025-10-07T10:15:30Z");
+    private static final LocalDate CURRENT_BUSINESS_DATE = LocalDate.of(2025, 10, 7);
 
     @Mock private FeeRepository feeRepository;
 
@@ -290,9 +293,9 @@ public class ApplicationEntryServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-        when(businessDateProvider.currentUkDate()).thenReturn(LocalDate.of(2025, 10, 7));
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+        when(businessDateProvider.currentUkDate()).thenReturn(CURRENT_BUSINESS_DATE);
         bulkUpdateOfficialsValidator =
                 new BulkUpdateOfficialsValidator(
                         applicationListRepository, applicationListEntryRepository);
@@ -389,7 +392,8 @@ public class ApplicationEntryServiceImplTest {
                 .thenReturn(new NameAddress());
         when(applicationListEntryGetSummaryProjection.getRnameAddress())
                 .thenReturn(new NameAddress());
-        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl())
+                .thenReturn(CURRENT_BUSINESS_DATE);
 
         when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
         when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
@@ -467,7 +471,7 @@ public class ApplicationEntryServiceImplTest {
         when(projection.getApplicantSurname()).thenReturn("surname");
         when(projection.getAnameAddress()).thenReturn(new NameAddress());
         when(projection.getRnameAddress()).thenReturn(new NameAddress());
-        when(projection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(projection.getDateOfAl()).thenReturn(CURRENT_BUSINESS_DATE);
         when(projection.getAccountReference()).thenReturn("accref");
         when(projection.getCjaCode()).thenReturn("cjacode");
         when(projection.getCourtCode()).thenReturn("courtcode");
@@ -1208,7 +1212,8 @@ public class ApplicationEntryServiceImplTest {
                 .thenReturn(new NameAddress());
         when(applicationListEntryGetSummaryProjection.getRnameAddress())
                 .thenReturn(new NameAddress());
-        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl())
+                .thenReturn(CURRENT_BUSINESS_DATE);
 
         when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
         when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");

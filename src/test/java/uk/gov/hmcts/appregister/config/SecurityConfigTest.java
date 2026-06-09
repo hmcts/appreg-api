@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 class SecurityConfigTest {
+    private static final Instant ISSUED_AT = Instant.parse("2025-01-02T03:04:05Z");
+    private static final Instant EXPIRES_AT = Instant.parse("2025-01-02T03:05:05Z");
 
     SecurityConfig config = new SecurityConfig();
 
@@ -22,8 +24,8 @@ class SecurityConfigTest {
         Jwt jwt =
                 new Jwt(
                         "t",
-                        Instant.now(),
-                        Instant.now().plusSeconds(60),
+                        ISSUED_AT,
+                        EXPIRES_AT,
                         Map.of("alg", "none"),
                         Map.of("roles", List.of("Admin", "User")));
 

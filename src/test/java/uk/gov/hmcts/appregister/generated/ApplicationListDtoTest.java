@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import utils.ConstraintAssertion;
 
 public class ApplicationListDtoTest {
+    private static final LocalTime LIST_TIME = LocalTime.of(10, 15);
 
     private ObjectMapper objectMapper;
 
@@ -36,7 +37,7 @@ public class ApplicationListDtoTest {
         applicationListDto.setCourtLocationCode("");
         applicationListDto.setDescription("");
 
-        applicationListDto.setTime(LocalTime.now());
+        applicationListDto.setTime(LIST_TIME);
 
         // validate the dto using Bean Validation
         Set<ConstraintViolation<Object>> constraintValidator =
@@ -75,7 +76,7 @@ public class ApplicationListDtoTest {
         applicationListDto.setCourtLocationCode("");
         applicationListDto.setDescription("");
 
-        applicationListDto.setTime(LocalTime.now());
+        applicationListDto.setTime(LIST_TIME);
 
         // validate the dto using Bean Validation
         Set<ConstraintViolation<Object>> constraintValidator =

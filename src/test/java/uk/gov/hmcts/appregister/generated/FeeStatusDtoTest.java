@@ -12,6 +12,8 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import utils.ConstraintAssertion;
 
 public class FeeStatusDtoTest {
+    private static final LocalDate STATUS_DATE = LocalDate.of(2025, 1, 2);
+
     @Test
     void testOfficialEmptyString() throws Exception {
         FeeStatus status = new FeeStatus();
@@ -39,7 +41,7 @@ public class FeeStatusDtoTest {
         FeeStatus status = new FeeStatus();
         status.setPaymentReference("1234512345123456");
         status.setPaymentStatus(PaymentStatus.PAID);
-        status.setStatusDate(LocalDate.now());
+        status.setStatusDate(STATUS_DATE);
 
         Set<ConstraintViolation<Object>> constraintValidator =
                 Validation.byDefaultProvider()

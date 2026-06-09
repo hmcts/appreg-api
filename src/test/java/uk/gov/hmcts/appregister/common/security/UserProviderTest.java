@@ -24,6 +24,8 @@ public class UserProviderTest {
     private static final String OID_CLAIM = "11111111-1111-1111-1111-111111111111";
     private static final String ROLE_1 = "ROLE_1";
     private static final String ROLE_2 = "ROLE_2";
+    private static final Instant ISSUED_AT = Instant.parse("2025-01-02T03:04:05Z");
+    private static final Instant EXPIRES_AT = Instant.parse("2025-01-02T04:04:05Z");
 
     private final UserProvider userProvider = new UserProvider();
 
@@ -111,8 +113,8 @@ public class UserProviderTest {
                         .header("alg", "none")
                         .claims(c -> c.putAll(claims))
                         .subject((String) claims.getOrDefault("oid", "sub"))
-                        .issuedAt(Instant.now())
-                        .expiresAt(Instant.now().plusSeconds(3600))
+                        .issuedAt(ISSUED_AT)
+                        .expiresAt(EXPIRES_AT)
                         .build();
 
         JwtAuthenticationToken auth =

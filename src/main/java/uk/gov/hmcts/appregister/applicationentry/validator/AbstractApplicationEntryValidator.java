@@ -462,7 +462,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         return applicationCode.getFeeDue() == YesOrNo.YES;
     }
 
-    private LocalDate currentBusinessDate() {
+    protected LocalDate currentBusinessDate() {
         return businessDateProvider.currentUkDate();
     }
 

@@ -7,8 +7,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Clock;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -38,14 +36,14 @@ import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 public class DatabaseJobsServiceImplTest {
+    private static final OffsetDateTime LAST_RAN = OffsetDateTime.parse("2025-01-02T03:04:05Z");
+
     private AdminAPIServiceImpl service;
 
     @Mock private DatabaseJobRepository databaseJobRepository;
     @Mock private RetentionPolicyRepository retentionPolicyRepository;
 
     @Spy private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
-
-    @Mock private Clock clock;
 
     @BeforeEach
     public void setUp() {
@@ -61,12 +59,9 @@ public class DatabaseJobsServiceImplTest {
 
     @Test
     public void testGetDatabaseJobStatusByName() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
-        testJob.setLastRan(OffsetDateTime.now(clock));
+        testJob.setLastRan(LAST_RAN);
         testJob.setId(1L);
         testJob.setEnabled(YesOrNo.YES);
 
@@ -86,18 +81,15 @@ public class DatabaseJobsServiceImplTest {
 
         assertNotNull(status);
         assertNotNull(status.getLastRan());
-        assertEquals(OffsetDateTime.now(clock), status.getLastRan());
+        assertEquals(LAST_RAN, status.getLastRan());
         assertEquals(true, status.getEnabled());
     }
 
     @Test
     public void testEnableDatabaseJobByName() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
-        testJob.setLastRan(OffsetDateTime.now(clock));
+        testJob.setLastRan(LAST_RAN);
         testJob.setId(2L);
         testJob.setEnabled(YesOrNo.NO);
 
