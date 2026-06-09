@@ -32,7 +32,16 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class ResultCodeMapper {
 
-    @Autowired WordingTemplateMapper wordingTemplateMapper;
+    private WordingTemplateMapper wordingTemplateMapper;
+
+    @Autowired
+    public void setWordingTemplateMapper(WordingTemplateMapper wordingTemplateMapper) {
+        this.wordingTemplateMapper = wordingTemplateMapper;
+    }
+
+    protected WordingTemplateMapper getWordingTemplateMapper() {
+        return wordingTemplateMapper;
+    }
 
     // Map a {@link ResolutionCode} entity to a full detail DTO.
     @Mapping(target = "resultCode", source = "resultCode")
@@ -42,7 +51,8 @@ public abstract class ResultCodeMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
+                    "java(getWordingTemplateMapper().getTemplateDetail("
+                            + "() -> entity.getWording(), null))")
     public abstract ResultCodeGetDetailDto toDetailDto(ResolutionCode entity);
 
     // Map a {@link ResolutionCode} entity to a summary DTO.

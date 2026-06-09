@@ -43,7 +43,7 @@ public class ResultCodeMapperTest {
         entity.setEndDate(endDate);
         entity.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        mapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         // assert
@@ -81,7 +81,7 @@ public class ResultCodeMapperTest {
         entity.setStartDate(startDate);
         entity.setEndDate(null);
 
-        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        mapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         Assertions.assertEquals(code, dto.getResultCode());
@@ -108,7 +108,7 @@ public class ResultCodeMapperTest {
         entity.setStartDate(null);
         entity.setEndDate(endDate);
 
-        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        mapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         Assertions.assertEquals(code, dto.getResultCode());

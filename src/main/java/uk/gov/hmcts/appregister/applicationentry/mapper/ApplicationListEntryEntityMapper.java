@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.time.LocalDate;
-import lombok.Setter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -31,10 +30,18 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
  * AppListEntryOfficial}.
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-@Setter
 public abstract class ApplicationListEntryEntityMapper {
 
-    @Autowired OfficialMapper officialMapper;
+    private OfficialMapper officialMapper;
+
+    @Autowired
+    public void setOfficialMapper(OfficialMapper officialMapper) {
+        this.officialMapper = officialMapper;
+    }
+
+    protected OfficialMapper getOfficialMapper() {
+        return officialMapper;
+    }
 
     public ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,
@@ -163,7 +170,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "surname", source = "official.surname")
     @Mapping(
             target = "officialType",
-            expression = "java(officialMapper.toOfficial(official.getType()))")
+            expression = "java(getOfficialMapper().toOfficial(official.getType()))")
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "id", ignore = true)
     public abstract AppListEntryOfficial toOfficial(
