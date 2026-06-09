@@ -6,9 +6,11 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import utils.ConstraintAssertion;
@@ -71,5 +73,25 @@ public class ApplicationEntryResultDtoTest {
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "resultCode", "size must be between 1 and 10");
+    }
+
+    @Test
+    void givenDuplicateEntryIds_whenDeserialisingBulkResultDto_thenEntryIdsArePreserved()
+            throws Exception {
+        UUID entryId = UUID.randomUUID();
+        String body =
+                """
+                {
+                  "entryIds": ["%s", "%s"],
+                  "result": {
+                    "resultCode": "RTC"
+                  }
+                }
+                """
+                        .formatted(entryId, entryId);
+
+        BulkResultDto resultDto = objectMapper.readValue(body, BulkResultDto.class);
+
+        Assertions.assertEquals(List.of(entryId, entryId), resultDto.getEntryIds());
     }
 }

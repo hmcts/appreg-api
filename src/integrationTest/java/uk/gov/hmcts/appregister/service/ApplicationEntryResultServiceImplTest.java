@@ -4,7 +4,6 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +78,7 @@ public class ApplicationEntryResultServiceImplTest extends BaseIntegration {
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add entries
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -182,7 +181,7 @@ public class ApplicationEntryResultServiceImplTest extends BaseIntegration {
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);

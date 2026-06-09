@@ -64,7 +64,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         BulkResultDto bulkResultDto = new BulkResultDto();
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(Set.of(appEntry, appEntry2, appEntry3));
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
         bulkResultDto.setResult(new ResultCreateDto());
 
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
@@ -134,7 +134,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         BulkResultDto bulkResultDto = new BulkResultDto();
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(Set.of(appEntry, appEntry2, appEntry3));
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
         bulkResultDto.setResult(new ResultCreateDto());
 
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
@@ -158,6 +158,33 @@ public class BulkApplicationEntryResultCreationValidatorTest {
                         });
 
         Assertions.assertTrue(success);
+    }
+
+    @Test
+    void givenDuplicateEntryIds_whenValidateBulkResult_thenDuplicateEntryIdsErrorIsThrown() {
+        UUID appList = UUID.randomUUID();
+        UUID appEntry = UUID.randomUUID();
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry));
+        bulkResultDto.setResult(new ResultCreateDto());
+
+        when(applicationListRepository.findByUuid(appList))
+                .thenReturn(Optional.of(new ApplicationList()));
+
+        PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
+                PayloadForCreateResults.<BulkResultDto>builder()
+                        .listId(appList)
+                        .payload(bulkResultDto)
+                        .build();
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payloadForCreateEntryResult, (v, r) -> true));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.DUPLICATE_ENTRY_IDS.getCode(),
+                exception.getCode().getCode());
     }
 
     @Test
@@ -196,7 +223,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         UUID appEntry = UUID.randomUUID();
         UUID appEntry2 = UUID.randomUUID();
 
-        payloadForCreateEntryResult.getPayload().setEntryIds(Set.of(appEntry, appEntry2));
+        payloadForCreateEntryResult.getPayload().setEntryIds(List.of(appEntry, appEntry2));
 
         when(applicationListRepository.findByUuid(appList))
                 .thenReturn(Optional.of(new ApplicationList()));
@@ -236,7 +263,7 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         UUID appEntry = UUID.randomUUID();
         UUID appEntry2 = UUID.randomUUID();
 
-        payloadForCreateEntryResult.getPayload().setEntryIds(Set.of(appEntry, appEntry2));
+        payloadForCreateEntryResult.getPayload().setEntryIds(List.of(appEntry, appEntry2));
         OrderIndependantUuidMatcher uuidMatcher =
                 new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2));
 

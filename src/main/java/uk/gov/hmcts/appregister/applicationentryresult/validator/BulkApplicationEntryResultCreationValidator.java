@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
@@ -59,12 +61,16 @@ public class BulkApplicationEntryResultCreationValidator
                         ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST,
                         "The list does not exist %s".formatted(validatable.getListId()));
             }
+        }
 
+        List<UUID> entryIds = validatable.getPayload().getEntryIds().stream().toList();
+        validateEntryIdsAreUnique(entryIds);
+
+        if (validatable.getListId() != null) {
             // now validate the entries belong to the list
             boolean validated =
                     applicationListEntryRepository.doesApplicationEntryBelongToApplicationList(
-                            validatable.getPayload().getEntryIds().stream().toList(),
-                            validatable.getListId());
+                            entryIds, validatable.getListId());
 
             // if this is not valid then error
             if (!validated) {
@@ -81,10 +87,7 @@ public class BulkApplicationEntryResultCreationValidator
 
         // process the validator according to whether we have the list ids or not
         if (validatable.getListId() != null) {
-            List<EntryToList> entryToListLst =
-                    getEntryForList(
-                            validatable.getListId(),
-                            validatable.getPayload().getEntryIds().stream().toList());
+            List<EntryToList> entryToListLst = getEntryForList(validatable.getListId(), entryIds);
 
             for (EntryToList entryToList : entryToListLst) {
                 // validate the entries
@@ -95,10 +98,9 @@ public class BulkApplicationEntryResultCreationValidator
             // get all of the entry to list mappings
             List<EntryToList> entryToListMapping;
             entryToListMapping =
-                    applicationListEntryRepository.findApplicationListForAllEntries(
-                            validatable.getPayload().getEntryIds().stream().toList());
+                    applicationListEntryRepository.findApplicationListForAllEntries(entryIds);
 
-            if (entryToListMapping.size() < validatable.getPayload().getEntryIds().size()) {
+            if (entryToListMapping.size() < entryIds.size()) {
                 throw new AppRegistryException(
                         ApplicationListEntryResultError.APPLICATION_ENTRIES_NOT_ALL_EXIST,
                         "The entries are not all present");
@@ -117,6 +119,16 @@ public class BulkApplicationEntryResultCreationValidator
 
         // now pass the success details through to the callback so the logic can take place
         return validateSuccess.apply(validatable, bulkSuccess);
+    }
+
+    private void validateEntryIdsAreUnique(List<UUID> entryIds) {
+        Set<UUID> uniqueEntryIds = new HashSet<>(entryIds);
+
+        if (uniqueEntryIds.size() != entryIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.DUPLICATE_ENTRY_IDS,
+                    "Duplicate entry IDs are not allowed");
+        }
     }
 
     private List<EntryToList> getEntryForList(UUID listId, List<UUID> entryIds) {

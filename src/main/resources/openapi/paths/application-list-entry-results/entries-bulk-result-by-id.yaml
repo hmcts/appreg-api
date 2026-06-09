@@ -12,7 +12,8 @@ post:
   description: >
     Atomically creates a **separate Result** for each specified entry in the **source**
     list (path `listId`), using the same Result payload for all entries. If any entry
-    cannot be resulted, **no Results are created**.
+    cannot be resulted, **no Results are created**. Duplicate `entryIds` are rejected
+    with a 400 response.
   requestBody:
     required: true
     content:

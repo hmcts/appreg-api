@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.controller.applicationentryresult;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.springframework.http.HttpMethod;
@@ -22,7 +21,7 @@ public class ApplicationEntryResultControllerSecurityTest extends AbstractSecuri
         resultCreateDto.setResultCode("SOME_CODE");
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(Set.of(UUID.randomUUID(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(UUID.randomUUID(), UUID.randomUUID()));
 
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
