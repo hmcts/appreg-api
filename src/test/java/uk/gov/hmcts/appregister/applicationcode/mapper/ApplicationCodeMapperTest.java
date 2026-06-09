@@ -43,7 +43,7 @@ public class ApplicationCodeMapperTest {
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsitefee);
 
@@ -121,7 +121,7 @@ public class ApplicationCodeMapperTest {
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, null, null);
 
@@ -160,7 +160,7 @@ public class ApplicationCodeMapperTest {
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, fee, offsetfee);
 
@@ -196,7 +196,7 @@ public class ApplicationCodeMapperTest {
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, null, null);
 
@@ -235,7 +235,7 @@ public class ApplicationCodeMapperTest {
         code.setCode("x");
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
 
         var dtoMin = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, min, null);
         var dtoMax = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, max, null);

@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
 import java.time.LocalDate;
-import lombok.Setter;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -32,10 +31,18 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffs
         injectionStrategy = InjectionStrategy.CONSTRUCTOR,
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-@Setter
 public abstract class ApplicationCodeMapper {
 
-    @Autowired WordingTemplateMapper wordingTemplateMapper;
+    private WordingTemplateMapper wordingTemplateMapper;
+
+    @Autowired
+    public void setWordingTemplateMapper(WordingTemplateMapper wordingTemplateMapper) {
+        this.wordingTemplateMapper = wordingTemplateMapper;
+    }
+
+    protected WordingTemplateMapper getWordingTemplateMapper() {
+        return wordingTemplateMapper;
+    }
 
     /**
      * A fee to dto mapping rule.
@@ -97,7 +104,8 @@ public abstract class ApplicationCodeMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
+                    "java(getWordingTemplateMapper().getTemplateDetail("
+                            + "() -> entity.getWording(), null))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
     @Mapping(target = "feeReference", source = "fee.reference", qualifiedByName = "mapFeeReference")
@@ -135,7 +143,8 @@ public abstract class ApplicationCodeMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
+                    "java(getWordingTemplateMapper().getTemplateDetail("
+                            + "() -> entity.getWording(), null))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
     @Mapping(target = "feeReference", source = "fee.reference", qualifiedByName = "mapFeeReference")

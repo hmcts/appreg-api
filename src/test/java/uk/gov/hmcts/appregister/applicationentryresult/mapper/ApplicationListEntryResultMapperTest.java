@@ -14,7 +14,7 @@ public class ApplicationListEntryResultMapperTest {
     public void testToApplicationListEntryResult() {
         ApplicationListEntryResultMapper applicationListEntryResultMapper =
                 new ApplicationListEntryResultMapperImpl();
-        applicationListEntryResultMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationListEntryResultMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
 
         AppListEntryResolution appListEntryResolution = new AppListEntryResolution();
         ResolutionCode resolutionCode = new ResolutionCode();

@@ -121,12 +121,13 @@ class ApplicationListEntryMapperTest {
     private static final LocalDate APPLICATION_LIST_DATE = LocalDate.of(2025, 10, 7);
 
     private ApplicationListEntryMapper mapper;
+    private final OfficialMapper officialMapper = new OfficialMapper();
 
     @BeforeEach
     void beforeEach() {
         mapper = new ApplicationListEntryMapperImpl();
         mapper.setApplicantMapper(new ApplicantMapperImpl());
-        mapper.setOfficialMapper(new OfficialMapper());
+        mapper.setOfficialMapper(officialMapper);
     }
 
     @Test
@@ -1313,7 +1314,7 @@ class ApplicationListEntryMapperTest {
                 appListEntryOfficial.getForename(),
                 entryGetDetailDto.getOfficials().get(0).getForename());
         Assertions.assertEquals(
-                mapper.officialMapper.toOfficial(OfficialType.CLERK),
+                officialMapper.toOfficial(OfficialType.CLERK),
                 entryGetDetailDto.getOfficials().get(0).getType());
         Assertions.assertEquals(
                 appListEntryOfficial.getTitle(),
@@ -1326,7 +1327,7 @@ class ApplicationListEntryMapperTest {
                 appListEntryOfficial2.getForename(),
                 entryGetDetailDto.getOfficials().get(1).getForename());
         Assertions.assertEquals(
-                mapper.officialMapper.toOfficial(OfficialType.MAGISTRATE),
+                officialMapper.toOfficial(OfficialType.MAGISTRATE),
                 entryGetDetailDto.getOfficials().get(1).getType());
         Assertions.assertEquals(
                 appListEntryOfficial2.getTitle(),
@@ -1481,8 +1482,7 @@ class ApplicationListEntryMapperTest {
                     appListEntry.getOfficials().get(i).getForename(),
                     entryGetDetailDto.getOfficials().get(i).getForename());
             Assertions.assertEquals(
-                    mapper.officialMapper.toOfficial(
-                            appListEntry.getOfficials().get(i).getOfficialType()),
+                    officialMapper.toOfficial(appListEntry.getOfficials().get(i).getOfficialType()),
                     entryGetDetailDto.getOfficials().get(i).getType());
             Assertions.assertEquals(
                     appListEntry.getOfficials().get(i).getTitle(),
@@ -1631,8 +1631,7 @@ class ApplicationListEntryMapperTest {
                     appListEntry.getOfficials().get(i).getForename(),
                     entryGetDetailDto.getOfficials().get(i).getForename());
             Assertions.assertEquals(
-                    mapper.officialMapper.toOfficial(
-                            appListEntry.getOfficials().get(i).getOfficialType()),
+                    officialMapper.toOfficial(appListEntry.getOfficials().get(i).getOfficialType()),
                     entryGetDetailDto.getOfficials().get(i).getType());
             Assertions.assertEquals(
                     appListEntry.getOfficials().get(i).getTitle(),
@@ -1783,8 +1782,7 @@ class ApplicationListEntryMapperTest {
                     appListEntry.getOfficials().get(i).getForename(),
                     entryGetDetailDto.getOfficials().get(i).getForename());
             Assertions.assertEquals(
-                    mapper.officialMapper.toOfficial(
-                            appListEntry.getOfficials().get(i).getOfficialType()),
+                    officialMapper.toOfficial(appListEntry.getOfficials().get(i).getOfficialType()),
                     entryGetDetailDto.getOfficials().get(i).getType());
             Assertions.assertEquals(
                     appListEntry.getOfficials().get(i).getTitle(),
