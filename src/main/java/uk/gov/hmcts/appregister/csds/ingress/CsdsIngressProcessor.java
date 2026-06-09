@@ -37,12 +37,20 @@ public class CsdsIngressProcessor {
     }
 
     private <T> void runProcessor(IDataIngressProcessor<T> processor) {
-        log.info("Starting CSDS ingress processor {}", processor.datasetName());
+        log.info(
+                "Starting CSDS ingress processor {} for target {}.{}",
+                processor.datasetName(),
+                processor.targetTable(),
+                processor.targetKeyField());
 
         val rawJson = processor.retrieve(ingressClient);
         val processedData = processor.preProcess(rawJson);
         processor.handle(processedData);
 
-        log.info("Completed CSDS ingress processor {}", processor.datasetName());
+        log.info(
+                "Completed CSDS ingress processor {} for target {}.{}",
+                processor.datasetName(),
+                processor.targetTable(),
+                processor.targetKeyField());
     }
 }

@@ -26,5 +26,7 @@ java:
           alias: azure-client-secret
         - name: azure-app-id
           alias: AZURE_AUDIENCE_ID
+        - name: CSDS-KEY-1
+          alias: CSDS_KEY_1
 appreg-frontend:
   enabled: false

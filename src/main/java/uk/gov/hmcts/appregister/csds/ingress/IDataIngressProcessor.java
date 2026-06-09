@@ -4,9 +4,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 public interface IDataIngressProcessor<T> {
-    String datasetName();
+    String targetTable();
 
-    List<String> sourcePaths();
+    String targetKeyField();
+
+    default String datasetName() {
+        return targetTable();
+    }
+
+    default List<String> sourcePaths() {
+        return List.of();
+    }
 
     default List<JsonNode> retrieve(CsdsIngressClient ingressClient) {
         return sourcePaths().stream().map(ingressClient::retrieveJson).toList();

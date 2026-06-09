@@ -20,7 +20,7 @@ public class CsdsIngressProperties {
 
     private List<String> accessKeys = List.of();
 
-    private String accessKeyHeader = "x-api-key";
+    private String accessKeyHeader = "Api-Key";
 
     private Duration leaseDuration = Duration.ofMinutes(5);
 
@@ -28,7 +28,13 @@ public class CsdsIngressProperties {
 
     private Duration readTimeout = Duration.ofSeconds(30);
 
-    @AssertTrue(message = "Enabled CSDS ingress requires a baseUrl and exactly two accessKeys")
+    private int pageSize = 100;
+
+    private StartupRunner startupRunner = new StartupRunner();
+
+    private Processors processors = new Processors();
+
+    @AssertTrue(message = "Enabled CSDS ingress requires a baseUrl and at least one accessKey")
     public boolean isConfigurationValid() {
         if (!enabled) {
             return true;
@@ -36,7 +42,7 @@ public class CsdsIngressProperties {
 
         return StringUtils.hasText(baseUrl)
                 && StringUtils.hasText(accessKeyHeader)
-                && accessKeys.stream().filter(StringUtils::hasText).count() == 2
+                && accessKeys.stream().anyMatch(StringUtils::hasText)
                 && leaseDuration != null
                 && !leaseDuration.isNegative()
                 && !leaseDuration.isZero()
@@ -45,6 +51,40 @@ public class CsdsIngressProperties {
                 && !connectTimeout.isZero()
                 && readTimeout != null
                 && !readTimeout.isNegative()
-                && !readTimeout.isZero();
+                && !readTimeout.isZero()
+                && startupRunner != null
+                && processors != null
+                && processors.isConfigurationValid()
+                && pageSize > 0;
+    }
+
+    @Getter
+    @Setter
+    public static class StartupRunner {
+        private boolean enabled;
+    }
+
+    @Getter
+    @Setter
+    public static class Processors {
+        private ApplicationCodes applicationCodes = new ApplicationCodes();
+
+        private boolean isConfigurationValid() {
+            return applicationCodes != null && applicationCodes.isConfigurationValid();
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class ApplicationCodes {
+        private boolean enabled;
+
+        private String sourceEntityName = "ApplicationCode";
+
+        private String comparisonOutputDir;
+
+        private boolean isConfigurationValid() {
+            return !enabled || StringUtils.hasText(sourceEntityName);
+        }
     }
 }

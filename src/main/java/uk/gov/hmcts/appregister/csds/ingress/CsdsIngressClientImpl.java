@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -32,7 +33,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                 val response =
                         csdsIngressRestClient
                                 .get()
-                                .uri(normalizePath(path))
+                                .uri(buildUri(path))
                                 .header(properties.getAccessKeyHeader(), accessKey)
                                 .accept(MediaType.APPLICATION_JSON)
                                 .retrieve()
@@ -62,6 +63,10 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
 
     private static String normalizePath(String path) {
         return path.startsWith("/") ? path : "/" + path;
+    }
+
+    private URI buildUri(String path) {
+        return URI.create(properties.getBaseUrl() + normalizePath(path));
     }
 
     private static void validatePath(String path) {
