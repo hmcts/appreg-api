@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -32,15 +33,17 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public abstract class ApplicationListEntryEntityMapper {
 
-    private OfficialMapper officialMapper;
+    OfficialMapper officialMapper;
+    private BusinessDateProvider businessDateProvider;
 
     @Autowired
     public void setOfficialMapper(OfficialMapper officialMapper) {
         this.officialMapper = officialMapper;
     }
 
-    protected OfficialMapper getOfficialMapper() {
-        return officialMapper;
+    @Autowired
+    public void setBusinessDateProvider(BusinessDateProvider businessDateProvider) {
+        this.businessDateProvider = businessDateProvider;
     }
 
     public ApplicationListEntry toApplicationListEntry(
@@ -170,7 +173,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "surname", source = "official.surname")
     @Mapping(
             target = "officialType",
-            expression = "java(getOfficialMapper().toOfficial(official.getType()))")
+            expression = "java(officialMapper.toOfficial(official.getType()))")
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "id", ignore = true)
     public abstract AppListEntryOfficial toOfficial(
@@ -187,6 +190,6 @@ public abstract class ApplicationListEntryEntityMapper {
         if (entryCreateDto.getLodgementDate() != null) {
             return entryCreateDto.getLodgementDate();
         }
-        return LocalDate.now();
+        return businessDateProvider.currentUkDate();
     }
 }

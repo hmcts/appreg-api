@@ -13,7 +13,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Setter;
@@ -46,6 +45,9 @@ import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExi
 
 @ExtendWith(MockitoExtension.class)
 public class StandardApplicantServiceTest {
+    private static final Instant FIXED_INSTANT = Instant.parse("2026-06-09T10:00:00Z");
+    private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));
+    private static final LocalDate CURRENT_UK_DATE = LocalDate.of(2026, 6, 9);
 
     @Mock private StandardApplicantRepository repository;
 
@@ -79,15 +81,15 @@ public class StandardApplicantServiceTest {
 
     @Test
     public void testGetAll() {
-        when(clock.instant()).thenReturn(Instant.now().plus(1, ChronoUnit.DAYS));
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
 
         val code = "APP001";
         val name = "John Doe";
         val addressLine1 = "123 Main Street";
-        val from = LocalDate.now().minusDays(10);
-        val to = LocalDate.now().plusDays(10);
+        val from = CURRENT_UK_DATE.minusDays(10);
+        val to = CURRENT_UK_DATE.plusDays(10);
         val pageable = PageRequest.of(0, 2);
 
         val standardApplicant1 = mock(StandardApplicant.class);
@@ -234,7 +236,7 @@ public class StandardApplicantServiceTest {
 
     @Test
     void testGetAll_auditsRequestedSearchCriteria() {
-        when(clock.instant()).thenReturn(Instant.now().plus(1, ChronoUnit.DAYS));
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
 
@@ -293,7 +295,7 @@ public class StandardApplicantServiceTest {
 
     @Test
     void testGetAll_normalisesReversedDateRangeBeforeSearchAndAudit() {
-        when(clock.instant()).thenReturn(Instant.now().plus(1, ChronoUnit.DAYS));
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
 
@@ -380,7 +382,7 @@ public class StandardApplicantServiceTest {
         private StandardApplicant success;
 
         public DummyStandardApplicantExistsValidator(StandardApplicantRepository repository) {
-            super(repository, Clock.systemUTC(), ZoneId.of("Europe/London"));
+            super(repository, FIXED_CLOCK, ZoneId.of("Europe/London"));
         }
 
         @Override
@@ -394,8 +396,8 @@ public class StandardApplicantServiceTest {
             val standardApplicant = new StandardApplicant();
             standardApplicant.setApplicantCode("APP001");
             standardApplicant.setName("John Doe");
-            standardApplicant.setApplicantStartDate(LocalDate.now());
-            standardApplicant.setApplicantEndDate(LocalDate.now().plusDays(1));
+            standardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
+            standardApplicant.setApplicantEndDate(CURRENT_UK_DATE.plusDays(1));
             return standardApplicant;
         }
     }

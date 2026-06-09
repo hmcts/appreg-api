@@ -9,7 +9,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Setter;
@@ -50,6 +49,9 @@ import utils.CurrencyUtil;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCodeServiceImplTest {
+    private static final Instant FIXED_INSTANT = Instant.parse("2024-10-05T10:15:30Z");
+    private static final LocalDate FIXED_BUSINESS_DATE = LocalDate.of(2024, 10, 5);
+    private static final LocalDate REQUEST_DATE = LocalDate.of(2024, 10, 5);
 
     @Mock private ApplicationCodeRepository repository;
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
@@ -76,7 +78,7 @@ public class ApplicationCodeServiceImplTest {
     public void setup() {
         objectMapper.registerModule(new JavaTimeModule());
         ukZone = ZoneId.of("Europe/London");
-        fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
+        fixedClock = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));
 
         applicationCodeService =
                 new ApplicationCodeServiceImpl(
@@ -111,7 +113,7 @@ public class ApplicationCodeServiceImplTest {
 
         String code = "code";
 
-        LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
+        LocalDate localDate = REQUEST_DATE;
 
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =
@@ -212,7 +214,7 @@ public class ApplicationCodeServiceImplTest {
                         4);
 
         String code = "code";
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        LocalDate todayUk = FIXED_BUSINESS_DATE;
         when(repository.search(eq(code), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
@@ -263,7 +265,7 @@ public class ApplicationCodeServiceImplTest {
                         4);
 
         String title = "title";
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        LocalDate todayUk = FIXED_BUSINESS_DATE;
         when(repository.search(eq(null), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
 
         Fee dummyMain = new FeeTestData().someComplete();
@@ -365,7 +367,7 @@ public class ApplicationCodeServiceImplTest {
                                 applicationCode4),
                         Pageable.ofSize(4).withPage(0),
                         4);
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        LocalDate todayUk = FIXED_BUSINESS_DATE;
         when(repository.search(eq(null), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
@@ -414,7 +416,7 @@ public class ApplicationCodeServiceImplTest {
 
         String code = "code";
 
-        LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
+        LocalDate localDate = REQUEST_DATE;
 
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =

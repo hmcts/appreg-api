@@ -6,10 +6,7 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,7 +51,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class CreateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.now();
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -62,7 +59,6 @@ public class CreateApplicationEntryValidatorTest {
 
     @Mock private ApplicationFeeService feeService;
 
-    @Mock private Clock clock;
     @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
@@ -79,9 +75,6 @@ public class CreateApplicationEntryValidatorTest {
 
     @BeforeEach
     void setUp() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         AppListTestData appListTestData = new AppListTestData();
@@ -205,6 +198,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setOfficials(List.of());
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        sanitiseFeeStatusDates(entryCreateDto.getFeeStatuses());
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -629,7 +623,6 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(20);
-        entryCreateDto.setLodgementDate(LocalDate.now(clock));
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
 
         when(applicationCodeRepository.findByCodeAndDate(
@@ -790,6 +783,41 @@ public class CreateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
                 appRegistryException.getCode());
+    }
+
+    @Test
+    void testValidateUsesBusinessDateWhenLodgementDateMissing() {
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setHasOffsiteFee(Boolean.FALSE);
+
+        applicationCode.setFeeDue(YesOrNo.YES);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryCreateDto.setFeeStatuses(List.of(new FeeStatus()));
+        entryCreateDto.setLodgementDate(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+        when(feeService.resolveFeePair(Mockito.any(), eq(TODAY_UK)))
+                .thenReturn(new FeePair(fee, null));
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        createApplicationEntryValidator.validate(payload);
+
+        Mockito.verify(feeService).resolveFeePair(Mockito.any(), eq(TODAY_UK));
     }
 
     @Test

@@ -32,6 +32,10 @@ import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 
 public class ReflectiveAuditorTest {
+    private static final OffsetDateTime OLD_CHANGED_DATE =
+            OffsetDateTime.parse("2025-01-02T03:04:05Z");
+    private static final OffsetDateTime NEW_CHANGED_DATE =
+            OffsetDateTime.parse("2025-01-03T03:04:05Z");
 
     @Test
     public void testParsingWithRecursionParsingDisabledAndInfiniteRecursionDetection() {
@@ -142,7 +146,7 @@ public class ReflectiveAuditorTest {
         test.id = 123L;
         test.name = "random name";
         test.setChangedBy("old user");
-        test.setChangedDate(OffsetDateTime.now());
+        test.setChangedDate(OLD_CHANGED_DATE);
 
         TestEntityAuditable newTest = new TestEntityAuditable();
 
@@ -152,7 +156,7 @@ public class ReflectiveAuditorTest {
         newTest.id = 1235L;
         newTest.name = "random name New";
         newTest.setChangedBy("new user");
-        newTest.setChangedDate(OffsetDateTime.now());
+        newTest.setChangedDate(NEW_CHANGED_DATE);
 
         ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
 

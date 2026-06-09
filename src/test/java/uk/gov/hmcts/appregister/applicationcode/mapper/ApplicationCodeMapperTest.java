@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffs
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class ApplicationCodeMapperTest {
+    private static final LocalDate EFFECTIVE_DATE = LocalDate.of(2025, 1, 2);
 
     private final ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 
@@ -34,8 +35,8 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
 
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
@@ -113,8 +114,8 @@ public class ApplicationCodeMapperTest {
     public void testWithoutFeesMapApplicationCodeGetSummaryDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
@@ -151,8 +152,8 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
 
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
@@ -188,8 +189,8 @@ public class ApplicationCodeMapperTest {
     public void testWithoutFeesMapApplicationCodeGetDetailDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
