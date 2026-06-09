@@ -153,11 +153,12 @@ public class ApplicationEntryDtoTest {
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
                 .feeDetails(
-                        new BulkFeeDetailsDto()
-                                .paymentStatus(PaymentStatus.PAID)
-                                .statusDate(LocalDate.of(2025, 10, 7))
-                                .paymentReference("PAY-001")
-                                .hasOffsiteFee(false));
+                        List.of(
+                                new BulkFeeDetailsDto()
+                                        .paymentStatus(PaymentStatus.PAID)
+                                        .statusDate(LocalDate.of(2025, 10, 7))
+                                        .paymentReference("PAY-001")
+                                        .hasOffsiteFee(false)));
     }
 
     private Set<UUID> entryIds(int totalCount) {
