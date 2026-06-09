@@ -284,6 +284,22 @@ public class BulkApplicationEntryResultCreationValidatorTest {
         Assertions.assertEquals(ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE, exception.getCode());
     }
 
+    @Test
+    void givenMissingEntryIds_whenValidate_thenThrowsEntryNotProvided() {
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setResult(new ResultCreateDto());
+
+        PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
+                PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build();
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payloadForCreateEntryResult));
+
+        Assertions.assertEquals(ApplicationListError.ENTRY_NOT_PROVIDED, exception.getCode());
+    }
+
     /**
      * A matcher that allows us to check that a list matches an expected list regardless of order.
      */

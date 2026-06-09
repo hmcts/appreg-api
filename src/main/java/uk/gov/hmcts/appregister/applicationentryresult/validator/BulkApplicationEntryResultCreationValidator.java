@@ -49,8 +49,7 @@ public class BulkApplicationEntryResultCreationValidator
                     validateSuccess) {
 
         Optional<ApplicationList> applicationListOptional;
-        List<UUID> entryIds =
-                validatable.getPayload() == null ? null : validatable.getPayload().getEntryIds();
+        List<UUID> entryIds = getEntryIds(validatable);
 
         if (entryIds != null) {
             validateNoDuplicateEntryIds(entryIds);
@@ -68,6 +67,8 @@ public class BulkApplicationEntryResultCreationValidator
                         ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST,
                         "The list does not exist %s".formatted(validatable.getListId()));
             }
+
+            validateEntryIdsProvided(entryIds);
 
             // now validate the entries belong to the list
             boolean validated =
@@ -99,6 +100,7 @@ public class BulkApplicationEntryResultCreationValidator
         } else {
             // get all of the entry to list mappings
             List<EntryToList> entryToListMapping;
+            validateEntryIdsProvided(entryIds);
             entryToListMapping =
                     applicationListEntryRepository.findApplicationListForAllEntries(entryIds);
 
@@ -130,6 +132,21 @@ public class BulkApplicationEntryResultCreationValidator
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE,
                     "Duplicate entry IDs are not allowed");
+        }
+    }
+
+    private List<UUID> getEntryIds(PayloadForCreateResults<BulkResultDto> validatable) {
+        if (validatable.getPayload() == null || validatable.getPayload().getEntryIds() == null) {
+            return null;
+        }
+
+        return new ArrayList<>(validatable.getPayload().getEntryIds());
+    }
+
+    private void validateEntryIdsProvided(List<UUID> entryIds) {
+        if (entryIds == null || entryIds.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
     }
 
