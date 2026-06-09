@@ -4,97 +4,97 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.function.BiFunction;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 
 @ExtendWith(MockitoExtension.class)
 public class StandardApplicantExistsValidatorTest {
-
-    @Mock private StandardApplicantExistsValidator standardApplicantExistsValidator;
+    private static final ZoneId UK_ZONE = ZoneId.of("Europe/London");
+    private static final LocalDate TODAY_UK = LocalDate.of(2026, 6, 9);
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
 
-    @InjectMocks private StandardApplicantExistsValidator validator;
+    private StandardApplicantExistsValidator validator;
+
+    @BeforeEach
+    void setUp() {
+        Clock clock = Clock.fixed(Instant.parse("2026-06-09T10:00:00Z"), ZoneId.of("UTC"));
+        validator =
+                new StandardApplicantExistsValidator(standardApplicantRepository, clock, UK_ZONE);
+    }
 
     @Test
     public void successValidation() {
-        LocalDate localDate = LocalDate.now();
         String code = "test";
-        PayloadForGet payload = PayloadForGet.builder().date(LocalDate.now()).code(code).build();
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCodeAndDate(code, localDate))
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
         // call the validator. No assertions needed as no exception means success
-        validator.validate(payload);
+        validator.validate(code);
     }
 
     @Test
     public void successValidationCallback() {
-        LocalDate localDate = LocalDate.now();
         String code = "test";
-        PayloadForGet payload = PayloadForGet.builder().date(LocalDate.now()).code(code).build();
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCodeAndDate(code, localDate))
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
-        BiFunction<PayloadForGet, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
+        BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
                 mockCallback();
 
         // call the validator. No assertions needed as no exception means success
-        validator.validate(payload, biFunction);
+        validator.validate(code, biFunction);
 
-        Mockito.verify(biFunction, times(1)).apply(payload, standardApplicant);
+        Mockito.verify(biFunction, times(1)).apply(code, standardApplicant);
     }
 
     @Test
     public void successValidationFailNoCallback() {
-        LocalDate localDate = LocalDate.now();
         String code = "test";
-        PayloadForGet payload = PayloadForGet.builder().date(LocalDate.now()).code(code).build();
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCodeAndDate(code, localDate))
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
                 .thenReturn(List.of());
 
-        BiFunction<PayloadForGet, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
+        BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
                 mockCallback();
 
         // call the validator. An exception is thrown but no callback is made to signify success
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
-                        AppRegistryException.class, () -> validator.validate(payload, biFunction));
+                        AppRegistryException.class, () -> validator.validate(code, biFunction));
         Assertions.assertNotNull(appRegistryException);
-        Mockito.verify(biFunction, times(0)).apply(payload, standardApplicant);
+        Mockito.verify(biFunction, times(0)).apply(code, standardApplicant);
     }
 
     @Test
     public void successValidationFailureNotFound() {
-        LocalDate localDate = LocalDate.now();
         String code = "test";
-        PayloadForGet payload = PayloadForGet.builder().date(LocalDate.now()).code(code).build();
-        when(standardApplicantRepository.findStandardApplicantByCodeAndDate(code, localDate))
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
                 .thenReturn(List.of());
 
         // call the validator. No assertions needed as no exception means success
         AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class, () -> validator.validate(payload));
+                Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(code));
         Assertions.assertEquals(
                 StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
@@ -108,24 +108,22 @@ public class StandardApplicantExistsValidatorTest {
 
     @Test
     public void successValidationFailureDuplicate_prefersFirstRecord() {
-        LocalDate localDate = LocalDate.now();
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         StandardApplicant alternativeApplicant = new StandardApplicant();
-        PayloadForGet payload = PayloadForGet.builder().date(LocalDate.now()).code(code).build();
-        when(standardApplicantRepository.findStandardApplicantByCodeAndDate(code, localDate))
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
                 .thenReturn(List.of(standardApplicant, alternativeApplicant));
 
         LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
 
-        StandardApplicant actual = validator.validate(payload, (request, applicant) -> applicant);
+        StandardApplicant actual = validator.validate(code, (request, applicant) -> applicant);
 
         Assertions.assertSame(standardApplicant, actual);
         Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
     }
 
     @SuppressWarnings("unchecked")
-    private static BiFunction<PayloadForGet, StandardApplicant, StandardApplicantGetDetailDto>
+    private static BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto>
             mockCallback() {
         return mock(BiFunction.class);
     }

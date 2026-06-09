@@ -38,7 +38,6 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
@@ -188,17 +187,15 @@ public class StandardApplicantServiceTest {
     @Test
     public void testGetByCode() {
         val code = "APP001";
-        val date = LocalDate.now();
 
-        val standardApplicantGetDetailDto = standardApplicantService.findByCode(code, date);
+        val standardApplicantGetDetailDto = standardApplicantService.findByCode(code);
 
         Assertions.assertEquals(standardApplicantGetDetailDto.getCode(), code);
-        Assertions.assertEquals(standardApplicantGetDetailDto.getStartDate(), date);
 
         verify(auditOperationService)
                 .processAudit(
                         isNull(),
-                        eq(StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE),
+                        eq(StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE),
                         notNull(),
                         notNull());
     }
@@ -225,15 +222,14 @@ public class StandardApplicantServiceTest {
                         List.of(listener),
                         new ApplicantMapperImpl());
 
-        val date = LocalDate.of(2025, 1, 1);
-        val actual = localService.findByCode(code, date);
+        val actual = localService.findByCode(code);
 
         Assertions.assertEquals(code, actual.getCode());
         Assertions.assertNotNull(listener.getCompleteEvent());
         val audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
         Assertions.assertNotSame(standardApplicant, audited);
         Assertions.assertEquals(code, audited.getApplicantCode());
-        Assertions.assertEquals(date, audited.getApplicantStartDate());
+        Assertions.assertNull(audited.getApplicantStartDate());
     }
 
     @Test
@@ -384,15 +380,14 @@ public class StandardApplicantServiceTest {
         private StandardApplicant success;
 
         public DummyStandardApplicantExistsValidator(StandardApplicantRepository repository) {
-            super(repository);
+            super(repository, Clock.systemUTC(), ZoneId.of("Europe/London"));
         }
 
         @Override
         public <R> R validate(
-                PayloadForGet saId,
-                BiFunction<PayloadForGet, StandardApplicant, R> createApplicationSupplier) {
+                String code, BiFunction<String, StandardApplicant, R> createApplicationSupplier) {
             return createApplicationSupplier.apply(
-                    saId, success != null ? success : defaultApplicant());
+                    code, success != null ? success : defaultApplicant());
         }
 
         private StandardApplicant defaultApplicant() {

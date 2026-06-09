@@ -29,14 +29,12 @@ public interface StandardApplicantService {
             PagingWrapper pageable);
 
     /**
-     * finds a standard applicant by code and date.
+     * finds a standard applicant by code.
      *
      * @param code The code of the standard applicant.
-     * @param date The date to check the validity of the standard applicant. The date has to be
-     *     before the date of the standard applicant and after the expiry date (if present).
      * @return The standard applicant detail DTO.
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException In the eventuality
      *     that the code can't be found
      */
-    StandardApplicantGetDetailDto findByCode(String code, LocalDate date);
+    StandardApplicantGetDetailDto findByCode(String code);
 }

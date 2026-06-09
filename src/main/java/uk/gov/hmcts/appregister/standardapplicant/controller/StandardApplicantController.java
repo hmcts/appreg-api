@@ -65,11 +65,9 @@ public class StandardApplicantController implements StandardApplicantsApi {
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<StandardApplicantGetDetailDto> getStandardApplicantByCodeAndDate(
-            String code, LocalDate date) {
+    public ResponseEntity<StandardApplicantGetDetailDto> getStandardApplicantByCode(String code) {
 
-        StandardApplicantGetDetailDto standardApplicantGetDetailDto =
-                service.findByCode(code, date);
+        StandardApplicantGetDetailDto standardApplicantGetDetailDto = service.findByCode(code);
 
         return ResponseEntity.status(OK)
                 .varyBy("Accept")

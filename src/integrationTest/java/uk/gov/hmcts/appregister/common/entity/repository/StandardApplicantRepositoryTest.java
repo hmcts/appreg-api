@@ -176,6 +176,49 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                this::assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord);
+    }
+
+    private void assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() {
+        LocalDate activeDate = LocalDate.now();
+        String code = "SACODE001";
+
+        StandardApplicant historicApplicant = new StandardApplicantTestData().someComplete();
+        historicApplicant.setApplicantCode(code);
+        historicApplicant.setName("Historic Applicant");
+        historicApplicant.setApplicantStartDate(activeDate.minusDays(30));
+        historicApplicant.setApplicantEndDate(activeDate.minusDays(10));
+
+        StandardApplicant boundedApplicant = new StandardApplicantTestData().someComplete();
+        boundedApplicant.setApplicantCode(code);
+        boundedApplicant.setName("Bounded Applicant");
+        boundedApplicant.setApplicantStartDate(activeDate.minusDays(5));
+        boundedApplicant.setApplicantEndDate(activeDate.plusDays(7));
+
+        StandardApplicant openEndedApplicant = new StandardApplicantTestData().someComplete();
+        openEndedApplicant.setApplicantCode(code);
+        openEndedApplicant.setName("Open-Ended Applicant");
+        openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
+        openEndedApplicant.setApplicantEndDate(null);
+
+        StandardApplicant savedHistoricApplicant = persistance.save(historicApplicant);
+        StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
+        StandardApplicant savedOpenEndedApplicant = persistance.save(openEndedApplicant);
+
+        List<StandardApplicant> retrievedApplicants =
+                repository.findStandardApplicantByCode(code, activeDate);
+
+        assertThat(retrievedApplicants)
+                .extracting(StandardApplicant::getId)
+                .containsExactly(
+                        savedOpenEndedApplicant.getId(),
+                        savedBoundedApplicant.getId(),
+                        savedHistoricApplicant.getId());
+    }
+
+    @Test
     public void testSearchIncludesApplicantsStartingOrEndingOnActiveDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
