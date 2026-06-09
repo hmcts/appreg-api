@@ -7,17 +7,14 @@ parameters:
       type: string
       maxLength: 10
     example: "SA"
-  - in: query
-    name: date
-    required: true
-    schema: { type: string, format: date }
-    description: |
-      ISO date (yyyy-MM-dd) on which the Standard Applicant must be valid.
-    example: "2021-01-01"
 get:
-  operationId: getStandardApplicantByCodeAndDate
+  operationId: getStandardApplicantByCode
   tags: [standard-applicants]
-  summary: Get a specific Standard Applicant by code and date.
+  summary: Get a specific Standard Applicant by code.
+  description: |
+    Returns a Standard Applicant record matching the supplied code without applying
+    lodgement-date effective filtering. Where multiple records share the same code,
+    the current active or latest record is selected using deterministic reference-data ordering.
   responses:
     "200":
       description: Standard Applicant found

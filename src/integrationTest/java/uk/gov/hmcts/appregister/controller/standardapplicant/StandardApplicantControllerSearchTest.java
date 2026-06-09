@@ -47,7 +47,6 @@ import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperati
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
-import uk.gov.hmcts.appregister.testutils.client.request.DateGetRequest;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -82,7 +81,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeAndDateForIndividual_thenReturn200()
+    public void givenValidRequest_whenGetStandardApplicantByCodeForIndividual_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -92,8 +91,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
-                        tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        tokenGenerator.fetchTokenForRole());
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -147,28 +145,13 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         APPCODE_CODE,
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getType()
-                                .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.STANDARD_APPLICANTS,
-                        "standard_applicant_start_date",
-                        null,
-                        LocalDate.now().toString(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getType()
-                                .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getEventName()));
+                        StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE.getEventName()));
     }
 
     @Test
     public void
-            givenSparsePersonStandardApplicant_whenGetStandardApplicantByCodeAndDate_thenReturnExplicitNulls()
+            givenSparsePersonStandardApplicant_whenGetStandardApplicantByCode_thenReturnExplicitNulls()
                     throws Exception {
         LocalDate activeDate = LocalDate.now();
         String sparseCode = "A1348SA1";
@@ -180,8 +163,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + sparseCode),
-                        tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(activeDate));
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
 
@@ -202,9 +184,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetStandardApplicantByCodeAndDateForOrganisation_thenReturn200()
-                    throws Exception {
+    public void givenValidRequest_whenGetStandardApplicantByCodeForOrganisation_thenReturn200()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -213,8 +194,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE_ORGANISATION),
-                        tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        tokenGenerator.fetchTokenForRole());
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -281,28 +261,31 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         APPCODE_CODE_ORGANISATION,
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getType()
-                                .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.STANDARD_APPLICANTS,
-                        "standard_applicant_start_date",
-                        null,
-                        LocalDate.now().toString(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getType()
-                                .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
-                                .getEventName()));
+                        StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE.getEventName()));
     }
 
     @Test
-    void givenMalformedDate_whenGetStandardApplicantByCodeAndDate_thenReturn400AndLogWarning(
-            CapturedOutput output) throws Exception {
+    public void givenApp006_whenGetStandardApplicantByCodeWithoutDate_thenReturn200()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/APP006"), tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+        Assertions.assertEquals("APP006", returnedSa.getCode());
+        Assertions.assertEquals(
+                "Organisation 3", returnedSa.getApplicant().getOrganisation().getName());
+    }
+
+    @Test
+    void givenDateQuery_whenGetStandardApplicantByCode_thenDateIsIgnored() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -310,17 +293,17 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
                         tokenGenerator.fetchTokenForRole(),
-                        rs -> rs.queryParam("date", "01-01-2026"));
+                        rs -> rs.queryParam("date", "2025-10-27"));
 
-        responseSpec.then().statusCode(400);
+        responseSpec.then().statusCode(200);
 
-        Assertions.assertTrue(
-                output.getOut()
-                        .contains("[400]: Problem with value 01-01-2026 for parameter date"));
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+        Assertions.assertEquals(APPCODE_CODE, returnedSa.getCode());
     }
 
     @Test
-    void givenOversizedCode_whenGetStandardApplicantByCodeAndDate_thenReturn400AndLogWarning(
+    void givenOversizedCode_whenGetStandardApplicantByCode_thenReturn400AndLogWarning(
             CapturedOutput output) throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -328,15 +311,14 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + "ABCDEFGHIJK"),
-                        tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(400);
 
         Assertions.assertTrue(
                 output.getOut()
                         .contains(
-                                "[400]: getStandardApplicantByCodeAndDate.code: size must be"
+                                "[400]: getStandardApplicantByCode.code: size must be"
                                         + " between 0 and 10"));
     }
 
@@ -372,8 +354,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + "NotExist"),
-                        tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        tokenGenerator.fetchTokenForRole());
 
         // assert the response
         ProblemDetail returnedSc = responseSpec.as(ProblemDetail.class);
@@ -389,9 +370,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetStandardApplicantByCodeAndDateNotWithinRange_thenReturn404()
-                    throws Exception {
+    public void givenDateOutsideApplicantRange_whenGetStandardApplicantByCode_thenDateIsIgnored()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -401,25 +381,18 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + DUPLICATE_APPCODE_CODE),
                         tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now().minusDays(1)));
+                        rs -> rs.queryParam("date", LocalDate.now().minusDays(1)));
 
         // assert the response
-        ProblemDetail returnedSc = responseSpec.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND.getCode().getAppCode(),
-                returnedSc.getType().toString());
-        Assertions.assertEquals(
-                StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND
-                        .getCode()
-                        .getHttpCode()
-                        .value(),
-                responseSpec.getStatusCode());
+        responseSpec.then().statusCode(200);
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+        Assertions.assertEquals(DUPLICATE_APPCODE_CODE, returnedSa.getCode());
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturnPreferredRecord()
-                    throws Exception {
+    public void givenDuplicateCode_whenGetStandardApplicantByCode_thenReturnPreferredRecord()
+            throws Exception {
         String code = "SANULL001";
         LocalDate queryDate = LocalDate.now();
         saveStandardApplicant(
@@ -433,9 +406,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + code),
-                        tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(queryDate));
+                        getLocalUrl(WEB_CONTEXT + "/" + code), tokenGenerator.fetchTokenForRole());
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -2000,13 +1971,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
                 RestEndpointDescription.builder()
-                        .url(
-                                getLocalUrl(
-                                        WEB_CONTEXT
-                                                + "/"
-                                                + APPCODE_CODE
-                                                + "?date="
-                                                + LocalDate.now()))
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

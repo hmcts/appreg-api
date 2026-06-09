@@ -17,7 +17,6 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
@@ -109,30 +108,27 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     }
 
     @Override
-    public StandardApplicantGetDetailDto findByCode(String code, LocalDate date) {
+    public StandardApplicantGetDetailDto findByCode(String code) {
         return auditService.processAudit(
                 null,
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE,
-                (req) -> {
-                    log.debug(
-                            "Start: Find Standard Applicant By Code for: app code: {} date: {}",
-                            code,
-                            date);
-
-                    return Optional.of(
-                            validator.validate(
-                                    PayloadForGet.builder().date(date).code(code).build(),
-                                    (id, standardApplicant) -> {
-                                        log.debug(
-                                                "Finish: Find Standard Applicant By Code for: app code: {} date: {}",
-                                                code,
-                                                date);
-
-                                        return new AuditableResult<>(
-                                                mapper.toReadGetDto(standardApplicant),
-                                                mapper.toEntity(code, date));
-                                    }));
-                },
+                StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE,
+                (req) -> findByCodeAuditResult(code),
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
+
+    private Optional<AuditableResult<StandardApplicantGetDetailDto, StandardApplicant>>
+            findByCodeAuditResult(String code) {
+        log.debug("Start: Find Standard Applicant By Code for: app code: {}", code);
+
+        var result =
+                validator.validate(
+                        code,
+                        (requestedCode, standardApplicant) ->
+                                new AuditableResult<>(
+                                        mapper.toReadGetDto(standardApplicant),
+                                        mapper.toEntity(requestedCode)));
+
+        log.debug("Finish: Find Standard Applicant By Code for: app code: {}", code);
+        return Optional.of(result);
     }
 }

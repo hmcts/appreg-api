@@ -79,7 +79,7 @@ public abstract class StandardApplicantMapper {
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "applicantCode", source = "code")
-    @Mapping(target = "applicantStartDate", source = "date")
+    @Mapping(target = "applicantStartDate", ignore = true)
     @Mapping(target = "applicantEndDate", ignore = true)
     @Mapping(target = "name", ignore = true)
     @Mapping(target = "version", constant = "0L")
@@ -98,7 +98,7 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "emailAddress", ignore = true)
     @Mapping(target = "telephoneNumber", ignore = true)
     @Mapping(target = "mobileNumber", ignore = true)
-    public abstract StandardApplicant toEntity(String code, LocalDate date);
+    public abstract StandardApplicant toEntity(String code);
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {
