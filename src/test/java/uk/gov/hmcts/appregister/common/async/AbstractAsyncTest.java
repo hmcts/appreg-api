@@ -6,7 +6,7 @@ import org.hibernate.AssertionFailure;
 import org.junit.jupiter.api.AfterEach;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 
-public class AbstractAsyncTest {
+public abstract class AbstractAsyncTest {
 
     @AfterEach
     void tearDown() {

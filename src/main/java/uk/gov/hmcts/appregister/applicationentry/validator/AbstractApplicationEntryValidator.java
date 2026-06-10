@@ -403,7 +403,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 applicationCodeRepository.findByCodeAndDate(
                         getApplicationCode(validatable), todayUk);
 
-        if (code.size() == 0) {
+        if (code.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
                     "No valid code can be found %s".formatted(getApplicationCode(validatable)));

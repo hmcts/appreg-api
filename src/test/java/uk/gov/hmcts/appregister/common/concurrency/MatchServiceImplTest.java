@@ -33,11 +33,14 @@ class MatchServiceImplTest {
 
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
-        matchService.matchOnRequest(
-                () -> {
-                    return matchResponse;
-                },
-                List.of(versionable));
+        MatchResponse<String> response =
+                matchService.matchOnRequest(
+                        () -> {
+                            return matchResponse;
+                        },
+                        List.of(versionable));
+
+        Assertions.assertSame(matchResponse, response);
     }
 
     @Test
