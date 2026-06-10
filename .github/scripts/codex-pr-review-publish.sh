@@ -95,12 +95,16 @@ git_local() {
 gh_authenticated() {
   env -i \
     "HOME=${sanitized_home}" \
+    "XDG_CONFIG_HOME=${sanitized_home}/.config" \
+    "GH_CONFIG_DIR=${sanitized_home}/.config/gh" \
     "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
     "LANG=${LANG:-C.UTF-8}" \
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
     "TERM=${TERM:-xterm}" \
     "TMPDIR=${sanitized_tmp}" \
+    "GH_PROMPT_DISABLED=1" \
     "GH_TOKEN=${GH_TOKEN}" \
+    "GITHUB_TOKEN=${GH_TOKEN}" \
     gh "$@"
 }
 
