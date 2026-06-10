@@ -195,11 +195,13 @@ Operational rules:
 - Fix only the implementation, tests, or documentation required to resolve the verification failure.
 - Do not remove, weaken, or bypass failing tests or repository guardrails.
 - Do not push branches or open pull requests. The workflow handles Git and PR creation in a separate trusted job after verification passes.
+- Run lightweight targeted checks you can reasonably run, such as `git diff --check`, source inspection, or focused non-Gradle commands.
+- Do not run `./gradlew`, `gradle`, or `./bin/codex-local-pipeline.sh` inside the Codex repair sandbox. Gradle needs cache and local socket behavior that the sandbox intentionally blocks; trusted workflow jobs run Gradle verification after Codex exits.
 - Pay attention to backend report tests that assert temporary files are cleaned up; do not leave .appregtmp files behind.
 - Backend formatting is not fully covered by Spotless. If verification failed in Checkstyle, fix the Java formatting manually rather than relying only on `spotlessApply`.
 - In particular, Checkstyle `RightCurlyAlone` requires closing braces to be alone on their own line, including lambda and assertion blocks.
 - Leave the working tree containing the full intended patch after your repair.
-- In your final message, summarize the repair and list any targeted checks you ran.
+- In your final message, summarize the repair and list any lightweight targeted checks you ran.
 
 Repair attempt: {os.environ["REPAIR_ATTEMPT"]} of {os.environ.get("MAX_CODEX_REPAIR_ATTEMPTS", "3")}
 

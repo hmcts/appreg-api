@@ -170,7 +170,8 @@ Operational rules:
 - Make a focused production change that satisfies the ticket.
 - Follow the repository's existing patterns and style.
 - Add or update tests where the behavior changes.
-- Run the most relevant targeted verification commands you can reasonably run in this CI job.
+- Run lightweight targeted checks you can reasonably run in this CI job, such as `git diff --check`, source inspection, or focused non-Gradle commands.
+- Do not run `./gradlew`, `gradle`, or `./bin/codex-local-pipeline.sh` inside the Codex generation sandbox. Gradle needs cache and local socket behavior that the sandbox intentionally blocks; trusted workflow jobs run Gradle verification after Codex exits.
 - Backend formatting is not fully covered by Spotless. Before finishing, check Java Checkstyle-sensitive formatting manually.
 - In particular, Checkstyle `RightCurlyAlone` requires closing braces to be alone on their own line, including lambda and assertion blocks.
 - Do not push branches or open pull requests. The workflow handles Git and PR creation in a separate trusted job after you finish.
@@ -202,7 +203,7 @@ Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue con
 
 ### Testing done
 
-Codex may run targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
+Codex may run lightweight targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
 
 ### Security Vulnerability Assessment ###
 
