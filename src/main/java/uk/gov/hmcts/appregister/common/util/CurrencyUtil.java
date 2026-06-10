@@ -5,6 +5,10 @@ import java.math.RoundingMode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 
 public class CurrencyUtil {
+    private CurrencyUtil() {
+        // Utility class
+    }
+
     /**
      * get pennies for the fee.
      *

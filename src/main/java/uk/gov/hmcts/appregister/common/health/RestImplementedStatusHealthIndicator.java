@@ -439,10 +439,10 @@ public class RestImplementedStatusHealthIndicator {
             RequestMapping requestMapping = getRequestMapping(method);
 
             if (requestMapping != null && requestMapping.method().length > 0) {
-                String method = requestMapping.method()[0].toString();
+                String httpMethod = requestMapping.method()[0].toString();
                 String url = requestMapping.value()[0].toString();
 
-                return method + " " + url;
+                return httpMethod + " " + url;
             }
 
             return "n/a";

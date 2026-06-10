@@ -35,6 +35,10 @@ public class ObfuscationUtil {
 
     static final ObjectMapper mapper = createObjectMapper();
 
+    private ObfuscationUtil() {
+        // Utility class
+    }
+
     private static ObjectMapper createObjectMapper() {
         SimpleModule maskingModule = new SimpleModule();
 

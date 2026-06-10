@@ -72,7 +72,7 @@ public class UserProviderTest {
                 Map.of(
                         "oid", OID_CLAIM,
                         "preferred_username", EMAIL_CLAIM));
-        AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getUserId);
+        assertThrows(AppRegistryException.class, userProvider::getUserId);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class UserProviderTest {
                 Map.of(
                         "tid", TID_CLAIM,
                         "preferred_username", EMAIL_CLAIM));
-        AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getUserId);
+        assertThrows(AppRegistryException.class, userProvider::getUserId);
     }
 
     // ---------- getEmail ----------
@@ -102,7 +102,7 @@ public class UserProviderTest {
                 Map.of(
                         "tid", TID_CLAIM,
                         "oid", OID_CLAIM));
-        AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getEmail);
+        assertThrows(AppRegistryException.class, userProvider::getEmail);
     }
 
     // ---------- helpers ----------

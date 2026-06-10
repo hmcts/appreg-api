@@ -1587,9 +1587,9 @@ public class ApplicationEntryServiceImplTest {
         dto.setTargetListId(targetList.getUuid());
         dto.setEntryIds(Set.of(entryId1, entryId2));
 
-        val success = new MoveEntriesValidationSuccess();
-        success.setTargetList(targetList);
-        moveEntriesValidator.setSuccess(success);
+        val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(validationSuccess);
 
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
                 .thenReturn(List.of(entry1, entry2));
@@ -1649,9 +1649,9 @@ public class ApplicationEntryServiceImplTest {
         dto.setTargetListId(targetList.getUuid());
         dto.setEntryIds(Set.of(entryId1, entryId2));
 
-        val success = new MoveEntriesValidationSuccess();
-        success.setTargetList(targetList);
-        moveEntriesValidator.setSuccess(success);
+        val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(validationSuccess);
 
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
                 .thenReturn(List.of(entry1));
