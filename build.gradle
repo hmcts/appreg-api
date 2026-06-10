@@ -432,7 +432,7 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.7.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.8.1'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
