@@ -165,7 +165,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                 auditService.processAudit(
                                         BeanUtil.copyBean(success.getApplicationList()),
                                         AppListAuditOperation.UPDATE_APP_LIST,
-                                        (evnt) ->
+                                        evnt ->
                                                 success.hasCourt()
                                                         ? Optional.of(
                                                                 updateWithCourt(updateDto, success))
@@ -185,7 +185,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.GET_APP_LIST,
-                (req) -> {
+                req -> {
                     ApplicationList list = findApplicationListOrThrow(id);
                     AuditableResult<ApplicationListGetDetailDto, ApplicationList> result =
                             new AuditableResult<>(
@@ -429,7 +429,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.GET_APP_LIST,
-                (req) ->
+                req ->
                         applicationListGetValidator.validateCja(
                                 dto,
                                 (getDto, success) -> {
@@ -462,7 +462,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.PRINT_APP_LIST,
-                (req) -> {
+                req -> {
                     ApplicationList list =
                             repository
                                     .findByUuid(id)

@@ -54,7 +54,7 @@ class AuditOperationServiceImplTest {
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                (req) -> {
+                req -> {
                     // Simulate some processing and return a response
                     return Optional.of(new AuditableResult<>(entryCreateDto, null));
                 },
@@ -136,7 +136,7 @@ class AuditOperationServiceImplTest {
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                (req) -> {
+                req -> {
                     // Simulate some processing and return a response
                     return Optional.empty();
                 },
@@ -177,7 +177,7 @@ class AuditOperationServiceImplTest {
                 () ->
                         auditOperationServiceImpl.processAudit(
                                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                                (req) -> {
+                                req -> {
                                     // Simulate some processing and return a response
                                     throw new IllegalArgumentException("");
                                 },
@@ -218,7 +218,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.CREATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -240,7 +240,7 @@ class AuditOperationServiceImplTest {
                                 auditOperationServiceImpl.processAudit(
                                         new ApplicationList(),
                                         TestAuditOperation.CREATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -262,7 +262,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.CREATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -283,7 +283,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.UPDATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -304,7 +304,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.UPDATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -326,7 +326,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.UPDATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(

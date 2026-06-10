@@ -58,7 +58,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
-                (req) -> {
+                req -> {
                     log.debug(
                             "Start: Find Application Codes for code: {} title: {} date: {} paging: {}",
                             appCode,

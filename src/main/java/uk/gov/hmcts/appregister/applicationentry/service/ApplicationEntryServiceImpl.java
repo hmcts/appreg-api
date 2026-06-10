@@ -1370,7 +1370,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         auditService.processAudit(
                                 null,
                                 AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
-                                (r) -> {
+                                r -> {
                                     getKeyablesForCreateUpdateEtag(
                                             success.getApplicationListEntry());
                                     EntryGetDetailDto dto =
@@ -1414,7 +1414,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         auditService.processAudit(
                                 null,
                                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
-                                (r) -> {
+                                r -> {
                                     // get the entries for the list
                                     Page<ApplicationListEntryGetSummaryProjection> entries =
                                             applicationListEntryRepository.searchForGetSummary(
@@ -1477,7 +1477,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         auditService.processAudit(
                                 null,
                                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
-                                (r) -> {
+                                r -> {
                                     List<UUID> entryIds =
                                             applicationListEntryRepository.searchForGetSummaryIds(
                                                     payloadForGet.getListId(),
