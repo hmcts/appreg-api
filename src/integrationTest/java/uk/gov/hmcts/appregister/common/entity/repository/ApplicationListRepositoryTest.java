@@ -6,6 +6,7 @@ import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @Autowired private ApplicationListRepository repository;
     @Autowired private CriminalJusticeAreaRepository cjaRepository;
 
-    private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, 1, 2);
+    private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.JANUARY, 2);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(9, 0);
 
     private ApplicationList save(
@@ -70,7 +71,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                 .description("Smoke test list")
                 .courtName("Cardiff Crown Court")
                 .courtCode("CCC003")
-                .date(LocalDate.of(2025, 1, 1))
+                .date(LocalDate.of(2025, Month.JANUARY, 1))
                 .time(LocalTime.of(9, 0))
                 .durationHours((short) 1)
                 .durationMinutes((short) 30)
@@ -143,7 +144,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findAllByFilter: matches by calendar day + hh:mm only")
     void findAllByFilter_dateAndTime_match() {
         // Given
-        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalDate targetDay = LocalDate.of(2025, Month.JANUARY, 2);
         LocalTime nineAm = LocalTime.of(9, 0);
         LocalTime tenAm = LocalTime.of(10, 0);
 
@@ -186,7 +187,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findAllByFilter: matches by time with seconds")
     void findAllByFilter_timeWithSeconds_match() {
         // Given
-        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalDate targetDay = LocalDate.of(2025, Month.JANUARY, 2);
         LocalTime nineAm = LocalTime.of(9, 0, 1);
         LocalTime nineOneAm = LocalTime.of(9, 3);
 
@@ -222,7 +223,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findAllByFilter: matches by 23:59")
     void findAllByFilter_minuteToMidnight_match() {
         // Given
-        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalDate targetDay = LocalDate.of(2025, Month.JANUARY, 2);
         LocalTime startTime = LocalTime.of(23, 59, 1);
         LocalTime endTime = LocalTime.of(0, 0);
 
@@ -307,7 +308,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findAllByFilter: description contains is case-insensitive")
     void findAllByFilter_description_contains_caseInsensitive() {
         // Given
-        var date = LocalDate.of(2025, 1, 3);
+        var date = LocalDate.of(2025, Month.JANUARY, 3);
         var time = LocalTime.of(11, 0);
 
         save("OPEN", null, null, date, time, "Morning Session", "Hall");
@@ -363,7 +364,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findAllByFilter: does not match soft deleted list")
     void findAllByFilter_softDeletedList_noMatch() {
         // Given
-        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalDate targetDay = LocalDate.of(2025, Month.JANUARY, 2);
         LocalTime nineAm = LocalTime.of(9, 0);
 
         // Soft deleted row -> should NOT match
@@ -396,8 +397,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findAllByFilter: paging works (page size 1, sorted by date asc)")
     void findAllByFilter_paging_andSorting() {
         // Given
-        var d1 = LocalDate.of(2025, 6, 1);
-        var d2 = LocalDate.of(2025, 6, 2);
+        var d1 = LocalDate.of(2025, Month.JUNE, 1);
+        var d2 = LocalDate.of(2025, Month.JUNE, 2);
         var t = LocalTime.of(11, 0);
 
         save("OPEN", "PG1", null, d1, t, "first", "loc");

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -27,7 +26,7 @@ class ApplicationListDeletionValidatorTest {
     void validationSuccess() {
         ApplicationList applicationList = new AppListTestData().someMinimal().build();
         UUID uuid = UUID.randomUUID();
-        when(applicationListRepository.findByUuidIncludingDelete(eq(uuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(uuid))
                 .thenReturn(Optional.of(applicationList));
         validator.validate(uuid);
     }
@@ -35,7 +34,7 @@ class ApplicationListDeletionValidatorTest {
     @Test
     void validationFailNotFound() {
         UUID uuid = UUID.randomUUID();
-        when(applicationListRepository.findByUuidIncludingDelete(eq(uuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(uuid))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =
@@ -48,7 +47,7 @@ class ApplicationListDeletionValidatorTest {
         ApplicationList applicationList = new AppListTestData().someMinimal().build();
         applicationList.setDeleted(true);
         UUID uuid = UUID.randomUUID();
-        when(applicationListRepository.findByUuidIncludingDelete(eq(uuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(uuid))
                 .thenReturn(Optional.of(applicationList));
 
         AppRegistryException ex =

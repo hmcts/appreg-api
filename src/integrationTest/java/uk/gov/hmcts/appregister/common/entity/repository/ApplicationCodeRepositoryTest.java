@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -79,13 +80,14 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     @Test
     void testGetByCodeAndDate() {
         List<ApplicationCode> applicationCodeToAssertAgainst =
-                applicationCodeRepository.findByCodeAndDate("AD99002", LocalDate.now());
+                applicationCodeRepository.findByCodeAndDate(
+                        "AD99002", LocalDate.now(java.time.ZoneOffset.UTC));
         assertThat(applicationCodeToAssertAgainst).isNotEmpty();
     }
 
     @Test
     void testGetByCodeAndDatePrefersNullEndDate() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "ZZ90011";
 
         ApplicationCode bounded = new ApplicationCodeTestData().someComplete();
@@ -112,7 +114,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testGetByCodeAndDateUsesExactCodeMatch() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "ZZ90012";
 
         ApplicationCode exactMatch = new ApplicationCodeTestData().someComplete();
@@ -138,7 +140,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testSearchExcludesCodeBeforeStartDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 1);
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 1);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90101", "Starts after search date", effectiveDate.plusDays(1), null);
@@ -153,7 +155,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testSearchIncludesCodeStartingOnActiveDate() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         ApplicationCode startsToday = saveApplicationCode("ZZ90013", "Starts Today", today, null);
 
@@ -167,7 +169,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testSearchIncludesCodeBetweenStartAndEndDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90102",
@@ -185,7 +187,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testSearchExcludesCodeAfterEndDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90103",
@@ -203,7 +205,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testSearchIncludesCodeWithNullEndDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90104", "Open ended effective code", effectiveDate.minusDays(10), null);
@@ -218,7 +220,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testSearchPaginationCountsAreBasedOnDateFilteredResults() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         String code = "ZZ90105";
 
         saveApplicationCode(

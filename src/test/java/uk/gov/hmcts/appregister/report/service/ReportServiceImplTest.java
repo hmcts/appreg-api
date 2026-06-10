@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -67,8 +68,8 @@ class ReportServiceImplTest {
     @Test
     void givenActivityAuditFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
             throws IOException {
-        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
-        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.ACTIVITY_AUDIT_REPORT);
         AtomicReference<ActivityAuditReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<ActivityAuditReportRow>> lifecycle =
@@ -125,8 +126,8 @@ class ReportServiceImplTest {
 
     @Test
     void givenFeesFilter_whenCreatingReport_thenStartsJobWithReportPageSize() throws IOException {
-        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
-        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.FEES_REPORT);
         AtomicReference<FeesReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<FeesReportRow>> lifecycle = new AtomicReference<>();
@@ -179,8 +180,8 @@ class ReportServiceImplTest {
         LegacyReportLocation location = new LegacyReportLocation().cjaCode("XX");
         FeesReportFilterDto filter =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(location);
         AppRegistryException exception =
                 new AppRegistryException(
@@ -209,8 +210,8 @@ class ReportServiceImplTest {
     @Test
     void givenSearchWarrantsFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
             throws IOException {
-        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
-        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.SEARCH_WARRANTS_REPORT);
         AtomicReference<SearchWarrantsReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<SearchWarrantsReportRow>> lifecycle =
@@ -267,8 +268,8 @@ class ReportServiceImplTest {
     @Test
     void givenDurationFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
             throws IOException {
-        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
-        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.DURATION_REPORT);
         AtomicReference<DurationReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<DurationReportRow>> lifecycle = new AtomicReference<>();
@@ -322,8 +323,8 @@ class ReportServiceImplTest {
         LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("BADCRT");
         DurationFilterDto filter =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(location);
         AppRegistryException exception =
                 new AppRegistryException(
@@ -352,8 +353,8 @@ class ReportServiceImplTest {
     @Test
     void givenListMaintenanceFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
             throws IOException {
-        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
-        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.LIST_MAINTENANCE_REPORT);
         AtomicReference<ListMaintenanceReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<ListMaintenanceReportRow>> lifecycle =
@@ -409,8 +410,8 @@ class ReportServiceImplTest {
     @Test
     void givenPrivateProsecutorsIndexFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
             throws IOException {
-        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
-        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
         TrackJobStatusResponse jobResponse =
                 createJobResponse(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT);
         AtomicReference<PrivateProsecutorsIndexReportDataReader> dataReader =
@@ -473,8 +474,8 @@ class ReportServiceImplTest {
         LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("BADCRT");
         ListMaintenanceFilterDto filter =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(location);
         AppRegistryException exception =
                 new AppRegistryException(
@@ -506,8 +507,8 @@ class ReportServiceImplTest {
         LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("BADCRT");
         PrivateProsecutorsIndexFilterDto filter =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(location);
         AppRegistryException exception =
                 new AppRegistryException(
@@ -565,8 +566,8 @@ class ReportServiceImplTest {
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(location);
 
         try {

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -50,8 +50,8 @@ import utils.CurrencyUtil;
 @ExtendWith(MockitoExtension.class)
 class ApplicationCodeServiceImplTest {
     private static final Instant FIXED_INSTANT = Instant.parse("2024-10-05T10:15:30Z");
-    private static final LocalDate FIXED_BUSINESS_DATE = LocalDate.of(2024, 10, 5);
-    private static final LocalDate REQUEST_DATE = LocalDate.of(2024, 10, 5);
+    private static final LocalDate FIXED_BUSINESS_DATE = LocalDate.of(2024, Month.OCTOBER, 5);
+    private static final LocalDate REQUEST_DATE = LocalDate.of(2024, Month.OCTOBER, 5);
 
     @Mock private ApplicationCodeRepository repository;
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
@@ -139,7 +139,7 @@ class ApplicationCodeServiceImplTest {
                 .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-        applicationCode.setStartDate(LocalDate.of(2020, 1, 1));
+        applicationCode.setStartDate(LocalDate.of(2020, Month.JANUARY, 1));
         dummyGetApplicationCodeValidator.setSuccess(
                 GetApplicationCodeValidationSuccess.builder()
                         .applicationCode(applicationCode)
@@ -150,7 +150,7 @@ class ApplicationCodeServiceImplTest {
         ApplicationCodeServiceImpl auditedService = buildServiceWithListeners(List.of(listener));
 
         String code = "code";
-        LocalDate localDate = LocalDate.of(2025, 1, 1);
+        LocalDate localDate = LocalDate.of(2025, Month.JANUARY, 1);
 
         auditedService.findByCode(PayloadForGet.builder().code(code).date(localDate).build());
 
@@ -215,7 +215,7 @@ class ApplicationCodeServiceImplTest {
 
         String code = "code";
         LocalDate todayUk = FIXED_BUSINESS_DATE;
-        when(repository.search(eq(code), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
+        when(repository.search(code, null, todayUk, criteria)).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -266,7 +266,7 @@ class ApplicationCodeServiceImplTest {
 
         String title = "title";
         LocalDate todayUk = FIXED_BUSINESS_DATE;
-        when(repository.search(eq(null), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
+        when(repository.search(null, title, todayUk, criteria)).thenReturn(results);
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
@@ -323,9 +323,8 @@ class ApplicationCodeServiceImplTest {
 
         String title = "title";
         String code = "code";
-        LocalDate effectiveDate = LocalDate.of(2021, 6, 15);
-        when(repository.search(eq(code), eq(title), eq(effectiveDate), eq(criteria)))
-                .thenReturn(results);
+        LocalDate effectiveDate = LocalDate.of(2021, Month.JUNE, 15);
+        when(repository.search(code, title, effectiveDate, criteria)).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -368,7 +367,7 @@ class ApplicationCodeServiceImplTest {
                         Pageable.ofSize(4).withPage(0),
                         4);
         LocalDate todayUk = FIXED_BUSINESS_DATE;
-        when(repository.search(eq(null), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
+        when(repository.search(null, null, todayUk, criteria)).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 

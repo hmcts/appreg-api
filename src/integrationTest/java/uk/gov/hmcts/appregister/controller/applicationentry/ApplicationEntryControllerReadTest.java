@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -2085,17 +2086,17 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         ApplicationListEntry zoe = createEntry(list);
         setRespondentName(zoe, "Dr", "Zoe", "Anderson");
-        zoe.getRnameaddress().setDateOfBirth(LocalDate.of(1990, 1, 1));
+        zoe.getRnameaddress().setDateOfBirth(LocalDate.of(1990, Month.JANUARY, 1));
         persistance.save(zoe);
 
         ApplicationListEntry amy = createEntry(list);
         setRespondentName(amy, "Mr", "Amy", "Zimmer");
-        amy.getRnameaddress().setDateOfBirth(LocalDate.of(1985, 5, 5));
+        amy.getRnameaddress().setDateOfBirth(LocalDate.of(1985, Month.MAY, 5));
         persistance.save(amy);
 
         ApplicationListEntry bob = createEntry(list);
         setRespondentName(bob, "Ms", "Bob", "Brown");
-        bob.getRnameaddress().setDateOfBirth(LocalDate.of(1975, 9, 9));
+        bob.getRnameaddress().setDateOfBirth(LocalDate.of(1975, Month.SEPTEMBER, 9));
         persistance.save(bob);
 
         TokenGenerator tokenGenerator = createAdminToken();
@@ -2130,9 +2131,9 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         Assertions.assertEquals(
                 List.of(
-                        LocalDate.of(1985, 5, 5),
-                        LocalDate.of(1975, 9, 9),
-                        LocalDate.of(1990, 1, 1)),
+                        LocalDate.of(1985, Month.MAY, 5),
+                        LocalDate.of(1975, Month.SEPTEMBER, 9),
+                        LocalDate.of(1990, Month.JANUARY, 1)),
                 respondentDobs);
     }
 

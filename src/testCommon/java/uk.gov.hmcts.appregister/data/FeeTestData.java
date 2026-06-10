@@ -19,7 +19,7 @@ public class FeeTestData
         Fee.FeeBuilder data = Fee.builder();
         data.reference(StringUtil.stripToMax(uniqueId.toString(), 12))
                 .description("description" + uniqueId)
-                .startDate(LocalDate.now())
+                .startDate(LocalDate.now(java.time.ZoneOffset.UTC))
                 .amount(BigDecimal.valueOf(20))
                 .build();
 

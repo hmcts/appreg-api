@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,7 +71,7 @@ class ListMaintenanceReportDataReaderTest {
         ListMaintenanceReportRow row = pages.getFirst().getFirst();
 
         Assertions.assertEquals(123L, row.getApplicationListId());
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Westminster", row.getCourthouseName());
         Assertions.assertEquals("Other court", row.getOtherCourthouse());
         Assertions.assertEquals("01", row.getCjaCode());
@@ -103,8 +104,8 @@ class ListMaintenanceReportDataReaderTest {
 
         ListMaintenanceFilterDto filter =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         ListMaintenanceReportDataReader reader =
                 new ListMaintenanceReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<ListMaintenanceReportRow> pageReader =
@@ -151,8 +152,8 @@ class ListMaintenanceReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("Morning", parameters.getValue("listDescription"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
@@ -161,7 +162,8 @@ class ListMaintenanceReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
             Assertions.assertEquals(123L, parameters.getValue("lastApplicationListId"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
@@ -176,8 +178,8 @@ class ListMaintenanceReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new ListMaintenanceFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .listDescription("Morning")
                 .location(location);
     }
@@ -197,7 +199,7 @@ class ListMaintenanceReportDataReaderTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.getLong("al_id")).thenReturn(123L);
         when(resultSet.getObject("list_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2018, 5, 18));
+                .thenReturn(LocalDate.of(2018, Month.MAY, 18));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Westminster");
         when(resultSet.getString("other_courthouse")).thenReturn("Other court");
         when(resultSet.getString("cja_code")).thenReturn("01");

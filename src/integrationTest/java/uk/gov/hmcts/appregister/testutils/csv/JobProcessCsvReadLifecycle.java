@@ -60,8 +60,8 @@ public class JobProcessCsvReadLifecycle implements AsyncJobLifecycle<Application
                     applicationCodeCsvPojo.getFeedue() != null && applicationCodeCsvPojo.getFeedue()
                             ? YesOrNo.YES
                             : YesOrNo.NO);
-            applicationCode.setStartDate(LocalDate.now().minusDays(1));
-            applicationCode.setEndDate(LocalDate.now().plusDays(1));
+            applicationCode.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
+            applicationCode.setEndDate(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1));
 
             // save the code
             applicationCodeRepository.save(applicationCode);

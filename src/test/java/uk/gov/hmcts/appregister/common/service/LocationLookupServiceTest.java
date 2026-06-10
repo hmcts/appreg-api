@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 @ExtendWith(MockitoExtension.class)
 class LocationLookupServiceTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;

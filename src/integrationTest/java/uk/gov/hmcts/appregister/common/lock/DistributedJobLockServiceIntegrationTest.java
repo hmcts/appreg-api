@@ -73,7 +73,7 @@ class DistributedJobLockServiceIntegrationTest extends BaseRepositoryTest {
         DatabaseJob job = databaseJobRepository.findByName(JOB_NAME);
         job.setEnabled(YesOrNo.YES);
         job.setMetadata("stale-token");
-        job.setLastRan(OffsetDateTime.now().minusMinutes(10));
+        job.setLastRan(OffsetDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(10));
         databaseJobRepository.save(job);
 
         var reacquiredLock = distributedJobLockService.tryAcquire(JOB_NAME, LEASE_DURATION);

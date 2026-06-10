@@ -7,6 +7,7 @@ import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
@@ -73,7 +74,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -137,7 +138,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     @Test
     void givenTooManyMagistrates_whenCreateEntry_thenReturn400() throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         entryCreateDto.setOfficials(
                 List.of(
                         buildOfficial("Ms", "Maya", "One", OfficialType.MAGISTRATE),
@@ -162,7 +163,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     @Test
     void givenTooManyCourtOfficials_whenCreateEntry_thenReturn400() throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         entryCreateDto.setOfficials(
                 List.of(
                         buildOfficial("Ms", "Maya", "One", OfficialType.MAGISTRATE),
@@ -189,7 +190,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
         entryCreateDto.setOfficials(List.of());
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
 
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(createAdminToken(), entryCreateDto, surnameToLookup);
@@ -220,7 +221,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
         // set to current date for assertion to match
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
         validateEntryCreationResponse(
@@ -313,7 +314,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
-        feeStatus.setStatusDate(LocalDate.now());
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
         feeStatus.setPaymentReference("123451234512345");
 
         var tokenGenerator = createAdminToken();
@@ -331,7 +332,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     void
             givenOverlappingActiveApplicationCodesAndFees_whenCreateListEntry_thenPreferNullEndDateRecords()
                     throws Exception {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String applicationCodeValue = "ZZ90001";
         String feeReference = "ZZ1.1";
 
@@ -446,7 +447,9 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setWordingFields(
                 List.of(
                         new TemplateSubstitution("Premises Address", "test wording"),
-                        new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
+                        new TemplateSubstitution(
+                                "Premises Date",
+                                LocalDate.now(java.time.ZoneOffset.UTC).toString())));
 
         var tokenGenerator = createAdminToken();
 
@@ -676,7 +679,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
-        feeStatus.setStatusDate(LocalDate.now());
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
         feeStatus.setPaymentReference("1234512345123456");
 
         var tokenGenerator = createAdminToken();
@@ -886,7 +889,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
@@ -2077,7 +2080,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         var createListReq =
                 new ApplicationListCreateDto()
-                        .date(LocalDate.now().plusDays(1))
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1))
                         .time(LocalTime.of(10, 0))
                         .description("SEQ TEST LIST " + UUID.randomUUID())
                         .status(ApplicationListStatus.OPEN)
@@ -2471,7 +2474,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         val feeStatus = new FeeStatus();
         feeStatus.setPaymentReference("PAY-CRT-001");
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
-        feeStatus.setStatusDate(LocalDate.of(2026, 1, 15));
+        feeStatus.setStatusDate(LocalDate.of(2026, Month.JANUARY, 15));
         entryCreateDto.setFeeStatuses(List.of(feeStatus));
 
         val tokenGenerator = createAdminToken();
@@ -2691,7 +2694,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     void givenAFailureCreate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setLodgementDate(LocalDate.now().plusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1));
 
         TokenGenerator tokenGenerator = createAdminToken();
 

@@ -20,7 +20,7 @@ public class NationalCourtHouseData
         var data = NationalCourtHouse.builder();
         data.courtLocationCode(StringUtil.stripToMax(id.toString(), 10))
                 .name(StringUtil.stripToMax("name " + id, 100))
-                .startDate(LocalDate.now())
+                .startDate(LocalDate.now(java.time.ZoneOffset.UTC))
                 .courtType("CHOA");
 
         return data;

@@ -18,8 +18,8 @@ public class AppListTestData
         UUID uniqueId = UUID.randomUUID();
         return ApplicationList.builder()
                 .description("Description " + uniqueId)
-                .date(LocalDate.now())
-                .time(LocalTime.now())
+                .date(LocalDate.now(java.time.ZoneOffset.UTC))
+                .time(LocalTime.now(java.time.Clock.systemUTC()))
                 .cja(new CriminalJusticeTestData().someMinimal().build());
     }
 

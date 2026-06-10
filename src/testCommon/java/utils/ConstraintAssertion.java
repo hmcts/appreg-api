@@ -8,6 +8,10 @@ import org.junit.jupiter.api.Assertions;
  * A class that allows validation constraints to be asserted in a consistent way across tests.
  */
 public class ConstraintAssertion {
+    private ConstraintAssertion() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * Asserts a constraint name and value using a list of constraint violations.
      *

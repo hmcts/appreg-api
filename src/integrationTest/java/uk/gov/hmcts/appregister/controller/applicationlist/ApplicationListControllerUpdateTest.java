@@ -563,8 +563,9 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
     void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
-        courtLocationGetDetailDto.setStartDate(LocalDate.now());
-        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        courtLocationGetDetailDto.setEndDate(
+                JsonNullable.of(LocalDate.now(java.time.ZoneOffset.UTC)));
         courtLocationGetDetailDto.setName("Manchester Crown Court");
 
         String[] createdLocation = createAppListUsingRestApi();
@@ -814,8 +815,9 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
 
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
-        courtLocationGetDetailDto.setStartDate(LocalDate.now());
-        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        courtLocationGetDetailDto.setEndDate(
+                JsonNullable.of(LocalDate.now(java.time.ZoneOffset.UTC)));
         courtLocationGetDetailDto.setName("Manchester Crown Court");
         var req =
                 new ApplicationListUpdateDto()
@@ -1145,7 +1147,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
                         (dto) -> {
                             FeeStatus feeStatus = new FeeStatus();
-                            feeStatus.setStatusDate(LocalDate.now());
+                            feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
                             // not paid so should fail
                             feeStatus.setPaymentStatus(PaymentStatus.UNDERTAKEN);
@@ -1188,7 +1190,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
                         (dto) -> {
                             FeeStatus feeStatus = new FeeStatus();
-                            feeStatus.setStatusDate(LocalDate.now());
+                            feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
                             // set to REMITTED so the list can be closed
                             feeStatus.setPaymentStatus(PaymentStatus.REMITTED);
                             dto.setFeeStatuses(List.of(feeStatus));

@@ -19,7 +19,7 @@ class StandardApplicantControllerSecurityTest extends AbstractSecurityController
                                                 + AbstractStandardApplicantControllerCrudTest
                                                         .APPCODE_CODE
                                                 + "?date="
-                                                + LocalDate.now()))
+                                                + LocalDate.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.HashMap;
@@ -80,7 +81,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "STD_APPLICANT_CODE",
                 "",
                 "{AW62958}",
-                OffsetDateTime.now(),
+                OffsetDateTime.now(java.time.ZoneOffset.UTC),
                 ALICE_DISPLAY_USERNAME,
                 ALICE_USER_ID);
         insertDataAuditRow(
@@ -89,7 +90,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "RESP_NAME",
                 "",
                 "Second page value",
-                OffsetDateTime.now().plusSeconds(1),
+                OffsetDateTime.now(java.time.ZoneOffset.UTC).plusSeconds(1),
                 ALICE_DISPLAY_USERNAME,
                 ALICE_USER_ID);
         insertDataAuditRow(
@@ -98,7 +99,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "RESP_ADDRESSLINE1",
                 "",
                 "Third page value",
-                OffsetDateTime.now().plusSeconds(2),
+                OffsetDateTime.now(java.time.ZoneOffset.UTC).plusSeconds(2),
                 ALICE_DISPLAY_USERNAME,
                 ALICE_USER_ID);
         insertDataAuditRow(
@@ -107,7 +108,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "STD_APPLICANT_CODE",
                 "AW62958",
                 "AW62959",
-                OffsetDateTime.now(),
+                OffsetDateTime.now(java.time.ZoneOffset.UTC),
                 ALICE_DISPLAY_USERNAME,
                 ALICE_USER_ID);
         insertDataAuditRow(
@@ -116,7 +117,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "RESP_NAME",
                 "",
                 "Hidden",
-                OffsetDateTime.now(),
+                OffsetDateTime.now(java.time.ZoneOffset.UTC),
                 BOB_DISPLAY_USERNAME,
                 BOB_USER_ID);
         insertDataAuditRow(
@@ -125,13 +126,13 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "AL_ID",
                 "",
                 "12345",
-                OffsetDateTime.now(),
+                OffsetDateTime.now(java.time.ZoneOffset.UTC),
                 ALICE_DISPLAY_USERNAME,
                 ALICE_USER_ID);
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         ActivityAuditFilterDto request =
                 new ActivityAuditFilterDto()
                         .dateFrom(today)
@@ -217,8 +218,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         FeesReportFilterDto request =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1))
                         .applicantName("Smith")
                         .location(new LegacyReportLocation().courtLocationCode("CCC003"));
 
@@ -278,7 +279,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     @Test
     void givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
             throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 5, 18);
+        LocalDate listDate = LocalDate.of(2026, Month.MAY, 18);
         insertFeesReportApplication(
                 listDate, null, "ArcPerson", "Singlefield", "ARC person fee wording");
         insertFeesReportApplication(
@@ -304,7 +305,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     @Test
     void givenFeesReportApplicantNameMatchesOrganisation_whenCreatingReport_thenCsvIncludesEntry()
             throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 5, 19);
+        LocalDate listDate = LocalDate.of(2026, Month.MAY, 19);
         insertFeesReportApplication(
                 listDate, null, "ArcPerson", "Unmatched", "ARC person fee wording");
         insertFeesReportApplication(
@@ -330,7 +331,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     @Test
     void givenFeesReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
             throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 5, 20);
+        LocalDate listDate = LocalDate.of(2026, Month.MAY, 20);
         insertFeesReportApplication(
                 listDate,
                 null,
@@ -370,8 +371,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         FeesReportFilterDto request =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("QX")
@@ -396,8 +397,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         FeesReportFilterDto request =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .courtLocationCode("CCC003")
@@ -427,8 +428,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         FeesReportFilterDto request =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(new LegacyReportLocation().courtLocationCode("ZZ999"));
 
         Response createResponse =
@@ -449,8 +450,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         FeesReportFilterDto request =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("Z1")
@@ -480,10 +481,10 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         SearchWarrantsReportFilterDto request =
                 new SearchWarrantsReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1))
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1))
                         .location(new LegacyReportLocation().courtLocationCode("CCC003"));
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -554,8 +555,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         SearchWarrantsReportFilterDto request =
                 new SearchWarrantsReportFilterDto()
-                        .dateFrom(LocalDate.of(2025, 10, 1))
-                        .dateTo(LocalDate.of(2025, 10, 31))
+                        .dateFrom(LocalDate.of(2025, Month.OCTOBER, 1))
+                        .dateTo(LocalDate.of(2025, Month.OCTOBER, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .courtLocationCode("LOC123")
@@ -598,7 +599,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     void
             givenValidDurationReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 4, 10);
+        LocalDate listDate = LocalDate.of(2026, Month.APRIL, 10);
         insertApplicationListRow(
                 "CLOSED",
                 listDate,
@@ -615,8 +616,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         DurationFilterDto request =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 28))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("CD")
@@ -692,8 +693,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         DurationFilterDto request =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("QX")
@@ -718,8 +719,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         DurationFilterDto request =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(new LegacyReportLocation().courtLocationCode("ZZ999"));
 
         Response createResponse =
@@ -741,8 +742,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         DurationFilterDto request =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("Z2")
@@ -771,8 +772,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28));
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 28));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -827,17 +828,17 @@ class ReportingControllerPostTest extends BaseIntegration {
                     throws Exception {
 
         // Setup
-        long id = insertApplicationList(LocalDate.of(2026, 1, 1), "", "", "", null);
-        insertEntry(LocalDate.of(2026, 1, 1), id, "Test applicant", 1, "N");
-        insertEntry(LocalDate.of(2026, 1, 1), id, "Test applicant 2", 2, null);
+        long id = insertApplicationList(LocalDate.of(2026, Month.JANUARY, 1), "", "", "", null);
+        insertEntry(LocalDate.of(2026, Month.JANUARY, 1), id, "Test applicant", 1, "N");
+        insertEntry(LocalDate.of(2026, Month.JANUARY, 1), id, "Test applicant 2", 2, null);
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 1, 1))
-                        .dateTo(LocalDate.of(2026, 1, 31));
+                        .dateFrom(LocalDate.of(2026, Month.JANUARY, 1))
+                        .dateTo(LocalDate.of(2026, Month.JANUARY, 31));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -896,7 +897,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         val listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
-                        LocalDate.of(2026, 4, 15),
+                        LocalDate.of(2026, Month.APRIL, 15),
                         "TH",
                         "Town Hall",
                         "Workload Report - Other Location",
@@ -906,7 +907,12 @@ class ReportingControllerPostTest extends BaseIntegration {
                         3);
 
         val entryId =
-                insertEntry(LocalDate.of(2026, 4, 15), listId, "Workload Report Applicant", 1, "N");
+                insertEntry(
+                        LocalDate.of(2026, Month.APRIL, 15),
+                        listId,
+                        "Workload Report Applicant",
+                        1,
+                        "N");
         insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
         insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
         insertOfficial(entryId, "M", "Mr", "Test", "Workload");
@@ -922,8 +928,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 15))
-                        .dateTo(LocalDate.of(2026, 4, 15))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 15))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 15))
                         .location(location);
 
         Response createResponse =
@@ -978,7 +984,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         val listId =
                 insertApplicationListRowReturningId(
                         "CLOSED",
-                        LocalDate.of(2026, 4, 16),
+                        LocalDate.of(2026, Month.APRIL, 16),
                         "TH",
                         "Town Hall",
                         "Workload Report - CJA Code Only",
@@ -988,7 +994,12 @@ class ReportingControllerPostTest extends BaseIntegration {
                         3);
 
         val entryId =
-                insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1, "N");
+                insertEntry(
+                        LocalDate.of(2026, Month.APRIL, 16),
+                        listId,
+                        "Workload Report Applicant",
+                        1,
+                        "N");
         insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
         insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
         insertOfficial(entryId, "M", "Mr", "Test", "Workload");
@@ -1004,8 +1015,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 16))
-                        .dateTo(LocalDate.of(2026, 4, 16))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 16))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 16))
                         .location(location);
 
         Response createResponse =
@@ -1055,7 +1066,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     @Test
     void givenWorkloadReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
             throws Exception {
-        val listDate = LocalDate.of(2026, 6, 18);
+        val listDate = LocalDate.of(2026, Month.JUNE, 18);
         val includedApplicant = "ARCPOC 1403 Workload Included";
         val excludedApplicant = "ARCPOC 1403 Workload Excluded";
         val includedLocation = "ARCPOC 1403 Workload Hall";
@@ -1109,7 +1120,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     public void
             givenSingleMagistrateOnSecondListEntry_whenCreatingWorkloadReport_thenMagistrateAppearsInFirstColumn()
                     throws Exception {
-        val listDate = LocalDate.of(2026, 9, 1); // fixes report date
+        val listDate = LocalDate.of(2026, Month.SEPTEMBER, 1); // fixes report date
         val applicantName = "Workload Second Entry Applicant"; // identifies target row
         val listId =
                 insertApplicationList(
@@ -1138,7 +1149,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     public void
             givenMultipleMagistratesOnSameEntry_whenCreatingWorkloadReport_thenEachMagistrateAppearsInSeparateColumn()
                     throws Exception {
-        val listDate = LocalDate.of(2026, 9, 2); // fixes report date
+        val listDate = LocalDate.of(2026, Month.SEPTEMBER, 2); // fixes report date
         val applicantName = "Workload Multiple Magistrates Applicant";
         val appListId =
                 insertApplicationList(
@@ -1187,8 +1198,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 28))
                         .location(location);
 
         Response createResponse =
@@ -1214,8 +1225,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         WorkloadFilterDto request =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 28))
                         .location(location);
 
         Response createResponse =
@@ -1231,7 +1242,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     void
             givenWorkloadEntryHasMultipleResolutionsAndOfficials_whenCreatingReport_thenSingleCsvRowContainsAllData()
                     throws Exception {
-        val listDate = LocalDate.of(2026, 8, 17);
+        val listDate = LocalDate.of(2026, Month.AUGUST, 17);
         val applicantName = "Workload Multi Resolution Applicant";
         val applicantId = insertNameAddress(applicantName, null, null, null, "Workload Street");
         val respondentId =
@@ -1274,7 +1285,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     @Test
     void givenValidPrivateProsecutorsIndexRequest_whenCreatingReport_thenCsvCanBeDownloaded()
             throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 4, 11);
+        LocalDate listDate = LocalDate.of(2026, Month.APRIL, 11);
         insertPrivateProsecutorsIndexApplication(listDate);
 
         TokenGenerator tokenGenerator =
@@ -1282,8 +1293,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         PrivateProsecutorsIndexFilterDto request =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 28))
                         .applicantSurname("Legacy")
                         .respondentOrganisationName("Respondent Org")
                         .location(
@@ -1378,7 +1389,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     void
             givenValidPrivateProsecutorsIndexRequestForStandardApplicant_whenCreatingReport_thenCsvCanBeDownloaded()
                     throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 4, 12);
+        LocalDate listDate = LocalDate.of(2026, Month.APRIL, 12);
         insertPrivateProsecutorsIndexStandardApplicantApplication(listDate);
 
         TokenGenerator tokenGenerator =
@@ -1386,8 +1397,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         PrivateProsecutorsIndexFilterDto request =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 28))
                         .standardApplicantName("Standards")
                         .respondentOrganisationName("Standard Respondent")
                         .location(
@@ -1468,7 +1479,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     void
             givenDateOnlyPrivateProsecutorsIndexRequest_whenCreatingReport_thenStandardApplicantNameIsPopulated()
                     throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 4, 13);
+        LocalDate listDate = LocalDate.of(2026, Month.APRIL, 13);
         insertPrivateProsecutorsIndexIndividualStandardApplicantApplication(listDate);
 
         TokenGenerator tokenGenerator =
@@ -1534,8 +1545,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         PrivateProsecutorsIndexFilterDto request =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .applicantSurname(" ")
                         .respondentFirstName(" ")
                         .location(new LegacyReportLocation().cjaCode(" "));
@@ -1565,8 +1576,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         PrivateProsecutorsIndexFilterDto request =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .applicantSurname("x y");
 
         Response createResponse =
@@ -1615,7 +1626,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     void
             givenValidListMaintenanceReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
-        LocalDate listDate = LocalDate.of(2026, 4, 11);
+        LocalDate listDate = LocalDate.of(2026, Month.APRIL, 11);
         Long matchingListId =
                 insertApplicationListRowReturningId(
                         "OPEN",
@@ -1655,8 +1666,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         ListMaintenanceFilterDto request =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 30))
-                        .dateTo(LocalDate.of(2026, 4, 1))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 30))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 1))
                         .listDescription("MAINTENANCE")
                         .location(
                                 new LegacyReportLocation()
@@ -1744,7 +1755,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         String description = "LM boundary report";
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, Month.JUNE, 1),
                 "AAA001",
                 null,
                 description,
@@ -1754,7 +1765,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 3);
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 6, 30),
+                LocalDate.of(2026, Month.JUNE, 30),
                 "AAA002",
                 null,
                 description,
@@ -1764,7 +1775,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 3);
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, Month.JULY, 1),
                 "AAA003",
                 null,
                 description,
@@ -1776,8 +1787,8 @@ class ReportingControllerPostTest extends BaseIntegration {
         String report =
                 createAndDownloadListMaintenanceReport(
                         new ListMaintenanceFilterDto()
-                                .dateFrom(LocalDate.of(2026, 6, 1))
-                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .dateFrom(LocalDate.of(2026, Month.JUNE, 1))
+                                .dateTo(LocalDate.of(2026, Month.JUNE, 30))
                                 .listDescription(description));
 
         assertThat(report).contains("01/06/2026,AAA001 - Boundary Start Court");
@@ -1791,7 +1802,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         String description = "LM court filter report";
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 6, 15),
+                LocalDate.of(2026, Month.JUNE, 15),
                 "CCC003",
                 null,
                 description,
@@ -1801,7 +1812,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 3);
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 6, 15),
+                LocalDate.of(2026, Month.JUNE, 15),
                 "BCC006",
                 null,
                 description,
@@ -1813,8 +1824,8 @@ class ReportingControllerPostTest extends BaseIntegration {
         String report =
                 createAndDownloadListMaintenanceReport(
                         new ListMaintenanceFilterDto()
-                                .dateFrom(LocalDate.of(2026, 6, 1))
-                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .dateFrom(LocalDate.of(2026, Month.JUNE, 1))
+                                .dateTo(LocalDate.of(2026, Month.JUNE, 30))
                                 .listDescription(description)
                                 .location(new LegacyReportLocation().courtLocationCode("CCC003")));
 
@@ -1829,7 +1840,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         String description = "LM other location report";
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 6, 15),
+                LocalDate.of(2026, Month.JUNE, 15),
                 null,
                 "Village Hall",
                 description,
@@ -1839,7 +1850,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 3);
         insertApplicationListRow(
                 "OPEN",
-                LocalDate.of(2026, 6, 15),
+                LocalDate.of(2026, Month.JUNE, 15),
                 null,
                 "Village Hall",
                 description,
@@ -1851,8 +1862,8 @@ class ReportingControllerPostTest extends BaseIntegration {
         String report =
                 createAndDownloadListMaintenanceReport(
                         new ListMaintenanceFilterDto()
-                                .dateFrom(LocalDate.of(2026, 6, 1))
-                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .dateFrom(LocalDate.of(2026, Month.JUNE, 1))
+                                .dateTo(LocalDate.of(2026, Month.JUNE, 30))
                                 .listDescription(description)
                                 .location(
                                         new LegacyReportLocation()
@@ -1869,8 +1880,8 @@ class ReportingControllerPostTest extends BaseIntegration {
         String report =
                 createAndDownloadListMaintenanceReport(
                         new ListMaintenanceFilterDto()
-                                .dateFrom(LocalDate.of(2026, 6, 1))
-                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .dateFrom(LocalDate.of(2026, Month.JUNE, 1))
+                                .dateTo(LocalDate.of(2026, Month.JUNE, 30))
                                 .listDescription("LM no matching report rows"));
 
         assertThat(report).contains("List Maintenance Report");
@@ -1889,8 +1900,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         ListMaintenanceFilterDto request =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("QX")
@@ -1915,8 +1926,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         ListMaintenanceFilterDto request =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(new LegacyReportLocation().courtLocationCode("ZZ999"));
 
         Response createResponse =
@@ -1938,8 +1949,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         ListMaintenanceFilterDto request =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
                                         .cjaCode("Z3")
@@ -1967,8 +1978,8 @@ class ReportingControllerPostTest extends BaseIntegration {
 
         ListMaintenanceFilterDto request =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .listDescription(" ")
                         .location(new LegacyReportLocation().cjaCode(" "));
 

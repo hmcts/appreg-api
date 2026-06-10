@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +45,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
 
         Response resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + CARDIFF_CODE, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + CARDIFF_CODE,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
                         token);
 
         resp.then().statusCode(200);
@@ -71,7 +74,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        LocalDate.now().toString(),
+                        LocalDate.now(java.time.ZoneOffset.UTC).toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
@@ -86,7 +89,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
 
         var resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + BRISTOL_CODE, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + BRISTOL_CODE,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
                         token);
 
         resp.then().statusCode(200);
@@ -114,7 +119,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        LocalDate.now().toString(),
+                        LocalDate.now(java.time.ZoneOffset.UTC).toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
@@ -130,7 +135,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         var invalid = "ZZZ999";
         var resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + invalid, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + invalid,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
                         token);
 
         resp.then().statusCode(404);
@@ -144,7 +151,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
     void givenDuplicateCourtLocations_whenGetCourtLocationByCodeAndDate_thenNewestRecordWins()
             throws Exception {
         String code = "CRTNUL001";
-        LocalDate queryDate = LocalDate.now();
+        LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
         saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
         saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
 
@@ -156,7 +163,10 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
 
         Response resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + code, OffsetDateTime.now()), token);
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + code,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
+                        token);
 
         resp.then().statusCode(200);
 
@@ -172,7 +182,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                     throws Exception {
         var code = "CLDET001";
         var name = "Created Detail Court";
-        var startDate = LocalDate.of(2025, 2, 3);
+        var startDate = LocalDate.of(2025, Month.FEBRUARY, 3);
         createCourtLocation(code, name, startDate, null);
 
         var token =
@@ -340,7 +350,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
     void givenDuplicateCourtLocations_whenGetCourtLocations_thenCallerSortControlsPageOrder()
             throws Exception {
         String code = "CRTNUL001";
-        LocalDate queryDate = LocalDate.now();
+        LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
         saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
         saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
 
@@ -374,7 +384,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         var code = "CLSUM001";
         var name = "Created Summary Court";
-        createCourtLocation(code, name, LocalDate.of(2025, 3, 4), null);
+        createCourtLocation(code, name, LocalDate.of(2025, Month.MARCH, 4), null);
 
         var token =
                 getATokenWithValidCredentials()

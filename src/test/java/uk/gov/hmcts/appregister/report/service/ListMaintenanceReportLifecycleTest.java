@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
@@ -75,7 +76,7 @@ class ListMaintenanceReportLifecycleTest {
 
     private ListMaintenanceReportRow populatedRow() {
         return ListMaintenanceReportRow.builder()
-                .listDate(LocalDate.of(2018, 5, 18))
+                .listDate(LocalDate.of(2018, Month.MAY, 18))
                 .courthouseName("B01IX00 - Westminster")
                 .otherCourthouse("Other court")
                 .cjaCode("01")

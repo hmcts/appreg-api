@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,8 +76,9 @@ class ActivityAuditReportDataReaderTest {
         Assertions.assertEquals("APPLICATION_CODE", row.getColumnName());
         Assertions.assertEquals("old", row.getOldValue());
         Assertions.assertEquals("new", row.getNewValue());
-        Assertions.assertEquals(LocalDate.of(2026, 4, 1), row.getCreatedDate());
-        Assertions.assertEquals(LocalDateTime.of(2026, 4, 1, 10, 15), row.getCreatedDateTime());
+        Assertions.assertEquals(LocalDate.of(2026, Month.APRIL, 1), row.getCreatedDate());
+        Assertions.assertEquals(
+                LocalDateTime.of(2026, Month.APRIL, 1, 10, 15), row.getCreatedDateTime());
         Assertions.assertEquals("caseworker@example.com", row.getUserName());
 
         Assertions.assertEquals(2, parameterSources.size());
@@ -123,8 +125,9 @@ class ActivityAuditReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2026, 4, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2026, 4, 30), parameters.getValue("dateTo"));
+        Assertions.assertEquals(
+                LocalDate.of(2026, Month.APRIL, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2026, Month.APRIL, 30), parameters.getValue("dateTo"));
         Assertions.assertEquals("caseworker@example.com", parameters.getValue("username"));
         Assertions.assertEquals(
                 List.of(
@@ -159,7 +162,7 @@ class ActivityAuditReportDataReaderTest {
 
         if (expectedCursor) {
             Assertions.assertEquals(
-                    LocalDateTime.of(2026, 4, 1, 10, 15),
+                    LocalDateTime.of(2026, Month.APRIL, 1, 10, 15),
                     parameters.getValue("lastCreatedDateTime"));
             Assertions.assertEquals(123L, parameters.getValue("lastDataId"));
         } else {
@@ -194,8 +197,8 @@ class ActivityAuditReportDataReaderTest {
 
     private ActivityAuditFilterDto filter() {
         return new ActivityAuditFilterDto()
-                .dateFrom(LocalDate.of(2026, 4, 1))
-                .dateTo(LocalDate.of(2026, 4, 30))
+                .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                 .username("caseworker@example.com")
                 .activityTypes(
                         List.of(
@@ -214,7 +217,7 @@ class ActivityAuditReportDataReaderTest {
                     ActivityAuditReportRow.builder()
                             .dataId(index)
                             .activityOrder(0)
-                            .createdDateTime(LocalDateTime.of(2026, 4, 1, 10, 15))
+                            .createdDateTime(LocalDateTime.of(2026, Month.APRIL, 1, 10, 15))
                             .build());
         }
         return rows;
@@ -230,9 +233,9 @@ class ActivityAuditReportDataReaderTest {
         when(resultSet.getString("old_value")).thenReturn("old");
         when(resultSet.getString("new_value")).thenReturn("new");
         when(resultSet.getObject("created_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2026, 4, 1));
+                .thenReturn(LocalDate.of(2026, Month.APRIL, 1));
         when(resultSet.getObject("created_date_time", LocalDateTime.class))
-                .thenReturn(LocalDateTime.of(2026, 4, 1, 10, 15));
+                .thenReturn(LocalDateTime.of(2026, Month.APRIL, 1, 10, 15));
         when(resultSet.getString("user_name")).thenReturn("caseworker@example.com");
         return resultSet;
     }

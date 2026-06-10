@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
@@ -64,15 +63,6 @@ public class ApplicationEntryResultUpdateValidator
         }
 
         log.debug("application list entry result is found {}", validatable.getResultId());
-    }
-
-    @Override
-    public <R> R validate(
-            PayloadForUpdateEntryResult validatable,
-            BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
-                    validateSuccess) {
-        // Delegate to base validate which will call getResult(...) to build the success object.
-        return super.validate(validatable, validateSuccess);
     }
 
     @Override

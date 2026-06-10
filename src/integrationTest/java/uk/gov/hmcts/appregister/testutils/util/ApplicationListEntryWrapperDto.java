@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 public class ApplicationListEntryWrapperDto {
     private EntryCreateDto entryCreateDto;
     private EntryUpdateDto entryUpdateDto;
-    private LocalDate lodgementDate = LocalDate.now();
+    private LocalDate lodgementDate = LocalDate.now(java.time.ZoneOffset.UTC);
 
     public ApplicationListEntryWrapperDto(EntryCreateDto entryCreateDto) {
         this.entryCreateDto = entryCreateDto;

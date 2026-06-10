@@ -68,6 +68,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param validatable The validatable payload
      * @param validateSuccess The success function to call if validation is successful
      */
+    @Override
     public <R> R validate(T validatable, BiFunction<T, O, R> validateSuccess) {
 
         // ensure mutual exclusivity of the respondent
@@ -359,14 +360,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param dto The dto to validate
      */
     private void ensureRespondentMutualExclusion(T dto) {
-        if (getRespondent(dto) != null) {
-            if (!(getRespondent(dto) != null && getRespondent(dto).getOrganisation() != null)
-                    ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
-                throw new AppRegistryException(
-                        AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
-                        "The respondent type can only be an organsisation or person %s"
-                                .formatted(getRespondent(dto)));
-            }
+        if (getRespondent(dto) != null
+                && !(getRespondent(dto) != null && getRespondent(dto).getOrganisation() != null)
+                        ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
+            throw new AppRegistryException(
+                    AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
+                    "The respondent type can only be an organsisation or person %s"
+                            .formatted(getRespondent(dto)));
         }
 
         log.debug("Validated respondent mutual exclusivity");
@@ -386,16 +386,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         LocalDate todayUk = currentBusinessDate();
         if (getApplicationCode(validatable) != null
                 && ApplicationCodeTypeEnum.isMatching(
-                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES,
-                        getApplicationCode(validatable))) {
-            // if the account number is null or empty then throw an error as we require
-            // an account number for enforcement fines codes
-            if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
-                throw new AppRegistryException(
-                        AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
-                        "Application number required for application code %s"
-                                .formatted(getApplicationCode(validatable)));
-            }
+                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES, getApplicationCode(validatable))
+                && (getAccountNumber(validatable) == null
+                        || getAccountNumber(validatable).isEmpty())) {
+            throw new AppRegistryException(
+                    AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                    "Application number required for application code %s"
+                            .formatted(getApplicationCode(validatable)));
         }
 
         // validate that the application code exists and is valid for today

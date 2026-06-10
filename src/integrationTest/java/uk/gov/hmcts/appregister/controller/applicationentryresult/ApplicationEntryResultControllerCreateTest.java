@@ -259,7 +259,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         var entry = createEntry(list);
         persistance.save(entry);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
         saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
@@ -310,7 +310,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         var entry = createEntry(list);
         persistance.save(entry);
 
-        LocalDate date = LocalDate.now();
+        LocalDate date = LocalDate.now(java.time.ZoneOffset.UTC);
 
         var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
         var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));

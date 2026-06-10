@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
+import java.time.Month;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -150,7 +151,7 @@ class ApplicantMapperTest {
         var person = new RespondentPerson();
         person.setName(fullName);
         person.setContactDetails(contactDetails);
-        person.setDateOfBirth(LocalDate.of(1980, 1, 2));
+        person.setDateOfBirth(LocalDate.of(1980, Month.JANUARY, 2));
 
         var respondent = new Respondent();
         respondent.setPerson(person);
@@ -161,7 +162,7 @@ class ApplicantMapperTest {
         assertEquals("John", mapped.getFirstName());
         assertEquals("Quincy", mapped.getMiddleName());
         assertEquals("Public", mapped.getLastName());
-        assertEquals(LocalDate.of(1980, 1, 2), mapped.getDateOfBirth());
+        assertEquals(LocalDate.of(1980, Month.JANUARY, 2), mapped.getDateOfBirth());
     }
 
     @Test

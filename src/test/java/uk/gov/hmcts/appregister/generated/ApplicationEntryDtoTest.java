@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -156,7 +157,7 @@ class ApplicationEntryDtoTest {
                         List.of(
                                 new BulkFeeDetailsDto()
                                         .paymentStatus(PaymentStatus.PAID)
-                                        .statusDate(LocalDate.of(2025, 10, 7))
+                                        .statusDate(LocalDate.of(2025, Month.OCTOBER, 7))
                                         .paymentReference("PAY-001")
                                         .hasOffsiteFee(false)));
     }

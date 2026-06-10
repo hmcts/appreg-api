@@ -95,7 +95,8 @@ class AsyncJobServiceImplTest extends BaseIntegration {
                             for (int i = 0; i < data.size(); i++) {
                                 List<ApplicationCode> csvBaseAppCodeLst =
                                         applicationCodeRepository.findByCodeAndDate(
-                                                data.get(i).getCode(), LocalDate.now());
+                                                data.get(i).getCode(),
+                                                LocalDate.now(java.time.ZoneOffset.UTC));
                                 Assertions.assertEquals(1, csvBaseAppCodeLst.size());
                                 Assertions.assertEquals(
                                         data.get(i).getCode(), csvBaseAppCodeLst.get(0).getCode());
@@ -123,7 +124,8 @@ class AsyncJobServiceImplTest extends BaseIntegration {
     /** Supplies generated application codes. */
     Function<Pageable, Page<ApplicationCode>> getApplicationCodesFunction =
             (pageable) -> {
-                return applicationCodeRepository.search("CODE", null, LocalDate.now(), pageable);
+                return applicationCodeRepository.search(
+                        "CODE", null, LocalDate.now(java.time.ZoneOffset.UTC), pageable);
             };
 
     @Test

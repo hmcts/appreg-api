@@ -262,7 +262,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
     void givenMultipleActiveResolutionCodes_whenUpdate_thenPrefersNullEndDate() throws Exception {
         var existingResult = givenExistingEntryResult();
         String currentEtag = EtagUtil.generateEtag(List.of(existingResult.entryResult()));
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
         saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
@@ -75,7 +76,7 @@ class FeesReportLifecycleTest {
 
     private FeesReportRow populatedRow() {
         return FeesReportRow.builder()
-                .listDate(LocalDate.of(2018, 5, 18))
+                .listDate(LocalDate.of(2018, Month.MAY, 18))
                 .courthouseName("B01IX00 - Westminster")
                 .otherCourthouse("Other court")
                 .cjaCode("01")
@@ -87,7 +88,7 @@ class FeesReportLifecycleTest {
                 .offSiteFeeValue(BigDecimal.ONE)
                 .totalFeeValue(BigDecimal.valueOf(21.125))
                 .feeStatus("Due")
-                .feeStatusDate(LocalDate.of(2018, 12, 3))
+                .feeStatusDate(LocalDate.of(2018, Month.DECEMBER, 3))
                 .paymentReference("REF-1")
                 .build();
     }

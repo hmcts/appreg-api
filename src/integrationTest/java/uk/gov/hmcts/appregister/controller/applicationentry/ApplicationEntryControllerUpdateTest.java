@@ -7,6 +7,7 @@ import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -214,7 +215,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void
             givenOverlappingActiveApplicationCodesAndFees_whenUpdateListEntry_thenPreferNullEndDateRecords()
                     throws Exception {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String applicationCodeValue = "ZZ90002";
         String feeReference = "ZZ2.1";
 
@@ -326,7 +327,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         FeeStatus feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(DUE);
         feeStatus.setPaymentReference("PAYREF-123");
-        feeStatus.setStatusDate(LocalDate.now());
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setFeeStatuses(List.of(feeStatus));
@@ -357,7 +358,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         FeeStatus feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
-        feeStatus.setStatusDate(LocalDate.now().plusDays(1));
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1));
 
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setFeeStatuses(List.of(feeStatus));
@@ -390,7 +391,9 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setWordingFields(
                 List.of(
                         new TemplateSubstitution("Premises Address", stringExceedLength),
-                        new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
+                        new TemplateSubstitution(
+                                "Premises Date",
+                                LocalDate.now(java.time.ZoneOffset.UTC).toString())));
 
         var tokenGenerator = createAdminToken();
         Response entryResponse = createListEntryWithAllData();
@@ -1054,7 +1057,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         val updatedFeeStatus = new FeeStatus();
         updatedFeeStatus.setPaymentReference("PAY-UPD-001");
         updatedFeeStatus.setPaymentStatus(PaymentStatus.REMITTED);
-        updatedFeeStatus.setStatusDate(LocalDate.of(2026, 2, 1));
+        updatedFeeStatus.setStatusDate(LocalDate.of(2026, Month.FEBRUARY, 1));
         entryUpdateDto.setFeeStatuses(List.of(updatedFeeStatus));
 
         val entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1091,7 +1094,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         val originalFeeStatus = new FeeStatus();
         originalFeeStatus.setPaymentReference("PAY-OLD-001");
         originalFeeStatus.setPaymentStatus(PaymentStatus.PAID);
-        originalFeeStatus.setStatusDate(LocalDate.of(2026, 1, 1));
+        originalFeeStatus.setStatusDate(LocalDate.of(2026, Month.JANUARY, 1));
         entryCreateDto.setFeeStatuses(List.of(originalFeeStatus));
 
         val tokenGenerator = createAdminToken();
@@ -1428,8 +1431,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         .cjaCode(null)
                         .durationHours(2)
                         .durationMinutes(23)
-                        .date(LocalDate.now())
-                        .time(LocalTime.now())
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC))
+                        .time(LocalTime.now(java.time.Clock.systemUTC()))
                         .description("description")
                         .status(ApplicationListStatus.CLOSED);
 
@@ -1538,8 +1541,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         .cjaCode(null)
                         .durationHours(2)
                         .durationMinutes(23)
-                        .date(LocalDate.now())
-                        .time(LocalTime.now())
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC))
+                        .time(LocalTime.now(java.time.Clock.systemUTC()))
                         .description("description")
                         .status(ApplicationListStatus.CLOSED);
 
@@ -1777,8 +1780,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         .cjaCode(null)
                         .durationHours(2)
                         .durationMinutes(23)
-                        .date(LocalDate.now())
-                        .time(LocalTime.now())
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC))
+                        .time(LocalTime.now(java.time.Clock.systemUTC()))
                         .description("description")
                         .status(ApplicationListStatus.CLOSED);
 

@@ -13,6 +13,7 @@ import io.restassured.specification.RequestSpecification;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -76,7 +77,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
     @BeforeEach
     void before() {
-        when(clock.instant()).thenReturn(Instant.now().plus(2, ChronoUnit.DAYS));
+        when(clock.instant())
+                .thenReturn(Instant.now(java.time.Clock.systemUTC()).plus(2, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
     }
@@ -102,7 +104,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
         // assert the data
         Assertions.assertEquals("APP001", returnedSa.getCode());
-        Assertions.assertEquals(LocalDate.now(), returnedSa.getStartDate());
+        Assertions.assertEquals(LocalDate.now(java.time.ZoneOffset.UTC), returnedSa.getStartDate());
         Assertions.assertTrue(returnedSa.getEndDate().isPresent());
         assertNull(returnedSa.getEndDate().get());
         Assertions.assertNotNull(returnedSa.getApplicant().getPerson().getName());
@@ -153,7 +155,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     @Test
     void givenSparsePersonStandardApplicant_whenGetStandardApplicantByCode_thenReturnExplicitNulls()
             throws Exception {
-        LocalDate activeDate = LocalDate.now();
+        LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
         String sparseCode = "A1348SA1";
         saveSparsePersonStandardApplicant(sparseCode, activeDate.minusDays(1), null);
 
@@ -204,7 +206,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
         // assert the data
         Assertions.assertEquals(APPCODE_CODE_ORGANISATION, returnedSa.getCode());
-        Assertions.assertEquals(LocalDate.now().minusDays(1), returnedSa.getStartDate());
+        Assertions.assertEquals(
+                LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1), returnedSa.getStartDate());
         Assertions.assertTrue(returnedSa.getEndDate().isPresent());
         assertNull(returnedSa.getEndDate().get());
         Assertions.assertEquals(
@@ -380,7 +383,10 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + DUPLICATE_APPCODE_CODE),
                         tokenGenerator.fetchTokenForRole(),
-                        rs -> rs.queryParam("date", LocalDate.now().minusDays(1)));
+                        rs ->
+                                rs.queryParam(
+                                        "date",
+                                        LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1)));
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -393,7 +399,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     void givenDuplicateCode_whenGetStandardApplicantByCode_thenReturnPreferredRecord()
             throws Exception {
         String code = "SANULL001";
-        LocalDate queryDate = LocalDate.now();
+        LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
         saveStandardApplicant(
                 code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
         saveStandardApplicant(code, "Open-Ended Applicant", queryDate.minusDays(1), null);
@@ -422,7 +428,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     void givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
             throws Exception {
         String code = "SANULL001";
-        LocalDate activeDate = LocalDate.now();
+        LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
         saveStandardApplicant(
                 code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
         saveStandardApplicant(code, "Open-Ended Applicant", activeDate.minusDays(1), null);
@@ -463,8 +469,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     void givenReversedDateRange_whenGetAllStandardApplicants_thenDatesAreNormalised()
             throws Exception {
         String code = "SAREV001";
-        LocalDate rangeStart = LocalDate.of(2024, 5, 6);
-        LocalDate rangeEnd = LocalDate.of(2025, 11, 6);
+        LocalDate rangeStart = LocalDate.of(2024, Month.MAY, 6);
+        LocalDate rangeEnd = LocalDate.of(2025, Month.NOVEMBER, 6);
         saveStandardApplicant(code, "Reversed Range Applicant", rangeEnd, null);
 
         TokenGenerator tokenGenerator =
@@ -503,8 +509,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         saveStandardApplicant(
                 code,
                 "Historical Range Applicant",
-                LocalDate.of(2025, 11, 6),
-                LocalDate.of(2025, 11, 20));
+                LocalDate.of(2025, Month.NOVEMBER, 6),
+                LocalDate.of(2025, Month.NOVEMBER, 20));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -520,8 +526,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                                 Optional.of(code),
                                 Optional.empty(),
                                 Optional.empty(),
-                                Optional.of(LocalDate.of(2024, 5, 6)),
-                                Optional.of(LocalDate.of(2025, 11, 6))),
+                                Optional.of(LocalDate.of(2024, Month.MAY, 6)),
+                                Optional.of(LocalDate.of(2025, Month.NOVEMBER, 6))),
                         new OpenApiPageMetaData());
 
         responseSpec.then().statusCode(200);
@@ -794,7 +800,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
         Mockito.reset(clock);
 
-        when(clock.instant()).thenReturn(Instant.now().minus(2, ChronoUnit.DAYS));
+        when(clock.instant())
+                .thenReturn(Instant.now(java.time.Clock.systemUTC()).minus(2, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
 
@@ -1204,7 +1211,13 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
             throws Exception {
         String code = "SAFN2001";
         savePersonStandardApplicant(
-                code, "Amelia", "Rosemarie", null, "Walker", LocalDate.now().minusDays(1), null);
+                code,
+                "Amelia",
+                "Rosemarie",
+                null,
+                "Walker",
+                LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1),
+                null);
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1704,7 +1717,8 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.of("123 High Street"),
-                                Optional.of(LocalDate.of(2026, 4, 1)), // matches seeded data
+                                Optional.of(
+                                        LocalDate.of(2026, Month.APRIL, 1)), // matches seeded data
                                 Optional.empty()),
                         new OpenApiPageMetaData());
 

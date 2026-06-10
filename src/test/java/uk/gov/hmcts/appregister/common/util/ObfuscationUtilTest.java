@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -137,7 +138,7 @@ class ObfuscationUtilTest {
         ApplicationListGetDetailDto dto =
                 new ApplicationListGetDetailDto()
                         .id(UUID.randomUUID())
-                        .date(LocalDate.of(2026, 5, 26))
+                        .date(LocalDate.of(2026, Month.MAY, 26))
                         .time(LocalTime.of(10, 30))
                         .description("Morning list")
                         .status(ApplicationListStatus.OPEN)

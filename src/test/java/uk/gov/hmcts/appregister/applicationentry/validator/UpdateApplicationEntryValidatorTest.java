@@ -7,6 +7,7 @@ import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,7 +53,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class UpdateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -120,10 +121,10 @@ class UpdateApplicationEntryValidatorTest {
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
-        when(applicationListEntryRepository.findByUuid(eq(appListEntryUuid)))
+        when(applicationListEntryRepository.findByUuid(appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        eq(appListUuid), eq(appListEntryUuid)))
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
     }
 
@@ -224,7 +225,7 @@ class UpdateApplicationEntryValidatorTest {
         // set the respondent to null for the organisation so we use the person
         entryUpdateDto.getRespondent().setOrganisation(null);
 
-        when(applicationListEntryRepository.findByUuid(eq(appListEntryUuid)))
+        when(applicationListEntryRepository.findByUuid(appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
@@ -251,7 +252,7 @@ class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getRespondent().setOrganisation(null);
 
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        eq(appListUuid), eq(appListEntryUuid)))
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =

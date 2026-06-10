@@ -9,6 +9,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.s
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -618,7 +619,7 @@ class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // Given: an application list with unique values to isolate this test
         ApplicationList list = new AppListTestData().someMinimal().build();
         list.setCourtCode("UNQ001");
-        LocalDate hearingDate = LocalDate.of(2030, 1, 1);
+        LocalDate hearingDate = LocalDate.of(2030, Month.JANUARY, 1);
         list.setDate(hearingDate);
         persistance.save(list);
 
@@ -883,9 +884,9 @@ class AppListEntryRepositoryTest extends BaseRepositoryTest {
         code.setTitle(resultCode + " title");
         code.setWording(resultCode + " wording");
         code.setLegislation("Test legislation");
-        code.setStartDate(LocalDate.now());
+        code.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC));
         code.setChangedBy(1L);
-        code.setChangedDate(OffsetDateTime.now());
+        code.setChangedDate(OffsetDateTime.now(java.time.ZoneOffset.UTC));
 
         AppListEntryResolution entryResolution = new AppListEntryResolution();
         entryResolution.setApplicationList(entry);

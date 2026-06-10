@@ -18,7 +18,7 @@ class ReportingControllerSecurityTest extends AbstractSecurityControllerTest {
                                 getLocalUrlWithDate(
                                         ReportingControllerGetTest.WEB_CONTEXT.formatted(
                                                 UUID.randomUUID()),
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

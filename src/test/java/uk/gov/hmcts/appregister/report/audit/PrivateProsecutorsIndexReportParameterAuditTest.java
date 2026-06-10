@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.audit;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ class PrivateProsecutorsIndexReportParameterAuditTest {
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
         PrivateProsecutorsIndexFilterDto filter =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 30))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                         .applicantSurname("Smith")
                         .applicantFirstName("John")
                         .applicantOrganisationName("Acme")
@@ -55,8 +56,8 @@ class PrivateProsecutorsIndexReportParameterAuditTest {
         PrivateProsecutorsIndexReportParameterAudit audit =
                 PrivateProsecutorsIndexReportParameterAudit.from(
                         new PrivateProsecutorsIndexFilterDto()
-                                .dateFrom(LocalDate.of(2026, 4, 1))
-                                .dateTo(LocalDate.of(2026, 4, 30)));
+                                .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                                .dateTo(LocalDate.of(2026, Month.APRIL, 30)));
 
         Assertions.assertEquals(
                 List.of(

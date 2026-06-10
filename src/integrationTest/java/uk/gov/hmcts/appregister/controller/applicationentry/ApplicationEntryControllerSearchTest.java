@@ -7,6 +7,7 @@ import static uk.gov.hmcts.appregister.common.security.RoleEnum.ADMIN;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -878,7 +879,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         ApplicationListEntry alpha =
                 createSortableEntry(
                         Status.CLOSED,
-                        LocalDate.of(2024, 1, 3),
+                        LocalDate.of(2024, Month.JANUARY, 3),
                         accountReferencePrefix + "A",
                         applicationCodePrefix + "A",
                         "Gamma Application",
@@ -891,7 +892,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         ApplicationListEntry bravo =
                 createSortableEntry(
                         Status.OPEN,
-                        LocalDate.of(2024, 1, 1),
+                        LocalDate.of(2024, Month.JANUARY, 1),
                         accountReferencePrefix + "B",
                         applicationCodePrefix + "B",
                         "Alpha Application",
@@ -904,7 +905,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         ApplicationListEntry charlie =
                 createSortableEntry(
                         Status.OPEN,
-                        LocalDate.of(2024, 1, 2),
+                        LocalDate.of(2024, Month.JANUARY, 2),
                         accountReferencePrefix + "C",
                         applicationCodePrefix + "C",
                         "Beta Application",

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -438,9 +439,12 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         String prefix = uniquePrefix("get-default-sort");
 
-        createWithCourt(prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-        createWithCourt(prefix + " - Alpha", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-        createWithCourt(prefix + " - Mango", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - Zebra", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - Alpha", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - Mango", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -477,7 +481,8 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         String prefix = uniquePrefix("get-sort-disallowed");
 
-        createWithCourt(prefix + " - X", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - X", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -549,9 +554,9 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         String prefix = uniquePrefix("get-paging");
 
-        createWithCourt(prefix + " - A", LocalDate.of(2025, 10, 14), LocalTime.of(9, 0));
-        createWithCourt(prefix + " - B", LocalDate.of(2025, 10, 15), LocalTime.of(9, 0));
-        createWithCourt(prefix + " - C", LocalDate.of(2025, 10, 16), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - A", LocalDate.of(2025, Month.OCTOBER, 14), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - B", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - C", LocalDate.of(2025, Month.OCTOBER, 16), LocalTime.of(9, 0));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -614,7 +619,7 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
     @DisplayName("GET: filter by date + time (exact match)")
     void givenDateAndTimeFilter_thenOnlyThatSlot() throws Exception {
         String prefix = uniquePrefix("get-date-time");
-        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalDate day = LocalDate.of(2025, Month.OCTOBER, 15);
         LocalTime t0930 = LocalTime.of(9, 30);
 
         ApplicationListGetDetailDto applicationListGetDetailDto =
@@ -693,7 +698,7 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
     void givenTimeFilter_thenSlot() throws Exception {
 
         String prefix = uniquePrefix("get-date-time");
-        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalDate day = LocalDate.of(2025, Month.OCTOBER, 15);
         LocalTime t2359 = LocalTime.of(23, 59);
 
         createWithCourt(prefix + " - keep", day, t2359);
@@ -737,8 +742,10 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         String prefix = uniquePrefix("get-court-filter");
 
-        createWithCourt(prefix + " - court", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-        createWithCja(prefix + " - cja", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - court", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
+        createWithCja(
+                prefix + " - cja", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -783,8 +790,10 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         String prefix = uniquePrefix("get-cja-filter");
 
-        createWithCja(prefix + " - cja", LocalDate.of(2025, 10, 16), LocalTime.of(11, 0));
-        createWithCourt(prefix + " - court", LocalDate.of(2025, 10, 16), LocalTime.of(11, 0));
+        createWithCja(
+                prefix + " - cja", LocalDate.of(2025, Month.OCTOBER, 16), LocalTime.of(11, 0));
+        createWithCourt(
+                prefix + " - court", LocalDate.of(2025, Month.OCTOBER, 16), LocalTime.of(11, 0));
 
         var adminToken =
                 getATokenWithValidCredentials()
@@ -830,7 +839,9 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         String prefix = uniquePrefix("soft-deleted");
         ApplicationListGetDetailDto dto =
                 createWithCourt(
-                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+                        prefix + " - Zebra",
+                        LocalDate.of(2025, Month.OCTOBER, 15),
+                        LocalTime.of(10, 30));
         UUID id = dto.getId();
 
         var userToken =
@@ -1095,7 +1106,9 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         String prefix = uniquePrefix("soft-deleted");
         ApplicationListGetDetailDto dto =
                 createWithCourt(
-                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+                        prefix + " - Zebra",
+                        LocalDate.of(2025, Month.OCTOBER, 15),
+                        LocalTime.of(10, 30));
         UUID id = dto.getId();
 
         // create a single entry

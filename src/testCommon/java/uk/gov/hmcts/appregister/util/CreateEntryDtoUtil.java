@@ -42,7 +42,7 @@ public class CreateEntryDtoUtil {
 
         EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.setOfficials(validOfficials());
 
         if (satisfyForClose) {
@@ -50,7 +50,7 @@ public class CreateEntryDtoUtil {
 
             // if we want to satisfy for close set to paid
             feeStatus.setPaymentStatus(PaymentStatus.PAID);
-            feeStatus.setStatusDate(LocalDate.now());
+            feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
             entryCreateDto.setFeeStatuses(List.of(feeStatus));
         }
 
@@ -146,7 +146,7 @@ public class CreateEntryDtoUtil {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
@@ -168,8 +168,8 @@ public class CreateEntryDtoUtil {
             }
             if (fs != null
                     && fs.getStatusDate() != null
-                    && fs.getStatusDate().isAfter(LocalDate.now())) {
-                fs.setStatusDate(LocalDate.now());
+                    && fs.getStatusDate().isAfter(LocalDate.now(java.time.ZoneOffset.UTC))) {
+                fs.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
             }
         }
     }

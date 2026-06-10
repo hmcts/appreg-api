@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -15,6 +15,7 @@ import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPE
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
@@ -38,7 +39,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 @ExtendWith(MockitoExtension.class)
 class ApplicationListCreateValidatorTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;

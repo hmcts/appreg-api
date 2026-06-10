@@ -63,6 +63,7 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -118,7 +119,7 @@ import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilde
 
 @SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryMapperTest {
-    private static final LocalDate APPLICATION_LIST_DATE = LocalDate.of(2025, 10, 7);
+    private static final LocalDate APPLICATION_LIST_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
 
     private ApplicationListEntryMapper mapper;
     private final OfficialMapper officialMapper = new OfficialMapper();
@@ -345,7 +346,7 @@ class ApplicationListEntryMapperTest {
         filterDto.setRespondentPostcode("AA1 1AA");
         filterDto.setCourtCode("COURT1");
         filterDto.setOtherLocationDescription("Room 4");
-        filterDto.setDate(LocalDate.of(2026, 6, 4));
+        filterDto.setDate(LocalDate.of(2026, Month.JUNE, 4));
         filterDto.setCjaCode("CJA01");
         filterDto.setStatus(ApplicationListStatus.CLOSED);
         filterDto.setApplicationTitle("Application Title");
@@ -363,7 +364,7 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals("COURT1", mappedResult.getApplicationList().getCourtCode());
         Assertions.assertEquals("Room 4", mappedResult.getApplicationList().getOtherLocation());
         Assertions.assertEquals(
-                LocalDate.of(2026, 6, 4), mappedResult.getApplicationList().getDate());
+                LocalDate.of(2026, Month.JUNE, 4), mappedResult.getApplicationList().getDate());
         Assertions.assertEquals("CJA01", mappedResult.getApplicationList().getCja().getCode());
         Assertions.assertEquals(Status.CLOSED, mappedResult.getApplicationList().getStatus());
     }
@@ -412,7 +413,7 @@ class ApplicationListEntryMapperTest {
     void testMapOffsetDateTime_returnsLocalDateAndHandlesNull() {
         Assertions.assertNull(mapper.map((OffsetDateTime) null));
         Assertions.assertEquals(
-                LocalDate.of(2026, 6, 4),
+                LocalDate.of(2026, Month.JUNE, 4),
                 mapper.map(OffsetDateTime.of(2026, 6, 4, 9, 30, 0, 0, ZoneOffset.UTC)));
     }
 

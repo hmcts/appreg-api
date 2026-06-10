@@ -4,6 +4,9 @@ import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 
 public final class ApplicationListEntryOfficialPrintProjectionUtil {
+    private ApplicationListEntryOfficialPrintProjectionUtil() {
+        /* This utility class should not be instantiated */
+    }
 
     public static Builder applicationListEntryOfficialPrintProjection() {
         return new Builder();
