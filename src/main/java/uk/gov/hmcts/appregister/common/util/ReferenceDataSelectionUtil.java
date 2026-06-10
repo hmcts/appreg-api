@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ReferenceDataSelectionUtil {
 
     /** Logs overlapping active rows and returns the first record from an already ordered list. */
-    public static <T> T selectFirstOrderedActiveRecord(
+    public <T> T selectFirstOrderedActiveRecord(
             List<T> matches,
             String referenceDataType,
             String referenceKey,
@@ -44,7 +44,7 @@ public class ReferenceDataSelectionUtil {
     }
 
     /** Logs duplicate rows and returns the first record from an already ordered list. */
-    public static <T> T selectFirstOrderedRecord(
+    public <T> T selectFirstOrderedRecord(
             List<T> matches, String referenceDataType, String referenceKey) {
 
         if (matches.size() > 1) {

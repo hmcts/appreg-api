@@ -85,28 +85,27 @@ class StandardApplicantServiceTest {
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
 
-        val code = "APP001";
-        val name = "John Doe";
-        val addressLine1 = "123 Main Street";
         val from = CURRENT_UK_DATE.minusDays(10);
         val to = CURRENT_UK_DATE.plusDays(10);
-        val pageable = PageRequest.of(0, 2);
 
-        val standardApplicant1 = mock(StandardApplicant.class);
-        val standardApplicant2 = mock(StandardApplicant.class);
+        val standardApplicant1 = new StandardApplicant();
+        standardApplicant1.setApplicantCode("APP001");
+        standardApplicant1.setName("John Doe");
+        standardApplicant1.setApplicantStartDate(from);
+        standardApplicant1.setApplicantEndDate(to);
 
-        when(standardApplicant1.getApplicantCode()).thenReturn("APP001");
-        when(standardApplicant1.getName()).thenReturn("John Doe");
-        when(standardApplicant1.getApplicantStartDate()).thenReturn(from);
-        when(standardApplicant1.getApplicantEndDate()).thenReturn(to);
-
-        when(standardApplicant2.getApplicantCode()).thenReturn("APP002");
-        when(standardApplicant2.getName()).thenReturn("Jane Doe");
-        when(standardApplicant2.getApplicantStartDate()).thenReturn(from.plusDays(1));
-        when(standardApplicant2.getApplicantEndDate()).thenReturn(to.plusDays(1));
+        val standardApplicant2 = new StandardApplicant();
+        standardApplicant2.setApplicantCode("APP002");
+        standardApplicant2.setName("Jane Doe");
+        standardApplicant2.setApplicantStartDate(from.plusDays(1));
+        standardApplicant2.setApplicantEndDate(to.plusDays(1));
 
         val projection1 = mock(StandardApplicantEnrichedProjection.class);
         val projection2 = mock(StandardApplicantEnrichedProjection.class);
+        val code = "APP001";
+        val name = "John Doe";
+        val addressLine1 = "123 Main Street";
+        val pageable = PageRequest.of(0, 2);
 
         when(projection1.getStandardApplicant()).thenReturn(standardApplicant1);
         when(projection1.getEffectiveName()).thenReturn("John Doe");
@@ -130,6 +129,7 @@ class StandardApplicantServiceTest {
 
         val standardApplicantPage =
                 standardApplicantService.findAll(code, name, addressLine1, from, to, wrapper);
+        val firstResult = standardApplicantPage.getContent().getFirst();
 
         verify(repository)
                 .search(
@@ -142,41 +142,24 @@ class StandardApplicantServiceTest {
                         eq(pageable));
 
         Assertions.assertEquals(2, standardApplicantPage.getTotalElements());
+        Assertions.assertEquals(standardApplicant1.getApplicantCode(), firstResult.getCode());
         Assertions.assertEquals(
-                pageImpl.getContent().getFirst().getStandardApplicant().getApplicantCode(),
-                standardApplicantPage.getContent().getFirst().getCode());
+                standardApplicant1.getName(),
+                firstResult.getApplicant().getOrganisation().getName());
         Assertions.assertEquals(
-                pageImpl.getContent().getFirst().getStandardApplicant().getName(),
-                standardApplicantPage
-                        .getContent()
-                        .getFirst()
-                        .getApplicant()
-                        .getOrganisation()
-                        .getName());
+                standardApplicant1.getApplicantStartDate(), firstResult.getStartDate());
         Assertions.assertEquals(
-                pageImpl.getContent().get(0).getStandardApplicant().getApplicantStartDate(),
-                standardApplicantPage.getContent().get(0).getStartDate());
-        Assertions.assertEquals(
-                pageImpl.getContent().get(0).getStandardApplicant().getApplicantEndDate(),
-                standardApplicantPage.getContent().get(0).getEndDate().get());
+                standardApplicant1.getApplicantEndDate(), firstResult.getEndDate().get());
 
+        val secondResult = standardApplicantPage.getContent().get(1);
+        Assertions.assertEquals(standardApplicant2.getApplicantCode(), secondResult.getCode());
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getStandardApplicant().getApplicantCode(),
-                standardApplicantPage.getContent().get(1).getCode());
+                standardApplicant2.getName(),
+                secondResult.getApplicant().getOrganisation().getName());
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getStandardApplicant().getName(),
-                standardApplicantPage
-                        .getContent()
-                        .get(1)
-                        .getApplicant()
-                        .getOrganisation()
-                        .getName());
+                standardApplicant2.getApplicantStartDate(), secondResult.getStartDate());
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getStandardApplicant().getApplicantStartDate(),
-                standardApplicantPage.getContent().get(1).getStartDate());
-        Assertions.assertEquals(
-                pageImpl.getContent().get(1).getStandardApplicant().getApplicantEndDate(),
-                standardApplicantPage.getContent().get(1).getEndDate().get());
+                standardApplicant2.getApplicantEndDate(), secondResult.getEndDate().get());
 
         verify(auditOperationService)
                 .processAudit(
@@ -242,18 +225,17 @@ class StandardApplicantServiceTest {
 
         val code = "APP001";
         val name = "John Doe";
-        val addressLine1 = "123 Main Street";
         val from = LocalDate.of(2026, 4, 1);
         val to = LocalDate.of(2026, 12, 31);
+
+        val applicant = new StandardApplicant();
+        applicant.setApplicantCode(code);
+        applicant.setName(name);
+        applicant.setApplicantStartDate(from);
+        applicant.setApplicantEndDate(to);
+        val addressLine1 = "123 Main Street";
         val pageable = PageRequest.of(0, 2);
-
-        val applicant = mock(StandardApplicant.class);
         val projection = mock(StandardApplicantEnrichedProjection.class);
-
-        when(applicant.getApplicantCode()).thenReturn(code);
-        when(applicant.getName()).thenReturn(name);
-        when(applicant.getApplicantStartDate()).thenReturn(from);
-        when(applicant.getApplicantEndDate()).thenReturn(to);
         when(projection.getStandardApplicant()).thenReturn(applicant);
         when(projection.getEffectiveName()).thenReturn(name);
         when(repository.search(
@@ -301,18 +283,17 @@ class StandardApplicantServiceTest {
 
         val code = "APP001";
         val name = "John Doe";
-        val addressLine1 = "123 Main Street";
         val requestedFrom = LocalDate.of(2026, 12, 31);
         val requestedTo = LocalDate.of(2026, 4, 1);
+
+        val applicant = new StandardApplicant();
+        applicant.setApplicantCode(code);
+        applicant.setName(name);
+        applicant.setApplicantStartDate(requestedTo);
+        applicant.setApplicantEndDate(requestedFrom);
+        val addressLine1 = "123 Main Street";
         val pageable = PageRequest.of(0, 2);
-
-        val applicant = mock(StandardApplicant.class);
         val projection = mock(StandardApplicantEnrichedProjection.class);
-
-        when(applicant.getApplicantCode()).thenReturn(code);
-        when(applicant.getName()).thenReturn(name);
-        when(applicant.getApplicantStartDate()).thenReturn(requestedTo);
-        when(applicant.getApplicantEndDate()).thenReturn(requestedFrom);
         when(projection.getStandardApplicant()).thenReturn(applicant);
         when(projection.getEffectiveName()).thenReturn(name);
         when(repository.search(

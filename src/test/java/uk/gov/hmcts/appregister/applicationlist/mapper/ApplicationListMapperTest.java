@@ -11,10 +11,11 @@ import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
@@ -29,12 +30,17 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 /**
- * Unit tests for {@link ApplicationListMapper}. Uses MapStruct's Mappers.getMapper(...) to obtain
- * the generated implementation so we don't need a Spring context for these tests.
+ * Unit tests for {@link ApplicationListMapper}.
  */
+@SpringJUnitConfig(classes = {ApplicationListMapperImpl.class, ApplicationListMappingHelper.class})
 class ApplicationListMapperTest {
 
-    private final ApplicationListMapper mapper = Mappers.getMapper(ApplicationListMapper.class);
+    @Autowired private ApplicationListMapper mapper;
+
+    @BeforeEach
+    void setUp() {
+        assertNotNull(mapper);
+    }
 
     // ---------- Mapping: toCreateEntityWithCourt ----------
 
@@ -48,12 +54,12 @@ class ApplicationListMapperTest {
         ApplicationList entity = mapper.toCreateEntityWithCja(dto, criminalJusticeArea);
 
         // Then
-        Assertions.assertEquals(criminalJusticeArea, entity.getCja());
-        Assertions.assertEquals(dto.getOtherLocationDescription(), entity.getOtherLocation());
-        Assertions.assertEquals(dto.getDescription(), entity.getDescription());
-        Assertions.assertEquals(criminalJusticeArea, entity.getCja());
-        Assertions.assertEquals(dto.getTime(), entity.getTime());
-        Assertions.assertEquals(dto.getDate(), entity.getDate());
+        assertEquals(criminalJusticeArea, entity.getCja());
+        assertEquals(dto.getOtherLocationDescription(), entity.getOtherLocation());
+        assertEquals(dto.getDescription(), entity.getDescription());
+        assertEquals(criminalJusticeArea, entity.getCja());
+        assertEquals(dto.getTime(), entity.getTime());
+        assertEquals(dto.getDate(), entity.getDate());
     }
 
     @Test
@@ -66,13 +72,13 @@ class ApplicationListMapperTest {
         ApplicationList entity = mapper.toCreateEntityWithCourt(dto, nationalCourtHouse);
 
         // Then
-        Assertions.assertEquals(nationalCourtHouse.getCourtLocationCode(), entity.getCourtCode());
-        Assertions.assertEquals(nationalCourtHouse.getName(), entity.getCourtName());
-        Assertions.assertEquals(dto.getDescription(), entity.getDescription());
-        Assertions.assertEquals(dto.getTime(), entity.getTime());
-        Assertions.assertEquals(dto.getDate(), entity.getDate());
-        Assertions.assertEquals(dto.getDurationHours(), entity.getDurationHours());
-        Assertions.assertEquals(dto.getDurationMinutes(), entity.getDurationMinutes());
+        assertEquals(nationalCourtHouse.getCourtLocationCode(), entity.getCourtCode());
+        assertEquals(nationalCourtHouse.getName(), entity.getCourtName());
+        assertEquals(dto.getDescription(), entity.getDescription());
+        assertEquals(dto.getTime(), entity.getTime());
+        assertEquals(dto.getDate(), entity.getDate());
+        assertEquals(dto.getDurationHours(), entity.getDurationHours());
+        assertEquals(dto.getDurationMinutes(), entity.getDurationMinutes());
     }
 
     @Nested
