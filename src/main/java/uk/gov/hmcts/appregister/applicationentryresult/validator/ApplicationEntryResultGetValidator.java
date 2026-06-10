@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
@@ -48,15 +47,6 @@ public class ApplicationEntryResultGetValidator
     @Override
     public void validate(PayloadGetEntryResultInList args) {
         validate(args, (a, s) -> null);
-    }
-
-    @Override
-    public <R> R validate(
-            PayloadGetEntryResultInList args,
-            BiFunction<PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess, R>
-                    createSupplier) {
-
-        return super.validate(args, createSupplier);
     }
 
     @Override

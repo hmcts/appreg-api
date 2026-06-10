@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
+import java.time.Month;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -234,8 +235,8 @@ class StandardApplicantMapperTest {
                         "APP001",
                         "John Doe",
                         "123 High Street",
-                        LocalDate.of(2026, 4, 1),
-                        LocalDate.of(2026, 12, 31));
+                        LocalDate.of(2026, Month.APRIL, 1),
+                        LocalDate.of(2026, Month.DECEMBER, 31));
 
         var mapper = new StandardApplicantMapperImpl();
         val entity = mapper.toEntity(codeAndName);
@@ -245,8 +246,9 @@ class StandardApplicantMapperTest {
         Assertions.assertEquals("APP001", entity.getApplicantCode());
         Assertions.assertEquals("John Doe", entity.getName());
         Assertions.assertEquals("123 High Street", entity.getAddressLine1());
-        Assertions.assertEquals(LocalDate.of(2026, 4, 1), entity.getApplicantStartDate());
-        Assertions.assertEquals(LocalDate.of(2026, 12, 31), entity.getApplicantEndDate());
+        Assertions.assertEquals(LocalDate.of(2026, Month.APRIL, 1), entity.getApplicantStartDate());
+        Assertions.assertEquals(
+                LocalDate.of(2026, Month.DECEMBER, 31), entity.getApplicantEndDate());
     }
 
     @Test

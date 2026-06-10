@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
     private static final String REPORT_QUERY =
             """
-     WITH applicants AS (
+            WITH applicants AS (
                 SELECT
                     na_id AS id,
                     code,
@@ -45,44 +45,44 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     TRUE AS is_standard_applicant
                 FROM
                     standard_applicants sa),
-                   officials_agg AS (
-                       SELECT
-                           ale_ale_id,
-                           MAX(CASE WHEN official_type = 'M' AND rn = 1
-                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP1,
-                           MAX(CASE WHEN official_type = 'M' AND rn = 2
-                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP2,
-                           MAX(CASE WHEN official_type = 'M' AND rn = 3
-                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP3,
-                           MAX(CASE WHEN official_type = 'C'
-                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS official
-                       FROM (
-                           SELECT *,
-                                  ROW_NUMBER() OVER
-                                  (PARTITION BY ale_ale_id, official_type ORDER BY official_type DESC) AS rn
-                           FROM app_list_entry_official
-                       ) ranked
-                       GROUP BY ale_ale_id
-                   )
+                    officials_agg AS (
+                          SELECT
+                              ale_ale_id,
+                              MAX(CASE WHEN official_type = 'M' AND rn = 1
+                                  THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP1,
+                              MAX(CASE WHEN official_type = 'M' AND rn = 2
+                                  THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP2,
+                              MAX(CASE WHEN official_type = 'M' AND rn = 3
+                                  THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP3,
+                              MAX(CASE WHEN official_type = 'C'
+                                  THEN CONCAT(title, ' ', forename, ' ', surname) END) AS official
+                          FROM (
+                              SELECT *,
+                                     ROW_NUMBER() OVER
+                                     (PARTITION BY ale_ale_id, official_type ORDER BY official_type DESC) AS rn
+                              FROM app_list_entry_official
+                          ) ranked
+                          GROUP BY ale_ale_id
+                    )
                 SELECT
                     ale.ale_id,
                     al.application_list_date AS list_date,
                     CASE
-                        WHEN al.courthouse_code IS NOT NULL
-                                                    THEN al.courthouse_code || ' - ' || al.courthouse_name
+                           WHEN al.courthouse_code IS NOT NULL
+                                                       THEN al.courthouse_code || ' - ' || al.courthouse_name
                     END AS courthouse_name,
                     al.other_courthouse AS list_other_location,
                     cja.cja_code AS cja_code,
                     al.list_description AS list_description,
                     CASE
-                        WHEN a.is_standard_applicant = TRUE THEN
-                                                a.code
+                           WHEN a.is_standard_applicant = TRUE THEN
+                                                   a.code
                     END AS standard_applicant_code,
                     CASE
-                        WHEN a.name IS NOT NULL THEN
-                             a.name
-                        ELSE
-                             CONCAT(a.forename_1, ' ', a.forename_2, ' ', a.forename_3, ' ', a.surname)
+                           WHEN a.name IS NOT NULL THEN
+                                a.name
+                           ELSE
+                                CONCAT(a.forename_1, ' ', a.forename_2, ' ', a.forename_3, ' ', a.surname)
                     END AS applicant_name,
                     ac.application_code AS application_code,
                     ac.application_code_title AS application_code_title,
@@ -95,9 +95,9 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     applicants a
                 JOIN application_list_entries ale ON
                     (a.is_standard_applicant = FALSE
-                        AND ale.a_na_id = a.id)
+                           AND ale.a_na_id = a.id)
                     OR (a.is_standard_applicant = TRUE
-                        AND ale.sa_sa_id = a.id)
+                           AND ale.sa_sa_id = a.id)
                 JOIN application_lists al ON
                     al.al_id = ale.al_al_id
                 JOIN application_codes ac ON
@@ -117,16 +117,16 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     AND al.application_list_date >= :dateFrom
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                     AND(:courthouseCode IS NULL
-                        OR UPPER(al.courthouse_code) LIKE '%' || UPPER(:courthouseCode) || '%')
+                           OR UPPER(al.courthouse_code) LIKE '%' || UPPER(:courthouseCode) || '%')
                     AND(:otherLocation IS NULL
-                        OR UPPER(al.other_courthouse) LIKE '%' || UPPER(:otherLocation) || '%')
+                           OR UPPER(al.other_courthouse) LIKE '%' || UPPER(:otherLocation) || '%')
                     AND( :cjaCode IS NULL
-                        OR UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%')
+                           OR UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%')
                     AND(:hasCursor IS FALSE
-                        OR :lastListDate IS NULL
-                        OR al.application_list_date < :lastListDate
-                        OR (al.application_list_date = :lastListDate
-                                AND ale.ale_id < :lastApplicationListEntryId))
+                           OR :lastListDate IS NULL
+                           OR al.application_list_date < :lastListDate
+                           OR (al.application_list_date = :lastListDate
+                                   AND ale.ale_id < :lastApplicationListEntryId))
                 GROUP BY
                     ale.ale_id,
                     al.application_list_date,
@@ -152,8 +152,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     list_date DESC,
                     ale.ale_id DESC
                 LIMIT :limit
-
-        """;
+            """;
 
     private static final RowMapper<WorkloadReportRow> ROW_MAPPER = new WorkloadReportRowMapper();
 

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.audit;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ class ActivityAuditReportParameterAuditTest {
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 30))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                         .username("caseworker")
                         .activityTypes(
                                 List.of(
@@ -41,8 +42,8 @@ class ActivityAuditReportParameterAuditTest {
     void givenNullOptionalParameters_whenExtractAuditData_thenSkipsNullValues() {
         ActivityAuditReportParameterAudit audit =
                 ActivityAuditReportParameterAudit.builder()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 30))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                         .build();
 
         Assertions.assertEquals(

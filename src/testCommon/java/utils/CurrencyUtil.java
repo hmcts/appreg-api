@@ -3,6 +3,10 @@ package utils;
 import java.math.BigDecimal;
 
 public class CurrencyUtil {
+    private CurrencyUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * Converts a BigDecimal to pounds and pence by moving the decimal point to the right by 2
      * places. Ignores any fractional part.

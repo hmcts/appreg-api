@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -121,7 +122,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                 () -> {
                     List<StandardApplicant> retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
-                                    "APP002", LocalDate.now());
+                                    "APP002", LocalDate.now(java.time.ZoneOffset.UTC));
 
                     assertThat(retrievedApplicant).isNotEmpty();
                 });
@@ -133,7 +134,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                 () -> {
                     List<StandardApplicant> retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
-                                    "APP003", LocalDate.now());
+                                    "APP003", LocalDate.now(java.time.ZoneOffset.UTC));
 
                     assertEquals(2, retrievedApplicant.size());
                 });
@@ -143,7 +144,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testFindByCodeAndDatePrefersNullEndDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
                     String code = "SANULL001";
 
                     StandardApplicant boundedApplicant =
@@ -181,7 +182,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     private void assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() {
-        LocalDate activeDate = LocalDate.now();
+        LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "SACODE001";
 
         StandardApplicant historicApplicant = new StandardApplicantTestData().someComplete();
@@ -221,7 +222,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testSearchIncludesApplicantsStartingOrEndingOnActiveDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
                     String code = "SABOUND001";
 
                     StandardApplicant startsTodayApplicant =
@@ -265,7 +266,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testSearchFiltersIndividualByCombinedForenameAndSurname() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
 
                     var page =
                             repository.search(
@@ -291,7 +292,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testSearchFiltersIndividualBySecondForename() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
 
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
                     matching.setApplicantCode("APP-FN2");
@@ -325,7 +326,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testSearchFiltersIndividualByThirdForename() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
 
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
                     matching.setApplicantCode("APP-FN3");
@@ -359,7 +360,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testSearchTreatsWildcardCharactersInNameAsLiterals() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
 
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
                     matching.setApplicantCode("APP-WILD");
@@ -401,16 +402,16 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
                     matching.setApplicantCode("APP900");
                     matching.setAddressLine1("221B Baker Street");
-                    matching.setApplicantStartDate(LocalDate.of(2025, 1, 1));
-                    matching.setApplicantEndDate(LocalDate.of(2025, 12, 31));
+                    matching.setApplicantStartDate(LocalDate.of(2025, Month.JANUARY, 1));
+                    matching.setApplicantEndDate(LocalDate.of(2025, Month.DECEMBER, 31));
 
                     repository.save(matching);
 
                     StandardApplicant nonMatching = new StandardApplicantTestData().someComplete();
                     nonMatching.setApplicantCode("APP901");
                     nonMatching.setAddressLine1("10 Downing Street");
-                    nonMatching.setApplicantStartDate(LocalDate.of(2025, 1, 1));
-                    nonMatching.setApplicantEndDate(LocalDate.of(2025, 12, 31));
+                    nonMatching.setApplicantStartDate(LocalDate.of(2025, Month.JANUARY, 1));
+                    nonMatching.setApplicantEndDate(LocalDate.of(2025, Month.DECEMBER, 31));
 
                     repository.save(nonMatching);
 
@@ -419,9 +420,9 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                                     null,
                                     null,
                                     "baker",
-                                    LocalDate.of(2025, 1, 1),
-                                    LocalDate.of(2025, 12, 31),
-                                    LocalDate.of(2025, 6, 1),
+                                    LocalDate.of(2025, Month.JANUARY, 1),
+                                    LocalDate.of(2025, Month.DECEMBER, 31),
+                                    LocalDate.of(2025, Month.JUNE, 1),
                                     PageRequest.of(0, 10));
 
                     assertEquals(1, results.getTotalElements());
@@ -439,7 +440,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
                     matching.setApplicantCode("APP902");
                     matching.setName("Window Match");
-                    matching.setApplicantStartDate(LocalDate.of(2025, 11, 6));
+                    matching.setApplicantStartDate(LocalDate.of(2025, Month.NOVEMBER, 6));
                     matching.setApplicantEndDate(null);
 
                     repository.save(matching);
@@ -447,7 +448,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                     StandardApplicant nonMatching = new StandardApplicantTestData().someComplete();
                     nonMatching.setApplicantCode("APP903");
                     nonMatching.setName("Window Miss");
-                    nonMatching.setApplicantStartDate(LocalDate.of(2025, 11, 7));
+                    nonMatching.setApplicantStartDate(LocalDate.of(2025, Month.NOVEMBER, 7));
                     nonMatching.setApplicantEndDate(null);
 
                     repository.save(nonMatching);
@@ -457,9 +458,9 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                                     null,
                                     null,
                                     null,
-                                    LocalDate.of(2024, 5, 6),
-                                    LocalDate.of(2025, 11, 6),
-                                    LocalDate.of(2026, 5, 15),
+                                    LocalDate.of(2024, Month.MAY, 6),
+                                    LocalDate.of(2025, Month.NOVEMBER, 6),
+                                    LocalDate.of(2026, Month.MAY, 15),
                                     PageRequest.of(0, 10));
 
                     assertThat(results.getContent())
@@ -479,7 +480,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                             new StandardApplicantTestData().someComplete();
                     activeApplicant.setApplicantCode("APP904");
                     activeApplicant.setName("Still Active");
-                    activeApplicant.setApplicantStartDate(LocalDate.of(2025, 1, 1));
+                    activeApplicant.setApplicantStartDate(LocalDate.of(2025, Month.JANUARY, 1));
                     activeApplicant.setApplicantEndDate(null);
 
                     repository.save(activeApplicant);
@@ -488,12 +489,12 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                             new StandardApplicantTestData().someComplete();
                     pastApplicant.setApplicantCode("APP905");
                     pastApplicant.setName("Historical Only");
-                    pastApplicant.setApplicantStartDate(LocalDate.of(2024, 1, 1));
-                    pastApplicant.setApplicantEndDate(LocalDate.of(2024, 12, 31));
+                    pastApplicant.setApplicantStartDate(LocalDate.of(2024, Month.JANUARY, 1));
+                    pastApplicant.setApplicantEndDate(LocalDate.of(2024, Month.DECEMBER, 31));
 
                     repository.save(pastApplicant);
 
-                    LocalDate activeDate = LocalDate.of(2026, 5, 15);
+                    LocalDate activeDate = LocalDate.of(2026, Month.MAY, 15);
                     Page<StandardApplicantEnrichedProjection> results =
                             repository.search(
                                     null,
@@ -517,7 +518,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testSearchSortsPersonByForenameThenSurnameIgnoringTitle() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    LocalDate activeDate = LocalDate.now();
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
 
                     StandardApplicant zoeApplicant = new StandardApplicantTestData().someComplete();
                     zoeApplicant.setApplicantCode("APP-ZOE");

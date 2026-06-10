@@ -51,19 +51,19 @@ class FeeRepositoryTest extends BaseRepositoryTest {
     void testSearchForFeeWithoutOffsite() {
         Assertions.assertNotNull(
                 applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
-                        "CO1.1", LocalDate.now(), false));
+                        "CO1.1", LocalDate.now(java.time.ZoneOffset.UTC), false));
     }
 
     @Test
     void testSearchForFeeWithOffsite() {
         Assertions.assertNotNull(
                 applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
-                        "CO1.1", LocalDate.now(), true));
+                        "CO1.1", LocalDate.now(java.time.ZoneOffset.UTC), true));
     }
 
     @Test
     void testSearchForFeeWithoutOffsitePrefersNullEndDate() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String reference = "ZZFEE1";
 
         Fee bounded = new FeeTestData().someComplete();

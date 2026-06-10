@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.generated;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +13,7 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import utils.ConstraintAssertion;
 
 class FeeStatusDtoTest {
-    private static final LocalDate STATUS_DATE = LocalDate.of(2025, 1, 2);
+    private static final LocalDate STATUS_DATE = LocalDate.of(2025, Month.JANUARY, 2);
 
     @Test
     void testOfficialEmptyString() {

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -42,7 +43,7 @@ class ApplicationListSerializationTest {
         list.setUuid(UUID.randomUUID());
         list.setStatus(Status.OPEN);
         list.setDescription("Serialization regression list");
-        list.setDate(LocalDate.of(2026, 6, 2));
+        list.setDate(LocalDate.of(2026, Month.JUNE, 2));
         list.setTime(LocalTime.of(10, 30));
 
         ApplicationListEntry entry = new ApplicationListEntry();
@@ -52,7 +53,7 @@ class ApplicationListSerializationTest {
         entry.setApplicationListEntryWording("Serialization regression entry");
         entry.setEntryRescheduled("N");
         entry.setSequenceNumber((short) 1);
-        entry.setLodgementDate(LocalDate.of(2026, 6, 2));
+        entry.setLodgementDate(LocalDate.of(2026, Month.JUNE, 2));
 
         list.setEntries(Set.of(entry));
 

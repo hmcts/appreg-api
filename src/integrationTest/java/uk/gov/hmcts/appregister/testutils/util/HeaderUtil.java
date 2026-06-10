@@ -6,6 +6,10 @@ import java.net.URI;
 import java.net.URL;
 
 public class HeaderUtil {
+    private HeaderUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * gets the location header value for the given response.
      *

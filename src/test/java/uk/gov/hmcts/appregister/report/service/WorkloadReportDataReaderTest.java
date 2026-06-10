@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,7 +71,7 @@ class WorkloadReportDataReaderTest {
         Assertions.assertEquals(1, pages.size());
         WorkloadReportRow row = pages.getFirst().getFirst();
 
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Test Court", row.getListCourtHouseName());
         Assertions.assertEquals("Other court", row.getListOtherLocation());
         Assertions.assertEquals("British Gas", row.getApplicantNameSurname());
@@ -104,8 +105,8 @@ class WorkloadReportDataReaderTest {
 
         WorkloadFilterDto filter =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         WorkloadReportDataReader reader =
                 new WorkloadReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<WorkloadReportRow> pageReader =
@@ -150,8 +151,8 @@ class WorkloadReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherLocation"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
@@ -159,7 +160,8 @@ class WorkloadReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
         }
@@ -172,8 +174,8 @@ class WorkloadReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new WorkloadFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .location(location);
     }
 

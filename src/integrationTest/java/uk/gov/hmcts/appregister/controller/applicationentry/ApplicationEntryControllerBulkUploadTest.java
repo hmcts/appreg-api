@@ -82,7 +82,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
         var createListRequest =
                 new ApplicationListCreateDto()
-                        .date(LocalDate.now().plusDays(1))
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1))
                         .time(LocalTime.of(10, 0))
                         .description("Bulk upload test list " + UUID.randomUUID())
                         .status(ApplicationListStatus.OPEN)

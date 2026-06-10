@@ -720,13 +720,16 @@ class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest
                 RestEndpointDescription.builder()
                         .url(
                                 getLocalUrlWithDate(
-                                        WEB_CONTEXT + "/" + EXPECTED_CODE, OffsetDateTime.now()))
+                                        WEB_CONTEXT + "/" + EXPECTED_CODE,
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
                 RestEndpointDescription.builder()
-                        .url(getLocalUrlWithDate(WEB_CONTEXT, OffsetDateTime.now()))
+                        .url(
+                                getLocalUrlWithDate(
+                                        WEB_CONTEXT, OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

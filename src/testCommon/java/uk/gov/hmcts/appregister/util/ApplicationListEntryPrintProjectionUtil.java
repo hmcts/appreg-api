@@ -5,6 +5,9 @@ import java.util.UUID;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 
 public final class ApplicationListEntryPrintProjectionUtil {
+    private ApplicationListEntryPrintProjectionUtil() {
+        /* This utility class should not be instantiated */
+    }
 
     public static Builder applicationListEntryPrintProjection() {
         return new Builder();

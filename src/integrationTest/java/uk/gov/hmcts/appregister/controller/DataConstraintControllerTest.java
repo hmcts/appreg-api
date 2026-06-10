@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -40,7 +41,7 @@ class DataConstraintControllerTest extends BaseIntegration {
     private static final String APP_LIST_ENTRIES_WEB_CONTEXT = "application-lists";
 
     private static final String VALID_COURT_CODE = "CCC003";
-    private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    private static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
 
     @Autowired protected TransactionalUnitOfWork unitOfWork;
 
@@ -55,7 +56,10 @@ class DataConstraintControllerTest extends BaseIntegration {
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(CODE_WEB_CONTEXT + "/TOOOOLOOOONG?date=" + LocalDate.now()),
+                        getLocalUrl(
+                                CODE_WEB_CONTEXT
+                                        + "/TOOOOLOOOONG?date="
+                                        + LocalDate.now(java.time.ZoneOffset.UTC)),
                         tokenGenerator.fetchTokenForRole());
 
         // assert the response

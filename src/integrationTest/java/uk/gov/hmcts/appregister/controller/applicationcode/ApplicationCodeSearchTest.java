@@ -11,6 +11,7 @@ import io.restassured.specification.RequestSpecification;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -482,9 +483,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         saveApplicationCodeWithFees(
                 code,
                 "ZZFEE01",
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1));
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -515,9 +516,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         saveApplicationCodeWithFees(
                 code,
                 "ZZFEE02",
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1));
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -674,7 +675,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                         + "/"
                                         + "AD99004"
                                         + "?date="
-                                        + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                                        + LocalDate.now(java.time.ZoneOffset.UTC)
+                                                .format(DateTimeFormatter.ISO_LOCAL_DATE)),
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
 
@@ -1105,7 +1107,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         String id = "notexist";
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + id, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + id,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
                         getATokenWithValidCredentials()
                                 .roles(List.of(RoleEnum.ADMIN))
                                 .build()

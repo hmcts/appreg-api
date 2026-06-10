@@ -193,7 +193,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
@@ -383,7 +383,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         entryCreateDto.setNumberOfRespondents(null);
 
@@ -466,7 +466,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
     void createEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Reference");
@@ -550,7 +550,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
@@ -672,7 +672,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
@@ -740,7 +740,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 
@@ -1087,7 +1087,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
         entryUpdateDto.setHasOffsiteFee(true);
@@ -1167,7 +1167,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 applicationListEntry.get(),
                 update.getPayload(),
                 "Application for a warrant to enter premises at {value} for date {"
-                        + LocalDate.now()
+                        + LocalDate.now(java.time.ZoneOffset.UTC)
                         + "}",
                 "Application for a warrant to enter premises at {{Premises Address}} "
                         + "for date {{Premises Date}}",
@@ -1227,7 +1227,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         // fill the template with the two parameters
         updateDto.setWordingFields(List.of(substitution, substitution1));
@@ -1288,7 +1288,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 update.getPayload(),
                 "Application for a warrant to enter"
                         + " premises at {value} for date {"
-                        + LocalDate.now()
+                        + LocalDate.now(java.time.ZoneOffset.UTC)
                         + "}",
                 "Application for a warrant to enter premises at "
                         + "{{Premises Address}} for date {{Premises Date}}",
@@ -1546,7 +1546,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
 
@@ -1735,7 +1735,8 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
      * @return The UUID of the created entry
      */
     private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest() {
-        return createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(LocalDate.now());
+        return createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
+                LocalDate.now(java.time.ZoneOffset.UTC));
     }
 
     private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
@@ -1827,7 +1828,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
@@ -1873,7 +1874,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             response.getPayload(),
                             "Application for a warrant to ente"
                                     + "r premises at {test wording} for date {"
-                                    + LocalDate.now()
+                                    + LocalDate.now(java.time.ZoneOffset.UTC)
                                     + "}",
                             "Application for a warrant to enter premises at "
                                     + "{{Premises Address}} for date {{Premises Date}}",
@@ -1894,7 +1895,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);

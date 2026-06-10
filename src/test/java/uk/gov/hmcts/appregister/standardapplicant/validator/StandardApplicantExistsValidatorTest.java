@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -28,7 +29,7 @@ import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCod
 @ExtendWith(MockitoExtension.class)
 class StandardApplicantExistsValidatorTest {
     private static final ZoneId UK_ZONE = ZoneId.of("Europe/London");
-    private static final LocalDate TODAY_UK = LocalDate.of(2026, 6, 9);
+    private static final LocalDate TODAY_UK = LocalDate.of(2026, Month.JUNE, 9);
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
 

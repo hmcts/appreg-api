@@ -18,7 +18,10 @@ class ApplicationCodeControllerSecurityTest extends AbstractSecurityControllerTe
                         .successRole(RoleEnum.ADMIN)
                         .build(),
                 RestEndpointDescription.builder()
-                        .url(getLocalUrlWithDate("application-codes/2", OffsetDateTime.now()))
+                        .url(
+                                getLocalUrlWithDate(
+                                        "application-codes/2",
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

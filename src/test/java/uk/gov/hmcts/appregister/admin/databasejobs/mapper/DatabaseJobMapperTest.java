@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.admin.databasejobs.mapper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +26,7 @@ import uk.gov.hmcts.appregister.report.exception.ReportError;
 
 @ExtendWith(MockitoExtension.class)
 class ReportLocationValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.of(2026, 5, 12);
+    private static final LocalDate TODAY_UK = LocalDate.of(2026, Month.MAY, 12);
 
     @Mock private CriminalJusticeAreaRepository criminalJusticeAreaRepository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;

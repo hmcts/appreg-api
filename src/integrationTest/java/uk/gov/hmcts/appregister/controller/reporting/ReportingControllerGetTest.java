@@ -57,7 +57,8 @@ class ReportingControllerGetTest extends BaseIntegration {
 
     private Function<Pageable, Page<ApplicationCode>> getApplicationCodesFunction =
             (pageable) -> {
-                return applicationCodeRepository.search("CODE", null, LocalDate.now(), pageable);
+                return applicationCodeRepository.search(
+                        "CODE", null, LocalDate.now(java.time.ZoneOffset.UTC), pageable);
             };
 
     @BeforeEach

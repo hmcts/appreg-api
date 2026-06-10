@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,8 +31,8 @@ import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCrudTest {
 
-    private static final LocalDate ORIGINAL_STATUS_DATE = LocalDate.of(2025, 1, 10);
-    private static final LocalDate UPDATED_STATUS_DATE = LocalDate.of(2025, 10, 7);
+    private static final LocalDate ORIGINAL_STATUS_DATE = LocalDate.of(2025, Month.JANUARY, 10);
+    private static final LocalDate UPDATED_STATUS_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
     private static final String ORIGINAL_PAYMENT_REFERENCE = "PAY-ORIGINAL";
     private static final String UPDATED_PAYMENT_REFERENCE = "PAY-UPDATED";
 
@@ -251,7 +252,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         BulkFeeDetailsDto feeDetails =
                 feeDetails(
                         PaymentStatus.REMITTED,
-                        LocalDate.now().plusDays(1),
+                        LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1),
                         UPDATED_PAYMENT_REFERENCE,
                         true);
 

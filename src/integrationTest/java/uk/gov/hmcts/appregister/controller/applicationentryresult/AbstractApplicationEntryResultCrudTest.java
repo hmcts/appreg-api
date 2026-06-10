@@ -6,6 +6,7 @@ import io.restassured.response.Response;
 import java.net.MalformedURLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -66,7 +67,7 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
 
     protected static final String CREATE_ENTRY_CONTEXT = "application-lists";
 
-    protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    protected static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
 
     protected static final String VALID_COURT_CODE = "CCC003";
@@ -166,7 +167,7 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 

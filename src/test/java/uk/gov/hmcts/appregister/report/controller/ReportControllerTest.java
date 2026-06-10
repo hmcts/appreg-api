@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,13 +81,13 @@ class ReportControllerTest {
 
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1))
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
         ActivityAuditFilterDto normalisedFilter =
                 new ActivityAuditFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
 
         when(reportService.createActivityAuditReport(filter))
@@ -121,12 +122,12 @@ class ReportControllerTest {
 
         FeesReportFilterDto filter =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1));
         FeesReportFilterDto normalisedFilter =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
 
         when(reportService.createFeesReport(filter))
                 .thenReturn(
@@ -159,12 +160,12 @@ class ReportControllerTest {
 
         SearchWarrantsReportFilterDto filter =
                 new SearchWarrantsReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1));
         SearchWarrantsReportFilterDto normalisedFilter =
                 new SearchWarrantsReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
 
         when(reportService.createSearchWarrantsReport(filter))
                 .thenReturn(
@@ -198,12 +199,12 @@ class ReportControllerTest {
 
         DurationFilterDto filter =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1));
         DurationFilterDto normalisedFilter =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
 
         when(reportService.createDurationReport(filter))
                 .thenReturn(
@@ -237,12 +238,12 @@ class ReportControllerTest {
 
         ListMaintenanceFilterDto filter =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1));
         ListMaintenanceFilterDto normalisedFilter =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
 
         when(reportService.createListMaintenanceReport(filter))
                 .thenReturn(
@@ -277,13 +278,13 @@ class ReportControllerTest {
 
         PrivateProsecutorsIndexFilterDto filter =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 31))
-                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1))
                         .applicantSurname("Smith");
         PrivateProsecutorsIndexFilterDto normalisedFilter =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .applicantSurname("Smith");
 
         when(reportService.createPrivateProsecutorsIndexReport(filter))

@@ -41,6 +41,7 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
      * @param validatable The validatable payload
      * @param validateSuccess The success function to call if validation is successful
      */
+    @Override
     public <R> R validate(T validatable, BiFunction<T, O, R> validateSuccess) {
 
         ApplicationList applicationList = validateParentApplicationList(validatable);

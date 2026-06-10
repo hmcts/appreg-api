@@ -18,7 +18,7 @@ class CriminalJusticeControllerSecurityTest extends AbstractSecurityControllerTe
                                                 + "/"
                                                 + AbstractCriminalJusticeControllerCrudTest
                                                         .EXPECTED_CODE,
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
@@ -27,7 +27,7 @@ class CriminalJusticeControllerSecurityTest extends AbstractSecurityControllerTe
                         .url(
                                 getLocalUrlWithDate(
                                         AbstractCriminalJusticeControllerCrudTest.WEB_CONTEXT,
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

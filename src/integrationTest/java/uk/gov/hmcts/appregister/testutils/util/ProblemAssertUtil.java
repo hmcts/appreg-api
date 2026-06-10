@@ -10,6 +10,9 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
  * A problem details class that allows to assert around problem details.
  */
 public class ProblemAssertUtil {
+    private ProblemAssertUtil() {
+        /* This utility class should not be instantiated */
+    }
 
     private static String normalizeLineEndings(String value) {
         return value == null ? null : value.replace("\r\n", "\n");

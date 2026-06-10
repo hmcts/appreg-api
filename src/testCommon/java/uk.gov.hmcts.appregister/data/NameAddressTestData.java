@@ -18,7 +18,7 @@ public class NameAddressTestData
     public NameAddress.NameAddressBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
         NameAddress.NameAddressBuilder data = NameAddress.builder();
-        data.dateOfBirth(LocalDate.now())
+        data.dateOfBirth(LocalDate.now(java.time.ZoneOffset.UTC))
                 .mobileNumber("number" + uniqueId)
                 .address1("address1" + uniqueId)
                 .address2("address2" + uniqueId)

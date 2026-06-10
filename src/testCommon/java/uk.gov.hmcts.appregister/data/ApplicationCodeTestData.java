@@ -31,7 +31,7 @@ public class ApplicationCodeTestData
     @Override
     public ApplicationCode someComplete() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         return Instancio.of(ApplicationCode.class)
                 .ignore(field(ApplicationCode::getId))
                 .ignore(field(ApplicationCode::getVersion))

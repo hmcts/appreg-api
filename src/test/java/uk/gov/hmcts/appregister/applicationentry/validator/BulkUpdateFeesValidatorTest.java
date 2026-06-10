@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import jakarta.validation.Validation;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +40,7 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BulkUpdateFeesValidatorTest {
 
-    private static final LocalDate TODAY = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;

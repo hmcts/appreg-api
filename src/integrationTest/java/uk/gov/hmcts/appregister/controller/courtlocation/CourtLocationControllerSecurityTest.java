@@ -19,7 +19,7 @@ class CourtLocationControllerSecurityTest extends AbstractSecurityControllerTest
                                                 + "/"
                                                 + AbstractCourtLocationControllerCrudTest
                                                         .CARDIFF_CODE,
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

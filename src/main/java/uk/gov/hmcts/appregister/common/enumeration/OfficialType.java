@@ -16,7 +16,7 @@ public enum OfficialType {
 
     public static OfficialType fromValue(String value) {
         for (OfficialType status : OfficialType.values()) {
-            if (status.getValue().equalsIgnoreCase(value)) {
+            if (status.value.equalsIgnoreCase(value)) {
                 return status;
             }
         }

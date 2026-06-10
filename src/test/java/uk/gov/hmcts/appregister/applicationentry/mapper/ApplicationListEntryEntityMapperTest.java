@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.mapper;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -35,7 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 @SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryEntityMapperTest {
-    private static final LocalDate BUSINESS_DATE = LocalDate.of(2025, 1, 2);
+    private static final LocalDate BUSINESS_DATE = LocalDate.of(2025, Month.JANUARY, 2);
 
     private ApplicationListEntryEntityMapper mapper;
 

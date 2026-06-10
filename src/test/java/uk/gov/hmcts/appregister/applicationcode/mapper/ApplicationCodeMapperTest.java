@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationcode.mapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -15,7 +16,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffs
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 class ApplicationCodeMapperTest {
-    private static final LocalDate EFFECTIVE_DATE = LocalDate.of(2025, 1, 2);
+    private static final LocalDate EFFECTIVE_DATE = LocalDate.of(2025, Month.JANUARY, 2);
 
     private final ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 

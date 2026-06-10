@@ -1,8 +1,12 @@
 package uk.gov.hmcts.appregister.util;
 
 import java.time.LocalDate;
+import java.time.Month;
 
 public final class TestConstants {
+    private TestConstants() {
+        /* This utility class should not be instantiated */
+    }
 
     public static final String MR = "Mr";
     public static final String MRS = "Mrs";
@@ -43,7 +47,7 @@ public final class TestConstants {
     public static final String PERSON5_PHONE = "02079460958";
     public static final String PERSON5_MOBILE = "07700900000";
     public static final String PERSON5_EMAIL = "s.johnson@example.com";
-    public static final LocalDate PERSON5_DATE_OF_BIRTH = LocalDate.of(2025, 11, 3);
+    public static final LocalDate PERSON5_DATE_OF_BIRTH = LocalDate.of(2025, Month.NOVEMBER, 3);
 
     public static final String ORGANISATION1_ADDRESSLINE1 = "100 Legal Street";
     public static final String ORGANISATION1_ADDRESSLINE2 = "Corporate Offices, Level 3";

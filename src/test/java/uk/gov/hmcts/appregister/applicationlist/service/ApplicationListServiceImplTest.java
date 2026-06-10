@@ -2,9 +2,9 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -27,6 +27,7 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_SURNAME;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -108,7 +109,7 @@ import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 @ExtendWith(MockitoExtension.class)
 class ApplicationListServiceImplTest {
 
-    private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, 10, 7);
+    private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(10, 30);
 
     @Mock private ApplicationListRepository repository;
@@ -328,7 +329,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
+        verify(mapper).toGetDetailDto(saved, cja, 0L, summaryCaptor.getValue());
     }
 
     @Test
@@ -529,7 +530,7 @@ class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent().size()).isEqualTo(1);
 
-        verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Central Court"));
+        verify(mapper).toGetSummaryDto(row, 0L, "Central Court");
     }
 
     @Test
@@ -582,7 +583,7 @@ class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent().size()).isEqualTo(1);
 
-        verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("CJA Desc"));
+        verify(mapper).toGetSummaryDto(row, 0L, "CJA Desc");
     }
 
     @Test
@@ -735,7 +736,7 @@ class ApplicationListServiceImplTest {
         ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
-        verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("CJA Name"));
+        verify(mapper).toGetSummaryDto(row, 0L, "CJA Name");
     }
 
     @Test
@@ -776,7 +777,7 @@ class ApplicationListServiceImplTest {
         ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
-        verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Some Court"));
+        verify(mapper).toGetSummaryDto(row, 0L, "Some Court");
     }
 
     @Test
@@ -815,7 +816,7 @@ class ApplicationListServiceImplTest {
         ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
-        verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
+        verify(mapper).toGetSummaryDto(row, 0L, "Location not set");
     }
 
     @Test
@@ -1095,7 +1096,7 @@ class ApplicationListServiceImplTest {
                         .build();
 
         Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
-        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
+        when(aleRepository.findSummariesById(id, pageable)).thenReturn(dbPage);
     }
 
     class DummyAuditOperationService implements AuditOperationService {

@@ -28,7 +28,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
@@ -37,7 +37,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -144,7 +144,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
@@ -153,7 +153,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -184,7 +184,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
@@ -194,7 +194,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 

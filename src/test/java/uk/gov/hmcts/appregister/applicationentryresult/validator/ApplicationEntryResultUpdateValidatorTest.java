@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultUpdateValidatorTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -78,22 +78,21 @@ class ApplicationEntryResultUpdateValidatorTest {
         resolutionCode.setWording("Some wording");
 
         // ---- base validations (AbstractApplicationEntryResultValidator) ----
-        when(applicationListRepository.findByUuidIncludingDelete(eq(applicationListUuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(applicationListUuid))
                 .thenReturn(Optional.of(applicationList));
 
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        eq(applicationListEntryUuid), eq(applicationListUuid)))
+                        applicationListEntryUuid, applicationListUuid))
                 .thenReturn(Optional.of(applicationListEntry));
 
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        eq(dto.getResultCode()), eq(TODAY_UK)))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
         AppListEntryResolution entryResolution = new AppListEntryResolution();
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-                        eq(resultUuid), eq(applicationListEntryUuid)))
+                        resultUuid, applicationListEntryUuid))
                 .thenReturn(Optional.of(entryResolution));
     }
 
@@ -105,7 +104,7 @@ class ApplicationEntryResultUpdateValidatorTest {
     @Test
     void validateEntryResultDoesNotExist() {
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-                        eq(resultUuid), eq(applicationListEntryUuid)))
+                        resultUuid, applicationListEntryUuid))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =
@@ -121,7 +120,7 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateApplicationListDoesNotExist() {
-        when(applicationListRepository.findByUuidIncludingDelete(eq(applicationListUuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(applicationListUuid))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =
@@ -138,7 +137,7 @@ class ApplicationEntryResultUpdateValidatorTest {
     @Test
     void validateApplicationListEntryDoesNotExist() {
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        eq(applicationListEntryUuid), eq(applicationListUuid)))
+                        applicationListEntryUuid, applicationListUuid))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =
@@ -154,8 +153,7 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateResolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        eq(dto.getResultCode()), eq(TODAY_UK)))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of());
 
         AppRegistryException ex =

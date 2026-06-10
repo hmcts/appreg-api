@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
@@ -106,7 +107,7 @@ class ActivityAuditReportLifecycleTest {
                 .columnName("APPLICATION_CODE")
                 .oldValue("old")
                 .newValue("new")
-                .createdDate(LocalDate.of(2026, 4, 1))
+                .createdDate(LocalDate.of(2026, Month.APRIL, 1))
                 .userName("caseworker")
                 .build();
     }
