@@ -101,6 +101,8 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
+    private static final String CREATED_OFFSITE_FEE_LOG =
+            "Created Offsite Fee: {} to Entry: {} mapping: {}";
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
             "appregister.application_entry.bulk_fee_update.requests";
@@ -717,7 +719,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 appListEntryFeeRepository.save(appListEntryFeeId);
 
                         log.debug(
-                                "Created Offsite Fee: {} to Entry: {} mapping: {}",
+                                CREATED_OFFSITE_FEE_LOG,
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
@@ -914,7 +916,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             appListEntryFeeRepository.save(offsiteEntryFee);
 
                     log.debug(
-                            "Created Offsite Fee: {} to Entry: {} mapping: {}",
+                            CREATED_OFFSITE_FEE_LOG,
                             savedOffsiteEntryFee.getFeeId(),
                             savedOffsiteEntryFee.getAppListEntryId(),
                             savedOffsiteEntryFee.getId());
@@ -1252,7 +1254,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             offsiteEntryFee = appListEntryFeeRepository.save(offsiteEntryFee);
 
                             log.debug(
-                                    "Created Offsite Fee: {} to Entry: {} mapping: {}",
+                                    CREATED_OFFSITE_FEE_LOG,
                                     offsiteEntryFee.getFeeId(),
                                     offsiteEntryFee.getAppListEntryId());
 
