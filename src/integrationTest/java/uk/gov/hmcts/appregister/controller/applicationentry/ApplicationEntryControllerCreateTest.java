@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import io.restassured.response.Response;
@@ -52,11 +53,11 @@ import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudTest {
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Test
-    public void givenValidRequest_whenCreateListEntry_thenReturn201() throws Exception {
+    void givenValidRequest_whenCreateListEntry_thenReturn201() throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
         substitution.setValue("test wording");
@@ -197,11 +198,11 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 entryCreateDto,
                 createdDto.getDetailDto(),
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
-        Assertions.assertTrue(createdDto.getDetailDto().getOfficials().isEmpty());
+        assertThat(createdDto.getDetailDto().getOfficials()).isEmpty();
     }
 
     @Test
-    public void givenValidRequest_whenCreateListEntryWithEnforcementFineCode_thenReturn201()
+    void givenValidRequest_whenCreateListEntryWithEnforcementFineCode_thenReturn201()
             throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
@@ -278,7 +279,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenValidRequest_whenCreateListEntryWithoutFeeAndRespondent_thenReturn201()
+    void givenValidRequest_whenCreateListEntryWithoutFeeAndRespondent_thenReturn201()
             throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -303,12 +304,12 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenPaymentReferenceWithFifteenCharacters_whenCreateListEntry_thenReturn201()
+    void givenPaymentReferenceWithFifteenCharacters_whenCreateListEntry_thenReturn201()
             throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
-        Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
+        assertThat(entryCreateDto.getFeeStatuses()).isNotEmpty();
 
         FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
@@ -327,7 +328,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenOverlappingActiveApplicationCodesAndFees_whenCreateListEntry_thenPreferNullEndDateRecords()
                     throws Exception {
         LocalDate today = LocalDate.now();
@@ -369,7 +370,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenCreateEntryWithApplicantApplicantMutualExclusiveInvalid_400IsReturned()
                     throws Exception {
 
@@ -471,7 +472,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenApplicationListDoesNotexist_404IsReturned()
+    void givenAnInvalidCreateEntryRequest_whenApplicationListDoesNotexist_404IsReturned()
             throws Exception {
 
         var tokenGenerator = createAdminToken();
@@ -493,9 +494,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectState_400IsReturned()
-                    throws Exception {
+    void givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectState_400IsReturned()
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -520,7 +520,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenApplicationCodeDoesNotExist_404IsReturned()
+    void givenAnInvalidCreateEntryRequest_whenApplicationCodeDoesNotExist_404IsReturned()
             throws Exception {
 
         var tokenGenerator = createAdminToken();
@@ -547,7 +547,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenFeeNotExist_404IsReturned() throws Exception {
+    void givenAnInvalidCreateEntryRequest_whenFeeNotExist_404IsReturned() throws Exception {
         var tokenGenerator = createAdminToken();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -571,8 +571,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenRespondentNotExist_404IsReturned()
-            throws Exception {
+    void givenAnInvalidCreateEntryRequest_whenRespondentNotExist_404IsReturned() throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -598,9 +597,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAnInvalidCreateEntryRequest_whenWordingTemplateFieldsNotSufficient_400IsReturned()
-                    throws Exception {
+    void givenAnInvalidCreateEntryRequest_whenWordingTemplateFieldsNotSufficient_400IsReturned()
+            throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
@@ -631,14 +629,14 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenFeeStatusIsDueAndPaymentReferenceProvided_then400IsReturned()
                     throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
-        Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
+        assertThat(entryCreateDto.getFeeStatuses()).isNotEmpty();
 
         FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
         feeStatus.setPaymentStatus(DUE);
@@ -668,13 +666,13 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenPaymentReferenceIsLongerThanFifteenCharacters_then400IsReturned()
                     throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
-        Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
+        assertThat(entryCreateDto.getFeeStatuses()).isNotEmpty();
 
         FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
@@ -702,7 +700,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void givenCreatedEntrySoftDeletedViaRepository_whenSearchingEntries_thenEntryIsExcluded()
+    void givenCreatedEntrySoftDeletedViaRepository_whenSearchingEntries_thenEntryIsExcluded()
             throws Exception {
 
         var tokenGenerator = createAdminToken();
@@ -732,9 +730,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
-                    throws Exception {
+    void givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
+            throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(List.of());
 
@@ -767,7 +764,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenCreateEntryWithAppicantApplicantMutualExclusiveInvalid2_400IsReturned()
                     throws Exception {
         // create the token
@@ -823,7 +820,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenCreateEntryWithRespondentMutualExclusiveInvalid_400IsReturned()
                     throws Exception {
         // setup the payload
@@ -919,7 +916,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectStateDeleted_400IsReturned()
                     throws Exception {
         // create the token
@@ -947,7 +944,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenRespondentNotRequired_400IsReturned()
+    void givenAnInvalidCreateEntryRequest_whenRespondentNotRequired_400IsReturned()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -975,7 +972,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenWordingLengthNotSufficient_400IsReturned()
+    void givenAnInvalidCreateEntryRequest_whenWordingLengthNotSufficient_400IsReturned()
             throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
@@ -1017,7 +1014,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     // TODO: Re-enable this once the decision has been made on the FE implementation.
     /*
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenWordingDataTypeFailure_400IsReturned()
+    void givenAnInvalidCreateEntryRequest_whenWordingDataTypeFailure_400IsReturned()
             throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
@@ -1056,7 +1053,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     } */
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidName_201Returned()
+    void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidName_201Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1084,7 +1081,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidAddress_201Returned()
+    void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidAddress_201Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1135,7 +1132,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidPostcode_201Returned()
+    void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidPostcode_201Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1161,7 +1158,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidPhoneNumber_201Returned()
+    void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidPhoneNumber_201Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1191,7 +1188,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidMobileNumber_201Returned()
+    void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidMobileNumber_201Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1221,7 +1218,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidEmail_201Returned()
+    void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidEmail_201Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1251,7 +1248,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidName_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidName_400Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1296,7 +1293,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidAddress_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidAddress_400Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1340,7 +1337,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidPostcode_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidPostcode_400Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1375,7 +1372,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidPhoneNumber_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidPhoneNumber_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1415,7 +1412,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidMobileNumber_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidMobileNumber_400Returned()
             throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1454,7 +1451,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidEmailAddress_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidEmailAddress_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1494,7 +1491,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidName_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidName_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1540,7 +1537,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidAddress_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidAddress_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1585,7 +1582,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidPostcode_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidPostcode_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1621,7 +1618,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidPhoneNumber_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidPhoneNumber_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1661,7 +1658,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidMobileNumber_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidMobileNumber_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1701,7 +1698,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidEmailAddress_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOApplicantHasInvalidEmailAddress_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1741,7 +1738,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidName_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidName_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1778,7 +1775,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidAddress_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidAddress_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1824,7 +1821,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidPostcode_400Returned()
+    void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidPostcode_400Returned()
             throws Exception {
 
         // setup the payload
@@ -1861,9 +1858,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidPhoneNumber_400Returned()
-                    throws Exception {
+    void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidPhoneNumber_400Returned()
+            throws Exception {
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1903,9 +1899,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidMobileNumber_400Returned()
-                    throws Exception {
+    void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidMobileNumber_400Returned()
+            throws Exception {
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1945,9 +1940,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidEmailAddress_400Returned()
-                    throws Exception {
+    void givenAFailureCreate_whenEntryCreateDTOOrganisationHasInvalidEmailAddress_400Returned()
+            throws Exception {
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1987,7 +1981,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenSameList_whenCreateTwoEntries_thenSequenceNumbersIncrement() throws Exception {
+    void givenSameList_whenCreateTwoEntries_thenSequenceNumbersIncrement() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
 
         // Arrange: create two entries in the same open list
@@ -2029,8 +2023,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenDifferentLists_whenCreateEntries_thenSequencesAreIndependent()
-            throws Exception {
+    void givenDifferentLists_whenCreateEntries_thenSequencesAreIndependent() throws Exception {
         List<ApplicationList> lists =
                 unitOfWork.inTransaction(
                         () -> applicationListRepository.findAll(Sort.by(Sort.Direction.ASC, "id")));
@@ -2078,7 +2071,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenNewList_whenCreateFirstEntry_thenSequenceIsOne() throws Exception {
+    void givenNewList_whenCreateFirstEntry_thenSequenceIsOne() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey tokenAndJwks = tokenGenerator.fetchTokenForRole();
 
@@ -2142,7 +2135,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenApplicationCodeDoesNotRequireRespondent_whenCreateEntryWithRespondentProvided_thenReturn201()
                     throws Exception {
         // Arrange
@@ -2173,7 +2166,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn201()
                     throws Exception {
         // Arrange
@@ -2216,7 +2209,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenEntryNumberOfRespondentsProvided_thenReturn201()
                     throws Exception {
         // Arrange
@@ -2559,7 +2552,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
                     throws Exception {
         // Arrange
@@ -2600,7 +2593,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
                     throws Exception {
         // Arrange
@@ -2641,7 +2634,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenAnInvalidCreateEntryRequest_whenMultipleValidationErrors_thenErrorsAreReturnedInSortedOrder()
                     throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -2695,7 +2688,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureCreate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
+    void givenAFailureCreate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setLodgementDate(LocalDate.now().plusDays(1));

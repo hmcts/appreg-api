@@ -16,7 +16,7 @@ class OpenApiPublisherTest extends BaseIntegration {
     private MockMvc mvc;
 
     @BeforeAll
-    public static void before() {
+    static void before() {
         // stop so that when started functional data is inserted
         postgresCommand.stop();
     }

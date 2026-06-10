@@ -20,7 +20,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import utils.ConstraintAssertion;
 
-public class ApplicationEntryDtoTest {
+class ApplicationEntryDtoTest {
 
     private ObjectMapper objectMapper;
 

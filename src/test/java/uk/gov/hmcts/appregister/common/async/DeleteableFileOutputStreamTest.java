@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 
-public class DeleteableFileOutputStreamTest extends AbstractAsyncTest {
+class DeleteableFileOutputStreamTest extends AbstractAsyncTest {
 
     @Test
-    public void testDeleteFile() throws Exception {
+    void testDeleteFile() throws Exception {
         File file = AppRegTempFileUtil.generateTempFile("deleteable-output-stream-test");
         Assertions.assertTrue(file.exists());
 

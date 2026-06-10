@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import utils.ConstraintAssertion;
 
-public class PersonDtoTest {
+class PersonDtoTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach

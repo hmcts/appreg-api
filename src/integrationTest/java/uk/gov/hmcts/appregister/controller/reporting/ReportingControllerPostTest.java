@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.controller.reporting;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.opencsv.CSVReader;
 import io.restassured.response.Response;
 import java.io.InputStream;
@@ -43,7 +45,7 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
-public class ReportingControllerPostTest extends BaseIntegration {
+class ReportingControllerPostTest extends BaseIntegration {
     private static final String FEES_REPORT_WEB_CONTEXT = "reports/fees/jobs";
     private static final String SEARCH_WARRANTS_REPORT_WEB_CONTEXT = "reports/search-warrants/jobs";
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
@@ -70,9 +72,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private String schema;
 
     @Test
-    public void
-            givenValidActivityAuditReportRequest_whenCreatingReport_thenFilteredCsvCanBeDownloaded()
-                    throws Exception {
+    void givenValidActivityAuditReportRequest_whenCreatingReport_thenFilteredCsvCanBeDownloaded()
+            throws Exception {
         insertDataAuditRow(
                 "Bulk Application Upload",
                 "APPLICATION_LIST_ENTRIES",
@@ -193,25 +194,24 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Activity Audit Report"));
-            Assertions.assertTrue(report.contains("Bulk Application Upload"));
-            Assertions.assertTrue(report.contains("AW62958"));
-            Assertions.assertTrue(report.contains("Second page value"));
-            Assertions.assertTrue(report.contains("Third page value"));
-            Assertions.assertTrue(report.contains(ALICE_DISPLAY_USERNAME));
-            Assertions.assertFalse(report.contains(ALICE_USER_ID));
-            Assertions.assertFalse(report.contains("{AW62958}"));
-            Assertions.assertFalse(report.contains("Update Application"));
-            Assertions.assertFalse(report.contains("Hidden"));
-            Assertions.assertFalse(report.contains(BOB_DISPLAY_USERNAME));
-            Assertions.assertFalse(report.contains("12345"));
+            assertThat(report).contains("Activity Audit Report");
+            assertThat(report).contains("Bulk Application Upload");
+            assertThat(report).contains("AW62958");
+            assertThat(report).contains("Second page value");
+            assertThat(report).contains("Third page value");
+            assertThat(report).contains(ALICE_DISPLAY_USERNAME);
+            assertThat(report).doesNotContain(ALICE_USER_ID);
+            assertThat(report).doesNotContain("{AW62958}");
+            assertThat(report).doesNotContain("Update Application");
+            assertThat(report).doesNotContain("Hidden");
+            assertThat(report).doesNotContain(BOB_DISPLAY_USERNAME);
+            assertThat(report).doesNotContain("12345");
         }
     }
 
     @Test
-    public void
-            givenValidFeesReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
-                    throws Exception {
+    void givenValidFeesReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+            throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -271,14 +271,13 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Fees Report"));
+            assertThat(report).contains("Fees Report");
         }
     }
 
     @Test
-    public void
-            givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
-                    throws Exception {
+    void givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
+            throws Exception {
         LocalDate listDate = LocalDate.of(2026, 5, 18);
         insertFeesReportApplication(
                 listDate, null, "ArcPerson", "Singlefield", "ARC person fee wording");
@@ -297,15 +296,14 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         String report = createFeesReportAndDownload(request);
 
-        Assertions.assertTrue(report.contains("Fees Report"));
-        Assertions.assertTrue(report.contains("ArcPerson Singlefield"));
-        Assertions.assertFalse(report.contains("Arc Organisation Applicant Ltd"));
+        assertThat(report).contains("Fees Report");
+        assertThat(report).contains("ArcPerson Singlefield");
+        assertThat(report).doesNotContain("Arc Organisation Applicant Ltd");
     }
 
     @Test
-    public void
-            givenFeesReportApplicantNameMatchesOrganisation_whenCreatingReport_thenCsvIncludesEntry()
-                    throws Exception {
+    void givenFeesReportApplicantNameMatchesOrganisation_whenCreatingReport_thenCsvIncludesEntry()
+            throws Exception {
         LocalDate listDate = LocalDate.of(2026, 5, 19);
         insertFeesReportApplication(
                 listDate, null, "ArcPerson", "Unmatched", "ARC person fee wording");
@@ -324,15 +322,14 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         String report = createFeesReportAndDownload(request);
 
-        Assertions.assertTrue(report.contains("Fees Report"));
-        Assertions.assertTrue(report.contains("Arc Organisation Singlefield Ltd"));
-        Assertions.assertFalse(report.contains("ArcPerson Unmatched"));
+        assertThat(report).contains("Fees Report");
+        assertThat(report).contains("Arc Organisation Singlefield Ltd");
+        assertThat(report).doesNotContain("ArcPerson Unmatched");
     }
 
     @Test
-    public void
-            givenFeesReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
-                    throws Exception {
+    void givenFeesReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
+            throws Exception {
         LocalDate listDate = LocalDate.of(2026, 5, 20);
         insertFeesReportApplication(
                 listDate,
@@ -359,16 +356,15 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         String report = createFeesReportAndDownload(request);
 
-        Assertions.assertTrue(report.contains("Fees Report"));
-        Assertions.assertTrue(report.contains("ArcPerson IncludedOtherLocation"));
-        Assertions.assertTrue(report.contains("Temporary Fees Hall"));
-        Assertions.assertFalse(report.contains("ArcPerson ExcludedOtherLocation"));
-        Assertions.assertFalse(report.contains("Permanent Fees Hall"));
+        assertThat(report).contains("Fees Report");
+        assertThat(report).contains("ArcPerson IncludedOtherLocation");
+        assertThat(report).contains("Temporary Fees Hall");
+        assertThat(report).doesNotContain("ArcPerson ExcludedOtherLocation");
+        assertThat(report).doesNotContain("Permanent Fees Hall");
     }
 
     @Test
-    public void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned()
-            throws Exception {
+    void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -393,7 +389,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenCourtAndCjaLocation_whenCreatingFeesReport_thenBadRequestIsReturned()
+    void givenCourtAndCjaLocation_whenCreatingFeesReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -425,8 +421,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenUnknownCourtCode_whenCreatingFeesReport_thenBadRequestIsReturned()
-            throws Exception {
+    void givenUnknownCourtCode_whenCreatingFeesReport_thenBadRequestIsReturned() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -443,12 +438,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         request);
 
         createResponse.then().statusCode(400);
-        Assertions.assertTrue(createResponse.asString().contains("Court not found"));
+        assertThat(createResponse.asString()).contains("Court not found");
     }
 
     @Test
-    public void givenDuplicateCjaCode_whenCreatingFeesReport_thenConflictIsReturned()
-            throws Exception {
+    void givenDuplicateCjaCode_whenCreatingFeesReport_thenConflictIsReturned() throws Exception {
         insertDuplicateCjaRows("Z1");
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -477,7 +471,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
+    void
             givenValidSearchWarrantsReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
 
@@ -542,12 +536,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Search Warrants Report"));
+            assertThat(report).contains("Search Warrants Report");
         }
     }
 
     @Test
-    public void
+    void
             givenInvalidLocationCombination_whenCreatingSearchWarrantsReport_thenBadRequestIsLoggedWithProblemDetail()
                     throws Exception {
         LogCaptor exceptionHandlerLogs = LogCaptor.forClass(AppRegExceptionHandler.class);
@@ -601,7 +595,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
+    void
             givenValidDurationReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 10);
@@ -680,18 +674,18 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Duration Report"));
-            Assertions.assertTrue(report.contains("10/04/2026"));
-            Assertions.assertTrue(report.contains("XCD123 - Duration Court"));
-            Assertions.assertTrue(report.contains("County Hall"));
-            Assertions.assertTrue(report.contains("Duration report integration list"));
-            Assertions.assertTrue(report.contains("2"));
-            Assertions.assertTrue(report.contains("45"));
+            assertThat(report).contains("Duration Report");
+            assertThat(report).contains("10/04/2026");
+            assertThat(report).contains("XCD123 - Duration Court");
+            assertThat(report).contains("County Hall");
+            assertThat(report).contains("Duration report integration list");
+            assertThat(report).contains("2");
+            assertThat(report).contains("45");
         }
     }
 
     @Test
-    public void givenUnknownCjaCode_whenCreatingDurationReport_thenBadRequestIsReturned()
+    void givenUnknownCjaCode_whenCreatingDurationReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -717,7 +711,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenUnknownCourtCode_whenCreatingDurationReport_thenBadRequestIsReturned()
+    void givenUnknownCourtCode_whenCreatingDurationReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -735,11 +729,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         request);
 
         createResponse.then().statusCode(400);
-        Assertions.assertTrue(createResponse.asString().contains("Court not found"));
+        assertThat(createResponse.asString()).contains("Court not found");
     }
 
     @Test
-    public void givenDuplicateCjaCode_whenCreatingDurationReport_thenConflictIsReturned()
+    void givenDuplicateCjaCode_whenCreatingDurationReport_thenConflictIsReturned()
             throws Exception {
         insertDuplicateCjaRows("Z2");
         TokenGenerator tokenGenerator =
@@ -769,7 +763,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
+    void
             givenValidWorkloadReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -823,12 +817,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Workload Report"));
+            assertThat(report).contains("Workload Report");
         }
     }
 
     @Test
-    public void
+    void
             givenValidWorkloadReportRequest_AppListAppListEntryIsDeletedNullCheck_ReportCanBeDownloaded()
                     throws Exception {
 
@@ -888,14 +882,14 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Workload Report"));
-            Assertions.assertTrue(report.contains("Test applicant"));
-            Assertions.assertTrue(report.contains("Test applicant 2"));
+            assertThat(report).contains("Workload Report");
+            assertThat(report).contains("Test applicant");
+            assertThat(report).contains("Test applicant 2");
         }
     }
 
     @Test
-    public void
+    void
             givenValidWorkloadReportWithOtherLocationFilter_whenCreatingReport_thenJobIsMadeAndReportCanBeDownloaded()
                     throws Exception {
 
@@ -970,14 +964,14 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Workload Report"));
-            Assertions.assertTrue(report.contains("Town Hall"));
-            Assertions.assertTrue(report.contains("CD"));
+            assertThat(report).contains("Workload Report");
+            assertThat(report).contains("Town Hall");
+            assertThat(report).contains("CD");
         }
     }
 
     @Test
-    public void
+    void
             givenValidWorkloadReportWithJustCJACode_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
 
@@ -1052,16 +1046,15 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Workload Report"));
-            Assertions.assertTrue(report.contains("Town Hall"));
-            Assertions.assertTrue(report.contains("CD"));
+            assertThat(report).contains("Workload Report");
+            assertThat(report).contains("Town Hall");
+            assertThat(report).contains("CD");
         }
     }
 
     @Test
-    public void
-            givenWorkloadReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
-                    throws Exception {
+    void givenWorkloadReportOtherLocationOnly_whenCreatingReport_thenCsvIsFilteredByOtherLocation()
+            throws Exception {
         val listDate = LocalDate.of(2026, 6, 18);
         val includedApplicant = "ARCPOC 1403 Workload Included";
         val excludedApplicant = "ARCPOC 1403 Workload Excluded";
@@ -1104,11 +1097,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         val report = createAndDownloadWorkloadReport(request);
 
-        Assertions.assertTrue(report.contains("Workload Report"));
-        Assertions.assertTrue(report.contains(includedApplicant));
-        Assertions.assertTrue(report.contains(includedLocation));
-        Assertions.assertFalse(report.contains(excludedApplicant));
-        Assertions.assertFalse(report.contains(excludedLocation));
+        assertThat(report).contains("Workload Report");
+        assertThat(report).contains(includedApplicant);
+        assertThat(report).contains(includedLocation);
+        assertThat(report).doesNotContain(excludedApplicant);
+        assertThat(report).doesNotContain(excludedLocation);
     }
 
     @Test
@@ -1182,9 +1175,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
-            givenCourtProvidedWithCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
-                    throws Exception {
+    void givenCourtProvidedWithCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+            throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -1209,7 +1201,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
+    void
             givenCourtProvidedWithOtherLocationFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -1236,7 +1228,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
+    void
             givenWorkloadEntryHasMultipleResolutionsAndOfficials_whenCreatingReport_thenSingleCsvRowContainsAllData()
                     throws Exception {
         val listDate = LocalDate.of(2026, 8, 17);
@@ -1272,15 +1264,15 @@ public class ReportingControllerPostTest extends BaseIntegration {
         val applicantRows = report.lines().filter(line -> line.contains(applicantName)).toList();
 
         Assertions.assertEquals(1, applicantRows.size()); // asserts one row per entry
-        Assertions.assertTrue(applicantRows.getFirst().contains("WRA")); // includes first result
-        Assertions.assertTrue(applicantRows.getFirst().contains("WRB")); // includes second result
-        Assertions.assertTrue(applicantRows.getFirst().contains("Jill Magistrate")); // includes JP
+        assertThat(applicantRows.getFirst()).contains("WRA"); // includes first result
+        assertThat(applicantRows.getFirst()).contains("WRB"); // includes second result
+        assertThat(applicantRows.getFirst()).contains("Jill Magistrate"); // includes JP
         Assertions.assertTrue(
                 applicantRows.getFirst().contains("Casey Clerk")); // includes official
     }
 
     @Test
-    public void givenValidPrivateProsecutorsIndexRequest_whenCreatingReport_thenCsvCanBeDownloaded()
+    void givenValidPrivateProsecutorsIndexRequest_whenCreatingReport_thenCsvCanBeDownloaded()
             throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 11);
         insertPrivateProsecutorsIndexApplication(listDate);
@@ -1366,24 +1358,24 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
-            Assertions.assertTrue(report.contains("11/04/2026"));
-            Assertions.assertTrue(report.contains("XCD999 - Private Court"));
-            Assertions.assertTrue(report.contains("Private Hall"));
-            Assertions.assertTrue(report.contains("CD"));
-            Assertions.assertTrue(report.contains("Legacy"));
-            Assertions.assertTrue(report.contains("Private"));
-            Assertions.assertTrue(report.contains("Respondent Org Ltd"));
-            Assertions.assertTrue(report.contains("Private wording"));
-            Assertions.assertTrue(report.contains("PIZ"));
-            Assertions.assertTrue(report.contains("PIA"));
-            Assertions.assertTrue(report.contains("Private notes"));
-            Assertions.assertFalse(report.contains("{wording}"));
+            assertThat(report).contains("Private Prosecution Index Report");
+            assertThat(report).contains("11/04/2026");
+            assertThat(report).contains("XCD999 - Private Court");
+            assertThat(report).contains("Private Hall");
+            assertThat(report).contains("CD");
+            assertThat(report).contains("Legacy");
+            assertThat(report).contains("Private");
+            assertThat(report).contains("Respondent Org Ltd");
+            assertThat(report).contains("Private wording");
+            assertThat(report).contains("PIZ");
+            assertThat(report).contains("PIA");
+            assertThat(report).contains("Private notes");
+            assertThat(report).doesNotContain("{wording}");
         }
     }
 
     @Test
-    public void
+    void
             givenValidPrivateProsecutorsIndexRequestForStandardApplicant_whenCreatingReport_thenCsvCanBeDownloaded()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 12);
@@ -1460,20 +1452,20 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
-            Assertions.assertTrue(report.contains("12/04/2026"));
-            Assertions.assertTrue(report.contains("XCD998 - Standard Private Court"));
-            Assertions.assertTrue(report.contains("Private Standards Body"));
-            Assertions.assertTrue(report.contains("Standard Respondent Ltd"));
-            Assertions.assertTrue(report.contains("Standard private wording"));
-            Assertions.assertTrue(report.contains("PIS"));
-            Assertions.assertTrue(report.contains("Standard private notes"));
-            Assertions.assertTrue(report.contains("CD,,,Private Standards Body,"));
+            assertThat(report).contains("Private Prosecution Index Report");
+            assertThat(report).contains("12/04/2026");
+            assertThat(report).contains("XCD998 - Standard Private Court");
+            assertThat(report).contains("Private Standards Body");
+            assertThat(report).contains("Standard Respondent Ltd");
+            assertThat(report).contains("Standard private wording");
+            assertThat(report).contains("PIS");
+            assertThat(report).contains("Standard private notes");
+            assertThat(report).contains("CD,,,Private Standards Body,");
         }
     }
 
     @Test
-    public void
+    void
             givenDateOnlyPrivateProsecutorsIndexRequest_whenCreatingReport_thenStandardApplicantNameIsPopulated()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 13);
@@ -1525,16 +1517,16 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
-            Assertions.assertTrue(report.contains("13/04/2026"));
-            Assertions.assertTrue(report.contains("XCD997 - Individual Standard Private Court"));
-            Assertions.assertTrue(report.contains("Private Citizen"));
-            Assertions.assertTrue(report.contains("CD,,,Private Citizen,"));
+            assertThat(report).contains("Private Prosecution Index Report");
+            assertThat(report).contains("13/04/2026");
+            assertThat(report).contains("XCD997 - Individual Standard Private Court");
+            assertThat(report).contains("Private Citizen");
+            assertThat(report).contains("CD,,,Private Citizen,");
         }
     }
 
     @Test
-    public void
+    void
             givenWhitespaceOnlyPrivateProsecutorsIndexFilters_whenCreatingReport_thenBadRequestIsReturned()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -1555,14 +1547,14 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         request);
 
         createResponse.then().statusCode(400);
-        Assertions.assertTrue(createResponse.asString().contains("Validation failed for fields:"));
-        Assertions.assertTrue(createResponse.asString().contains("applicantSurname"));
-        Assertions.assertTrue(createResponse.asString().contains("respondentFirstName"));
-        Assertions.assertTrue(createResponse.asString().contains("location.cjaCode"));
+        assertThat(createResponse.asString()).contains("Validation failed for fields:");
+        assertThat(createResponse.asString()).contains("applicantSurname");
+        assertThat(createResponse.asString()).contains("respondentFirstName");
+        assertThat(createResponse.asString()).contains("location.cjaCode");
     }
 
     @Test
-    public void
+    void
             givenPrivateProsecutorsIndexFilterContainsInternalWhitespace_whenCreatingReport_thenCsvCanBeDownloaded()
                     throws Exception {
         TokenAndJwksKey token =
@@ -1614,13 +1606,13 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            assertThat(report).contains("Private Prosecution Index Report");
             Assertions.assertEquals(2, report.lines().count());
         }
     }
 
     @Test
-    public void
+    void
             givenValidListMaintenanceReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 11);
@@ -1731,25 +1723,24 @@ public class ReportingControllerPostTest extends BaseIntegration {
         downloadResponse.then().contentType("text/csv");
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-            Assertions.assertTrue(report.contains("List Maintenance Report"));
+            assertThat(report).contains("List Maintenance Report");
             Assertions.assertTrue(
                     report.contains(
                             "List Date,List Court House Name,List Other Location,CJA Code,"
                                     + "List Description,List Status,No Of Application Entries"));
-            Assertions.assertTrue(report.contains("11/04/2026"));
-            Assertions.assertTrue(report.contains("XCD123 - Maintenance Court"));
-            Assertions.assertTrue(report.contains("County Hall"));
-            Assertions.assertTrue(report.contains("CD"));
-            Assertions.assertTrue(report.contains("List maintenance integration,OPEN,2"));
-            Assertions.assertFalse(report.contains("Closed maintenance list"));
-            Assertions.assertFalse(report.contains("Unmatched report list"));
+            assertThat(report).contains("11/04/2026");
+            assertThat(report).contains("XCD123 - Maintenance Court");
+            assertThat(report).contains("County Hall");
+            assertThat(report).contains("CD");
+            assertThat(report).contains("List maintenance integration,OPEN,2");
+            assertThat(report).doesNotContain("Closed maintenance list");
+            assertThat(report).doesNotContain("Unmatched report list");
         }
     }
 
     @Test
-    public void
-            givenListMaintenanceRowsOnDateBounds_whenNoLocationFilter_thenBothBoundsAreIncluded()
-                    throws Exception {
+    void givenListMaintenanceRowsOnDateBounds_whenNoLocationFilter_thenBothBoundsAreIncluded()
+            throws Exception {
         String description = "LM boundary report";
         insertApplicationListRow(
                 "OPEN",
@@ -1789,13 +1780,13 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                 .dateTo(LocalDate.of(2026, 6, 30))
                                 .listDescription(description));
 
-        Assertions.assertTrue(report.contains("01/06/2026,AAA001 - Boundary Start Court"));
-        Assertions.assertTrue(report.contains("30/06/2026,AAA002 - Boundary End Court"));
-        Assertions.assertFalse(report.contains("Outside Boundary Court"));
+        assertThat(report).contains("01/06/2026,AAA001 - Boundary Start Court");
+        assertThat(report).contains("30/06/2026,AAA002 - Boundary End Court");
+        assertThat(report).doesNotContain("Outside Boundary Court");
     }
 
     @Test
-    public void givenCourtFilter_whenCreatingListMaintenanceReport_thenOnlyMatchingCourtIsReturned()
+    void givenCourtFilter_whenCreatingListMaintenanceReport_thenOnlyMatchingCourtIsReturned()
             throws Exception {
         String description = "LM court filter report";
         insertApplicationListRow(
@@ -1827,12 +1818,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                 .listDescription(description)
                                 .location(new LegacyReportLocation().courtLocationCode("CCC003")));
 
-        Assertions.assertTrue(report.contains("CCC003 - Cardiff Crown Court"));
-        Assertions.assertFalse(report.contains("BCC006 - Bristol Crown Court"));
+        assertThat(report).contains("CCC003 - Cardiff Crown Court");
+        assertThat(report).doesNotContain("BCC006 - Bristol Crown Court");
     }
 
     @Test
-    public void
+    void
             givenOtherLocationAndCjaFilter_whenCreatingListMaintenanceReport_thenOnlyMatchingRowIsReturned()
                     throws Exception {
         String description = "LM other location report";
@@ -1868,12 +1859,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                                 .cjaCode("CD")
                                                 .otherLocationDescription("village")));
 
-        Assertions.assertTrue(report.contains("Village Hall,CD," + description));
-        Assertions.assertFalse(report.contains("Village Hall,CE," + description));
+        assertThat(report).contains("Village Hall,CD," + description);
+        assertThat(report).doesNotContain("Village Hall,CE," + description);
     }
 
     @Test
-    public void givenNoMatchingRows_whenCreatingListMaintenanceReport_thenEmptyCsvIsReturned()
+    void givenNoMatchingRows_whenCreatingListMaintenanceReport_thenEmptyCsvIsReturned()
             throws Exception {
         String report =
                 createAndDownloadListMaintenanceReport(
@@ -1882,7 +1873,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                 .dateTo(LocalDate.of(2026, 6, 30))
                                 .listDescription("LM no matching report rows"));
 
-        Assertions.assertTrue(report.contains("List Maintenance Report"));
+        assertThat(report).contains("List Maintenance Report");
         Assertions.assertTrue(
                 report.contains(
                         "List Date,List Court House Name,List Other Location,CJA Code,"
@@ -1891,7 +1882,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenUnknownCjaCode_whenCreatingListMaintenanceReport_thenBadRequestIsReturned()
+    void givenUnknownCjaCode_whenCreatingListMaintenanceReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1917,7 +1908,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenUnknownCourtCode_whenCreatingListMaintenanceReport_thenBadRequestIsReturned()
+    void givenUnknownCourtCode_whenCreatingListMaintenanceReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1935,11 +1926,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         request);
 
         createResponse.then().statusCode(400);
-        Assertions.assertTrue(createResponse.asString().contains("Court not found"));
+        assertThat(createResponse.asString()).contains("Court not found");
     }
 
     @Test
-    public void givenDuplicateCjaCode_whenCreatingListMaintenanceReport_thenConflictIsReturned()
+    void givenDuplicateCjaCode_whenCreatingListMaintenanceReport_thenConflictIsReturned()
             throws Exception {
         insertDuplicateCjaRows("Z3");
         TokenGenerator tokenGenerator =
@@ -1969,9 +1960,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void
-            givenWhitespaceOnlyListMaintenanceFilters_whenCreatingReport_thenBadRequestIsReturned()
-                    throws Exception {
+    void givenWhitespaceOnlyListMaintenanceFilters_whenCreatingReport_thenBadRequestIsReturned()
+            throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -1989,9 +1979,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         request);
 
         createResponse.then().statusCode(400);
-        Assertions.assertTrue(createResponse.asString().contains("Validation failed for fields:"));
-        Assertions.assertTrue(createResponse.asString().contains("listDescription"));
-        Assertions.assertTrue(createResponse.asString().contains("location.cjaCode"));
+        assertThat(createResponse.asString()).contains("Validation failed for fields:");
+        assertThat(createResponse.asString()).contains("listDescription");
+        assertThat(createResponse.asString()).contains("location.cjaCode");
     }
 
     private void insertDataAuditRow(

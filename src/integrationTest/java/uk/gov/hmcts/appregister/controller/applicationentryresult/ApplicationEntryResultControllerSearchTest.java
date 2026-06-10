@@ -28,8 +28,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationEntryResultControllerSearchTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     void givenCreatedEntryResults_whenGetEntryResults_thenReturnedFieldsAreCorrect()
@@ -96,7 +95,7 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @StabilityTest
-    public void givenApplicationListEntryResult_whenSearchForResults_thenSuccessResponse()
+    void givenApplicationListEntryResult_whenSearchForResults_thenSuccessResponse()
             throws Exception {
         UUID appList =
                 UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createAppList(null)[0]));
@@ -200,9 +199,8 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void
-            givenApplicationListEntryResult_whenSearchForResultsWithClosedList_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationListEntryResult_whenSearchForResultsWithClosedList_thenSuccessResponse()
+            throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Name of Crown Court");
@@ -263,7 +261,7 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void givenApplicationListEntryResult_whenSearchForResultsWithNoList_thenFailureResponse()
+    void givenApplicationListEntryResult_whenSearchForResultsWithNoList_thenFailureResponse()
             throws Exception {
         UUID appList = UUID.randomUUID();
 
@@ -286,9 +284,8 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void
-            givenApplicationListEntryResult_whenSearchForResultsWithNoEntry_thenFailureResponse()
-                    throws Exception {
+    void givenApplicationListEntryResult_whenSearchForResultsWithNoEntry_thenFailureResponse()
+            throws Exception {
         UUID appList =
                 UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createAppList(null)[0]));
 
@@ -308,7 +305,7 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void givenApplicationListEntryResult_whenApplicationlistDeleted_thenFailureResponse()
+    void givenApplicationListEntryResult_whenApplicationlistDeleted_thenFailureResponse()
             throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -350,9 +347,8 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void
-            givenApplicationListEntryResult_whenApplicationlistEntryDeleted_thenFailureResponse()
-                    throws Exception {
+    void givenApplicationListEntryResult_whenApplicationlistEntryDeleted_thenFailureResponse()
+            throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Name of Crown Court");

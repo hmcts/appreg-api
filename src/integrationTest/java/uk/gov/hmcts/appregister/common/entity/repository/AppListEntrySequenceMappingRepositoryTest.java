@@ -18,14 +18,14 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 @Slf4j
 @Transactional
 @Rollback
-public class AppListEntrySequenceMappingRepositoryTest extends BaseRepositoryTest {
+class AppListEntrySequenceMappingRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
     @PersistenceContext private EntityManager entityManager;
 
     @Test
-    public void testBasicInsertionAndFetchById() {
+    void testBasicInsertionAndFetchById() {
         Long alId = createApplicationListAndGetId();
 
         AppListEntrySequenceMapping mapping =
@@ -41,7 +41,7 @@ public class AppListEntrySequenceMappingRepositoryTest extends BaseRepositoryTes
     }
 
     @Test
-    public void testUpdateAleLastSequence() {
+    void testUpdateAleLastSequence() {
         Long alId = createApplicationListAndGetId();
 
         AppListEntrySequenceMapping saved =

@@ -28,7 +28,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @ExtendWith(MockitoExtension.class)
-public class MoveEntriesValidatorTest {
+class MoveEntriesValidatorTest {
 
     @Mock private ApplicationListRepository alRepository;
 
@@ -83,8 +83,9 @@ public class MoveEntriesValidatorTest {
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(targetListId);
         dto.setEntryIds(Set.of(UUID.randomUUID()));
+        MoveEntriesPayload payload = payload(sourceListId, dto);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dto), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(payload, (d, s) -> s))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         ex ->
@@ -111,8 +112,9 @@ public class MoveEntriesValidatorTest {
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(targetListId);
         dto.setEntryIds(Set.of(UUID.randomUUID()));
+        MoveEntriesPayload payload = payload(sourceListId, dto);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dto), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(payload, (d, s) -> s))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         ex ->
@@ -139,8 +141,9 @@ public class MoveEntriesValidatorTest {
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(targetListId);
         dto.setEntryIds(Set.of(UUID.randomUUID()));
+        MoveEntriesPayload payload = payload(sourceListId, dto);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dto), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(payload, (d, s) -> s))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         ex ->
@@ -158,8 +161,9 @@ public class MoveEntriesValidatorTest {
         when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.empty());
 
         MoveEntriesDto dto = new MoveEntriesDto();
+        MoveEntriesPayload payload = payload(sourceListId, dto);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dto), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(payload, (d, s) -> s))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         ex ->
@@ -179,8 +183,9 @@ public class MoveEntriesValidatorTest {
 
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(targetListId);
+        MoveEntriesPayload payload = payload(sourceListId, dto);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dto), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(payload, (d, s) -> s))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         ex ->
@@ -205,8 +210,9 @@ public class MoveEntriesValidatorTest {
         MoveEntriesDto dtoNull = new MoveEntriesDto();
         dtoNull.setTargetListId(targetListId);
         dtoNull.setEntryIds(null);
+        MoveEntriesPayload nullPayload = payload(sourceListId, dtoNull);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dtoNull), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(nullPayload, (d, s) -> s))
                 .satisfies(
                         ex ->
                                 Assertions.assertEquals(
@@ -216,8 +222,9 @@ public class MoveEntriesValidatorTest {
         MoveEntriesDto dtoEmpty = new MoveEntriesDto();
         dtoEmpty.setTargetListId(targetListId);
         dtoEmpty.setEntryIds(Set.of());
+        MoveEntriesPayload emptyPayload = payload(sourceListId, dtoEmpty);
 
-        assertThatThrownBy(() -> validator.validate(payload(sourceListId, dtoEmpty), (d, s) -> s))
+        assertThatThrownBy(() -> validator.validate(emptyPayload, (d, s) -> s))
                 .satisfies(
                         ex ->
                                 Assertions.assertEquals(

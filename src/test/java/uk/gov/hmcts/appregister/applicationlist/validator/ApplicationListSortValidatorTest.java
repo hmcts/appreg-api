@@ -1,8 +1,8 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 /**
  * Unit tests for {@link ApplicationListSortValidator}.
  */
-public class ApplicationListSortValidatorTest {
+class ApplicationListSortValidatorTest {
 
     private ApplicationListSortValidator validator;
 
@@ -34,20 +34,20 @@ public class ApplicationListSortValidatorTest {
         AppRegistryException ex =
                 assertThrows(
                         AppRegistryException.class, () -> validator.validate("notAValidField"));
-        assertTrue(ex.getMessage().contains("not allowed"));
+        assertThat(ex.getMessage()).contains("not allowed");
     }
 
     @Test
     void validate_nullProperty_throwsAppRegistryException() {
         AppRegistryException ex =
                 assertThrows(AppRegistryException.class, () -> validator.validate(null));
-        assertTrue(ex.getMessage().contains("not allowed"));
+        assertThat(ex.getMessage()).contains("not allowed");
     }
 
     @Test
     void validate_blankProperty_throwsAppRegistryException() {
         AppRegistryException ex =
                 assertThrows(AppRegistryException.class, () -> validator.validate("  "));
-        assertTrue(ex.getMessage().contains("not allowed"));
+        assertThat(ex.getMessage()).contains("not allowed");
     }
 }

@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
  * Unit tests for {@link ApplicationListMapper}. Uses MapStruct's Mappers.getMapper(...) to obtain
  * the generated implementation so we don't need a Spring context for these tests.
  */
-public class ApplicationListMapperTest {
+class ApplicationListMapperTest {
 
     private final ApplicationListMapper mapper = Mappers.getMapper(ApplicationListMapper.class);
 

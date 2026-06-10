@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller.standardapplicant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -54,7 +55,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 
 @ExtendWith(OutputCaptureExtension.class)
-public class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTest {
+class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "standard-applicants";
 
     @Value("${spring.data.web.pageable.default-page-size}")
@@ -74,14 +75,14 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     private static final String DUPLICATE_APPCODE_CODE = "APP003";
 
     @BeforeEach
-    public void before() {
+    void before() {
         when(clock.instant()).thenReturn(Instant.now().plus(2, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeForIndividual_thenReturn200()
+    void givenValidRequest_whenGetStandardApplicantByCodeForIndividual_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -150,9 +151,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
-            givenSparsePersonStandardApplicant_whenGetStandardApplicantByCode_thenReturnExplicitNulls()
-                    throws Exception {
+    void givenSparsePersonStandardApplicant_whenGetStandardApplicantByCode_thenReturnExplicitNulls()
+            throws Exception {
         LocalDate activeDate = LocalDate.now();
         String sparseCode = "A1348SA1";
         saveSparsePersonStandardApplicant(sparseCode, activeDate.minusDays(1), null);
@@ -184,7 +184,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeForOrganisation_thenReturn200()
+    void givenValidRequest_whenGetStandardApplicantByCodeForOrganisation_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -266,8 +266,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenApp006_whenGetStandardApplicantByCodeWithoutDate_thenReturn200()
-            throws Exception {
+    void givenApp006_whenGetStandardApplicantByCodeWithoutDate_thenReturn200() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -344,7 +343,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeAndCodeNotExist_thenReturn404()
+    void givenValidRequest_whenGetStandardApplicantByCodeAndCodeNotExist_thenReturn404()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -370,7 +369,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenDateOutsideApplicantRange_whenGetStandardApplicantByCode_thenDateIsIgnored()
+    void givenDateOutsideApplicantRange_whenGetStandardApplicantByCode_thenDateIsIgnored()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -391,7 +390,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenDuplicateCode_whenGetStandardApplicantByCode_thenReturnPreferredRecord()
+    void givenDuplicateCode_whenGetStandardApplicantByCode_thenReturnPreferredRecord()
             throws Exception {
         String code = "SANULL001";
         LocalDate queryDate = LocalDate.now();
@@ -420,9 +419,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
-            givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
-                    throws Exception {
+    void givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
+            throws Exception {
         String code = "SANULL001";
         LocalDate activeDate = LocalDate.now();
         saveStandardApplicant(
@@ -462,7 +460,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenReversedDateRange_whenGetAllStandardApplicants_thenDatesAreNormalised()
+    void givenReversedDateRange_whenGetAllStandardApplicants_thenDatesAreNormalised()
             throws Exception {
         String code = "SAREV001";
         LocalDate rangeStart = LocalDate.of(2024, 5, 6);
@@ -498,7 +496,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
+    void
             givenHistoricalDateRange_whenGetAllStandardApplicants_thenPastOverlappingApplicantIsReturned()
                     throws Exception {
         String code = "SAHIST001";
@@ -537,7 +535,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @StabilityTest
-    public void givenValidRequest_whenGetAllStandardApplicant_thenReturn200() throws Exception {
+    void givenValidRequest_whenGetAllStandardApplicant_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -582,7 +580,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @StabilityTest
     @Test
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithoutExplicitSort_thenReturn200()
                     throws Exception {
 
@@ -670,7 +668,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithExplicitSort_thenReturn200()
                     throws Exception {
 
@@ -739,7 +737,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetStandardApplicantWithPagingNoResult_thenReturn200()
+    void givenValidRequest_whenGetStandardApplicantWithPagingNoResult_thenReturn200()
             throws Exception {
 
         // create the token
@@ -791,9 +789,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetStandardApplicantWithPagingNoResultDateRange_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetStandardApplicantWithPagingNoResultDateRange_thenReturn200()
+            throws Exception {
 
         Mockito.reset(clock);
 
@@ -844,9 +841,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetStandardApplicantWithPagingFilterPartialCode_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetStandardApplicantWithPagingFilterPartialCode_thenReturn200()
+            throws Exception {
 
         // create a token
         TokenGenerator tokenGenerator =
@@ -898,7 +894,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForOrganisation_thenReturn200()
                     throws Exception {
 
@@ -961,7 +957,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForNameOfIndividual_thenReturn200()
                     throws Exception {
 
@@ -1033,7 +1029,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForSurNameOfIndividual_thenReturn200()
                     throws Exception {
 
@@ -1099,7 +1095,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetStandardApplicantWithPagingAllFilter_thenReturn200()
+    void givenValidRequest_whenGetStandardApplicantWithPagingAllFilter_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -1153,9 +1149,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetStandardApplicantWithFullNameFilterForIndividual_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetStandardApplicantWithFullNameFilterForIndividual_thenReturn200()
+            throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -1205,9 +1200,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetStandardApplicantWithNameFilterForSecondForename_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetStandardApplicantWithNameFilterForSecondForename_thenReturn200()
+            throws Exception {
         String code = "SAFN2001";
         savePersonStandardApplicant(
                 code, "Amelia", "Rosemarie", null, "Walker", LocalDate.now().minusDays(1), null);
@@ -1240,7 +1234,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
         // create the token
@@ -1292,8 +1286,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @StabilityTest
-    public void givenSASuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-            throws Exception {
+    void givenSASuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse() throws Exception {
         for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
                 StandardApplicantSortFieldEnum.values()) {
 
@@ -1346,7 +1339,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantWithPagingInvalidSortQuery_thenReturn400()
+    void givenValidRequest_whenGetStandardApplicantWithPagingInvalidSortQuery_thenReturn400()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -1377,9 +1370,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     // 0 and returns a 200. Our implementation
     // returns a 500
     @Test
-    public void
-            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn400()
-                    throws Exception {
+    void givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn400()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1412,7 +1404,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     // does not behave
     // accordingly
     @Test
-    public void
+    void
             givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
         // create the token
@@ -1446,8 +1438,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @StabilityTest
-    public void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse()
-            throws Exception {
+    void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse() throws Exception {
         for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
                 StandardApplicantSortFieldEnum.values()) {
 
@@ -1510,8 +1501,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @StabilityTest
-    public void givenASuccessfulFilterPartialName_whenSearch_thenSuccessResponse()
-            throws Exception {
+    void givenASuccessfulFilterPartialName_whenSearch_thenSuccessResponse() throws Exception {
         for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
                 StandardApplicantSortFieldEnum.values()) {
 
@@ -1564,8 +1554,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @StabilityTest
-    public void givenASuccessfulFilterPartialForename_whenSearch_thenSuccessResponse()
-            throws Exception {
+    void givenASuccessfulFilterPartialForename_whenSearch_thenSuccessResponse() throws Exception {
         for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
                 StandardApplicantSortFieldEnum.values()) {
 
@@ -1619,8 +1608,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @StabilityTest
-    public void givenASuccessfulFilterPartialSurname_whenSearch_thenSuccessResponse()
-            throws Exception {
+    void givenASuccessfulFilterPartialSurname_whenSearch_thenSuccessResponse() throws Exception {
         for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
                 StandardApplicantSortFieldEnum.values()) {
 
@@ -1674,7 +1662,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))
@@ -1700,7 +1688,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void
+    void
             givenValidRequest_whenFilterByAddressLine1AndFromDateAndSortByName_thenReturnSortedResults()
                     throws Exception {
         val tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1723,7 +1711,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         responseSpec.then().statusCode(200);
 
         val page = responseSpec.as(StandardApplicantPage.class);
-        Assertions.assertFalse(page.getContent().isEmpty());
+        assertThat(page.getContent()).isNotEmpty();
 
         // verify sorting by name (ascending)
         val first = page.getContent().get(0);
@@ -1781,8 +1769,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenSortByAddressLine1_thenReturnSortedResults()
-            throws Exception {
+    void givenValidRequest_whenSortByAddressLine1_thenReturnSortedResults() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -1797,7 +1784,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         responseSpec.then().statusCode(200);
 
         StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
-        Assertions.assertFalse(page.getContent().isEmpty());
+        assertThat(page.getContent()).isNotEmpty();
 
         String firstAddress = extractAddress(page.getContent().get(0));
         String secondAddress = extractAddress(page.getContent().get(1));
@@ -1811,7 +1798,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenSortByFrom_thenReturnSortedResults() throws Exception {
+    void givenValidRequest_whenSortByFrom_thenReturnSortedResults() throws Exception {
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1827,7 +1814,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         responseSpec.then().statusCode(200);
 
         StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
-        Assertions.assertFalse(page.getContent().isEmpty());
+        assertThat(page.getContent()).isNotEmpty();
 
         List<LocalDate> dates =
                 page.getContent().stream()

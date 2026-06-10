@@ -19,8 +19,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 
-public class ApplicationEntryResultControllerDeleteTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Delete Application List Entry Result: 204 when valid IDs")

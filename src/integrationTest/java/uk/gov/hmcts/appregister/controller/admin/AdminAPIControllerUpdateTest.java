@@ -11,9 +11,9 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
-public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
+class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     @Test
-    public void whenEnableDisableJobByName_thenReturnOk() throws Exception {
+    void whenEnableDisableJobByName_thenReturnOk() throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
 
         Response responseSpec =
@@ -40,7 +40,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenUpdateRetentionPeriodByName_thenReturnOk() throws Exception {
+    void whenUpdateRetentionPeriodByName_thenReturnOk() throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
 
         Response responseSpec =
@@ -79,7 +79,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenEnableDisableJobByName_thenReturn404() throws Exception {
+    void whenEnableDisableJobByName_thenReturn404() throws Exception {
         var jobName = "SOME_JOB_THAT_DOES_NOT_EXIST";
 
         Response responseSpec =
@@ -98,7 +98,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenUpdateRetentionPeriodByNameWithInvalidRetentionPeriod_thenReturn400()
+    void whenUpdateRetentionPeriodByNameWithInvalidRetentionPeriod_thenReturn400()
             throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
 

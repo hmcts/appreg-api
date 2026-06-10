@@ -36,7 +36,7 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationListCreateValidatorTest {
+class ApplicationListCreateValidatorTest {
 
     private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 

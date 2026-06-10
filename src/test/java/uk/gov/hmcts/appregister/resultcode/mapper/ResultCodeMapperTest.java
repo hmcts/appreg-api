@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
-public class ResultCodeMapperTest {
+class ResultCodeMapperTest {
     private final ResultCodeMapper mapper = new ResultCodeMapperImpl();
 
     @Test

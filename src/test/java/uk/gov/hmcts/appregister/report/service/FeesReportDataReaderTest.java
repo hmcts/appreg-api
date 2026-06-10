@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -199,8 +200,8 @@ class FeesReportDataReaderTest {
         Assertions.assertTrue(finalSelectIndex > -1);
         Assertions.assertTrue(cursorPredicateIndex < latestFeeStatusIndex);
         Assertions.assertEquals(-1, query.indexOf(":hasCursor IS FALSE", finalSelectIndex));
-        Assertions.assertTrue(query.contains("EXISTS ("));
-        Assertions.assertTrue(query.contains("FROM app_list_entry_fee_id cursor_alefi"));
+        assertThat(query).contains("EXISTS (");
+        assertThat(query).contains("FROM app_list_entry_fee_id cursor_alefi");
     }
 
     private void assertLegacyFeesQueryShape(String query) {
@@ -213,9 +214,9 @@ class FeesReportDataReaderTest {
                 normalisedQuery.contains(
                         "UPPER(sa.standard_applicant_code) "
                                 + "LIKE '%' || UPPER(:standardApplicantCode) || '%'"));
-        Assertions.assertTrue(normalisedQuery.contains("COALESCE(b.forename_1, '')"));
-        Assertions.assertTrue(normalisedQuery.contains("COALESCE(b.surname, '')"));
-        Assertions.assertTrue(normalisedQuery.contains("NULLIF(TRIM("));
+        assertThat(normalisedQuery).contains("COALESCE(b.forename_1, '')");
+        assertThat(normalisedQuery).contains("COALESCE(b.surname, '')");
+        assertThat(normalisedQuery).contains("NULLIF(TRIM(");
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(b.applicant_display_name) "
@@ -236,8 +237,8 @@ class FeesReportDataReaderTest {
                         "UPPER(b.courthouse_code) " + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
         Assertions.assertTrue(
                 normalisedQuery.contains("UPPER(SUBSTRING(b.courthouse_code FROM 2 FOR 2))"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :otherCourthouse IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseCode IS NULL"));
+        assertThat(normalisedQuery).contains("AND :otherCourthouse IS NULL");
+        assertThat(normalisedQuery).contains("AND :courthouseCode IS NULL");
         Assertions.assertEquals(-1, normalisedQuery.indexOf("UPPER(b.courthouse_code) = UPPER"));
         Assertions.assertEquals(-1, normalisedQuery.indexOf("UPPER(sa.standard_applicant_code) ="));
     }

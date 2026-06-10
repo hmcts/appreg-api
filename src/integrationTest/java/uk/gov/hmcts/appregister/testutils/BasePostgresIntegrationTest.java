@@ -48,7 +48,7 @@ public abstract class BasePostgresIntegrationTest {
     @LocalServerPort protected String port;
 
     @BeforeEach
-    public void beforeEachTest() {
+    void beforeEachTest() {
         reset.resetDbData();
     }
 

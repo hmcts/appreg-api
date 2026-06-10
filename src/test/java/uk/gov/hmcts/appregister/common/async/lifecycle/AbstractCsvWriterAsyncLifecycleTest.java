@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.common.async.lifecycle;
 
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,10 +20,10 @@ import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 
-public class AbstractCsvWriterAsyncLifecycleTest {
+class AbstractCsvWriterAsyncLifecycleTest {
 
     @Test
-    public void testAbstractCsvAsyncLifecycle() throws IOException {
+    void testAbstractCsvAsyncLifecycle() throws IOException {
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
         when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
         when(jobStatusResponse.getUserName()).thenReturn("user");
@@ -86,7 +86,7 @@ public class AbstractCsvWriterAsyncLifecycleTest {
                         JobStatus1.COMPLETED));
 
         // ensure we try to write the clob
-        verify(jobStatusResponse, times(1)).write(notNull());
+        verify(jobStatusResponse).write(notNull());
 
         // make sure the reader and writer streams are closed
         Assertions.assertThrows(IOException.class, csvWriter::getInputStream);
@@ -94,7 +94,7 @@ public class AbstractCsvWriterAsyncLifecycleTest {
     }
 
     @Test
-    public void testAbstractCsvAsyncLifecycleFail() throws IOException {
+    void testAbstractCsvAsyncLifecycleFail() throws IOException {
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
         when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
         when(jobStatusResponse.getUserName()).thenReturn("user");
@@ -156,7 +156,7 @@ public class AbstractCsvWriterAsyncLifecycleTest {
                         JobStatus1.FAILED));
 
         // ensure we did not write the clob
-        verify(jobStatusResponse, times(0)).write(notNull());
+        verify(jobStatusResponse, never()).write(notNull());
 
         // make sure the reader and writer streams are closed
         Assertions.assertThrows(IOException.class, csvWriter::getInputStream);

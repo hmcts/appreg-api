@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest {
+class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "criminal-justice-areas";
     // expectations based on the flyway test data
     private static final String EXPECTED_CODE = "CD";
@@ -57,7 +57,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaWithValidCode_thenReturn200()
+    void givenValidRequest_whenGetCriminalJusticeAreaWithValidCode_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -103,7 +103,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenValidRequest_whenGetCriminalJusticeAreaWithInvalidCode_thenReturn404()
+    void givenValidRequest_whenGetCriminalJusticeAreaWithInvalidCode_thenReturn404()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -130,7 +130,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreaByCode_thenReturnFields()
+    void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreaByCode_thenReturnFields()
             throws Exception {
         var code = "K1";
         var description = "Created CJA";
@@ -152,7 +152,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeArea_thenReturn200() throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeArea_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -215,8 +215,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaWithPaging_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaWithPaging_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -283,9 +282,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void
-            givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreas_thenReturnSummaryFields()
-                    throws Exception {
+    void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreas_thenReturnSummaryFields()
+            throws Exception {
         var code = "K2";
         var description = "Created Summary CJA";
         createCriminalJusticeArea(code, description);
@@ -313,7 +311,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaSort_thenReturn200() throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaSort_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -377,8 +375,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenValidRequest_whenGetCriminalJusticeAreaInvalidSort_thenReturn400()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaInvalidSort_thenReturn400() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -402,8 +399,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaFilterByCode_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaFilterByCode_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -469,7 +465,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaFilterByDescription_thenReturn200()
+    void givenValidRequest_whenGetCriminalJusticeAreaFilterByDescription_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -536,9 +532,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetCriminalJusticeAreaFilterByCodeAndDescription_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaFilterByCodeAndDescription_thenReturn200()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -604,7 +599,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @StabilityTest
-    public void givenCriminalJusticeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenCriminalJusticeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
         for (CriminalJusticeSortFieldEnum criminalJusticeSortFieldEnum :
                 CriminalJusticeSortFieldEnum.values()) {
@@ -668,7 +663,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @StabilityTest
-    public void givenASuccessfulFilterPartialDescription_whenSearch_thenSuccessResponse()
+    void givenASuccessfulFilterPartialDescription_whenSearch_thenSuccessResponse()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -762,7 +757,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var token = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         Response responseSpec =

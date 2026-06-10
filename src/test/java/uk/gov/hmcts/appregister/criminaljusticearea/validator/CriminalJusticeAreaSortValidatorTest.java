@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea_;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
-public class CriminalJusticeAreaSortValidatorTest {
+class CriminalJusticeAreaSortValidatorTest {
     private CriminalJusticeAreaSortValidator validator;
 
     @BeforeEach

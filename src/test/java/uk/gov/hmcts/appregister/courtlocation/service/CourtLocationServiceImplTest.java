@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.courtlocation.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -43,7 +44,7 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 
 @ExtendWith(MockitoExtension.class)
-public class CourtLocationServiceImplTest {
+class CourtLocationServiceImplTest {
 
     private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 
@@ -142,7 +143,7 @@ public class CourtLocationServiceImplTest {
         CourtLocationGetDetailDto dto = service.findByCodeAndDate(code, date);
 
         Assertions.assertEquals("Preferred Court", dto.getName());
-        Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
+        assertThat(logCaptor.getWarnLogs().getFirst()).contains("Data quality warning");
 
         verify(auditOperationService)
                 .processAudit(
@@ -283,7 +284,7 @@ public class CourtLocationServiceImplTest {
         Assertions.assertEquals(0, pageDto.getTotalPages());
         Assertions.assertEquals(1, pageDto.getPageNumber());
         Assertions.assertEquals(10, pageDto.getPageSize());
-        Assertions.assertTrue(pageDto.getContent().isEmpty());
+        assertThat(pageDto.getContent()).isEmpty();
 
         verify(auditOperationService)
                 .processAudit(

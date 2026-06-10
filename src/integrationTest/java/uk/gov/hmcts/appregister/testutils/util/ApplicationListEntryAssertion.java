@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.testutils.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Objects;
@@ -182,7 +184,7 @@ public class ApplicationListEntryAssertion {
         // assert offsite fee in the database is set if provided
         if (entryCreateUpdateDto.getFeeStatuses() != null
                 && !entryCreateUpdateDto.getFeeStatuses().isEmpty()) {
-            Assertions.assertFalse(applicationListEntry.getEntryFeeIds().isEmpty());
+            assertThat(applicationListEntry.getEntryFeeIds()).isNotEmpty();
 
             boolean containsOffsite = false;
             for (AppListEntryFeeId fee : applicationListEntry.getEntryFeeIds()) {

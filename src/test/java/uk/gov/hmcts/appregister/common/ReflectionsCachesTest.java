@@ -1,21 +1,23 @@
 package uk.gov.hmcts.appregister.common;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
-public class ReflectionsCachesTest {
+class ReflectionsCachesTest {
     @Test
-    public void testLoadCachesIsLoading() {
+    void testLoadCachesIsLoading() {
         ReflectionCaches.ReflectionMeta data =
                 ReflectionCaches.METHOD_CACHE.get(ApplicationCode.class);
         ReflectionCaches.ReflectionMeta data2 =
                 ReflectionCaches.METHOD_CACHE.get(ApplicationCode.class);
 
         // assert the same reference
-        Assertions.assertTrue(data == data2);
+        Assertions.assertSame(data, data2);
 
         ReflectionCaches.ReflectionMeta appLstData =
                 ReflectionCaches.METHOD_CACHE.get(ApplicationList.class);
@@ -23,7 +25,7 @@ public class ReflectionsCachesTest {
                 ReflectionCaches.METHOD_CACHE.get(ApplicationList.class);
 
         // assert the same reference
-        Assertions.assertTrue(appLstData.methods().size() != 0);
-        Assertions.assertTrue(appLstData.methods() == appLstData2.methods());
+        assertThat(appLstData.methods()).isNotEmpty();
+        Assertions.assertSame(appLstData.methods(), appLstData2.methods());
     }
 }

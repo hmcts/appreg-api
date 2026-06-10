@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
-public class AbstractCourtLocationControllerCrudTest extends BaseIntegration {
+class AbstractCourtLocationControllerCrudTest extends BaseIntegration {
     protected static final String WEB_CONTEXT = "court-locations";
 
     protected static final String CARDIFF_CODE = "CCC003";
