@@ -36,8 +36,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthConverter,
-            SecurityEndpointFailureLogger securityEndpointFailureLogger)
-            throws Exception {
+            SecurityEndpointFailureLogger securityEndpointFailureLogger) {
 
         http.authorizeHttpRequests(
                         auth ->

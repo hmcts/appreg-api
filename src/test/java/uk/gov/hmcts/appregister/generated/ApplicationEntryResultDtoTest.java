@@ -27,7 +27,7 @@ class ApplicationEntryResultDtoTest {
     }
 
     @Test
-    void testEntryResultCreateDtoEmptyStringErrors() throws Exception {
+    void testEntryResultCreateDtoEmptyStringErrors() {
         // Create an instance of EntryCreateDto
         ResultCreateDto resultCreateDto = new ResultCreateDto();
 
@@ -51,7 +51,7 @@ class ApplicationEntryResultDtoTest {
     }
 
     @Test
-    void testEntryResultUpdateDtoEmptyStringErrors() throws Exception {
+    void testEntryResultUpdateDtoEmptyStringErrors() {
         ResultUpdateDto resultUpdateDto = new ResultUpdateDto();
 
         // Set properties

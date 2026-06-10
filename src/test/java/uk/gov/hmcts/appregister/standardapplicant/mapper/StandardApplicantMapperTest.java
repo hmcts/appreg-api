@@ -219,17 +219,17 @@ class StandardApplicantMapperTest {
 
     @Test
     void testNoEntity() {
-        val record = new CodeAndName(null, null, null, null, null);
+        val codeAndName = new CodeAndName(null, null, null, null, null);
 
         var mapper = new StandardApplicantMapperImpl();
-        Assertions.assertNotNull(mapper.toEntity(record));
+        Assertions.assertNotNull(mapper.toEntity(codeAndName));
     }
 
     @Test
     void testSearchAuditEntityIncludesAllAuditedFilters() {
         // Build the same lightweight surrogate entity that the GET /standard-applicants search
         // endpoint passes into the audit framework.
-        val record =
+        val codeAndName =
                 new CodeAndName(
                         "APP001",
                         "John Doe",
@@ -238,7 +238,7 @@ class StandardApplicantMapperTest {
                         LocalDate.of(2026, 12, 31));
 
         var mapper = new StandardApplicantMapperImpl();
-        val entity = mapper.toEntity(record);
+        val entity = mapper.toEntity(codeAndName);
 
         // Each populated field below maps to a real database column and is now eligible for READ
         // audit extraction.

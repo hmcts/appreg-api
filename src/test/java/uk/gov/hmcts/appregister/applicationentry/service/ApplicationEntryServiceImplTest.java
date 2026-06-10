@@ -1588,9 +1588,9 @@ class ApplicationEntryServiceImplTest {
         dto.setTargetListId(targetList.getUuid());
         dto.setEntryIds(Set.of(entryId1, entryId2));
 
-        val success = new MoveEntriesValidationSuccess();
-        success.setTargetList(targetList);
-        moveEntriesValidator.setSuccess(success);
+        val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(validationSuccess);
 
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
                 .thenReturn(List.of(entry1, entry2));
@@ -1649,9 +1649,9 @@ class ApplicationEntryServiceImplTest {
         dto.setTargetListId(targetList.getUuid());
         dto.setEntryIds(Set.of(entryId1, entryId2));
 
-        val success = new MoveEntriesValidationSuccess();
-        success.setTargetList(targetList);
-        moveEntriesValidator.setSuccess(success);
+        val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(validationSuccess);
 
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
                 .thenReturn(List.of(entry1));
@@ -2276,7 +2276,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void testUpdateClosedListWithAppend() throws Exception {
+    void testUpdateClosedListWithAppend() {
         // setup payload with a note to be applied
         EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
         entryUpdateClosedDto.setAdditionalNotes("additional notes");

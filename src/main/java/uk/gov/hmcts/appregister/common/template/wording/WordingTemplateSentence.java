@@ -487,15 +487,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
             // TODO: When we know more about how specific data types work
             // we can interpret and validate for them. At the moment lets return a
             // TEXT which is completely open and accepts any value.
-            /*
-            // check the data types is correct in the template
-            for (WordingDataTypes types : WordingDataTypes.values()) {
-                if (types.getValue().equals(type)) {
-                    return types.getType();
-                }
-            }
-             */
-
             return WordingDataTypes.TEXT;
         }
 

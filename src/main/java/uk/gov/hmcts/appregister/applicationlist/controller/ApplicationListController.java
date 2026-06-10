@@ -53,6 +53,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationListController implements ApplicationListsApi {
+    private static final String ACCEPT_HEADER = "Accept";
 
     private static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
@@ -84,15 +85,12 @@ public class ApplicationListController implements ApplicationListsApi {
         MatchResponse<ApplicationListGetDetailDto> created =
                 service.create(applicationListCreateDto);
 
-        ResponseEntity<ApplicationListGetDetailDto> response =
-                ResponseEntity.status(CREATED)
-                        .varyBy("Accept")
-                        .contentType(VND_JSON_V1)
-                        .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
-                        .eTag(created.getEtag())
-                        .body(created.getPayload());
-
-        return response;
+        return ResponseEntity.status(CREATED)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
+                .eTag(created.getEtag())
+                .body(created.getPayload());
     }
 
     @Override
@@ -108,7 +106,7 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ResponseEntity<ApplicationListGetDetailDto> response =
                 ResponseEntity.status(OK)
-                        .varyBy("Accept")
+                        .varyBy(ACCEPT_HEADER)
                         .contentType(VND_JSON_V1)
                         .eTag(updated.getEtag())
                         .body(updated.getPayload());
@@ -152,7 +150,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ApplicationListGetDetailDto retrieved = service.get(id, pageable);
 
-        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
+        return ResponseEntity.status(OK)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .body(retrieved);
     }
 
     /**
@@ -234,7 +235,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ApplicationListGetPrintDto retrieved = service.print(id);
 
-        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
+        return ResponseEntity.status(OK)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .body(retrieved);
     }
 
     /**

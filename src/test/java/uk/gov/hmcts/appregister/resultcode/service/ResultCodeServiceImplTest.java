@@ -188,7 +188,6 @@ class ResultCodeServiceImplTest {
         final String codeFilter = "R";
         final String titleFilter = "X";
         final var pageable = PageRequest.of(0, 2);
-        ;
 
         var e1 = new ResolutionCode();
         var e2 = new ResolutionCode();

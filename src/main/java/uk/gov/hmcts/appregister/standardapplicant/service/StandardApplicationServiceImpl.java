@@ -58,7 +58,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         return auditService.processAudit(
                 null,
                 StandardApplicantOperation.GET_STANDARD_APPLICANTS,
-                (req) -> {
+                req -> {
                     // Use today's date to ensure we only return Result Codes that are currently
                     // active.
                     var todayUk = LocalDate.now(clock.withZone(ukZone));
@@ -97,10 +97,10 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             name,
                             pageable);
 
-                    CodeAndName record =
+                    CodeAndName codeAndName =
                             new CodeAndName(code, name, addressLine1, normalisedFrom, normalisedTo);
                     AuditableResult<StandardApplicantPage, StandardApplicant> result =
-                            new AuditableResult<>(newPage, mapper.toEntity(record));
+                            new AuditableResult<>(newPage, mapper.toEntity(codeAndName));
 
                     return Optional.of(result);
                 },
@@ -112,7 +112,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         return auditService.processAudit(
                 null,
                 StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE,
-                (req) -> findByCodeAuditResult(code),
+                req -> findByCodeAuditResult(code),
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 

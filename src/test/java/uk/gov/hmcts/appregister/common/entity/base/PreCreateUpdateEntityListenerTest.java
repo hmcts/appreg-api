@@ -46,7 +46,6 @@ class PreCreateUpdateEntityListenerTest {
     void testUpdate() {
         String userName = "test-user";
         String email = "email";
-        String email1 = "email1";
 
         when(clock.instant()).thenReturn(java.time.Instant.parse("2024-01-01T10:00:00Z"));
         when(clock.getZone()).thenReturn(java.time.ZoneId.of("UTC"));

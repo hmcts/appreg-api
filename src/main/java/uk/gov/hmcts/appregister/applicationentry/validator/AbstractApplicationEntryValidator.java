@@ -403,7 +403,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 applicationCodeRepository.findByCodeAndDate(
                         getApplicationCode(validatable), todayUk);
 
-        if (code.size() == 0) {
+        if (code.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
                     "No valid code can be found %s".formatted(getApplicationCode(validatable)));
@@ -559,8 +559,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                         && getNumberOfRespondents(validatable) == 0)) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
-                    "Bulk respondent not required for code %s"
-                            .formatted(getApplicationCode(validatable)));
+                    BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
+                            getApplicationCode(validatable)));
         }
 
         if (applicationCode.getBulkRespondentAllowed() == YesOrNo.YES

@@ -98,8 +98,7 @@ public class BulkUpdateFeesValidator
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
-        Set<UUID> requestedIds = new HashSet<>(payload.data().getEntryIds());
-        return requestedIds;
+        return new HashSet<>(payload.data().getEntryIds());
     }
 
     private void validateFeeDetails(BulkUpdateFeesPayload payload) {

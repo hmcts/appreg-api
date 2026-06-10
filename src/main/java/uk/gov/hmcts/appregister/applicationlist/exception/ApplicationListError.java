@@ -40,8 +40,7 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     HttpStatus.CONFLICT,
                     "The application list is not in a deletable state",
                     "AL-8")),
-    LIST_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-9")),
+    LIST_NOT_FOUND(applicationListNotFound("AL-9")),
     ENTRY_NOT_PROVIDED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "'entryIds' must be provided and non-empty", "AL-10")),
@@ -53,10 +52,8 @@ public enum ApplicationListError implements ErrorCodeEnum {
     ENTRY_NOT_IN_SOURCE_LIST(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Application list entry not in source list", "AL-12")),
-    SOURCE_LIST_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-13")),
-    TARGET_LIST_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-14")),
+    SOURCE_LIST_NOT_FOUND(applicationListNotFound("AL-13")),
+    TARGET_LIST_NOT_FOUND(applicationListNotFound("AL-14")),
     INVALID_NEW_LIST_STATUS(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
@@ -100,5 +97,9 @@ public enum ApplicationListError implements ErrorCodeEnum {
     @Override
     public ErrorDetail getCode() {
         return defaultErrorCode;
+    }
+
+    private static DefaultErrorDetail applicationListNotFound(String code) {
+        return DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", code);
     }
 }

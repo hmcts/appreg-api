@@ -118,8 +118,7 @@ public class ReflectionCaches {
 
         while (current != null && current != Object.class) {
             try {
-                Field field = current.getDeclaredField(fieldName);
-                return field;
+                return current.getDeclaredField(fieldName);
             } catch (NoSuchFieldException ignored) {
                 current = current.getSuperclass(); // move up the hierarchy
             }

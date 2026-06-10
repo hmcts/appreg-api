@@ -283,9 +283,9 @@ class ApplicationListEntryMapperTest {
                         .result(result)
                         .build();
 
-        var mapper = new ApplicationListEntryMapperImpl();
-        mapper.setApplicantMapper(new ApplicantMapperImpl());
-        var model = mapper.toSummaryDto(projection);
+        var localMapper = new ApplicationListEntryMapperImpl();
+        localMapper.setApplicantMapper(new ApplicantMapperImpl());
+        var model = localMapper.toSummaryDto(projection);
 
         assertApplicationListEntrySummary(
                 uuid,
@@ -480,8 +480,8 @@ class ApplicationListEntryMapperTest {
                         .result(result2)
                         .build();
 
-        var mapper = new ApplicationListEntryMapperImpl();
-        mapper.setApplicantMapper(new ApplicantMapperImpl());
+        var localMapper = new ApplicationListEntryMapperImpl();
+        localMapper.setApplicantMapper(new ApplicantMapperImpl());
 
         var uuid1 = UUID.randomUUID();
         short sequenceNumber1 = 1;
@@ -506,7 +506,7 @@ class ApplicationListEntryMapperTest {
                         .build();
 
         List<ApplicationListEntrySummary> list =
-                mapper.toSummaryDtoList(List.of(projection1, projection2));
+                localMapper.toSummaryDtoList(List.of(projection1, projection2));
 
         assertThat(list).hasSize(2);
 

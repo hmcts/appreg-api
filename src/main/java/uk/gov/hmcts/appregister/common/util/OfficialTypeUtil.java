@@ -21,8 +21,7 @@ public final class OfficialTypeUtil {
         }
 
         try {
-            OfficialType type = OfficialType.fromValue(code);
-            return type;
+            return OfficialType.fromValue(code);
         } catch (IllegalArgumentException e) {
             log.warn("Received invalid official type code: {}. Defaulting to MAGISTRATE.", code);
             return OfficialType.MAGISTRATE;

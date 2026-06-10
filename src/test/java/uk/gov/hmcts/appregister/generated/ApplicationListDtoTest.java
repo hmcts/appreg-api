@@ -27,7 +27,7 @@ class ApplicationListDtoTest {
     }
 
     @Test
-    void testListCreateDtoEmptyStringErrors() throws Exception {
+    void testListCreateDtoEmptyStringErrors() {
         // Create an instance of EntryCreateDto
         ApplicationListCreateDto applicationListDto = new ApplicationListCreateDto();
 
@@ -67,7 +67,7 @@ class ApplicationListDtoTest {
     }
 
     @Test
-    void testListUpdateDtoEmptyStringErrors() throws Exception {
+    void testListUpdateDtoEmptyStringErrors() {
         ApplicationListUpdateDto applicationListDto = new ApplicationListUpdateDto();
 
         // Set properties

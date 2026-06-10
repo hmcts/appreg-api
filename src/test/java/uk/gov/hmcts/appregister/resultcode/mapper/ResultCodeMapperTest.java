@@ -119,9 +119,9 @@ class ResultCodeMapperTest {
 
     @Test
     void testNoEntity() {
-        CodeAndTitle record = new CodeAndTitle(null, null);
+        CodeAndTitle codeAndTitle = new CodeAndTitle(null, null);
 
-        var mapper = new ResultCodeMapperImpl();
-        Assertions.assertNotNull(mapper.toEntity(record));
+        var localMapper = new ResultCodeMapperImpl();
+        Assertions.assertNotNull(localMapper.toEntity(codeAndTitle));
     }
 }

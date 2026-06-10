@@ -222,15 +222,6 @@ class ApplicationListMapperTest {
             // Given
             UUID id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6");
 
-            var appList =
-                    ApplicationList.builder()
-                            .uuid(id)
-                            .description("Morning session")
-                            .status(Status.OPEN)
-                            .date(LocalDate.of(2025, 9, 19))
-                            .time(LocalTime.of(9, 0, 0))
-                            .build();
-
             ApplicationListSummaryProjectionImpl applicationListEntryCountProjection =
                     new ApplicationListSummaryProjectionImpl();
             applicationListEntryCountProjection.setDescription("Morning session");

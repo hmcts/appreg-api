@@ -90,23 +90,6 @@ public class FeatureRules extends BaseRules {
                     .ignoreDependency(
                             resideInAPackage(BASE_PACKAGE + ".."), resideInAPackage("lombok.."));
 
-    // TODO: We need to correct the sort api classes before enabling this rule
-    /*
-    @ArchTest
-    static final com.tngtech.archunit.lang.ArchRule api_format =
-        classes()
-            .that().resideInAPackage(BASE_PACKAGE + ".(*).api..")
-            .and(
-                not(resideInAnyPackage(BASE_PACKAGE + ".generated.."))
-            )
-            .and(
-                not(resideInAnyPackage(BASE_PACKAGE + ".common.."))
-            )
-            .should().haveSimpleNameEndingWith("SortFieldEnum")
-            .andShould().implement(SortableOperationEnum.class).should()
-            .beAssignableTo(Enum.class).allowEmptyShould(true);
-            */
-
     @ArchTest
     static final com.tngtech.archunit.lang.ArchRule controllers_format_rule =
             classes()

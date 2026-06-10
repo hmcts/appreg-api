@@ -8,6 +8,9 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 public class EtagUtil {
+    private EtagUtil() {
+        // Utility class
+    }
 
     /**
      * generates an ETag for a given entity based on its ID, version, and class name.

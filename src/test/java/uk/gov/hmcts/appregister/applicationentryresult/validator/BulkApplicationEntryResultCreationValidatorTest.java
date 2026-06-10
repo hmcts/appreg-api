@@ -79,7 +79,6 @@ class BulkApplicationEntryResultCreationValidatorTest {
                 validator.validate(
                         payloadForCreateEntryResult,
                         (v, r) -> {
-                            ;
                             Assertions.assertEquals(3, r.getResults().size());
                             Assertions.assertEquals(appList, r.getResults().get(0).getListId());
                             Assertions.assertEquals(appList, r.getResults().get(1).getListId());
@@ -146,7 +145,6 @@ class BulkApplicationEntryResultCreationValidatorTest {
                 validator.validate(
                         payloadForCreateEntryResult,
                         (v, r) -> {
-                            ;
                             Assertions.assertEquals(3, r.getResults().size());
                             Assertions.assertEquals(appList, r.getResults().get(0).getListId());
                             Assertions.assertEquals(appList2, r.getResults().get(1).getListId());
@@ -174,7 +172,6 @@ class BulkApplicationEntryResultCreationValidatorTest {
                             validator.validate(
                                     payloadForCreateEntryResult,
                                     (v, r) -> {
-                                        ;
                                         return true;
                                     });
                         });
@@ -216,7 +213,6 @@ class BulkApplicationEntryResultCreationValidatorTest {
                             validator.validate(
                                     payloadForCreateEntryResult,
                                     (v, r) -> {
-                                        ;
                                         return true;
                                     });
                         });
@@ -253,7 +249,6 @@ class BulkApplicationEntryResultCreationValidatorTest {
                             validator.validate(
                                     payloadForCreateEntryResult,
                                     (v, r) -> {
-                                        ;
                                         return true;
                                     });
                         });

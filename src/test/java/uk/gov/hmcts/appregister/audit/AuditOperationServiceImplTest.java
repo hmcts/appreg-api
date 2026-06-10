@@ -47,14 +47,14 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowWithResponsePayload() throws Exception {
+    void testAuditOperationFlowWithResponsePayload() {
         EntryCreateDto entryCreateDto = Instancio.create(EntryCreateDto.class);
 
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                (req) -> {
+                req -> {
                     // Simulate some processing and return a response
                     return Optional.of(new AuditableResult<>(entryCreateDto, null));
                 },
@@ -131,12 +131,12 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowWithResponseWithoutPayload() throws Exception {
+    void testAuditOperationFlowWithResponseWithoutPayload() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                (req) -> {
+                req -> {
                     // Simulate some processing and return a response
                     return Optional.empty();
                 },
@@ -168,7 +168,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowWithResponseWithPayloadFailure() throws Exception {
+    void testAuditOperationFlowWithResponseWithPayloadFailure() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
 
@@ -177,7 +177,7 @@ class AuditOperationServiceImplTest {
                 () ->
                         auditOperationServiceImpl.processAudit(
                                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                                (req) -> {
+                                req -> {
                                     // Simulate some processing and return a response
                                     throw new IllegalArgumentException("");
                                 },
@@ -208,8 +208,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowValidationFailureForCreateOpNoNewValuebutOldValue()
-            throws Exception {
+    void testAuditOperationFlowValidationFailureForCreateOpNoNewValuebutOldValue() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         AppRegistryException exception =
@@ -218,7 +217,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.CREATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -230,7 +229,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowValidationFailureForCreateBothNewAndOldValue() throws Exception {
+    void testAuditOperationFlowValidationFailureForCreateBothNewAndOldValue() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         AppRegistryException exception =
@@ -240,7 +239,7 @@ class AuditOperationServiceImplTest {
                                 auditOperationServiceImpl.processAudit(
                                         new ApplicationList(),
                                         TestAuditOperation.CREATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -253,7 +252,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowValidationFailureForCreateOldValueAndNoNewOrOld() throws Exception {
+    void testAuditOperationFlowValidationFailureForCreateOldValueAndNoNewOrOld() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         AppRegistryException exception =
@@ -262,7 +261,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.CREATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -274,7 +273,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowValidationFailureForUpdateNoNewOrOld() throws Exception {
+    void testAuditOperationFlowValidationFailureForUpdateNoNewOrOld() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         AppRegistryException exception =
@@ -283,7 +282,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.UPDATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -295,7 +294,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowValidationFailureForUpdateNew() throws Exception {
+    void testAuditOperationFlowValidationFailureForUpdateNew() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         AppRegistryException exception =
@@ -304,7 +303,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.UPDATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
@@ -317,7 +316,7 @@ class AuditOperationServiceImplTest {
     }
 
     @Test
-    void testAuditOperationFlowValidationFailureForUpdateOldNoNew() throws Exception {
+    void testAuditOperationFlowValidationFailureForUpdateOldNoNew() {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         AppRegistryException exception =
@@ -326,7 +325,7 @@ class AuditOperationServiceImplTest {
                         () ->
                                 auditOperationServiceImpl.processAudit(
                                         TestAuditOperation.UPDATE,
-                                        (req) -> {
+                                        req -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(

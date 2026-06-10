@@ -222,7 +222,7 @@ public class ApplicationUpdateListLocationValidator
 
     @Override
     Function<PayloadForUpdate<ApplicationListUpdateDto>, String> getCourtLocation() {
-        return (dto) ->
+        return dto ->
                 dto.getData().getCourtLocationCode() != null
                         ? dto.getData().getCourtLocationCode()
                         : null;
@@ -230,21 +230,21 @@ public class ApplicationUpdateListLocationValidator
 
     @Override
     Function<PayloadForUpdate<ApplicationListUpdateDto>, String> getCjaCode() {
-        return (dto) -> dto.getData().getCjaCode() != null ? dto.getData().getCjaCode() : null;
+        return dto -> dto.getData().getCjaCode() != null ? dto.getData().getCjaCode() : null;
     }
 
     @Override
     Function<PayloadForUpdate<ApplicationListUpdateDto>, String> getLocationDescription() {
-        return (dto) -> dto.getData().getOtherLocationDescription();
+        return dto -> dto.getData().getOtherLocationDescription();
     }
 
     @Override
     Function<PayloadForUpdate<ApplicationListUpdateDto>, ApplicationListStatus> getStatus() {
-        return (dto) -> dto.getData().getStatus();
+        return dto -> dto.getData().getStatus();
     }
 
     @Override
     Function<PayloadForUpdate<ApplicationListUpdateDto>, LocalTime> getTime() {
-        return (dto) -> dto.getData().getTime();
+        return dto -> dto.getData().getTime();
     }
 }

@@ -56,7 +56,7 @@ class BulkUploadAsyncLifecycleTest {
 
     @Test
     void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure(
-            CapturedOutput output) throws IOException {
+            CapturedOutput output) {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
@@ -129,7 +129,7 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() throws IOException {
+    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() {
         BulkUploadRow row = validOrganisationRow();
         doThrow(
                         new AppRegistryException(

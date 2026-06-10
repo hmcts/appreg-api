@@ -32,7 +32,7 @@ class ApplicationEntryDtoTest {
     }
 
     @Test
-    void testEntryCreateDtoEmptyStringErrors() throws Exception {
+    void testEntryCreateDtoEmptyStringErrors() {
         // Create an instance of EntryCreateDto
         EntryCreateDto entryCreateDto = new EntryCreateDto();
 
@@ -69,7 +69,7 @@ class ApplicationEntryDtoTest {
     }
 
     @Test
-    void testEntryUpdateDtoEmptyStringErrors() throws Exception {
+    void testEntryUpdateDtoEmptyStringErrors() {
         // Create an instance of EntryCreateDto
         EntryUpdateDto entryUpdateDto = new EntryUpdateDto();
 
