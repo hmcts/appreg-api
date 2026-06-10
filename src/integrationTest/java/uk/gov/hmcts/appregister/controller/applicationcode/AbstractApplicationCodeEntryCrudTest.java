@@ -57,7 +57,7 @@ public class AbstractApplicationCodeEntryCrudTest extends BaseIntegration {
     }
 
     @BeforeEach
-    public void before() {
+    void before() {
         // a date that is without range for the main but out of range for the offsite fee
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));

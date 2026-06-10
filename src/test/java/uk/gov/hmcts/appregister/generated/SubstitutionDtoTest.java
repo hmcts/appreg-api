@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import utils.ConstraintAssertion;
 
-public class SubstitutionDtoTest {
+class SubstitutionDtoTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach

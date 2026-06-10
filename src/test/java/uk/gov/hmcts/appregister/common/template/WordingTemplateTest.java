@@ -7,8 +7,9 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
-public class WordingTemplateTest {
+class WordingTemplateTest {
     private static final String DATE_TEMPLATE =
             "This is a test {DATE|Applicant officer|10} with a date";
 
@@ -44,11 +45,12 @@ public class WordingTemplateTest {
     }
 
     @Test
-    public void testParameterSizeMismatch() {
+    void testParameterSizeMismatch() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
+        List<TemplateSubstitution> substitutions = List.of();
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
-                        AppRegistryException.class, () -> collection.substitute(List.of()));
+                        AppRegistryException.class, () -> collection.substitute(substitutions));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
@@ -56,7 +58,7 @@ public class WordingTemplateTest {
     // TODO: Re-enable this once the decision has been made on the FE implementation.
     /*
     @Test
-    public void testInvalidDateFormatFailure() {
+    void testInvalidDateFormatFailure() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
@@ -69,7 +71,7 @@ public class WordingTemplateTest {
     } */
 
     @Test
-    public void testInvalidLengthFormatFailure() {
+    void testInvalidLengthFormatFailure() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(

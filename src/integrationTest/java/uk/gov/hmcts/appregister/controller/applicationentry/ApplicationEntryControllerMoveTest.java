@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
@@ -49,7 +50,7 @@ import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
-public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCrudTest {
+class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCrudTest {
     @MockitoBean private UserProvider provider;
     @Autowired private DataAuditRepository dataAuditRepository;
     @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
@@ -60,7 +61,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
             "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
     @BeforeEach
-    public void before() {
+    void before() {
         when(provider.getUserId()).thenReturn("user");
         when(provider.getEmail()).thenReturn("email");
         when(provider.getRoles()).thenReturn(new String[] {"role"});
@@ -474,7 +475,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
 
         Assertions.assertNotNull(problemDetail.getDetail());
-        Assertions.assertTrue(problemDetail.getDetail().contains(invalidEntryId.toString()));
+        assertThat(problemDetail.getDetail()).contains(invalidEntryId.toString());
     }
 
     private ApplicationListPage getApplicationListPage(

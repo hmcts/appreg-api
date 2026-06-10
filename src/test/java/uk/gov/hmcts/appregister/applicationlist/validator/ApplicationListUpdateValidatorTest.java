@@ -51,7 +51,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationListUpdateValidatorTest {
+class ApplicationListUpdateValidatorTest {
 
     private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 

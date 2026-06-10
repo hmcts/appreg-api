@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
@@ -21,7 +23,7 @@ class ApplicationListSerializationTest {
 
         String json = Assertions.assertDoesNotThrow(() -> objectMapper.writeValueAsString(list));
 
-        Assertions.assertFalse(json.contains("\"entries\""));
+        assertThat(json).doesNotContain("\"entries\"");
     }
 
     @Test
@@ -31,7 +33,7 @@ class ApplicationListSerializationTest {
 
         String json = Assertions.assertDoesNotThrow(() -> objectMapper.writeValueAsString(entry));
 
-        Assertions.assertFalse(json.contains("\"applicationList\""));
+        assertThat(json).doesNotContain("\"applicationList\"");
     }
 
     private ApplicationList applicationListWithEntryGraph() {

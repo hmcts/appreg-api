@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.log;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import jakarta.validation.ConstraintViolationException;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
@@ -12,7 +14,7 @@ import org.mockito.Mockito;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
-public class ControllerLogAspectTest {
+class ControllerLogAspectTest {
 
     private final LogCaptor controllerAspectLog = LogCaptor.forClass(ControllerLogAspect.class);
     private final LogCaptor abstractAspectLog =
@@ -56,8 +58,8 @@ public class ControllerLogAspectTest {
                         .getDebugLogs()
                         .get(1)
                         .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
-        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
-        Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+        assertThat(controllerAspectLog.getDebugLogs().get(1)).endsWith(" ms");
+        Mockito.verify(customProceedingJoinPoint).proceed();
     }
 
     @Test
@@ -87,7 +89,7 @@ public class ControllerLogAspectTest {
                         .getDebugLogs()
                         .get(1)
                         .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
-        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
+        assertThat(controllerAspectLog.getDebugLogs().get(1)).endsWith(" ms");
     }
 
     @Test
@@ -118,7 +120,7 @@ public class ControllerLogAspectTest {
                         .getDebugLogs()
                         .get(1)
                         .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
-        Assertions.assertTrue(controllerAspectLog.getDebugLogs().get(1).endsWith(" ms"));
+        assertThat(controllerAspectLog.getDebugLogs().get(1)).endsWith(" ms");
     }
 
     @Test
@@ -140,7 +142,7 @@ public class ControllerLogAspectTest {
                         () -> controllerLogAspect.logDuration(customProceedingJoinPoint));
 
         Assertions.assertSame(exception, thrown);
-        Assertions.assertTrue(abstractAspectLog.getErrorLogs().isEmpty());
+        assertThat(abstractAspectLog.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -164,7 +166,7 @@ public class ControllerLogAspectTest {
                 (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
 
         Assertions.assertEquals("Test Result", result.getBody());
-        Assertions.assertTrue(controllerAspectLog.getDebugLogs().isEmpty());
+        assertThat(controllerAspectLog.getDebugLogs()).isEmpty();
     }
 
     @Test

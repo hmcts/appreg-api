@@ -3,9 +3,9 @@ package uk.gov.hmcts.appregister.common.template;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class BraceSubstitutedSentenceTest {
+class BraceSubstitutedSentenceTest {
     @Test
-    public void testBraceParse() {
+    void testBraceParse() {
         String valueTemplate =
                 "Test template {office1Val} and second template "
                         + "{office2Val} and third\" +\n"

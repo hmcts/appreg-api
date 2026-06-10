@@ -7,7 +7,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class CourtLocationControllerSecurityTest extends AbstractSecurityControllerTest {
+class CourtLocationControllerSecurityTest extends AbstractSecurityControllerTest {
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {

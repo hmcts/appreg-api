@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 
-public class CourtLocationMapperTest {
+class CourtLocationMapperTest {
     @Test
-    public void testToSummaryDto_provideValidData_validDtoGenerated() {
+    void testToSummaryDto_provideValidData_validDtoGenerated() {
         var code = "12345";
         var name = "Bath Crown Court";
 
@@ -23,7 +23,7 @@ public class CourtLocationMapperTest {
     }
 
     @Test
-    public void testToDetailDto_provideAllValidData_validDtoGenerated() {
+    void testToDetailDto_provideAllValidData_validDtoGenerated() {
         var code = "12345";
         var name = "Bath Crown Court";
         var startDate = LocalDate.parse("2020-01-01");

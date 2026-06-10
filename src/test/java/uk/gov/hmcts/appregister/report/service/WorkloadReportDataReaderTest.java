@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -27,7 +28,7 @@ import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
-public class WorkloadReportDataReaderTest {
+class WorkloadReportDataReaderTest {
     @Test
     void givenReportRowsExist_whenReadData_thenReadsPagesWithExpectedParameters() throws Exception {
         NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
@@ -178,10 +179,10 @@ public class WorkloadReportDataReaderTest {
 
     private void assertLegacyWorkloadsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
-        Assertions.assertTrue(normalisedQuery.contains("first_name as forename_1"));
-        Assertions.assertTrue(normalisedQuery.contains("middle_name as forename_2"));
-        Assertions.assertTrue(normalisedQuery.contains("null as forename_3"));
-        Assertions.assertTrue(normalisedQuery.contains("last_name as surname"));
+        assertThat(normalisedQuery).contains("first_name as forename_1");
+        assertThat(normalisedQuery).contains("middle_name as forename_2");
+        assertThat(normalisedQuery).contains("null as forename_3");
+        assertThat(normalisedQuery).contains("last_name as surname");
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(al.other_courthouse) "

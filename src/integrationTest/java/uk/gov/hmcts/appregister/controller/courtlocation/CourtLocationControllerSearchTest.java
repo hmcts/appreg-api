@@ -31,7 +31,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerCrudTest {
+class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerCrudTest {
 
     // --- /court-locations/{code}?date=... -----------------------------------------------------
     @Test
@@ -573,7 +573,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     }
 
     @StabilityTest
-    public void givenCourtLocationSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenCourtLocationSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
         for (CourtLocationSortFieldMapper courtLocationSortFieldMapper :
                 CourtLocationSortFieldMapper.values()) {
@@ -706,7 +706,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))

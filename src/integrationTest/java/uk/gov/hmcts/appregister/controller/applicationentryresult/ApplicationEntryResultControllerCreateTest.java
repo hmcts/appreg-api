@@ -31,8 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationEntryResultControllerCreateTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Create Application List Entry Result: 201 when valid request")
@@ -347,9 +346,8 @@ public class ApplicationEntryResultControllerCreateTest
     private static final String RTC_CODE = "RTC";
 
     @Test
-    public void
-            givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessOkResponse()
-                    throws Exception {
+    void givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessOkResponse()
+            throws Exception {
         val list = createAndSaveList(OPEN);
         val entry = createEntry(list);
 
@@ -588,7 +586,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultRequestWithDuplicateEntryIds_whenACallIsMadeWithAList_thenFailureBadRequestResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -614,7 +612,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithAListThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         // create the payload to result 2 entries against the list
@@ -639,7 +637,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithAEntryThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -676,7 +674,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithToANonExistentResultCode_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -711,7 +709,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithIncorrectTemplateValues_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -746,7 +744,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultWithNoListRequest_whenACallIsMadeWithTwoEntries_thenSuccessOkResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -987,7 +985,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultWithNoListRequest_whenACallIsMadeWithAEntryThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -1024,7 +1022,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultWithNoListRequest_whenACallIsMadeWithToANonExistentResultCode_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -1059,7 +1057,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultWithNoListRequest_whenACallIsMadeWithIncorrectTemplateValues_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);

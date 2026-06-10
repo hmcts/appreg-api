@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -42,12 +43,12 @@ class PrivateProsecutorsIndexReportLifecycleTest {
             lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
-            Assertions.assertTrue(csv.get().contains("Private Prosecution Index Report"));
-            Assertions.assertTrue(csv.get().contains("List Date,List Court House Name"));
-            Assertions.assertTrue(csv.get().contains("18/05/2018,B01IX00 - Westminster"));
-            Assertions.assertTrue(csv.get().contains("Smith,John,,Jane,Bloggs,Widgets Ltd"));
-            Assertions.assertTrue(csv.get().contains("Wording,R4,R3,R2,R1,Notes"));
-            Assertions.assertTrue(csv.get().contains(",,,,,,,,,,,,,,,"));
+            assertThat(csv.get()).contains("Private Prosecution Index Report");
+            assertThat(csv.get()).contains("List Date,List Court House Name");
+            assertThat(csv.get()).contains("18/05/2018,B01IX00 - Westminster");
+            assertThat(csv.get()).contains("Smith,John,,Jane,Bloggs,Widgets Ltd");
+            assertThat(csv.get()).contains("Wording,R4,R3,R2,R1,Notes");
+            assertThat(csv.get()).contains(",,,,,,,,,,,,,,,");
         } finally {
             outputFile.delete();
         }

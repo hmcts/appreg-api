@@ -33,7 +33,7 @@ import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
  * A test class that allows us to verify the core audit service.
  */
 @Slf4j
-public class AuditOperationServiceImplTest extends BaseIntegration {
+class AuditOperationServiceImplTest extends BaseIntegration {
 
     @MockitoBean private UserProvider provider;
 
@@ -44,7 +44,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
     private static final String EMPTY = "";
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         // setup the trace id in the log MDC
         MDC.put(AuditOperationServiceImpl.TRACE_ID, "test-trace-id");
         when(provider.getUserId()).thenReturn("user");

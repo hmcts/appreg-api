@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.enumeration.JobStatusType;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 
-public class JobStatusMapperTest {
+class JobStatusMapperTest {
     @Test
-    public void testMap() {
+    void testMap() {
         JobStatusMapperImpl mapper = new JobStatusMapperImpl();
         Assertions.assertEquals(JobStatusType.SUBMITTED, mapper.getJobStatus(JobStatus1.RECEIVED));
         Assertions.assertEquals(JobStatusType.PENDING, mapper.getJobStatus(JobStatus1.VALIDATING));
@@ -17,7 +17,7 @@ public class JobStatusMapperTest {
     }
 
     @Test
-    public void testInverseMap() {
+    void testInverseMap() {
         JobStatusMapperImpl mapper = new JobStatusMapperImpl();
 
         Assertions.assertEquals(JobStatus1.RECEIVED, mapper.getJobStatus(JobStatusType.SUBMITTED));

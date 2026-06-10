@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -41,12 +42,12 @@ class ActivityAuditReportLifecycleTest {
             lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
-            Assertions.assertTrue(csv.get().contains("Activity Audit Report"));
-            Assertions.assertTrue(csv.get().contains("Event Name,Table Name,Column Name"));
+            assertThat(csv.get()).contains("Activity Audit Report");
+            assertThat(csv.get()).contains("Event Name,Table Name,Column Name");
             Assertions.assertTrue(
                     csv.get().contains("Add Application,APPLICATION_LIST_ENTRY,APPLICATION_CODE"));
-            Assertions.assertTrue(csv.get().contains("old,new,2026-04-01,caseworker"));
-            Assertions.assertTrue(csv.get().contains(",,,,,,"));
+            assertThat(csv.get()).contains("old,new,2026-04-01,caseworker");
+            assertThat(csv.get()).contains(",,,,,,");
         } finally {
             outputFile.delete();
         }
@@ -71,8 +72,8 @@ class ActivityAuditReportLifecycleTest {
             lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
-            Assertions.assertTrue(csv.get().contains("Activity Audit Report"));
-            Assertions.assertTrue(csv.get().contains("Event Name,Table Name,Column Name"));
+            assertThat(csv.get()).contains("Activity Audit Report");
+            assertThat(csv.get()).contains("Event Name,Table Name,Column Name");
         } finally {
             outputFile.delete();
         }

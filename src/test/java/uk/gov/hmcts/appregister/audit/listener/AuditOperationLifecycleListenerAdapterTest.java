@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.audit.listener;
 
-import static org.mockito.Mockito.times;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.Mockito;
@@ -19,7 +17,7 @@ class AuditOperationLifecycleListenerAdapterTest {
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);
         my.eventPerformed(
                 new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", null));
-        Mockito.verify(my, times(1)).started(Mockito.notNull());
+        Mockito.verify(my).started(Mockito.notNull());
     }
 
     @Test
@@ -33,7 +31,7 @@ class AuditOperationLifecycleListenerAdapterTest {
                                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", null),
                         null,
                         null));
-        Mockito.verify(my, times(1)).finished(Mockito.notNull());
+        Mockito.verify(my).finished(Mockito.notNull());
     }
 
     @Test
@@ -50,6 +48,6 @@ class AuditOperationLifecycleListenerAdapterTest {
                                         null),
                                 null,
                                 null)));
-        Mockito.verify(my, times(1)).finishFail(Mockito.notNull());
+        Mockito.verify(my).finishFail(Mockito.notNull());
     }
 }

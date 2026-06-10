@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
-public class DatabaseJobsServiceImplTest {
+class DatabaseJobsServiceImplTest {
     private static final OffsetDateTime LAST_RAN = OffsetDateTime.parse("2025-01-02T03:04:05Z");
 
     private AdminAPIServiceImpl service;
@@ -46,7 +46,7 @@ public class DatabaseJobsServiceImplTest {
     @Spy private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
 
         service =
                 new AdminAPIServiceImpl(
@@ -58,7 +58,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobStatusByName() {
+    void testGetDatabaseJobStatusByName() {
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setLastRan(LAST_RAN);
@@ -86,7 +86,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testEnableDatabaseJobByName() {
+    void testEnableDatabaseJobByName() {
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setLastRan(LAST_RAN);
@@ -106,7 +106,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testUpdateDatabaseJobRetentionPeriodByName() {
+    void testUpdateDatabaseJobRetentionPeriodByName() {
         var retentionPolicyEntity = new RetentionPolicy();
         retentionPolicyEntity.setConfigValue("1825");
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
@@ -124,7 +124,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobRetentionPeriodByName() {
+    void testGetDatabaseJobRetentionPeriodByName() {
         var retentionPolicy = new RetentionPolicy();
         retentionPolicy.setConfigValue("1825");
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
@@ -145,7 +145,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+    void testGetDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
                         "RETENTION_PERIOD_DAYS"))
@@ -170,7 +170,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testUpdateDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+    void testUpdateDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
                         "RETENTION_PERIOD_DAYS"))
@@ -195,7 +195,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobStatusByName_auditsRequestedJobType() {
+    void testGetDatabaseJobStatusByName_auditsRequestedJobType() {
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setEnabled(YesOrNo.YES);

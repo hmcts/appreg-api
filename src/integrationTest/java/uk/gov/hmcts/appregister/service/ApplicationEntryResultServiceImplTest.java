@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationEntryResultServiceImplTest extends BaseIntegration {
+class ApplicationEntryResultServiceImplTest extends BaseIntegration {
 
     private static final String RTC_CODE = "RTC";
 
@@ -51,7 +51,7 @@ public class ApplicationEntryResultServiceImplTest extends BaseIntegration {
     private static final String COURT_HOUSE_KEY = "Courthouse";
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -59,7 +59,7 @@ public class ApplicationEntryResultServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void testBulkResultWithoutList() throws Exception {
+    void testBulkResultWithoutList() throws Exception {
         ApplicationList list = new AppListTestData().someMinimal().build();
         list.setStatus(OPEN);
         ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();
@@ -162,7 +162,7 @@ public class ApplicationEntryResultServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void testEntryDoesNotExistFailure() throws Exception {
+    void testEntryDoesNotExistFailure() throws Exception {
         ApplicationList list = new AppListTestData().someMinimal().build();
         list.setStatus(OPEN);
         ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();

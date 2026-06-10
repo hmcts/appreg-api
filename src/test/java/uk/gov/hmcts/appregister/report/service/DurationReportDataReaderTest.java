@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -177,11 +178,11 @@ class DurationReportDataReaderTest {
     }
 
     private void assertLegacyDurationQueryShape(String query) {
-        Assertions.assertTrue(query.contains("FROM application_lists al"));
-        Assertions.assertTrue(query.contains("LEFT JOIN criminal_justice_area cja"));
-        Assertions.assertTrue(query.contains("al.application_list_status = 'CLOSED'"));
-        Assertions.assertTrue(query.contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'"));
-        Assertions.assertTrue(query.contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)"));
+        assertThat(query).contains("FROM application_lists al");
+        assertThat(query).contains("LEFT JOIN criminal_justice_area cja");
+        assertThat(query).contains("al.application_list_status = 'CLOSED'");
+        assertThat(query).contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'");
+        assertThat(query).contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)");
         Assertions.assertTrue(
                 query.contains("ORDER BY al.application_list_date DESC, al.al_id DESC"));
     }

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.resultcode.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -42,7 +43,7 @@ import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
 @ExtendWith(MockitoExtension.class)
-public class ResultCodeServiceImplTest {
+class ResultCodeServiceImplTest {
 
     @Mock private ResolutionCodeRepository repository;
     @Mock private ResultCodeMapper mapper;
@@ -59,7 +60,7 @@ public class ResultCodeServiceImplTest {
     private ResultCodeServiceImpl service;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         ZoneId ukZone = ZoneId.of("Europe/London");
         Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
 
@@ -253,7 +254,7 @@ public class ResultCodeServiceImplTest {
         Assertions.assertEquals(0, pageDto.getTotalPages());
         Assertions.assertEquals(1, pageDto.getPageNumber());
         Assertions.assertEquals(10, pageDto.getPageSize());
-        Assertions.assertTrue(pageDto.getContent().isEmpty());
+        assertThat(pageDto.getContent()).isEmpty();
 
         verify(auditOperationService)
                 .processAudit(

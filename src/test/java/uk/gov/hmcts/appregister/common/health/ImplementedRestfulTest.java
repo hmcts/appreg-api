@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.health;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.List;
 import java.util.Map;
 import lombok.val;
@@ -11,16 +13,16 @@ import org.junit.jupiter.api.Test;
  * when endpoints are implemented. This class allows developers the ability to eyeball the health
  * status of the implementation and manually declare this by removing from the list.
  */
-public class ImplementedRestfulTest {
+class ImplementedRestfulTest {
     // The unimplemented endpoints. This list should be empty at the point of releasing
     // application register to production.
     private static final List<String> UNIMPLEMENTED_ENDPOINTS = List.of();
 
     @Test
-    public void testShouldNotBeImplemented() throws Exception {
+    void testShouldNotBeImplemented() throws Exception {
         val implemented = new RestImplementedStatusHealthIndicator().status();
 
-        Assertions.assertFalse(implemented.isEmpty());
+        assertThat(implemented).isNotEmpty();
 
         // assert against the unimplemented endpoints.
         for (var endpoint : UNIMPLEMENTED_ENDPOINTS) {

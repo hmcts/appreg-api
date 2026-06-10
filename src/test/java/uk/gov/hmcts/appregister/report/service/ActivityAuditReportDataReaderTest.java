@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -106,7 +107,7 @@ class ActivityAuditReportDataReaderTest {
 
         reader.readData(
                 new ReadPagePosition(600, 0),
-                (rows, context) -> Assertions.assertFalse(rows.isEmpty()),
+                (rows, context) -> assertThat(rows).isNotEmpty(),
                 mock(JobContext.class));
 
         Assertions.assertEquals(1, parameterSources.size());
@@ -168,24 +169,23 @@ class ActivityAuditReportDataReaderTest {
     }
 
     private void assertQueryShape(String query) {
-        String normalisedQuery = query.replaceAll("\\s+", " ");
         Assertions.assertTrue(
                 query.contains(
                         "CASE da.event_name WHEN :eventName0 THEN 0 WHEN :eventName1 THEN 1"));
-        Assertions.assertTrue(query.contains("da.created_date >= :dateFrom"));
-        Assertions.assertTrue(query.contains("da.event_name IN (:eventNames)"));
+        assertThat(query).contains("da.created_date >= :dateFrom");
+        assertThat(query).contains("da.event_name IN (:eventNames)");
         Assertions.assertTrue(
                 query.contains("COALESCE(NULLIF(da.user_id, ''), da.user_name) AS user_name"));
         Assertions.assertTrue(
                 query.contains("OR COALESCE(NULLIF(da.user_id, ''), da.user_name) = :username"));
-        Assertions.assertTrue(query.contains("POSITION('_ID' IN UPPER(da.column_name)) = 0"));
+        assertThat(query).contains("POSITION('_ID' IN UPPER(da.column_name)) = 0");
         Assertions.assertTrue(
                 query.contains("Maintains legacy MIS Activity Audit report ordering"));
-        Assertions.assertTrue(query.contains("ORDER BY"));
+        assertThat(query).contains("ORDER BY");
         Assertions.assertEquals(-1, query.indexOf(":lastActivityOrder"));
         Assertions.assertEquals(-1, query.indexOf("ORDER BY\n                activity_order"));
-        Assertions.assertTrue(normalisedQuery.contains("ORDER BY created_date_time, data_id"));
-        Assertions.assertTrue(query.contains("LIMIT :limit"));
+        assertThat(query.replaceAll("\\s+", " ")).contains("ORDER BY created_date_time, data_id");
+        assertThat(query).contains("LIMIT :limit");
     }
 
     private boolean wouldPassIdColumnPredicate(String columnName) {

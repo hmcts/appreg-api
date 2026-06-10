@@ -21,7 +21,7 @@ import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 
 @ExtendWith(MockitoExtension.class)
-public class JpaReaderTest extends AbstractAsyncTest {
+class JpaReaderTest extends AbstractAsyncTest {
 
     @Captor ArgumentCaptor<Pageable> pageableArgumentCaptor;
 

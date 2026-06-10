@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.template;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -9,7 +11,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
-public class WordingSentenceTest {
+class WordingSentenceTest {
     private static final String MULTIPLE_VALUE_TEMPLATE =
             "Application by {TEXT|Applicant officer|10} for a production ord covering "
                     + "{Unknown|No.of accounts|10} accounts(s) requiring the respondent to either produce or "
@@ -27,7 +29,7 @@ public class WordingSentenceTest {
             "This is a test {Unknown|Applicant officer|70} with a date";
 
     @Test
-    public void testParseWordingTemplateMultipleSuccess() {
+    void testParseWordingTemplateMultipleSuccess() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
@@ -78,7 +80,7 @@ public class WordingSentenceTest {
                         + "requiring the respondent to either produce or allow access to material that is in their "
                         + "possession or control for the purpose of a relevant investigation",
                 result.getSubstitutedString());
-        Assertions.assertTrue(templateSentence.getErroneousTemplates().isEmpty());
+        assertThat(templateSentence.getErroneousTemplates()).isEmpty();
 
         // verify getting values for the substituted string
         List<String> templateSubstitutionList =
@@ -88,7 +90,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testGetSubstitutedSentence() {
+    void testGetSubstitutedSentence() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
@@ -141,7 +143,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testGetSubstitutedSentenceApplyValues() {
+    void testGetSubstitutedSentenceApplyValues() {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Applicant officer");
 
@@ -168,7 +170,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testGetSubstitutedSentenceError() {
+    void testGetSubstitutedSentenceError() {
         BraceSubstitutedSentence substitutedSentence =
                 BraceSubstitutedSentence.withSubstitutedSentence(
                         "Application by {My Test} for a production "
@@ -184,7 +186,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testSubstituteIntoWordingTemplateSingleSuccess() {
+    void testSubstituteIntoWordingTemplateSingleSuccess() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
 
@@ -209,35 +211,34 @@ public class WordingSentenceTest {
         SubstitutedSentence result = templateSentence.substitute(List.of(substitution));
         Assertions.assertEquals(
                 "This is a test {2025-03-17} with a date", result.getSubstitutedString());
-        Assertions.assertTrue(templateSentence.getErroneousTemplates().isEmpty());
+        assertThat(templateSentence.getErroneousTemplates()).isEmpty();
         Assertions.assertEquals(
                 "This is a test {2025-03-17} with a date",
                 templateSentence.getSubstitutedSentence().getSubstitutedString());
     }
 
     @Test
-    public void testSubstituteIntoWordingTemplateAlreadyProcessed() {
+    void testSubstituteIntoWordingTemplateAlreadyProcessed() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Applicant officer");
         substitution.setValue("2025-03-17");
+        List<TemplateSubstitution> substitutions = List.of(substitution);
+        templateSentence.substitute(substitutions);
 
         AppRegistryException exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> {
-                            templateSentence.substitute(List.of(substitution));
-                            templateSentence.substitute(List.of(substitution));
-                        });
+                        () -> templateSentence.substitute(substitutions));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, exception.getCode());
     }
 
     @Test
-    public void testParseWordingTemplateMultipleSuccessForEachTemplateSeparately() {
+    void testParseWordingTemplateMultipleSuccessForEachTemplateSeparately() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
         Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
@@ -254,7 +255,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testSubstituteTemplateKeyAlreadyProcessed() {
+    void testSubstituteTemplateKeyAlreadyProcessed() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
         Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
@@ -266,20 +267,18 @@ public class WordingSentenceTest {
         Templateable templateableToSubstitute = sentence.getTemplateableContents()[0];
 
         // perform substitution twice so we force an error
+        sentence.substituteForTemplate(templateableToSubstitute, "Test");
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> {
-                            sentence.substituteForTemplate(templateableToSubstitute, "Test");
-                            sentence.substituteForTemplate(templateableToSubstitute, "Test");
-                        });
+                        () -> sentence.substituteForTemplate(templateableToSubstitute, "Test"));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_KEY_NOT_FOUND, appRegistryException.getCode());
     }
 
     @Test
-    public void testGetReferences() {
+    void testGetReferences() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
         Assertions.assertEquals(
@@ -293,7 +292,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testGetTemplate() {
+    void testGetTemplate() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
         Assertions.assertEquals(
@@ -306,7 +305,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testParseWordingParsingInvalidTemplates() {
+    void testParseWordingParsingInvalidTemplates() {
         WordingTemplateSentence templateSentence = WordingTemplateSentence.with(MULTIPLE_INVALID);
 
         Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
@@ -320,7 +319,7 @@ public class WordingSentenceTest {
     // TODO: Re-enable this once the decision has been made on the FE implementation.
     /*
     @Test
-    public void testInvalidDateFormatFailure() {
+    void testInvalidDateFormatFailure() {
                 WordingTemplateSentence templateSentence =
                         WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
                 AppRegistryException appRegistryException =
@@ -336,22 +335,22 @@ public class WordingSentenceTest {
     */
 
     @Test
-    public void testInvalidLengthFormatFailure() {
+    void testInvalidLengthFormatFailure() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
+        Templateable templateableToSubstitute = templateSentence.getTemplateableContents()[0];
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 templateSentence.substituteForTemplate(
-                                        templateSentence.getTemplateableContents()[0],
-                                        "this value exceeds length"));
+                                        templateableToSubstitute, "this value exceeds length"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
     }
 
     @Test
-    public void testInvalidNumberOfArgumentsTooMany() {
+    void testInvalidNumberOfArgumentsTooMany() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
@@ -375,19 +374,19 @@ public class WordingSentenceTest {
         TemplateSubstitution substitution3 = new TemplateSubstitution();
         substitution3.setKey("invalid");
         substitution3.setValue("2025-03-17");
+        List<TemplateSubstitution> substitutions =
+                List.of(substitution, substitution2, substitution3);
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () ->
-                                templateSentence.substitute(
-                                        List.of(substitution, substitution2, substitution3)));
+                        () -> templateSentence.substitute(substitutions));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test
-    public void testInvalidNumberOfArgumentsTooFew() {
+    void testInvalidNumberOfArgumentsTooFew() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
@@ -403,17 +402,18 @@ public class WordingSentenceTest {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Applicant officer");
         substitution.setValue("My Test");
+        List<TemplateSubstitution> substitutions = List.of(substitution);
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> templateSentence.substitute(List.of(substitution)));
+                        () -> templateSentence.substitute(substitutions));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test
-    public void testInvalidArgumentSubstitutionKey() {
+    void testInvalidArgumentSubstitutionKey() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
@@ -433,17 +433,18 @@ public class WordingSentenceTest {
         TemplateSubstitution substitution2 = new TemplateSubstitution();
         substitution.setKey("No.of accounts wrong");
         substitution.setValue("My Test");
+        List<TemplateSubstitution> substitutions = List.of(substitution, substitution2);
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> templateSentence.substitute(List.of(substitution, substitution2)));
+                        () -> templateSentence.substitute(substitutions));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test
-    public void testSubstituteNullValuesThrows() {
+    void testSubstituteNullValuesThrows() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
 

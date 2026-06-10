@@ -20,31 +20,27 @@ class BulkUploadCsvFormatValidatorTest {
 
     @Test
     void givenLegacyHeaders_whenValidate_thenPasses() {
-        assertDoesNotThrow(
-                () ->
-                        validator.validate(
-                                csvFile(
-                                        "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME\n")));
+        MultipartFile file = csvFile("RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME\n");
+
+        assertDoesNotThrow(() -> validator.validate(file));
     }
 
     @Test
     void givenCanonicalHeaders_whenValidate_thenPasses() {
-        assertDoesNotThrow(
-                () ->
-                        validator.validate(
-                                csvFile("RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n")));
+        MultipartFile file = csvFile("RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n");
+
+        assertDoesNotThrow(() -> validator.validate(file));
     }
 
     @Test
     void givenMixedLegacyAndCanonicalHeaders_whenValidate_thenThrows() {
+        MultipartFile file =
+                csvFile(
+                        "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME|"
+                                + "RESP_FIRST_NAME\n");
+
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        csvFile(
-                                                "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME|"
-                                                        + "RESP_FIRST_NAME\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
@@ -54,12 +50,10 @@ class BulkUploadCsvFormatValidatorTest {
 
     @Test
     void givenPartialLegacyHeaders_whenValidate_thenThrows() {
+        MultipartFile file = csvFile("RESP_FORENAME1|RESP_FORENAME2|RESP_SURNAME\n");
+
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        csvFile("RESP_FORENAME1|RESP_FORENAME2|RESP_SURNAME\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
@@ -68,10 +62,10 @@ class BulkUploadCsvFormatValidatorTest {
 
     @Test
     void givenPartialCanonicalHeaders_whenValidate_thenThrows() {
+        MultipartFile file = csvFile("RESP_FIRST_NAME|RESP_LAST_NAME\n");
+
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(csvFile("RESP_FIRST_NAME|RESP_LAST_NAME\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
@@ -80,10 +74,10 @@ class BulkUploadCsvFormatValidatorTest {
 
     @Test
     void givenNoNameHeaders_whenValidate_thenThrows() {
+        MultipartFile file = csvFile("APPLICANT_CODE|APPLICATION_CODE\n");
+
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(csvFile("APPLICANT_CODE|APPLICATION_CODE\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
@@ -94,8 +88,10 @@ class BulkUploadCsvFormatValidatorTest {
 
     @Test
     void givenBlankHeaderRow_whenValidate_thenThrows() {
+        MultipartFile file = csvFile("\n");
+
         AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(csvFile("\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);

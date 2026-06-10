@@ -11,7 +11,7 @@ import uk.gov.hmcts.appregister.data.ApplicationRegisterTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
-public class ApplicationRegisterRepositoryTest extends BaseRepositoryTest {
+class ApplicationRegisterRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationRegisterRepository appRegRepository;
 
@@ -20,7 +20,7 @@ public class ApplicationRegisterRepositoryTest extends BaseRepositoryTest {
     private static final int BASELINE_TEST_COUNT = 0;
 
     @Test
-    public void testBasicInsertionUpdate() {
+    void testBasicInsertionUpdate() {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     ApplicationRegister appRegEntryData =

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -19,7 +20,7 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
-public class WorkloadReportLifecycleTest {
+class WorkloadReportLifecycleTest {
     @Test
     void givenReportRows_whenCompleted_thenWritesCsvAndDeletesTempFile() throws Exception {
         AtomicReference<String> csv = new AtomicReference<>();
@@ -41,7 +42,7 @@ public class WorkloadReportLifecycleTest {
             lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
-            Assertions.assertTrue(csv.get().contains("Workload Report"));
+            assertThat(csv.get()).contains("Workload Report");
             Assertions.assertTrue(
                     csv.get()
                             .contains(

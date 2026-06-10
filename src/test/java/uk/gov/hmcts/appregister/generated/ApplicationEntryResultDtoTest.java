@@ -15,7 +15,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import utils.ConstraintAssertion;
 
-public class ApplicationEntryResultDtoTest {
+class ApplicationEntryResultDtoTest {
 
     private ObjectMapper objectMapper;
 

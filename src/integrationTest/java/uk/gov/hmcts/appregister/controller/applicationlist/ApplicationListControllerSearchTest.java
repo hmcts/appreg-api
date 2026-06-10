@@ -49,12 +49,12 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
-public class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
+class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
 
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
 
         // loop through all sort fields to make sure no errors occur
@@ -93,9 +93,8 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void
-            givenApplicationListSuccessfulDefaultSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationListSuccessfulDefaultSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -129,7 +128,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     // This test cant be made a stability test as slows the test run down
     // TODO: look into this
     @Test
-    public void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -197,7 +196,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByCourtCode_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByCourtCode_thenSuccessResponse()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -258,7 +257,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByLocation_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByLocation_thenSuccessResponse()
             throws Exception {
 
         // create the token
@@ -319,7 +318,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
+    void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
             throws Exception {
 
         // create the token
@@ -370,7 +369,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByCjaLocation_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByCjaLocation_thenSuccessResponse()
             throws Exception {
 
         // create the token
@@ -500,7 +499,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -1116,7 +1115,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         ApplicationListGetDetailDto page = resp.as(ApplicationListGetDetailDto.class);
 
         assertThat(page.getEntriesSummary().size()).isEqualTo(1);
-        Assertions.assertTrue(page.getDescription().startsWith("soft-deleted ::"));
+        assertThat(page.getDescription()).startsWith("soft-deleted ::");
         Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
         Assertions.assertEquals(1, page.getEntriesCount());
         Assertions.assertEquals("CCC003", page.getCourtCode());
@@ -1145,7 +1144,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
+    void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
         var token = getToken();
 
         // create list

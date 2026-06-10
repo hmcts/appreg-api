@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -202,23 +203,23 @@ class PrivateProsecutorsIndexReportDataReaderTest {
     }
 
     private void assertLegacyPrivateProsecutorsIndexQueryShape(String query) {
-        Assertions.assertTrue(query.contains("JOIN name_address app_na"));
-        Assertions.assertTrue(query.contains("FROM standard_applicants sa"));
-        Assertions.assertTrue(query.contains("NULLIF(TRIM(sa.name), '')"));
-        Assertions.assertTrue(query.contains("app_na.first_name"));
-        Assertions.assertTrue(query.contains("app_na.last_name"));
-        Assertions.assertTrue(query.contains("COALESCE(sa.forename_1, '')"));
-        Assertions.assertTrue(query.contains("COALESCE(sa.surname, '')"));
-        Assertions.assertTrue(query.contains("sa.standard_applicant_code"));
-        Assertions.assertTrue(query.contains("AND ale.sa_sa_id IS NULL"));
-        Assertions.assertTrue(query.contains("OR UPPER(sa.standard_applicant_name)"));
-        Assertions.assertTrue(query.contains("al.application_list_status = 'CLOSED'"));
-        Assertions.assertTrue(query.contains("ac.application_code = 'MX99010'"));
-        Assertions.assertTrue(query.contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'"));
-        Assertions.assertTrue(query.contains("ale.is_deleted IS NULL OR ale.is_deleted <> 'Y'"));
-        Assertions.assertTrue(query.contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)"));
-        Assertions.assertTrue(query.contains("ROW_NUMBER() OVER"));
-        Assertions.assertTrue(query.contains("ORDER BY rc.resolution_code DESC"));
+        assertThat(query).contains("JOIN name_address app_na");
+        assertThat(query).contains("FROM standard_applicants sa");
+        assertThat(query).contains("NULLIF(TRIM(sa.name), '')");
+        assertThat(query).contains("app_na.first_name");
+        assertThat(query).contains("app_na.last_name");
+        assertThat(query).contains("COALESCE(sa.forename_1, '')");
+        assertThat(query).contains("COALESCE(sa.surname, '')");
+        assertThat(query).contains("sa.standard_applicant_code");
+        assertThat(query).contains("AND ale.sa_sa_id IS NULL");
+        assertThat(query).contains("OR UPPER(sa.standard_applicant_name)");
+        assertThat(query).contains("al.application_list_status = 'CLOSED'");
+        assertThat(query).contains("ac.application_code = 'MX99010'");
+        assertThat(query).contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'");
+        assertThat(query).contains("ale.is_deleted IS NULL OR ale.is_deleted <> 'Y'");
+        assertThat(query).contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)");
+        assertThat(query).contains("ROW_NUMBER() OVER");
+        assertThat(query).contains("ORDER BY rc.resolution_code DESC");
         Assertions.assertTrue(
                 query.contains("ORDER BY fa.application_list_date DESC, fa.ale_id DESC"));
     }

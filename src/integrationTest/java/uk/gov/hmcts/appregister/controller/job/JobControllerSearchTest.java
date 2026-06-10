@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.testutils.csv.JobProcessCsvReadLifecycle;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class JobControllerSearchTest extends BaseIntegration {
+class JobControllerSearchTest extends BaseIntegration {
     public static final String WEB_CONTEXT = "jobs";
 
     @Autowired private UserProvider userProvider;
@@ -47,7 +47,7 @@ public class JobControllerSearchTest extends BaseIntegration {
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -55,7 +55,7 @@ public class JobControllerSearchTest extends BaseIntegration {
     }
 
     @Test
-    public void givenJob_whenJobStatusRequested_thenASuccessIsReturned() throws Exception {
+    void givenJob_whenJobStatusRequested_thenASuccessIsReturned() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -119,8 +119,7 @@ public class JobControllerSearchTest extends BaseIntegration {
     }
 
     @Test
-    public void givenJob_whenJobThatDoesNotExistIsRequested_thenAFailureIsReturned()
-            throws Exception {
+    void givenJob_whenJobThatDoesNotExistIsRequested_thenAFailureIsReturned() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -136,7 +135,7 @@ public class JobControllerSearchTest extends BaseIntegration {
     }
 
     @Test
-    public void givenJob_whenJobExistsButNotForUser_thenAFailureIsReturned() throws Exception {
+    void givenJob_whenJobExistsButNotForUser_thenAFailureIsReturned() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -185,7 +184,7 @@ public class JobControllerSearchTest extends BaseIntegration {
     }
 
     @Test
-    public void givenJob_whenJobStatusRequested_thenDataAuditRowIsPersisted() throws Exception {
+    void givenJob_whenJobStatusRequested_thenDataAuditRowIsPersisted() throws Exception {
         val tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         val request =

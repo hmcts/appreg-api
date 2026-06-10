@@ -792,7 +792,7 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
-    public void toEntrySummary() {
+    void toEntrySummary() {
         // the applicant does have a name so is an organisation
         NameAddress applicant = new NameAddress();
         applicant.setName("name");
@@ -1473,7 +1473,7 @@ class ApplicationListEntryMapperTest {
                         .getType());
 
         // validate the officials
-        Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
+        assertThat(entryGetDetailDto.getOfficials()).isNotEmpty();
         for (int i = 0; i < entryGetDetailDto.getOfficials().size(); i++) {
             Assertions.assertEquals(
                     appListEntry.getOfficials().get(i).getSurname(),
@@ -1490,7 +1490,7 @@ class ApplicationListEntryMapperTest {
         }
 
         // validate the statuses
-        Assertions.assertFalse(entryGetDetailDto.getFeeStatuses().isEmpty());
+        assertThat(entryGetDetailDto.getFeeStatuses()).isNotEmpty();
         for (int i = 0; i < entryGetDetailDto.getFeeStatuses().size(); i++) {
             Assertions.assertEquals(
                     appListEntry.getEntryFeeStatuses().get(i).getAlefsPaymentReference(),
@@ -1622,7 +1622,7 @@ class ApplicationListEntryMapperTest {
                         .getType());
 
         // validate the officials
-        Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
+        assertThat(entryGetDetailDto.getOfficials()).isNotEmpty();
         for (int i = 0; i < entryGetDetailDto.getOfficials().size(); i++) {
             Assertions.assertEquals(
                     appListEntry.getOfficials().get(i).getSurname(),
@@ -1639,7 +1639,7 @@ class ApplicationListEntryMapperTest {
         }
 
         // validate the statuses
-        Assertions.assertFalse(entryGetDetailDto.getFeeStatuses().isEmpty());
+        assertThat(entryGetDetailDto.getFeeStatuses()).isNotEmpty();
         for (int i = 0; i < entryGetDetailDto.getFeeStatuses().size(); i++) {
             Assertions.assertEquals(
                     appListEntry.getEntryFeeStatuses().get(i).getAlefsPaymentReference(),
@@ -1773,7 +1773,7 @@ class ApplicationListEntryMapperTest {
                         .getType());
 
         // validate the officials
-        Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
+        assertThat(entryGetDetailDto.getOfficials()).isNotEmpty();
         for (int i = 0; i < entryGetDetailDto.getOfficials().size(); i++) {
             Assertions.assertEquals(
                     appListEntry.getOfficials().get(i).getSurname(),
@@ -1790,7 +1790,7 @@ class ApplicationListEntryMapperTest {
         }
 
         // validate the statuses
-        Assertions.assertFalse(entryGetDetailDto.getFeeStatuses().isEmpty());
+        assertThat(entryGetDetailDto.getFeeStatuses()).isNotEmpty();
         for (int i = 0; i < entryGetDetailDto.getFeeStatuses().size(); i++) {
             Assertions.assertEquals(
                     appListEntry.getEntryFeeStatuses().get(i).getAlefsPaymentReference(),

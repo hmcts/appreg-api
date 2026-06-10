@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import io.restassured.response.Response;
@@ -46,11 +47,11 @@ import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudTest {
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Test
-    public void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
+    void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -68,8 +69,8 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         entryUpdateDto);
 
         responseSpecUpdate.then().statusCode(200);
-        Assertions.assertFalse(responseSpecUpdate.asString().contains("\"applicationList\""));
-        Assertions.assertFalse(responseSpecUpdate.asString().contains("\"entries\""));
+        assertThat(responseSpecUpdate.asString()).doesNotContain("\"applicationList\"");
+        assertThat(responseSpecUpdate.asString()).doesNotContain("\"entries\"");
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
         LocalDate createdDate = responseSpecCreate.as(EntryGetDetailDto.class).getLodgementDate();
@@ -130,7 +131,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessfulUpdate_whenAllValueAreToBeUpdatedWithEnforcementFines_200Returned()
+    void givenASuccessfulUpdate_whenAllValueAreToBeUpdatedWithEnforcementFines_200Returned()
             throws Exception {
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
@@ -156,7 +157,6 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         responseSpecUpdate.then().statusCode(200);
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
-        EntryGetDetailDto createDDto = responseSpecCreate.as(EntryGetDetailDto.class);
 
         validateEntryUpdateResponse(
                 entryUpdateDto,
@@ -211,7 +211,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenOverlappingActiveApplicationCodesAndFees_whenUpdateListEntry_thenPreferNullEndDateRecords()
                     throws Exception {
         LocalDate today = LocalDate.now();
@@ -259,7 +259,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned() throws Exception {
+    void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned() throws Exception {
         var tokenGenerator = createAdminToken();
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
@@ -283,7 +283,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenAnEtagFailingMatch_412Returned() throws Exception {
+    void givenAFailureUpdate_whenAnEtagFailingMatch_412Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         TokenGenerator tokenGenerator =
@@ -320,7 +320,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenInvalidUpdate_whenFeeStatusDueAndPaymentReferenceProvided_400Returned()
+    void givenInvalidUpdate_whenFeeStatusDueAndPaymentReferenceProvided_400Returned()
             throws Exception {
 
         FeeStatus feeStatus = new FeeStatus();
@@ -353,7 +353,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenInvalidUpdate_whenFeeStatusDateIsInFuture_400Returned() throws Exception {
+    void givenInvalidUpdate_whenFeeStatusDateIsInFuture_400Returned() throws Exception {
 
         FeeStatus feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
@@ -381,7 +381,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenWordingTemplateFieldsLengthNotAcceptable_400Returned()
+    void givenAFailureUpdate_whenWordingTemplateFieldsLengthNotAcceptable_400Returned()
             throws Exception {
 
         String stringExceedLength = RandomStringUtils.insecure().nextAlphanumeric(201);
@@ -415,9 +415,8 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenAnInvalidUpdateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
-                    throws Exception {
+    void givenAnInvalidUpdateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
+            throws Exception {
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -451,7 +450,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessUpdate_whenApplicantAddressIsValid_200Returned() throws Exception {
+    void givenASuccessUpdate_whenApplicantAddressIsValid_200Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -481,7 +480,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
     /* REGEX Validation Tests */
     @Test
-    public void givenASuccessUpdate_whenApplicantNameIsValid_200Returned() throws Exception {
+    void givenASuccessUpdate_whenApplicantNameIsValid_200Returned() throws Exception {
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setNumberOfRespondents(null);
@@ -518,7 +517,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
     /* REGEX Validation Tests */
     @Test
-    public void givenASuccessUpdate_whenApplicantEmailIsValid_200Returned() throws Exception {
+    void givenASuccessUpdate_whenApplicantEmailIsValid_200Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -548,7 +547,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
     /* REGEX Validation Tests */
     @Test
-    public void givenASuccessUpdate_whenApplicantPhoneIsValid_200Returned() throws Exception {
+    void givenASuccessUpdate_whenApplicantPhoneIsValid_200Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -578,7 +577,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
     /* REGEX Validation Tests */
     @Test
-    public void givenASuccessUpdate_whenApplicantMobileIsValid_200Returned() throws Exception {
+    void givenASuccessUpdate_whenApplicantMobileIsValid_200Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -607,7 +606,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenApplicantAddressInvalid_400Returned() throws Exception {
+    void givenAFailureUpdate_whenApplicantAddressInvalid_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -644,7 +643,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenApplicantInvalidName_400Returned() throws Exception {
+    void givenAFailureUpdate_whenApplicantInvalidName_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -689,7 +688,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenApplicantPhoneNumberInvalid_400Returned() throws Exception {
+    void givenAFailureUpdate_whenApplicantPhoneNumberInvalid_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -726,7 +725,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenApplicantMobileInvalid_400Returned() throws Exception {
+    void givenAFailureUpdate_whenApplicantMobileInvalid_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -763,7 +762,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAFailureUpdate_whenApplicantEmailInvalid_400Returned() throws Exception {
+    void givenAFailureUpdate_whenApplicantEmailInvalid_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -799,7 +798,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn200()
                     throws Exception {
 
@@ -831,7 +830,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenNumberOfRespondentsProvided_thenReturn200()
                     throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
@@ -1230,7 +1229,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
                     throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
@@ -1269,7 +1268,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
+    void
             givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
                     throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
@@ -1371,11 +1370,11 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 updatedDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}",
                 entryUpdateDto.getFeeStatuses());
-        Assertions.assertTrue(updatedDto.getOfficials().isEmpty());
+        assertThat(updatedDto.getOfficials()).isEmpty();
     }
 
     @Test
-    public void givenASuccessfulUpdateToClosedList_whenAllValueAreToBeUpdate_200Returned()
+    void givenASuccessfulUpdateToClosedList_whenAllValueAreToBeUpdate_200Returned()
             throws Exception {
         String notesOnCreate = "This is a note on create";
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
@@ -1486,7 +1485,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessfulUpdateToClosedList_whenListIsOpen_412Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenListIsOpen_412Returned() throws Exception {
         String notesOnCreate = "This is a note on create";
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setNumberOfRespondents(null);
@@ -1578,8 +1577,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_409Returned()
-            throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_409Returned() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1605,8 +1603,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_409Returned()
-            throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_409Returned() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1650,8 +1647,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenASuccessfulUpdateToClosedList_whenAppListIsNotClosed_409Returned()
-            throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenAppListIsNotClosed_409Returned() throws Exception {
         String notesOnCreate = "This is a note on create";
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setNumberOfRespondents(null);
@@ -1723,9 +1719,8 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenASuccessfulUpdateToClosedList_whenAppListIsClosedButNotRelatedToEntry_409Returned()
-                    throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenAppListIsClosedButNotRelatedToEntry_409Returned()
+            throws Exception {
 
         String notesOnCreate = "This is a note on create";
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();

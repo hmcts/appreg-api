@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -45,7 +44,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 
 @ExtendWith(MockitoExtension.class)
-public class DataAuditLoggerTest {
+class DataAuditLoggerTest {
     @Mock private Auditor auditDifferentiator;
 
     @Mock private DataAuditRepository dataAuditRepository;
@@ -56,7 +55,7 @@ public class DataAuditLoggerTest {
     private ArgumentCaptor<List<DataAudit>> auditListCaptor = ArgumentCaptor.forClass(List.class);
 
     @Test
-    public void testStartOperationTest() {
+    void testStartOperationTest() {
         StartEvent startEvent =
                 new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
 
@@ -66,7 +65,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testFailOperationTest() {
+    void testFailOperationTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         StartEvent startEvent =
                 new StartEvent(
@@ -82,7 +81,7 @@ public class DataAuditLoggerTest {
 
     /** This is a programmatic error as both new and old audit values should NEVER be null. */
     @Test
-    public void testFailOldAndNewEntityNull() {
+    void testFailOldAndNewEntityNull() {
         StartEvent startEvent = new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", null);
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, null);
 
@@ -100,7 +99,7 @@ public class DataAuditLoggerTest {
      * types.
      */
     @Test
-    public void testFailOldAndNewEntityDifferentTypes() {
+    void testFailOldAndNewEntityDifferentTypes() {
         StartEvent startEvent =
                 new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", new ApplicationList());
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, new ApplicationCode());
@@ -119,7 +118,7 @@ public class DataAuditLoggerTest {
      * ids.
      */
     @Test
-    public void testFailOldAndNewEntityWithDifferentIds() {
+    void testFailOldAndNewEntityWithDifferentIds() {
         ApplicationList applicationList = new ApplicationList();
         applicationList.setId(1L);
 
@@ -140,7 +139,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForGetWithDataAuditSaveTest() {
+    void testSuccessOperationForGetWithDataAuditSaveTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode oldCode = null;
         ApplicationCode newCode = testData.someComplete();
@@ -156,7 +155,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForCreateTest() {
+    void testSuccessOperationForCreateTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         Long id = 123L;
@@ -179,7 +178,7 @@ public class DataAuditLoggerTest {
                                 new AuditableData(tableName, field1, newValue2)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
 
         DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -203,7 +202,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testReadAuditSkipsEmptyStringNewValue() {
+    void testReadAuditSkipsEmptyStringNewValue() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         newCode.setId(123L);
@@ -221,7 +220,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testReadAuditPersistsNonEmptyNewValue() {
+    void testReadAuditPersistsNonEmptyNewValue() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         newCode.setId(123L);
@@ -236,14 +235,14 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
         Assertions.assertEquals("value", auditListCaptor.getValue().getFirst().getNewValue());
         Assertions.assertEquals(
                 CrudEnum.READ, auditListCaptor.getValue().getFirst().getUpdateType());
     }
 
     @Test
-    public void testCreateAuditStillPersistsEmptyStringNewValue() {
+    void testCreateAuditStillPersistsEmptyStringNewValue() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         newCode.setId(123L);
@@ -256,14 +255,14 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
         Assertions.assertEquals("", auditListCaptor.getValue().getFirst().getNewValue());
         Assertions.assertEquals(
                 CrudEnum.CREATE, auditListCaptor.getValue().getFirst().getUpdateType());
     }
 
     @Test
-    public void testAuditSaveFailureDoesNotEscapeOnCompleteEvent() {
+    void testAuditSaveFailureDoesNotEscapeOnCompleteEvent() {
         val testData = new ApplicationCodeTestData();
         val newCode = testData.someComplete();
         val id = 123L;
@@ -294,7 +293,7 @@ public class DataAuditLoggerTest {
                                         listener));
 
         Assertions.assertEquals("business-result", result);
-        verify(dataAuditRepository, times(1)).saveAll(any());
+        verify(dataAuditRepository).saveAll(any());
         // The logger should preserve the exact failed field name without logging the field value.
         val failureLog =
                 logCaptor.getErrorLogs().stream()
@@ -312,7 +311,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForUpdateWhereNewLargerThanOldTest() {
+    void testSuccessOperationForUpdateWhereNewLargerThanOldTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         ApplicationCode oldCode = testData.someComplete();
@@ -353,7 +352,7 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
 
         DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -381,7 +380,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForUpdateWhereOldLargerThanNewDiffTest() {
+    void testSuccessOperationForUpdateWhereOldLargerThanNewDiffTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         ApplicationCode oldCode = testData.someComplete();
@@ -424,7 +423,7 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
 
         DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -452,7 +451,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForSoftDeleteTest() {
+    void testSuccessOperationForSoftDeleteTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         ApplicationCode oldCode = testData.someComplete();
@@ -480,8 +479,8 @@ public class DataAuditLoggerTest {
                                 new AuditableData(tableName, field1, oldValue2)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
-        verify(auditDifferentiator, times(1)).extractAuditData(any(), any());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(auditDifferentiator).extractAuditData(any(), any());
 
         DataAudit dataAudit1 = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
@@ -493,7 +492,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForSoftDeleteTestWithDifferentiatorEntity() {
+    void testSuccessOperationForSoftDeleteTestWithDifferentiatorEntity() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         ApplicationCode oldCode = testData.someComplete();
@@ -530,7 +529,7 @@ public class DataAuditLoggerTest {
                 .thenReturn(List.of(new AuditableData(tableName, field1, oldValue)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
         verify(auditDifferentiator, never()).extractAuditData(any(), any());
 
         DataAudit dataAudit1 = auditListCaptor.getValue().get(0);

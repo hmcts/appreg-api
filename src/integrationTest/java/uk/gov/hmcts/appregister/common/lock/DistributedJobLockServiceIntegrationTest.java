@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.lock;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -64,7 +65,7 @@ class DistributedJobLockServiceIntegrationTest extends BaseRepositoryTest {
         var secondLock = distributedJobLockService.tryAcquire(JOB_NAME, LEASE_DURATION);
 
         assertTrue(firstLock.isPresent());
-        assertTrue(secondLock.isEmpty());
+        assertThat(secondLock).isEmpty();
     }
 
     @Test
@@ -110,7 +111,7 @@ class DistributedJobLockServiceIntegrationTest extends BaseRepositoryTest {
 
         var lock = distributedJobLockService.tryAcquire(JOB_NAME, LEASE_DURATION);
 
-        assertTrue(lock.isEmpty());
+        assertThat(lock).isEmpty();
     }
 
     @Test

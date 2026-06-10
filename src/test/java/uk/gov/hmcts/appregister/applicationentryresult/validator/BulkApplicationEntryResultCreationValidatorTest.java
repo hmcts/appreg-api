@@ -33,7 +33,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class BulkApplicationEntryResultCreationValidatorTest {
+class BulkApplicationEntryResultCreationValidatorTest {
     @Mock private ApplicationListRepository applicationListRepository;
 
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;

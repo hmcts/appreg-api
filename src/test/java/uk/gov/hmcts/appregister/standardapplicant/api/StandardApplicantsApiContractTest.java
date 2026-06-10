@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.api;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -9,7 +11,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.api.StandardApplicantsApi;
 
-public class StandardApplicantsApiContractTest {
+class StandardApplicantsApiContractTest {
     private static final Path STANDARD_APPLICANT_BY_CODE_OPENAPI_PATH =
             Path.of(
                     "src/main/resources/openapi/paths/standard-applicants/"
@@ -19,9 +21,9 @@ public class StandardApplicantsApiContractTest {
     void getStandardApplicantByCodeOpenApiPathDoesNotDefineDateParameter() throws IOException {
         String pathYaml = Files.readString(STANDARD_APPLICANT_BY_CODE_OPENAPI_PATH);
 
-        Assertions.assertTrue(pathYaml.contains("operationId: getStandardApplicantByCode"));
-        Assertions.assertFalse(pathYaml.contains("name: date"));
-        Assertions.assertFalse(pathYaml.contains("getStandardApplicantByCodeAndDate"));
+        assertThat(pathYaml).contains("operationId: getStandardApplicantByCode");
+        assertThat(pathYaml).doesNotContain("name: date");
+        assertThat(pathYaml).doesNotContain("getStandardApplicantByCodeAndDate");
     }
 
     @Test

@@ -25,8 +25,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationEntryResultControllerUpdateTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Update Application List Entry Result: 200 when valid request + If-Match matches")

@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 
-public class CriminalJusticeAreaMapperTest {
+class CriminalJusticeAreaMapperTest {
     @Test
-    public void testMap() {
+    void testMap() {
         String code = "mycode";
         String description = "mydescription";
 

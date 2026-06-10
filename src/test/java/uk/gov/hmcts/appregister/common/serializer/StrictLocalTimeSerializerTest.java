@@ -5,7 +5,7 @@ import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class StrictLocalTimeSerializerTest {
+class StrictLocalTimeSerializerTest {
 
     @Test
     void testSerialize() throws Exception {

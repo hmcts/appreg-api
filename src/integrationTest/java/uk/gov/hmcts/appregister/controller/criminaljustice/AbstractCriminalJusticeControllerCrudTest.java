@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.controller.criminaljustice;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
-public class AbstractCriminalJusticeControllerCrudTest extends BaseIntegration {
+class AbstractCriminalJusticeControllerCrudTest extends BaseIntegration {
     protected static final String WEB_CONTEXT = "criminal-justice-areas";
 
     // expectations based on the flyway test data

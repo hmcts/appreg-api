@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.hmcts.appregister.common.security.RoleEnum.ADMIN;
 
@@ -43,7 +43,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudTest {
 
     @Test
     void givenExistingList_whenGetApplicationListEntryIdsWithoutFilters_thenReturnAllIds()
@@ -98,7 +98,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                 executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
 
         Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
-        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+        assertThat(response.getIds()).doesNotContain(nonMatchingEntry.getUuid());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                 executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
 
         Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
-        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+        assertThat(response.getIds()).doesNotContain(nonMatchingEntry.getUuid());
     }
 
     @Test
@@ -138,7 +138,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryIdsDto response = executeListEntryIdsSearch(createAdminToken(), listId, filter);
 
         Assertions.assertNotNull(response.getIds());
-        Assertions.assertTrue(response.getIds().isEmpty());
+        assertThat(response.getIds()).isEmpty();
     }
 
     @Test
@@ -216,7 +216,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryIdsDto response = executeGlobalEntryIdsSearch(createAdminToken(), filter);
 
         Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
-        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+        assertThat(response.getIds()).doesNotContain(nonMatchingEntry.getUuid());
     }
 
     @Test
@@ -227,7 +227,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryIdsDto response = executeGlobalEntryIdsSearch(createAdminToken(), filter);
 
         Assertions.assertNotNull(response.getIds());
-        Assertions.assertTrue(response.getIds().isEmpty());
+        assertThat(response.getIds()).isEmpty();
     }
 
     @Test
@@ -262,7 +262,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearch() throws Exception {
+    void testGetApplicationEntriesSearch() throws Exception {
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(ADMIN)).build();
@@ -281,7 +281,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithAllDetails() throws Exception {
+    void testGetApplicationEntriesSearchWithAllDetails() throws Exception {
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(ADMIN)).build();
@@ -487,7 +487,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithPartialAllDetails() throws Exception {
+    void testGetApplicationEntriesSearchWithPartialAllDetails() throws Exception {
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
         filterDto.setApplicantSurname("rn");
@@ -686,9 +686,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void
-            givenApplicationEntryListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationEntryListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
 
         for (ApplicationEntrySortFieldEnum sortField : ApplicationEntrySortFieldEnum.values()) {
 
@@ -719,8 +718,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void givenSupportedSortKeys_whenGetApplicationEntries_thenSortBeforePaging()
-            throws Exception {
+    void givenSupportedSortKeys_whenGetApplicationEntries_thenSortBeforePaging() throws Exception {
         String uniqueToken = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String accountReferencePrefix = "SORT-" + uniqueToken + "-";
         SortFixture fixture = createGlobalSortFixture(uniqueToken, accountReferencePrefix);
@@ -764,7 +762,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void givenResultedAndUnresultedEntries_whenGetApplicationEntriesSortedByIsResulted()
+    void givenResultedAndUnresultedEntries_whenGetApplicationEntriesSortedByIsResulted()
             throws Exception {
         String uniqueToken = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String accountReferencePrefix = "ISR-" + uniqueToken + "-";
@@ -799,7 +797,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationEntriesWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
 
@@ -825,9 +823,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidSortQuery_thenReturn400()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationEntriesWithPagingInvalidSortQuery_thenReturn400()
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -844,7 +841,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void givenCourtCodeSort_whenGetApplicationEntries_thenReturn400() throws Exception {
+    void givenCourtCodeSort_whenGetApplicationEntries_thenReturn400() throws Exception {
         var tokenGenerator = createAdminToken();
 
         Response responseSpec =
@@ -860,9 +857,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn400()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn400()
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -1036,7 +1032,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
             List<UUID> statusOrder) {}
 
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
 
@@ -1054,7 +1050,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var tokenGenerator = createAdminToken();
 
         Response responseSpec =
@@ -1073,7 +1069,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenInvalidRespondentPostcodeFilter_whenGetApplicationEntries_thenReturn400()
+    void givenInvalidRespondentPostcodeFilter_whenGetApplicationEntries_thenReturn400()
             throws Exception {
         var tokenGenerator = createAdminToken();
 
@@ -1093,9 +1089,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void
-            givenPartialRespondentPostcodeMatch_whenGetApplicationEntries_thenReturnMatchingEntry()
-                    throws Exception {
+    void givenPartialRespondentPostcodeMatch_whenGetApplicationEntries_thenReturnMatchingEntry()
+            throws Exception {
         ApplicationList matchingList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(matchingList);
@@ -1129,7 +1124,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenPartialRespondentPostcodeMiss_whenGetApplicationEntries_thenReturnEmptyPage()
+    void givenPartialRespondentPostcodeMiss_whenGetApplicationEntries_thenReturnEmptyPage()
             throws Exception {
         ApplicationList list = createAndSaveList(Status.OPEN);
 
@@ -1157,7 +1152,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
     @Test
     @StabilityTest
-    public void testGetApplicationEntriesSearchReturnsAllResultCodes() throws Exception {
+    void testGetApplicationEntriesSearchReturnsAllResultCodes() throws Exception {
         ApplicationList list = createAndSaveList(Status.OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", false);
 

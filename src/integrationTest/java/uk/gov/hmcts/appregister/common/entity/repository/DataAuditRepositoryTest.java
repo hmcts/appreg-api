@@ -12,14 +12,14 @@ import uk.gov.hmcts.appregister.data.DataAuditTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
 @Slf4j
-public class DataAuditRepositoryTest extends BaseRepositoryTest {
+class DataAuditRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Autowired private UserProvider loggedInUser;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    void testBasicInsertionUpdate() throws Exception {
         // test save
         DataAudit dataAudit = persistance.save(new DataAuditTestData().someMinimal().build());
 

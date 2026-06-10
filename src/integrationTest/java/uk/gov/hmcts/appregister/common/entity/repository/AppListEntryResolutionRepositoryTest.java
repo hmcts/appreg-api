@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
@@ -9,13 +9,11 @@ import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDI
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -24,7 +22,7 @@ import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 
 @Transactional
 @Rollback
-public class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
+class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private AppListEntryResolutionRepository applicationListEntryResolutionRepository;
 
@@ -33,12 +31,11 @@ public class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
     @PersistenceContext private EntityManager entityManager;
 
     @Test
-    public void testFindByApplicationListUuidForPrinting() {
+    void testFindByApplicationListUuidForPrinting() {
         // Arrange
         ApplicationList list = new AppListTestData().someMinimal().build();
-        ApplicationListEntry entry =
-                ApplicationListEntryUtil.saveApplicationListEntry(
-                        entityManager, persistance, list, (short) 1);
+        ApplicationListEntryUtil.saveApplicationListEntry(
+                entityManager, persistance, list, (short) 1);
 
         // Act
         List<ApplicationListEntryResolutionPrintProjection> results =
@@ -47,7 +44,7 @@ public class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
 
         // Assert
         assertNotNull(results);
-        Assertions.assertFalse(results.isEmpty());
+        assertThat(results).isNotEmpty();
 
         List<String> retrievedWordings =
                 results.stream()
