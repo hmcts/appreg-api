@@ -147,8 +147,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenConstraintExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenConstraintExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned() {
 
         String customMessage = "Custom message";
 
@@ -219,8 +218,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenhandleMethodArgumentExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenhandleMethodArgumentExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned() {
 
         String customMessage = "Custom message";
 
@@ -275,8 +273,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder()
-            throws Exception {
+    void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
@@ -328,8 +325,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenWholeNumberTypeMismatch_whenTheExceptionIsThrown_thenWholeNumberMessageIsReturned()
-            throws Exception {
+    void givenWholeNumberTypeMismatch_whenTheExceptionIsThrown_thenWholeNumberMessageIsReturned() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
@@ -368,8 +364,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenBooleanTypeMismatch_whenTheExceptionIsThrown_thenBooleanMessageIsReturned()
-            throws Exception {
+    void givenBooleanTypeMismatch_whenTheExceptionIsThrown_thenBooleanMessageIsReturned() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
@@ -409,8 +404,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned() {
 
         String content = "Type conversion problem. Something in the payload is not correct";
 
@@ -440,8 +434,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenHttpMessageNotReadableDateExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenHttpMessageNotReadableDateException_whenTheExceptionIsThrown_thenAProblemDetailIsReturned() {
 
         String content = "Not Readable Error";
         String dateExContent = "Date type mismatch error somewhere in payload";
@@ -585,8 +578,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenEmptyHandlerMethodValidationException_whenHandled_thenGenericWarnIsLogged()
-            throws NoSuchMethodException {
+    void givenEmptyHandlerMethodValidationException_whenHandled_thenGenericWarnIsLogged() {
         MethodValidationResult validationResult = Mockito.mock(MethodValidationResult.class);
         Mockito.when(validationResult.getParameterValidationResults()).thenReturn(List.of());
         Mockito.when(validationResult.getCrossParameterValidationResults()).thenReturn(List.of());

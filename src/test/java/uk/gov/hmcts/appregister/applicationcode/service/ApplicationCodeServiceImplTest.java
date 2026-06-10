@@ -94,7 +94,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCode() throws Exception {
+    void findByCode() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
@@ -162,7 +162,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCodeNullDate() throws Exception {
+    void findByCodeNullDate() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
@@ -196,7 +196,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findAllByCode() throws Exception {
+    void findAllByCode() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -247,7 +247,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findAllByTitle() throws Exception {
+    void findAllByTitle() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -298,7 +298,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findAllByDate() throws Exception {
+    void findAllByDate() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -351,7 +351,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findAllCriteria() throws Exception {
+    void findAllCriteria() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -400,7 +400,7 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCodeWithFeesEmpty() throws Exception {
+    void findByCodeWithFeesEmpty() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =

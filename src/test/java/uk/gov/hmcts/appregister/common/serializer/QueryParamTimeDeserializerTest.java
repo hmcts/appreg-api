@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class QueryParamTimeDeserializerTest {
 
     @Test
-    void testDeserialize() throws Exception {
+    void testDeserialize() {
         Assertions.assertEquals(
                 LocalTime.parse("12:30:00"), new QueryParamTimeDeserializer().convert("12:30"));
     }

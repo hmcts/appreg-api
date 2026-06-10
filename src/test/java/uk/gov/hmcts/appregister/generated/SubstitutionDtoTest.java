@@ -23,7 +23,7 @@ class SubstitutionDtoTest {
     }
 
     @Test
-    void testSubstitutionEmptyString() throws Exception {
+    void testSubstitutionEmptyString() {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setValue("");
         substitution.setKey("");

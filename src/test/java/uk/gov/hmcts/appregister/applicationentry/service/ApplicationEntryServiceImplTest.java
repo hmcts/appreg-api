@@ -2276,7 +2276,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void testUpdateClosedListWithAppend() throws Exception {
+    void testUpdateClosedListWithAppend() {
         // setup payload with a note to be applied
         EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
         entryUpdateClosedDto.setAdditionalNotes("additional notes");

@@ -23,7 +23,7 @@ class OfficialDtoTest {
     }
 
     @Test
-    void testOfficialEmptyString() throws Exception {
+    void testOfficialEmptyString() {
         Official official = new Official();
         official.setForename("");
         official.setSurname("");

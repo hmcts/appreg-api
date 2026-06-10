@@ -15,7 +15,7 @@ class FeeStatusDtoTest {
     private static final LocalDate STATUS_DATE = LocalDate.of(2025, 1, 2);
 
     @Test
-    void testOfficialEmptyString() throws Exception {
+    void testOfficialEmptyString() {
         FeeStatus status = new FeeStatus();
         status.setPaymentReference("");
 
@@ -36,8 +36,7 @@ class FeeStatusDtoTest {
     }
 
     @Test
-    void givenPaymentReferenceLongerThanFifteenCharacters_whenValidating_thenConstraintViolation()
-            throws Exception {
+    void givenPaymentReferenceLongerThanFifteenCharacters_whenValidating_thenConstraintViolation() {
         FeeStatus status = new FeeStatus();
         status.setPaymentReference("1234512345123456");
         status.setPaymentStatus(PaymentStatus.PAID);
