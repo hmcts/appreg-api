@@ -179,15 +179,13 @@ public class RestImplementedStatusHealthIndicator {
 
         implementedEndpoints.stream()
                 .forEach(
-                        controllerMethod -> {
-                            details.put(controllerMethod.getApiString(), IMPLEMENTED);
-                        });
+                        controllerMethod ->
+                                details.put(controllerMethod.getApiString(), IMPLEMENTED));
 
         unImplementedEndpoints.stream()
                 .forEach(
-                        controllerMethod -> {
-                            details.put(controllerMethod.getApiString(), NOT_IMPLEMENTED);
-                        });
+                        controllerMethod ->
+                                details.put(controllerMethod.getApiString(), NOT_IMPLEMENTED));
         return details;
     }
 

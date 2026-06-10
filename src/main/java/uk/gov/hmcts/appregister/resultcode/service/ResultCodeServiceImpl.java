@@ -143,9 +143,9 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                             codeFilter,
                             titleFilter);
 
-                    CodeAndTitle record = new CodeAndTitle(codeFilter, titleFilter);
+                    CodeAndTitle codeAndTitle = new CodeAndTitle(codeFilter, titleFilter);
                     AuditableResult<ResultCodePage, Keyable> result =
-                            new AuditableResult<>(responsePage, mapper.toEntity(record));
+                            new AuditableResult<>(responsePage, mapper.toEntity(codeAndTitle));
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

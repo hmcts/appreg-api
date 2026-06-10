@@ -289,78 +289,77 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         MatchResponse<EntryGetDetailDto> getDetailDto =
                 validator.validate(
                         entryCreateDto,
-                        (dto, success) -> {
-                            return auditService.processAudit(
-                                    AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
-                                    req -> {
-                                        NameAddress applicantToSave =
-                                                createApplicant(entryCreateDto);
+                        (dto, success) ->
+                                auditService.processAudit(
+                                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
+                                        req -> {
+                                            NameAddress applicantToSave =
+                                                    createApplicant(entryCreateDto);
 
-                                        NameAddress respondentToSave =
-                                                createRespondent(entryCreateDto);
+                                            NameAddress respondentToSave =
+                                                    createRespondent(entryCreateDto);
 
-                                        // save the list
-                                        ApplicationListEntry listEntryEntity =
-                                                applicationListEntryEntityMapper
-                                                        .toApplicationListEntry(
-                                                                entryCreateDto.getData(),
-                                                                success.getWordingSentence()
-                                                                        .substitute(
-                                                                                entryCreateDto
-                                                                                        .getData()
-                                                                                        .getWordingFields())
-                                                                        .getSubstitutedString(),
-                                                                success.getSa(),
-                                                                applicantToSave,
-                                                                respondentToSave,
-                                                                success.getApplicationCode(),
-                                                                success.getApplicationList(),
-                                                                bulkUpload);
+                                            // save the list
+                                            ApplicationListEntry listEntryEntity =
+                                                    applicationListEntryEntityMapper
+                                                            .toApplicationListEntry(
+                                                                    entryCreateDto.getData(),
+                                                                    success.getWordingSentence()
+                                                                            .substitute(
+                                                                                    entryCreateDto
+                                                                                            .getData()
+                                                                                            .getWordingFields())
+                                                                            .getSubstitutedString(),
+                                                                    success.getSa(),
+                                                                    applicantToSave,
+                                                                    respondentToSave,
+                                                                    success.getApplicationCode(),
+                                                                    success.getApplicationList(),
+                                                                    bulkUpload);
 
-                                        Long alId = success.getApplicationList().getId();
-                                        short seq = allocateNextSequence(alId);
-                                        listEntryEntity.setSequenceNumber(seq);
+                                            Long alId = success.getApplicationList().getId();
+                                            short seq = allocateNextSequence(alId);
+                                            listEntryEntity.setSequenceNumber(seq);
 
-                                        listEntryEntity =
-                                                refreshEntity(
-                                                        applicationListEntryRepository.save(
-                                                                listEntryEntity));
-                                        log.debug(
-                                                "Created application entry with id: {}",
-                                                listEntryEntity.getId());
+                                            listEntryEntity =
+                                                    refreshEntity(
+                                                            applicationListEntryRepository.save(
+                                                                    listEntryEntity));
+                                            log.debug(
+                                                    "Created application entry with id: {}",
+                                                    listEntryEntity.getId());
 
-                                        List<AppListEntryFeeStatus> statusList =
-                                                createFeeStatus(
-                                                        listEntryEntity,
-                                                        entryCreateDto,
-                                                        success,
-                                                        bulkUpload);
+                                            List<AppListEntryFeeStatus> statusList =
+                                                    createFeeStatus(
+                                                            listEntryEntity,
+                                                            entryCreateDto,
+                                                            success,
+                                                            bulkUpload);
 
-                                        List<AppListEntryOfficial> officialList =
-                                                createOfficial(listEntryEntity, entryCreateDto);
+                                            List<AppListEntryOfficial> officialList =
+                                                    createOfficial(listEntryEntity, entryCreateDto);
 
-                                        createFees(success, listEntryEntity, entryCreateDto);
+                                            createFees(success, listEntryEntity, entryCreateDto);
 
-                                        EntryGetDetailDto entryGetDetailDto =
-                                                applicationListEntryMapStructMapper
-                                                        .toEntryGetDetailDto(
-                                                                listEntryEntity,
-                                                                statusList,
-                                                                success.getFee(),
-                                                                officialList,
-                                                                success.getSa());
-                                        entryGetDetailDto.setHasOffsiteFee(
-                                                entryCreateDto.getData().getHasOffsiteFee());
+                                            EntryGetDetailDto entryGetDetailDto =
+                                                    applicationListEntryMapStructMapper
+                                                            .toEntryGetDetailDto(
+                                                                    listEntryEntity,
+                                                                    statusList,
+                                                                    success.getFee(),
+                                                                    officialList,
+                                                                    success.getSa());
+                                            entryGetDetailDto.setHasOffsiteFee(
+                                                    entryCreateDto.getData().getHasOffsiteFee());
 
-                                        return Optional.of(
-                                                new AuditableResult<>(
-                                                        MatchResponse.of(
-                                                                entryGetDetailDto,
-                                                                getKeyablesForCreateUpdateEtag(
-                                                                        listEntryEntity)),
-                                                        listEntryEntity));
-                                    });
-                        });
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            MatchResponse.of(
+                                                                    entryGetDetailDto,
+                                                                    getKeyablesForCreateUpdateEtag(
+                                                                            listEntryEntity)),
+                                                            listEntryEntity));
+                                        }));
 
         log.debug(
                 "Finished create application entry for list {} entry {}",
@@ -389,95 +388,106 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         MatchResponse<EntryGetDetailDto> getDetailDto =
                 updateApplicationEntryValidator.validate(
                         updateEntry,
-                        (dto, success) -> {
-                            // lets check the concurrent match before we process the update
-                            return matchService.matchOnRequest(
-                                    () -> {
-                                        return auditService.processAudit(
-                                                BeanUtil.copyBean(success.getApplicationEntryId()),
-                                                AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST,
-                                                req -> {
+                        (dto, success) ->
+                                // lets check the concurrent match before we process the update
+                                matchService.matchOnRequest(
+                                        () ->
+                                                auditService.processAudit(
+                                                        BeanUtil.copyBean(
+                                                                success.getApplicationEntryId()),
+                                                        AppListEntryAuditOperation
+                                                                .UPDATE_APP_ENTRY_LIST,
+                                                        req -> {
 
-                                                    // save the applicant
-                                                    updateApplicant(updateEntry, success);
+                                                            // save the applicant
+                                                            updateApplicant(updateEntry, success);
 
-                                                    // save the respondent
-                                                    updateRespondent(updateEntry, success);
+                                                            // save the respondent
+                                                            updateRespondent(updateEntry, success);
 
-                                                    // update entry with a standard applicant
-                                                    updateStandardApplicant(success);
+                                                            // update entry with a standard
+                                                            // applicant
+                                                            updateStandardApplicant(success);
 
-                                                    // save the list
-                                                    ApplicationListEntry listEntryEntity =
-                                                            success.getApplicationEntryId();
+                                                            // save the list
+                                                            ApplicationListEntry listEntryEntity =
+                                                                    success.getApplicationEntryId();
 
-                                                    // update the core list data
-                                                    applicationListEntryEntityMapper
-                                                            .toApplicationListEntry(
-                                                                    updateEntry.getData(),
-                                                                    success.getWordingSentence()
-                                                                            .substitute(
-                                                                                    updateEntry
-                                                                                            .getData()
-                                                                                            .getWordingFields())
-                                                                            .getSubstitutedString(),
-                                                                    success.getSa(),
-                                                                    success.getApplicationCode(),
-                                                                    success.getApplicationList(),
-                                                                    listEntryEntity);
-
-                                                    // save the core list data
-                                                    listEntryEntity =
-                                                            refreshEntity(
-                                                                    applicationListEntryRepository
-                                                                            .save(listEntryEntity));
-                                                    log.debug(
-                                                            "Created application entry with id: {}",
-                                                            listEntryEntity.getId());
-
-                                                    // add the new fee statuses
-                                                    List<AppListEntryFeeStatus>
-                                                            updatedFeeStatusLst =
-                                                                    updateFeeStatus(
-                                                                            updateEntry, success);
-
-                                                    // update the officials
-                                                    List<AppListEntryOfficial> updatedOfficialList =
-                                                            updateOfficials(updateEntry, success);
-
-                                                    // update the fees for the entry
-                                                    updateFees(success, updateEntry);
-
-                                                    // create the fee entry mappings
-                                                    EntryGetDetailDto entryGetDetailDto =
-                                                            applicationListEntryMapStructMapper
-                                                                    .toEntryGetDetailDto(
+                                                            // update the core list data
+                                                            applicationListEntryEntityMapper
+                                                                    .toApplicationListEntry(
+                                                                            updateEntry.getData(),
+                                                                            success.getWordingSentence()
+                                                                                    .substitute(
+                                                                                            updateEntry
+                                                                                                    .getData()
+                                                                                                    .getWordingFields())
+                                                                                    .getSubstitutedString(),
+                                                                            success.getSa(),
                                                                             success
-                                                                                    .getApplicationEntryId(),
-                                                                            updatedFeeStatusLst,
-                                                                            success.getFee(),
-                                                                            updatedOfficialList,
-                                                                            success.getSa());
-                                                    entryGetDetailDto.setHasOffsiteFee(
-                                                            updateEntry
-                                                                    .getData()
-                                                                    .getHasOffsiteFee());
+                                                                                    .getApplicationCode(),
+                                                                            success
+                                                                                    .getApplicationList(),
+                                                                            listEntryEntity);
 
-                                                    return Optional.of(
-                                                            new AuditableResult<>(
-                                                                    MatchResponse.of(
-                                                                            entryGetDetailDto,
-                                                                            getKeyablesForCreateUpdateEtag(
-                                                                                    listEntryEntity)),
-                                                                    success
-                                                                            .getApplicationEntryId()));
-                                                });
-                                    },
+                                                            // save the core list data
+                                                            listEntryEntity =
+                                                                    refreshEntity(
+                                                                            applicationListEntryRepository
+                                                                                    .save(
+                                                                                            listEntryEntity));
+                                                            log.debug(
+                                                                    "Created application entry with id: {}",
+                                                                    listEntryEntity.getId());
 
-                                    // return the latest entities for the entry read on the update
-                                    getKeyablesForCreateUpdateEtag(
-                                            success.getApplicationEntryId()));
-                        });
+                                                            // add the new fee statuses
+                                                            List<AppListEntryFeeStatus>
+                                                                    updatedFeeStatusLst =
+                                                                            updateFeeStatus(
+                                                                                    updateEntry,
+                                                                                    success);
+
+                                                            // update the officials
+                                                            List<AppListEntryOfficial>
+                                                                    updatedOfficialList =
+                                                                            updateOfficials(
+                                                                                    updateEntry,
+                                                                                    success);
+
+                                                            // update the fees for the entry
+                                                            updateFees(success, updateEntry);
+
+                                                            // create the fee entry mappings
+                                                            EntryGetDetailDto entryGetDetailDto =
+                                                                    applicationListEntryMapStructMapper
+                                                                            .toEntryGetDetailDto(
+                                                                                    success
+                                                                                            .getApplicationEntryId(),
+                                                                                    updatedFeeStatusLst,
+                                                                                    success
+                                                                                            .getFee(),
+                                                                                    updatedOfficialList,
+                                                                                    success
+                                                                                            .getSa());
+                                                            entryGetDetailDto.setHasOffsiteFee(
+                                                                    updateEntry
+                                                                            .getData()
+                                                                            .getHasOffsiteFee());
+
+                                                            return Optional.of(
+                                                                    new AuditableResult<>(
+                                                                            MatchResponse.of(
+                                                                                    entryGetDetailDto,
+                                                                                    getKeyablesForCreateUpdateEtag(
+                                                                                            listEntryEntity)),
+                                                                            success
+                                                                                    .getApplicationEntryId()));
+                                                        }),
+
+                                        // return the latest entities for the entry read on the
+                                        // update
+                                        getKeyablesForCreateUpdateEtag(
+                                                success.getApplicationEntryId())));
 
         log.debug(
                 "Finished update application entry {} in list {}",
@@ -492,41 +502,42 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         return updateClosedApplicationEntryValidator.validate(
                 updateEntry,
-                (ue, success) -> {
-                    // lets check the concurrent match before we process the update
-                    return matchService.matchOnRequest(
-                            () -> {
-                                return auditService.processAudit(
-                                        BeanUtil.copyBean(success.getApplicationEntryId()),
-                                        AppListEntryAuditOperation.UPDATE_CLOSED_APP_ENTRY_LIST,
-                                        req -> {
-                                            success.getApplicationEntryId()
-                                                    .setNotes(
-                                                            success.getApplicationEntryId()
-                                                                            .getNotes()
-                                                                    + " "
-                                                                    + updateEntry
-                                                                            .getData()
-                                                                            .getAdditionalNotes());
+                (ue, success) ->
+                        // lets check the concurrent match before we process the update
+                        matchService.matchOnRequest(
+                                () ->
+                                        auditService.processAudit(
+                                                BeanUtil.copyBean(success.getApplicationEntryId()),
+                                                AppListEntryAuditOperation
+                                                        .UPDATE_CLOSED_APP_ENTRY_LIST,
+                                                req -> {
+                                                    success.getApplicationEntryId()
+                                                            .setNotes(
+                                                                    success.getApplicationEntryId()
+                                                                                    .getNotes()
+                                                                            + " "
+                                                                            + updateEntry
+                                                                                    .getData()
+                                                                                    .getAdditionalNotes());
 
-                                            // update the notes by appending with the alternative
-                                            // notes
-                                            applicationListEntryRepository.save(
-                                                    success.getApplicationEntryId());
+                                                    // update the notes by appending with the
+                                                    // alternative
+                                                    // notes
+                                                    applicationListEntryRepository.save(
+                                                            success.getApplicationEntryId());
 
-                                            return Optional.of(
-                                                    new AuditableResult<>(
-                                                            MatchResponse.of(
-                                                                    null,
-                                                                    getKeyablesForCreateUpdateEtag(
-                                                                            success
-                                                                                    .getApplicationEntryId())),
-                                                            success.getApplicationEntryId()));
-                                        });
-                            },
-                            // return the latest entities for the entry read on the update
-                            getKeyablesForCreateUpdateEtag(success.getApplicationEntryId()));
-                });
+                                                    return Optional.of(
+                                                            new AuditableResult<>(
+                                                                    MatchResponse.of(
+                                                                            null,
+                                                                            getKeyablesForCreateUpdateEtag(
+                                                                                    success
+                                                                                            .getApplicationEntryId())),
+                                                                    success
+                                                                            .getApplicationEntryId()));
+                                                }),
+                                // return the latest entities for the entry read on the update
+                                getKeyablesForCreateUpdateEtag(success.getApplicationEntryId())));
     }
 
     @Transactional
@@ -1355,35 +1366,35 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         return getEntryValidator.validate(
                 entry,
-                (req, success) -> {
-                    return auditService.processAudit(
-                            null,
-                            AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
-                            (r) -> {
-                                getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
-                                EntryGetDetailDto dto =
-                                        applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                                                success.getApplicationListEntry(),
-                                                hasOffsite(success.getApplicationListEntry()));
-                                log.debug(
-                                        "Finished: Getting application list entry detail: {} for list: {}",
-                                        entry.getEntryId(),
-                                        entry.getListId());
-                                AuditableResult<
-                                                MatchResponse<EntryGetDetailDto>,
-                                                ApplicationListEntry>
-                                        result =
-                                                new AuditableResult<>(
-                                                        MatchResponse.of(
-                                                                dto,
-                                                                getKeyablesForCreateUpdateEtag(
-                                                                        success
-                                                                                .getApplicationListEntry())),
-                                                        applicationListEntryMapStructMapper
-                                                                .toApplicationListEntry(entry));
-                                return Optional.of(result);
-                            });
-                });
+                (req, success) ->
+                        auditService.processAudit(
+                                null,
+                                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
+                                (r) -> {
+                                    getKeyablesForCreateUpdateEtag(
+                                            success.getApplicationListEntry());
+                                    EntryGetDetailDto dto =
+                                            applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                                                    success.getApplicationListEntry(),
+                                                    hasOffsite(success.getApplicationListEntry()));
+                                    log.debug(
+                                            "Finished: Getting application list entry detail: {} for list: {}",
+                                            entry.getEntryId(),
+                                            entry.getListId());
+                                    AuditableResult<
+                                                    MatchResponse<EntryGetDetailDto>,
+                                                    ApplicationListEntry>
+                                            result =
+                                                    new AuditableResult<>(
+                                                            MatchResponse.of(
+                                                                    dto,
+                                                                    getKeyablesForCreateUpdateEtag(
+                                                                            success
+                                                                                    .getApplicationListEntry())),
+                                                            applicationListEntryMapStructMapper
+                                                                    .toApplicationListEntry(entry));
+                                    return Optional.of(result);
+                                }));
     }
 
     @Override

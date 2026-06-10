@@ -177,70 +177,80 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
         MatchResponse<ResultGetDto> getDto =
                 updateValidator.validate(
                         updateEntryResult,
-                        (dto, success) -> {
-                            // lets check the concurrent match before we process the update
-                            return matchService.matchOnRequest(
-                                    () -> {
-                                        return auditService.processAudit(
-                                                ApplicationListEntryResultAudit.from(
-                                                        BeanUtil.copyBean(
-                                                                success.getAppListEntryResult())),
-                                                AppListEntryResultAuditOperation
-                                                        .UPDATE_APP_LIST_ENTRY_RESULT,
-                                                req -> {
+                        (dto, success) ->
+                                // lets check the concurrent match before we process the update
+                                matchService.matchOnRequest(
+                                        () ->
+                                                auditService.processAudit(
+                                                        ApplicationListEntryResultAudit.from(
+                                                                BeanUtil.copyBean(
+                                                                        success
+                                                                                .getAppListEntryResult())),
+                                                        AppListEntryResultAuditOperation
+                                                                .UPDATE_APP_LIST_ENTRY_RESULT,
+                                                        req -> {
 
-                                                    // save the list entry result
-                                                    AppListEntryResolution listEntryResultEntity =
-                                                            success.getAppListEntryResult();
+                                                            // save the list entry result
+                                                            AppListEntryResolution
+                                                                    listEntryResultEntity =
+                                                                            success
+                                                                                    .getAppListEntryResult();
 
-                                                    // update the core list data
-                                                    applicationListEntryResultEntityMapper
-                                                            .toApplicationListEntryResult(
-                                                                    updateEntryResult.getData(),
-                                                                    success.getWordingSentence()
-                                                                            .substitute(
-                                                                                    updateEntryResult
-                                                                                            .getData()
-                                                                                            .getWordingFields())
-                                                                            .getSubstitutedString(),
-                                                                    success.getResolutionCode(),
-                                                                    success
-                                                                            .getApplicationListEntry(),
-                                                                    userProvider.getEmail(),
-                                                                    listEntryResultEntity);
-
-                                                    // save the core list data
-                                                    listEntryResultEntity =
-                                                            refreshEntity(
-                                                                    repository.save(
-                                                                            listEntryResultEntity));
-                                                    log.debug(
-                                                            "Updated application entry result with id: {}",
-                                                            listEntryResultEntity.getId());
-
-                                                    ResultGetDto resultGetDto =
-                                                            applicationListEntryResultMapper
-                                                                    .toResultGetDto(
+                                                            // update the core list data
+                                                            applicationListEntryResultEntityMapper
+                                                                    .toApplicationListEntryResult(
+                                                                            updateEntryResult
+                                                                                    .getData(),
+                                                                            success.getWordingSentence()
+                                                                                    .substitute(
+                                                                                            updateEntryResult
+                                                                                                    .getData()
+                                                                                                    .getWordingFields())
+                                                                                    .getSubstitutedString(),
+                                                                            success
+                                                                                    .getResolutionCode(),
+                                                                            success
+                                                                                    .getApplicationListEntry(),
+                                                                            userProvider.getEmail(),
                                                                             listEntryResultEntity);
 
-                                                    return Optional.of(
-                                                            new AuditableResult<>(
-                                                                    MatchResponse.of(
-                                                                            resultGetDto,
-                                                                            getKeyablesForCreateUpdateEtag(
-                                                                                    listEntryResultEntity)),
-                                                                    ApplicationListEntryResultAudit
-                                                                            .from(
-                                                                                    success
-                                                                                            .getAppListEntryResult())));
-                                                });
-                                    },
+                                                            // save the core list data
+                                                            listEntryResultEntity =
+                                                                    refreshEntity(
+                                                                            repository.save(
+                                                                                    listEntryResultEntity));
+                                                            log.debug(
+                                                                    "Updated application entry result with id: {}",
+                                                                    listEntryResultEntity.getId());
 
-                                    // return the latest entities for the entry result read on the
-                                    // update
-                                    getKeyablesForCreateUpdateEtag(
-                                            success.getAppListEntryResult()));
-                        });
+                                                            ResultGetDto resultGetDto =
+                                                                    applicationListEntryResultMapper
+                                                                            .toResultGetDto(
+                                                                                    listEntryResultEntity);
+                                                            AppListEntryResolution
+                                                                    auditedEntryResult =
+                                                                            success
+                                                                                    .getAppListEntryResult();
+                                                            ApplicationListEntryResultAudit
+                                                                    auditEntity =
+                                                                            ApplicationListEntryResultAudit
+                                                                                    .from(
+                                                                                            auditedEntryResult);
+
+                                                            return Optional.of(
+                                                                    new AuditableResult<>(
+                                                                            MatchResponse.of(
+                                                                                    resultGetDto,
+                                                                                    getKeyablesForCreateUpdateEtag(
+                                                                                            listEntryResultEntity)),
+                                                                            auditEntity));
+                                                        }),
+
+                                        // return the latest entities for the entry result read on
+                                        // the
+                                        // update
+                                        getKeyablesForCreateUpdateEtag(
+                                                success.getAppListEntryResult())));
 
         log.debug(
                 "Finished update application entry result {} for entry {} in list {}",
@@ -282,11 +292,10 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
                                     // convert data to response
                                     pageData.forEach(
-                                            result -> {
-                                                resultPage.addContentItem(
-                                                        applicationListEntryResultMapper
-                                                                .toResultGetDto(result));
-                                            });
+                                            result ->
+                                                    resultPage.addContentItem(
+                                                            applicationListEntryResultMapper
+                                                                    .toResultGetDto(result)));
                                     pageMapper.toPage(
                                             pageData, resultPage, pageWrapper.getSortStrings());
 

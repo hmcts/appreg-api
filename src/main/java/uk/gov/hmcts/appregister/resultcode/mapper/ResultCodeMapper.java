@@ -70,7 +70,7 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "resultCode", source = "code")
     @Mapping(target = "title", source = "title")
     @BeanMapping(ignoreByDefault = true)
-    public abstract ResolutionCode toEntity(CodeAndTitle record);
+    public abstract ResolutionCode toEntity(CodeAndTitle codeAndTitle);
 
     static JsonNullable<LocalDate> toEndDate(LocalDate value) {
         return value != null ? JsonNullable.of(value) : JsonNullable.of(null);

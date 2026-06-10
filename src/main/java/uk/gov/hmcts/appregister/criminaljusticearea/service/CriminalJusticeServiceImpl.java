@@ -67,9 +67,11 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                             craPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    CodeAndDescription record = new CodeAndDescription(code, description);
+                    CodeAndDescription codeAndDescription =
+                            new CodeAndDescription(code, description);
                     AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
-                            new AuditableResult<>(craPage, criminalJusticeMapper.toEntity(record));
+                            new AuditableResult<>(
+                                    craPage, criminalJusticeMapper.toEntity(codeAndDescription));
 
                     return Optional.of(result);
                 },
