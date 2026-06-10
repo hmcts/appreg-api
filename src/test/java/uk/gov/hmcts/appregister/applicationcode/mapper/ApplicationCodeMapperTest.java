@@ -14,13 +14,13 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeA
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
-public class ApplicationCodeMapperTest {
+class ApplicationCodeMapperTest {
     private static final LocalDate EFFECTIVE_DATE = LocalDate.of(2025, 1, 2);
 
     private final ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 
     @Test
-    public void testWithCompleteMapApplicationCodeGetSummaryDto() {
+    void testWithCompleteMapApplicationCodeGetSummaryDto() {
         Fee fee = new Fee();
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
@@ -111,7 +111,7 @@ public class ApplicationCodeMapperTest {
     }
 
     @Test
-    public void testWithoutFeesMapApplicationCodeGetSummaryDto() {
+    void testWithoutFeesMapApplicationCodeGetSummaryDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
         code.setEndDate(EFFECTIVE_DATE);
@@ -137,7 +137,7 @@ public class ApplicationCodeMapperTest {
     }
 
     @Test
-    public void testWithCompleteMapApplicationCodeGetDetailDto() {
+    void testWithCompleteMapApplicationCodeGetDetailDto() {
         Fee fee = new Fee();
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
@@ -186,7 +186,7 @@ public class ApplicationCodeMapperTest {
     }
 
     @Test
-    public void testWithoutFeesMapApplicationCodeGetDetailDto() {
+    void testWithoutFeesMapApplicationCodeGetDetailDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
         code.setEndDate(EFFECTIVE_DATE);

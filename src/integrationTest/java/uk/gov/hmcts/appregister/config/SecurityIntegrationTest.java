@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 
-public class SecurityIntegrationTest extends BasePostgresIntegrationTest {
+class SecurityIntegrationTest extends BasePostgresIntegrationTest {
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired

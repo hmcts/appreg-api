@@ -12,10 +12,10 @@ import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 
-public class PageMapperTest {
+class PageMapperTest {
 
     @Test
-    public void testBasicMappingAll() {
+    void testBasicMappingAll() {
         PageRequest pageable = PageRequest.of(0, 10);
         Sort.Order order = new Sort.Order(Sort.Direction.DESC, "testSortField");
         Sort sort = Sort.by(order);
@@ -40,7 +40,7 @@ public class PageMapperTest {
     }
 
     @Test
-    public void testBasicMappingNoSort() {
+    void testBasicMappingNoSort() {
         PageRequest pageable = PageRequest.of(0, 10);
 
         PageMapper mapper = new PageMapper();

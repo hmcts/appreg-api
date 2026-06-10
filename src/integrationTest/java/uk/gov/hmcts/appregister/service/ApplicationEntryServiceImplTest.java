@@ -58,7 +58,7 @@ import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryWrapperDto;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @Slf4j
-public class ApplicationEntryServiceImplTest extends BaseIntegration {
+class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Autowired private ApplicationEntryService applicationEntryService;
 
@@ -84,7 +84,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     @Autowired private ApplicationListEntryAssertion applicationListEntryAssertion;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -92,7 +92,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
+    void createEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -188,7 +188,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
+    void createEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -284,7 +284,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithFeeLodgementDateInThePast() {
+    void createEntryNoRespondentWithFeeLodgementDateInThePast() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -374,7 +374,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithFeeLodgementDateToday() {
+    void createEntryNoRespondentWithFeeLodgementDateToday() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -463,7 +463,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
+    void createEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.now());
@@ -539,12 +539,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
+    void createEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
         createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
     }
 
     @Test
-    public void createEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
+    void createEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
@@ -667,8 +667,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void
-            createEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
+    void createEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
@@ -804,7 +803,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
+    void updateEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -916,7 +915,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
+    void updateEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1046,7 +1045,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithOffsiteFeeAndStandardApplicant() {
+    void updateEntryWithOffsiteFeeAndStandardApplicant() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         UUID uuid = createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
@@ -1179,7 +1178,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
+    void updateEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
@@ -1300,7 +1299,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
+    void updateEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
@@ -1416,7 +1415,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
+    void updateEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1519,8 +1518,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void
-            updateEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
+    void updateEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1636,7 +1634,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithNullHasOffsiteFeeDoesNotThrow() {
+    void updateEntryWithNullHasOffsiteFeeDoesNotThrow() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         // Create an entry that already exists
@@ -1690,7 +1688,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
+    void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);

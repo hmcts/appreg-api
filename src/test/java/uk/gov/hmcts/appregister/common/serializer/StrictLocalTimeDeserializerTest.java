@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
-public class StrictLocalTimeDeserializerTest {
+class StrictLocalTimeDeserializerTest {
 
     @Test
     void testDeserialize() throws Exception {

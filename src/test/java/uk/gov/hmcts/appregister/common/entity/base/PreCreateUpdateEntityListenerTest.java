@@ -72,6 +72,6 @@ class PreCreateUpdateEntityListenerTest {
 
         // verify that the user provider was called twice, once for create
         verify(userProvider, times(2)).getUserId();
-        verify(userProvider, times(1)).getEmail();
+        verify(userProvider).getEmail();
     }
 }

@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -158,7 +159,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class ApplicationEntryServiceImplTest {
+class ApplicationEntryServiceImplTest {
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
             "appregister.application_entry.bulk_fee_update.requests";
@@ -344,7 +345,7 @@ public class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    public void testSearchForGetSummary() {
+    void testSearchForGetSummary() {
         ApplicationListEntryMapper mapStructMapper = new ApplicationListEntryMapperImpl();
         mapStructMapper.setApplicantMapper(new ApplicantMapperImpl());
         service =
@@ -720,7 +721,7 @@ public class ApplicationEntryServiceImplTest {
         ArgumentCaptor<ApplicationListEntry> appListEntryCaptor =
                 ArgumentCaptor.forClass(ApplicationListEntry.class);
 
-        verify(applicationListEntryRepository, times(1)).save(appListEntryCaptor.capture());
+        verify(applicationListEntryRepository).save(appListEntryCaptor.capture());
         Assertions.assertEquals(applicationListEntry, appListEntryCaptor.getValue());
 
         // verify that the fee status is saved
@@ -971,7 +972,7 @@ public class ApplicationEntryServiceImplTest {
         // application list entry saved and sequence set to 1
         ArgumentCaptor<ApplicationListEntry> appListEntryCaptor =
                 ArgumentCaptor.forClass(ApplicationListEntry.class);
-        verify(applicationListEntryRepository, times(1)).save(appListEntryCaptor.capture());
+        verify(applicationListEntryRepository).save(appListEntryCaptor.capture());
         Assertions.assertEquals((short) 1, appListEntryCaptor.getValue().getSequenceNumber());
 
         // mapping saved with aleLastSequence == 1 and alId == alId
@@ -1110,7 +1111,7 @@ public class ApplicationEntryServiceImplTest {
         // application list entry saved and sequence set to 6 (5 + 1)
         ArgumentCaptor<ApplicationListEntry> appListEntryCaptor =
                 ArgumentCaptor.forClass(ApplicationListEntry.class);
-        verify(applicationListEntryRepository, times(1)).save(appListEntryCaptor.capture());
+        verify(applicationListEntryRepository).save(appListEntryCaptor.capture());
         Assertions.assertEquals((short) 6, appListEntryCaptor.getValue().getSequenceNumber());
         Assertions.assertEquals(6, existing.getAleLastSequence());
     }
@@ -1189,7 +1190,7 @@ public class ApplicationEntryServiceImplTest {
         Assertions.assertNotNull(matchResponse.getEtag());
 
         // no fees were found or called for
-        verify(feeRepository, times(0)).findByIdsBetweenDate(notNull(), notNull());
+        verify(feeRepository, never()).findByIdsBetweenDate(notNull(), notNull());
     }
 
     @Test
@@ -1610,8 +1611,7 @@ public class ApplicationEntryServiceImplTest {
 
         service.move(sourceListId, dto);
 
-        verify(applicationListEntryRepository, times(1))
-                .findByUuidsInSourceList(eq(sourceListId), anySet());
+        verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
         verify(applicationListEntryRepository, times(2)).save(savedEntryCaptor.capture());
 
         List<ApplicationListEntry> savedEntries = savedEntryCaptor.getAllValues();
@@ -1665,9 +1665,8 @@ public class ApplicationEntryServiceImplTest {
                                     ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST, appEx.getCode());
                         });
 
-        verify(applicationListEntryRepository, times(1))
-                .findByUuidsInSourceList(eq(sourceListId), anySet());
-        verify(applicationListEntryRepository, times(0)).save(any(ApplicationListEntry.class));
+        verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
+        verify(applicationListEntryRepository, never()).save(any(ApplicationListEntry.class));
     }
 
     @Test
@@ -1836,7 +1835,7 @@ public class ApplicationEntryServiceImplTest {
                         .find(BULK_FEE_UPDATE_ENTRIES_METRIC)
                         .tag(METRIC_STATUS_TAG, "failed")
                         .summary());
-        verify(appListEntryFeeStatusRepository, times(0)).save(any(AppListEntryFeeStatus.class));
+        verify(appListEntryFeeStatusRepository, never()).save(any(AppListEntryFeeStatus.class));
     }
 
     @Test
@@ -1874,7 +1873,7 @@ public class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(listId), anySet());
         verify(appListEntryFeeStatusRepository, times(500)).save(any(AppListEntryFeeStatus.class));
-        verify(feeRepository, times(0)).findOffsite(any(LocalDate.class));
+        verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
 
     @Test
@@ -1940,7 +1939,7 @@ public class ApplicationEntryServiceImplTest {
 
         ArgumentCaptor<AppListEntryFeeId> feeMappingCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeId.class);
-        verify(feeRepository, times(1)).findOffsite(LocalDate.of(2025, 10, 7));
+        verify(feeRepository).findOffsite(LocalDate.of(2025, 10, 7));
         verify(appListEntryFeeRepository, times(2)).save(feeMappingCaptor.capture());
         Assertions.assertEquals(
                 Set.of(entry1.getId(), entry2.getId()),
@@ -2124,8 +2123,8 @@ public class ApplicationEntryServiceImplTest {
                                     ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST, appEx.getCode());
                         });
 
-        verify(appListEntryOfficialRepository, times(0)).delete(any(AppListEntryOfficial.class));
-        verify(appListEntryOfficialRepository, times(0)).save(any(AppListEntryOfficial.class));
+        verify(appListEntryOfficialRepository, never()).delete(any(AppListEntryOfficial.class));
+        verify(appListEntryOfficialRepository, never()).save(any(AppListEntryOfficial.class));
     }
 
     @Test
@@ -2138,8 +2137,9 @@ public class ApplicationEntryServiceImplTest {
                 .validate(any(MoveEntriesPayload.class), any());
 
         MoveEntriesDto dto = new MoveEntriesDto();
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
@@ -2156,8 +2156,9 @@ public class ApplicationEntryServiceImplTest {
 
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(UUID.randomUUID());
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
@@ -2172,8 +2173,9 @@ public class ApplicationEntryServiceImplTest {
                 .validate(any(MoveEntriesPayload.class), any());
 
         MoveEntriesDto dto = new MoveEntriesDto();
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
@@ -2190,8 +2192,9 @@ public class ApplicationEntryServiceImplTest {
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(UUID.randomUUID());
         dto.setEntryIds(Set.of(UUID.randomUUID()));
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
@@ -2208,8 +2211,9 @@ public class ApplicationEntryServiceImplTest {
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(UUID.randomUUID());
         dto.setEntryIds(null);
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
@@ -2225,8 +2229,9 @@ public class ApplicationEntryServiceImplTest {
 
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setEntryIds(Set.of());
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
@@ -2243,8 +2248,9 @@ public class ApplicationEntryServiceImplTest {
 
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setEntryIds(Set.of(UUID.randomUUID()));
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
@@ -2261,8 +2267,9 @@ public class ApplicationEntryServiceImplTest {
 
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setEntryIds(Set.of(UUID.randomUUID()));
+        UUID sourceListId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
@@ -2318,7 +2325,7 @@ public class ApplicationEntryServiceImplTest {
 
         // ensure that we called save and that we set the soft deleted state to true
         Assertions.assertTrue(applicationListEntry.isDeleted());
-        verify(applicationListEntryRepository, times(1)).save(eq(applicationListEntry));
+        verify(applicationListEntryRepository).save(eq(applicationListEntry));
     }
 
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {

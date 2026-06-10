@@ -24,7 +24,7 @@ import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 
-public class ApplicationListServiceImplTest extends AbstractApplicationListControllerCrudTest {
+class ApplicationListServiceImplTest extends AbstractApplicationListControllerCrudTest {
     @Autowired private ApplicationListService applicationListService;
 
     @Autowired private TransactionalUnitOfWork unitOfWork;
@@ -32,7 +32,7 @@ public class ApplicationListServiceImplTest extends AbstractApplicationListContr
     @Autowired private ApplicationListRepository applicationListRepository;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -40,7 +40,7 @@ public class ApplicationListServiceImplTest extends AbstractApplicationListContr
     }
 
     @Test
-    public void updateAppListToClosed() throws Exception {
+    void updateAppListToClosed() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry

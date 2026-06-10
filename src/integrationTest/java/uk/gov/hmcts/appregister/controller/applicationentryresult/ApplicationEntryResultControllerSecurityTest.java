@@ -11,7 +11,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class ApplicationEntryResultControllerSecurityTest extends AbstractSecurityControllerTest {
+class ApplicationEntryResultControllerSecurityTest extends AbstractSecurityControllerTest {
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {

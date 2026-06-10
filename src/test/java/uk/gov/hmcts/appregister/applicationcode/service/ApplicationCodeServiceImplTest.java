@@ -48,7 +48,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import utils.CurrencyUtil;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationCodeServiceImplTest {
+class ApplicationCodeServiceImplTest {
     private static final Instant FIXED_INSTANT = Instant.parse("2024-10-05T10:15:30Z");
     private static final LocalDate FIXED_BUSINESS_DATE = LocalDate.of(2024, 10, 5);
     private static final LocalDate REQUEST_DATE = LocalDate.of(2024, 10, 5);
@@ -75,7 +75,7 @@ public class ApplicationCodeServiceImplTest {
     private ApplicationCodeServiceImpl applicationCodeService;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         objectMapper.registerModule(new JavaTimeModule());
         ukZone = ZoneId.of("Europe/London");
         fixedClock = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));

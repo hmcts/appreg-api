@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-public class DefaultErrorDetailTest {
+class DefaultErrorDetailTest {
 
     @Test
-    public void testDefaultErrorDetail() {
+    void testDefaultErrorDetail() {
         DefaultErrorDetail errorDetail =
                 new DefaultErrorDetail(HttpStatus.BAD_REQUEST, "An error occurred", "appCode");
         Assertions.assertEquals("appCode", errorDetail.getAppCode());

@@ -78,7 +78,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationEntryResultServiceImplTest {
+class ApplicationEntryResultServiceImplTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;

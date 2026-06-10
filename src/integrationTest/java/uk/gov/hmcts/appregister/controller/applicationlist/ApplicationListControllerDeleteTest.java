@@ -26,7 +26,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public class ApplicationListControllerDeleteTest extends AbstractApplicationListControllerCrudTest {
+class ApplicationListControllerDeleteTest extends AbstractApplicationListControllerCrudTest {
 
     @Test
     void givenValidRequest_whenDeleteWithValidId_then204() throws Exception {

@@ -33,7 +33,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
  *
  * <p>This class is vital to ensure we do not leak implementation details through API response.
  */
-public class DataConstraintControllerTest extends BaseIntegration {
+class DataConstraintControllerTest extends BaseIntegration {
 
     private static final String CODE_WEB_CONTEXT = "application-codes";
     private static final String APP_LIST_WEB_CONTEXT = "application-lists";
@@ -47,7 +47,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     @Autowired protected ApplicationListRepository applicationListRepository;
 
     @Test
-    public void testSizeFailure() throws Exception {
+    void testSizeFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -69,7 +69,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testSizeBodyFailure() throws Exception {
+    void testSizeBodyFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -106,7 +106,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testDateFailure() throws Exception {
+    void testDateFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -128,7 +128,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testTimeFailure() throws Exception {
+    void testTimeFailure() throws Exception {
         LocalTime midNight = LocalTime.parse("00:00");
         var createListReq =
                 new ApplicationListCreateDto()
@@ -170,7 +170,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testTimeOnQueryFailure() throws Exception {
+    void testTimeOnQueryFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -196,7 +196,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testHourValueMaximumFailure() throws Exception {
+    void testHourValueMaximumFailure() throws Exception {
         LocalTime midNight = LocalTime.parse("00:00");
         int minutesExceedingMax = 61;
         var createListReq =
@@ -235,7 +235,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testStateEnumFailure() throws Exception {
+    void testStateEnumFailure() throws Exception {
         LocalTime timeofEntry = LocalTime.parse("01:00");
         var createListReq =
                 new ApplicationListCreateDto()
@@ -282,7 +282,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testMismatchFailure() throws Exception {
+    void testMismatchFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -304,7 +304,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testParameterFailure() throws Exception {
+    void testParameterFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -326,7 +326,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testNumberAsString() throws Exception {
+    void testNumberAsString() throws Exception {
         ApplicationListCreateDto createListReq =
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
@@ -365,7 +365,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testEmptyNotAllowed() throws Exception {
+    void testEmptyNotAllowed() throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         entryCreateDto.setWordingFields(null);
@@ -404,7 +404,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testRegexFailureApplicant() throws Exception {
+    void testRegexFailureApplicant() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -522,7 +522,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testRegexFailureRespondent() throws Exception {
+    void testRegexFailureRespondent() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 

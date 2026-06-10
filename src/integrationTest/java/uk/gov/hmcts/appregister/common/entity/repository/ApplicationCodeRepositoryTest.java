@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,7 +21,7 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
-public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
+class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
@@ -30,7 +31,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     private static final int TOTAL_APP_CODES_COUNT = 45;
 
     @Test
-    public void testBasicInsertionUpdate() {
+    void testBasicInsertionUpdate() {
         // assert that the save has occurred
         long count = applicationCodeRepository.count();
         Assertions.assertEquals(TOTAL_APP_CODES_COUNT, count);
@@ -76,14 +77,14 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetByCodeAndDate() {
+    void testGetByCodeAndDate() {
         List<ApplicationCode> applicationCodeToAssertAgainst =
                 applicationCodeRepository.findByCodeAndDate("AD99002", LocalDate.now());
-        Assertions.assertFalse(applicationCodeToAssertAgainst.isEmpty());
+        assertThat(applicationCodeToAssertAgainst).isNotEmpty();
     }
 
     @Test
-    public void testGetByCodeAndDatePrefersNullEndDate() {
+    void testGetByCodeAndDatePrefersNullEndDate() {
         LocalDate today = LocalDate.now();
         String code = "ZZ90011";
 
@@ -110,7 +111,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetByCodeAndDateUsesExactCodeMatch() {
+    void testGetByCodeAndDateUsesExactCodeMatch() {
         LocalDate today = LocalDate.now();
         String code = "ZZ90012";
 
@@ -136,7 +137,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchExcludesCodeBeforeStartDate() {
+    void testSearchExcludesCodeBeforeStartDate() {
         LocalDate effectiveDate = LocalDate.of(2020, 1, 1);
         ApplicationCode applicationCode =
                 saveApplicationCode(
@@ -147,11 +148,11 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                         applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
 
         Assertions.assertEquals(0, results.getTotalElements());
-        Assertions.assertTrue(results.getContent().isEmpty());
+        assertThat(results.getContent()).isEmpty();
     }
 
     @Test
-    public void testSearchIncludesCodeStartingOnActiveDate() {
+    void testSearchIncludesCodeStartingOnActiveDate() {
         LocalDate today = LocalDate.now();
 
         ApplicationCode startsToday = saveApplicationCode("ZZ90013", "Starts Today", today, null);
@@ -165,7 +166,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchIncludesCodeBetweenStartAndEndDate() {
+    void testSearchIncludesCodeBetweenStartAndEndDate() {
         LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
@@ -183,7 +184,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchExcludesCodeAfterEndDate() {
+    void testSearchExcludesCodeAfterEndDate() {
         LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
@@ -197,11 +198,11 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                         applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
 
         Assertions.assertEquals(0, results.getTotalElements());
-        Assertions.assertTrue(results.getContent().isEmpty());
+        assertThat(results.getContent()).isEmpty();
     }
 
     @Test
-    public void testSearchIncludesCodeWithNullEndDate() {
+    void testSearchIncludesCodeWithNullEndDate() {
         LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
@@ -216,7 +217,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchPaginationCountsAreBasedOnDateFilteredResults() {
+    void testSearchPaginationCountsAreBasedOnDateFilteredResults() {
         LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
         String code = "ZZ90105";
 

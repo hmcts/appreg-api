@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
-public class AbstractResultCodeControllerCrudTest extends BaseIntegration {
+class AbstractResultCodeControllerCrudTest extends BaseIntegration {
     protected static final String WEB_CONTEXT = "result-codes";
 
     // Known seeds (from your resolution_codes seed data)

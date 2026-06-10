@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -42,11 +43,11 @@ class FeesReportLifecycleTest {
             lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
-            Assertions.assertTrue(csv.get().contains("Fees Report"));
-            Assertions.assertTrue(csv.get().contains("List Date,List Court House Name"));
-            Assertions.assertTrue(csv.get().contains("18/05/2018,B01IX00 - Westminster"));
-            Assertions.assertTrue(csv.get().contains("20.13,1.00,21.13,Due,2018-12-03,REF-1"));
-            Assertions.assertTrue(csv.get().contains(",,,,,,,,,,,,,"));
+            assertThat(csv.get()).contains("Fees Report");
+            assertThat(csv.get()).contains("List Date,List Court House Name");
+            assertThat(csv.get()).contains("18/05/2018,B01IX00 - Westminster");
+            assertThat(csv.get()).contains("20.13,1.00,21.13,Due,2018-12-03,REF-1");
+            assertThat(csv.get()).contains(",,,,,,,,,,,,,");
         } finally {
             outputFile.delete();
         }

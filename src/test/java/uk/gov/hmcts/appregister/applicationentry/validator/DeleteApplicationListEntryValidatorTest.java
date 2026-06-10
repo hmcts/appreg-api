@@ -22,7 +22,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class DeleteApplicationListEntryValidatorTest {
+class DeleteApplicationListEntryValidatorTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
 

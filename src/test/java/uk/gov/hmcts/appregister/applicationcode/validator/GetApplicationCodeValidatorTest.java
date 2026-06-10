@@ -25,7 +25,7 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class GetApplicationCodeValidatorTest {
+class GetApplicationCodeValidatorTest {
 
     @Mock private ApplicationCodeRepository applicationCodeRepository;
 

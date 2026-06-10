@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 
-public class CourtLocationSortFieldMapperTest {
+class CourtLocationSortFieldMapperTest {
 
     @Test
     void lookupByApiValue_nameReturnsTitle() {

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
@@ -198,7 +199,7 @@ class BulkCreateApplicationEntryValidatorTest {
         CreateApplicationEntryValidationSuccess success =
                 validator.validate(payload(), (validatable, result) -> result);
 
-        Assertions.assertTrue(entryCreateDto.getWordingFields().isEmpty());
+        assertThat(entryCreateDto.getWordingFields()).isEmpty();
         Assertions.assertEquals(
                 "Request to copy documents",
                 success.getWordingSentence()
@@ -222,11 +223,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "one")));
+        PayloadForCreate<EntryCreateDto> payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
@@ -246,11 +248,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "")));
+        PayloadForCreate<EntryCreateDto> payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());

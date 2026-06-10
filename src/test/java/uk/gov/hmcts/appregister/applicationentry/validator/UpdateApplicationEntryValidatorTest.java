@@ -51,7 +51,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class UpdateApplicationEntryValidatorTest {
+class UpdateApplicationEntryValidatorTest {
     private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;

@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudTest {
 
     @Test
     void givenValidRequest_whenDeleteWithValidId_then204() throws Exception {

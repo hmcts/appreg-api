@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -26,7 +26,7 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 
 @ExtendWith(MockitoExtension.class)
-public class StandardApplicantExistsValidatorTest {
+class StandardApplicantExistsValidatorTest {
     private static final ZoneId UK_ZONE = ZoneId.of("Europe/London");
     private static final LocalDate TODAY_UK = LocalDate.of(2026, 6, 9);
 
@@ -42,7 +42,7 @@ public class StandardApplicantExistsValidatorTest {
     }
 
     @Test
-    public void successValidation() {
+    void successValidation() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
@@ -53,7 +53,7 @@ public class StandardApplicantExistsValidatorTest {
     }
 
     @Test
-    public void successValidationCallback() {
+    void successValidationCallback() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
@@ -65,11 +65,11 @@ public class StandardApplicantExistsValidatorTest {
         // call the validator. No assertions needed as no exception means success
         validator.validate(code, biFunction);
 
-        Mockito.verify(biFunction, times(1)).apply(code, standardApplicant);
+        Mockito.verify(biFunction).apply(code, standardApplicant);
     }
 
     @Test
-    public void successValidationFailNoCallback() {
+    void successValidationFailNoCallback() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
@@ -83,11 +83,11 @@ public class StandardApplicantExistsValidatorTest {
                 Assertions.assertThrows(
                         AppRegistryException.class, () -> validator.validate(code, biFunction));
         Assertions.assertNotNull(appRegistryException);
-        Mockito.verify(biFunction, times(0)).apply(code, standardApplicant);
+        Mockito.verify(biFunction, Mockito.never()).apply(code, standardApplicant);
     }
 
     @Test
-    public void successValidationFailureNotFound() {
+    void successValidationFailureNotFound() {
         String code = "test";
         when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
                 .thenReturn(List.of());
@@ -107,7 +107,7 @@ public class StandardApplicantExistsValidatorTest {
     }
 
     @Test
-    public void successValidationFailureDuplicate_prefersFirstRecord() {
+    void successValidationFailureDuplicate_prefersFirstRecord() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         StandardApplicant alternativeApplicant = new StandardApplicant();
@@ -119,7 +119,7 @@ public class StandardApplicantExistsValidatorTest {
         StandardApplicant actual = validator.validate(code, (request, applicant) -> applicant);
 
         Assertions.assertSame(standardApplicant, actual);
-        Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
+        assertThat(logCaptor.getWarnLogs().getFirst()).contains("Data quality warning");
     }
 
     @SuppressWarnings("unchecked")

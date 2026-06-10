@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerTest {
+class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "application-list-entries";
     private static final String CREATE_ENTRY_CONTEXT = "application-lists";

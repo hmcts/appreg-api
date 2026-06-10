@@ -1,8 +1,8 @@
 package uk.gov.hmcts.appregister.common.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +54,7 @@ class LocationLookupServiceTest {
         AppRegistryException ex =
                 assertThrows(
                         AppRegistryException.class, () -> service.getActiveCourtOrThrow("XYZ"));
-        assertTrue(ex.getMessage().contains("No court found for code 'XYZ'"));
+        assertThat(ex.getMessage()).contains("No court found for code 'XYZ'");
         verify(courtHouseRepository).findActiveCourts("XYZ", TODAY_UK);
     }
 
@@ -73,7 +73,7 @@ class LocationLookupServiceTest {
         NationalCourtHouse result = service.getActiveCourtOrThrow("DUPE");
 
         assertSame(preferred, result);
-        assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
+        assertThat(logCaptor.getWarnLogs().getFirst()).contains("Data quality warning");
         verify(courtHouseRepository).findActiveCourts("DUPE", TODAY_UK);
     }
 
@@ -107,7 +107,7 @@ class LocationLookupServiceTest {
 
         AppRegistryException ex =
                 assertThrows(AppRegistryException.class, () -> service.getCjaOrThrow("X1"));
-        assertTrue(ex.getMessage().contains("No Criminal Justice Areas found for code 'X1'"));
+        assertThat(ex.getMessage()).contains("No Criminal Justice Areas found for code 'X1'");
         verify(cjaRepository).findByCode("X1");
     }
 
@@ -118,7 +118,7 @@ class LocationLookupServiceTest {
 
         AppRegistryException ex =
                 assertThrows(AppRegistryException.class, () -> service.getCjaOrThrow("Y2"));
-        assertTrue(ex.getMessage().contains("Multiple Criminal Justice Areas found for code 'Y2'"));
+        assertThat(ex.getMessage()).contains("Multiple Criminal Justice Areas found for code 'Y2'");
         verify(cjaRepository).findByCode("Y2");
     }
 }

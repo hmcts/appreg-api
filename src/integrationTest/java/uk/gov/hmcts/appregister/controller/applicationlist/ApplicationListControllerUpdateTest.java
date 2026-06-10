@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
+class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
 
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
@@ -997,7 +997,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenValidRequest_whenUpdateForClose_then200() throws Exception {
+    void givenValidRequest_whenUpdateForClose_then200() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1035,7 +1035,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation =
                 createAppListUsingRestApi((dto) -> dto.durationHours(0).durationMinutes(0));
 
@@ -1070,7 +1070,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNoResultEntries_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNoResultEntries_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1100,7 +1100,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNoOfficials_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNoOfficials_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1136,7 +1136,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNotPaid_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNotPaid_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1179,7 +1179,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenRemittedFee_whenUpdateForClose_then200() throws Exception {
+    void givenRemittedFee_whenUpdateForClose_then200() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry with a REMITTED fee status
@@ -1459,7 +1459,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
+    void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
         var token = getToken();
 
         // create list

@@ -17,7 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.JwtError;
 
-public class UserProviderTest {
+class UserProviderTest {
 
     private static final String EMAIL_CLAIM = "test.user@example.com";
     private static final String TID_CLAIM = "00000000-0000-0000-0000-000000000000";

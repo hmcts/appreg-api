@@ -6,9 +6,9 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class DeletableFileInputStreamTest extends AbstractAsyncTest {
+class DeletableFileInputStreamTest extends AbstractAsyncTest {
     @Test
-    public void testDeleteFile() throws Exception {
+    void testDeleteFile() throws Exception {
         File file = Files.createTempFile("deleteable-input-stream-test-", ".tmp").toFile();
         file.deleteOnExit();
         Assertions.assertTrue(file.exists());

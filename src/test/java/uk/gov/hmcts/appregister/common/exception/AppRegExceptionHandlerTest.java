@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -83,7 +85,7 @@ class AppRegExceptionHandlerTest {
                                 log ->
                                         log.contains(
                                                 "[404]: Application code not found (Test message)")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -115,7 +117,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: Custom message (Test message)")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -133,7 +135,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.INTERNAL_SERVER_ERROR.getCode().getMessage(),
                 problemDetail.getBody().getDetail());
-        Assertions.assertTrue(logCaptor.getWarnLogs().isEmpty());
+        assertThat(logCaptor.getWarnLogs()).isEmpty();
         Assertions.assertTrue(
                 logCaptor.getErrorLogs().stream()
                         .anyMatch(
@@ -183,7 +185,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: " + customMessage)));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -212,7 +214,7 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[400]: Problem with value 01-01-2026 for"
                                                         + " parameter date")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -269,7 +271,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: Validation failed for fields:")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -433,7 +435,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: " + content)));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -469,7 +471,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: " + dateExContent)));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -486,11 +488,12 @@ class AppRegExceptionHandlerTest {
                   ]
                 }
                 """;
+        ObjectMapper objectMapper = new ObjectMapper();
 
         Exception cause =
                 Assertions.assertThrows(
                         Exception.class,
-                        () -> new ObjectMapper().readValue(body, BulkOfficialsUpdateDto.class));
+                        () -> objectMapper.readValue(body, BulkOfficialsUpdateDto.class));
 
         HttpMessageNotReadableException exception =
                 new HttpMessageNotReadableException(content, cause, null);
@@ -517,7 +520,7 @@ class AppRegExceptionHandlerTest {
                                                 "[400]: Problem setting value for officials[0].type."
                                                         + " Accepted values are: MAGISTRATE,"
                                                         + " CLERK")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -536,7 +539,7 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[400]: Required request parameter 'date' is"
                                                         + " missing")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -578,7 +581,7 @@ class AppRegExceptionHandlerTest {
                                                 "[400]: Validation failed for handler method"
                                                         + " arguments: code=size must be between 0"
                                                         + " and 10")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test

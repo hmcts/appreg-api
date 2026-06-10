@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
+abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
 
     @MockitoBean protected UserProvider provider;
 

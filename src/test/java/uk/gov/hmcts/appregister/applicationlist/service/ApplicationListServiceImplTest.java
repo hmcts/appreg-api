@@ -15,7 +15,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
@@ -107,7 +106,7 @@ import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilde
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationListServiceImplTest {
+class ApplicationListServiceImplTest {
 
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, 10, 7);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(10, 30);
@@ -236,7 +235,7 @@ public class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper, times(1)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
     }
 
     @Test
@@ -287,8 +286,8 @@ public class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper, times(1)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
-        verify(mapper, times(1)).toGetDetailDto(saved, null, 1L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 1L, summaryCaptor.getValue());
     }
 
     // -------- CJA PATH --------
@@ -329,8 +328,7 @@ public class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper, times(1))
-                .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
+        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test

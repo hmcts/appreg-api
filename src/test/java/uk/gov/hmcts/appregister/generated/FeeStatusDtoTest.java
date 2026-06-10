@@ -11,7 +11,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import utils.ConstraintAssertion;
 
-public class FeeStatusDtoTest {
+class FeeStatusDtoTest {
     private static final LocalDate STATUS_DATE = LocalDate.of(2025, 1, 2);
 
     @Test

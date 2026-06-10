@@ -38,7 +38,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
+class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "result-codes";
 
@@ -576,7 +576,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @StabilityTest
-    public void givenResultCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenResultCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
         for (ResultCodeSortFieldEnum resultCodeSortFieldEnum : ResultCodeSortFieldEnum.values()) {
 
@@ -737,7 +737,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))

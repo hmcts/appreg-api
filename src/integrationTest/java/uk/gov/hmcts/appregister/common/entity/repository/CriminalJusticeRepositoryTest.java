@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
-public class CriminalJusticeRepositoryTest extends BaseRepositoryTest {
+class CriminalJusticeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private CriminalJusticeAreaRepository criminalJusticeAreaRepository;
 
@@ -25,7 +25,7 @@ public class CriminalJusticeRepositoryTest extends BaseRepositoryTest {
     private static final int BASELINE_TEST_COUNT = 4;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    void testBasicInsertionUpdate() throws Exception {
 
         transactionalUnitOfWork.inTransaction(
                 () -> {
@@ -49,7 +49,7 @@ public class CriminalJusticeRepositoryTest extends BaseRepositoryTest {
 
                     // assert that the data that has been retrieved aligns with the data that we
                     // have stored
-                    assertFalse(criminalJusticeAreaToAssertAgainst.isEmpty());
+                    assertThat(criminalJusticeAreaToAssertAgainst).isNotEmpty();
                     expectAllCommonEntityFields(
                             dataToPersist, criminalJusticeAreaToAssertAgainst.get());
                     assertEquals(

@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 
-public class StandardApplicantMapperTest {
+class StandardApplicantMapperTest {
     @Test
-    public void testStandardApplicantMapperForIndividual() {
+    void testStandardApplicantMapperForIndividual() {
         val standardApplicant = new StandardApplicantTestData().someComplete();
 
         // make the name null to simulate individual
@@ -124,7 +124,7 @@ public class StandardApplicantMapperTest {
     }
 
     @Test
-    public void testStandardApplicantMapperForOrganisation() {
+    void testStandardApplicantMapperForOrganisation() {
         val standardApplicant = new StandardApplicantTestData().someComplete();
 
         val standardApplicantMapper = new StandardApplicantMapperImpl();

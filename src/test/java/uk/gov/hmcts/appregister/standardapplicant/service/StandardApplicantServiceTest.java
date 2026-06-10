@@ -44,7 +44,7 @@ import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper
 import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExistsValidator;
 
 @ExtendWith(MockitoExtension.class)
-public class StandardApplicantServiceTest {
+class StandardApplicantServiceTest {
     private static final Instant FIXED_INSTANT = Instant.parse("2026-06-09T10:00:00Z");
     private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));
     private static final LocalDate CURRENT_UK_DATE = LocalDate.of(2026, 6, 9);
@@ -75,12 +75,12 @@ public class StandardApplicantServiceTest {
     @InjectMocks private StandardApplicationServiceImpl standardApplicantService;
 
     @BeforeEach
-    public void before() {
+    void before() {
         standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
     }
 
     @Test
-    public void testGetAll() {
+    void testGetAll() {
         when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
@@ -187,7 +187,7 @@ public class StandardApplicantServiceTest {
     }
 
     @Test
-    public void testGetByCode() {
+    void testGetByCode() {
         val code = "APP001";
 
         val standardApplicantGetDetailDto = standardApplicantService.findByCode(code);

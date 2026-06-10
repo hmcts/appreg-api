@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -19,7 +18,7 @@ import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
-public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
+class StandardApplicantRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private StandardApplicantRepository repository;
 
@@ -29,7 +28,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     private static final int BASELINE_TEST_COUNT = 7;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    void testBasicInsertionUpdate() throws Exception {
 
         transactionalUnitOfWork.inTransaction(
                 () -> {
@@ -53,7 +52,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
 
                     // assert that the data that has been retrieved aligns with the data that we
                     // have stored
-                    assertFalse(standardApplicantToAssertAgainst.isEmpty());
+                    assertThat(standardApplicantToAssertAgainst).isNotEmpty();
                     expectAllCommonEntityFields(data, standardApplicantToAssertAgainst.get());
                     expectAllCommonEntityFields(
                             dataToPersist, standardApplicantToAssertAgainst.get());
@@ -117,19 +116,19 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByCodeAndDate() throws Exception {
+    void testFindByCodeAndDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     List<StandardApplicant> retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP002", LocalDate.now());
 
-                    assertFalse(retrievedApplicant.isEmpty());
+                    assertThat(retrievedApplicant).isNotEmpty();
                 });
     }
 
     @Test
-    public void testFindByCodeAndDateMultiple() throws Exception {
+    void testFindByCodeAndDateMultiple() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     List<StandardApplicant> retrievedApplicant =
@@ -141,7 +140,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByCodeAndDatePrefersNullEndDate() throws Exception {
+    void testFindByCodeAndDatePrefersNullEndDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
@@ -176,7 +175,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() throws Exception {
+    void testFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 this::assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord);
     }
@@ -219,7 +218,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchIncludesApplicantsStartingOrEndingOnActiveDate() throws Exception {
+    void testSearchIncludesApplicantsStartingOrEndingOnActiveDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
@@ -263,7 +262,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchFiltersIndividualByCombinedForenameAndSurname() throws Exception {
+    void testSearchFiltersIndividualByCombinedForenameAndSurname() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
@@ -289,7 +288,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchFiltersIndividualBySecondForename() throws Exception {
+    void testSearchFiltersIndividualBySecondForename() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
@@ -323,7 +322,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchFiltersIndividualByThirdForename() throws Exception {
+    void testSearchFiltersIndividualByThirdForename() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
@@ -357,7 +356,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchTreatsWildcardCharactersInNameAsLiterals() throws Exception {
+    void testSearchTreatsWildcardCharactersInNameAsLiterals() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
@@ -396,7 +395,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchFiltersByAddressLine1AndDateRange() throws Exception {
+    void testSearchFiltersByAddressLine1AndDateRange() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
@@ -434,7 +433,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchDateRangeUsesOverlapSemanticsForOpenEndedApplicants() throws Exception {
+    void testSearchDateRangeUsesOverlapSemanticsForOpenEndedApplicants() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     StandardApplicant matching = new StandardApplicantTestData().someComplete();
@@ -473,7 +472,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchWithoutDateRangeStillRestrictsResultsToActiveDate() throws Exception {
+    void testSearchWithoutDateRangeStillRestrictsResultsToActiveDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     StandardApplicant activeApplicant =
@@ -515,7 +514,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchSortsPersonByForenameThenSurnameIgnoringTitle() throws Exception {
+    void testSearchSortsPersonByForenameThenSurnameIgnoringTitle() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();

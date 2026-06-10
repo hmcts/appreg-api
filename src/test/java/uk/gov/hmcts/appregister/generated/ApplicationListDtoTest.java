@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import utils.ConstraintAssertion;
 
-public class ApplicationListDtoTest {
+class ApplicationListDtoTest {
     private static final LocalTime LIST_TIME = LocalTime.of(10, 15);
 
     private ObjectMapper objectMapper;

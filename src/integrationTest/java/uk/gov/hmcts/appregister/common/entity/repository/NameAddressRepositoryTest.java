@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
 @Slf4j
-public class NameAddressRepositoryTest extends BaseRepositoryTest {
+class NameAddressRepositoryTest extends BaseRepositoryTest {
     @Autowired private NameAddressRepository namedAddressRepository;
 
     @Autowired private UserProvider loggedInUser;
@@ -22,7 +22,7 @@ public class NameAddressRepositoryTest extends BaseRepositoryTest {
     private static final int BASELINE_TEST_COUNT = 5;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    void testBasicInsertionUpdate() throws Exception {
         // assert that the save has occurred
         long count = namedAddressRepository.count();
         Assertions.assertEquals(BASELINE_TEST_COUNT, count);
