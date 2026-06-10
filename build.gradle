@@ -396,6 +396,8 @@ ext {
   log4JVersion = '2.26.0'
 }
 
+// Temporary override until a Spring Boot 4.0.x release picks up Framework 7.0.8+.
+ext['spring-framework.version'] = '7.0.8'
 ext['snakeyaml.version'] = '2.0'
 
 dependencies {
@@ -579,18 +581,18 @@ tasks.register('flywayArtefact', Jar) {
   from new File('./flyway/migrations'), new File('./flyway/data_population')
 }
 
-  tasks.register('bundleOpenApi', GenerateTask) {                                                                                               
-    generatorName = 'openapi'                                                                                                                   
-    inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')                                                         
-    outputDir = layout.buildDirectory.dir('specmerge')                                                                                          
-    inputs.files(fileTree('src/main/resources/openapi'))                                                                                        
-  }                                                                                                                                             
-                                                                                                                                                
-  tasks.register('copySpecIntoLocalDebugResources', Copy) {                                                                                     
-    dependsOn tasks.named('bundleOpenApi')                                                                                                      
-    from layout.buildDirectory.file('specmerge/openapi.json')                                                                                   
-    into layout.buildDirectory.dir('localDebug/resources/static/specs')                                                                         
-  } 
+  tasks.register('bundleOpenApi', GenerateTask) {
+    generatorName = 'openapi'
+    inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+    outputDir = layout.buildDirectory.dir('specmerge')
+    inputs.files(fileTree('src/main/resources/openapi'))
+  }
+
+  tasks.register('copySpecIntoLocalDebugResources', Copy) {
+    dependsOn tasks.named('bundleOpenApi')
+    from layout.buildDirectory.file('specmerge/openapi.json')
+    into layout.buildDirectory.dir('localDebug/resources/static/specs')
+  }
 
 tasks.named('compileJava') {
   dependsOn tasks.named('openApiGenerate')
