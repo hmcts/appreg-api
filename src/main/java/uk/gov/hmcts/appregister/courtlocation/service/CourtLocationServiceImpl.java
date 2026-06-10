@@ -92,7 +92,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                             new AuditableResult<>(
                                     mapper.toDetailDto(selectedCourt), mapper.toEntity(code, date));
 
-                    // Map the single matching entity to a detail DTO
                     return Optional.of(result);
                 },
                 // Spring injects all AuditOperationLifecycleListener beans as a List;

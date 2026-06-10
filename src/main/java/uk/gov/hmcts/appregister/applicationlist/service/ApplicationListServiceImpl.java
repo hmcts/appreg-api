@@ -374,9 +374,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                 AppListAuditOperation.DELETE_APP_LIST,
                                 req -> {
                                     performDelete(success.getApplicationList());
-                                    Optional<AuditableResult<Void, ApplicationList>> ret =
-                                            Optional.empty();
-                                    return ret;
+                                    return Optional.empty();
                                 },
                                 auditLifecycleListeners.toArray(
                                         new AuditOperationLifecycleListener[0])));

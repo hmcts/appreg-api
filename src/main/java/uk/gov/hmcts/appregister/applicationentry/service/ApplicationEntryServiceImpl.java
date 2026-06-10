@@ -1604,9 +1604,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     success.getApplicationListEntry().setDeleted(true);
                                     applicationListEntryRepository.save(
                                             success.getApplicationListEntry());
-                                    Optional<AuditableResult<Void, DeleteAuditable>> ret =
-                                            Optional.empty();
-                                    return ret;
+                                    return Optional.empty();
                                 }));
 
         log.debug(

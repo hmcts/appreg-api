@@ -84,15 +84,12 @@ public class ApplicationListController implements ApplicationListsApi {
         MatchResponse<ApplicationListGetDetailDto> created =
                 service.create(applicationListCreateDto);
 
-        ResponseEntity<ApplicationListGetDetailDto> response =
-                ResponseEntity.status(CREATED)
-                        .varyBy("Accept")
-                        .contentType(VND_JSON_V1)
-                        .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
-                        .eTag(created.getEtag())
-                        .body(created.getPayload());
-
-        return response;
+        return ResponseEntity.status(CREATED)
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
+                .eTag(created.getEtag())
+                .body(created.getPayload());
     }
 
     @Override

@@ -13,8 +13,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class ControllerLogAspect extends AbstractOperationDurationAspect {
-    //    private static final String JSON_CONTENT_TYPE = "application/vnd.hmcts.appreg.v1+json";
-
     @Around("(within(uk.gov.hmcts.appregister..controller..*))")
     public Object logDuration(ProceedingJoinPoint pjp) throws Throwable {
         return invokeOperationMDC(
