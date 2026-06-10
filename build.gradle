@@ -479,7 +479,7 @@ dependencies {
   testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
-  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.35.0'
+  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.36.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'
