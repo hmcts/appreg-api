@@ -45,6 +45,52 @@ class WordingTemplateTest {
     }
 
     @Test
+    void testTemplateFailParsingTemplateFormatWithExtraDelimiterSegment() {
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                WordingTemplateSentence.WordingTemplate.with(
+                                        "{TEXT|Applicant officer|10|EXTRA}"));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
+    }
+
+    @Test
+    void testTemplateFailParsingTemplateFormatWithBlankType() {
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                WordingTemplateSentence.WordingTemplate.with(
+                                        "{|Applicant officer|10}"));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
+    }
+
+    @Test
+    void testTemplateFailParsingTemplateFormatWithBlankReference() {
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> WordingTemplateSentence.WordingTemplate.with("{TEXT||10}"));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
+    }
+
+    @Test
+    void testTemplateFailParsingTemplateFormatWithBlankLength() {
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                WordingTemplateSentence.WordingTemplate.with(
+                                        "{TEXT|Applicant officer|}"));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
+    }
+
+    @Test
     void testParameterSizeMismatch() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
         List<TemplateSubstitution> substitutions = List.of();

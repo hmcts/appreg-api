@@ -25,8 +25,17 @@ class WordingSentenceTest {
                     + "the purpose of {IncorrectFormat|} "
                     + "a relevant investigation {This is not a valid template} ";
 
+    private static final String INVALID_EXTRA_SEGMENT =
+            "Application by {TEXT|Applicant officer|70|EXTRA} for a production ord";
+
     private static final String SINGLE_VALUE_TEMPLATE =
             "This is a test {Unknown|Applicant officer|70} with a date";
+
+    private static final String REPEATED_KEY_TEMPLATE =
+            "Before {TEXT|Applicant officer|20} and after {TEXT|Applicant officer|20}";
+
+    private static final String KEY_IN_PROSE_TEMPLATE =
+            "Applicant officer should review {TEXT|Applicant officer|20}";
 
     @Test
     void testParseWordingTemplateMultipleSuccess() {
@@ -218,6 +227,63 @@ class WordingSentenceTest {
     }
 
     @Test
+    void testSubstituteIgnoresValueOrderAndMatchesByKey() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Applicant officer");
+        substitution.setValue("My Test");
+
+        TemplateSubstitution substitution2 = new TemplateSubstitution();
+        substitution2.setKey("No.of accounts");
+        substitution2.setValue("2025-03-17");
+
+        SubstitutedSentence result =
+                templateSentence.substitute(List.of(substitution2, substitution));
+
+        Assertions.assertEquals(
+                "Application by {My Test} for a production ord covering {2025-03-17} accounts(s) "
+                        + "requiring the respondent to either produce or allow access to material that is in their "
+                        + "possession or control for the purpose of a relevant investigation",
+                result.getSubstitutedString());
+    }
+
+    @Test
+    void testSubstituteRepeatedKeysReplacesEachPlaceholderIndividually() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(REPEATED_KEY_TEMPLATE);
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Applicant officer");
+        substitution.setValue("First");
+
+        TemplateSubstitution substitution2 = new TemplateSubstitution();
+        substitution2.setKey("Applicant officer");
+        substitution2.setValue("Second");
+
+        SubstitutedSentence result =
+                templateSentence.substitute(List.of(substitution, substitution2));
+
+        Assertions.assertEquals("Before {First} and after {Second}", result.getSubstitutedString());
+    }
+
+    @Test
+    void testSubstituteDoesNotReplaceMatchingKeyTextOutsidePlaceholders() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(KEY_IN_PROSE_TEMPLATE);
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Applicant officer");
+        substitution.setValue("Alice");
+
+        SubstitutedSentence result = templateSentence.substitute(List.of(substitution));
+
+        Assertions.assertEquals(
+                "Applicant officer should review {Alice}", result.getSubstitutedString());
+    }
+
+    @Test
     void testSubstituteIntoWordingTemplateAlreadyProcessed() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
@@ -314,6 +380,18 @@ class WordingSentenceTest {
                 "IncorrectFormat|", templateSentence.getErroneousTemplates().get(0));
         Assertions.assertEquals(
                 "This is not a valid template", templateSentence.getErroneousTemplates().get(1));
+    }
+
+    @Test
+    void testParseWordingParsingInvalidTemplateWithExtraSegment() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(INVALID_EXTRA_SEGMENT);
+
+        Assertions.assertEquals(0, templateSentence.getTemplateableContents().length);
+        Assertions.assertEquals(1, templateSentence.getErroneousTemplates().size());
+        Assertions.assertEquals(
+                "TEXT|Applicant officer|70|EXTRA",
+                templateSentence.getErroneousTemplates().getFirst());
     }
 
     // TODO: Re-enable this once the decision has been made on the FE implementation.
@@ -451,6 +529,27 @@ class WordingSentenceTest {
         AppRegistryException exception =
                 Assertions.assertThrows(
                         AppRegistryException.class, () -> templateSentence.substitute(null));
+
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, exception.getCode());
+    }
+
+    @Test
+    void testSubstituteRejectsAlreadyProcessedKeyWhenDifferentPlaceholderRemains() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
+
+        templateSentence.substituteForTemplate(
+                templateSentence.getTemplateableContents()[0], "Done");
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Applicant officer");
+        substitution.setValue("Should fail");
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> templateSentence.substitute(List.of(substitution)));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, exception.getCode());

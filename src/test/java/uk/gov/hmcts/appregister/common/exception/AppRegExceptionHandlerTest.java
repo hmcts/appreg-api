@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
-import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -32,10 +32,12 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.MethodValidationException;
 import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
@@ -43,9 +45,13 @@ import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
+    private static final HttpHeaders HEADERS = HttpHeaders.EMPTY;
+    private static final HttpStatusCode BAD_REQUEST = HttpStatus.BAD_REQUEST;
+
     private AppRegExceptionHandler exceptionHandler;
     private SecurityEndpointFailureLogger securityEndpointFailureLogger;
     private LogCaptor logCaptor;
+    private WebRequest webRequest;
 
     @BeforeEach
     void beforeEach() {
@@ -53,6 +59,7 @@ class AppRegExceptionHandlerTest {
         exceptionHandler = new AppRegExceptionHandler(securityEndpointFailureLogger);
         logCaptor = LogCaptor.forClass(AppRegExceptionHandler.class);
         logCaptor.clearLogs();
+        webRequest = Mockito.mock(WebRequest.class);
     }
 
     @Test
@@ -148,24 +155,14 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenConstraintExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned() {
+            givenConstraintExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsReturned() {
 
         String customMessage = "Custom message";
 
-        ConstraintViolation<?> cv =
-                ConstraintViolationImpl.forReturnValueValidation(
-                        "invalid value",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "propertyPath",
-                        "val",
-                        PathImpl.createPathFromString("propertyPath"),
-                        null,
-                        null,
-                        null);
+        ConstraintViolation<?> cv = Mockito.mock(ConstraintViolation.class);
+        Mockito.when(cv.getPropertyPath())
+                .thenReturn(PathImpl.createPathFromString("propertyPath"));
+        Mockito.when(cv.getMessage()).thenReturn("invalid value");
         // setup
         ConstraintViolationException exception =
                 new ConstraintViolationException(customMessage, Set.of(cv));
@@ -178,14 +175,73 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertEquals(400, problemDetail.getBody().getStatus());
-        Assertions.assertEquals(customMessage, problemDetail.getBody().getDetail());
+        Assertions.assertEquals(
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "propertyPath=invalid value",
+                problemDetail.getBody().getDetail());
         Assertions.assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(),
                 problemDetail.getBody().getType());
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
-                        .anyMatch(log -> log.contains("[400]: " + customMessage)));
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Constraints failed for fields:"
+                                                        + System.lineSeparator()
+                                                        + "propertyPath=invalid value")));
         assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
+    void givenConstraintViolations_whenHandled_thenFieldDetailsAreReturnedAndLogged() {
+        ConstraintViolation<?> secondViolation = Mockito.mock(ConstraintViolation.class);
+        Mockito.when(secondViolation.getPropertyPath())
+                .thenReturn(PathImpl.createPathFromString("bField"));
+        Mockito.when(secondViolation.getMessage()).thenReturn("another invalid value");
+        ConstraintViolation<?> firstViolation = Mockito.mock(ConstraintViolation.class);
+        Mockito.when(firstViolation.getPropertyPath())
+                .thenReturn(PathImpl.createPathFromString("aField"));
+        Mockito.when(firstViolation.getMessage()).thenReturn("invalid value");
+
+        ConstraintViolationException exception =
+                new ConstraintViolationException(
+                        "Custom message", Set.of(secondViolation, firstViolation));
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleConstraintViolationException(exception);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertEquals(
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "aField=invalid value"
+                        + System.lineSeparator()
+                        + "bField=another invalid value",
+                problemDetail.getBody().getDetail());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Constraints failed for fields:"
+                                                        + System.lineSeparator()
+                                                        + "aField=invalid value"
+                                                        + System.lineSeparator()
+                                                        + "bField=another invalid value")));
+    }
+
+    @Test
+    void givenConstraintViolationsAreEmpty_whenHandled_thenExceptionMessageIsReturned() {
+        ConstraintViolationException exception =
+                new ConstraintViolationException("Custom message", Set.of());
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleConstraintViolationException(exception);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertEquals("Custom message", problemDetail.getBody().getDetail());
     }
 
     @Test
@@ -249,7 +305,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
@@ -310,7 +367,8 @@ class AppRegExceptionHandlerTest {
                 };
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
@@ -352,7 +410,8 @@ class AppRegExceptionHandlerTest {
                 };
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
@@ -391,7 +450,8 @@ class AppRegExceptionHandlerTest {
                 };
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
@@ -415,7 +475,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
@@ -449,7 +510,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
@@ -493,7 +555,8 @@ class AppRegExceptionHandlerTest {
                 new HttpMessageNotReadableException(content, cause, null);
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
@@ -619,7 +682,8 @@ class AppRegExceptionHandlerTest {
                 new MissingServletRequestParameterException("date", "LocalDate");
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMissingServletRequestParameter(exception, null, null, null);
+                exceptionHandler.handleMissingServletRequestParameter(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
         Assertions.assertTrue(
@@ -660,7 +724,7 @@ class AppRegExceptionHandlerTest {
 
         ResponseEntity<Object> problemDetail =
                 exceptionHandler.handleHandlerMethodValidationException(
-                        exception, null, HttpStatus.BAD_REQUEST, null);
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
         Assertions.assertTrue(
@@ -685,7 +749,7 @@ class AppRegExceptionHandlerTest {
 
         ResponseEntity<Object> problemDetail =
                 exceptionHandler.handleHandlerMethodValidationException(
-                        exception, null, HttpStatus.BAD_REQUEST, null);
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
         Assertions.assertTrue(
@@ -695,6 +759,48 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[400]: Validation failed for handler method"
                                                         + " arguments")));
+    }
+
+    @Test
+    void givenMethodValidationException_whenHandled_thenWarnIsLoggedWithoutError()
+            throws NoSuchMethodException {
+        MethodParameter methodParameter =
+                new MethodParameter(
+                        AppRegExceptionHandlerTest.class.getDeclaredMethod(
+                                "sampleValidationMethod", String.class),
+                        0);
+
+        ParameterValidationResult validationResult =
+                new ParameterValidationResult(
+                        methodParameter,
+                        "ABCDEFGHIJK",
+                        List.of(
+                                new DefaultMessageSourceResolvable(
+                                        "size must be between 0 and 10")),
+                        null,
+                        null,
+                        null,
+                        (error, sourceType) -> null);
+
+        MethodValidationException exception =
+                new MethodValidationException(
+                        MethodValidationResult.create(
+                                this, methodParameter.getMethod(), List.of(validationResult)));
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMethodValidationException(
+                        exception, HEADERS, HttpStatus.BAD_REQUEST, webRequest);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Validation failed for handler method"
+                                                        + " arguments: code=size must be between 0"
+                                                        + " and 10")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test

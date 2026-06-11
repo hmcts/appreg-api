@@ -22,7 +22,8 @@ public class EtagUtil {
         try {
             String base = getStringRepresentation(id);
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(base.getBytes(StandardCharsets.UTF_8));
+            byte[] bytes = base.getBytes(StandardCharsets.UTF_8);
+            byte[] digest = md.digest(bytes);
             return "\"" + HexFormat.of().formatHex(digest) + "\""; // quotes required
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate ETag", e);
@@ -42,8 +43,8 @@ public class EtagUtil {
                     .append(keyable.getId().toString())
                     .append(":")
                     .append(
-                            (keyable instanceof Versionable)
-                                    ? ((Versionable) keyable).getVersion().toString()
+                            (keyable instanceof Versionable versionable)
+                                    ? versionable.getVersion().toString()
                                     : "")
                     .append(keyable.getClass().getCanonicalName());
         }

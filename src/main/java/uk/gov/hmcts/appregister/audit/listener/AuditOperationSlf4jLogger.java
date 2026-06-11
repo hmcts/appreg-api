@@ -56,7 +56,7 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
         return getLog(
                 event.getRequestAction().getEventName(),
                 event.getMessageUuid(),
-                Integer.valueOf(event.getMessageStatus().getStatus()).toString());
+                Integer.toString(event.getMessageStatus().getStatus()));
     }
 
     /**
