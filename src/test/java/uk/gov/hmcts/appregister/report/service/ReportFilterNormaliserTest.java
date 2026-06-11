@@ -136,4 +136,32 @@ class ReportFilterNormaliserTest {
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), normalisedFilter.getDateFrom());
         Assertions.assertNull(normalisedFilter.getDateTo());
     }
+
+    @Test
+    void givenSearchWarrantsDateRangeIsOrdered_whenNormalised_thenFilterIsUnchanged() {
+        SearchWarrantsReportFilterDto filter =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
+
+        SearchWarrantsReportFilterDto normalisedFilter = normaliser.normalise(filter);
+
+        Assertions.assertSame(filter, normalisedFilter);
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), normalisedFilter.getDateTo());
+    }
+
+    @Test
+    void givenPrivateProsecutorsDateRangeIsEqual_whenNormalised_thenFilterIsUnchanged() {
+        PrivateProsecutorsIndexFilterDto filter =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
+
+        PrivateProsecutorsIndexFilterDto normalisedFilter = normaliser.normalise(filter);
+
+        Assertions.assertSame(filter, normalisedFilter);
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), normalisedFilter.getDateFrom());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), normalisedFilter.getDateTo());
+    }
 }
