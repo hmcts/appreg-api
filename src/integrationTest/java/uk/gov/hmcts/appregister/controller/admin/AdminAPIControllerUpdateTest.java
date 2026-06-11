@@ -115,8 +115,10 @@ class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
         assertEquals(400, responseSpec.getStatusCode());
         var responseBody = new ObjectMapper().readTree(responseSpec.asString());
         assertEquals(
-                "updateDatabaseJobRetentionPeriodByName.retentionPeriodDays: must be greater than"
-                        + " or equal to 1",
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "updateDatabaseJobRetentionPeriodByName.retentionPeriodDays="
+                        + "must be greater than or equal to 1",
                 responseBody.get("detail").asText());
     }
 }

@@ -12,7 +12,6 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 public abstract class AbstractSortValidator implements Validator<String, Void> {
 
     /** Set of allowed property names for sorting. */
-    /** Set of allowed property names for sorting. */
     private final Set<String> allowed;
 
     /**

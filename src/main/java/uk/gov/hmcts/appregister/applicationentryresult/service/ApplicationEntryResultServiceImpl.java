@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,6 +75,7 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     private final PageMapper pageMapper;
 
     // Infrastructure
+    private final ObjectProvider<ApplicationEntryResultService> selfProvider;
     private final EntityManager entityManager;
     private final UserProvider userProvider;
 
@@ -324,11 +326,17 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                     // loop through each successful validation result and create the entry result
                     for (PayloadForCreateEntryResult<ResultCreateDto> createValidationSuccesses :
                             success.getResults()) {
-                        createdResults.add(create(createValidationSuccesses).getPayload());
+                        createdResults.add(
+                                getSelfService().create(createValidationSuccesses).getPayload());
                     }
 
                     return createdResults;
                 });
+    }
+
+    private ApplicationEntryResultService getSelfService() {
+        var selfService = selfProvider.getIfAvailable();
+        return selfService != null ? selfService : this;
     }
 
     /**

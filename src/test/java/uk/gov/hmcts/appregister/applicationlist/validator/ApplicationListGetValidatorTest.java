@@ -244,4 +244,22 @@ class ApplicationListGetValidatorTest {
             assertThrows(AppRegistryException.class, () -> validator.validate(dto));
         }
     }
+
+    @Test
+    void getStatus_returnsStatusAccessor() {
+        var dto = new ApplicationListGetFilterDto();
+        dto.setStatus(uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED);
+
+        assertEquals(
+                uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED,
+                validator.getStatus().apply(dto));
+    }
+
+    @Test
+    void getTime_returnsTimeAccessor() {
+        var dto = new ApplicationListGetFilterDto();
+        dto.setTime(LocalDate.of(2025, Month.OCTOBER, 7).atTime(9, 30).toLocalTime());
+
+        assertEquals(dto.getTime(), validator.getTime().apply(dto));
+    }
 }
