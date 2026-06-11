@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -82,12 +84,13 @@ public class AppConfig implements WebMvcConfigurer {
      */
     class ListStringConverter implements GenericConverter {
         @Override
-        public Set<ConvertiblePair> getConvertibleTypes() {
+        public @Nullable Set<@NonNull ConvertiblePair> getConvertibleTypes() {
             return Set.of(new ConvertiblePair(String.class, List.class));
         }
 
         @Override
-        public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+        public @Nullable Object convert(
+                @Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
             if (source instanceof String str) {
                 return List.of(str);
             }

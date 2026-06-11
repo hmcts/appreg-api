@@ -68,7 +68,9 @@ class DataConstraintControllerTest extends BaseIntegration {
         Assertions.assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
         Assertions.assertEquals(
-                "getApplicationCodeByCodeAndDate.code: size must be between 0 and 10",
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "getApplicationCodeByCodeAndDate.code=size must be between 0 and 10",
                 problemDetail.getDetail());
     }
 

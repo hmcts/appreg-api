@@ -228,9 +228,6 @@ class WordingSentenceTest {
 
     @Test
     void testSubstituteIgnoresValueOrderAndMatchesByKey() {
-        WordingTemplateSentence templateSentence =
-                WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
-
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Applicant officer");
         substitution.setValue("My Test");
@@ -239,6 +236,8 @@ class WordingSentenceTest {
         substitution2.setKey("No.of accounts");
         substitution2.setValue("2025-03-17");
 
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
         SubstitutedSentence result =
                 templateSentence.substitute(List.of(substitution2, substitution));
 
@@ -251,9 +250,6 @@ class WordingSentenceTest {
 
     @Test
     void testSubstituteRepeatedKeysReplacesEachPlaceholderIndividually() {
-        WordingTemplateSentence templateSentence =
-                WordingTemplateSentence.with(REPEATED_KEY_TEMPLATE);
-
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Applicant officer");
         substitution.setValue("First");
@@ -262,6 +258,8 @@ class WordingSentenceTest {
         substitution2.setKey("Applicant officer");
         substitution2.setValue("Second");
 
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(REPEATED_KEY_TEMPLATE);
         SubstitutedSentence result =
                 templateSentence.substitute(List.of(substitution, substitution2));
 

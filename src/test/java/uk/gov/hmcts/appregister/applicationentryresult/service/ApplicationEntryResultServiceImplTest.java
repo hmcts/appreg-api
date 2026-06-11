@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
@@ -90,6 +92,7 @@ class ApplicationEntryResultServiceImplTest {
     @Mock private EntityManager entityManager;
     @Mock private UserProvider userProvider;
     @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private ObjectProvider<ApplicationEntryResultService> selfProvider;
 
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
@@ -156,8 +159,11 @@ class ApplicationEntryResultServiceImplTest {
                         applicationListEntryResultMapper,
                         applicationListEntryResultEntityMapper,
                         new PageMapper(),
+                        selfProvider,
                         entityManager,
                         userProvider);
+
+        lenient().when(selfProvider.getIfAvailable()).thenReturn(service);
     }
 
     @Test

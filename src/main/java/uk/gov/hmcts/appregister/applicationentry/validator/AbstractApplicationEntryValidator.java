@@ -519,54 +519,80 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param validatable The validatable payload
      */
     private void validateRespondent(ApplicationCode applicationCode, T validatable) {
+        boolean respondentRequired = applicationCode.getRequiresRespondent() == YesOrNo.YES;
+        boolean bulkRespondentAllowed = applicationCode.getBulkRespondentAllowed() == YesOrNo.YES;
+        boolean hasRespondent = getRespondent(validatable) != null;
+        boolean hasNumberOfRespondents = hasNumberOfRespondents(validatable);
 
-        // if respondent is required, check that it exists in the payload
-        if (applicationCode.getRequiresRespondent() == YesOrNo.YES
-                && getRespondent(validatable) == null) {
+        validateRequiredRespondent(validatable, respondentRequired, hasRespondent);
+        validateBulkRespondentNotAllowed(
+                validatable, bulkRespondentAllowed, hasNumberOfRespondents);
+        validateConflictingBulkRespondent(
+                validatable, bulkRespondentAllowed, hasRespondent, hasNumberOfRespondents);
+        validateMissingBulkRespondent(
+                validatable, respondentRequired, hasRespondent, hasZeroRespondents(validatable));
+        validateBulkRespondentPresence(
+                validatable,
+                bulkRespondentAllowed,
+                respondentRequired,
+                hasNumberOfRespondents,
+                hasRespondent);
+
+        log.debug("Validated the respondent details");
+    }
+
+    private void validateRequiredRespondent(
+            T validatable, boolean respondentRequired, boolean hasRespondent) {
+        if (respondentRequired && !hasRespondent) {
             throw new AppRegistryException(
                     AppListEntryError.RESPONDENT_REQUIRED,
                     "Respondent required for code %s".formatted(getApplicationCode(validatable)));
         }
+    }
 
-        // check bulk respondent is off and no respondents are specified in the payload
-        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.NO
-                && getNumberOfRespondents(validatable) != null
-                && getNumberOfRespondents(validatable) != 0) {
+    private void validateBulkRespondentNotAllowed(
+            T validatable, boolean bulkRespondentAllowed, boolean hasNumberOfRespondents) {
+        if (!bulkRespondentAllowed && hasNumberOfRespondents) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
                     BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
                             getApplicationCode(validatable)));
         }
+    }
 
-        // if we are setting multiple respondents, check that the application code allows it
-        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.NO
-                && getRespondent(validatable) != null
-                && (getNumberOfRespondents(validatable) != null
-                        && getNumberOfRespondents(validatable) != 0)) {
+    private void validateConflictingBulkRespondent(
+            T validatable,
+            boolean bulkRespondentAllowed,
+            boolean hasRespondent,
+            boolean hasNumberOfRespondents) {
+        if (!bulkRespondentAllowed && hasRespondent && hasNumberOfRespondents) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
                     BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
                             getApplicationCode(validatable)));
         }
+    }
 
-        // if we are setting multiple respondents, check that the application code allows it
-        if (applicationCode.getRequiresRespondent() == YesOrNo.YES
-                        && getRespondent(validatable) == null
-                || (getNumberOfRespondents(validatable) != null
-                        && getNumberOfRespondents(validatable) == 0)) {
+    private void validateMissingBulkRespondent(
+            T validatable,
+            boolean respondentRequired,
+            boolean hasRespondent,
+            boolean hasZeroRespondents) {
+        if ((respondentRequired && !hasRespondent) || hasZeroRespondents) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
                     BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
                             getApplicationCode(validatable)));
         }
+    }
 
-        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.YES
-                && applicationCode.getRequiresRespondent() == YesOrNo.NO) {
-
-            boolean hasNumberOfRespondents =
-                    getNumberOfRespondents(validatable) != null
-                            && getNumberOfRespondents(validatable) != 0;
-            boolean hasRespondent = getRespondent(validatable) != null;
+    private void validateBulkRespondentPresence(
+            T validatable,
+            boolean bulkRespondentAllowed,
+            boolean respondentRequired,
+            boolean hasNumberOfRespondents,
+            boolean hasRespondent) {
+        if (bulkRespondentAllowed && !respondentRequired) {
             if (!hasNumberOfRespondents && !hasRespondent) {
                 throw new AppRegistryException(
                         AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
@@ -581,8 +607,16 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                                 .formatted(dto));
             }
         }
+    }
 
-        log.debug("Validated the respondent details");
+    private boolean hasNumberOfRespondents(T validatable) {
+        return getNumberOfRespondents(validatable) != null
+                && getNumberOfRespondents(validatable) != 0;
+    }
+
+    private boolean hasZeroRespondents(T validatable) {
+        return getNumberOfRespondents(validatable) != null
+                && getNumberOfRespondents(validatable) == 0;
     }
 
     private void validateLodgementDate(T validatable) {
