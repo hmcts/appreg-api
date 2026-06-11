@@ -23,6 +23,8 @@ spring:
   # Continue to use Jackson 2 for now
   jackson:
     use-jackson2-defaults: true
+    deserialization:
+      fail-on-unknown-properties: true
   data:
     web:
       pageable:

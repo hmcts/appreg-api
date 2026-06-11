@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller.reporting;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.opencsv.CSVReader;
 import io.restassured.response.Response;
 import java.io.InputStream;
@@ -208,6 +209,57 @@ class ReportingControllerPostTest extends BaseIntegration {
             assertThat(report).doesNotContain(BOB_DISPLAY_USERNAME);
             assertThat(report).doesNotContain("12345");
         }
+    }
+
+    @Test
+    void givenActivityAuditReportRequestContainsUnsupportedField_whenCreatingReport_thenBadRequest()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
+        ActivityAuditFilterDto request =
+                new ActivityAuditFilterDto()
+                        .dateFrom(today)
+                        .dateTo(today)
+                        .activityTypes(List.of(ActivityType.CREATE_APPLICATION_LIST));
+        ObjectNode requestBody = mapper.valueToTree(request);
+        requestBody.put("courtCode", "LOC123");
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(ACTIVITY_AUDIT_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        mapper.writeValueAsString(requestBody));
+
+        createResponse.then().statusCode(400);
+        ProblemDetail problemDetail = createResponse.as(ProblemDetail.class);
+        Assertions.assertEquals("Unsupported request field: courtCode", problemDetail.getDetail());
+    }
+
+    @Test
+    void givenFeesReportRequestContainsUnsupportedNestedField_whenCreatingReport_thenBadRequest()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 31))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 1))
+                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
+        ObjectNode requestBody = mapper.valueToTree(request);
+        ((ObjectNode) requestBody.path("location")).put("unexpected", "value");
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        mapper.writeValueAsString(requestBody));
+
+        createResponse.then().statusCode(400);
+        ProblemDetail problemDetail = createResponse.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                "Unsupported request field: location.unexpected", problemDetail.getDetail());
     }
 
     @Test

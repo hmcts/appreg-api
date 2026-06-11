@@ -144,6 +144,8 @@ The html reports reside under build/reports/jacoco/
 
 2. If you navigate to https://editor.swagger.io/. You can import the specification by selecting File -> Import URL and entering the URL to the openapi.json file
 
+3. A bundled YAML specification is also produced during the Gradle build at `openapi.yaml` in the project root
+
 ## Plugins
 
 - **HMCTS Gradle Java plugin**

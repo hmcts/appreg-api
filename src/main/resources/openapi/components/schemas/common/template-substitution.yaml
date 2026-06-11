@@ -1,6 +1,7 @@
 type: object
 description: The template field with the associated value to substitute. Blank fields will be rejected, nulls should be used instead.
-required: [name, value]
+additionalProperties: false
+required: [key, value]
 properties:
   key:
     type: string

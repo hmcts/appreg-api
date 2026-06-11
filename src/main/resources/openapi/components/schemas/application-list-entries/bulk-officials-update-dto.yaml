@@ -1,5 +1,6 @@
 type: object
 description: Replace officials for multiple Application List Entries in one atomic operation.
+additionalProperties: false
 required:
   - entryIds
   - officials
