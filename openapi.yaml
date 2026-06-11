@@ -1029,7 +1029,7 @@ paths:
       - application-lists
     put:
       description: |
-        Full replacement (PUT) of an existing Application List. The `id` is taken from the path; the request body must satisfy the same constraints as create (including the XOR location rule: either `courtLocation` or (`otherLocationDescription` + `criminalJusticeAreaCode`)). The request must include the current `version` for optimistic concurrency; a mismatch results in 409 Conflict.
+        Full replacement (PUT) of an existing Application List. The `id` is taken from the path; the request body must satisfy the same constraints as create (including the XOR location rule: either `courtLocation` or (`otherLocationDescription` + `criminalJusticeAreaCode`)). The request must include a valid `If-Match` header for optimistic concurrency control; a mismatch results in 409 Conflict.
       operationId: updateApplicationList
       parameters:
       - description: Public identifier of the Application List.
@@ -5475,7 +5475,6 @@ components:
       - description
       - status
       - time
-      - version
       type: object
     application-list-get-print-dto:
       description: Immutable DTO representing a detailed Application List.
@@ -6897,7 +6896,7 @@ components:
           minLength: 1
           type: string
       required:
-      - name
+      - key
       - value
       type: object
     fee-status:

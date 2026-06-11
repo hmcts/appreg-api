@@ -567,6 +567,7 @@ tasks.named('openApiGenerate') {
   ]
 
   inputs.files(fileTree('src/main/resources/openapi'))
+  dependsOn tasks.named('copyBundledOpenApiYamlToRoot')
 }
 
 // Add a new jar that will be published to maven with the classifier -openapi
