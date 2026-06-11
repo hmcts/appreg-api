@@ -87,13 +87,6 @@ public class AbstractOperationDurationAspect {
                 && appRegistryException.getCode().getCode().getHttpCode().is4xxClientError();
     }
 
-    /**
-     * logs the start of the join point.
-     *
-     * @param proceedingJoinPoint the join point
-     * @return The string to log with arguments. By default, it logs the method signature and the
-     *     arguments, but it ignores any pageable arguments as they can be very large
-     */
     /** A consumer that takes three arguments. */
     public interface TriConsumer<K, V, S> {
         void accept(K k, V v, S s);

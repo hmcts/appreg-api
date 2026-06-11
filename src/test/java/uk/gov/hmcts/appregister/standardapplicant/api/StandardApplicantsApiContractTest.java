@@ -21,9 +21,10 @@ class StandardApplicantsApiContractTest {
     void getStandardApplicantByCodeOpenApiPathDoesNotDefineDateParameter() throws IOException {
         String pathYaml = Files.readString(STANDARD_APPLICANT_BY_CODE_OPENAPI_PATH);
 
-        assertThat(pathYaml).contains("operationId: getStandardApplicantByCode");
-        assertThat(pathYaml).doesNotContain("name: date");
-        assertThat(pathYaml).doesNotContain("getStandardApplicantByCodeAndDate");
+        assertThat(pathYaml)
+                .contains("operationId: getStandardApplicantByCode")
+                .doesNotContain("name: date")
+                .doesNotContain("getStandardApplicantByCodeAndDate");
     }
 
     @Test

@@ -320,8 +320,10 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertTrue(
                 output.getOut()
                         .contains(
-                                "[400]: getStandardApplicantByCode.code: size must be"
-                                        + " between 0 and 10"));
+                                "[400]: Constraints failed for fields:"
+                                        + System.lineSeparator()
+                                        + "getStandardApplicantByCode.code="
+                                        + "size must be between 0 and 10"));
     }
 
     @Test
@@ -341,8 +343,10 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertTrue(
                 output.getOut()
                         .contains(
-                                "[400]: getStandardApplicants.pageSize: must be less than or"
-                                        + " equal to 100"));
+                                "[400]: Constraints failed for fields:"
+                                        + System.lineSeparator()
+                                        + "getStandardApplicants.pageSize="
+                                        + "must be less than or equal to 100"));
     }
 
     @Test

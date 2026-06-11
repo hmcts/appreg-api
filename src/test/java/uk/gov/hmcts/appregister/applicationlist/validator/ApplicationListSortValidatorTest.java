@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
@@ -29,25 +32,12 @@ class ApplicationListSortValidatorTest {
         assertDoesNotThrow(() -> validator.validate(ApplicationList_.DESCRIPTION));
     }
 
-    @Test
-    void validate_disallowedProperty_throwsAppRegistryException() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"notAValidField", "  "})
+    void validate_invalidProperty_throwsAppRegistryException(String sortProperty) {
         AppRegistryException ex =
-                assertThrows(
-                        AppRegistryException.class, () -> validator.validate("notAValidField"));
-        assertThat(ex.getMessage()).contains("not allowed");
-    }
-
-    @Test
-    void validate_nullProperty_throwsAppRegistryException() {
-        AppRegistryException ex =
-                assertThrows(AppRegistryException.class, () -> validator.validate(null));
-        assertThat(ex.getMessage()).contains("not allowed");
-    }
-
-    @Test
-    void validate_blankProperty_throwsAppRegistryException() {
-        AppRegistryException ex =
-                assertThrows(AppRegistryException.class, () -> validator.validate("  "));
+                assertThrows(AppRegistryException.class, () -> validator.validate(sortProperty));
         assertThat(ex.getMessage()).contains("not allowed");
     }
 }

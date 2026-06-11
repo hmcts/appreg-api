@@ -590,12 +590,6 @@ public abstract class ApplicationListEntryMapper {
     /**
      * A useful mapper to map the applicant details of the standard applicant.
      *
-     * @param nameAddress The database name and address
-     * @return The applicant Dto
-     */
-    /**
-     * A useful mapper to map the applicant details of the standard applicant.
-     *
      * @param applicant The database applicant
      * @return The applicant Dto
      */

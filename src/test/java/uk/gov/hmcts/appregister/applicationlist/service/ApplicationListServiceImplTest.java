@@ -159,7 +159,7 @@ class ApplicationListServiceImplTest {
     @Mock private EntityManager entityManager;
 
     // A null match provider that returns a null etag
-    private static MatchProvider NULL_MATCH_PROVIDER =
+    private static final MatchProvider NULL_MATCH_PROVIDER =
             new MatchProvider() {
                 @Override
                 public String getEtag() {
@@ -472,7 +472,7 @@ class ApplicationListServiceImplTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
-        assertThat(result.getContent().size()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
 
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
     }
@@ -528,7 +528,7 @@ class ApplicationListServiceImplTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
-        assertThat(result.getContent().size()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
 
         verify(mapper).toGetSummaryDto(row, 0L, "Central Court");
     }
@@ -581,7 +581,7 @@ class ApplicationListServiceImplTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
-        assertThat(result.getContent().size()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
 
         verify(mapper).toGetSummaryDto(row, 0L, "CJA Desc");
     }

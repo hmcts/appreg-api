@@ -231,19 +231,19 @@ class ApplicationCodeServiceImplTest {
                         code, null, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
+        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
-                applicationCode.getCode());
+                applicationCode.getCode(),
+                applicationCodeDtoPage.getContent().get(0).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
-                applicationCode2.getCode());
+                applicationCode2.getCode(),
+                applicationCodeDtoPage.getContent().get(1).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
-                applicationCode3.getCode());
+                applicationCode3.getCode(),
+                applicationCodeDtoPage.getContent().get(2).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
-                applicationCode4.getCode());
+                applicationCode4.getCode(),
+                applicationCodeDtoPage.getContent().get(3).getApplicationCode());
     }
 
     @Test
@@ -282,19 +282,19 @@ class ApplicationCodeServiceImplTest {
                         null, title, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
+        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
-                applicationCode.getCode());
+                applicationCode.getCode(),
+                applicationCodeDtoPage.getContent().get(0).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
-                applicationCode2.getCode());
+                applicationCode2.getCode(),
+                applicationCodeDtoPage.getContent().get(1).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
-                applicationCode3.getCode());
+                applicationCode3.getCode(),
+                applicationCodeDtoPage.getContent().get(2).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
-                applicationCode4.getCode());
+                applicationCode4.getCode(),
+                applicationCodeDtoPage.getContent().get(3).getApplicationCode());
     }
 
     @Test
@@ -334,13 +334,13 @@ class ApplicationCodeServiceImplTest {
                         code, title, effectiveDate, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
+        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
-                applicationCode.getCode());
+                applicationCode.getCode(),
+                applicationCodeDtoPage.getContent().get(0).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
-                applicationCode2.getCode());
+                applicationCode2.getCode(),
+                applicationCodeDtoPage.getContent().get(1).getApplicationCode());
         Assertions.assertEquals(
                 applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
                 applicationCode3.getCode());

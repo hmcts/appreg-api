@@ -84,49 +84,22 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
         // determines whether we are auditing old, new or both
         AuditOldNewEnum oldNew = event.getNewOldAuditState();
 
-        // if we just have old gather the old data difference
-        if (oldNew == AuditOldNewEnum.OLD) {
-            processOld(event);
-            // if both new and old values are present
-        } else if (oldNew == AuditOldNewEnum.BOTH) {
-            List<AuditableData> oldDifferenceList;
-            List<AuditableData> newDifferenceList;
-            if (event.getOldValue() instanceof Auditable auditDifferentiable) {
-                oldDifferenceList =
-                        auditDifferentiable.extractAuditData(event.getRequestAction().getType());
-            } else {
-                oldDifferenceList =
-                        auditor.extractAuditData(
-                                event.getRequestAction().getType(), event.getOldValue());
-            }
-
-            if (event.getNewValue() instanceof Auditable newAuditDifferentiable) {
-                newDifferenceList =
-                        newAuditDifferentiable.extractAuditData(event.getRequestAction().getType());
-            } else {
-                newDifferenceList =
-                        auditor.extractAuditData(
-                                event.getRequestAction().getType(), event.getNewValue());
-            }
-
-            // based on the largest size we define the primary and secondary lists to compare
-            List<AuditableData> primaryList =
-                    oldDifferenceList.size() >= newDifferenceList.size()
-                            ? oldDifferenceList
-                            : newDifferenceList;
-            List<AuditableData> secondaryList =
-                    oldDifferenceList.size() >= newDifferenceList.size()
-                            ? newDifferenceList
-                            : oldDifferenceList;
-
-            auditDiff(
-                    event,
-                    primaryList,
-                    secondaryList,
-                    oldDifferenceList.size() >= newDifferenceList.size());
-        } else {
-            processNew(event);
+        switch (oldNew) {
+            case OLD -> processOld(event);
+            case BOTH -> processBoth(event);
+            case NEW -> processNew(event);
         }
+    }
+
+    private void processBoth(CompleteEvent event) {
+        List<AuditableData> oldDifferenceList = extractAuditData(event.getOldValue(), event);
+        List<AuditableData> newDifferenceList = extractAuditData(event.getNewValue(), event);
+
+        boolean oldIsPrimary = oldDifferenceList.size() >= newDifferenceList.size();
+        List<AuditableData> primaryList = oldIsPrimary ? oldDifferenceList : newDifferenceList;
+        List<AuditableData> secondaryList = oldIsPrimary ? newDifferenceList : oldDifferenceList;
+
+        auditDiff(event, primaryList, secondaryList, oldIsPrimary);
     }
 
     /**
@@ -135,18 +108,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
      * @param event The completed event.
      */
     private void processOld(CompleteEvent event) {
-        List<AuditableData> oldDifferenceList;
-
-        // prioritise the extract audit data from Auditable if implemented
-        if (event.getOldValue() instanceof Auditable auditDifferentiable) {
-            oldDifferenceList =
-                    auditDifferentiable.extractAuditData(event.getRequestAction().getType());
-        } else {
-            oldDifferenceList =
-                    auditor.extractAuditData(
-                            event.getRequestAction().getType(), event.getOldValue());
-        }
-
+        List<AuditableData> oldDifferenceList = extractAuditData(event.getOldValue(), event);
         auditDiff(event, oldDifferenceList, null, true);
     }
 
@@ -156,17 +118,16 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
      * @param event The completed event.
      */
     private void processNew(CompleteEvent event) {
-        List<AuditableData> newDifferenceList;
-        if (event.getNewValue() instanceof Auditable auditDifferentiable) {
-            newDifferenceList =
-                    auditDifferentiable.extractAuditData(event.getRequestAction().getType());
-        } else {
-            newDifferenceList =
-                    auditor.extractAuditData(
-                            event.getRequestAction().getType(), event.getNewValue());
+        List<AuditableData> newDifferenceList = extractAuditData(event.getNewValue(), event);
+        auditDiff(event, newDifferenceList, null, false);
+    }
+
+    private List<AuditableData> extractAuditData(Keyable value, CompleteEvent event) {
+        if (value instanceof Auditable auditable) {
+            return auditable.extractAuditData(event.getRequestAction().getType());
         }
 
-        auditDiff(event, newDifferenceList, null, false);
+        return auditor.extractAuditData(event.getRequestAction().getType(), value);
     }
 
     /**

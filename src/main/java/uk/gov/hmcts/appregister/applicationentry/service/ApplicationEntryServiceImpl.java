@@ -701,11 +701,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     });
         }
 
-        if ((success.getFee() != null
-                        && success.getFee().offsiteFee() != null
-                        && entryCreateDto.getData() != null
-                        && entryCreateDto.getData().getHasOffsiteFee() != null)
-                && entryCreateDto.getData().getHasOffsiteFee()) {
+        if (success.getFee() != null
+                && success.getFee().offsiteFee() != null
+                && entryCreateDto.getData() != null
+                && Boolean.TRUE.equals(entryCreateDto.getData().getHasOffsiteFee())) {
             // save the offsite fee
             auditService.processAudit(
                     AppListEntryAuditOperation.CREATE_FEE_ENTRY,

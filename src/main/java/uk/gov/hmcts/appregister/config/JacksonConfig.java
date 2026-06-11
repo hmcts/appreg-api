@@ -16,6 +16,8 @@ import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
  * serialization/deserialisation. Spring Boot 4 expects us to use Jackson 3 but the jackson 3 API
  * does not natively support JsonNullable types. This will need to be addressed later in the
  * development cycle.
+ *
+ * @deprecated Spring Boot 4 expects Jackson 3, but JsonNullable support is not yet available
  */
 @Deprecated
 @SuppressWarnings("removal")

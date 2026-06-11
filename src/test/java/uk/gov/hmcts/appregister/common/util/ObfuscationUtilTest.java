@@ -66,10 +66,11 @@ class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(entryPage);
 
-        assertThat(obfuscated).doesNotContain("ACC-12345");
-        assertThat(obfuscated).contains("\"applicant\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"respondent\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"accountNumber\":\"[REDACTED]\"");
+        assertThat(obfuscated)
+                .doesNotContain("ACC-12345")
+                .contains("\"applicant\":\"[REDACTED]\"")
+                .contains("\"respondent\":\"[REDACTED]\"")
+                .contains("\"accountNumber\":\"[REDACTED]\"");
     }
 
     @Test
@@ -154,17 +155,17 @@ class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
 
-        assertThat(obfuscated).doesNotContain("ACC-67890");
-        assertThat(obfuscated).doesNotContain("Jane Applicant");
-        assertThat(obfuscated).doesNotContain("John Respondent");
-        assertThat(obfuscated).doesNotContain("EC1A 1BB");
-
-        assertThat(obfuscated).contains("\"description\":\"Morning list\"");
-        assertThat(obfuscated).contains("\"entriesSummary\"");
-        assertThat(obfuscated).contains("\"accountNumber\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"applicant\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"respondent\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"postCode\":\"[REDACTED]\"");
+        assertThat(obfuscated)
+                .doesNotContain("ACC-67890")
+                .doesNotContain("Jane Applicant")
+                .doesNotContain("John Respondent")
+                .doesNotContain("EC1A 1BB")
+                .contains("\"description\":\"Morning list\"")
+                .contains("\"entriesSummary\"")
+                .contains("\"accountNumber\":\"[REDACTED]\"")
+                .contains("\"applicant\":\"[REDACTED]\"")
+                .contains("\"respondent\":\"[REDACTED]\"")
+                .contains("\"postCode\":\"[REDACTED]\"");
     }
 
     @Test
@@ -178,9 +179,10 @@ class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(resultGetDto);
 
-        assertThat(obfuscated).contains("\"resultCode\":\"RC-001\"");
-        assertThat(obfuscated).contains("\"entryId\"");
-        assertThat(obfuscated).contains("\"wording\"");
+        assertThat(obfuscated)
+                .contains("\"resultCode\":\"RC-001\"")
+                .contains("\"entryId\"")
+                .contains("\"wording\"");
     }
 
     @Test
@@ -205,9 +207,10 @@ class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(resultPage);
 
-        assertThat(obfuscated).contains("\"content\"");
-        assertThat(obfuscated).contains("\"resultCode\":\"RC-002\"");
-        assertThat(obfuscated).contains("\"pageNumber\":0");
-        assertThat(obfuscated).contains("\"totalElements\":1");
+        assertThat(obfuscated)
+                .contains("\"content\"")
+                .contains("\"resultCode\":\"RC-002\"")
+                .contains("\"pageNumber\":0")
+                .contains("\"totalElements\":1");
     }
 }
