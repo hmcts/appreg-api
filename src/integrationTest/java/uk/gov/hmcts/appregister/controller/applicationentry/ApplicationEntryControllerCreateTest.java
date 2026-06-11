@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -56,6 +57,32 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudTest {
     @Autowired private DataAuditRepository dataAuditRepository;
+
+    @Test
+    void givenCreateEntryRequestContainsNestedUnsupportedField_whenCreateListEntry_thenReturn400()
+            throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
+
+        ObjectNode requestBody = mapper.valueToTree(entryCreateDto);
+        ((ObjectNode) requestBody.path("applicant").path("person").path("name"))
+                .put("nickname", "Johnny");
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        createAdminToken().fetchTokenForRole(),
+                        mapper.writeValueAsString(requestBody));
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        Assertions.assertEquals(
+                "Unsupported request field: applicant.person.name.nickname",
+                response.as(ProblemDetail.class).getDetail());
+    }
 
     @Test
     void givenValidRequest_whenCreateListEntry_thenReturn201() throws Exception {

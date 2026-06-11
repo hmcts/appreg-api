@@ -1,6 +1,7 @@
 type: object
 description: >
   Request payload to update a closed Application List Entry.
+additionalProperties: false
 required:
   - additionalNotes
 

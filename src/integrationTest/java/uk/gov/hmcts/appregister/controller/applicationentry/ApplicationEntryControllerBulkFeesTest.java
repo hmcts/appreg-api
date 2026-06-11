@@ -3,6 +3,8 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.Month;
@@ -35,6 +37,35 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
     private static final LocalDate UPDATED_STATUS_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
     private static final String ORIGINAL_PAYMENT_REFERENCE = "PAY-ORIGINAL";
     private static final String UPDATED_PAYMENT_REFERENCE = "PAY-UPDATED";
+
+    @Test
+    void givenBulkFeesRequestContainsUnsupportedNestedField_whenBulkUpdateFees_thenReturns400()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        BulkFeesUpdateDto request = validBulkFeesUpdateDto(Set.of(entry.getId()));
+        ObjectNode requestBody = mapper.valueToTree(request);
+        ArrayNode feeDetails = (ArrayNode) requestBody.path("feeDetails");
+        ((ObjectNode) feeDetails.get(0)).put("unexpected", "value");
+
+        Response response =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT + "/" + entry.getListId() + "/entries/fees"),
+                        tokenGenerator.fetchTokenForRole(),
+                        mapper.writeValueAsString(requestBody));
+
+        response.then().statusCode(400);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+        assertThat(problemDetail.getDetail())
+                .isEqualTo("Unsupported request field: feeDetails[0].unexpected");
+    }
 
     @Test
     void givenValidEntries_whenBulkUpdateFees_thenFeeDetailsAreReplacedForEveryEntry()

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -517,6 +518,102 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void
+            givenHttpMessageNotReadableUnknownPropertyException_whenThrown_thenProblemDetailIsReturned()
+                    throws Exception {
+        String content = "Not Readable Error";
+        String body =
+                """
+                {
+                  "dateFrom": "2025-10-01",
+                  "courtCode": "LOC123"
+                }
+                """;
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        Exception cause =
+                Assertions.assertThrows(
+                        Exception.class,
+                        () -> objectMapper.readValue(body, StrictRequestDto.class));
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, cause, null);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
+        Assertions.assertEquals(
+                "Unsupported request field: courtCode",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Unsupported request field: courtCode")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
+    void
+            givenHttpMessageNotReadableNestedUnknownPropertyException_whenThrown_thenProblemDetailUsesJsonPath()
+                    throws Exception {
+        String content = "Not Readable Error";
+        String body =
+                """
+                {
+                  "nested": {
+                    "unexpected": "value"
+                  }
+                }
+                """;
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        Exception cause =
+                Assertions.assertThrows(
+                        Exception.class,
+                        () -> objectMapper.readValue(body, StrictNestedRequestDto.class));
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, cause, null);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
+        Assertions.assertEquals(
+                "Unsupported request field: nested.unexpected",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Unsupported request field:"
+                                                        + " nested.unexpected")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
     void givenMissingRequestParameter_whenHandled_thenWarnIsLoggedWithoutError() {
         MissingServletRequestParameterException exception =
                 new MissingServletRequestParameterException("date", "LocalDate");
@@ -707,5 +804,41 @@ class AppRegExceptionHandlerTest {
     @SuppressWarnings("unused")
     private void sampleValidationMethod(String code) {
         // used to create a MethodParameter with a stable name for validation tests
+    }
+
+    private static class StrictRequestDto {
+        private String dateFrom;
+
+        public String getDateFrom() {
+            return dateFrom;
+        }
+
+        public void setDateFrom(String dateFrom) {
+            this.dateFrom = dateFrom;
+        }
+    }
+
+    private static class StrictNestedRequestDto {
+        private StrictNestedDto nested;
+
+        public StrictNestedDto getNested() {
+            return nested;
+        }
+
+        public void setNested(StrictNestedDto nested) {
+            this.nested = nested;
+        }
+    }
+
+    private static class StrictNestedDto {
+        private String known;
+
+        public String getKnown() {
+            return known;
+        }
+
+        public void setKnown(String known) {
+            this.known = known;
+        }
     }
 }

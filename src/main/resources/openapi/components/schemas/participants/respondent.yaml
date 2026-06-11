@@ -1,5 +1,6 @@
 type: object
 description: The respondent to the application.
+additionalProperties: false
 
 properties:
 

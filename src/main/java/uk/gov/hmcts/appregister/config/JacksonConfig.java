@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,9 @@ public class JacksonConfig {
         module.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
         module.addDeserializer(LocalTime.class, new StrictLocalTimeDeserializer());
 
-        return builder -> builder.modulesToInstall(new JsonNullableModule(), module);
+        return builder -> {
+            builder.modulesToInstall(new JsonNullableModule(), module);
+            builder.featuresToEnable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        };
     }
 }

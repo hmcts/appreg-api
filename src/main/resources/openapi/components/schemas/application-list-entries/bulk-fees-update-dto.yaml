@@ -1,5 +1,6 @@
 type: object
 description: Update fee details for multiple Application List Entries in one atomic operation.
+additionalProperties: false
 required:
   - entryIds
   - feeDetails

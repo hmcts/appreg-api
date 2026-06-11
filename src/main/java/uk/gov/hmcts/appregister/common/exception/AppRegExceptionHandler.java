@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -216,6 +218,8 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             WebRequest request) {
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        UnrecognizedPropertyException unrecognizedPropertyException =
+                findCause(ex, UnrecognizedPropertyException.class);
         ValueInstantiationException valueInstantiationException =
                 findCause(ex, ValueInstantiationException.class);
 
@@ -226,6 +230,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(dateException.getMessage());
         } else if (isEnumInstantiationProblem(valueInstantiationException)) {
             problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
+        } else if (unrecognizedPropertyException != null) {
+            problemDetail.setDetail(
+                    "Unsupported request field: " + getJsonPath(unrecognizedPropertyException));
         } else if (invalidFormatException != null) {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
@@ -263,6 +270,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private String getJsonPath(ValueInstantiationException exception) {
+        return getJsonPath((JsonMappingException) exception);
+    }
+
+    private String getJsonPath(JsonMappingException exception) {
         if (exception.getPath().isEmpty()) {
             return UNKNOWN_FIELD;
         }

@@ -581,18 +581,51 @@ tasks.register('flywayArtefact', Jar) {
   from new File('./flyway/migrations'), new File('./flyway/data_population')
 }
 
-  tasks.register('bundleOpenApi', GenerateTask) {
-    generatorName = 'openapi'
-    inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
-    outputDir = layout.buildDirectory.dir('specmerge')
-    inputs.files(fileTree('src/main/resources/openapi'))
-  }
+tasks.register('bundleOpenApiJson', GenerateTask) {
+  generatorName = 'openapi'
+  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+  outputDir = layout.buildDirectory.dir('specmerge')
+  additionalProperties = [
+    outputFileName: 'openapi.json'
+  ]
+  inputs.files(fileTree('src/main/resources/openapi'))
+}
 
-  tasks.register('copySpecIntoLocalDebugResources', Copy) {
-    dependsOn tasks.named('bundleOpenApi')
-    from layout.buildDirectory.file('specmerge/openapi.json')
-    into layout.buildDirectory.dir('localDebug/resources/static/specs')
+tasks.register('bundleOpenApiYaml', GenerateTask) {
+  generatorName = 'openapi-yaml'
+  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+  outputDir = layout.buildDirectory.dir('specmerge')
+  additionalProperties = [
+    outputFile: 'openapi.yaml'
+  ]
+  inputs.files(fileTree('src/main/resources/openapi'))
+}
+
+tasks.register('copyBundledOpenApiYamlToRoot') {
+  dependsOn tasks.named('bundleOpenApiYaml')
+  def bundledSpec = layout.buildDirectory.file('specmerge/openapi.yaml')
+  def rootSpec = layout.projectDirectory.file('openapi.yaml')
+
+  inputs.file(bundledSpec)
+  outputs.file(rootSpec)
+
+  doLast {
+    copy {
+      from bundledSpec
+      into layout.projectDirectory
+    }
   }
+}
+
+tasks.named('assemble') {
+  dependsOn tasks.named('copyBundledOpenApiYamlToRoot')
+}
+
+tasks.register('copySpecIntoLocalDebugResources', Copy) {
+  dependsOn tasks.named('bundleOpenApiJson')
+  from layout.buildDirectory.file('specmerge/openapi.json')
+  into layout.buildDirectory.dir('localDebug/resources/static/specs')
+}
 
 tasks.named('compileJava') {
   dependsOn tasks.named('openApiGenerate')

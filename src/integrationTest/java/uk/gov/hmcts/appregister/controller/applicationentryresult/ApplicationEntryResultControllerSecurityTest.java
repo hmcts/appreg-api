@@ -1,13 +1,13 @@
 package uk.gov.hmcts.appregister.controller.applicationentryresult;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
@@ -38,11 +38,9 @@ class ApplicationEntryResultControllerSecurityTest extends AbstractSecurityContr
                                                 + "/results"))
                         .method(HttpMethod.POST)
                         .payload(
-                                Map.of(
-                                        "resultCode",
-                                        "SOME_CODE",
-                                        "resolutionWording",
-                                        "Some wording"))
+                                new ResultCreateDto()
+                                        .resultCode("SOME_CODE")
+                                        .wordingFields(List.of()))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
@@ -55,12 +53,6 @@ class ApplicationEntryResultControllerSecurityTest extends AbstractSecurityContr
                                                 + entryId
                                                 + "/results"))
                         .method(HttpMethod.GET)
-                        .payload(
-                                Map.of(
-                                        "resultCode",
-                                        "SOME_CODE",
-                                        "resolutionWording",
-                                        "Some wording"))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
@@ -87,7 +79,10 @@ class ApplicationEntryResultControllerSecurityTest extends AbstractSecurityContr
                                                 + "/results/"
                                                 + resultId))
                         .method(HttpMethod.PUT)
-                        .payload(Map.of("resultCode", "SOME_CODE", "wordingFields", List.of()))
+                        .payload(
+                                new ResultUpdateDto()
+                                        .resultCode("SOME_CODE")
+                                        .wordingFields(List.of()))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
