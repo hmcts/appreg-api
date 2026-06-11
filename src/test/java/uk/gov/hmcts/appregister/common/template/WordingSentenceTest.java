@@ -543,11 +543,12 @@ class WordingSentenceTest {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Applicant officer");
         substitution.setValue("Should fail");
+        var substitutions = List.of(substitution);
 
         AppRegistryException exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> templateSentence.substitute(List.of(substitution)));
+                        () -> templateSentence.substitute(substitutions));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, exception.getCode());

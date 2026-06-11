@@ -346,7 +346,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
     @Getter
     public static class WordingTemplate implements Templateable {
         /** The delimiter used within a wording template. */
-        private static final String delimiter = "|";
+        private static final String DELIMITER = "|";
 
         private boolean substitutionComplete = false;
 
@@ -434,7 +434,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
          * @return The pattern parts
          */
         private String[] getPartsOfTemplate(String template) {
-            return template.split(Pattern.quote(delimiter), -1);
+            return template.split(Pattern.quote(DELIMITER), -1);
         }
 
         @Override
@@ -479,6 +479,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
          *
          * @return Always return a TEXT for now.
          */
+        @SuppressWarnings({"java:S1172", "java:S1135"})
         public static WordingDataTypes validateDataType(String type) {
             // TODO: When we know more about how specific data types work
             // we can interpret and validate for them. At the moment lets return a

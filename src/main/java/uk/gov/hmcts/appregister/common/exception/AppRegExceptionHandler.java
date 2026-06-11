@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
@@ -150,7 +151,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -196,7 +197,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleHandlerMethodValidationException(
+    protected @Nullable ResponseEntity<@NonNull Object> handleHandlerMethodValidationException(
             HandlerMethodValidationException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -206,7 +207,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleMethodValidationException(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMethodValidationException(
             MethodValidationException ex,
             HttpHeaders headers,
             HttpStatus status,
@@ -216,7 +217,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(
+    protected @Nullable ResponseEntity<@NonNull Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -299,7 +300,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleMissingServletRequestParameter(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMissingServletRequestParameter(
             MissingServletRequestParameterException ex,
             HttpHeaders headers,
             HttpStatusCode status,
