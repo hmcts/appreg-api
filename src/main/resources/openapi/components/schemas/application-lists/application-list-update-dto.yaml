@@ -6,7 +6,6 @@ required:
   - time
   - description
   - status
-  - version
 
 properties:
 
