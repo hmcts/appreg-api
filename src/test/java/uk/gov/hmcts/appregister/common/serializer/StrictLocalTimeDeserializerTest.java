@@ -40,7 +40,7 @@ class StrictLocalTimeDeserializerTest {
     }
 
     @Test
-    void testDeserializeFailForNonStringToken() throws Exception {
+    void testDeserializeFailForNonStringToken() {
         var parser = Mockito.mock(JsonParser.class);
         when(parser.currentToken()).thenReturn(JsonToken.VALUE_NUMBER_INT);
 

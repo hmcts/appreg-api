@@ -42,8 +42,7 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
     }
 
     @Override
-    protected boolean isFeeStatusRequired(
-            ApplicationCode applicationCode, PayloadForCreate<EntryCreateDto> validatable) {
+    protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
         return false;
     }
 

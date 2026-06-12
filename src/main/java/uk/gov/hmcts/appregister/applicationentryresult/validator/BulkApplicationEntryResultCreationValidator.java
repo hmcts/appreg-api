@@ -136,16 +136,14 @@ public class BulkApplicationEntryResultCreationValidator
     }
 
     private List<UUID> getEntryIds(PayloadForCreateResults<BulkResultDto> validatable) {
-        if (validatable.getPayload() == null) {
-            return List.of();
-        }
-
-        var entryIds = validatable.getPayload().getEntryIds();
-        return entryIds == null ? List.of() : new ArrayList<>(entryIds);
+        return Optional.ofNullable(validatable.getPayload())
+                .map(BulkResultDto::getEntryIds)
+                .map(ArrayList::new)
+                .orElseGet(ArrayList::new);
     }
 
     private void validateEntryIdsProvided(List<UUID> entryIds) {
-        if (entryIds == null || entryIds.isEmpty()) {
+        if (entryIds.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }

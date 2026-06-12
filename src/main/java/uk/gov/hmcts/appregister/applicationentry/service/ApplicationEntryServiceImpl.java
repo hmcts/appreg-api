@@ -628,12 +628,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
-        if (bulkFeesUpdateDto == null) {
-            return 0;
-        }
-
-        var entryIds = bulkFeesUpdateDto.getEntryIds();
-        return entryIds == null ? 0 : entryIds.size();
+        return Optional.ofNullable(bulkFeesUpdateDto)
+                .map(BulkFeesUpdateDto::getEntryIds)
+                .map(Set::size)
+                .orElse(0);
     }
 
     private void recordBulkFeeUpdateMetrics(
