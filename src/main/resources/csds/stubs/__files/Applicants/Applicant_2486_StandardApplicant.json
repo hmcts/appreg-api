@@ -1,7 +1,35 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "4b103fcf-4a24-4348-893d-61f8b2dae30d",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2486,
+    "PSSSAID" : 582,
+    "SAID" : 582,
+    "Code" : "GAZPROM",
+    "OrganisationName" : "GAZPROM ENERGY",
+    "StartDate" : "2016-12-10",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "test add 1",
+      "AddressLine2" : null,
+      "AddressLine3" : null,
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "NE46 2RF"
+    }, {
+      "AddressLine1" : "BAUHAUS",
+      "AddressLine2" : "5TH FLOOR",
+      "AddressLine3" : "27 QUAY STREET",
+      "AddressLine4" : "MANCHESTER",
+      "AddressLine5" : null,
+      "PostCode" : null
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Telephone",
+      "ContactValue" : "42543"
+    }, {
+      "ContactType" : "Email Address",
+      "ContactValue" : "test@test.com"
+    } ]
+  } ]
 }

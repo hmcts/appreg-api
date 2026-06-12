@@ -1,7 +1,25 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "443440c9-16ec-42b6-bca5-84fba26c2a57",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2504,
+    "PSSSAID" : 221,
+    "SAID" : 221,
+    "Code" : "ENGASPEN",
+    "OrganisationName" : "ENGAGE (SPARKS ENERGY)",
+    "StartDate" : "2016-08-11",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Wavell House",
+      "AddressLine2" : "Holcombe Road",
+      "AddressLine3" : "Helmshore",
+      "AddressLine4" : "Rossendale",
+      "AddressLine5" : null,
+      "PostCode" : "BB4 4NF"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Telephone",
+      "ContactValue" : "03333206200"
+    } ]
+  } ]
 }

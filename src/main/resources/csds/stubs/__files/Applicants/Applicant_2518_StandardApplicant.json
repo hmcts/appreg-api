@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "24120ffc-b598-41fc-84a4-2297913e2490",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2518,
+    "PSSSAID" : 121,
+    "SAID" : 121,
+    "Code" : "NPMP",
+    "OrganisationName" : "Npower Ltd, MeterPlus",
+    "StartDate" : "2016-06-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 3,
+    "Address" : [ {
+      "AddressLine1" : "Windmill Hill Business Park",
+      "AddressLine2" : "Whitehill Way",
+      "AddressLine3" : "Swindon",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "SN5 6PB"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

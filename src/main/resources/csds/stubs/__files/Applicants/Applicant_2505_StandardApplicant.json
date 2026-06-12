@@ -1,7 +1,25 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "8630f4bb-6e11-4175-ae3b-77a5aa347cb4",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2505,
+    "PSSSAID" : 361,
+    "SAID" : 361,
+    "Code" : "Total",
+    "OrganisationName" : "Total Gas and Power",
+    "StartDate" : "2016-10-31",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Bridge Gate",
+      "AddressLine2" : "55-57 High Street",
+      "AddressLine3" : "Redhill",
+      "AddressLine4" : "Surrey",
+      "AddressLine5" : null,
+      "PostCode" : "RH1 1RX"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Telephone",
+      "ContactValue" : "01737 275800"
+    } ]
+  } ]
 }

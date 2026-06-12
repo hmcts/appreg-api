@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "a90b05d3-de25-452e-8ed9-6e6819d618bf",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2507,
+    "PSSSAID" : 401,
+    "SAID" : 401,
+    "Code" : "XtraEnergy",
+    "OrganisationName" : "Face2Face (Extra Energy Ltd)",
+    "StartDate" : "2016-11-02",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Energy House",
+      "AddressLine2" : "Athena Drive",
+      "AddressLine3" : "Tachbrook Park",
+      "AddressLine4" : "Leamington Spa",
+      "AddressLine5" : null,
+      "PostCode" : "CV34 6RQ"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

@@ -1,7 +1,28 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "6d7719d4-45dd-4178-927d-164ec2dd191e",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2498,
+    "PSSSAID" : 2846,
+    "SAID" : 2846,
+    "Code" : "ENW",
+    "OrganisationName" : "Electricity North West",
+    "StartDate" : "2017-05-25",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "304 Bridgewater Place",
+      "AddressLine2" : "Birchwood Park",
+      "AddressLine3" : "Warrington",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "WA3 6XG"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "enquiries@enwl.co.uk"
+    }, {
+      "ContactType" : "Telephone",
+      "ContactValue" : "08001954141"
+    } ]
+  } ]
 }

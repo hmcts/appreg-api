@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "eac5bead-0292-4555-a1d4-703501dcd0f3",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2513,
+    "PSSSAID" : 1704,
+    "SAID" : 1704,
+    "Code" : "ESSEXPOL",
+    "OrganisationName" : "Essex Police",
+    "StartDate" : "2017-03-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Essex Police HQ",
+      "AddressLine2" : null,
+      "AddressLine3" : null,
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : null
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

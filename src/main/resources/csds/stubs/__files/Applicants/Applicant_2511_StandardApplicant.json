@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "2a1f21e9-7f92-487d-a442-2af3fa10ca28",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2511,
+    "PSSSAID" : 1483,
+    "SAID" : 1483,
+    "Code" : "KENTPOL",
+    "OrganisationName" : "Kent Police HQ",
+    "StartDate" : "2017-02-26",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 2,
+    "Address" : [ {
+      "AddressLine1" : "Kent Police Headquarters",
+      "AddressLine2" : "Sutton Road",
+      "AddressLine3" : "Maidstone",
+      "AddressLine4" : "Kent",
+      "AddressLine5" : null,
+      "PostCode" : "ME15 9BZ"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

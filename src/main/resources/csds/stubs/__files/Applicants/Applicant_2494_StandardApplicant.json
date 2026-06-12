@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "789d97c1-1f7f-4f68-ac3a-21ad6680c0b3",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2494,
+    "PSSSAID" : 723,
+    "SAID" : 723,
+    "Code" : "NORTHUMBRI",
+    "OrganisationName" : "Northumbrian Water",
+    "StartDate" : "2017-01-24",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Northumbria House",
+      "AddressLine2" : "Abbey Road",
+      "AddressLine3" : "Pity Me",
+      "AddressLine4" : "Durham",
+      "AddressLine5" : null,
+      "PostCode" : "DH1 5FJ"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

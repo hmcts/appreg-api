@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "84846909-4110-4259-8e0a-d8ab1025d863",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2528,
+    "PSSSAID" : 1,
+    "SAID" : 1,
+    "Code" : "BGAS",
+    "OrganisationName" : "British Gas Trading Limited",
+    "StartDate" : "2016-06-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 5,
+    "Address" : [ {
+      "AddressLine1" : "Millstream",
+      "AddressLine2" : "Maidenhead Road",
+      "AddressLine3" : "Windsor",
+      "AddressLine4" : "Berkshire",
+      "AddressLine5" : null,
+      "PostCode" : "SL4 5GD"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

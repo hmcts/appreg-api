@@ -1,7 +1,25 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "77bc1f8d-f09f-4d71-9cb7-7543e1c1ebc1",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2497,
+    "PSSSAID" : 2546,
+    "SAID" : 2546,
+    "Code" : "SWPOLBRIDG",
+    "OrganisationName" : "South Wales Police HQ",
+    "StartDate" : "2017-05-10",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Cowbridge Road",
+      "AddressLine2" : "Bridgend",
+      "AddressLine3" : "South Wales",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "CF31 3SU"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "publicservicecentre@south-wales.pnn.police.uk"
+    } ]
+  } ]
 }

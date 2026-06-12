@@ -1,7 +1,28 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "f83e92f0-2832-494e-ba3d-813567f6dc59",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2501,
+    "PSSSAID" : 4134,
+    "SAID" : 4134,
+    "Code" : "HASTE",
+    "OrganisationName" : "Haste Ltd",
+    "StartDate" : "2019-01-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "PO Box 290",
+      "AddressLine2" : "Petersfield",
+      "AddressLine3" : null,
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "GU32 8GN"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "support@hasteltd.co.uk"
+    }, {
+      "ContactType" : "Telephone",
+      "ContactValue" : "01730897100"
+    } ]
+  } ]
 }

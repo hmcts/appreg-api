@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "8f1a468c-8327-4b92-83e1-b79c444b2a44",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2489,
+    "PSSSAID" : 301,
+    "SAID" : 301,
+    "Code" : "BMBC",
+    "OrganisationName" : "Barnsley Metropolitan Borough Council",
+    "StartDate" : "2016-09-29",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 2,
+    "Address" : [ {
+      "AddressLine1" : "Beevor Court 2",
+      "AddressLine2" : "Pontefract Road",
+      "AddressLine3" : "Barnsley",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "S70 1HG"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

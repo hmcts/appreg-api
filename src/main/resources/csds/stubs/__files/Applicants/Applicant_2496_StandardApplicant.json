@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "1f737c9e-9fe2-400b-a047-840cc299dc0d",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2496,
+    "PSSSAID" : 1783,
+    "SAID" : 1783,
+    "Code" : "POLC",
+    "OrganisationName" : "Cambridgeshire Police",
+    "StartDate" : "2017-03-15",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Cambridgeshire Constabulary HQ",
+      "AddressLine2" : "Hinchingbrooke Park",
+      "AddressLine3" : "Huntingdon",
+      "AddressLine4" : "Cambridgeshire",
+      "AddressLine5" : null,
+      "PostCode" : "PE29 6NP"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

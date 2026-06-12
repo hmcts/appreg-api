@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "17dc85e7-78be-4962-83ef-a40f7c3307a7",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2503,
+    "PSSSAID" : 81,
+    "SAID" : 81,
+    "Code" : "SPWR",
+    "OrganisationName" : "Scottish Power Energy Retail Ltd",
+    "StartDate" : "2016-06-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "2nd Floor Scottish Power",
+      "AddressLine2" : "Wrexham Road",
+      "AddressLine3" : "Pentre Vychen",
+      "AddressLine4" : "Wrexham",
+      "AddressLine5" : null,
+      "PostCode" : "LL14 4DU"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

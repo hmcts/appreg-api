@@ -1,7 +1,28 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "30ec1ad5-85bb-4187-baf9-4f39f6f05022",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2521,
+    "PSSSAID" : 504,
+    "SAID" : 504,
+    "Code" : "GROSHE",
+    "OrganisationName" : "Grosvenor Services Group Ltd (Hudson Energy)",
+    "StartDate" : "2016-11-25",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 2,
+    "Address" : [ {
+      "AddressLine1" : "St David's House",
+      "AddressLine2" : "11 Drake House Crescent",
+      "AddressLine3" : "Sheffield",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "S20 7HT"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "contact@grosvenorservices.co.uk"
+    }, {
+      "ContactType" : "Telephone",
+      "ContactValue" : "03331231471"
+    } ]
+  } ]
 }

@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "83a0b686-35d5-4090-861d-6990f2d47630",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2502,
+    "PSSSAID" : 5939,
+    "SAID" : 5939,
+    "Code" : "ICEBD",
+    "OrganisationName" : "East of England ICE Team (Bedford)",
+    "StartDate" : "2018-06-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Unit 2, Franklin Court",
+      "AddressLine2" : "Priory Business Park",
+      "AddressLine3" : "Bedford",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "MK44 3JZ"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

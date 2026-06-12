@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "18a8d64e-2af2-46a2-ba61-d784f8c74536",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2491,
+    "PSSSAID" : 441,
+    "SAID" : 441,
+    "Code" : "EXTR",
+    "OrganisationName" : "Extra Energy Ltd",
+    "StartDate" : "2016-11-23",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Energy House",
+      "AddressLine2" : "Athena Drive",
+      "AddressLine3" : "Tahbrook Park",
+      "AddressLine4" : "Leamington Spa",
+      "AddressLine5" : null,
+      "PostCode" : "CV34 6RQ"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

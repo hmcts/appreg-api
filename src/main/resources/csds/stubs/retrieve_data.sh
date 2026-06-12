@@ -31,7 +31,7 @@ STANDARD_REFERENCE_URLS=(
     "System/GD?\$f=Domain='CriminalJusticeAreas'&\$limit=${LIMIT}"
     "Court/GD?\$limit=${LIMIT}"
     "Venue/GD?\$limit=${LIMIT}"
-    "ResolutionCodes/GD?\$limit=${LIMIT}"
+    "ResolutionCode/GD?\$limit=${LIMIT}"
     "Applicant/GD?\$limit=${LIMIT}"
 )
 
@@ -90,7 +90,7 @@ if [ -f "$APPLICANTS_FILE" ]; then
         echo "Retrieving address and contact information for applicant ID: ${id}..."
         ADDRESS_URL="${BASE_URL}Address/GD?\$f=FID_StandardApplicant=${id}"
         CONTACT_URL="${BASE_URL}ContactInformation/GD?\$f=FID_StandardApplicant=${id}"
-        GET_STANDARD_APPLICANT_URL="${NAMED_QUERY_URL}GetStandardApplicant/GD?\$f=ApplicantId=${id}"
+        GET_STANDARD_APPLICANT_URL="${NAMED_QUERY_URL}DA_GetStandardApplicant/GD?\$f=ApplicantID=${id}"
 
         OUTPUT_FILE="${APPLICANT_FOLDER}/Applicant_${id}_Address.json"
 

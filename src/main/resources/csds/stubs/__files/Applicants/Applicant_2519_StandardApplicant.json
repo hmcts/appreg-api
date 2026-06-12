@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "5301fe56-cd3f-4a2e-b8df-be6b999b4642",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2519,
+    "PSSSAID" : 201,
+    "SAID" : 201,
+    "Code" : "EXCC",
+    "OrganisationName" : "EXETER CITY COUNCIL",
+    "StartDate" : "2016-07-11",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Civic Centre",
+      "AddressLine2" : "Paris Street",
+      "AddressLine3" : "Exeter",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "EX1 1JN"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

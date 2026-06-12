@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "923e0191-7f8e-40c4-8176-c6dd2f445fdf",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2493,
+    "PSSSAID" : 583,
+    "SAID" : 583,
+    "Code" : "BES",
+    "OrganisationName" : "BUSINESS ENERGY SOLUTIONS LTD",
+    "StartDate" : "2016-12-10",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "PARKSIDE STAND",
+      "AddressLine2" : "FLEETWOOD TOWN FOOTBALL CLUB",
+      "AddressLine3" : "PARK AVENUE",
+      "AddressLine4" : "FLEETWOOD",
+      "AddressLine5" : null,
+      "PostCode" : "FY7 6TX"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

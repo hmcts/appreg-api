@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "03458952-13f0-4f5f-9fb4-66e3f697d8b1",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2520,
+    "PSSSAID" : 281,
+    "SAID" : 281,
+    "Code" : "SEG",
+    "OrganisationName" : "Southern Electric Gas",
+    "StartDate" : "2016-06-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "55 Vastern Road",
+      "AddressLine2" : "Reading",
+      "AddressLine3" : null,
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "RG1 8BU"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

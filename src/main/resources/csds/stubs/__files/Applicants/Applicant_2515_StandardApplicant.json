@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "d6836ead-7a67-48ff-8389-986b31c8cc0b",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2515,
+    "PSSSAID" : 2786,
+    "SAID" : 2786,
+    "Code" : "MARL",
+    "OrganisationName" : "MARLOWE HOUSE STN",
+    "StartDate" : "2017-05-22",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "1",
+      "AddressLine2" : null,
+      "AddressLine3" : null,
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : null
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/api/rest/named-query/csds/GetStandardApplicant/GD?$f=ApplicantId=${id}",
+    "urlPath": "/api/rest/named-query/csds/DA_GetStandardApplicant/GD?\\$f=ApplicantID${id}",
     "queryParameters": {
       "$f": {
         "matches": "ApplicantId=(\\d+)"

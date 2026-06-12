@@ -1,7 +1,25 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "a0e7b84b-e397-46de-ad2d-23924d2e6f1d",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2495,
+    "PSSSAID" : 1645,
+    "SAID" : 1645,
+    "Code" : "NELC",
+    "OrganisationName" : "North East Lincolnshire City Council",
+    "StartDate" : "2017-03-14",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Municipal Offices",
+      "AddressLine2" : "Town Hall Square",
+      "AddressLine3" : "Grimsby",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "DN31 1HU"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Telephone",
+      "ContactValue" : "01474 313131"
+    } ]
+  } ]
 }

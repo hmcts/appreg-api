@@ -1,7 +1,28 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "db1fa943-d120-42af-8b5c-d5ed49e51fc7",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2514,
+    "PSSSAID" : 1994,
+    "SAID" : 1994,
+    "Code" : "OXLEMHT",
+    "OrganisationName" : "Oxleas NHS Foundation Trust Headquarters",
+    "StartDate" : "2017-02-25",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Pinewood House",
+      "AddressLine2" : "Pinewood Place",
+      "AddressLine3" : "Dartford",
+      "AddressLine4" : "Kent",
+      "AddressLine5" : null,
+      "PostCode" : "DA2 7WG"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "oxl-tr.foundationtrust@nhs.net"
+    }, {
+      "ContactType" : "Telephone",
+      "ContactValue" : "01322625700"
+    } ]
+  } ]
 }

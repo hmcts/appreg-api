@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "88f1c085-0091-4831-b0fb-44039d09560b",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2527,
+    "PSSSAID" : 2492,
+    "SAID" : 2492,
+    "Code" : "ENGA",
+    "OrganisationName" : "Engage Services Limited on behalf of RWE Npower",
+    "StartDate" : "2017-05-03",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "8th Floor Rutland House",
+      "AddressLine2" : "148 Edmund Street",
+      "AddressLine3" : "Birmingham",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "B3 2JR"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

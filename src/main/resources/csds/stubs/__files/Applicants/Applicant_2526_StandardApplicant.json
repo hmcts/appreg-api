@@ -1,7 +1,25 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "b4538b53-fc2d-49e5-921e-48f8eff51880",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2526,
+    "PSSSAID" : 2162,
+    "SAID" : 2162,
+    "Code" : "RBG",
+    "OrganisationName" : "ROYAL BOROUGH OF GREENWICH",
+    "StartDate" : "2017-04-05",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Customer Services",
+      "AddressLine2" : "The Woolwich Centre",
+      "AddressLine3" : "Wellington Street",
+      "AddressLine4" : "Woolwich",
+      "AddressLine5" : null,
+      "PostCode" : "SE18 6HQ"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Telephone",
+      "ContactValue" : "02088548888"
+    } ]
+  } ]
 }

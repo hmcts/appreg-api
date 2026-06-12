@@ -1,7 +1,28 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "d11ad627-4343-46ef-b5e1-e8aa2dfe444e",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2499,
+    "PSSSAID" : 3108,
+    "SAID" : 3108,
+    "Code" : "GAD",
+    "OrganisationName" : "GREGORY ABRAMS DAVIDSON SOLICITORS",
+    "StartDate" : "2017-04-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "20-24 MATHEW STREET",
+      "AddressLine2" : "LIVERPOOL",
+      "AddressLine3" : null,
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "L2 6RE"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "INDO@GADLIP.CO.UK"
+    }, {
+      "ContactType" : "Telephone",
+      "ContactValue" : "0151 236 5000"
+    } ]
+  } ]
 }

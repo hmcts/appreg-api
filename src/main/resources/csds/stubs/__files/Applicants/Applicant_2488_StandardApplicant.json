@@ -1,7 +1,28 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "6ba362fd-5759-48b8-b9fd-d4625cb88e4c",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2488,
+    "PSSSAID" : 181,
+    "SAID" : 181,
+    "Code" : "OPUS",
+    "OrganisationName" : "OPUS ENERGY LIMITED",
+    "StartDate" : "2016-07-11",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Opus Energy House",
+      "AddressLine2" : "8-10 The Lakes",
+      "AddressLine3" : "Northampton",
+      "AddressLine4" : null,
+      "AddressLine5" : null,
+      "PostCode" : "NN4 7YD"
+    } ],
+    "ContactInformation" : [ {
+      "ContactType" : "Email Address",
+      "ContactValue" : "contactus@opusenergy.com"
+    }, {
+      "ContactType" : "Telephone",
+      "ContactValue" : "08432272377"
+    } ]
+  } ]
 }

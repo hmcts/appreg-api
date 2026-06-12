@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "061ad996-b9ba-415a-8250-dffbe9df1d98",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2506,
+    "PSSSAID" : 381,
+    "SAID" : 381,
+    "Code" : "SCP",
+    "OrganisationName" : "Scottish Power Energy (Richburns)",
+    "StartDate" : "2016-11-07",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "New Aspect House",
+      "AddressLine2" : "Technology Avenue",
+      "AddressLine3" : "Hamilton Intnl Technology Park",
+      "AddressLine4" : "Blantyre",
+      "AddressLine5" : "Glasgow",
+      "PostCode" : "G72 0HT"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

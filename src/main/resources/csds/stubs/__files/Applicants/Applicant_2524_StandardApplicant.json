@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "f858c0c1-162f-4c86-82a4-2dbcc8a9a98f",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2524,
+    "PSSSAID" : 523,
+    "SAID" : 523,
+    "Code" : "HAVE",
+    "OrganisationName" : "Haven Power (Advanced Collection Systems)",
+    "StartDate" : "2016-11-29",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Advanced Collection Systems Ltd",
+      "AddressLine2" : "Steele House",
+      "AddressLine3" : "126 Great North Road",
+      "AddressLine4" : "Hatfield",
+      "AddressLine5" : "Hertfordshire",
+      "PostCode" : "AL9 5JN"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

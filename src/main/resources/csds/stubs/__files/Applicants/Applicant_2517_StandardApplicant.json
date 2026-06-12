@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "76d73db3-b6f2-4a69-b7f6-9d2dbf3d7ca9",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2517,
+    "PSSSAID" : 21,
+    "SAID" : 21,
+    "Code" : "NPF2",
+    "OrganisationName" : "Face2Face (NPower)",
+    "StartDate" : "2016-06-01",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Face2Face Contact Ltd",
+      "AddressLine2" : "16 Shottery Brook Office Park",
+      "AddressLine3" : "Timothy's Bridge Road",
+      "AddressLine4" : "Stratford Upon Avon",
+      "AddressLine5" : "Warwickshire",
+      "PostCode" : "CV37 9NR"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }

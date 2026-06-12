@@ -1,7 +1,22 @@
 {
-  "error" : {
-    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
-    "errorId" : "fffa4327-79c3-4b9b-82fa-1b0e88108885",
-    "statusCode" : 400
-  }
+  "records" : [ {
+    "ApplicantID" : 2516,
+    "PSSSAID" : 3066,
+    "SAID" : 3066,
+    "Code" : "IBC01",
+    "OrganisationName" : "Ipswich Borough Council",
+    "StartDate" : "2017-06-09",
+    "Enddate" : null,
+    "UpdateDate" : "2026-06-10T10:16:05.094Z",
+    "VersionNumber" : 1,
+    "Address" : [ {
+      "AddressLine1" : "Grafton House",
+      "AddressLine2" : "15-17 Russell Road",
+      "AddressLine3" : "Ipswich",
+      "AddressLine4" : "Suffolk",
+      "AddressLine5" : null,
+      "PostCode" : "IP1 2DE"
+    } ],
+    "ContactInformation" : [ ]
+  } ]
 }
