@@ -64,6 +64,35 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Initialise fallback parity result
+        run: |
+          mkdir -p "${OUTPUT_DIR}"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = {
+              "issueKey": os.environ.get("ISSUE_KEY", ""),
+              "issueUrl": os.environ.get("ISSUE_URL", ""),
+              "repository": os.environ.get("GITHUB_REPOSITORY", ""),
+              "status": "UNCERTAIN",
+              "confidence": "low",
+              "summary": "Parity check did not complete before the report stage. Setup, authentication, snapshot download, or validation may have failed.",
+              "runUrl": f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}",
+              "snapshotId": "unavailable",
+              "legacyEvidence": [],
+              "modernEvidence": [],
+              "gaps": ["Parity workflow setup failed before Codex produced a result."],
+              "recommendedNextStep": "Inspect the GitHub Actions run logs and rerun the parity check after fixing the setup failure.",
+          }
+
+          Path(os.environ["OUTPUT_DIR"], "parity-report.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True),
+              encoding="utf-8",
+          )
+          PY
+
       - name: Verify runner toolchain and Codex auth
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
