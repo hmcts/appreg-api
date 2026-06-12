@@ -13,12 +13,10 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @Slf4j
 @Profile("csds-mock")
-public class CSDSMockConfig {
+public class CsdsMockConfig {
 
     @Value("${appreg.csds.wiremock.port:0}")
     private int wireMockPort;
-
-    private final String STUBS_PATH = "csds/stubs";
 
     // This class is used to activate the csds-wiremock profile which will start a WireMock server
     // with the CSDS stubs
@@ -34,11 +32,12 @@ public class CSDSMockConfig {
 
     private FileSource fileSource() {
         FileSource fs;
+        String stubPath = "csds/stubs";
         try {
-            fs = new ClasspathFileSource(STUBS_PATH);
+            fs = new ClasspathFileSource(stubPath);
         } catch (Exception x) {
             log.debug("Running via executable jar; using BOOT-INF folder.");
-            fs = new ClasspathFileSource("BOOT-INF/classes/" + STUBS_PATH);
+            fs = new ClasspathFileSource("BOOT-INF/classes/" + stubPath);
         }
         return fs;
     }
