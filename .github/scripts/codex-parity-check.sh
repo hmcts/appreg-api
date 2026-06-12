@@ -208,11 +208,10 @@ from pathlib import Path
 prompt = f"""You are Codex running a report-only legacy parity check for Apps Reg.
 
 Task:
-Compare the Jira ticket against the legacy Apps Reg source snapshot and the modern backend repository.
-Decide whether the functionality described in the Jira ticket appears to match the legacy implementation.
-The Jira ticket may describe functionality that has not been implemented in the modern repository yet. If the legacy
-behaviour is clear but equivalent modern code cannot be found, return GAP_FOUND and explain the legacy behaviour that
-should be implemented. Do not treat missing modern implementation as a workflow failure.
+Compare the Jira ticket against the legacy Apps Reg source snapshot.
+Decide whether the functionality described in the Jira ticket matches the equivalent legacy behaviour.
+This check is not an implementation-delivery check. The Jira ticket may describe work that has not been implemented in
+the modern repository yet. Missing modern code must not be reported as GAP_FOUND.
 
 Hard rules:
 - Do not modify files.
@@ -224,12 +223,16 @@ Hard rules:
 - Evidence must be references only: repository name, file path, class/component/service/function names, plus a concise
   behavioural note where needed.
 - If you cannot find enough evidence, return UNCERTAIN rather than guessing.
-- Use MATCHES_LEGACY only when you find equivalent modern behaviour. Use GAP_FOUND when legacy behaviour is clear but
-  the modern implementation is missing or materially different.
+- Use MATCHES_LEGACY when the Jira ticket description aligns with the legacy behaviour.
+- Use GAP_FOUND only when the Jira ticket description conflicts with, omits, or misstates material legacy behaviour.
+- Do not inspect or score whether the modern repository has delivered the functionality yet.
+- The JSON schema field named modernEvidence is kept for downstream compatibility. Populate it with Jira ticket
+  evidence, such as acceptance criteria or description references, not modern code evidence.
 
 Modern repository:
 - Repository: {os.environ["GITHUB_REPOSITORY"]}
-- Working directory: current checkout
+- Working directory: current checkout, available only for repository context. Do not use it to decide whether the
+  ticket has been implemented.
 
 Legacy snapshot:
 - Root: {os.environ["LEGACY_SNAPSHOT_DIR"]}
@@ -400,7 +403,7 @@ report = {
         raw.get("modernEvidence"),
         10,
         240,
-        "Generated modern evidence was suppressed because it contained unsafe content."
+        "Generated Jira ticket evidence was suppressed because it contained unsafe content."
     ),
     "gaps": safe_array(raw.get("gaps"), 10, 320, "Generated gap details were suppressed because they contained unsafe content."),
     "recommendedNextStep": safe_string(
@@ -425,8 +428,8 @@ lines = [
 ]
 lines.extend(f"- {item}" for item in report["legacyEvidence"] or ["No legacy evidence identified."])
 lines.append("")
-lines.append("Modern evidence:")
-lines.extend(f"- {item}" for item in report["modernEvidence"] or ["No modern evidence identified."])
+lines.append("Jira ticket evidence:")
+lines.extend(f"- {item}" for item in report["modernEvidence"] or ["No Jira ticket evidence identified."])
 lines.append("")
 lines.append("Gaps:")
 lines.extend(f"- {item}" for item in report["gaps"] or ["No gaps listed."])
