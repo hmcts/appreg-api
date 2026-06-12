@@ -880,14 +880,12 @@ class ApplicationEntryServiceImplTest {
 
         AppListEntryFeeStatusTestData appListEntryFeeStatusTestData =
                 new AppListEntryFeeStatusTestData();
-        List<AppListEntryFeeStatus> statusLst = new ArrayList<>();
         for (FeeStatus feeStatus : entryCreateDto.getFeeStatuses()) {
             AppListEntryFeeStatus appStatus = appListEntryFeeStatusTestData.someComplete();
             when(applicationListEntryEntityMapper.toFeeStatus(feeStatus, applicationListEntry))
                     .thenReturn(appStatus);
             appStatus.setId(-1L);
             when(appListEntryFeeStatusRepository.save(appStatus)).thenReturn(appStatus);
-            statusLst.add(appStatus);
         }
 
         AppListEntryOfficialTestData officialTestData = new AppListEntryOfficialTestData();
@@ -965,7 +963,7 @@ class ApplicationEntryServiceImplTest {
                         .build();
 
         // run
-        MatchResponse<EntryGetDetailDto> response = service.createEntry(payload);
+        service.createEntry(payload);
 
         // assertions
 
@@ -1010,14 +1008,12 @@ class ApplicationEntryServiceImplTest {
 
         AppListEntryFeeStatusTestData appListEntryFeeStatusTestData =
                 new AppListEntryFeeStatusTestData();
-        List<AppListEntryFeeStatus> statusLst = new ArrayList<>();
         for (FeeStatus feeStatus : entryCreateDto.getFeeStatuses()) {
             AppListEntryFeeStatus appStatus = appListEntryFeeStatusTestData.someComplete();
             when(applicationListEntryEntityMapper.toFeeStatus(feeStatus, applicationListEntry))
                     .thenReturn(appStatus);
             appStatus.setId(-1L);
             when(appListEntryFeeStatusRepository.save(appStatus)).thenReturn(appStatus);
-            statusLst.add(appStatus);
         }
 
         AppListEntryOfficialTestData officialTestData = new AppListEntryOfficialTestData();
