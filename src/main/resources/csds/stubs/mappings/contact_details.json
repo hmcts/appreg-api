@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/api/rest/query/csds/ContactInformation/GD",
+    "urlPath": "/api/rest/query/CSDS/ContactInformation/GD",
     "queryParameters": {
       "$f": {
         "matches": "FID_StandardApplicant=(\\d+)"
@@ -13,7 +13,7 @@
     "headers": {
       "Content-Type": "application/json"
     },
-    "bodyFileName": "Applicants/Applicant_{{regexExtract request.url '([0-9]+)'}}_ContactDetails.json",
+    "bodyFileName": "Applicants/Applicant_{{regexExtract request.url 'FID_StandardApplicant(=|%3D)([0-9]+)' 'parts'}}{{parts.1}}_ContactDetails.json",
     "transformers": [
       "response-template"
     ]

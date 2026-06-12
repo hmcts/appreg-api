@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/rest/query/csds/health"
+    "url": "/api/rest/query/CSDS/health"
   },
   "response": {
     "status": 200,

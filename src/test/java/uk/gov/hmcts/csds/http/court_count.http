@@ -1,0 +1,7 @@
+GET http://localhost:4551/api/rest/count/CSDS/Court/GD
+
+> {%
+  client.test("Request executed successfully", function () {
+    client.assert(response.status === 200, "Response status is not 200");
+  });
+%}

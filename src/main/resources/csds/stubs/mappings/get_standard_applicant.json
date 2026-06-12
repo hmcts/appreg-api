@@ -1,10 +1,10 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/api/rest/named-query/csds/DA_GetStandardApplicant/GD?\\$f=ApplicantID${id}",
+    "urlPath": "/api/rest/named-query/CSDS/DA_GetStandardApplicant/GD",
     "queryParameters": {
       "$f": {
-        "matches": "ApplicantId=(\\d+)"
+        "matches": "ApplicantID=(\\d+)"
       }
     }
   },
@@ -13,7 +13,7 @@
     "headers": {
       "Content-Type": "application/json"
     },
-    "bodyFileName": "Applicants/Applicant_{{regexExtract request.url '([0-9]+)'}}_StandardApplicant.json",
+    "bodyFileName": "Applicants/Applicant_{{regexExtract request.url 'ApplicantID(=|%3D)([0-9]+)' 'parts'}}{{parts.1}}_StandardApplicant.json",
     "transformers": [
       "response-template"
     ]

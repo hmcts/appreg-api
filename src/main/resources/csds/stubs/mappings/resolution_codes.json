@@ -2,7 +2,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/rest/query/csds/ResolutionCodes/GD"
+    "url": "/api/rest/query/CSDS/ResolutionCodes/GD"
   },
   "response": {
     "status": 200,

@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/rest/query/csds/Applicant/GD"
+    "url": "/api/rest/query/CSDS/Applicant/GD"
   },
   "response": {
     "status": 200,

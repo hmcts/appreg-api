@@ -1,7 +1,12 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/rest/query/csds/System/GD?$f=Domain='CriminalJusticeAreas'"
+    "urlPath": "/api/rest/query/CSDS/System/GD",
+    "queryParameters": {
+      "$f": {
+        "matches": "Domain='CriminalJusticeAreas'"
+      }
+    }
   },
   "response": {
     "status": 200,

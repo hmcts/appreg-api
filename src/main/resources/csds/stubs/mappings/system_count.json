@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/rest/count/CSDS/System/GD",
+    "queryParameters": {
+      "$f": {
+        "matches": "Domain='(.*)'"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": ["response-template"],
+    "bodyFileName": "{{regexExtract request.url Domain='(.*)'}}_count.json"
+  }
+}
+

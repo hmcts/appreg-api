@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/rest/query/csds/Venue/GD"
+    "url": "/api/rest/query/CSDS/Venue/GD"
   },
   "response": {
     "status": 200,

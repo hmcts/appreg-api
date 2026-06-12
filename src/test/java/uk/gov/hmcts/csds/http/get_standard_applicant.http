@@ -1,0 +1,7 @@
+GET http://localhost:4551/api/rest/named-query/CSDS/DA_GetStandardApplicant/GD?$f=ApplicantID=2479
+
+> {%
+  client.test("Request executed successfully", function () {
+    client.assert(response.status === 200, "Response status is not 200");
+  });
+%}

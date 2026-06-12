@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPathPattern": "/api/rest/count/csds/(.*)/GD"
+    "urlPathPattern": "/api/rest/count/CSDS/(.*)/GD"
   },
   "response": {
     "status": 200,
