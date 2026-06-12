@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3245,
+    "StartDate" : "2016-06-01",
+    "EndDate" : null,
+    "Address" : "Windmill Hill Business Park - Whitehill Way - Swindon - SN5 6PB",
+    "Address.AddressLine1" : "Windmill Hill Business Park",
+    "Address.AddressLine2" : "Whitehill Way",
+    "Address.AddressLine3" : "Swindon",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "SN5 6PB",
+    "FID_StandardApplicant" : 2518,
+    "FID_Court" : null
+  } ]
+}

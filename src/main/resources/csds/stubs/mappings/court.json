@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/csds/Court/GD"
+    "url": "/api/rest/query/csds/Court/GD"
   },
   "response": {
     "status": 200,

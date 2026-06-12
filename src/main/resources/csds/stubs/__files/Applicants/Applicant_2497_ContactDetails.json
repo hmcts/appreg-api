@@ -1,0 +1,13 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2646,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "publicservicecentre@south-wales.pnn.police.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2497,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

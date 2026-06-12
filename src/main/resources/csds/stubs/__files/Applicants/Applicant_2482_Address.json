@@ -1,0 +1,29 @@
+{
+  "records" : [ {
+    "AddressID" : 2131,
+    "StartDate" : null,
+    "EndDate" : null,
+    "Address" : "test add line 1 - NW1 2FF",
+    "Address.AddressLine1" : "test add line 1",
+    "Address.AddressLine2" : null,
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "NW1 2FF",
+    "FID_StandardApplicant" : 2482,
+    "FID_Court" : null
+  }, {
+    "AddressID" : 3209,
+    "StartDate" : "2016-10-31",
+    "EndDate" : null,
+    "Address" : "72 Paris Street - Exeter - Devon - EX1 2JZ",
+    "Address.AddressLine1" : "72 Paris Street",
+    "Address.AddressLine2" : "Exeter",
+    "Address.AddressLine3" : "Devon",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "EX1 2JZ",
+    "FID_StandardApplicant" : 2482,
+    "FID_Court" : null
+  } ]
+}

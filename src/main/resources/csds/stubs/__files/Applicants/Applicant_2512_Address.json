@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3239,
+    "StartDate" : "2017-03-14",
+    "EndDate" : null,
+    "Address" : "Town Hall - Pinstone Street - Sheffield - S1 2HH",
+    "Address.AddressLine1" : "Town Hall",
+    "Address.AddressLine2" : "Pinstone Street",
+    "Address.AddressLine3" : "Sheffield",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "S1 2HH",
+    "FID_StandardApplicant" : 2512,
+    "FID_Court" : null
+  } ]
+}

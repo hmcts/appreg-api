@@ -1,6 +1,6 @@
 {
   "records" : [ {
-    "ApplicantID" : 1067,
+    "ApplicantID" : 2479,
     "Code" : "MHA",
     "OrganisationName" : "Devon County Council",
     "StartDate" : "2016-06-01",
@@ -11,6 +11,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 41,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Mental Health Finance - Room 205 - Civic Centre - Barnstaple - Devon - EX31 1ED",
     "Address.AddressLine1" : "Mental Health Finance",
     "Address.AddressLine2" : "Room 205",
@@ -20,7 +23,7 @@
     "Address.PostCode" : "EX31 1ED",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1068,
+    "ApplicantID" : 2480,
     "Code" : "EDDC",
     "OrganisationName" : "EAST DEVON DISTRICT COUNCIL",
     "StartDate" : "2016-07-11",
@@ -31,6 +34,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 202,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Knowle - Sidmouth - EX10 8HL",
     "Address.AddressLine1" : "Knowle",
     "Address.AddressLine2" : "Sidmouth",
@@ -40,7 +46,7 @@
     "Address.PostCode" : "EX10 8HL",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1069,
+    "ApplicantID" : 2481,
     "Code" : "OVO",
     "OrganisationName" : "OVO Energy",
     "StartDate" : "2016-08-30",
@@ -51,6 +57,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 262,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "1 Rivergate - Temple Quay - Bristol - BS1 6ED",
     "Address.AddressLine1" : "1 Rivergate",
     "Address.AddressLine2" : "Temple Quay",
@@ -60,7 +69,7 @@
     "Address.PostCode" : "BS1 6ED",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1070,
+    "ApplicantID" : 2482,
     "Code" : "DCH",
     "OrganisationName" : "Devon and Cornwall Housing Ltd",
     "StartDate" : "2016-10-31",
@@ -71,6 +80,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 362,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "72 Paris Street - Exeter - Devon - EX1 2JZ",
     "Address.AddressLine1" : "72 Paris Street",
     "Address.AddressLine2" : "Exeter",
@@ -80,7 +92,7 @@
     "Address.PostCode" : "EX1 2JZ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1071,
+    "ApplicantID" : 2483,
     "Code" : "UTIL",
     "OrganisationName" : "Face2Face (Utility Warehouse)",
     "StartDate" : "2016-11-21",
@@ -91,6 +103,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 422,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Face2Face Contact Ltd - 16 Shottery Brook Office Park - Timothy's Bridge Road - Stratford Upon Avon - Warwickshire - CV37 9NR",
     "Address.AddressLine1" : "Face2Face Contact Ltd",
     "Address.AddressLine2" : "16 Shottery Brook Office Park",
@@ -100,7 +115,7 @@
     "Address.PostCode" : "CV37 9NR",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1072,
+    "ApplicantID" : 2484,
     "Code" : "TEUW",
     "OrganisationName" : "Telecom Plus t/as Utility Warehouse",
     "StartDate" : "2016-11-24",
@@ -111,6 +126,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 482,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Network HQ - 508 Edgeware Road - The Hyde - London - NW9 5AB",
     "Address.AddressLine1" : "Network HQ",
     "Address.AddressLine2" : "508 Edgeware Road",
@@ -120,7 +138,7 @@
     "Address.PostCode" : "NW9 5AB",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1073,
+    "ApplicantID" : 2485,
     "Code" : "GROSUW",
     "OrganisationName" : "Grosvenor Services Group Ltd (The Utility Warehouse)",
     "StartDate" : "2016-11-25",
@@ -131,6 +149,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 501,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "St David's House - 11 Drake House Crescent - Sheffield - S20 7HT",
     "Address.AddressLine1" : "St David's House",
     "Address.AddressLine2" : "11 Drake House Crescent",
@@ -140,7 +161,7 @@
     "Address.PostCode" : "S20 7HT",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1074,
+    "ApplicantID" : 2486,
     "Code" : "GAZPROM",
     "OrganisationName" : "GAZPROM ENERGY",
     "StartDate" : "2016-12-10",
@@ -151,6 +172,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 582,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "BAUHAUS - 5TH FLOOR - 27 QUAY STREET - MANCHESTER",
     "Address.AddressLine1" : "BAUHAUS",
     "Address.AddressLine2" : "5TH FLOOR",
@@ -160,7 +184,7 @@
     "Address.PostCode" : null,
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1075,
+    "ApplicantID" : 2487,
     "Code" : "DMBC",
     "OrganisationName" : "Doncaster Metropolitan Borough Council",
     "StartDate" : "2017-03-14",
@@ -171,6 +195,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1623,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Civic Office - Waterdale - Doncaster - DN1 3BU",
     "Address.AddressLine1" : "Civic Office",
     "Address.AddressLine2" : "Waterdale",
@@ -180,7 +207,7 @@
     "Address.PostCode" : "DN1 3BU",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1076,
+    "ApplicantID" : 2488,
     "Code" : "OPUS",
     "OrganisationName" : "OPUS ENERGY LIMITED",
     "StartDate" : "2016-07-11",
@@ -191,6 +218,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 181,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Opus Energy House - 8-10 The Lakes - Northampton - NN4 7YD",
     "Address.AddressLine1" : "Opus Energy House",
     "Address.AddressLine2" : "8-10 The Lakes",
@@ -200,7 +230,7 @@
     "Address.PostCode" : "NN4 7YD",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1077,
+    "ApplicantID" : 2489,
     "Code" : "BMBC",
     "OrganisationName" : "Barnsley Metropolitan Borough Council",
     "StartDate" : "2016-09-29",
@@ -211,6 +241,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 301,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Beevor Court 2 - Pontefract Road - Barnsley - S70 1HG",
     "Address.AddressLine1" : "Beevor Court 2",
     "Address.AddressLine2" : "Pontefract Road",
@@ -220,7 +253,7 @@
     "Address.PostCode" : "S70 1HG",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1078,
+    "ApplicantID" : 2490,
     "Code" : "SPAR",
     "OrganisationName" : "Spark Energy Supply Ltd (Engage)",
     "StartDate" : "2016-11-21",
@@ -231,6 +264,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 421,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Regent House - 316 Beulah Hill - Upper Norwood - London - SE19 2LF",
     "Address.AddressLine1" : "Regent House",
     "Address.AddressLine2" : "316 Beulah Hill",
@@ -240,7 +276,7 @@
     "Address.PostCode" : "SE19 2LF",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1079,
+    "ApplicantID" : 2491,
     "Code" : "EXTR",
     "OrganisationName" : "Extra Energy Ltd",
     "StartDate" : "2016-11-23",
@@ -251,6 +287,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 441,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Energy House - Athena Drive - Tahbrook Park - Leamington Spa - CV34 6RQ",
     "Address.AddressLine1" : "Energy House",
     "Address.AddressLine2" : "Athena Drive",
@@ -260,7 +299,7 @@
     "Address.PostCode" : "CV34 6RQ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1080,
+    "ApplicantID" : 2492,
     "Code" : "GRLEDF",
     "OrganisationName" : "Grosvenor Services Group Ltd (EDF)",
     "StartDate" : "2016-11-23",
@@ -271,6 +310,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 462,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "St David's House - 11 Drake House Crescent - Sheffield - S20 7HT",
     "Address.AddressLine1" : "St David's House",
     "Address.AddressLine2" : "11 Drake House Crescent",
@@ -280,7 +322,7 @@
     "Address.PostCode" : "S20 7HT",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1081,
+    "ApplicantID" : 2493,
     "Code" : "BES",
     "OrganisationName" : "BUSINESS ENERGY SOLUTIONS LTD",
     "StartDate" : "2016-12-10",
@@ -291,6 +333,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 583,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "PARKSIDE STAND - FLEETWOOD TOWN FOOTBALL CLUB - PARK AVENUE - FLEETWOOD - FY7 6TX",
     "Address.AddressLine1" : "PARKSIDE STAND",
     "Address.AddressLine2" : "FLEETWOOD TOWN FOOTBALL CLUB",
@@ -300,7 +345,7 @@
     "Address.PostCode" : "FY7 6TX",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1082,
+    "ApplicantID" : 2494,
     "Code" : "NORTHUMBRI",
     "OrganisationName" : "Northumbrian Water",
     "StartDate" : "2017-01-24",
@@ -311,6 +356,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 723,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Northumbria House - Abbey Road - Pity Me - Durham - DH1 5FJ",
     "Address.AddressLine1" : "Northumbria House",
     "Address.AddressLine2" : "Abbey Road",
@@ -320,7 +368,7 @@
     "Address.PostCode" : "DH1 5FJ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1083,
+    "ApplicantID" : 2495,
     "Code" : "NELC",
     "OrganisationName" : "North East Lincolnshire City Council",
     "StartDate" : "2017-03-14",
@@ -331,6 +379,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1645,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Municipal Offices - Town Hall Square - Grimsby - DN31 1HU",
     "Address.AddressLine1" : "Municipal Offices",
     "Address.AddressLine2" : "Town Hall Square",
@@ -340,7 +391,7 @@
     "Address.PostCode" : "DN31 1HU",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1084,
+    "ApplicantID" : 2496,
     "Code" : "POLC",
     "OrganisationName" : "Cambridgeshire Police",
     "StartDate" : "2017-03-15",
@@ -351,6 +402,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1783,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Cambridgeshire Constabulary HQ - Hinchingbrooke Park - Huntingdon - Cambridgeshire - PE29 6NP",
     "Address.AddressLine1" : "Cambridgeshire Constabulary HQ",
     "Address.AddressLine2" : "Hinchingbrooke Park",
@@ -360,7 +414,7 @@
     "Address.PostCode" : "PE29 6NP",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1085,
+    "ApplicantID" : 2497,
     "Code" : "SWPOLBRIDG",
     "OrganisationName" : "South Wales Police HQ",
     "StartDate" : "2017-05-10",
@@ -371,6 +425,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 2546,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Cowbridge Road - Bridgend - South Wales - CF31 3SU",
     "Address.AddressLine1" : "Cowbridge Road",
     "Address.AddressLine2" : "Bridgend",
@@ -380,7 +437,7 @@
     "Address.PostCode" : "CF31 3SU",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1086,
+    "ApplicantID" : 2498,
     "Code" : "ENW",
     "OrganisationName" : "Electricity North West",
     "StartDate" : "2017-05-25",
@@ -391,6 +448,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 2846,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "304 Bridgewater Place - Birchwood Park - Warrington - WA3 6XG",
     "Address.AddressLine1" : "304 Bridgewater Place",
     "Address.AddressLine2" : "Birchwood Park",
@@ -400,7 +460,7 @@
     "Address.PostCode" : "WA3 6XG",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1087,
+    "ApplicantID" : 2499,
     "Code" : "GAD",
     "OrganisationName" : "GREGORY ABRAMS DAVIDSON SOLICITORS",
     "StartDate" : "2017-04-01",
@@ -411,6 +471,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 3108,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "20-24 MATHEW STREET - LIVERPOOL - L2 6RE",
     "Address.AddressLine1" : "20-24 MATHEW STREET",
     "Address.AddressLine2" : "LIVERPOOL",
@@ -420,7 +483,7 @@
     "Address.PostCode" : "L2 6RE",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1088,
+    "ApplicantID" : 2500,
     "Code" : "TVLO",
     "OrganisationName" : "TV Licensing",
     "StartDate" : "2017-04-01",
@@ -431,6 +494,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 3595,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Customer Service Centre - PO Box 88 - Darwen - Lancashire - BB3 1YX",
     "Address.AddressLine1" : "Customer Service Centre",
     "Address.AddressLine2" : "PO Box 88",
@@ -440,7 +506,7 @@
     "Address.PostCode" : "BB3 1YX",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1089,
+    "ApplicantID" : 2501,
     "Code" : "HASTE",
     "OrganisationName" : "Haste Ltd",
     "StartDate" : "2019-01-01",
@@ -451,6 +517,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 4134,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "PO Box 290 - Petersfield - GU32 8GN",
     "Address.AddressLine1" : "PO Box 290",
     "Address.AddressLine2" : "Petersfield",
@@ -460,7 +529,7 @@
     "Address.PostCode" : "GU32 8GN",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1090,
+    "ApplicantID" : 2502,
     "Code" : "ICEBD",
     "OrganisationName" : "East of England ICE Team (Bedford)",
     "StartDate" : "2018-06-01",
@@ -471,6 +540,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 5939,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Unit 2, Franklin Court - Priory Business Park - Bedford - MK44 3JZ",
     "Address.AddressLine1" : "Unit 2, Franklin Court",
     "Address.AddressLine2" : "Priory Business Park",
@@ -480,7 +552,7 @@
     "Address.PostCode" : "MK44 3JZ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1091,
+    "ApplicantID" : 2503,
     "Code" : "SPWR",
     "OrganisationName" : "Scottish Power Energy Retail Ltd",
     "StartDate" : "2016-06-01",
@@ -491,6 +563,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 81,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "2nd Floor Scottish Power - Wrexham Road - Pentre Vychen - Wrexham - LL14 4DU",
     "Address.AddressLine1" : "2nd Floor Scottish Power",
     "Address.AddressLine2" : "Wrexham Road",
@@ -500,7 +575,7 @@
     "Address.PostCode" : "LL14 4DU",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1092,
+    "ApplicantID" : 2504,
     "Code" : "ENGASPEN",
     "OrganisationName" : "ENGAGE (SPARKS ENERGY)",
     "StartDate" : "2016-08-11",
@@ -511,6 +586,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 221,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Wavell House - Holcombe Road - Helmshore - Rossendale - BB4 4NF",
     "Address.AddressLine1" : "Wavell House",
     "Address.AddressLine2" : "Holcombe Road",
@@ -520,7 +598,7 @@
     "Address.PostCode" : "BB4 4NF",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1093,
+    "ApplicantID" : 2505,
     "Code" : "Total",
     "OrganisationName" : "Total Gas and Power",
     "StartDate" : "2016-10-31",
@@ -531,6 +609,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 361,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Bridge Gate - 55-57 High Street - Redhill - Surrey - RH1 1RX",
     "Address.AddressLine1" : "Bridge Gate",
     "Address.AddressLine2" : "55-57 High Street",
@@ -540,7 +621,7 @@
     "Address.PostCode" : "RH1 1RX",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1094,
+    "ApplicantID" : 2506,
     "Code" : "SCP",
     "OrganisationName" : "Scottish Power Energy (Richburns)",
     "StartDate" : "2016-11-07",
@@ -551,6 +632,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 381,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "New Aspect House - Technology Avenue - Hamilton Intnl Technology Park - Blantyre - Glasgow - G72 0HT",
     "Address.AddressLine1" : "New Aspect House",
     "Address.AddressLine2" : "Technology Avenue",
@@ -560,7 +644,7 @@
     "Address.PostCode" : "G72 0HT",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1095,
+    "ApplicantID" : 2507,
     "Code" : "XtraEnergy",
     "OrganisationName" : "Face2Face (Extra Energy Ltd)",
     "StartDate" : "2016-11-02",
@@ -571,6 +655,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 401,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Energy House - Athena Drive - Tachbrook Park - Leamington Spa - CV34 6RQ",
     "Address.AddressLine1" : "Energy House",
     "Address.AddressLine2" : "Athena Drive",
@@ -580,7 +667,7 @@
     "Address.PostCode" : "CV34 6RQ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1096,
+    "ApplicantID" : 2508,
     "Code" : "GRLNP",
     "OrganisationName" : "Grosvenor Services Group Ltd (NPower)",
     "StartDate" : "2016-11-23",
@@ -591,6 +678,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 461,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "St David's House - 11 Drake House Crescent - Sheffield - S20 7HT",
     "Address.AddressLine1" : "St David's House",
     "Address.AddressLine2" : "11 Drake House Crescent",
@@ -600,7 +690,7 @@
     "Address.PostCode" : "S20 7HT",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1097,
+    "ApplicantID" : 2509,
     "Code" : "ARVEDF",
     "OrganisationName" : "Arvato Financial Solutions Limited (EDF)",
     "StartDate" : "2016-12-10",
@@ -611,6 +701,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 581,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "24 George Square - Glasgow - G2 1EG",
     "Address.AddressLine1" : "24 George Square",
     "Address.AddressLine2" : "Glasgow",
@@ -620,7 +713,7 @@
     "Address.PostCode" : "G2 1EG",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1098,
+    "ApplicantID" : 2510,
     "Code" : "SYPOLICE",
     "OrganisationName" : "South Yorkshire Police",
     "StartDate" : "2017-02-14",
@@ -631,6 +724,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 904,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Carbrook House - Carbrook - Sheffield - S9 2DB",
     "Address.AddressLine1" : "Carbrook House",
     "Address.AddressLine2" : "Carbrook",
@@ -640,7 +736,7 @@
     "Address.PostCode" : "S9 2DB",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1099,
+    "ApplicantID" : 2511,
     "Code" : "KENTPOL",
     "OrganisationName" : "Kent Police HQ",
     "StartDate" : "2017-02-26",
@@ -651,6 +747,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1483,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Kent Police Headquarters - Sutton Road - Maidstone - Kent - ME15 9BZ",
     "Address.AddressLine1" : "Kent Police Headquarters",
     "Address.AddressLine2" : "Sutton Road",
@@ -660,7 +759,7 @@
     "Address.PostCode" : "ME15 9BZ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1100,
+    "ApplicantID" : 2512,
     "Code" : "SCC",
     "OrganisationName" : "Sheffield City Council",
     "StartDate" : "2017-03-14",
@@ -671,6 +770,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1643,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Town Hall - Pinstone Street - Sheffield - S1 2HH",
     "Address.AddressLine1" : "Town Hall",
     "Address.AddressLine2" : "Pinstone Street",
@@ -680,7 +782,7 @@
     "Address.PostCode" : "S1 2HH",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1101,
+    "ApplicantID" : 2513,
     "Code" : "ESSEXPOL",
     "OrganisationName" : "Essex Police",
     "StartDate" : "2017-03-01",
@@ -691,6 +793,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1704,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Essex Police HQ",
     "Address.AddressLine1" : "Essex Police HQ",
     "Address.AddressLine2" : null,
@@ -700,7 +805,7 @@
     "Address.PostCode" : null,
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1102,
+    "ApplicantID" : 2514,
     "Code" : "OXLEMHT",
     "OrganisationName" : "Oxleas NHS Foundation Trust Headquarters",
     "StartDate" : "2017-02-25",
@@ -711,6 +816,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1994,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Pinewood House - Pinewood Place - Dartford - Kent - DA2 7WG",
     "Address.AddressLine1" : "Pinewood House",
     "Address.AddressLine2" : "Pinewood Place",
@@ -720,7 +828,7 @@
     "Address.PostCode" : "DA2 7WG",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1103,
+    "ApplicantID" : 2515,
     "Code" : "MARL",
     "OrganisationName" : "MARLOWE HOUSE STN",
     "StartDate" : "2017-05-22",
@@ -731,6 +839,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 2786,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "1",
     "Address.AddressLine1" : "1",
     "Address.AddressLine2" : null,
@@ -740,7 +851,7 @@
     "Address.PostCode" : null,
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1104,
+    "ApplicantID" : 2516,
     "Code" : "IBC01",
     "OrganisationName" : "Ipswich Borough Council",
     "StartDate" : "2017-06-09",
@@ -751,6 +862,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 3066,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Grafton House - 15-17 Russell Road - Ipswich - Suffolk - IP1 2DE",
     "Address.AddressLine1" : "Grafton House",
     "Address.AddressLine2" : "15-17 Russell Road",
@@ -760,7 +874,7 @@
     "Address.PostCode" : "IP1 2DE",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1105,
+    "ApplicantID" : 2517,
     "Code" : "NPF2",
     "OrganisationName" : "Face2Face (NPower)",
     "StartDate" : "2016-06-01",
@@ -771,6 +885,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 21,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Face2Face Contact Ltd - 16 Shottery Brook Office Park - Timothy's Bridge Road - Stratford Upon Avon - Warwickshire - CV37 9NR",
     "Address.AddressLine1" : "Face2Face Contact Ltd",
     "Address.AddressLine2" : "16 Shottery Brook Office Park",
@@ -780,7 +897,7 @@
     "Address.PostCode" : "CV37 9NR",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1106,
+    "ApplicantID" : 2518,
     "Code" : "NPMP",
     "OrganisationName" : "Npower Ltd, MeterPlus",
     "StartDate" : "2016-06-01",
@@ -791,6 +908,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 121,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Windmill Hill Business Park - Whitehill Way - Swindon - SN5 6PB",
     "Address.AddressLine1" : "Windmill Hill Business Park",
     "Address.AddressLine2" : "Whitehill Way",
@@ -800,7 +920,7 @@
     "Address.PostCode" : "SN5 6PB",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1107,
+    "ApplicantID" : 2519,
     "Code" : "EXCC",
     "OrganisationName" : "EXETER CITY COUNCIL",
     "StartDate" : "2016-07-11",
@@ -811,6 +931,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 201,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Civic Centre - Paris Street - Exeter - EX1 1JN",
     "Address.AddressLine1" : "Civic Centre",
     "Address.AddressLine2" : "Paris Street",
@@ -820,7 +943,7 @@
     "Address.PostCode" : "EX1 1JN",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1108,
+    "ApplicantID" : 2520,
     "Code" : "SEG",
     "OrganisationName" : "Southern Electric Gas",
     "StartDate" : "2016-06-01",
@@ -831,6 +954,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 281,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "55 Vastern Road - Reading - RG1 8BU",
     "Address.AddressLine1" : "55 Vastern Road",
     "Address.AddressLine2" : "Reading",
@@ -840,7 +966,7 @@
     "Address.PostCode" : "RG1 8BU",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1109,
+    "ApplicantID" : 2521,
     "Code" : "GROSHE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Hudson Energy)",
     "StartDate" : "2016-11-25",
@@ -851,6 +977,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 504,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "St David's House - 11 Drake House Crescent - Sheffield - S20 7HT",
     "Address.AddressLine1" : "St David's House",
     "Address.AddressLine2" : "11 Drake House Crescent",
@@ -860,7 +989,7 @@
     "Address.PostCode" : "S20 7HT",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1110,
+    "ApplicantID" : 2522,
     "Code" : "GROSO",
     "OrganisationName" : "Grosvenor Services Group Ltd (Ovo Energy)",
     "StartDate" : "2016-11-29",
@@ -871,6 +1000,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 521,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "St David's House - 11 Drake House Crescent - Sheffield - S20 7HT",
     "Address.AddressLine1" : "St David's House",
     "Address.AddressLine2" : "11 Drake House Crescent",
@@ -880,7 +1012,7 @@
     "Address.PostCode" : "S20 7HT",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1111,
+    "ApplicantID" : 2523,
     "Code" : "WPD",
     "OrganisationName" : "Western Power Distribution",
     "StartDate" : "2016-11-29",
@@ -891,6 +1023,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 522,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Avonbank - Feeder Road - Bristol - BS2 0TB",
     "Address.AddressLine1" : "Avonbank",
     "Address.AddressLine2" : "Feeder Road",
@@ -900,7 +1035,7 @@
     "Address.PostCode" : "BS2 0TB",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1112,
+    "ApplicantID" : 2524,
     "Code" : "HAVE",
     "OrganisationName" : "Haven Power (Advanced Collection Systems)",
     "StartDate" : "2016-11-29",
@@ -911,6 +1046,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 523,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Advanced Collection Systems Ltd - Steele House - 126 Great North Road - Hatfield - Hertfordshire - AL9 5JN",
     "Address.AddressLine1" : "Advanced Collection Systems Ltd",
     "Address.AddressLine2" : "Steele House",
@@ -920,7 +1058,7 @@
     "Address.PostCode" : "AL9 5JN",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1113,
+    "ApplicantID" : 2525,
     "Code" : "COOP",
     "OrganisationName" : "Co-op Energy",
     "StartDate" : "2017-01-31",
@@ -931,6 +1069,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 763,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Co-operative House - Warwick Technology Park - Gallows Hill - Warwick - CV34 6DA",
     "Address.AddressLine1" : "Co-operative House",
     "Address.AddressLine2" : "Warwick Technology Park",
@@ -940,7 +1081,7 @@
     "Address.PostCode" : "CV34 6DA",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1114,
+    "ApplicantID" : 2526,
     "Code" : "RBG",
     "OrganisationName" : "ROYAL BOROUGH OF GREENWICH",
     "StartDate" : "2017-04-05",
@@ -951,6 +1092,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 2162,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Customer Services - The Woolwich Centre - Wellington Street - Woolwich - SE18 6HQ",
     "Address.AddressLine1" : "Customer Services",
     "Address.AddressLine2" : "The Woolwich Centre",
@@ -960,7 +1104,7 @@
     "Address.PostCode" : "SE18 6HQ",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1115,
+    "ApplicantID" : 2527,
     "Code" : "ENGA",
     "OrganisationName" : "Engage Services Limited on behalf of RWE Npower",
     "StartDate" : "2017-05-03",
@@ -971,6 +1115,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 2492,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "8th Floor Rutland House - 148 Edmund Street - Birmingham - B3 2JR",
     "Address.AddressLine1" : "8th Floor Rutland House",
     "Address.AddressLine2" : "148 Edmund Street",
@@ -980,7 +1127,7 @@
     "Address.PostCode" : "B3 2JR",
     "FID_ReleasePackage" : null
   }, {
-    "ApplicantID" : 1116,
+    "ApplicantID" : 2528,
     "Code" : "BGAS",
     "OrganisationName" : "British Gas Trading Limited",
     "StartDate" : "2016-06-01",
@@ -991,6 +1138,9 @@
     "VersionType" : "Initial",
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Inactive",
+    "PSSSAID" : 1,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
     "Address" : "Millstream - Maidenhead Road - Windsor - Berkshire - SL4 5GD",
     "Address.AddressLine1" : "Millstream",
     "Address.AddressLine2" : "Maidenhead Road",

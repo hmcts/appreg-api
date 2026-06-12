@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3237,
+    "StartDate" : "2017-02-14",
+    "EndDate" : null,
+    "Address" : "Carbrook House - Carbrook - Sheffield - S9 2DB",
+    "Address.AddressLine1" : "Carbrook House",
+    "Address.AddressLine2" : "Carbrook",
+    "Address.AddressLine3" : "Sheffield",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "S9 2DB",
+    "FID_StandardApplicant" : 2510,
+    "FID_Court" : null
+  } ]
+}

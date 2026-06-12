@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3222,
+    "StartDate" : "2017-03-14",
+    "EndDate" : null,
+    "Address" : "Municipal Offices - Town Hall Square - Grimsby - DN31 1HU",
+    "Address.AddressLine1" : "Municipal Offices",
+    "Address.AddressLine2" : "Town Hall Square",
+    "Address.AddressLine3" : "Grimsby",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "DN31 1HU",
+    "FID_StandardApplicant" : 2495,
+    "FID_Court" : null
+  } ]
+}

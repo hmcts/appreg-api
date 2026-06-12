@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/csds/System/GD?$f=Domain='CriminalJusticeAreas'"
+    "url": "/api/rest/query/csds/System/GD?$f=Domain='CriminalJusticeAreas'"
   },
   "response": {
     "status": 200,

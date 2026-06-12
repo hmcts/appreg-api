@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/rest/named-query/csds/GetStandardApplicant/GD?$f=ApplicantId=${id}",
+    "queryParameters": {
+      "$f": {
+        "matches": "ApplicantId=(\\d+)"
+      }
+    }
+  },
+  "response": {
+    "status":200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "Applicants/Applicant_{{regexExtract request.url '([0-9]+)'}}_StandardApplicant.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
+

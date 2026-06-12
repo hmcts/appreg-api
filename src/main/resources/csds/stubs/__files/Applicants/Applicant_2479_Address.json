@@ -1,0 +1,29 @@
+{
+  "records" : [ {
+    "AddressID" : 2129,
+    "StartDate" : null,
+    "EndDate" : null,
+    "Address" : "TestTest - London - NW1 2SP",
+    "Address.AddressLine1" : "TestTest",
+    "Address.AddressLine2" : null,
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : "London",
+    "Address.PostCode" : "NW1 2SP",
+    "FID_StandardApplicant" : 2479,
+    "FID_Court" : null
+  }, {
+    "AddressID" : 3206,
+    "StartDate" : "2016-06-01",
+    "EndDate" : null,
+    "Address" : "Mental Health Finance - Room 205 - Civic Centre - Barnstaple - Devon - EX31 1ED",
+    "Address.AddressLine1" : "Mental Health Finance",
+    "Address.AddressLine2" : "Room 205",
+    "Address.AddressLine3" : "Civic Centre",
+    "Address.AddressLine4" : "Barnstaple",
+    "Address.AddressLine5" : "Devon",
+    "Address.PostCode" : "EX31 1ED",
+    "FID_StandardApplicant" : 2479,
+    "FID_Court" : null
+  } ]
+}

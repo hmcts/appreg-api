@@ -1,0 +1,33 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 1761,
+    "ContactType" : "Mobile",
+    "ContactSubType" : null,
+    "ContactValue" : "13114",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2485,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2642,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "contact@grosvenorservices.co.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2485,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2749,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "03331231471",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2485,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

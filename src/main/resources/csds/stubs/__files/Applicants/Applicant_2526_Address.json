@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3253,
+    "StartDate" : "2017-04-05",
+    "EndDate" : null,
+    "Address" : "Customer Services - The Woolwich Centre - Wellington Street - Woolwich - SE18 6HQ",
+    "Address.AddressLine1" : "Customer Services",
+    "Address.AddressLine2" : "The Woolwich Centre",
+    "Address.AddressLine3" : "Wellington Street",
+    "Address.AddressLine4" : "Woolwich",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "SE18 6HQ",
+    "FID_StandardApplicant" : 2526,
+    "FID_Court" : null
+  } ]
+}

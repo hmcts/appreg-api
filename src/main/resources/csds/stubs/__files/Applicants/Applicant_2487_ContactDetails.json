@@ -1,0 +1,13 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2643,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "customer.services@doncaster.gov.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2487,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

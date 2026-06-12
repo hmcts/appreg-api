@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3224,
+    "StartDate" : "2017-05-10",
+    "EndDate" : null,
+    "Address" : "Cowbridge Road - Bridgend - South Wales - CF31 3SU",
+    "Address.AddressLine1" : "Cowbridge Road",
+    "Address.AddressLine2" : "Bridgend",
+    "Address.AddressLine3" : "South Wales",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "CF31 3SU",
+    "FID_StandardApplicant" : 2497,
+    "FID_Court" : null
+  } ]
+}

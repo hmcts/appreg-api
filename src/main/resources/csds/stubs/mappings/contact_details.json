@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/csds/ContactInformation/GD",
+    "urlPath": "/api/rest/query/csds/ContactInformation/GD",
     "queryParameters": {
       "$f": {
         "matches": "FID_StandardApplicant=(\\d+)"

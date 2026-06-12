@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3244,
+    "StartDate" : "2016-06-01",
+    "EndDate" : null,
+    "Address" : "Face2Face Contact Ltd - 16 Shottery Brook Office Park - Timothy's Bridge Road - Stratford Upon Avon - Warwickshire - CV37 9NR",
+    "Address.AddressLine1" : "Face2Face Contact Ltd",
+    "Address.AddressLine2" : "16 Shottery Brook Office Park",
+    "Address.AddressLine3" : "Timothy's Bridge Road",
+    "Address.AddressLine4" : "Stratford Upon Avon",
+    "Address.AddressLine5" : "Warwickshire",
+    "Address.PostCode" : "CV37 9NR",
+    "FID_StandardApplicant" : 2517,
+    "FID_Court" : null
+  } ]
+}

@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3218,
+    "StartDate" : "2016-11-23",
+    "EndDate" : null,
+    "Address" : "Energy House - Athena Drive - Tahbrook Park - Leamington Spa - CV34 6RQ",
+    "Address.AddressLine1" : "Energy House",
+    "Address.AddressLine2" : "Athena Drive",
+    "Address.AddressLine3" : "Tahbrook Park",
+    "Address.AddressLine4" : "Leamington Spa",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "CV34 6RQ",
+    "FID_StandardApplicant" : 2491,
+    "FID_Court" : null
+  } ]
+}

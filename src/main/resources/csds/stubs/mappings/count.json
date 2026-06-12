@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/rest/count/csds/(.*)/GD"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": ["response-template"],
+    "bodyFileName": "{{request.pathSegments.[4]}}_count.json"
+  }
+}
+

@@ -11,6 +11,9 @@ fi
 LIMIT=50
 
 BASE_URL="https://csds.dev.apps.hmcts.net/api/rest/query/CSDS/"
+NAMED_QUERY_URL="https://csds.dev.apps.hmcts.net/api/rest/named-query/CSDS/"
+
+TEMPLATES="./mappings/templates"
 
 STANDARD_REFERENCE_TABLES=(
     ApplicationCode
@@ -41,6 +44,7 @@ for i in "${!STANDARD_REFERENCE_TABLES[@]}"; do
     TABLE_NAME="${STANDARD_REFERENCE_TABLES[$i]}"
     URL="${BASE_URL}${STANDARD_REFERENCE_URLS[$i]}"
     OUTPUT_FILE="${OUTPUT_FOLDER}/${TABLE_NAME}.json"
+    COUNT_FILE="${OUTPUT_FOLDER}/${TABLE_NAME}_count.json"
 
     if [ $TABLE_NAME = "Address" ]; then
         echo "Will retrieve after getting applicant data"
@@ -62,6 +66,12 @@ for i in "${!STANDARD_REFERENCE_TABLES[@]}"; do
         echo "Error retrieving data for ${TABLE_NAME}"
     fi
 
+    COUNT=$(jq '.records | length' "$OUTPUT_FILE")
+    echo "Total records retrieved for ${TABLE_NAME}: ${COUNT}"
+
+    echo "Saving wiremock count file for ${TABLE_NAME} to ${COUNT_FILE}"
+    echo "{\"count\": ${COUNT}}" > "$COUNT_FILE"
+
     echo "Sleeping for a few seconds"
     sleep 5s
 done
@@ -71,11 +81,16 @@ APPLICANTS_FILE="${OUTPUT_FOLDER}/Applicant.json"
 APPLICANT_FOLDER="${OUTPUT_FOLDER}/Applicants"
 mkdir -p "$APPLICANT_FOLDER"
 
+# Clear out folder before saving new data - we're assuming there is data in the folder
+# So we want to clear it out so that the applicants json content matches the new applicant data we are fetching
+rm -rf "${APPLICANT_FOLDER:?}"/*
+
 if [ -f "$APPLICANTS_FILE" ]; then
     for id in $(jq -r '.records | .[] | .ApplicantID' "$APPLICANTS_FILE"); do
         echo "Retrieving address and contact information for applicant ID: ${id}..."
         ADDRESS_URL="${BASE_URL}Address/GD?\$f=FID_StandardApplicant=${id}"
         CONTACT_URL="${BASE_URL}ContactInformation/GD?\$f=FID_StandardApplicant=${id}"
+        GET_STANDARD_APPLICANT_URL="${NAMED_QUERY_URL}GetStandardApplicant/GD?\$f=ApplicantId=${id}"
 
         OUTPUT_FILE="${APPLICANT_FOLDER}/Applicant_${id}_Address.json"
 
@@ -97,8 +112,15 @@ if [ -f "$APPLICANTS_FILE" ]; then
             echo "Error retrieving data for ContactDetails"
         fi
 
+        curl -H "Api-Key: ${CSDS_KEY}" "$GET_STANDARD_APPLICANT_URL" -o "${APPLICANT_FOLDER}/Applicant_${id}_StandardApplicant.json"
+        if [ $? -eq 0 ]; then
+            echo "Data for StandardApplicant saved to ${APPLICANT_FOLDER}/Applicant_${id}_StandardApplicant.json"
+        else
+            echo "Error retrieving data for StandardApplicant"
+        fi
+
         echo "Sleeping for a few seconds"
-        sleep 5s
+        sleep 3s
     done
 fi
 

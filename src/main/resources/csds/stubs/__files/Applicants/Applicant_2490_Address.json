@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3217,
+    "StartDate" : "2016-11-21",
+    "EndDate" : null,
+    "Address" : "Regent House - 316 Beulah Hill - Upper Norwood - London - SE19 2LF",
+    "Address.AddressLine1" : "Regent House",
+    "Address.AddressLine2" : "316 Beulah Hill",
+    "Address.AddressLine3" : "Upper Norwood",
+    "Address.AddressLine4" : "London",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "SE19 2LF",
+    "FID_StandardApplicant" : 2490,
+    "FID_Court" : null
+  } ]
+}

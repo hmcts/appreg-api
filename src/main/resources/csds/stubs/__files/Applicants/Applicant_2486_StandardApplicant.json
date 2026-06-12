@@ -1,0 +1,7 @@
+{
+  "error" : {
+    "errorMessage" : "Query GetStandardApplicant does not exist. Known queries: DA_GetStandardApplicant",
+    "errorId" : "4b103fcf-4a24-4348-893d-61f8b2dae30d",
+    "statusCode" : 400
+  }
+}

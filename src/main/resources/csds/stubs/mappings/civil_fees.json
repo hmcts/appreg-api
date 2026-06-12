@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/csds/System/GD?$f=Domain='CivilFees'"
+    "url": "/api/rest/query/csds/System/GD?$f=Domain='CivilFees'"
   },
   "response": {
     "status": 200,

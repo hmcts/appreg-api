@@ -1,0 +1,29 @@
+{
+  "records" : [ {
+    "AddressID" : 2135,
+    "StartDate" : null,
+    "EndDate" : null,
+    "Address" : "test add 1 - NE46 2RF",
+    "Address.AddressLine1" : "test add 1",
+    "Address.AddressLine2" : null,
+    "Address.AddressLine3" : null,
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "NE46 2RF",
+    "FID_StandardApplicant" : 2486,
+    "FID_Court" : null
+  }, {
+    "AddressID" : 3213,
+    "StartDate" : "2016-12-10",
+    "EndDate" : null,
+    "Address" : "BAUHAUS - 5TH FLOOR - 27 QUAY STREET - MANCHESTER",
+    "Address.AddressLine1" : "BAUHAUS",
+    "Address.AddressLine2" : "5TH FLOOR",
+    "Address.AddressLine3" : "27 QUAY STREET",
+    "Address.AddressLine4" : "MANCHESTER",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : null,
+    "FID_StandardApplicant" : 2486,
+    "FID_Court" : null
+  } ]
+}

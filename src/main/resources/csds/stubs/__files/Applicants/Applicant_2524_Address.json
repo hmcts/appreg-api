@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3251,
+    "StartDate" : "2016-11-29",
+    "EndDate" : null,
+    "Address" : "Advanced Collection Systems Ltd - Steele House - 126 Great North Road - Hatfield - Hertfordshire - AL9 5JN",
+    "Address.AddressLine1" : "Advanced Collection Systems Ltd",
+    "Address.AddressLine2" : "Steele House",
+    "Address.AddressLine3" : "126 Great North Road",
+    "Address.AddressLine4" : "Hatfield",
+    "Address.AddressLine5" : "Hertfordshire",
+    "Address.PostCode" : "AL9 5JN",
+    "FID_StandardApplicant" : 2524,
+    "FID_Court" : null
+  } ]
+}

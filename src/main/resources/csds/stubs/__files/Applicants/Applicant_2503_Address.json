@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3230,
+    "StartDate" : "2016-06-01",
+    "EndDate" : null,
+    "Address" : "2nd Floor Scottish Power - Wrexham Road - Pentre Vychen - Wrexham - LL14 4DU",
+    "Address.AddressLine1" : "2nd Floor Scottish Power",
+    "Address.AddressLine2" : "Wrexham Road",
+    "Address.AddressLine3" : "Pentre Vychen",
+    "Address.AddressLine4" : "Wrexham",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "LL14 4DU",
+    "FID_StandardApplicant" : 2503,
+    "FID_Court" : null
+  } ]
+}

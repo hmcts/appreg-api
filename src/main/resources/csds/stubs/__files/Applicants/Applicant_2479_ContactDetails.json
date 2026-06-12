@@ -1,0 +1,13 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 1752,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "Test@test.com",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2479,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

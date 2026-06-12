@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3246,
+    "StartDate" : "2016-07-11",
+    "EndDate" : null,
+    "Address" : "Civic Centre - Paris Street - Exeter - EX1 1JN",
+    "Address.AddressLine1" : "Civic Centre",
+    "Address.AddressLine2" : "Paris Street",
+    "Address.AddressLine3" : "Exeter",
+    "Address.AddressLine4" : null,
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "EX1 1JN",
+    "FID_StandardApplicant" : 2519,
+    "FID_Court" : null
+  } ]
+}

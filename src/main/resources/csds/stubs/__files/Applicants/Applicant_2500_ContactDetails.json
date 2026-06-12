@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2649,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "TVLOpsSupport@capita.co.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2500,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2755,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "01254700465",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2500,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

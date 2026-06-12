@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2654,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "oxl-tr.foundationtrust@nhs.net",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2514,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2762,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "01322625700",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2514,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

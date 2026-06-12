@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 1759,
+    "ContactType" : "Mobile",
+    "ContactSubType" : null,
+    "ContactValue" : "234232542",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2482,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2748,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "01",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2482,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

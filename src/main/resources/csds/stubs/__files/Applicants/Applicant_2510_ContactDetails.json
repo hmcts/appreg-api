@@ -1,0 +1,13 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2653,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "enquiries@southyorks.pnn.police.uk",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2510,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}

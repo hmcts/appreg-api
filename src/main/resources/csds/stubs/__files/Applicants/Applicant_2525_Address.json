@@ -1,0 +1,16 @@
+{
+  "records" : [ {
+    "AddressID" : 3252,
+    "StartDate" : "2017-01-31",
+    "EndDate" : null,
+    "Address" : "Co-operative House - Warwick Technology Park - Gallows Hill - Warwick - CV34 6DA",
+    "Address.AddressLine1" : "Co-operative House",
+    "Address.AddressLine2" : "Warwick Technology Park",
+    "Address.AddressLine3" : "Gallows Hill",
+    "Address.AddressLine4" : "Warwick",
+    "Address.AddressLine5" : null,
+    "Address.PostCode" : "CV34 6DA",
+    "FID_StandardApplicant" : 2525,
+    "FID_Court" : null
+  } ]
+}

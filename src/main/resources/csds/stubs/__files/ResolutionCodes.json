@@ -1,7 +1,7 @@
 {
   "error" : {
     "errorMessage" : "ResolutionCodes: unknown entity (known entities are Address, Applicant, ApplicationCode, Case, ChangeSetDocument, ChangeSetItem, ChangeTotal, CivilFee, CommonPlatformPleaTypes, ContactInformation, Court, CourtLJAOrganisationHeader, Courtroom, Document, DocumentCodeSet, DocumentElement, Driving, EnforcementArea, FixedListHeader, FunctionalArea, Hearing, LJACourtProsecutor, LinkCourtroom, MapOUCodes, Nationality, OffenceHeader, OffenceMenu, OffenceMenuElementDefinition, OffenceMenuOptions, OffenceRevision, OffenceTerminalEntry, Organisation, People, PleaTypes, Prosecutor, ReleasePackage, ReleasePackageContent, ResolutionCode, ResultDocument, ResultDocumentTerminalEntry, ResultHeader, ResultMenu, ResultMenuOptions, ResultRevision, ResultSet, ResultTerminalEntry, SourceFile, SourceFileMessage, SourceStatus, SourceXSDSchema, SourceZIP, System, Venue)",
-    "errorId" : "eebb06e7-7e3a-4318-b606-6c892fa1d319",
+    "errorId" : "eaf182f9-6178-480d-9e94-f8789f5ed90f",
     "statusCode" : 400
   }
 }

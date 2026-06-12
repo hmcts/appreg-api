@@ -1,0 +1,23 @@
+{
+  "records" : [ {
+    "ContactInformationID" : 2644,
+    "ContactType" : "Email Address",
+    "ContactSubType" : null,
+    "ContactValue" : "contactus@opusenergy.com",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2488,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  }, {
+    "ContactInformationID" : 2750,
+    "ContactType" : "Telephone",
+    "ContactSubType" : null,
+    "ContactValue" : "08432272377",
+    "FID_Prosecutor" : null,
+    "FID_StandardApplicant" : 2488,
+    "FID_ApplicationCodes" : null,
+    "FID_Court" : null,
+    "FID_ResolutionCodes" : null
+  } ]
+}
