@@ -47,7 +47,6 @@ jobs:
       ISSUE_ASSIGNEE: ${{ inputs.assignee }}
       ISSUE_URL: ${{ inputs.issueUrl }}
       WORKFLOW_TYPE: ${{ inputs.workflowType }}
-      OUTPUT_DIR: ${{ runner.temp }}/parity-output
 
     steps:
       - name: Validate workflow type
@@ -56,6 +55,9 @@ jobs:
             echo "Unexpected workflowType: ${WORKFLOW_TYPE}" >&2
             exit 1
           fi
+
+      - name: Initialise workflow paths
+        run: echo "OUTPUT_DIR=${RUNNER_TEMP}/parity-output" >>"${GITHUB_ENV}"
 
       - name: Checkout default branch
         uses: actions/checkout@v5
