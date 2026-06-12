@@ -123,7 +123,7 @@ jobs:
 
       - name: Verify no tracked files changed
         run: |
-          changed="$(git status --short --untracked-files=no)"
+          changed="$(git status --short --untracked-files=all)"
           if [[ -n "${changed}" ]]; then
             echo "Parity checker must not modify tracked files:" >&2
             echo "${changed}" >&2
