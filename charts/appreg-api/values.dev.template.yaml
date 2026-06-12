@@ -50,7 +50,7 @@ appreg-frontend:
             alias: azure-client-secret-fe
           - name: azure-app-id
             alias: azure-app-id-fe
-          - name: redis-connection-string
+          - name: managed-redis-connection-string
             alias: redis-connection-string
           - name: test-user1-email
             alias: TEST-USER1-EMAIL
