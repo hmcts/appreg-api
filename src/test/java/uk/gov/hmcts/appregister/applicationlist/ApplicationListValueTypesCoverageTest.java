@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListDto;
@@ -48,8 +49,8 @@ class ApplicationListValueTypesCoverageTest {
 
     @Test
     void standardApplicantDto_exposesRecordComponents() {
-        var startDate = LocalDate.of(2026, 1, 1);
-        var endDate = LocalDate.of(2026, 12, 31);
+        var startDate = LocalDate.of(2026, Month.JANUARY, 1);
+        var endDate = LocalDate.of(2026, Month.DECEMBER, 31);
         var dto =
                 new StandardApplicantDto(
                         7L,

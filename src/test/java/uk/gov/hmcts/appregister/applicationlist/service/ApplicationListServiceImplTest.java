@@ -467,7 +467,7 @@ class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         // Then
         assertThat(result).isNotNull();

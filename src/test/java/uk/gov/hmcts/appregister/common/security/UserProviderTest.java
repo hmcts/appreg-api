@@ -37,8 +37,8 @@ class UserProviderTest {
     @Test
     void getRoles_returnsEmptyArray_whenNoAuthenticationPresent() {
         SecurityContextHolder.clearContext();
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(AppRegistryException.class, () -> userProvider.getRoles());
+        var appRegistryException =
+                Assertions.assertThrows(AppRegistryException.class, userProvider::getRoles);
         assertEquals(JwtError.INVALID_TOKEN, appRegistryException.getCode());
     }
 

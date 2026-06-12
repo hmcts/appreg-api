@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -195,7 +194,7 @@ class AsyncJobPersistenceServiceImplTest {
 
         service.writeClob(jobId, input);
 
-        verify(preparedStatement).setObject(eq(2), eq(jobId.getId()));
+        verify(preparedStatement).setObject(2, jobId.getId());
         verify(preparedStatement).setCharacterStream(anyInt(), any(Reader.class));
         verify(preparedStatement).executeUpdate();
     }
@@ -228,7 +227,7 @@ class AsyncJobPersistenceServiceImplTest {
         try (var inputStream = resource.getInputStream()) {
             assertEquals("csv", new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
         }
-        verify(preparedStatement).setObject(eq(1), eq(jobId.getId()));
+        verify(preparedStatement).setObject(1, jobId.getId());
     }
 
     @Test

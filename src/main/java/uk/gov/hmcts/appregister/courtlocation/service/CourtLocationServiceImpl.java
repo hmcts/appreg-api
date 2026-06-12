@@ -94,7 +94,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
 
                     return Optional.of(result);
                 },
-                // Spring injects all AuditOperationLifecycleListener beans as a List;
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 

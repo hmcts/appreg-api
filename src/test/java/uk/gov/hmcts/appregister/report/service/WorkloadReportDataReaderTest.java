@@ -86,10 +86,9 @@ class WorkloadReportDataReaderTest {
 
     @Test
     void givenNoLocation_whenReadData_thenLocationParametersAreNull() throws IOException {
-        NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
-        JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
-        List<MapSqlParameterSource> parameterSources = new ArrayList<>();
-        List<String> queries = new ArrayList<>();
+        var jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        var rawJdbcTemplate = mock(JdbcTemplate.class);
+        var parameterSources = new ArrayList<MapSqlParameterSource>();
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
         when(jdbcTemplate.query(
@@ -98,7 +97,6 @@ class WorkloadReportDataReaderTest {
                         ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
                 .thenAnswer(
                         invocation -> {
-                            queries.add(invocation.getArgument(0));
                             parameterSources.add(invocation.getArgument(1));
                             return List.of();
                         });

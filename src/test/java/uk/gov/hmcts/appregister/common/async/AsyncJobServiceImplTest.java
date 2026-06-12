@@ -159,7 +159,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     lifecycleEventArgumentCaptor.getAllValues().get(7).getJobStatus());
         }
 
-        Assertions.assertThrows(IOException.class, () -> csvReader.getInputStream());
+        Assertions.assertThrows(IOException.class, csvReader::getInputStream);
     }
 
     @Test

@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mockStatic;
 
 import org.junit.jupiter.api.Test;
@@ -9,7 +11,8 @@ class ApplicationTest {
 
     @Test
     void constructor_createsApplicationInstance() {
-        new Application();
+        var application = assertDoesNotThrow(Application::new);
+        assertNotNull(application);
     }
 
     @Test
