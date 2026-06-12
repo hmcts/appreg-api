@@ -1,13 +1,16 @@
 package uk.gov.hmcts.appregister.applicationfee.model.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.LinkedHashMap;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -52,8 +55,8 @@ class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
+        assertEquals(feeMain, feePair.mainFee());
+        assertEquals(feeOffsite, feePair.offsiteFee());
     }
 
     @Test
@@ -72,8 +75,8 @@ class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertNull(feePair.offsiteFee());
+        assertEquals(feeMain, feePair.mainFee());
+        assertNull(feePair.offsiteFee());
     }
 
     @Test
@@ -91,8 +94,8 @@ class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
-        Assertions.assertNull(feePair.mainFee());
+        assertEquals(feeOffsite, feePair.offsiteFee());
+        assertNull(feePair.mainFee());
     }
 
     @Test
@@ -106,8 +109,8 @@ class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertNull(feePair.offsiteFee());
-        Assertions.assertNull(feePair.mainFee());
+        assertNull(feePair.offsiteFee());
+        assertNull(feePair.mainFee());
     }
 
     @Test
@@ -142,7 +145,42 @@ class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
+        assertEquals(feeMain, feePair.mainFee());
+        assertEquals(feeOffsite, feePair.offsiteFee());
+    }
+
+    @Test
+    void testResolveFeePairsBatchesReferencesAndKeepsFirstOrderedMatch() {
+        var feeMain = new Fee();
+        feeMain.setId(5L);
+        feeMain.setReference("ref-one");
+        feeMain.setOffsite(false);
+
+        var feeMainOlder = new Fee();
+        feeMainOlder.setId(1L);
+        feeMainOlder.setReference("ref-one");
+        feeMainOlder.setOffsite(false);
+
+        var secondFee = new Fee();
+        secondFee.setId(6L);
+        secondFee.setReference("ref-two");
+        secondFee.setOffsite(false);
+
+        var feeOffsite = new Fee();
+        feeOffsite.setId(9L);
+        feeOffsite.setOffsite(true);
+
+        when(repository.findByReferenceInBetweenDate(List.of("ref-one", "ref-two"), TODAY_UK))
+                .thenReturn(List.of(feeMain, feeMainOlder, secondFee));
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of(feeOffsite));
+
+        Map<String, FeePair> feePairs =
+                applicationFeeService.resolveFeePairs(
+                        List.of("REF-ONE", "REF-TWO", "REF-ONE"), TODAY_UK);
+
+        var expected = new LinkedHashMap<String, FeePair>();
+        expected.put("REF-ONE", new FeePair(feeMain, feeOffsite));
+        expected.put("REF-TWO", new FeePair(secondFee, feeOffsite));
+        assertEquals(expected, feePairs);
     }
 }

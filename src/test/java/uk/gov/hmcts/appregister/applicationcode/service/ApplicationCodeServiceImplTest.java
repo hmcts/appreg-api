@@ -1,5 +1,11 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,10 +15,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import lombok.Setter;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -119,12 +126,12 @@ class ApplicationCodeServiceImplTest {
         ApplicationCodeGetDetailDto applicationCodeDto =
                 applicationCodeService.findByCode(payloadForGet);
 
-        Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+        assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
 
-        Assertions.assertEquals(
+        assertEquals(
                 CurrencyUtil.getPoundsToPennies(dummyMain.getAmount()),
                 applicationCodeDto.getFeeAmount().get().getValue());
-        Assertions.assertEquals(
+        assertEquals(
                 CurrencyUtil.getPoundsToPennies(dummyOffset.getAmount()),
                 applicationCodeDto.getOffsiteFeeAmount().get().getValue());
     }
@@ -154,11 +161,11 @@ class ApplicationCodeServiceImplTest {
 
         auditedService.findByCode(PayloadForGet.builder().code(code).date(localDate).build());
 
-        Assertions.assertNotNull(listener.getCompleteEvent());
+        assertNotNull(listener.getCompleteEvent());
         ApplicationCode audited = (ApplicationCode) listener.getCompleteEvent().getNewValue();
-        Assertions.assertNotSame(applicationCode, audited);
-        Assertions.assertEquals(code, audited.getCode());
-        Assertions.assertEquals(localDate, audited.getStartDate());
+        assertNotSame(applicationCode, audited);
+        assertEquals(code, audited.getCode());
+        assertEquals(localDate, audited.getStartDate());
     }
 
     @Test
@@ -186,21 +193,21 @@ class ApplicationCodeServiceImplTest {
         ApplicationCodeGetDetailDto applicationCodeDto =
                 applicationCodeService.findByCode(payloadForGet);
 
-        Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
-        Assertions.assertEquals(
+        assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+        assertEquals(
                 CurrencyUtil.getPoundsToPennies(dummyMain.getAmount()),
                 applicationCodeDto.getFeeAmount().get().getValue());
-        Assertions.assertEquals(
+        assertEquals(
                 CurrencyUtil.getPoundsToPennies(dummyOffset.getAmount()),
                 applicationCodeDto.getOffsiteFeeAmount().get().getValue());
     }
 
     @Test
     void findAllByCode() {
-        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode4 = new ApplicationCodeTestData().someComplete();
+        var applicationCode = createApplicationCodeWithFeeReference("REF-1");
+        var applicationCode2 = createApplicationCodeWithFeeReference("REF-2");
+        var applicationCode3 = createApplicationCodeWithFeeReference("REF-3");
+        var applicationCode4 = createApplicationCodeWithFeeReference("REF-4");
 
         Pageable criteria = Pageable.ofSize(10);
         PageImpl<ApplicationCode> results =
@@ -221,9 +228,15 @@ class ApplicationCodeServiceImplTest {
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
+        var feePairs =
+                Map.of(
+                        "REF-1", new FeePair(dummyMain, dummyOffset),
+                        "REF-2", new FeePair(dummyMain, dummyOffset),
+                        "REF-3", new FeePair(dummyMain, dummyOffset),
+                        "REF-4", new FeePair(dummyMain, dummyOffset));
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new FeePair(dummyMain, dummyOffset));
+        when(feeService.resolveFeePairs(List.of("REF-1", "REF-2", "REF-3", "REF-4"), todayUk))
+                .thenReturn(feePairs);
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -231,27 +244,28 @@ class ApplicationCodeServiceImplTest {
                         code, null, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
-        Assertions.assertEquals(
+        assertEquals(4, applicationCodeDtoPage.getTotalElements());
+        assertEquals(
                 applicationCode.getCode(),
                 applicationCodeDtoPage.getContent().get(0).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode2.getCode(),
                 applicationCodeDtoPage.getContent().get(1).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode3.getCode(),
                 applicationCodeDtoPage.getContent().get(2).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode4.getCode(),
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode());
+        verify(feeService).resolveFeePairs(List.of("REF-1", "REF-2", "REF-3", "REF-4"), todayUk);
     }
 
     @Test
     void findAllByTitle() {
-        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode4 = new ApplicationCodeTestData().someComplete();
+        var applicationCode = createApplicationCodeWithFeeReference("REF-1");
+        var applicationCode2 = createApplicationCodeWithFeeReference("REF-2");
+        var applicationCode3 = createApplicationCodeWithFeeReference("REF-3");
+        var applicationCode4 = createApplicationCodeWithFeeReference("REF-4");
 
         Pageable criteria = Pageable.ofSize(10);
         PageImpl<ApplicationCode> results =
@@ -270,9 +284,15 @@ class ApplicationCodeServiceImplTest {
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
+        var feePairs =
+                Map.of(
+                        "REF-1", new FeePair(dummyMain, dummyOffset),
+                        "REF-2", new FeePair(dummyMain, dummyOffset),
+                        "REF-3", new FeePair(dummyMain, dummyOffset),
+                        "REF-4", new FeePair(dummyMain, dummyOffset));
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new FeePair(dummyMain, dummyOffset));
+        when(feeService.resolveFeePairs(List.of("REF-1", "REF-2", "REF-3", "REF-4"), todayUk))
+                .thenReturn(feePairs);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -282,27 +302,27 @@ class ApplicationCodeServiceImplTest {
                         null, title, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
-        Assertions.assertEquals(
+        assertEquals(4, applicationCodeDtoPage.getTotalElements());
+        assertEquals(
                 applicationCode.getCode(),
                 applicationCodeDtoPage.getContent().get(0).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode2.getCode(),
                 applicationCodeDtoPage.getContent().get(1).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode3.getCode(),
                 applicationCodeDtoPage.getContent().get(2).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode4.getCode(),
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode());
     }
 
     @Test
     void findAllByDate() {
-        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode4 = new ApplicationCodeTestData().someComplete();
+        var applicationCode = createApplicationCodeWithFeeReference("REF-1");
+        var applicationCode2 = createApplicationCodeWithFeeReference("REF-2");
+        var applicationCode3 = createApplicationCodeWithFeeReference("REF-3");
+        var applicationCode4 = createApplicationCodeWithFeeReference("REF-4");
 
         Pageable criteria = Pageable.ofSize(10);
         PageImpl<ApplicationCode> results =
@@ -317,14 +337,19 @@ class ApplicationCodeServiceImplTest {
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
-
-        when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new FeePair(dummyMain, dummyOffset));
+        var feePairs =
+                Map.of(
+                        "REF-1", new FeePair(dummyMain, dummyOffset),
+                        "REF-2", new FeePair(dummyMain, dummyOffset),
+                        "REF-3", new FeePair(dummyMain, dummyOffset),
+                        "REF-4", new FeePair(dummyMain, dummyOffset));
 
         String title = "title";
         String code = "code";
         LocalDate effectiveDate = LocalDate.of(2021, Month.JUNE, 15);
         when(repository.search(code, title, effectiveDate, criteria)).thenReturn(results);
+        when(feeService.resolveFeePairs(List.of("REF-1", "REF-2", "REF-3", "REF-4"), effectiveDate))
+                .thenReturn(feePairs);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -334,27 +359,27 @@ class ApplicationCodeServiceImplTest {
                         code, title, effectiveDate, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
-        Assertions.assertEquals(
+        assertEquals(4, applicationCodeDtoPage.getTotalElements());
+        assertEquals(
                 applicationCode.getCode(),
                 applicationCodeDtoPage.getContent().get(0).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCode2.getCode(),
                 applicationCodeDtoPage.getContent().get(1).getApplicationCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
                 applicationCode3.getCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
                 applicationCode4.getCode());
     }
 
     @Test
     void findAllCriteria() {
-        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
-        ApplicationCode applicationCode4 = new ApplicationCodeTestData().someComplete();
+        var applicationCode = createApplicationCodeWithFeeReference("REF-1");
+        var applicationCode2 = createApplicationCodeWithFeeReference("REF-2");
+        var applicationCode3 = createApplicationCodeWithFeeReference("REF-3");
+        var applicationCode4 = createApplicationCodeWithFeeReference("REF-4");
 
         Pageable criteria = Pageable.ofSize(10);
         PageImpl<ApplicationCode> results =
@@ -373,9 +398,15 @@ class ApplicationCodeServiceImplTest {
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
+        var feePairs =
+                Map.of(
+                        "REF-1", new FeePair(dummyMain, dummyOffset),
+                        "REF-2", new FeePair(dummyMain, dummyOffset),
+                        "REF-3", new FeePair(dummyMain, dummyOffset),
+                        "REF-4", new FeePair(dummyMain, dummyOffset));
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new FeePair(dummyMain, dummyOffset));
+        when(feeService.resolveFeePairs(List.of("REF-1", "REF-2", "REF-3", "REF-4"), todayUk))
+                .thenReturn(feePairs);
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -383,19 +414,47 @@ class ApplicationCodeServiceImplTest {
                         null, null, null, PagingWrapper.of(List.of(), criteria.withPage(0)));
 
         // make assertion
-        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
-        Assertions.assertEquals(
+        assertEquals(4, applicationCodeDtoPage.getTotalElements());
+        assertEquals(
                 applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
                 applicationCode.getCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
                 applicationCode2.getCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
                 applicationCode3.getCode());
-        Assertions.assertEquals(
+        assertEquals(
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
                 applicationCode4.getCode());
+    }
+
+    @Test
+    void findAllCachesFeePairsByReferenceForThePage() {
+        var first = new ApplicationCodeTestData().someComplete();
+        var second = new ApplicationCodeTestData().someComplete();
+        var third = new ApplicationCodeTestData().someComplete();
+        first.setFeeReference("SHARED");
+        second.setFeeReference("SHARED");
+        third.setFeeReference("UNIQUE");
+
+        var criteria = Pageable.ofSize(10);
+        var results =
+                new PageImpl<>(List.of(first, second, third), Pageable.ofSize(3).withPage(0), 3);
+        var todayUk = FIXED_BUSINESS_DATE;
+        var feePairs = new LinkedHashMap<String, FeePair>();
+        feePairs.put("SHARED", new FeePair(new FeeTestData().someComplete(), null));
+        feePairs.put("UNIQUE", new FeePair(new FeeTestData().someComplete(), null));
+
+        when(repository.search("code", null, todayUk, criteria)).thenReturn(results);
+        when(feeService.resolveFeePairs(List.of("SHARED", "UNIQUE"), todayUk)).thenReturn(feePairs);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        applicationCodeService.findAll("code", null, null, PagingWrapper.of(List.of(), criteria));
+
+        verify(feeService).resolveFeePairs(List.of("SHARED", "UNIQUE"), todayUk);
+        verify(feeService, never()).resolveFeePair(Mockito.notNull(), eq(todayUk));
     }
 
     @Test
@@ -421,9 +480,9 @@ class ApplicationCodeServiceImplTest {
         ApplicationCodeGetDetailDto applicationCodeDto =
                 applicationCodeService.findByCode(payloadForGet);
 
-        Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
-        Assertions.assertEquals(JsonNullable.undefined(), applicationCodeDto.getFeeAmount());
-        Assertions.assertEquals(JsonNullable.undefined(), applicationCodeDto.getOffsiteFeeAmount());
+        assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+        assertEquals(JsonNullable.undefined(), applicationCodeDto.getFeeAmount());
+        assertEquals(JsonNullable.undefined(), applicationCodeDto.getOffsiteFeeAmount());
     }
 
     private ApplicationCodeServiceImpl buildServiceWithListeners(
@@ -438,6 +497,12 @@ class ApplicationCodeServiceImplTest {
                 fixedClock,
                 ukZone,
                 dummyGetApplicationCodeValidator);
+    }
+
+    private ApplicationCode createApplicationCodeWithFeeReference(String feeReference) {
+        var applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setFeeReference(feeReference);
+        return applicationCode;
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
