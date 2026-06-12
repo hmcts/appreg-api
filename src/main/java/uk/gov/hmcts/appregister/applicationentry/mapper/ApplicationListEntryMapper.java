@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
@@ -62,21 +61,43 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
-@Setter
 public abstract class ApplicationListEntryMapper {
 
-    @Autowired ApplicantMapper applicantMapper;
+    private ApplicantMapper applicantMapper;
 
-    @Autowired OfficialMapper officialMapper;
+    private OfficialMapper officialMapper;
 
-    @Autowired WordingTemplateMapper wordingTemplateMapper;
+    private WordingTemplateMapper wordingTemplateMapper;
+
+    @Autowired
+    public void setApplicantMapper(ApplicantMapper applicantMapper) {
+        this.applicantMapper = applicantMapper;
+    }
+
+    @Autowired
+    public void setOfficialMapper(OfficialMapper officialMapper) {
+        this.officialMapper = officialMapper;
+    }
+
+    @Autowired
+    public void setWordingTemplateMapper(WordingTemplateMapper wordingTemplateMapper) {
+        this.wordingTemplateMapper = wordingTemplateMapper;
+    }
+
+    protected ApplicantMapper getApplicantMapper() {
+        return applicantMapper;
+    }
+
+    protected WordingTemplateMapper getWordingTemplateMapper() {
+        return wordingTemplateMapper;
+    }
 
     @Mapping(
             target = "applicant",
             expression =
                     "java(org.openapitools.jackson.nullable."
                             + "JsonNullable.of("
-                            + "applicantMapper"
+                            + "getApplicantMapper()"
                             + ".getNameForApplicant("
                             + "summaryProjection.getStandardApplicant(), summaryProjection.getApplicant())))")
     @Mapping(
@@ -84,7 +105,8 @@ public abstract class ApplicationListEntryMapper {
             expression =
                     "java(org.openapitools.jackson.nullable."
                             + "JsonNullable.of("
-                            + "applicantMapper.getNameForNameAddress(summaryProjection.getRespondent())))")
+                            + "getApplicantMapper().getNameForNameAddress("
+                            + "summaryProjection.getRespondent())))")
     public abstract ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);
 
@@ -442,7 +464,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(wordingTemplateMapper.getTemplateDetail("
+                    "java(getWordingTemplateMapper().getTemplateDetail("
                             + "() -> applicationListEntry.getApplicationCode().getWording(),"
                             + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
@@ -486,7 +508,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(wordingTemplateMapper.getTemplateDetail("
+                    "java(getWordingTemplateMapper().getTemplateDetail("
                             + "() -> applicationListEntry.getApplicationCode().getWording(),"
                             + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(
@@ -565,12 +587,6 @@ public abstract class ApplicationListEntryMapper {
         return null;
     }
 
-    /**
-     * A useful mapper to map the applicant details of the standard applicant.
-     *
-     * @param nameAddress The database name and address
-     * @return The applicant Dto
-     */
     /**
      * A useful mapper to map the applicant details of the standard applicant.
      *

@@ -56,15 +56,14 @@ class BulkUploadAsyncLifecycleTest {
 
     @Test
     void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure(
-            CapturedOutput output) throws IOException {
+            CapturedOutput output) {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> lifecycle.validating(event(row, context)));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -130,7 +129,7 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() throws IOException {
+    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() {
         BulkUploadRow row = validOrganisationRow();
         doThrow(
                         new AppRegistryException(
@@ -139,11 +138,10 @@ class BulkUploadAsyncLifecycleTest {
                 .when(bulkCreateApplicationEntryValidator)
                 .validate(any(), any());
         JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> lifecycle.validating(event(row, context)));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);

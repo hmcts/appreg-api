@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +70,7 @@ class DurationReportDataReaderTest {
         DurationReportRow row = pages.getFirst().getFirst();
 
         Assertions.assertEquals(123L, row.getApplicationListId());
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Westminster", row.getCourthouseName());
         Assertions.assertEquals("Other court", row.getOtherCourthouse());
         Assertions.assertEquals("01", row.getCjaCode());
@@ -101,8 +103,8 @@ class DurationReportDataReaderTest {
 
         DurationFilterDto filter =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         DurationReportDataReader reader =
                 new DurationReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<DurationReportRow> pageReader =
@@ -147,8 +149,8 @@ class DurationReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
@@ -156,7 +158,8 @@ class DurationReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
             Assertions.assertEquals(123L, parameters.getValue("lastApplicationListId"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
@@ -171,17 +174,17 @@ class DurationReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new DurationFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .location(location);
     }
 
     private void assertLegacyDurationQueryShape(String query) {
-        Assertions.assertTrue(query.contains("FROM application_lists al"));
-        Assertions.assertTrue(query.contains("LEFT JOIN criminal_justice_area cja"));
-        Assertions.assertTrue(query.contains("al.application_list_status = 'CLOSED'"));
-        Assertions.assertTrue(query.contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'"));
-        Assertions.assertTrue(query.contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)"));
+        assertThat(query).contains("FROM application_lists al");
+        assertThat(query).contains("LEFT JOIN criminal_justice_area cja");
+        assertThat(query).contains("al.application_list_status = 'CLOSED'");
+        assertThat(query).contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'");
+        assertThat(query).contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)");
         Assertions.assertTrue(
                 query.contains("ORDER BY al.application_list_date DESC, al.al_id DESC"));
     }
@@ -190,7 +193,7 @@ class DurationReportDataReaderTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.getLong("al_id")).thenReturn(123L);
         when(resultSet.getObject("list_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2018, 5, 18));
+                .thenReturn(LocalDate.of(2018, Month.MAY, 18));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Westminster");
         when(resultSet.getString("other_courthouse")).thenReturn("Other court");
         when(resultSet.getString("cja_code")).thenReturn("01");

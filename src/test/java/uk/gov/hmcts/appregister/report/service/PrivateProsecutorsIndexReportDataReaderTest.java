@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +71,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
         PrivateProsecutorsIndexReportRow row = pages.getFirst().getFirst();
 
         Assertions.assertEquals(123L, row.getApplicationListEntryId());
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Westminster", row.getCourthouseName());
         Assertions.assertEquals("Other court", row.getOtherCourthouse());
         Assertions.assertEquals("01", row.getCjaCode());
@@ -111,8 +113,8 @@ class PrivateProsecutorsIndexReportDataReaderTest {
 
         PrivateProsecutorsIndexFilterDto filter =
                 new PrivateProsecutorsIndexFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         PrivateProsecutorsIndexReportDataReader reader =
                 new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<PrivateProsecutorsIndexReportRow> pageReader =
@@ -158,8 +160,8 @@ class PrivateProsecutorsIndexReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("Smith", parameters.getValue("applicantSurname"));
         Assertions.assertEquals("John", parameters.getValue("applicantFirstName"));
         Assertions.assertEquals("Acme", parameters.getValue("applicantOrganisationName"));
@@ -174,7 +176,8 @@ class PrivateProsecutorsIndexReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
             Assertions.assertEquals(123L, parameters.getValue("lastApplicationListEntryId"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
@@ -189,8 +192,8 @@ class PrivateProsecutorsIndexReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new PrivateProsecutorsIndexFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .applicantSurname("Smith")
                 .applicantFirstName("John")
                 .applicantOrganisationName("Acme")
@@ -202,23 +205,23 @@ class PrivateProsecutorsIndexReportDataReaderTest {
     }
 
     private void assertLegacyPrivateProsecutorsIndexQueryShape(String query) {
-        Assertions.assertTrue(query.contains("JOIN name_address app_na"));
-        Assertions.assertTrue(query.contains("FROM standard_applicants sa"));
-        Assertions.assertTrue(query.contains("NULLIF(TRIM(sa.name), '')"));
-        Assertions.assertTrue(query.contains("app_na.first_name"));
-        Assertions.assertTrue(query.contains("app_na.last_name"));
-        Assertions.assertTrue(query.contains("COALESCE(sa.forename_1, '')"));
-        Assertions.assertTrue(query.contains("COALESCE(sa.surname, '')"));
-        Assertions.assertTrue(query.contains("sa.standard_applicant_code"));
-        Assertions.assertTrue(query.contains("AND ale.sa_sa_id IS NULL"));
-        Assertions.assertTrue(query.contains("OR UPPER(sa.standard_applicant_name)"));
-        Assertions.assertTrue(query.contains("al.application_list_status = 'CLOSED'"));
-        Assertions.assertTrue(query.contains("ac.application_code = 'MX99010'"));
-        Assertions.assertTrue(query.contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'"));
-        Assertions.assertTrue(query.contains("ale.is_deleted IS NULL OR ale.is_deleted <> 'Y'"));
-        Assertions.assertTrue(query.contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)"));
-        Assertions.assertTrue(query.contains("ROW_NUMBER() OVER"));
-        Assertions.assertTrue(query.contains("ORDER BY rc.resolution_code DESC"));
+        assertThat(query).contains("JOIN name_address app_na");
+        assertThat(query).contains("FROM standard_applicants sa");
+        assertThat(query).contains("NULLIF(TRIM(sa.name), '')");
+        assertThat(query).contains("app_na.first_name");
+        assertThat(query).contains("app_na.last_name");
+        assertThat(query).contains("COALESCE(sa.forename_1, '')");
+        assertThat(query).contains("COALESCE(sa.surname, '')");
+        assertThat(query).contains("sa.standard_applicant_code");
+        assertThat(query).contains("AND ale.sa_sa_id IS NULL");
+        assertThat(query).contains("OR UPPER(sa.standard_applicant_name)");
+        assertThat(query).contains("al.application_list_status = 'CLOSED'");
+        assertThat(query).contains("ac.application_code = 'MX99010'");
+        assertThat(query).contains("al.is_deleted IS NULL OR al.is_deleted <> 'Y'");
+        assertThat(query).contains("ale.is_deleted IS NULL OR ale.is_deleted <> 'Y'");
+        assertThat(query).contains("SUBSTRING(al.courthouse_code FROM 2 FOR 2)");
+        assertThat(query).contains("ROW_NUMBER() OVER");
+        assertThat(query).contains("ORDER BY rc.resolution_code DESC");
         Assertions.assertTrue(
                 query.contains("ORDER BY fa.application_list_date DESC, fa.ale_id DESC"));
     }
@@ -227,7 +230,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.getLong("ale_id")).thenReturn(123L);
         when(resultSet.getObject("list_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2018, 5, 18));
+                .thenReturn(LocalDate.of(2018, Month.MAY, 18));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Westminster");
         when(resultSet.getString("other_courthouse")).thenReturn("Other court");
         when(resultSet.getString("cja_code")).thenReturn("01");

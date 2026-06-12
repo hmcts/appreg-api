@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,7 +47,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BulkCreateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -198,7 +200,7 @@ class BulkCreateApplicationEntryValidatorTest {
         CreateApplicationEntryValidationSuccess success =
                 validator.validate(payload(), (validatable, result) -> result);
 
-        Assertions.assertTrue(entryCreateDto.getWordingFields().isEmpty());
+        assertThat(entryCreateDto.getWordingFields()).isEmpty();
         Assertions.assertEquals(
                 "Request to copy documents",
                 success.getWordingSentence()
@@ -222,11 +224,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "one")));
+        PayloadForCreate<EntryCreateDto> payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
@@ -246,11 +249,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "")));
+        PayloadForCreate<EntryCreateDto> payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());

@@ -4,10 +4,10 @@ import java.time.LocalTime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class QueryParamTimeDeserializerTest {
+class QueryParamTimeDeserializerTest {
 
     @Test
-    void testDeserialize() throws Exception {
+    void testDeserialize() {
         Assertions.assertEquals(
                 LocalTime.parse("12:30:00"), new QueryParamTimeDeserializer().convert("12:30"));
     }

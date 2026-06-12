@@ -48,7 +48,7 @@ public class JobStatusResponse {
      * @return The job id details.
      */
     public JobIdRequest getJobId() {
-        return JobIdRequest.builder().id(getUuid()).userName(getUserName()).build();
+        return JobIdRequest.builder().id(uuid).userName(userName).build();
     }
 
     /**

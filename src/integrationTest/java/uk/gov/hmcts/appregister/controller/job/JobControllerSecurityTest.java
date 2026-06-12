@@ -8,7 +8,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class JobControllerSecurityTest extends AbstractSecurityControllerTest {
+class JobControllerSecurityTest extends AbstractSecurityControllerTest {
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
@@ -19,7 +19,7 @@ public class JobControllerSecurityTest extends AbstractSecurityControllerTest {
                                         JobControllerSearchTest.WEB_CONTEXT
                                                 + "/"
                                                 + UUID.randomUUID(),
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

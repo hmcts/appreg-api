@@ -45,7 +45,7 @@ class CsvReaderTest extends AbstractAsyncTest {
     }
 
     @Test
-    public void testFailFormat() throws IOException {
+    void testFailFormat() throws IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         URL resource = classLoader.getResource("person_failformat.csv");
         File fileToLoad = new File(resource.getFile());
@@ -65,7 +65,7 @@ class CsvReaderTest extends AbstractAsyncTest {
     }
 
     @Test
-    public void testDataTypeError() throws IOException {
+    void testDataTypeError() throws IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         URL resource = classLoader.getResource("person_faildataformat.csv");
         File fileToLoad = new File(resource.getFile());

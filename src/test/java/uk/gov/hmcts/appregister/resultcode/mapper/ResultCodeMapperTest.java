@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
-public class ResultCodeMapperTest {
+class ResultCodeMapperTest {
     private final ResultCodeMapper mapper = new ResultCodeMapperImpl();
 
     @Test
@@ -43,7 +43,7 @@ public class ResultCodeMapperTest {
         entity.setEndDate(endDate);
         entity.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        mapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         // assert
@@ -81,7 +81,7 @@ public class ResultCodeMapperTest {
         entity.setStartDate(startDate);
         entity.setEndDate(null);
 
-        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        mapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         Assertions.assertEquals(code, dto.getResultCode());
@@ -108,7 +108,7 @@ public class ResultCodeMapperTest {
         entity.setStartDate(null);
         entity.setEndDate(endDate);
 
-        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        mapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         Assertions.assertEquals(code, dto.getResultCode());
@@ -119,9 +119,9 @@ public class ResultCodeMapperTest {
 
     @Test
     void testNoEntity() {
-        CodeAndTitle record = new CodeAndTitle(null, null);
+        CodeAndTitle codeAndTitle = new CodeAndTitle(null, null);
 
-        var mapper = new ResultCodeMapperImpl();
-        Assertions.assertNotNull(mapper.toEntity(record));
+        var localMapper = new ResultCodeMapperImpl();
+        Assertions.assertNotNull(localMapper.toEntity(codeAndTitle));
     }
 }

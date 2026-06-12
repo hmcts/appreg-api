@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 
-public class CsvWriterTest extends AbstractAsyncTest {
+class CsvWriterTest extends AbstractAsyncTest {
 
     @AfterEach
     void tearDown() {

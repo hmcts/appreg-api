@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,12 +50,12 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
-public class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
+class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
 
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
 
         // loop through all sort fields to make sure no errors occur
@@ -93,9 +94,8 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void
-            givenApplicationListSuccessfulDefaultSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationListSuccessfulDefaultSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -129,7 +129,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     // This test cant be made a stability test as slows the test run down
     // TODO: look into this
     @Test
-    public void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -197,7 +197,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByCourtCode_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByCourtCode_thenSuccessResponse()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -258,7 +258,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByLocation_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByLocation_thenSuccessResponse()
             throws Exception {
 
         // create the token
@@ -319,7 +319,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
+    void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
             throws Exception {
 
         // create the token
@@ -370,7 +370,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByCjaLocation_thenSuccessResponse()
+    void givenApplicationListSuccessfulSort_whenSortByCjaLocation_thenSuccessResponse()
             throws Exception {
 
         // create the token
@@ -439,9 +439,12 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         String prefix = uniquePrefix("get-default-sort");
 
-        createWithCourt(prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-        createWithCourt(prefix + " - Alpha", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-        createWithCourt(prefix + " - Mango", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - Zebra", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - Alpha", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - Mango", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -478,7 +481,8 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         String prefix = uniquePrefix("get-sort-disallowed");
 
-        createWithCourt(prefix + " - X", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - X", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -500,7 +504,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -550,9 +554,9 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         String prefix = uniquePrefix("get-paging");
 
-        createWithCourt(prefix + " - A", LocalDate.of(2025, 10, 14), LocalTime.of(9, 0));
-        createWithCourt(prefix + " - B", LocalDate.of(2025, 10, 15), LocalTime.of(9, 0));
-        createWithCourt(prefix + " - C", LocalDate.of(2025, 10, 16), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - A", LocalDate.of(2025, Month.OCTOBER, 14), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - B", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - C", LocalDate.of(2025, Month.OCTOBER, 16), LocalTime.of(9, 0));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -615,7 +619,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     @DisplayName("GET: filter by date + time (exact match)")
     void givenDateAndTimeFilter_thenOnlyThatSlot() throws Exception {
         String prefix = uniquePrefix("get-date-time");
-        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalDate day = LocalDate.of(2025, Month.OCTOBER, 15);
         LocalTime t0930 = LocalTime.of(9, 30);
 
         ApplicationListGetDetailDto applicationListGetDetailDto =
@@ -694,7 +698,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     void givenTimeFilter_thenSlot() throws Exception {
 
         String prefix = uniquePrefix("get-date-time");
-        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalDate day = LocalDate.of(2025, Month.OCTOBER, 15);
         LocalTime t2359 = LocalTime.of(23, 59);
 
         createWithCourt(prefix + " - keep", day, t2359);
@@ -738,8 +742,10 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         String prefix = uniquePrefix("get-court-filter");
 
-        createWithCourt(prefix + " - court", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-        createWithCja(prefix + " - cja", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(
+                prefix + " - court", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
+        createWithCja(
+                prefix + " - cja", LocalDate.of(2025, Month.OCTOBER, 15), LocalTime.of(10, 30));
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -784,8 +790,10 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         String prefix = uniquePrefix("get-cja-filter");
 
-        createWithCja(prefix + " - cja", LocalDate.of(2025, 10, 16), LocalTime.of(11, 0));
-        createWithCourt(prefix + " - court", LocalDate.of(2025, 10, 16), LocalTime.of(11, 0));
+        createWithCja(
+                prefix + " - cja", LocalDate.of(2025, Month.OCTOBER, 16), LocalTime.of(11, 0));
+        createWithCourt(
+                prefix + " - court", LocalDate.of(2025, Month.OCTOBER, 16), LocalTime.of(11, 0));
 
         var adminToken =
                 getATokenWithValidCredentials()
@@ -831,7 +839,9 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         String prefix = uniquePrefix("soft-deleted");
         ApplicationListGetDetailDto dto =
                 createWithCourt(
-                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+                        prefix + " - Zebra",
+                        LocalDate.of(2025, Month.OCTOBER, 15),
+                        LocalTime.of(10, 30));
         UUID id = dto.getId();
 
         var userToken =
@@ -1096,7 +1106,9 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         String prefix = uniquePrefix("soft-deleted");
         ApplicationListGetDetailDto dto =
                 createWithCourt(
-                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+                        prefix + " - Zebra",
+                        LocalDate.of(2025, Month.OCTOBER, 15),
+                        LocalTime.of(10, 30));
         UUID id = dto.getId();
 
         // create a single entry
@@ -1116,7 +1128,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         ApplicationListGetDetailDto page = resp.as(ApplicationListGetDetailDto.class);
 
         assertThat(page.getEntriesSummary().size()).isEqualTo(1);
-        Assertions.assertTrue(page.getDescription().startsWith("soft-deleted ::"));
+        assertThat(page.getDescription()).startsWith("soft-deleted ::");
         Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
         Assertions.assertEquals(1, page.getEntriesCount());
         Assertions.assertEquals("CCC003", page.getCourtCode());
@@ -1145,7 +1157,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
+    void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
         var token = getToken();
 
         // create list

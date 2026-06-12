@@ -1,5 +1,6 @@
 type: object
 description: The Official hearing the application. Blank fields will be rejected, nulls should be used instead.
+additionalProperties: false
 properties:
 
   title:

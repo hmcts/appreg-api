@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.model.EntryToList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -46,6 +49,11 @@ public class BulkApplicationEntryResultCreationValidator
                     validateSuccess) {
 
         Optional<ApplicationList> applicationListOptional;
+        List<UUID> entryIds = getEntryIds(validatable);
+
+        if (entryIds != null) {
+            validateNoDuplicateEntryIds(entryIds);
+        }
 
         // lets cope with the situation where we may not have a list but if
         // we do the entries should relate to those entries
@@ -60,11 +68,12 @@ public class BulkApplicationEntryResultCreationValidator
                         "The list does not exist %s".formatted(validatable.getListId()));
             }
 
+            validateEntryIdsProvided(entryIds);
+
             // now validate the entries belong to the list
             boolean validated =
                     applicationListEntryRepository.doesApplicationEntryBelongToApplicationList(
-                            validatable.getPayload().getEntryIds().stream().toList(),
-                            validatable.getListId());
+                            entryIds, validatable.getListId());
 
             // if this is not valid then error
             if (!validated) {
@@ -81,10 +90,7 @@ public class BulkApplicationEntryResultCreationValidator
 
         // process the validator according to whether we have the list ids or not
         if (validatable.getListId() != null) {
-            List<EntryToList> entryToListLst =
-                    getEntryForList(
-                            validatable.getListId(),
-                            validatable.getPayload().getEntryIds().stream().toList());
+            List<EntryToList> entryToListLst = getEntryForList(validatable.getListId(), entryIds);
 
             for (EntryToList entryToList : entryToListLst) {
                 // validate the entries
@@ -94,11 +100,11 @@ public class BulkApplicationEntryResultCreationValidator
         } else {
             // get all of the entry to list mappings
             List<EntryToList> entryToListMapping;
+            validateEntryIdsProvided(entryIds);
             entryToListMapping =
-                    applicationListEntryRepository.findApplicationListForAllEntries(
-                            validatable.getPayload().getEntryIds().stream().toList());
+                    applicationListEntryRepository.findApplicationListForAllEntries(entryIds);
 
-            if (entryToListMapping.size() < validatable.getPayload().getEntryIds().size()) {
+            if (entryToListMapping.size() < entryIds.size()) {
                 throw new AppRegistryException(
                         ApplicationListEntryResultError.APPLICATION_ENTRIES_NOT_ALL_EXIST,
                         "The entries are not all present");
@@ -117,6 +123,31 @@ public class BulkApplicationEntryResultCreationValidator
 
         // now pass the success details through to the callback so the logic can take place
         return validateSuccess.apply(validatable, bulkSuccess);
+    }
+
+    private void validateNoDuplicateEntryIds(List<UUID> entryIds) {
+        Set<UUID> uniqueEntryIds = new HashSet<>(entryIds);
+
+        if (uniqueEntryIds.size() != entryIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE,
+                    "Duplicate entry IDs are not allowed");
+        }
+    }
+
+    private List<UUID> getEntryIds(PayloadForCreateResults<BulkResultDto> validatable) {
+        if (validatable.getPayload() == null || validatable.getPayload().getEntryIds() == null) {
+            return null;
+        }
+
+        return new ArrayList<>(validatable.getPayload().getEntryIds());
+    }
+
+    private void validateEntryIdsProvided(List<UUID> entryIds) {
+        if (entryIds == null || entryIds.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
+        }
     }
 
     private List<EntryToList> getEntryForList(UUID listId, List<UUID> entryIds) {

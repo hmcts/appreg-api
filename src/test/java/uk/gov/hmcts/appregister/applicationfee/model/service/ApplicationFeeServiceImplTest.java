@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -19,9 +20,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationFeeServiceImplTest {
+class ApplicationFeeServiceImplTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private FeeRepository repository;
 
@@ -30,7 +31,7 @@ public class ApplicationFeeServiceImplTest {
     @InjectMocks private ApplicationFeeServiceImpl applicationFeeService;
 
     @Test
-    public void testMainAndOffsiteFee() {
+    void testMainAndOffsiteFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         Fee feeMain = new Fee();
@@ -56,7 +57,7 @@ public class ApplicationFeeServiceImplTest {
     }
 
     @Test
-    public void testMainAndNoOffsiteFee() {
+    void testMainAndNoOffsiteFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         Fee feeMain = new Fee();
@@ -76,7 +77,7 @@ public class ApplicationFeeServiceImplTest {
     }
 
     @Test
-    public void testOffsiteFeeAndNoMainFee() {
+    void testOffsiteFeeAndNoMainFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         Fee feeOffsite = new Fee();
@@ -95,7 +96,7 @@ public class ApplicationFeeServiceImplTest {
     }
 
     @Test
-    public void testNoOffsiteFeeAndNoMainFee() {
+    void testNoOffsiteFeeAndNoMainFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         String ref = "ref";
@@ -110,7 +111,7 @@ public class ApplicationFeeServiceImplTest {
     }
 
     @Test
-    public void testMultipleOffsiteFeeAndMainFee() {
+    void testMultipleOffsiteFeeAndMainFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         // generate multiple main and offsite fees

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.audit;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ class DurationReportParameterAuditTest {
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
         DurationFilterDto filter =
                 new DurationFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 30))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                         .location(
                                 new LegacyReportLocation()
                                         .otherLocationDescription("Other court")
@@ -39,8 +40,8 @@ class DurationReportParameterAuditTest {
         DurationReportParameterAudit audit =
                 DurationReportParameterAudit.from(
                         new DurationFilterDto()
-                                .dateFrom(LocalDate.of(2026, 4, 1))
-                                .dateTo(LocalDate.of(2026, 4, 30)));
+                                .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                                .dateTo(LocalDate.of(2026, Month.APRIL, 30)));
 
         Assertions.assertEquals(
                 List.of(

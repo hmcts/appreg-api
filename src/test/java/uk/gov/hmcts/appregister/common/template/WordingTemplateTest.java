@@ -3,12 +3,15 @@ package uk.gov.hmcts.appregister.common.template;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
-public class WordingTemplateTest {
+class WordingTemplateTest {
     private static final String DATE_TEMPLATE =
             "This is a test {DATE|Applicant officer|10} with a date";
 
@@ -23,32 +26,32 @@ public class WordingTemplateTest {
                 TemplateConstraint.TypeEnum.TEXT, template.getDetail().getConstraint().getType());
     }
 
-    @Test
-    void testTemplateFailParsingTemplateFormatIncorrect() {
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "{Wrong}",
+                "{Wrong",
+                "{TEXT|Applicant officer|10|EXTRA}",
+                "{|Applicant officer|10}",
+                "{TEXT||10}",
+                "{TEXT|Applicant officer|}"
+            })
+    void testTemplateFailParsingTemplateFormatIncorrect(String invalidTemplate) {
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> WordingTemplateSentence.WordingTemplate.with("{Wrong}"));
+                        () -> WordingTemplateSentence.WordingTemplate.with(invalidTemplate));
         Assertions.assertEquals(
                 CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
     }
 
     @Test
-    void testTemplateFailParsingTemplateFormatIncorrect2() {
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> WordingTemplateSentence.WordingTemplate.with("{Wrong"));
-        Assertions.assertEquals(
-                CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
-    }
-
-    @Test
-    public void testParameterSizeMismatch() {
+    void testParameterSizeMismatch() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
+        List<TemplateSubstitution> substitutions = List.of();
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
-                        AppRegistryException.class, () -> collection.substitute(List.of()));
+                        AppRegistryException.class, () -> collection.substitute(substitutions));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
@@ -56,7 +59,7 @@ public class WordingTemplateTest {
     // TODO: Re-enable this once the decision has been made on the FE implementation.
     /*
     @Test
-    public void testInvalidDateFormatFailure() {
+    void testInvalidDateFormatFailure() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
@@ -69,7 +72,7 @@ public class WordingTemplateTest {
     } */
 
     @Test
-    public void testInvalidLengthFormatFailure() {
+    void testInvalidLengthFormatFailure() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(

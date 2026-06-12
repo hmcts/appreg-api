@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.audit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +33,7 @@ class AuditOperationSlf4jLoggerTest {
         Assertions.assertEquals(
                 "Completion fail audit\s" + AuditOperationSlf4jLogger.getLog(auditRequest),
                 logCaptor.getInfoLogs().getFirst());
-        Assertions.assertFalse(logCaptor.getInfoLogs().getFirst().contains("p_messagecontent"));
+        assertThat(logCaptor.getInfoLogs().getFirst()).doesNotContain("p_messagecontent");
     }
 
     @Test
@@ -44,7 +46,7 @@ class AuditOperationSlf4jLoggerTest {
         Assertions.assertEquals(
                 "Start audit\s" + AuditOperationSlf4jLogger.getLog(startEvent),
                 logCaptor.getInfoLogs().getFirst());
-        Assertions.assertFalse(logCaptor.getInfoLogs().getFirst().contains("p_messagecontent"));
+        assertThat(logCaptor.getInfoLogs().getFirst()).doesNotContain("p_messagecontent");
     }
 
     @Test
@@ -58,6 +60,6 @@ class AuditOperationSlf4jLoggerTest {
         Assertions.assertEquals(
                 "Completion audit\s" + AuditOperationSlf4jLogger.getLog(auditRequest),
                 logCaptor.getInfoLogs().getFirst());
-        Assertions.assertFalse(logCaptor.getInfoLogs().getFirst().contains("p_messagecontent"));
+        assertThat(logCaptor.getInfoLogs().getFirst()).doesNotContain("p_messagecontent");
     }
 }

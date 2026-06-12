@@ -7,7 +7,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class CriminalJusticeControllerSecurityTest extends AbstractSecurityControllerTest {
+class CriminalJusticeControllerSecurityTest extends AbstractSecurityControllerTest {
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
@@ -18,7 +18,7 @@ public class CriminalJusticeControllerSecurityTest extends AbstractSecurityContr
                                                 + "/"
                                                 + AbstractCriminalJusticeControllerCrudTest
                                                         .EXPECTED_CODE,
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
@@ -27,7 +27,7 @@ public class CriminalJusticeControllerSecurityTest extends AbstractSecurityContr
                         .url(
                                 getLocalUrlWithDate(
                                         AbstractCriminalJusticeControllerCrudTest.WEB_CONTEXT,
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

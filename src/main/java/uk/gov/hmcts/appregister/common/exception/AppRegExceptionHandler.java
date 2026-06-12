@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
@@ -16,6 +17,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -113,18 +116,23 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             ConstraintViolationException ex) {
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
 
-        problemDetail.setDetail("Constraints failed for fields:" + System.lineSeparator());
-
-        // add the failure specifics to the problem detail properties
-        for (ConstraintViolation<?> fieldError : ex.getConstraintViolations()) {
+        if (ex.getConstraintViolations().isEmpty()) {
+            problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "");
+        } else {
+            String constraintDetail =
+                    ex.getConstraintViolations().stream()
+                            .sorted(
+                                    Comparator.comparing(
+                                            fieldError -> fieldError.getPropertyPath().toString()))
+                            .map(
+                                    fieldError ->
+                                            fieldError.getPropertyPath()
+                                                    + "="
+                                                    + fieldError.getMessage())
+                            .collect(Collectors.joining(System.lineSeparator()));
             problemDetail.setDetail(
-                    problemDetail.getDetail()
-                            + fieldError.getPropertyPath()
-                            + "="
-                            + fieldError.getMessage());
+                    "Constraints failed for fields:" + System.lineSeparator() + constraintDetail);
         }
-
-        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
         logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
@@ -143,7 +151,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -189,7 +197,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+    protected @Nullable ResponseEntity<@NonNull Object> handleHandlerMethodValidationException(
             HandlerMethodValidationException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -199,7 +207,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodValidationException(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMethodValidationException(
             MethodValidationException ex,
             HttpHeaders headers,
             HttpStatus status,
@@ -209,13 +217,15 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+    protected @Nullable ResponseEntity<@NonNull Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        UnrecognizedPropertyException unrecognizedPropertyException =
+                findCause(ex, UnrecognizedPropertyException.class);
         ValueInstantiationException valueInstantiationException =
                 findCause(ex, ValueInstantiationException.class);
 
@@ -226,6 +236,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(dateException.getMessage());
         } else if (isEnumInstantiationProblem(valueInstantiationException)) {
             problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
+        } else if (unrecognizedPropertyException != null) {
+            problemDetail.setDetail(
+                    "Unsupported request field: " + getJsonPath(unrecognizedPropertyException));
         } else if (invalidFormatException != null) {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
@@ -263,6 +276,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private String getJsonPath(ValueInstantiationException exception) {
+        return getJsonPath((JsonMappingException) exception);
+    }
+
+    private String getJsonPath(JsonMappingException exception) {
         if (exception.getPath().isEmpty()) {
             return UNKNOWN_FIELD;
         }
@@ -283,7 +300,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMissingServletRequestParameter(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMissingServletRequestParameter(
             MissingServletRequestParameterException ex,
             HttpHeaders headers,
             HttpStatusCode status,

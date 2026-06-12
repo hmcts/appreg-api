@@ -31,6 +31,9 @@ import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 
 public final class ApplicationListEntryUtil {
+    private ApplicationListEntryUtil() {
+        /* This utility class should not be instantiated */
+    }
 
     /** Creates a new ApplicationListEntry with a standard applicant. */
     public static ApplicationListEntry saveApplicationListEntry(

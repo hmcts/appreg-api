@@ -21,7 +21,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationEntryResultGetValidatorTest {
+class ApplicationEntryResultGetValidatorTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;

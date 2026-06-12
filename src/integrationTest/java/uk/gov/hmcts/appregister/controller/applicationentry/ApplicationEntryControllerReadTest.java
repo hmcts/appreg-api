@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,13 +59,13 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTest {
 
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Test
     @StabilityTest
-    public void testGetApplicationEntrySuccess() throws Exception {
+    void testGetApplicationEntrySuccess() throws Exception {
         var tokenGenerator = createAdminToken();
 
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
@@ -177,7 +178,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationEntryListDoesNotExist() throws Exception {
+    void testGetApplicationEntryListDoesNotExist() throws Exception {
         var tokenGenerator = createAdminToken();
 
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
@@ -201,7 +202,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationEntryListIsClosedExist() throws Exception {
+    void testGetApplicationEntryListIsClosedExist() throws Exception {
         var tokenGenerator = createAdminToken();
 
         var responseSpec =
@@ -223,7 +224,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationEntryListWithIsDeleted() throws Exception {
+    void testGetApplicationEntryListWithIsDeleted() throws Exception {
         var tokenGenerator = createAdminToken();
 
         var responseSpec =
@@ -245,7 +246,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationEntryListWithEntryNotPartOfList() throws Exception {
+    void testGetApplicationEntryListWithEntryNotPartOfList() throws Exception {
         var tokenGenerator = createAdminToken();
 
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
@@ -266,7 +267,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationEntryListWithEntryNotInList() throws Exception {
+    void testGetApplicationEntryListWithEntryNotInList() throws Exception {
         var tokenGenerator = createAdminToken();
 
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
@@ -290,7 +291,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesForUnknownListReturns404() throws Exception {
+    void testGetApplicationListEntriesForUnknownListReturns404() throws Exception {
         var tokenGenerator = createAdminToken();
 
         var responseSpec =
@@ -437,7 +438,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearch() throws Exception {
+    void testGetApplicationEntriesSearch() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -582,7 +583,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithAllDetails() throws Exception {
+    void testGetApplicationEntriesSearchWithAllDetails() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -699,7 +700,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithPartialAllDetails() throws Exception {
+    void testGetApplicationEntriesSearchWithPartialAllDetails() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -816,9 +817,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void
-            givenApplicationEntryListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationEntryListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
         for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
                 ApplicationEntrySortFieldEnum.values()) {
 
@@ -852,7 +852,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithSort() throws Exception {
+    void testGetApplicationEntriesSearchWithSort() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -981,9 +981,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void
-            givenApplicationListEntrySuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationListEntrySuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
         for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
                 ApplicationEntrySortFieldEnum.values()) {
 
@@ -1017,7 +1016,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationEntriesWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
         // create the token
@@ -1044,9 +1043,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidSortQuery_thenReturn400()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationEntriesWithPagingInvalidSortQuery_thenReturn400()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1070,9 +1068,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     // 0 and returns a 200. Our implementation
     // returns a 500
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn200()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1095,7 +1092,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     // does not behave
     // accordingly
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
                     throws Exception {
         // create the token
@@ -1119,7 +1116,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
+    void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", true);
 
@@ -1141,7 +1138,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesWithInvalidSequenceNumberReturnsWholeNumberMessage()
+    void testGetApplicationListEntriesWithInvalidSequenceNumberReturnsWholeNumberMessage()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
 
@@ -1167,9 +1164,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void
-            testGetApplicationListEntriesWithSpecialCharacterSequenceNumberReturnsWholeNumberMessage()
-                    throws Exception {
+    void testGetApplicationListEntriesWithSpecialCharacterSequenceNumberReturnsWholeNumberMessage()
+            throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
 
         Response responseSpec =
@@ -1193,7 +1189,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesWithInvalidRespondentPostcodeReturnsValidationError()
+    void testGetApplicationListEntriesWithInvalidRespondentPostcodeReturnsValidationError()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
 
@@ -1213,7 +1209,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesWithInvalidFeeRequiredReturnsBooleanMessage()
+    void testGetApplicationListEntriesWithInvalidFeeRequiredReturnsBooleanMessage()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
 
@@ -1238,29 +1234,28 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesWithInvalidApplicationTitleReturnsValidationError()
+    void testGetApplicationListEntriesWithInvalidApplicationTitleReturnsValidationError()
             throws Exception {
         assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
                 "applicationTitle", "Title;--");
     }
 
     @Test
-    public void testGetApplicationListEntriesWithInvalidApplicantNameReturnsValidationError()
+    void testGetApplicationListEntriesWithInvalidApplicantNameReturnsValidationError()
             throws Exception {
         assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
                 "applicantName", "Jane#");
     }
 
     @Test
-    public void testGetApplicationListEntriesWithInvalidRespondentNameReturnsValidationError()
+    void testGetApplicationListEntriesWithInvalidRespondentNameReturnsValidationError()
             throws Exception {
         assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
                 "respondentName", "Smith<>");
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByPartialRespondentPostcodeHit()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByPartialRespondentPostcodeHit() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(list);
@@ -1295,8 +1290,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByPartialRespondentPostcodeMiss()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByPartialRespondentPostcodeMiss() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry entry = createEntry(list);
@@ -1324,7 +1318,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByAnyAppliedResultCode() throws Exception {
+    void testGetApplicationListEntriesFiltersByAnyAppliedResultCode() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", true);
 
@@ -1355,7 +1349,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByPartialResultCode() throws Exception {
+    void testGetApplicationListEntriesFiltersByPartialResultCode() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(list);
@@ -1391,7 +1385,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesTrimsAccountReferenceFilter() throws Exception {
+    void testGetApplicationListEntriesTrimsAccountReferenceFilter() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(list);
@@ -1424,7 +1418,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesIgnoresBlankAccountReferenceFilter() throws Exception {
+    void testGetApplicationListEntriesIgnoresBlankAccountReferenceFilter() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry firstEntry = createEntry(list);
@@ -1458,7 +1452,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByResultCodeAcrossEntriesWhenNotLatest()
+    void testGetApplicationListEntriesFiltersByResultCodeAcrossEntriesWhenNotLatest()
             throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
         ApplicationListEntry latestMatchingEntry = createEntry(list);
@@ -1507,7 +1501,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByApplicantNameOnly() throws Exception {
+    void testGetApplicationListEntriesFiltersByApplicantNameOnly() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         // matches applicant filter
@@ -1546,8 +1540,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByApplicantNamePartialForename()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByApplicantNamePartialForename() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(applicationList);
@@ -1582,8 +1575,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByApplicantNamePartialSurname()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByApplicantNamePartialSurname() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(applicationList);
@@ -1618,7 +1610,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByStandardApplicantName() throws Exception {
+    void testGetApplicationListEntriesFiltersByStandardApplicantName() throws Exception {
         final ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         StandardApplicant matchingApplicant = new StandardApplicantTestData().someComplete();
@@ -1663,7 +1655,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByStandardApplicantNamePartialForename()
+    void testGetApplicationListEntriesFiltersByStandardApplicantNamePartialForename()
             throws Exception {
         final ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
@@ -1709,7 +1701,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByStandardApplicantNamePartialSurname()
+    void testGetApplicationListEntriesFiltersByStandardApplicantNamePartialSurname()
             throws Exception {
         final ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
@@ -1755,7 +1747,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByStandardApplicantName_returnsExpectedJson()
+    void testGetApplicationListEntriesFiltersByStandardApplicantName_returnsExpectedJson()
             throws Exception {
         final ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
@@ -1813,7 +1805,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByRespondentNameOnly() throws Exception {
+    void testGetApplicationListEntriesFiltersByRespondentNameOnly() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         // matches respondent filter
@@ -1852,8 +1844,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByRespondentNamePartialForename()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByRespondentNamePartialForename() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(applicationList);
@@ -1888,8 +1879,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByRespondentNamePartialSurname()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByRespondentNamePartialSurname() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(applicationList);
@@ -1924,8 +1914,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
-    public void testGetApplicationListEntriesFiltersByApplicantNameAndRespondentName()
-            throws Exception {
+    void testGetApplicationListEntriesFiltersByApplicantNameAndRespondentName() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
         // matches both filters
@@ -1973,7 +1962,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationListEntriesSortMetadata() throws Exception {
+    void testGetApplicationListEntriesSortMetadata() throws Exception {
         var tokenGenerator = createAdminToken();
 
         ApplicationList list = createAndSaveList(OPEN);
@@ -2006,7 +1995,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationListEntriesSortsByApplicantName() throws Exception {
+    void testGetApplicationListEntriesSortsByApplicantName() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry zoe = createEntry(list);
@@ -2049,8 +2038,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationListEntriesSortsByStandardApplicantDisplayName()
-            throws Exception {
+    void testGetApplicationListEntriesSortsByStandardApplicantDisplayName() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry zoe = createEntry(list);
@@ -2093,22 +2081,22 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationListEntriesSortsByRespondentName() throws Exception {
+    void testGetApplicationListEntriesSortsByRespondentName() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
         ApplicationListEntry zoe = createEntry(list);
         setRespondentName(zoe, "Dr", "Zoe", "Anderson");
-        zoe.getRnameaddress().setDateOfBirth(LocalDate.of(1990, 1, 1));
+        zoe.getRnameaddress().setDateOfBirth(LocalDate.of(1990, Month.JANUARY, 1));
         persistance.save(zoe);
 
         ApplicationListEntry amy = createEntry(list);
         setRespondentName(amy, "Mr", "Amy", "Zimmer");
-        amy.getRnameaddress().setDateOfBirth(LocalDate.of(1985, 5, 5));
+        amy.getRnameaddress().setDateOfBirth(LocalDate.of(1985, Month.MAY, 5));
         persistance.save(amy);
 
         ApplicationListEntry bob = createEntry(list);
         setRespondentName(bob, "Ms", "Bob", "Brown");
-        bob.getRnameaddress().setDateOfBirth(LocalDate.of(1975, 9, 9));
+        bob.getRnameaddress().setDateOfBirth(LocalDate.of(1975, Month.SEPTEMBER, 9));
         persistance.save(bob);
 
         TokenGenerator tokenGenerator = createAdminToken();
@@ -2143,9 +2131,9 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
         Assertions.assertEquals(
                 List.of(
-                        LocalDate.of(1985, 5, 5),
-                        LocalDate.of(1975, 9, 9),
-                        LocalDate.of(1990, 1, 1)),
+                        LocalDate.of(1985, Month.MAY, 5),
+                        LocalDate.of(1975, Month.SEPTEMBER, 9),
+                        LocalDate.of(1990, Month.JANUARY, 1)),
                 respondentDobs);
     }
 

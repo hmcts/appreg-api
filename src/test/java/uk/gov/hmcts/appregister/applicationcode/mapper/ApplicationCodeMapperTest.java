@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationcode.mapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -14,12 +15,13 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeA
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
-public class ApplicationCodeMapperTest {
+class ApplicationCodeMapperTest {
+    private static final LocalDate EFFECTIVE_DATE = LocalDate.of(2025, Month.JANUARY, 2);
 
     private final ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 
     @Test
-    public void testWithCompleteMapApplicationCodeGetSummaryDto() {
+    void testWithCompleteMapApplicationCodeGetSummaryDto() {
         Fee fee = new Fee();
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
@@ -34,15 +36,15 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
 
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsitefee);
 
@@ -110,17 +112,17 @@ public class ApplicationCodeMapperTest {
     }
 
     @Test
-    public void testWithoutFeesMapApplicationCodeGetSummaryDto() {
+    void testWithoutFeesMapApplicationCodeGetSummaryDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, null, null);
 
@@ -136,7 +138,7 @@ public class ApplicationCodeMapperTest {
     }
 
     @Test
-    public void testWithCompleteMapApplicationCodeGetDetailDto() {
+    void testWithCompleteMapApplicationCodeGetDetailDto() {
         Fee fee = new Fee();
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
@@ -151,15 +153,15 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
 
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, fee, offsetfee);
 
@@ -185,17 +187,17 @@ public class ApplicationCodeMapperTest {
     }
 
     @Test
-    public void testWithoutFeesMapApplicationCodeGetDetailDto() {
+    void testWithoutFeesMapApplicationCodeGetDetailDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(LocalDate.now());
-        code.setStartDate(LocalDate.now());
+        code.setEndDate(EFFECTIVE_DATE);
+        code.setStartDate(EFFECTIVE_DATE);
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, null, null);
 
@@ -234,7 +236,7 @@ public class ApplicationCodeMapperTest {
         code.setCode("x");
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
-        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
 
         var dtoMin = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, min, null);
         var dtoMax = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, max, null);

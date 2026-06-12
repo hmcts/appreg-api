@@ -7,22 +7,22 @@ import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 
 @Slf4j
 @UtilityClass
-public final class OfficialTypeUtil {
+@SuppressWarnings({"checkstyle:MemberName", "checkstyle:AbbreviationAsWordInName"})
+public class OfficialTypeUtil {
 
-    public static final String MAGISTRATE_CODE = OfficialType.MAGISTRATE.getValue();
-    public static final String CLERK_CODE = OfficialType.CLERK.getValue();
-    public static final List<OfficialType> PRINTABLE_CODES =
+    public final String MAGISTRATE_CODE = OfficialType.MAGISTRATE.getValue();
+    public final String CLERK_CODE = OfficialType.CLERK.getValue();
+    public final List<OfficialType> PRINTABLE_CODES =
             List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
-    public static OfficialType fromCode(String code) {
+    public OfficialType fromCode(String code) {
         if (code == null) {
             log.warn("Received null official type code. Defaulting to MAGISTRATE.");
             return OfficialType.MAGISTRATE;
         }
 
         try {
-            OfficialType type = OfficialType.fromValue(code);
-            return type;
+            return OfficialType.fromValue(code);
         } catch (IllegalArgumentException e) {
             log.warn("Received invalid official type code: {}. Defaulting to MAGISTRATE.", code);
             return OfficialType.MAGISTRATE;

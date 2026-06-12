@@ -1,5 +1,6 @@
 type: object
 description: Request payload to create an Application List Entry. Blank fields will be rejected, nulls should be used instead.
+additionalProperties: false
 required:
   - applicationCode
 

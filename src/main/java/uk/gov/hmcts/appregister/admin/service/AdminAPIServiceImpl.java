@@ -50,7 +50,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     @Override
     public void enableDisableDatabaseJobByName(AdminJobType jobName, Boolean enable) {
         var databaseJob = databaseJobRepository.findByName(jobName.getValue());
-        databaseJob.setEnabled(enable ? YesOrNo.YES : YesOrNo.NO);
+        databaseJob.setEnabled(Boolean.TRUE.equals(enable) ? YesOrNo.YES : YesOrNo.NO);
         databaseJobRepository.save(databaseJob);
     }
 

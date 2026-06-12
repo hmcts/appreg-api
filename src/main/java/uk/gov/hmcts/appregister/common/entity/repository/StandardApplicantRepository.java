@@ -41,6 +41,36 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             @Param("code") String code, @Param("date") LocalDate date);
 
     /**
+     * Finds StandardApplicant rows by applicant code without filtering by lodgement date.
+     *
+     * <p>The supplied active date is only used to prefer the currently active row when duplicate
+     * codes exist. Historic rows remain eligible so saved ALE detail rendering is not blocked by
+     * date-effective lookup failures.
+     *
+     * @param code the applicant code to search for
+     * @param active the date used to prefer currently active rows
+     * @return ordered matching StandardApplicant rows
+     */
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
+        ORDER BY CASE
+                    WHEN sa.applicantStartDate <= :active
+                     AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :active)
+                    THEN 0
+                    ELSE 1
+                 END,
+                 CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
+        """)
+    List<StandardApplicant> findStandardApplicantByCode(
+            @Param("code") String code, @Param("active") LocalDate active);
+
+    /**
      * Finds the ids that are greater than this value.
      *
      * @param value the minimum ID value

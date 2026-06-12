@@ -55,7 +55,8 @@ put:
     Full replacement (PUT) of an existing Application List. The `id` is taken from
     the path; the request body must satisfy the same constraints as create
     (including the XOR location rule: either `courtLocation` or (`otherLocationDescription` + `criminalJusticeAreaCode`)).
-    The request must include the current `version` for optimistic concurrency; a mismatch results in 409 Conflict.
+    The request must include a valid `If-Match` header for optimistic concurrency control;
+    a mismatch results in 409 Conflict.
   requestBody:
     required: true
     content:

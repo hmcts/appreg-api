@@ -17,13 +17,15 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.JwtError;
 
-public class UserProviderTest {
+class UserProviderTest {
 
     private static final String EMAIL_CLAIM = "test.user@example.com";
     private static final String TID_CLAIM = "00000000-0000-0000-0000-000000000000";
     private static final String OID_CLAIM = "11111111-1111-1111-1111-111111111111";
     private static final String ROLE_1 = "ROLE_1";
     private static final String ROLE_2 = "ROLE_2";
+    private static final Instant ISSUED_AT = Instant.parse("2025-01-02T03:04:05Z");
+    private static final Instant EXPIRES_AT = Instant.parse("2025-01-02T04:04:05Z");
 
     private final UserProvider userProvider = new UserProvider();
 
@@ -70,7 +72,7 @@ public class UserProviderTest {
                 Map.of(
                         "oid", OID_CLAIM,
                         "preferred_username", EMAIL_CLAIM));
-        AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getUserId);
+        assertThrows(AppRegistryException.class, userProvider::getUserId);
     }
 
     @Test
@@ -79,7 +81,7 @@ public class UserProviderTest {
                 Map.of(
                         "tid", TID_CLAIM,
                         "preferred_username", EMAIL_CLAIM));
-        AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getUserId);
+        assertThrows(AppRegistryException.class, userProvider::getUserId);
     }
 
     // ---------- getEmail ----------
@@ -100,7 +102,7 @@ public class UserProviderTest {
                 Map.of(
                         "tid", TID_CLAIM,
                         "oid", OID_CLAIM));
-        AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getEmail);
+        assertThrows(AppRegistryException.class, userProvider::getEmail);
     }
 
     // ---------- helpers ----------
@@ -111,8 +113,8 @@ public class UserProviderTest {
                         .header("alg", "none")
                         .claims(c -> c.putAll(claims))
                         .subject((String) claims.getOrDefault("oid", "sub"))
-                        .issuedAt(Instant.now())
-                        .expiresAt(Instant.now().plusSeconds(3600))
+                        .issuedAt(ISSUED_AT)
+                        .expiresAt(EXPIRES_AT)
                         .build();
 
         JwtAuthenticationToken auth =

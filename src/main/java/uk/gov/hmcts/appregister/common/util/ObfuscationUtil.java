@@ -32,8 +32,13 @@ import uk.gov.hmcts.appregister.generated.model.ResultPage;
 @Slf4j
 public class ObfuscationUtil {
     private static final String REDACTED = "[REDACTED]";
+    private static final String ACCOUNT_NUMBER_FIELD = "accountNumber";
 
     static final ObjectMapper mapper = createObjectMapper();
+
+    private ObfuscationUtil() {
+        // Utility class
+    }
 
     private static ObjectMapper createObjectMapper() {
         SimpleModule maskingModule = new SimpleModule();
@@ -119,9 +124,9 @@ public class ObfuscationUtil {
             gen.writeObjectField("status", value.getStatus());
 
             if (value.getAccountNumber() != null && value.getAccountNumber().isPresent()) {
-                gen.writeStringField("accountNumber", REDACTED);
+                gen.writeStringField(ACCOUNT_NUMBER_FIELD, REDACTED);
             } else {
-                gen.writeNullField("accountNumber");
+                gen.writeNullField(ACCOUNT_NUMBER_FIELD);
             }
 
             gen.writeEndObject();
@@ -161,7 +166,7 @@ public class ObfuscationUtil {
             gen.writeObjectField("uuid", value.getUuid());
             gen.writeObjectField("sequenceNumber", value.getSequenceNumber());
 
-            gen.writeStringField("accountNumber", REDACTED);
+            gen.writeStringField(ACCOUNT_NUMBER_FIELD, REDACTED);
             gen.writeStringField("applicant", REDACTED);
             gen.writeStringField("respondent", REDACTED);
             gen.writeStringField("postCode", REDACTED);

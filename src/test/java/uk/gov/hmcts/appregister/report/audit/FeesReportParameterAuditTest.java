@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.audit;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ class FeesReportParameterAuditTest {
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
         FeesReportFilterDto filter =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 30))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                         .standardApplicantCode("STD1")
                         .applicantName("Jane Smith")
                         .location(
@@ -43,8 +44,8 @@ class FeesReportParameterAuditTest {
         FeesReportParameterAudit audit =
                 FeesReportParameterAudit.from(
                         new FeesReportFilterDto()
-                                .dateFrom(LocalDate.of(2026, 4, 1))
-                                .dateTo(LocalDate.of(2026, 4, 30)));
+                                .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                                .dateTo(LocalDate.of(2026, Month.APRIL, 30)));
 
         Assertions.assertEquals(
                 List.of(

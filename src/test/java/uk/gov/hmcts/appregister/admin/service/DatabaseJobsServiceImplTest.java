@@ -1,14 +1,12 @@
 package uk.gov.hmcts.appregister.admin.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Clock;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +35,9 @@ import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
-public class DatabaseJobsServiceImplTest {
+class DatabaseJobsServiceImplTest {
+    private static final OffsetDateTime LAST_RAN = OffsetDateTime.parse("2025-01-02T03:04:05Z");
+
     private AdminAPIServiceImpl service;
 
     @Mock private DatabaseJobRepository databaseJobRepository;
@@ -45,10 +45,8 @@ public class DatabaseJobsServiceImplTest {
 
     @Spy private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
 
-    @Mock private Clock clock;
-
     @BeforeEach
-    public void setUp() {
+    void setUp() {
 
         service =
                 new AdminAPIServiceImpl(
@@ -60,13 +58,10 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobStatusByName() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-
+    void testGetDatabaseJobStatusByName() {
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
-        testJob.setLastRan(OffsetDateTime.now(clock));
+        testJob.setLastRan(LAST_RAN);
         testJob.setId(1L);
         testJob.setEnabled(YesOrNo.YES);
 
@@ -86,18 +81,15 @@ public class DatabaseJobsServiceImplTest {
 
         assertNotNull(status);
         assertNotNull(status.getLastRan());
-        assertEquals(OffsetDateTime.now(clock), status.getLastRan());
+        assertEquals(LAST_RAN, status.getLastRan());
         assertEquals(true, status.getEnabled());
     }
 
     @Test
-    public void testEnableDatabaseJobByName() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-
+    void testEnableDatabaseJobByName() {
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
-        testJob.setLastRan(OffsetDateTime.now(clock));
+        testJob.setLastRan(LAST_RAN);
         testJob.setId(2L);
         testJob.setEnabled(YesOrNo.NO);
 
@@ -114,7 +106,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testUpdateDatabaseJobRetentionPeriodByName() {
+    void testUpdateDatabaseJobRetentionPeriodByName() {
         var retentionPolicyEntity = new RetentionPolicy();
         retentionPolicyEntity.setConfigValue("1825");
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
@@ -132,7 +124,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobRetentionPeriodByName() {
+    void testGetDatabaseJobRetentionPeriodByName() {
         var retentionPolicy = new RetentionPolicy();
         retentionPolicy.setConfigValue("1825");
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
@@ -153,7 +145,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+    void testGetDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
                         "RETENTION_PERIOD_DAYS"))
@@ -178,7 +170,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testUpdateDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+    void testUpdateDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
         when(retentionPolicyRepository.countByJobNameAndConfigKey(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
                         "RETENTION_PERIOD_DAYS"))
@@ -203,7 +195,7 @@ public class DatabaseJobsServiceImplTest {
     }
 
     @Test
-    public void testGetDatabaseJobStatusByName_auditsRequestedJobType() {
+    void testGetDatabaseJobStatusByName_auditsRequestedJobType() {
         val testJob = new DatabaseJob();
         testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setEnabled(YesOrNo.YES);

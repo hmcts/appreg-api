@@ -1,5 +1,6 @@
 type: object
 description: Update fee details for multiple Application List Entries in one atomic operation.
+additionalProperties: false
 required:
   - entryIds
   - feeDetails
@@ -20,4 +21,10 @@ properties:
     example: [ "3fa85f64-5717-4562-b3fc-2c963f66afa6", "3fa85f64-5717-4562-b3fc-2c963f66afa7" ]
 
   feeDetails:
-    $ref: "./bulk-fee-details-dto.yaml"
+    type: array
+    description: >
+      Array of fee detail rows to apply to every selected Application List Entry.
+      At least one fee detail row must be provided.
+    minItems: 1
+    items:
+      $ref: "./bulk-fee-details-dto.yaml"

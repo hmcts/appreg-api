@@ -18,14 +18,14 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
-public class FeeRepositoryTest extends BaseRepositoryTest {
+class FeeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private FeeRepository applicationFeeRepository;
 
     private static final int BASELINE_TEST_COUNT = 23;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    void testBasicInsertionUpdate() throws Exception {
         // assert that the save has occurred
         long count = applicationFeeRepository.count();
         Assertions.assertEquals(BASELINE_TEST_COUNT, count);
@@ -48,22 +48,22 @@ public class FeeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchForFeeWithoutOffsite() {
+    void testSearchForFeeWithoutOffsite() {
         Assertions.assertNotNull(
                 applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
-                        "CO1.1", LocalDate.now(), false));
+                        "CO1.1", LocalDate.now(java.time.ZoneOffset.UTC), false));
     }
 
     @Test
-    public void testSearchForFeeWithOffsite() {
+    void testSearchForFeeWithOffsite() {
         Assertions.assertNotNull(
                 applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
-                        "CO1.1", LocalDate.now(), true));
+                        "CO1.1", LocalDate.now(java.time.ZoneOffset.UTC), true));
     }
 
     @Test
-    public void testSearchForFeeWithoutOffsitePrefersNullEndDate() {
-        LocalDate today = LocalDate.now();
+    void testSearchForFeeWithoutOffsitePrefersNullEndDate() {
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String reference = "ZZFEE1";
 
         Fee bounded = new FeeTestData().someComplete();

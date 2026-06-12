@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.audit;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ class ListMaintenanceReportParameterAuditTest {
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
         ListMaintenanceFilterDto filter =
                 new ListMaintenanceFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 30))
+                        .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                        .dateTo(LocalDate.of(2026, Month.APRIL, 30))
                         .listDescription("Morning")
                         .location(
                                 new LegacyReportLocation()
@@ -42,8 +43,8 @@ class ListMaintenanceReportParameterAuditTest {
         ListMaintenanceReportParameterAudit audit =
                 ListMaintenanceReportParameterAudit.from(
                         new ListMaintenanceFilterDto()
-                                .dateFrom(LocalDate.of(2026, 4, 1))
-                                .dateTo(LocalDate.of(2026, 4, 30)));
+                                .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
+                                .dateTo(LocalDate.of(2026, Month.APRIL, 30)));
 
         Assertions.assertEquals(
                 List.of(

@@ -1,15 +1,16 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
+import java.time.Month;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 
-public class StandardApplicantMapperTest {
+class StandardApplicantMapperTest {
     @Test
-    public void testStandardApplicantMapperForIndividual() {
+    void testStandardApplicantMapperForIndividual() {
         val standardApplicant = new StandardApplicantTestData().someComplete();
 
         // make the name null to simulate individual
@@ -124,7 +125,7 @@ public class StandardApplicantMapperTest {
     }
 
     @Test
-    public void testStandardApplicantMapperForOrganisation() {
+    void testStandardApplicantMapperForOrganisation() {
         val standardApplicant = new StandardApplicantTestData().someComplete();
 
         val standardApplicantMapper = new StandardApplicantMapperImpl();
@@ -219,34 +220,35 @@ public class StandardApplicantMapperTest {
 
     @Test
     void testNoEntity() {
-        val record = new CodeAndName(null, null, null, null, null);
+        val codeAndName = new CodeAndName(null, null, null, null, null);
 
         var mapper = new StandardApplicantMapperImpl();
-        Assertions.assertNotNull(mapper.toEntity(record));
+        Assertions.assertNotNull(mapper.toEntity(codeAndName));
     }
 
     @Test
     void testSearchAuditEntityIncludesAllAuditedFilters() {
         // Build the same lightweight surrogate entity that the GET /standard-applicants search
         // endpoint passes into the audit framework.
-        val record =
+        val codeAndName =
                 new CodeAndName(
                         "APP001",
                         "John Doe",
                         "123 High Street",
-                        LocalDate.of(2026, 4, 1),
-                        LocalDate.of(2026, 12, 31));
+                        LocalDate.of(2026, Month.APRIL, 1),
+                        LocalDate.of(2026, Month.DECEMBER, 31));
 
         var mapper = new StandardApplicantMapperImpl();
-        val entity = mapper.toEntity(record);
+        val entity = mapper.toEntity(codeAndName);
 
         // Each populated field below maps to a real database column and is now eligible for READ
         // audit extraction.
         Assertions.assertEquals("APP001", entity.getApplicantCode());
         Assertions.assertEquals("John Doe", entity.getName());
         Assertions.assertEquals("123 High Street", entity.getAddressLine1());
-        Assertions.assertEquals(LocalDate.of(2026, 4, 1), entity.getApplicantStartDate());
-        Assertions.assertEquals(LocalDate.of(2026, 12, 31), entity.getApplicantEndDate());
+        Assertions.assertEquals(LocalDate.of(2026, Month.APRIL, 1), entity.getApplicantStartDate());
+        Assertions.assertEquals(
+                LocalDate.of(2026, Month.DECEMBER, 31), entity.getApplicantEndDate());
     }
 
     @Test

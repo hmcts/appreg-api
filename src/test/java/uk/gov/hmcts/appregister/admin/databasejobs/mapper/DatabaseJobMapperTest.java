@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.admin.databasejobs.mapper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;
@@ -10,11 +10,13 @@ import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapperImpl;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
-public class DatabaseJobMapperTest {
+class DatabaseJobMapperTest {
+    private static final OffsetDateTime LAST_RAN = OffsetDateTime.parse("2025-01-02T03:04:05Z");
+
     private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
 
     @Test
-    public void testMapYesOrNoToBoolean() {
+    void testMapYesOrNoToBoolean() {
         // Given
         var yes = YesOrNo.YES;
         var no = YesOrNo.NO;
@@ -32,10 +34,10 @@ public class DatabaseJobMapperTest {
     }
 
     @Test
-    public void testToDatabaseJobStatus() {
+    void testToDatabaseJobStatus() {
         // Given
         var databaseJob = new DatabaseJob();
-        databaseJob.setLastRan(OffsetDateTime.now());
+        databaseJob.setLastRan(LAST_RAN);
         databaseJob.setEnabled(YesOrNo.YES);
 
         // When

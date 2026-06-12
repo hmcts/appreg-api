@@ -7,7 +7,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class CourtLocationControllerSecurityTest extends AbstractSecurityControllerTest {
+class CourtLocationControllerSecurityTest extends AbstractSecurityControllerTest {
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
@@ -19,7 +19,7 @@ public class CourtLocationControllerSecurityTest extends AbstractSecurityControl
                                                 + "/"
                                                 + AbstractCourtLocationControllerCrudTest
                                                         .CARDIFF_CODE,
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

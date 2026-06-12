@@ -44,7 +44,7 @@ import uk.gov.hmcts.appregister.testutils.csv.JobProcessCsvWriteLifecycle;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ReportingControllerGetTest extends BaseIntegration {
+class ReportingControllerGetTest extends BaseIntegration {
     public static final String WEB_CONTEXT = "reports/jobs/%s/download";
 
     @Autowired private UserProvider userProvider;
@@ -57,11 +57,12 @@ public class ReportingControllerGetTest extends BaseIntegration {
 
     private Function<Pageable, Page<ApplicationCode>> getApplicationCodesFunction =
             (pageable) -> {
-                return applicationCodeRepository.search("CODE", null, LocalDate.now(), pageable);
+                return applicationCodeRepository.search(
+                        "CODE", null, LocalDate.now(java.time.ZoneOffset.UTC), pageable);
             };
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -69,8 +70,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
     }
 
     @Test
-    public void givenCompletedJob_whenWeRequestToDownloadTheCSV_thenASuccessIsReturned()
-            throws Exception {
+    void givenCompletedJob_whenWeRequestToDownloadTheCSV_thenASuccessIsReturned() throws Exception {
         JobTypeRequest request =
                 JobTypeRequest.builder()
                         .jobType(JobType.FEES_REPORT)
@@ -144,9 +144,8 @@ public class ReportingControllerGetTest extends BaseIntegration {
     }
 
     @Test
-    public void
-            givenCompletedJob_whenWeRequestToDownloadTheCSVAndOneDoesNotExist_thenASuccessIsReturned()
-                    throws Exception {
+    void givenCompletedJob_whenWeRequestToDownloadTheCSVAndOneDoesNotExist_thenASuccessIsReturned()
+            throws Exception {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -187,8 +186,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
     }
 
     @Test
-    public void givenCompletedJob_whenWeDownloadTheCSV_thenDataAuditRowIsPersisted()
-            throws Exception {
+    void givenCompletedJob_whenWeDownloadTheCSV_thenDataAuditRowIsPersisted() throws Exception {
         val request =
                 JobTypeRequest.builder()
                         .jobType(JobType.FEES_REPORT)

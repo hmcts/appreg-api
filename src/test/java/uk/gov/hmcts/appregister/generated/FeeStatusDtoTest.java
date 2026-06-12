@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.generated;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
@@ -11,9 +12,11 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import utils.ConstraintAssertion;
 
-public class FeeStatusDtoTest {
+class FeeStatusDtoTest {
+    private static final LocalDate STATUS_DATE = LocalDate.of(2025, Month.JANUARY, 2);
+
     @Test
-    void testOfficialEmptyString() throws Exception {
+    void testOfficialEmptyString() {
         FeeStatus status = new FeeStatus();
         status.setPaymentReference("");
 
@@ -34,12 +37,11 @@ public class FeeStatusDtoTest {
     }
 
     @Test
-    void givenPaymentReferenceLongerThanFifteenCharacters_whenValidating_thenConstraintViolation()
-            throws Exception {
+    void givenPaymentReferenceLongerThanFifteenCharacters_whenValidating_thenConstraintViolation() {
         FeeStatus status = new FeeStatus();
         status.setPaymentReference("1234512345123456");
         status.setPaymentStatus(PaymentStatus.PAID);
-        status.setStatusDate(LocalDate.now());
+        status.setStatusDate(STATUS_DATE);
 
         Set<ConstraintViolation<Object>> constraintValidator =
                 Validation.byDefaultProvider()

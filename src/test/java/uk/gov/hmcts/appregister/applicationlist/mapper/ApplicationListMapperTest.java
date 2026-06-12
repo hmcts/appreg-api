@@ -6,15 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
@@ -29,12 +31,17 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 /**
- * Unit tests for {@link ApplicationListMapper}. Uses MapStruct's Mappers.getMapper(...) to obtain
- * the generated implementation so we don't need a Spring context for these tests.
+ * Unit tests for {@link ApplicationListMapper}.
  */
-public class ApplicationListMapperTest {
+@SpringJUnitConfig(classes = {ApplicationListMapperImpl.class, ApplicationListMappingHelper.class})
+class ApplicationListMapperTest {
 
-    private final ApplicationListMapper mapper = Mappers.getMapper(ApplicationListMapper.class);
+    @Autowired private ApplicationListMapper mapper;
+
+    @BeforeEach
+    void setUp() {
+        assertNotNull(mapper);
+    }
 
     // ---------- Mapping: toCreateEntityWithCourt ----------
 
@@ -48,12 +55,12 @@ public class ApplicationListMapperTest {
         ApplicationList entity = mapper.toCreateEntityWithCja(dto, criminalJusticeArea);
 
         // Then
-        Assertions.assertEquals(criminalJusticeArea, entity.getCja());
-        Assertions.assertEquals(dto.getOtherLocationDescription(), entity.getOtherLocation());
-        Assertions.assertEquals(dto.getDescription(), entity.getDescription());
-        Assertions.assertEquals(criminalJusticeArea, entity.getCja());
-        Assertions.assertEquals(dto.getTime(), entity.getTime());
-        Assertions.assertEquals(dto.getDate(), entity.getDate());
+        assertEquals(criminalJusticeArea, entity.getCja());
+        assertEquals(dto.getOtherLocationDescription(), entity.getOtherLocation());
+        assertEquals(dto.getDescription(), entity.getDescription());
+        assertEquals(criminalJusticeArea, entity.getCja());
+        assertEquals(dto.getTime(), entity.getTime());
+        assertEquals(dto.getDate(), entity.getDate());
     }
 
     @Test
@@ -66,13 +73,13 @@ public class ApplicationListMapperTest {
         ApplicationList entity = mapper.toCreateEntityWithCourt(dto, nationalCourtHouse);
 
         // Then
-        Assertions.assertEquals(nationalCourtHouse.getCourtLocationCode(), entity.getCourtCode());
-        Assertions.assertEquals(nationalCourtHouse.getName(), entity.getCourtName());
-        Assertions.assertEquals(dto.getDescription(), entity.getDescription());
-        Assertions.assertEquals(dto.getTime(), entity.getTime());
-        Assertions.assertEquals(dto.getDate(), entity.getDate());
-        Assertions.assertEquals(dto.getDurationHours(), entity.getDurationHours());
-        Assertions.assertEquals(dto.getDurationMinutes(), entity.getDurationMinutes());
+        assertEquals(nationalCourtHouse.getCourtLocationCode(), entity.getCourtCode());
+        assertEquals(nationalCourtHouse.getName(), entity.getCourtName());
+        assertEquals(dto.getDescription(), entity.getDescription());
+        assertEquals(dto.getTime(), entity.getTime());
+        assertEquals(dto.getDate(), entity.getDate());
+        assertEquals(dto.getDurationHours(), entity.getDurationHours());
+        assertEquals(dto.getDurationMinutes(), entity.getDurationMinutes());
     }
 
     @Nested
@@ -83,7 +90,7 @@ public class ApplicationListMapperTest {
             // Given
             var dto =
                     new ApplicationListCreateDto()
-                            .date(LocalDate.of(2025, 9, 17))
+                            .date(LocalDate.of(2025, Month.SEPTEMBER, 17))
                             .time(LocalTime.parse("10:30"))
                             .description("Morning session")
                             .status(ApplicationListStatus.OPEN)
@@ -110,7 +117,7 @@ public class ApplicationListMapperTest {
             assertNull(entity.getOtherLocation());
             assertEquals("Morning session", entity.getDescription());
             assertEquals(Status.OPEN, entity.getStatus());
-            assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
+            assertEquals(LocalDate.of(2025, Month.SEPTEMBER, 17), entity.getDate());
             assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
             assertEquals(45, entity.getDurationMinutes());
@@ -126,7 +133,7 @@ public class ApplicationListMapperTest {
 
             ApplicationListCreateDto dto =
                     new ApplicationListCreateDto()
-                            .date(LocalDate.of(2025, 9, 18))
+                            .date(LocalDate.of(2025, Month.SEPTEMBER, 18))
                             .time(LocalTime.parse("14:05:07"))
                             .description("Afternoon session")
                             .otherLocationDescription("Temporary Courtroom at Town Hall")
@@ -156,7 +163,7 @@ public class ApplicationListMapperTest {
             assertEquals("Temporary Courtroom at Town Hall", entity.getOtherLocation());
             assertEquals("Afternoon session", entity.getDescription());
             assertEquals(Status.OPEN, entity.getStatus());
-            assertEquals(LocalDate.of(2025, 9, 18), entity.getDate());
+            assertEquals(LocalDate.of(2025, Month.SEPTEMBER, 18), entity.getDate());
             assertEquals(LocalTime.of(14, 5, 7), entity.getTime());
             assertEquals(1, entity.getDurationHours());
             assertEquals(15, entity.getDurationMinutes());
@@ -180,7 +187,7 @@ public class ApplicationListMapperTest {
                             .status(Status.OPEN)
                             .courtCode("LOC123")
                             .courtName("Bath Magistrates Court")
-                            .date(LocalDate.of(2025, 9, 17))
+                            .date(LocalDate.of(2025, Month.SEPTEMBER, 17))
                             .time(LocalTime.of(10, 30, 0))
                             .durationHours((short) 2)
                             .durationMinutes((short) 30)
@@ -199,7 +206,7 @@ public class ApplicationListMapperTest {
             assertNull(dto.getOtherLocationDescription());
 
             assertEquals(id, dto.getId());
-            assertEquals(LocalDate.of(2025, 9, 17), dto.getDate());
+            assertEquals(LocalDate.of(2025, Month.SEPTEMBER, 17), dto.getDate());
             assertEquals(LocalTime.parse("10:30"), dto.getTime());
             assertEquals("Morning session for traffic-related applications", dto.getDescription());
             assertEquals(ApplicationListStatus.OPEN, dto.getStatus());
@@ -222,19 +229,10 @@ public class ApplicationListMapperTest {
             // Given
             UUID id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6");
 
-            var appList =
-                    ApplicationList.builder()
-                            .uuid(id)
-                            .description("Morning session")
-                            .status(Status.OPEN)
-                            .date(LocalDate.of(2025, 9, 19))
-                            .time(LocalTime.of(9, 0, 0))
-                            .build();
-
             ApplicationListSummaryProjectionImpl applicationListEntryCountProjection =
                     new ApplicationListSummaryProjectionImpl();
             applicationListEntryCountProjection.setDescription("Morning session");
-            applicationListEntryCountProjection.setDate(LocalDate.of(2025, 9, 19));
+            applicationListEntryCountProjection.setDate(LocalDate.of(2025, Month.SEPTEMBER, 19));
             applicationListEntryCountProjection.setTime(LocalTime.of(9, 0, 0));
             applicationListEntryCountProjection.setStatus(Status.OPEN);
             applicationListEntryCountProjection.setUuid(id);
@@ -250,7 +248,7 @@ public class ApplicationListMapperTest {
             // Then
             assertNotNull(dto);
             assertEquals(id, dto.getId());
-            assertEquals(LocalDate.of(2025, 9, 19), dto.getDate());
+            assertEquals(LocalDate.of(2025, Month.SEPTEMBER, 19), dto.getDate());
             assertEquals(LocalTime.of(9, 0, 0), dto.getTime());
             assertEquals("Bath Magistrates Court", dto.getLocation());
             assertEquals("Morning session", dto.getDescription());

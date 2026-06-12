@@ -26,7 +26,7 @@ import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 
 @Transactional
 @Rollback
-public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTest {
+class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
     private ApplicationListEntryOfficialRepository applicationListEntryOfficialRepository;
@@ -36,7 +36,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
     record OfficialKey(String title, String forename, String surname, OfficialType type) {}
 
     @Test
-    public void testFindByApplicationListUuidForPrinting() {
+    void testFindByApplicationListUuidForPrinting() {
         // Arrange: one list with two entries
         ApplicationList list = new AppListTestData().someMinimal().build();
 

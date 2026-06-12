@@ -1,5 +1,6 @@
 type: object
 description: The person making, or responding to, the application.
+additionalProperties: false
 required:
   - name
   - contactDetails

@@ -6,10 +6,8 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,8 +52,8 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class UpdateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.now();
+class UpdateApplicationEntryValidatorTest {
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -63,7 +61,6 @@ public class UpdateApplicationEntryValidatorTest {
 
     @Mock private ApplicationFeeService feeService;
 
-    @Mock private Clock clock;
     @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
@@ -83,9 +80,6 @@ public class UpdateApplicationEntryValidatorTest {
 
     @BeforeEach
     void setUp() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         AppListTestData appListTestData = new AppListTestData();
@@ -127,10 +121,10 @@ public class UpdateApplicationEntryValidatorTest {
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
-        when(applicationListEntryRepository.findByUuid(eq(appListEntryUuid)))
+        when(applicationListEntryRepository.findByUuid(appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        eq(appListUuid), eq(appListEntryUuid)))
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
     }
 
@@ -231,7 +225,7 @@ public class UpdateApplicationEntryValidatorTest {
         // set the respondent to null for the organisation so we use the person
         entryUpdateDto.getRespondent().setOrganisation(null);
 
-        when(applicationListEntryRepository.findByUuid(eq(appListEntryUuid)))
+        when(applicationListEntryRepository.findByUuid(appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
@@ -258,7 +252,7 @@ public class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getRespondent().setOrganisation(null);
 
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        eq(appListUuid), eq(appListEntryUuid)))
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =

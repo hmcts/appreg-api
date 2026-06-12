@@ -25,8 +25,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationEntryResultControllerUpdateTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Update Application List Entry Result: 200 when valid request + If-Match matches")
@@ -263,7 +262,7 @@ public class ApplicationEntryResultControllerUpdateTest
     void givenMultipleActiveResolutionCodes_whenUpdate_thenPrefersNullEndDate() throws Exception {
         var existingResult = givenExistingEntryResult();
         String currentEtag = EtagUtil.generateEtag(List.of(existingResult.entryResult()));
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
         saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));

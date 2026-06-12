@@ -1,5 +1,6 @@
 type: object
 description: The applicant making the application.
+additionalProperties: false
 properties:
 
   person:

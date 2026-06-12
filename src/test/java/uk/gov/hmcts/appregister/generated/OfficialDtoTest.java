@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import utils.ConstraintAssertion;
 
-public class OfficialDtoTest {
+class OfficialDtoTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -23,7 +23,7 @@ public class OfficialDtoTest {
     }
 
     @Test
-    void testOfficialEmptyString() throws Exception {
+    void testOfficialEmptyString() {
         Official official = new Official();
         official.setForename("");
         official.setSurname("");

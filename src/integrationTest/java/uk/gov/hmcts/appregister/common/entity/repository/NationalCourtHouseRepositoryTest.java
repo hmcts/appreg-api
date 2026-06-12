@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,7 +14,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
-public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
+class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private NationalCourtHouseRepository repository;
 
@@ -28,7 +29,8 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                 "returns seeded Cardiff (CCC003) when active on given date (case-insensitive code)")
         void returnsCardiff() {
             List<NationalCourtHouse> result =
-                    repository.findActiveCourtsWithDate("ccc003", LocalDate.of(2025, 1, 1));
+                    repository.findActiveCourtsWithDate(
+                            "ccc003", LocalDate.of(2025, Month.JANUARY, 1));
 
             assertThat(result)
                     .hasSize(1)
@@ -40,7 +42,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                                 assertThat(n.getCourtLocationCode()).isEqualTo("CCC003");
                                 assertThat(n.getName()).containsIgnoringCase("Cardiff");
                                 assertThat(n.getStartDate())
-                                        .isBeforeOrEqualTo(LocalDate.of(2025, 1, 1));
+                                        .isBeforeOrEqualTo(LocalDate.of(2025, Month.JANUARY, 1));
                             });
         }
 
@@ -48,7 +50,8 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns seeded Bristol (BCC006) when active on given date")
         void returnsBristol() {
             List<NationalCourtHouse> result =
-                    repository.findActiveCourtsWithDate("BCC006", LocalDate.of(2025, 1, 1));
+                    repository.findActiveCourtsWithDate(
+                            "BCC006", LocalDate.of(2025, Month.JANUARY, 1));
 
             assertThat(result)
                     .extracting(NationalCourtHouse::getCourtLocationCode)
@@ -58,7 +61,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("prefers the most recent null-end row when multiple courts share a code")
         void prefersMostRecentNullEndDateRow() {
-            LocalDate activeDate = LocalDate.now();
+            LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
             String code = "NCHNF001";
 
             NationalCourtHouse olderCourt =
@@ -94,7 +97,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns bounded active rows and excludes future-dated open-ended rows")
         void returnsBoundedActiveRowsWithinDateWindow() {
-            LocalDate activeDate = LocalDate.now();
+            LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
             String code = "NCHDW001";
 
             NationalCourtHouse boundedCourt =
@@ -139,7 +142,10 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         void onlyActiveChoaRows() {
             var page =
                     repository.findAllActiveCourts(
-                            null, null, LocalDate.now(), PageRequest.of(0, 20));
+                            null,
+                            null,
+                            LocalDate.now(java.time.ZoneOffset.UTC),
+                            PageRequest.of(0, 20));
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
@@ -158,7 +164,10 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         void filtersByCode() {
             var page =
                     repository.findAllActiveCourts(
-                            "cc", null, LocalDate.now(), PageRequest.of(0, 20));
+                            "cc",
+                            null,
+                            LocalDate.now(java.time.ZoneOffset.UTC),
+                            PageRequest.of(0, 20));
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
@@ -170,7 +179,10 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         void filtersByName() {
             var page =
                     repository.findAllActiveCourts(
-                            null, "crown", LocalDate.now(), PageRequest.of(0, 20));
+                            null,
+                            "crown",
+                            LocalDate.now(java.time.ZoneOffset.UTC),
+                            PageRequest.of(0, 20));
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getName)
@@ -182,7 +194,10 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         void filtersByCodeAndName() {
             var page =
                     repository.findAllActiveCourts(
-                            "cc", "bristol", LocalDate.now(), PageRequest.of(0, 20));
+                            "cc",
+                            "bristol",
+                            LocalDate.now(java.time.ZoneOffset.UTC),
+                            PageRequest.of(0, 20));
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
@@ -195,10 +210,16 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
             // We have exactly two active CHOA rows in the seed.
             var page1 =
                     repository.findAllActiveCourts(
-                            null, null, LocalDate.now(), PageRequest.of(0, 1));
+                            null,
+                            null,
+                            LocalDate.now(java.time.ZoneOffset.UTC),
+                            PageRequest.of(0, 1));
             var page2 =
                     repository.findAllActiveCourts(
-                            null, null, LocalDate.now(), PageRequest.of(1, 1));
+                            null,
+                            null,
+                            LocalDate.now(java.time.ZoneOffset.UTC),
+                            PageRequest.of(1, 1));
 
             assertThat(page1.getTotalElements()).isEqualTo(2);
             assertThat(page1.getContent()).hasSize(1);
@@ -208,7 +229,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("findActiveCourts(code) excludes future rows and keeps bounded current rows")
         void activeCourtsUsesCurrentDateWindow() {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
             String code = "NCHCW001";
 
             NationalCourtHouse boundedCourt =
@@ -244,7 +265,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("findAllActiveCourts only returns rows active today")
         void allActiveCourtsFiltersToCurrentDateWindow() {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
             String codePrefix = "NAW";
 
             NationalCourtHouse boundedCourt =

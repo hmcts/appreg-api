@@ -1,5 +1,6 @@
 type: object
 description: Parameters to move entries from one Application List to another.
+additionalProperties: false
 required:
   - targetListId
   - entryIds

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,8 +7,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Setter;
@@ -49,7 +48,10 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import utils.CurrencyUtil;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationCodeServiceImplTest {
+class ApplicationCodeServiceImplTest {
+    private static final Instant FIXED_INSTANT = Instant.parse("2024-10-05T10:15:30Z");
+    private static final LocalDate FIXED_BUSINESS_DATE = LocalDate.of(2024, Month.OCTOBER, 5);
+    private static final LocalDate REQUEST_DATE = LocalDate.of(2024, Month.OCTOBER, 5);
 
     @Mock private ApplicationCodeRepository repository;
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
@@ -73,10 +75,10 @@ public class ApplicationCodeServiceImplTest {
     private ApplicationCodeServiceImpl applicationCodeService;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         objectMapper.registerModule(new JavaTimeModule());
         ukZone = ZoneId.of("Europe/London");
-        fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
+        fixedClock = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));
 
         applicationCodeService =
                 new ApplicationCodeServiceImpl(
@@ -92,7 +94,7 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCode() throws Exception {
+    void findByCode() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
@@ -111,7 +113,7 @@ public class ApplicationCodeServiceImplTest {
 
         String code = "code";
 
-        LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
+        LocalDate localDate = REQUEST_DATE;
 
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =
@@ -137,7 +139,7 @@ public class ApplicationCodeServiceImplTest {
                 .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-        applicationCode.setStartDate(LocalDate.of(2020, 1, 1));
+        applicationCode.setStartDate(LocalDate.of(2020, Month.JANUARY, 1));
         dummyGetApplicationCodeValidator.setSuccess(
                 GetApplicationCodeValidationSuccess.builder()
                         .applicationCode(applicationCode)
@@ -148,7 +150,7 @@ public class ApplicationCodeServiceImplTest {
         ApplicationCodeServiceImpl auditedService = buildServiceWithListeners(List.of(listener));
 
         String code = "code";
-        LocalDate localDate = LocalDate.of(2025, 1, 1);
+        LocalDate localDate = LocalDate.of(2025, Month.JANUARY, 1);
 
         auditedService.findByCode(PayloadForGet.builder().code(code).date(localDate).build());
 
@@ -160,7 +162,7 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCodeNullDate() throws Exception {
+    void findByCodeNullDate() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
@@ -194,7 +196,7 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findAllByCode() throws Exception {
+    void findAllByCode() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -212,8 +214,8 @@ public class ApplicationCodeServiceImplTest {
                         4);
 
         String code = "code";
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(eq(code), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
+        LocalDate todayUk = FIXED_BUSINESS_DATE;
+        when(repository.search(code, null, todayUk, criteria)).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -229,23 +231,23 @@ public class ApplicationCodeServiceImplTest {
                         code, null, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
+        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
-                applicationCode.getCode());
+                applicationCode.getCode(),
+                applicationCodeDtoPage.getContent().get(0).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
-                applicationCode2.getCode());
+                applicationCode2.getCode(),
+                applicationCodeDtoPage.getContent().get(1).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
-                applicationCode3.getCode());
+                applicationCode3.getCode(),
+                applicationCodeDtoPage.getContent().get(2).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
-                applicationCode4.getCode());
+                applicationCode4.getCode(),
+                applicationCodeDtoPage.getContent().get(3).getApplicationCode());
     }
 
     @Test
-    void findAllByTitle() throws Exception {
+    void findAllByTitle() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -263,8 +265,8 @@ public class ApplicationCodeServiceImplTest {
                         4);
 
         String title = "title";
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(eq(null), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
+        LocalDate todayUk = FIXED_BUSINESS_DATE;
+        when(repository.search(null, title, todayUk, criteria)).thenReturn(results);
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
@@ -280,23 +282,23 @@ public class ApplicationCodeServiceImplTest {
                         null, title, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
+        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
-                applicationCode.getCode());
+                applicationCode.getCode(),
+                applicationCodeDtoPage.getContent().get(0).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
-                applicationCode2.getCode());
+                applicationCode2.getCode(),
+                applicationCodeDtoPage.getContent().get(1).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
-                applicationCode3.getCode());
+                applicationCode3.getCode(),
+                applicationCodeDtoPage.getContent().get(2).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
-                applicationCode4.getCode());
+                applicationCode4.getCode(),
+                applicationCodeDtoPage.getContent().get(3).getApplicationCode());
     }
 
     @Test
-    void findAllByDate() throws Exception {
+    void findAllByDate() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -321,9 +323,8 @@ public class ApplicationCodeServiceImplTest {
 
         String title = "title";
         String code = "code";
-        LocalDate effectiveDate = LocalDate.of(2021, 6, 15);
-        when(repository.search(eq(code), eq(title), eq(effectiveDate), eq(criteria)))
-                .thenReturn(results);
+        LocalDate effectiveDate = LocalDate.of(2021, Month.JUNE, 15);
+        when(repository.search(code, title, effectiveDate, criteria)).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -333,13 +334,13 @@ public class ApplicationCodeServiceImplTest {
                         code, title, effectiveDate, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
-        Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
+        Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(0).getApplicationCode(),
-                applicationCode.getCode());
+                applicationCode.getCode(),
+                applicationCodeDtoPage.getContent().get(0).getApplicationCode());
         Assertions.assertEquals(
-                applicationCodeDtoPage.getContent().get(1).getApplicationCode(),
-                applicationCode2.getCode());
+                applicationCode2.getCode(),
+                applicationCodeDtoPage.getContent().get(1).getApplicationCode());
         Assertions.assertEquals(
                 applicationCodeDtoPage.getContent().get(2).getApplicationCode(),
                 applicationCode3.getCode());
@@ -349,7 +350,7 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findAllCriteria() throws Exception {
+    void findAllCriteria() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode3 = new ApplicationCodeTestData().someComplete();
@@ -365,8 +366,8 @@ public class ApplicationCodeServiceImplTest {
                                 applicationCode4),
                         Pageable.ofSize(4).withPage(0),
                         4);
-        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(eq(null), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
+        LocalDate todayUk = FIXED_BUSINESS_DATE;
+        when(repository.search(null, null, todayUk, criteria)).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -398,7 +399,7 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCodeWithFeesEmpty() throws Exception {
+    void findByCodeWithFeesEmpty() {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
@@ -414,7 +415,7 @@ public class ApplicationCodeServiceImplTest {
 
         String code = "code";
 
-        LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
+        LocalDate localDate = REQUEST_DATE;
 
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =

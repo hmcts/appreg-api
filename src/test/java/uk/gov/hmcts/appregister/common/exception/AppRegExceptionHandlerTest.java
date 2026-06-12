@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -12,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
-import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -29,10 +32,12 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.MethodValidationException;
 import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
@@ -40,9 +45,13 @@ import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
+    private static final HttpHeaders HEADERS = HttpHeaders.EMPTY;
+    private static final HttpStatusCode BAD_REQUEST = HttpStatus.BAD_REQUEST;
+
     private AppRegExceptionHandler exceptionHandler;
     private SecurityEndpointFailureLogger securityEndpointFailureLogger;
     private LogCaptor logCaptor;
+    private WebRequest webRequest;
 
     @BeforeEach
     void beforeEach() {
@@ -50,6 +59,7 @@ class AppRegExceptionHandlerTest {
         exceptionHandler = new AppRegExceptionHandler(securityEndpointFailureLogger);
         logCaptor = LogCaptor.forClass(AppRegExceptionHandler.class);
         logCaptor.clearLogs();
+        webRequest = Mockito.mock(WebRequest.class);
     }
 
     @Test
@@ -83,7 +93,7 @@ class AppRegExceptionHandlerTest {
                                 log ->
                                         log.contains(
                                                 "[404]: Application code not found (Test message)")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -115,7 +125,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: Custom message (Test message)")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -133,7 +143,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.INTERNAL_SERVER_ERROR.getCode().getMessage(),
                 problemDetail.getBody().getDetail());
-        Assertions.assertTrue(logCaptor.getWarnLogs().isEmpty());
+        assertThat(logCaptor.getWarnLogs()).isEmpty();
         Assertions.assertTrue(
                 logCaptor.getErrorLogs().stream()
                         .anyMatch(
@@ -145,25 +155,14 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenConstraintExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenConstraintExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsReturned() {
 
         String customMessage = "Custom message";
 
-        ConstraintViolation<?> cv =
-                ConstraintViolationImpl.forReturnValueValidation(
-                        "invalid value",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "propertyPath",
-                        "val",
-                        PathImpl.createPathFromString("propertyPath"),
-                        null,
-                        null,
-                        null);
+        ConstraintViolation<?> cv = Mockito.mock(ConstraintViolation.class);
+        Mockito.when(cv.getPropertyPath())
+                .thenReturn(PathImpl.createPathFromString("propertyPath"));
+        Mockito.when(cv.getMessage()).thenReturn("invalid value");
         // setup
         ConstraintViolationException exception =
                 new ConstraintViolationException(customMessage, Set.of(cv));
@@ -176,14 +175,73 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertEquals(400, problemDetail.getBody().getStatus());
-        Assertions.assertEquals(customMessage, problemDetail.getBody().getDetail());
+        Assertions.assertEquals(
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "propertyPath=invalid value",
+                problemDetail.getBody().getDetail());
         Assertions.assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(),
                 problemDetail.getBody().getType());
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
-                        .anyMatch(log -> log.contains("[400]: " + customMessage)));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Constraints failed for fields:"
+                                                        + System.lineSeparator()
+                                                        + "propertyPath=invalid value")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
+    void givenConstraintViolations_whenHandled_thenFieldDetailsAreReturnedAndLogged() {
+        ConstraintViolation<?> secondViolation = Mockito.mock(ConstraintViolation.class);
+        Mockito.when(secondViolation.getPropertyPath())
+                .thenReturn(PathImpl.createPathFromString("bField"));
+        Mockito.when(secondViolation.getMessage()).thenReturn("another invalid value");
+        ConstraintViolation<?> firstViolation = Mockito.mock(ConstraintViolation.class);
+        Mockito.when(firstViolation.getPropertyPath())
+                .thenReturn(PathImpl.createPathFromString("aField"));
+        Mockito.when(firstViolation.getMessage()).thenReturn("invalid value");
+
+        ConstraintViolationException exception =
+                new ConstraintViolationException(
+                        "Custom message", Set.of(secondViolation, firstViolation));
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleConstraintViolationException(exception);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertEquals(
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "aField=invalid value"
+                        + System.lineSeparator()
+                        + "bField=another invalid value",
+                problemDetail.getBody().getDetail());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Constraints failed for fields:"
+                                                        + System.lineSeparator()
+                                                        + "aField=invalid value"
+                                                        + System.lineSeparator()
+                                                        + "bField=another invalid value")));
+    }
+
+    @Test
+    void givenConstraintViolationsAreEmpty_whenHandled_thenExceptionMessageIsReturned() {
+        ConstraintViolationException exception =
+                new ConstraintViolationException("Custom message", Set.of());
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleConstraintViolationException(exception);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertEquals("Custom message", problemDetail.getBody().getDetail());
     }
 
     @Test
@@ -212,13 +270,12 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[400]: Problem with value 01-01-2026 for"
                                                         + " parameter date")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
     void
-            givenhandleMethodArgumentExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenhandleMethodArgumentExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned() {
 
         String customMessage = "Custom message";
 
@@ -248,7 +305,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
@@ -269,12 +327,11 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: Validation failed for fields:")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
-    void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder()
-            throws Exception {
+    void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
@@ -310,7 +367,8 @@ class AppRegExceptionHandlerTest {
                 };
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
@@ -326,8 +384,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenWholeNumberTypeMismatch_whenTheExceptionIsThrown_thenWholeNumberMessageIsReturned()
-            throws Exception {
+    void givenWholeNumberTypeMismatch_whenTheExceptionIsThrown_thenWholeNumberMessageIsReturned() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
@@ -353,7 +410,8 @@ class AppRegExceptionHandlerTest {
                 };
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
@@ -366,8 +424,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenBooleanTypeMismatch_whenTheExceptionIsThrown_thenBooleanMessageIsReturned()
-            throws Exception {
+    void givenBooleanTypeMismatch_whenTheExceptionIsThrown_thenBooleanMessageIsReturned() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
@@ -393,7 +450,8 @@ class AppRegExceptionHandlerTest {
                 };
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
@@ -407,8 +465,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned() {
 
         String content = "Type conversion problem. Something in the payload is not correct";
 
@@ -418,7 +475,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
@@ -433,13 +491,12 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: " + content)));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
     void
-            givenHttpMessageNotReadableDateExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+            givenHttpMessageNotReadableDateException_whenTheExceptionIsThrown_thenAProblemDetailIsReturned() {
 
         String content = "Not Readable Error";
         String dateExContent = "Date type mismatch error somewhere in payload";
@@ -453,7 +510,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
@@ -469,7 +527,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(log -> log.contains("[400]: " + dateExContent)));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -486,17 +544,19 @@ class AppRegExceptionHandlerTest {
                   ]
                 }
                 """;
+        ObjectMapper objectMapper = new ObjectMapper();
 
         Exception cause =
                 Assertions.assertThrows(
                         Exception.class,
-                        () -> new ObjectMapper().readValue(body, BulkOfficialsUpdateDto.class));
+                        () -> objectMapper.readValue(body, BulkOfficialsUpdateDto.class));
 
         HttpMessageNotReadableException exception =
                 new HttpMessageNotReadableException(content, cause, null);
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
@@ -517,7 +577,103 @@ class AppRegExceptionHandlerTest {
                                                 "[400]: Problem setting value for officials[0].type."
                                                         + " Accepted values are: MAGISTRATE,"
                                                         + " CLERK")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
+    void
+            givenHttpMessageNotReadableUnknownPropertyException_whenThrown_thenProblemDetailIsReturned()
+                    throws Exception {
+        String content = "Not Readable Error";
+        String body =
+                """
+                {
+                  "dateFrom": "2025-10-01",
+                  "courtCode": "LOC123"
+                }
+                """;
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        Exception cause =
+                Assertions.assertThrows(
+                        Exception.class,
+                        () -> objectMapper.readValue(body, StrictRequestDto.class));
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, cause, null);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
+        Assertions.assertEquals(
+                "Unsupported request field: courtCode",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Unsupported request field: courtCode")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
+    void
+            givenHttpMessageNotReadableNestedUnknownPropertyException_whenThrown_thenProblemDetailUsesJsonPath()
+                    throws Exception {
+        String content = "Not Readable Error";
+        String body =
+                """
+                {
+                  "nested": {
+                    "unexpected": "value"
+                  }
+                }
+                """;
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        Exception cause =
+                Assertions.assertThrows(
+                        Exception.class,
+                        () -> objectMapper.readValue(body, StrictNestedRequestDto.class));
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, cause, null);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
+        Assertions.assertEquals(
+                "Unsupported request field: nested.unexpected",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Unsupported request field:"
+                                                        + " nested.unexpected")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -526,7 +682,8 @@ class AppRegExceptionHandlerTest {
                 new MissingServletRequestParameterException("date", "LocalDate");
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleMissingServletRequestParameter(exception, null, null, null);
+                exceptionHandler.handleMissingServletRequestParameter(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
         Assertions.assertTrue(
@@ -536,7 +693,7 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[400]: Required request parameter 'date' is"
                                                         + " missing")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -567,7 +724,7 @@ class AppRegExceptionHandlerTest {
 
         ResponseEntity<Object> problemDetail =
                 exceptionHandler.handleHandlerMethodValidationException(
-                        exception, null, HttpStatus.BAD_REQUEST, null);
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
         Assertions.assertTrue(
@@ -578,12 +735,11 @@ class AppRegExceptionHandlerTest {
                                                 "[400]: Validation failed for handler method"
                                                         + " arguments: code=size must be between 0"
                                                         + " and 10")));
-        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
-    void givenEmptyHandlerMethodValidationException_whenHandled_thenGenericWarnIsLogged()
-            throws NoSuchMethodException {
+    void givenEmptyHandlerMethodValidationException_whenHandled_thenGenericWarnIsLogged() {
         MethodValidationResult validationResult = Mockito.mock(MethodValidationResult.class);
         Mockito.when(validationResult.getParameterValidationResults()).thenReturn(List.of());
         Mockito.when(validationResult.getCrossParameterValidationResults()).thenReturn(List.of());
@@ -593,7 +749,7 @@ class AppRegExceptionHandlerTest {
 
         ResponseEntity<Object> problemDetail =
                 exceptionHandler.handleHandlerMethodValidationException(
-                        exception, null, HttpStatus.BAD_REQUEST, null);
+                        exception, HEADERS, BAD_REQUEST, webRequest);
 
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
         Assertions.assertTrue(
@@ -603,6 +759,48 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[400]: Validation failed for handler method"
                                                         + " arguments")));
+    }
+
+    @Test
+    void givenMethodValidationException_whenHandled_thenWarnIsLoggedWithoutError()
+            throws NoSuchMethodException {
+        MethodParameter methodParameter =
+                new MethodParameter(
+                        AppRegExceptionHandlerTest.class.getDeclaredMethod(
+                                "sampleValidationMethod", String.class),
+                        0);
+
+        ParameterValidationResult validationResult =
+                new ParameterValidationResult(
+                        methodParameter,
+                        "ABCDEFGHIJK",
+                        List.of(
+                                new DefaultMessageSourceResolvable(
+                                        "size must be between 0 and 10")),
+                        null,
+                        null,
+                        null,
+                        (error, sourceType) -> null);
+
+        MethodValidationException exception =
+                new MethodValidationException(
+                        MethodValidationResult.create(
+                                this, methodParameter.getMethod(), List.of(validationResult)));
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMethodValidationException(
+                        exception, HEADERS, HttpStatus.BAD_REQUEST, webRequest);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Validation failed for handler method"
+                                                        + " arguments: code=size must be between 0"
+                                                        + " and 10")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
@@ -712,5 +910,41 @@ class AppRegExceptionHandlerTest {
     @SuppressWarnings("unused")
     private void sampleValidationMethod(String code) {
         // used to create a MethodParameter with a stable name for validation tests
+    }
+
+    private static class StrictRequestDto {
+        private String dateFrom;
+
+        public String getDateFrom() {
+            return dateFrom;
+        }
+
+        public void setDateFrom(String dateFrom) {
+            this.dateFrom = dateFrom;
+        }
+    }
+
+    private static class StrictNestedRequestDto {
+        private StrictNestedDto nested;
+
+        public StrictNestedDto getNested() {
+            return nested;
+        }
+
+        public void setNested(StrictNestedDto nested) {
+            this.nested = nested;
+        }
+    }
+
+    private static class StrictNestedDto {
+        private String known;
+
+        public String getKnown() {
+            return known;
+        }
+
+        public void setKnown(String known) {
+            this.known = known;
+        }
     }
 }

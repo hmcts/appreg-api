@@ -68,6 +68,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param validatable The validatable payload
      * @param validateSuccess The success function to call if validation is successful
      */
+    @Override
     public <R> R validate(T validatable, BiFunction<T, O, R> validateSuccess) {
 
         // ensure mutual exclusivity of the respondent
@@ -359,14 +360,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param dto The dto to validate
      */
     private void ensureRespondentMutualExclusion(T dto) {
-        if (getRespondent(dto) != null) {
-            if (!(getRespondent(dto) != null && getRespondent(dto).getOrganisation() != null)
-                    ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
-                throw new AppRegistryException(
-                        AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
-                        "The respondent type can only be an organsisation or person %s"
-                                .formatted(getRespondent(dto)));
-            }
+        if (getRespondent(dto) != null
+                && !(getRespondent(dto) != null && getRespondent(dto).getOrganisation() != null)
+                        ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
+            throw new AppRegistryException(
+                    AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
+                    "The respondent type can only be an organsisation or person %s"
+                            .formatted(getRespondent(dto)));
         }
 
         log.debug("Validated respondent mutual exclusivity");
@@ -386,16 +386,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         LocalDate todayUk = currentBusinessDate();
         if (getApplicationCode(validatable) != null
                 && ApplicationCodeTypeEnum.isMatching(
-                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES,
-                        getApplicationCode(validatable))) {
-            // if the account number is null or empty then throw an error as we require
-            // an account number for enforcement fines codes
-            if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
-                throw new AppRegistryException(
-                        AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
-                        "Application number required for application code %s"
-                                .formatted(getApplicationCode(validatable)));
-            }
+                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES, getApplicationCode(validatable))
+                && (getAccountNumber(validatable) == null
+                        || getAccountNumber(validatable).isEmpty())) {
+            throw new AppRegistryException(
+                    AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                    "Application number required for application code %s"
+                            .formatted(getApplicationCode(validatable)));
         }
 
         // validate that the application code exists and is valid for today
@@ -403,7 +400,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 applicationCodeRepository.findByCodeAndDate(
                         getApplicationCode(validatable), todayUk);
 
-        if (code.size() == 0) {
+        if (code.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
                     "No valid code can be found %s".formatted(getApplicationCode(validatable)));
@@ -462,7 +459,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         return applicationCode.getFeeDue() == YesOrNo.YES;
     }
 
-    private LocalDate currentBusinessDate() {
+    protected LocalDate currentBusinessDate() {
         return businessDateProvider.currentUkDate();
     }
 
@@ -522,54 +519,80 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param validatable The validatable payload
      */
     private void validateRespondent(ApplicationCode applicationCode, T validatable) {
+        boolean respondentRequired = applicationCode.getRequiresRespondent() == YesOrNo.YES;
+        boolean bulkRespondentAllowed = applicationCode.getBulkRespondentAllowed() == YesOrNo.YES;
+        boolean hasRespondent = getRespondent(validatable) != null;
+        boolean hasNumberOfRespondents = hasNumberOfRespondents(validatable);
 
-        // if respondent is required, check that it exists in the payload
-        if (applicationCode.getRequiresRespondent() == YesOrNo.YES
-                && getRespondent(validatable) == null) {
+        validateRequiredRespondent(validatable, respondentRequired, hasRespondent);
+        validateBulkRespondentNotAllowed(
+                validatable, bulkRespondentAllowed, hasNumberOfRespondents);
+        validateConflictingBulkRespondent(
+                validatable, bulkRespondentAllowed, hasRespondent, hasNumberOfRespondents);
+        validateMissingBulkRespondent(
+                validatable, respondentRequired, hasRespondent, hasZeroRespondents(validatable));
+        validateBulkRespondentPresence(
+                validatable,
+                bulkRespondentAllowed,
+                respondentRequired,
+                hasNumberOfRespondents,
+                hasRespondent);
+
+        log.debug("Validated the respondent details");
+    }
+
+    private void validateRequiredRespondent(
+            T validatable, boolean respondentRequired, boolean hasRespondent) {
+        if (respondentRequired && !hasRespondent) {
             throw new AppRegistryException(
                     AppListEntryError.RESPONDENT_REQUIRED,
                     "Respondent required for code %s".formatted(getApplicationCode(validatable)));
         }
+    }
 
-        // check bulk respondent is off and no respondents are specified in the payload
-        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.NO
-                && getNumberOfRespondents(validatable) != null
-                && getNumberOfRespondents(validatable) != 0) {
+    private void validateBulkRespondentNotAllowed(
+            T validatable, boolean bulkRespondentAllowed, boolean hasNumberOfRespondents) {
+        if (!bulkRespondentAllowed && hasNumberOfRespondents) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
                     BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
                             getApplicationCode(validatable)));
         }
+    }
 
-        // if we are setting multiple respondents, check that the application code allows it
-        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.NO
-                && getRespondent(validatable) != null
-                && (getNumberOfRespondents(validatable) != null
-                        && getNumberOfRespondents(validatable) != 0)) {
+    private void validateConflictingBulkRespondent(
+            T validatable,
+            boolean bulkRespondentAllowed,
+            boolean hasRespondent,
+            boolean hasNumberOfRespondents) {
+        if (!bulkRespondentAllowed && hasRespondent && hasNumberOfRespondents) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
                     BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
                             getApplicationCode(validatable)));
         }
+    }
 
-        // if we are setting multiple respondents, check that the application code allows it
-        if (applicationCode.getRequiresRespondent() == YesOrNo.YES
-                        && getRespondent(validatable) == null
-                || (getNumberOfRespondents(validatable) != null
-                        && getNumberOfRespondents(validatable) == 0)) {
+    private void validateMissingBulkRespondent(
+            T validatable,
+            boolean respondentRequired,
+            boolean hasRespondent,
+            boolean hasZeroRespondents) {
+        if ((respondentRequired && !hasRespondent) || hasZeroRespondents) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
-                    "Bulk respondent not required for code %s"
-                            .formatted(getApplicationCode(validatable)));
+                    BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
+                            getApplicationCode(validatable)));
         }
+    }
 
-        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.YES
-                && applicationCode.getRequiresRespondent() == YesOrNo.NO) {
-
-            boolean hasNumberOfRespondents =
-                    getNumberOfRespondents(validatable) != null
-                            && getNumberOfRespondents(validatable) != 0;
-            boolean hasRespondent = getRespondent(validatable) != null;
+    private void validateBulkRespondentPresence(
+            T validatable,
+            boolean bulkRespondentAllowed,
+            boolean respondentRequired,
+            boolean hasNumberOfRespondents,
+            boolean hasRespondent) {
+        if (bulkRespondentAllowed && !respondentRequired) {
             if (!hasNumberOfRespondents && !hasRespondent) {
                 throw new AppRegistryException(
                         AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
@@ -584,8 +607,16 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                                 .formatted(dto));
             }
         }
+    }
 
-        log.debug("Validated the respondent details");
+    private boolean hasNumberOfRespondents(T validatable) {
+        return getNumberOfRespondents(validatable) != null
+                && getNumberOfRespondents(validatable) != 0;
+    }
+
+    private boolean hasZeroRespondents(T validatable) {
+        return getNumberOfRespondents(validatable) != null
+                && getNumberOfRespondents(validatable) == 0;
     }
 
     private void validateLodgementDate(T validatable) {

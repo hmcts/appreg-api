@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.restassured.response.Response;
 import java.io.File;
 import java.net.URISyntaxException;
@@ -36,7 +38,7 @@ import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
-public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryCrudTest {
 
     private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
     private static final int CSV_ROW_COUNT = 5;
@@ -80,7 +82,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
         var createListRequest =
                 new ApplicationListCreateDto()
-                        .date(LocalDate.now().plusDays(1))
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1))
                         .time(LocalTime.of(10, 0))
                         .description("Bulk upload test list " + UUID.randomUUID())
                         .status(ApplicationListStatus.OPEN)
@@ -140,7 +142,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         Assertions.assertEquals(listId, entry.getListId());
         Assertions.assertEquals(ApplicationListStatus.OPEN, entry.getStatus());
         Assertions.assertFalse(entry.getIsResulted());
-        Assertions.assertTrue(entry.getResulted().isEmpty());
+        assertThat(entry.getResulted()).isEmpty();
         Assertions.assertNotNull(entry.getDate());
 
         return new ApiEntry(

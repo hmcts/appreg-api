@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.courtlocation.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
@@ -43,9 +45,9 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 
 @ExtendWith(MockitoExtension.class)
-public class CourtLocationServiceImplTest {
+class CourtLocationServiceImplTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private NationalCourtHouseRepository repository;
     @Mock private BusinessDateProvider businessDateProvider;
@@ -142,7 +144,7 @@ public class CourtLocationServiceImplTest {
         CourtLocationGetDetailDto dto = service.findByCodeAndDate(code, date);
 
         Assertions.assertEquals("Preferred Court", dto.getName());
-        Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
+        assertThat(logCaptor.getWarnLogs().getFirst()).contains("Data quality warning");
 
         verify(auditOperationService)
                 .processAudit(
@@ -202,8 +204,7 @@ public class CourtLocationServiceImplTest {
         Page<NationalCourtHouse> dbPage = new PageImpl<>(List.of(e1, e2), pageable, 5);
 
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(repository.findAllActiveCourts(
-                        eq(codeFilter), eq(nameFilter), eq(TODAY_UK), eq(pageable)))
+        when(repository.findAllActiveCourts(codeFilter, nameFilter, TODAY_UK, pageable))
                 .thenReturn(dbPage);
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
@@ -283,7 +284,7 @@ public class CourtLocationServiceImplTest {
         Assertions.assertEquals(0, pageDto.getTotalPages());
         Assertions.assertEquals(1, pageDto.getPageNumber());
         Assertions.assertEquals(10, pageDto.getPageSize());
-        Assertions.assertTrue(pageDto.getContent().isEmpty());
+        assertThat(pageDto.getContent()).isEmpty();
 
         verify(auditOperationService)
                 .processAudit(

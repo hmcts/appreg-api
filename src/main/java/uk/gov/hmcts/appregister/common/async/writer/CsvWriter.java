@@ -90,7 +90,7 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
     }
 
     /** Do not add a header if it has already been written. */
-    public class NoHeaderStrategy<T> extends HeaderNameBaseMappingStrategy<T> {
+    public class NoHeaderStrategy<R> extends HeaderNameBaseMappingStrategy<R> {
 
         private final File file;
 
@@ -99,7 +99,7 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
         }
 
         @Override
-        public String[] generateHeader(T bean) throws CsvRequiredFieldEmptyException {
+        public String[] generateHeader(R bean) throws CsvRequiredFieldEmptyException {
             // if the file is empty, then we can write the header, otherwise
             // do not bother
             if (file.length() != 0) {

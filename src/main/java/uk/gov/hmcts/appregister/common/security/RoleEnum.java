@@ -17,7 +17,7 @@ public enum RoleEnum {
     public static boolean isAdmin(String... roles) {
         if (roles != null) {
             for (String role : roles) {
-                if (ADMIN.getRole().equals(role)) {
+                if (ADMIN.role.equals(role)) {
                     return true;
                 }
             }
@@ -29,7 +29,7 @@ public enum RoleEnum {
     public static boolean isUser(String... roles) {
         if (roles != null) {
             for (String role : roles) {
-                if (USER.getRole().equals(role)) {
+                if (USER.role.equals(role)) {
                     return true;
                 }
             }

@@ -1,5 +1,6 @@
 type: object
-description: Fee details to apply to every selected Application List Entry.
+description: One fee detail row to apply to every selected Application List Entry.
+additionalProperties: false
 required:
   - paymentStatus
   - statusDate

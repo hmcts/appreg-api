@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +38,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultCreationValidatorTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
@@ -153,8 +153,7 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_entryDoesNotExistOrNotBelongToList() {
-        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        eq(entryId), eq(listId)))
+        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =

@@ -9,7 +9,12 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -18,84 +23,37 @@ class BulkUploadCsvFormatValidatorTest {
 
     private final BulkUploadCsvFormatValidator validator = new BulkUploadCsvFormatValidator();
 
-    @Test
-    void givenLegacyHeaders_whenValidate_thenPasses() {
-        assertDoesNotThrow(
-                () ->
-                        validator.validate(
-                                csvFile(
-                                        "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME\n")));
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME\n",
+                "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n"
+            })
+    void givenSupportedHeaders_whenValidate_thenPasses(String headers) {
+        MultipartFile file = csvFile(headers);
+
+        assertDoesNotThrow(() -> validator.validate(file));
     }
 
-    @Test
-    void givenCanonicalHeaders_whenValidate_thenPasses() {
-        assertDoesNotThrow(
-                () ->
-                        validator.validate(
-                                csvFile("RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n")));
-    }
+    @ParameterizedTest
+    @MethodSource("invalidHeaderCases")
+    void givenInvalidHeaders_whenValidate_thenThrows(String headers, String expectedMessage) {
+        MultipartFile file = csvFile(headers);
 
-    @Test
-    void givenMixedLegacyAndCanonicalHeaders_whenValidate_thenThrows() {
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        csvFile(
-                                                "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME|"
-                                                        + "RESP_FIRST_NAME\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
-        assertThat(exception)
-                .hasMessageContaining("either legacy respondent name columns or canonical");
-    }
-
-    @Test
-    void givenPartialLegacyHeaders_whenValidate_thenThrows() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        csvFile("RESP_FORENAME1|RESP_FORENAME2|RESP_SURNAME\n")));
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
-        assertThat(exception).hasMessageContaining("Legacy bulk upload files must include");
-    }
-
-    @Test
-    void givenPartialCanonicalHeaders_whenValidate_thenThrows() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(csvFile("RESP_FIRST_NAME|RESP_LAST_NAME\n")));
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
-        assertThat(exception).hasMessageContaining("Canonical bulk upload files must include");
-    }
-
-    @Test
-    void givenNoNameHeaders_whenValidate_thenThrows() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(csvFile("APPLICANT_CODE|APPLICATION_CODE\n")));
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
-        assertThat(exception)
-                .hasMessageContaining(
-                        "must include either legacy respondent name columns or canonical");
+        assertThat(exception).hasMessageContaining(expectedMessage);
     }
 
     @Test
     void givenBlankHeaderRow_whenValidate_thenThrows() {
+        MultipartFile file = csvFile("\n");
+
         AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(csvFile("\n")));
+                assertThrows(AppRegistryException.class, () -> validator.validate(file));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
@@ -124,5 +82,21 @@ class BulkUploadCsvFormatValidatorTest {
             throw new AssertionError(exception);
         }
         return file;
+    }
+
+    private static Stream<Arguments> invalidHeaderCases() {
+        return Stream.of(
+                Arguments.of(
+                        "RESP_FORENAME1|RESP_FORENAME2|RESP_FORENAME3|RESP_SURNAME|RESP_FIRST_NAME\n",
+                        "either legacy respondent name columns or canonical"),
+                Arguments.of(
+                        "RESP_FORENAME1|RESP_FORENAME2|RESP_SURNAME\n",
+                        "Legacy bulk upload files must include"),
+                Arguments.of(
+                        "RESP_FIRST_NAME|RESP_LAST_NAME\n",
+                        "Canonical bulk upload files must include"),
+                Arguments.of(
+                        "APPLICANT_CODE|APPLICATION_CODE\n",
+                        "must include either legacy respondent name columns or canonical"));
     }
 }

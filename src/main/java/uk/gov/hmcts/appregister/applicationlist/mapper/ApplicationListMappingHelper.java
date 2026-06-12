@@ -1,15 +1,15 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
-import lombok.experimental.UtilityClass;
 import org.mapstruct.Named;
+import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 
-@UtilityClass
-public final class ApplicationListMappingHelper {
+@Component
+public class ApplicationListMappingHelper {
 
     @Named("formatDuration")
-    public static String formatDuration(ApplicationList app) {
+    public String formatDuration(ApplicationList app) {
         if (app == null) {
             return null;
         }
@@ -21,7 +21,7 @@ public final class ApplicationListMappingHelper {
     }
 
     @Named("formatCja")
-    public static String formatCja(CriminalJusticeArea cja) {
+    public String formatCja(CriminalJusticeArea cja) {
         if (cja == null) {
             return null;
         }

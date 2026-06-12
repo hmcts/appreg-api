@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 @ExtendWith(MockitoExtension.class)
-public class GetApplicationListEntriesValidatorTest {
+class GetApplicationListEntriesValidatorTest {
     @Mock private ApplicationListRepository applicationListRepository;
 
     @InjectMocks private GetApplicationListEntriesValidator getApplicationListEntriesValidator;

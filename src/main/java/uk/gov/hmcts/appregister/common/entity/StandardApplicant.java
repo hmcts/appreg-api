@@ -123,6 +123,6 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
      * @return True or false
      */
     public static boolean isOrganisation(StandardApplicant applicant) {
-        return applicant.getName() != null && !applicant.getName().isBlank();
+        return applicant.name != null && !applicant.name.isBlank();
     }
 }

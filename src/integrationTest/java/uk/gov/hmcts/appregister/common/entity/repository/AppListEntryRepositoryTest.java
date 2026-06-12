@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.Assert.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,6 +9,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.s
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +46,7 @@ import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Transactional
 @Rollback
-public class AppListEntryRepositoryTest extends BaseRepositoryTest {
+class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -55,7 +55,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     @PersistenceContext private EntityManager entityManager;
 
     @Test
-    public void testBasicInsertionUpdate() {
+    void testBasicInsertionUpdate() {
         // assert
         // test save
         ApplicationListEntry listEntryData = new AppListEntryTestData().someMinimal().build();
@@ -89,7 +89,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindSummariesById_returnsExpectedSummaryProjection() {
+    void testFindSummariesById_returnsExpectedSummaryProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
                 saveApplicationListEntry(entityManager, persistance, list, (short) 1);
@@ -154,15 +154,14 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindSummariesById_paging_and_sorting() {
+    void testFindSummariesById_paging_and_sorting() {
         // Given
         ApplicationList list = new AppListTestData().someMinimal().build();
         Short sequenceNumber1 = (short) 1;
         Short sequenceNumber2 = (short) 2;
         ApplicationListEntry data1 =
                 saveApplicationListEntry(entityManager, persistance, list, sequenceNumber1);
-        ApplicationListEntry data2 =
-                saveApplicationListEntry(entityManager, persistance, list, sequenceNumber2);
+        saveApplicationListEntry(entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 1, Sort.by("sequenceNumber").ascending());
@@ -187,7 +186,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindSummariesById_excludesDeletedEntries() {
+    void testFindSummariesById_excludesDeletedEntries() {
         // Given: an application list with one entry
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
@@ -210,7 +209,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByIdForPrinting_returnsExpectedPrintProjection() {
+    void testFindByIdForPrinting_returnsExpectedPrintProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
                 saveApplicationListEntry(entityManager, persistance, list, (short) 1);
@@ -397,7 +396,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByIdForPrinting_excludesDeletedApplicationListEntries() {
+    void testFindByIdForPrinting_excludesDeletedApplicationListEntries() {
         // Given: an application list with one deleted entry
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
@@ -419,7 +418,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetListEntriesSearchWithNoSearchCriteria() {
+    void testGetListEntriesSearchWithNoSearchCriteria() {
         // When: page 0 size 1
         Pageable page =
                 PageRequest.of(
@@ -448,7 +447,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetListEntriesSearchWithSearchCriteria() {
+    void testGetListEntriesSearchWithSearchCriteria() {
         // Searching without filter to get a list id to then filter.
         Pageable page =
                 PageRequest.of(
@@ -504,7 +503,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetListEntriesSearchForDataWithFullEntry() {
+    void testGetListEntriesSearchForDataWithFullEntry() {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "courtCode"));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
@@ -565,7 +564,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetListEntriesSearchForDataWithPartialsWherePossible() {
+    void testGetListEntriesSearchForDataWithPartialsWherePossible() {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 20);
         Page<ApplicationListEntryGetSummaryProjection> page0 =
@@ -616,11 +615,11 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchForGetSummary_excludesDeletedApplicationListEntries() {
+    void testSearchForGetSummary_excludesDeletedApplicationListEntries() {
         // Given: an application list with unique values to isolate this test
         ApplicationList list = new AppListTestData().someMinimal().build();
         list.setCourtCode("UNQ001");
-        LocalDate hearingDate = LocalDate.of(2030, 1, 1);
+        LocalDate hearingDate = LocalDate.of(2030, Month.JANUARY, 1);
         list.setDate(hearingDate);
         persistance.save(list);
 
@@ -670,7 +669,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testCountByApplicationListUuids_excludesDeletedEntries() {
+    void testCountByApplicationListUuids_excludesDeletedEntries() {
         // Given: two lists
         ApplicationList listA = new AppListTestData().someMinimal().build();
         persistance.save(listA);
@@ -718,7 +717,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByUuidAndApplicationListUuid_excludesDeletedEntries() {
+    void testFindByUuidAndApplicationListUuid_excludesDeletedEntries() {
         // Given: an application list and an entry
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
@@ -752,7 +751,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchForFilterByApplicantSurname() {
+    void testSearchForFilterByApplicantSurname() {
         // Given: an application list with entries that have distinct applicant surnames
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
@@ -801,7 +800,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @Transactional
-    public void testFindExistingEntryIdsInSourceList_returnsOnlyMatchingIds() {
+    void testFindExistingEntryIdsInSourceList_returnsOnlyMatchingIds() {
         // Given: source and another list
         ApplicationList sourceList = new AppListTestData().someMinimal().build();
         persistance.save(sourceList);
@@ -828,12 +827,12 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // Then: only the IDs that belong to the source list are returned
         assertEquals(Set.of(sourceUuid1, sourceUuid2), result);
-        assertFalse(result.contains(otherUuid));
+        assertThat(result).doesNotContain(otherUuid);
     }
 
     @Test
     @Transactional
-    public void testFindResolutionCodesByEntryIds_returnsAllResolutionCodesForEachEntry() {
+    void testFindResolutionCodesByEntryIds_returnsAllResolutionCodesForEachEntry() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
 
@@ -865,9 +864,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         .map(p -> p.getResolutionCode().getResultCode())
                         .toList();
 
-        assertTrue(entry1Codes.contains("RC1"));
-        assertTrue(entry1Codes.contains("RC2"));
-        assertTrue(entry2Codes.contains("RC3"));
+        assertThat(entry1Codes).contains("RC1");
+        assertThat(entry1Codes).contains("RC2");
+        assertThat(entry2Codes).contains("RC3");
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {
@@ -885,9 +884,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         code.setTitle(resultCode + " title");
         code.setWording(resultCode + " wording");
         code.setLegislation("Test legislation");
-        code.setStartDate(LocalDate.now());
+        code.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC));
         code.setChangedBy(1L);
-        code.setChangedDate(OffsetDateTime.now());
+        code.setChangedDate(OffsetDateTime.now(java.time.ZoneOffset.UTC));
 
         AppListEntryResolution entryResolution = new AppListEntryResolution();
         entryResolution.setApplicationList(entry);

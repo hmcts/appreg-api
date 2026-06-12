@@ -58,7 +58,7 @@ import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryWrapperDto;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @Slf4j
-public class ApplicationEntryServiceImplTest extends BaseIntegration {
+class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Autowired private ApplicationEntryService applicationEntryService;
 
@@ -84,7 +84,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     @Autowired private ApplicationListEntryAssertion applicationListEntryAssertion;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -92,7 +92,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
+    void createEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -188,12 +188,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
+    void createEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
@@ -284,7 +284,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithFeeLodgementDateInThePast() {
+    void createEntryNoRespondentWithFeeLodgementDateInThePast() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -374,7 +374,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithFeeLodgementDateToday() {
+    void createEntryNoRespondentWithFeeLodgementDateToday() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -383,7 +383,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         entryCreateDto.setNumberOfRespondents(null);
 
@@ -463,10 +463,10 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
+    void createEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Reference");
@@ -539,18 +539,18 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
+    void createEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
         createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
     }
 
     @Test
-    public void createEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
+    void createEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
@@ -667,13 +667,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void
-            createEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
+    void createEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
@@ -741,7 +740,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 
@@ -804,7 +803,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
+    void updateEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -916,7 +915,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
+    void updateEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1046,7 +1045,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithOffsiteFeeAndStandardApplicant() {
+    void updateEntryWithOffsiteFeeAndStandardApplicant() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         UUID uuid = createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
@@ -1088,7 +1087,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
         entryUpdateDto.setHasOffsiteFee(true);
@@ -1168,7 +1167,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 applicationListEntry.get(),
                 update.getPayload(),
                 "Application for a warrant to enter premises at {value} for date {"
-                        + LocalDate.now()
+                        + LocalDate.now(java.time.ZoneOffset.UTC)
                         + "}",
                 "Application for a warrant to enter premises at {{Premises Address}} "
                         + "for date {{Premises Date}}",
@@ -1179,7 +1178,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
+    void updateEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
@@ -1228,7 +1227,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         // fill the template with the two parameters
         updateDto.setWordingFields(List.of(substitution, substitution1));
@@ -1289,7 +1288,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 update.getPayload(),
                 "Application for a warrant to enter"
                         + " premises at {value} for date {"
-                        + LocalDate.now()
+                        + LocalDate.now(java.time.ZoneOffset.UTC)
                         + "}",
                 "Application for a warrant to enter premises at "
                         + "{{Premises Address}} for date {{Premises Date}}",
@@ -1300,7 +1299,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
+    void updateEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
@@ -1416,7 +1415,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
+    void updateEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1519,8 +1518,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void
-            updateEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
+    void updateEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1548,7 +1546,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
 
@@ -1636,7 +1634,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryWithNullHasOffsiteFeeDoesNotThrow() {
+    void updateEntryWithNullHasOffsiteFeeDoesNotThrow() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         // Create an entry that already exists
@@ -1690,7 +1688,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
+    void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
@@ -1737,7 +1735,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
      * @return The UUID of the created entry
      */
     private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest() {
-        return createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(LocalDate.now());
+        return createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
+                LocalDate.now(java.time.ZoneOffset.UTC));
     }
 
     private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
@@ -1829,7 +1828,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
@@ -1875,7 +1874,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             response.getPayload(),
                             "Application for a warrant to ente"
                                     + "r premises at {test wording} for date {"
-                                    + LocalDate.now()
+                                    + LocalDate.now(java.time.ZoneOffset.UTC)
                                     + "}",
                             "Application for a warrant to enter premises at "
                                     + "{{Premises Address}} for date {{Premises Date}}",
@@ -1896,7 +1895,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);

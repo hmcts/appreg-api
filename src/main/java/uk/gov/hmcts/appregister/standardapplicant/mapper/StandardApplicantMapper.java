@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
-import lombok.Setter;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -31,10 +30,18 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
         injectionStrategy = InjectionStrategy.CONSTRUCTOR,
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-@Setter
 public abstract class StandardApplicantMapper {
 
-    @Autowired ApplicantMapper applicantMapper;
+    private ApplicantMapper applicantMapper;
+
+    @Autowired
+    public void setApplicantMapper(ApplicantMapper applicantMapper) {
+        this.applicantMapper = applicantMapper;
+    }
+
+    protected ApplicantMapper getApplicantMapper() {
+        return applicantMapper;
+    }
 
     @Mapping(target = "code", source = "standardApplicant.applicantCode")
     @Mapping(target = "applicant", expression = "java(mapApplicantFromProjection(projection))")
@@ -49,7 +56,8 @@ public abstract class StandardApplicantMapper {
     @Mapping(
             target = "applicant",
             expression =
-                    "java(applicantMapper.toApplicant(applicantMapper.toApplicantEntity(entity)))")
+                    "java(getApplicantMapper().toApplicant("
+                            + "getApplicantMapper().toApplicantEntity(entity)))")
     @Mapping(target = "startDate", source = "applicantStartDate")
     @Mapping(target = "endDate", expression = "java(toEndDate(entity.getApplicantEndDate()))")
     public abstract StandardApplicantGetDetailDto toReadGetDto(StandardApplicant entity);
@@ -79,7 +87,7 @@ public abstract class StandardApplicantMapper {
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "applicantCode", source = "code")
-    @Mapping(target = "applicantStartDate", source = "date")
+    @Mapping(target = "applicantStartDate", ignore = true)
     @Mapping(target = "applicantEndDate", ignore = true)
     @Mapping(target = "name", ignore = true)
     @Mapping(target = "version", constant = "0L")
@@ -98,7 +106,7 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "emailAddress", ignore = true)
     @Mapping(target = "telephoneNumber", ignore = true)
     @Mapping(target = "mobileNumber", ignore = true)
-    public abstract StandardApplicant toEntity(String code, LocalDate date);
+    public abstract StandardApplicant toEntity(String code);
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {

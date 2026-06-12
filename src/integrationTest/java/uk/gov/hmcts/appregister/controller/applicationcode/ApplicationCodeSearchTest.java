@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationcode;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -10,6 +11,7 @@ import io.restassured.specification.RequestSpecification;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -53,11 +55,11 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
+class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithWithMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
         // create the token
@@ -121,7 +123,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -174,7 +176,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
+    void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -233,7 +235,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesForCodeWithMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -299,7 +301,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
+    void
             givenOverlappingActiveApplicationCodes_whenGetApplicationCodes_thenCallerSortControlsPageOrder()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -328,7 +330,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesForCodeWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
         TokenGenerator tokenGenerator =
@@ -374,9 +376,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
+            throws Exception {
         // The GET-by-code endpoint resolves fees using the request date, not the mocked clock.
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -424,7 +425,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesDateIsNotCorrectlyFormatted_thenReturn400()
+    void givenValidRequest_whenGetApplicationCodesDateIsNotCorrectlyFormatted_thenReturn400()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -453,8 +454,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400() throws Exception {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -478,14 +478,14 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenHistoricDate_whenGetApplicationCodes_thenReturnEmptyPage() throws Exception {
+    void givenHistoricDate_whenGetApplicationCodes_thenReturnEmptyPage() throws Exception {
         String code = "ZZDATE01";
         saveApplicationCodeWithFees(
                 code,
                 "ZZFEE01",
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1));
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -506,19 +506,19 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 0, 0);
-        Assertions.assertTrue(page.getContent() == null || page.getContent().isEmpty());
+        assertThat(page.getContent()).isNullOrEmpty();
     }
 
     @Test
-    public void givenCodeTitleAndDate_whenGetApplicationCodes_thenReturnDateFilteredPage()
+    void givenCodeTitleAndDate_whenGetApplicationCodes_thenReturnDateFilteredPage()
             throws Exception {
         String code = "ZZDATE02";
         saveApplicationCodeWithFees(
                 code,
                 "ZZFEE02",
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1));
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -545,7 +545,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenInvalidDate_whenGetApplicationCodes_thenReturn400() throws Exception {
+    void givenInvalidDate_whenGetApplicationCodes_thenReturn400() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -575,7 +575,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithoutExplicitSort_thenReturn200()
                     throws Exception {
 
@@ -634,9 +634,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetApplicationCodes_ensureOffsiteFeeIsPresentForAll_returns200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodes_ensureOffsiteFeeIsPresentForAll_returns200()
+            throws Exception {
         // create the token to send
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -661,7 +660,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
+    void
             givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsPresentWithNullOffsiteFeeRef_returns200()
                     throws Exception {
         // create the token to send
@@ -676,7 +675,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                         + "/"
                                         + "AD99004"
                                         + "?date="
-                                        + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                                        + LocalDate.now(java.time.ZoneOffset.UTC)
+                                                .format(DateTimeFormatter.ISO_LOCAL_DATE)),
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
 
@@ -688,9 +688,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithExplicitSort_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithExplicitSort_thenReturn200()
+            throws Exception {
 
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -724,7 +723,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithPagingNoResult_thenReturn200()
+    void givenValidRequest_whenGetApplicationCodesWithPagingNoResult_thenReturn200()
             throws Exception {
 
         // create the token
@@ -762,9 +761,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingApplicationCodeFilter_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingApplicationCodeFilter_thenReturn200()
+            throws Exception {
 
         // create a token
         TokenGenerator tokenGenerator =
@@ -802,7 +800,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithPagingTitleFilter_thenReturn200()
+    void givenValidRequest_whenGetApplicationCodesWithPagingTitleFilter_thenReturn200()
             throws Exception {
 
         // create the token
@@ -842,7 +840,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithPagingAllFilter_thenReturn200()
+    void givenValidRequest_whenGetApplicationCodesWithPagingAllFilter_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -892,9 +890,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPageNumberBeyondResultBoundary_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPageNumberBeyondResultBoundary_thenReturn200()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -923,7 +920,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @StabilityTest
-    public void givenApplicationCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenApplicationCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
         for (ApplicationCodeSortFieldEnum applicationCodeSortFieldEnum :
                 ApplicationCodeSortFieldEnum.values()) {
@@ -958,7 +955,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidSortQuery_thenReturn400()
+    void givenValidRequest_whenGetApplicationCodesWithPagingInvalidSortQuery_thenReturn400()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -987,7 +984,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     // 0 and returns a 200. Our implementation
     // returns a 500
     @Test
-    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn400()
+    void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn400()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -1024,7 +1021,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     // does not behave
     // accordingly
     @Test
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
         // create the token
@@ -1060,9 +1057,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeType_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeType_thenReturn200()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1105,14 +1101,15 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404() throws Exception {
 
         // execute the functionality
         String id = "notexist";
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + id, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + id,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
                         getATokenWithValidCredentials()
                                 .roles(List.of(RoleEnum.ADMIN))
                                 .build()
@@ -1145,8 +1142,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesForDateNotValid_thenReturn404()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesForDateNotValid_thenReturn404() throws Exception {
         String id = APPCODE_CODE;
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
@@ -1183,7 +1179,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturnPreferredActiveRecord()
                     throws Exception {
 
@@ -1211,8 +1207,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenGetWithMultipleTemplateValues_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetWithMultipleTemplateValues_thenReturn200() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
 
@@ -1287,8 +1282,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse()
-            throws Exception {
+    void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse() throws Exception {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -1319,7 +1313,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var tokenGenerator = createAdminToken();
 
         Response responseSpec =

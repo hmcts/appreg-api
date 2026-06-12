@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import utils.ConstraintAssertion;
 
-public class PersonDtoTest {
+class PersonDtoTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -27,7 +27,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testPersonEmptyStrings() throws Exception {
+    void testPersonEmptyStrings() {
         JsonNullable<String> emptyNullable = JsonNullable.of("");
         FullName fullName = new FullName();
         fullName.setFirstName("");
@@ -93,7 +93,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testOrganisationEmptyStrings() throws Exception {
+    void testOrganisationEmptyStrings() {
         JsonNullable<String> emptyNullable = JsonNullable.of("");
         Organisation organisation = new Organisation();
         organisation.setName("");
@@ -144,7 +144,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testPersonContactDetailsRegexFailure() throws Exception {
+    void testPersonContactDetailsRegexFailure() {
         ContactDetails contactDetails = new ContactDetails();
         contactDetails.setAddressLine1("Test Address Line 1\t");
         contactDetails.setAddressLine2(JsonNullable.of("Test Address Line 2\n"));
@@ -208,7 +208,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testPersonContactDetailsPartialFailure() throws Exception {
+    void testPersonContactDetailsPartialFailure() {
         ContactDetails contactDetails = new ContactDetails();
         contactDetails.setAddressLine1("Test Address Line 1\t");
         contactDetails.setAddressLine2(JsonNullable.of("Test Address Line 2"));
@@ -251,7 +251,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testPersonFullNameRegexFailure() throws Exception {
+    void testPersonFullNameRegexFailure() {
         FullName fullName = new FullName();
         fullName.setFirstName("Test First Name\t");
         fullName.setMiddleName(JsonNullable.of("Test Middle Name\n"));
@@ -283,7 +283,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testPersonFullNamePartialRegexFailure() throws Exception {
+    void testPersonFullNamePartialRegexFailure() {
         FullName fullName = new FullName();
         fullName.setFirstName("Test First Name");
         fullName.setMiddleName(JsonNullable.of("Test Middle Name"));
@@ -307,7 +307,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testOrganisationNameRegexFailure() throws Exception {
+    void testOrganisationNameRegexFailure() {
         Organisation organisation = new Organisation();
         organisation.setContactDetails(new ContactDetails());
 

@@ -1,10 +1,11 @@
 package uk.gov.hmcts.appregister.controller.resultcode;
 
 import java.time.LocalDate;
+import java.time.Month;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
-public class AbstractResultCodeControllerCrudTest extends BaseIntegration {
+class AbstractResultCodeControllerCrudTest extends BaseIntegration {
     protected static final String WEB_CONTEXT = "result-codes";
 
     // Known seeds (from your resolution_codes seed data)
@@ -14,8 +15,8 @@ public class AbstractResultCodeControllerCrudTest extends BaseIntegration {
     protected static final String AUTH_TITLE = "Authorised";
     protected static final String CASE_CODE = "CASE";
 
-    protected static final LocalDate SEED_START = LocalDate.of(2016, 1, 1);
-    protected static final LocalDate ACTIVE_DAY = LocalDate.of(2025, 1, 1);
+    protected static final LocalDate SEED_START = LocalDate.of(2016, Month.JANUARY, 1);
+    protected static final LocalDate ACTIVE_DAY = LocalDate.of(2025, Month.JANUARY, 1);
 
     // Audit event names
     protected static final String AUDIT_GET_ONE =

@@ -17,14 +17,18 @@ class NoSecurityConfigCoverageIntegrationTest {
 
     @Test
     void verifyLocalDebugRuntime_rejectsClasspathWithoutMarker() {
-        assertThatThrownBy(() -> NoSecurityConfig.verifyLocalDebugRuntime(emptyClassLoader()))
+        ClassLoader classLoader = emptyClassLoader();
+
+        assertThatThrownBy(() -> NoSecurityConfig.verifyLocalDebugRuntime(classLoader))
                 .isInstanceOf(NoSecurityConfigurationException.class)
                 .hasMessageContaining("local debug");
     }
 
     @Test
     void verifyLocalDebugRuntime_allowsClasspathWithMarker() {
-        assertThatCode(() -> NoSecurityConfig.verifyLocalDebugRuntime(markerClassLoader()))
+        ClassLoader classLoader = markerClassLoader();
+
+        assertThatCode(() -> NoSecurityConfig.verifyLocalDebugRuntime(classLoader))
                 .doesNotThrowAnyException();
     }
 

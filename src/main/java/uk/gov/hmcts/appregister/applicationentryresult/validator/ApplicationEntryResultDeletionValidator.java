@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
@@ -49,15 +48,6 @@ public class ApplicationEntryResultDeletionValidator
     public void validate(ListEntryResultDeleteArgs args) {
         validate(args, (a, s) -> null);
         log.debug("Validated deletion for entry result {}", args.resultId());
-    }
-
-    @Override
-    public <R> R validate(
-            ListEntryResultDeleteArgs args,
-            BiFunction<ListEntryResultDeleteArgs, ListEntryResultDeleteValidationSuccess, R>
-                    createSupplier) {
-
-        return super.validate(args, createSupplier);
     }
 
     @Override
