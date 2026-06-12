@@ -1198,7 +1198,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             success.getFee().mainFee().getId());
 
             // if we have no fees associated then create a new one
-            if (!appListEntryFeeId.isPresent()) {
+            if (appListEntryFeeId.isEmpty()) {
                 log.debug(
                         "Adding new fee {} to entry %s {}",
                         success.getFee().mainFee().getId(),
@@ -1239,7 +1239,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             success.getFee().offsiteFee().getId());
 
             // add the offsite fee
-            if (!appListEntryOffsiteFeeId.isPresent() && success.getFee().offsiteFee() != null) {
+            if (appListEntryOffsiteFeeId.isEmpty() && success.getFee().offsiteFee() != null) {
                 log.debug(
                         "Adding new offsite fee {} to entry %s {}",
                         success.getFee().offsiteFee().getId(),

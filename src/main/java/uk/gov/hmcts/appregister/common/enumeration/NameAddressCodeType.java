@@ -1,8 +1,11 @@
 package uk.gov.hmcts.appregister.common.enumeration;
 
+import lombok.Getter;
+
 /**
  * Enumeration representing the code type for name address types.
  */
+@Getter
 public enum NameAddressCodeType {
     APPLICANT("NA"),
     RESPONDENT("RE");
@@ -22,7 +25,4 @@ public enum NameAddressCodeType {
         throw new IllegalArgumentException("Unknown fee status: " + code);
     }
 
-    public String getCode() {
-        return code;
-    }
 }

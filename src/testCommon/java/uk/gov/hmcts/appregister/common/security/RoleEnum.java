@@ -16,7 +16,7 @@ public enum RoleEnum {
 
     public static boolean isAdmin(String... roles) {
         if (roles != null) {
-            for (String role : roles) {
+            for (var role : roles) {
                 if (ADMIN.role.equals(role)) {
                     return true;
                 }
@@ -28,7 +28,7 @@ public enum RoleEnum {
 
     public static boolean isUser(String... roles) {
         if (roles != null) {
-            for (String role : roles) {
+            for (var role : roles) {
                 if (USER.role.equals(role)) {
                     return true;
                 }

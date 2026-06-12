@@ -58,14 +58,14 @@ class WordingTemplateTest {
 
     @Test
     void testInvalidLengthFormatFailure() {
-        WordingTemplateSentence collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
-        AppRegistryException appRegistryException =
+        var collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
+        var templateable = collection.getTemplateableContents()[0];
+        var appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 collection.substituteForTemplate(
-                                        collection.getTemplateableContents()[0],
-                                        "this value exceeds length"));
+                                        templateable, "this value exceeds length"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
     }
