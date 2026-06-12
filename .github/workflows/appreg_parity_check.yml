@@ -66,32 +66,10 @@ jobs:
 
       - name: Initialise fallback parity result
         run: |
-          mkdir -p "${OUTPUT_DIR}"
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          report = {
-              "issueKey": os.environ.get("ISSUE_KEY", ""),
-              "issueUrl": os.environ.get("ISSUE_URL", ""),
-              "repository": os.environ.get("GITHUB_REPOSITORY", ""),
-              "status": "UNCERTAIN",
-              "confidence": "low",
-              "summary": "Parity check did not complete before the report stage. Setup, authentication, snapshot download, or validation may have failed.",
-              "runUrl": f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}",
-              "snapshotId": "unavailable",
-              "legacyEvidence": [],
-              "modernEvidence": [],
-              "gaps": ["Parity workflow setup failed before Codex produced a result."],
-              "recommendedNextStep": "Inspect the GitHub Actions run logs and rerun the parity check after fixing the setup failure.",
-          }
-
-          Path(os.environ["OUTPUT_DIR"], "parity-report.json").write_text(
-              json.dumps(report, indent=2, sort_keys=True),
-              encoding="utf-8",
-          )
-          PY
+          python3 ./.github/scripts/write-parity-fallback-report.py \
+            --summary "Parity check did not complete before the report stage. Setup, authentication, snapshot download, or validation may have failed." \
+            --gap "Parity workflow setup failed before Codex produced a result." \
+            --recommended-next-step "Inspect the GitHub Actions run logs and rerun the parity check after fixing the setup failure."
 
       - name: Verify runner toolchain and Codex auth
         env:
@@ -149,6 +127,10 @@ jobs:
           if [[ -n "${changed}" ]]; then
             echo "Parity checker must not modify tracked files:" >&2
             echo "${changed}" >&2
+            python3 ./.github/scripts/write-parity-fallback-report.py \
+              --summary "Parity check result was suppressed because the report-only workflow modified tracked files." \
+              --gap "The parity checker modified tracked files, which violates the report-only contract." \
+              --recommended-next-step "Inspect the GitHub Actions run logs before relying on this parity result."
             exit 1
           fi
 

@@ -51,10 +51,11 @@ def main() -> int:
     notify_url = _env("CODEX_JIRA_PARITY_NOTIFY_URL")
     if not notify_url:
         print(
-            "::warning::CODEX_JIRA_PARITY_NOTIFY_URL is not configured; "
-            "skipping Jira parity notification."
+            "::error::CODEX_JIRA_PARITY_NOTIFY_URL is not configured; "
+            "cannot notify Jira of the parity result.",
+            file=sys.stderr,
         )
-        return 0
+        return 1
 
     payload = json.loads(Path(args.report).read_text(encoding="utf-8"))
     timeout = int(_env("CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS", "10"))
