@@ -123,45 +123,8 @@ jobs:
             exit 1
           fi
 
-      - name: Upload parity report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: appreg-parity-report
-          path: |
-            ${{ runner.temp }}/parity-output/parity-report.json
-            ${{ runner.temp }}/parity-output/parity-comment.md
-            ${{ runner.temp }}/parity-output/codex-usage-summary.json
-          if-no-files-found: warn
-          retention-days: 1
-
-  notify-jira:
-    if: always()
-    needs: parity-check
-    runs-on: codex-pilot-azure-aks
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    env:
-      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      OUTPUT_DIR: ${{ runner.temp }}/parity-output
-
-    steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ env.DEFAULT_BRANCH }}
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Download parity report
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: appreg-parity-report
-          path: ${{ env.OUTPUT_DIR }}
-
       - name: Notify Jira parity result
+        if: always()
         env:
           CODEX_JIRA_PARITY_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PARITY_NOTIFY_URL }}
           CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS || '10' }}
@@ -173,3 +136,12 @@ jobs:
           fi
 
           ./.github/scripts/notify-jira-parity-result.py --report "${report_path}"
+
+      - name: Upload token usage summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-parity-usage-summary
+          path: ${{ runner.temp }}/parity-output/codex-usage-summary.json
+          if-no-files-found: warn
+          retention-days: 14
