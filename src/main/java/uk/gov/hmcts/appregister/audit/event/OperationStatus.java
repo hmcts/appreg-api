@@ -16,5 +16,4 @@ public enum OperationStatus {
     OperationStatus(int status) {
         this.status = status;
     }
-
 }

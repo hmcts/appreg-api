@@ -24,5 +24,4 @@ public enum NameAddressCodeType {
         }
         throw new IllegalArgumentException("Unknown fee status: " + code);
     }
-
 }
