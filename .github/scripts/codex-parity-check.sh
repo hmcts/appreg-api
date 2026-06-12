@@ -210,6 +210,9 @@ prompt = f"""You are Codex running a report-only legacy parity check for Apps Re
 Task:
 Compare the Jira ticket against the legacy Apps Reg source snapshot and the modern backend repository.
 Decide whether the functionality described in the Jira ticket appears to match the legacy implementation.
+The Jira ticket may describe functionality that has not been implemented in the modern repository yet. If the legacy
+behaviour is clear but equivalent modern code cannot be found, return GAP_FOUND and explain the legacy behaviour that
+should be implemented. Do not treat missing modern implementation as a workflow failure.
 
 Hard rules:
 - Do not modify files.
@@ -221,6 +224,8 @@ Hard rules:
 - Evidence must be references only: repository name, file path, class/component/service/function names, plus a concise
   behavioural note where needed.
 - If you cannot find enough evidence, return UNCERTAIN rather than guessing.
+- Use MATCHES_LEGACY only when you find equivalent modern behaviour. Use GAP_FOUND when legacy behaviour is clear but
+  the modern implementation is missing or materially different.
 
 Modern repository:
 - Repository: {os.environ["GITHUB_REPOSITORY"]}
