@@ -157,7 +157,7 @@ class ReportJobAuditServiceTest {
 
     @Test
     void givenNonReportJobOrIntermediateTransition_whenAuditingTransition_thenSkipsAudit() {
-        ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
+        var service = new ReportJobAuditService(auditService, List.of());
 
         service.auditStatusTransition(
                 reportJob(JobType.BULK_UPLOAD_ENTRIES),
@@ -168,6 +168,26 @@ class ReportJobAuditServiceTest {
                 reportJob(JobType.FEES_REPORT), JobStatus1.VALIDATING, JobStatus1.PROCESSING, null);
         service.auditStatusTransition(
                 reportJob(JobType.FEES_REPORT), JobStatus1.COMPLETED, JobStatus1.FAILED, null);
+
+        verify(auditService, never())
+                .processAudit(
+                        any(ReportJobAudit.class),
+                        any(),
+                        any(),
+                        any(AuditOperationLifecycleListener[].class));
+    }
+
+    @Test
+    void givenMissingJobMetadata_whenAuditingTransition_thenSkipsAudit() {
+        var service = new ReportJobAuditService(auditService, List.of());
+        var missingType = JobStatusResponse.builder().uuid(UUID.randomUUID()).build();
+        var missingUuid = JobStatusResponse.builder().type(JobType.FEES_REPORT).build();
+
+        service.auditStatusTransition(null, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
+        service.auditStatusTransition(
+                missingType, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
+        service.auditStatusTransition(
+                missingUuid, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
 
         verify(auditService, never())
                 .processAudit(

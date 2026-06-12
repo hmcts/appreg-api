@@ -497,13 +497,18 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             return;
         }
 
-        LocalDate today = currentBusinessDate();
-        for (FeeStatus feeStatus : feeStatuses) {
-            if (feeStatus == null || feeStatus.getStatusDate() == null) {
+        var today = currentBusinessDate();
+        for (var feeStatus : feeStatuses) {
+            if (feeStatus == null) {
                 continue;
             }
 
-            if (feeStatus.getStatusDate().isAfter(today)) {
+            var statusDate = feeStatus.getStatusDate();
+            if (statusDate == null) {
+                continue;
+            }
+
+            if (statusDate.isAfter(today)) {
                 throw new AppRegistryException(
                         AppListEntryError.STATUS_DATE_CANNOT_BE_IN_FUTURE,
                         "Status date cannot be after today's date");

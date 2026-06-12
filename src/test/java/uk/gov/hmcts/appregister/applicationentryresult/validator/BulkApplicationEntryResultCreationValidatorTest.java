@@ -281,13 +281,25 @@ class BulkApplicationEntryResultCreationValidatorTest {
 
     @Test
     void givenMissingEntryIds_whenValidate_thenThrowsEntryNotProvided() {
-        BulkResultDto bulkResultDto = new BulkResultDto();
+        var bulkResultDto = new BulkResultDto();
         bulkResultDto.setResult(new ResultCreateDto());
 
-        PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
+        var payloadForCreateEntryResult =
                 PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build();
 
-        AppRegistryException exception =
+        var exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payloadForCreateEntryResult));
+
+        Assertions.assertEquals(ApplicationListError.ENTRY_NOT_PROVIDED, exception.getCode());
+    }
+
+    @Test
+    void givenMissingPayload_whenValidate_thenThrowsEntryNotProvided() {
+        var payloadForCreateEntryResult = PayloadForCreateResults.<BulkResultDto>builder().build();
+
+        var exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () -> validator.validate(payloadForCreateEntryResult));

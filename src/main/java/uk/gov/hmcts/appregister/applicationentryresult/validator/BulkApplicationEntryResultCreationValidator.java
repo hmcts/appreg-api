@@ -49,9 +49,9 @@ public class BulkApplicationEntryResultCreationValidator
                     validateSuccess) {
 
         Optional<ApplicationList> applicationListOptional;
-        List<UUID> entryIds = getEntryIds(validatable);
+        var entryIds = getEntryIds(validatable);
 
-        if (entryIds != null) {
+        if (!entryIds.isEmpty()) {
             validateNoDuplicateEntryIds(entryIds);
         }
 
@@ -136,11 +136,12 @@ public class BulkApplicationEntryResultCreationValidator
     }
 
     private List<UUID> getEntryIds(PayloadForCreateResults<BulkResultDto> validatable) {
-        if (validatable.getPayload() == null || validatable.getPayload().getEntryIds() == null) {
-            return null;
+        if (validatable.getPayload() == null) {
+            return List.of();
         }
 
-        return new ArrayList<>(validatable.getPayload().getEntryIds());
+        var entryIds = validatable.getPayload().getEntryIds();
+        return entryIds == null ? List.of() : new ArrayList<>(entryIds);
     }
 
     private void validateEntryIdsProvided(List<UUID> entryIds) {
