@@ -172,17 +172,18 @@ class PageableMapperTest {
 
     @Test
     void testPageableSortDirectionFailure() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
-        AppRegistryException ex =
+        var sort = List.of("field, 1232");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         10,
                                         2,
-                                        List.of("field, 1232"),
+                                        sort,
                                         ApplicationListEntriesSummarySortFieldEnum.SEQUENCE_NUMBER,
                                         Sort.Direction.ASC,
                                         ApplicationListEntriesSummarySortFieldEnum
@@ -192,17 +193,18 @@ class PageableMapperTest {
 
     @Test
     void testPageableSortKeyFailure() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
-        AppRegistryException ex =
+        var sort = List.of("field, asc");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         10,
                                         2,
-                                        List.of("field, asc"),
+                                        sort,
                                         ApplicationListEntriesSummarySortFieldEnum.SEQUENCE_NUMBER,
                                         Sort.Direction.ASC,
                                         ApplicationListEntriesSummarySortFieldEnum
@@ -212,11 +214,11 @@ class PageableMapperTest {
 
     @Test
     void testPageableSupportsInternalDefaultSortOutsideExternalSortLookup() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
 
-        PagingWrapper pageable =
+        var pageable =
                 appPageable.from(
                         null,
                         null,
@@ -233,16 +235,15 @@ class PageableMapperTest {
                 InternalDefaultSortField.INTERNAL_ONLY.getTieBreaker(),
                 pageable.getPageable().getSort().get().toList().get(1).getProperty());
 
-        AppRegistryException ex =
+        var sort = List.of(InternalDefaultSortField.INTERNAL_ONLY.getApiValue() + ",asc");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         null,
                                         null,
-                                        List.of(
-                                                InternalDefaultSortField.INTERNAL_ONLY.getApiValue()
-                                                        + ",asc"),
+                                        sort,
                                         InternalDefaultSortField.INTERNAL_ONLY,
                                         Sort.Direction.ASC,
                                         TestSortableOperationEnum::getEntityValue));
@@ -251,11 +252,11 @@ class PageableMapperTest {
 
     @Test
     void testPageableUsingSortConfig() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
 
-        PagingWrapper pageable =
+        var pageable =
                 appPageable.from(
                         null,
                         null,
@@ -270,17 +271,15 @@ class PageableMapperTest {
                 ApplicationEntryDefaultSortFieldEnum.CODE.getTieBreaker(),
                 pageable.getPageable().getSort().get().toList().get(1).getProperty());
 
-        AppRegistryException ex =
+        var sort = List.of(ApplicationEntryDefaultSortFieldEnum.CODE.getApiValue() + ",asc");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         null,
                                         null,
-                                        List.of(
-                                                ApplicationEntryDefaultSortFieldEnum.CODE
-                                                                .getApiValue()
-                                                        + ",asc"),
+                                        sort,
                                         ApplicationEntrySortConfig.SEARCH,
                                         Sort.Direction.ASC));
         Assertions.assertEquals(CommonAppError.SORT_NOT_SUITABLE, ex.getCode());

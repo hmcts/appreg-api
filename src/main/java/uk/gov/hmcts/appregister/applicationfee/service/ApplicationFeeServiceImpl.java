@@ -42,7 +42,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     @SuppressWarnings("java:S1135")
     private FeePair resolveFeePair(Optional<Fee> feesForRef, Optional<Fee> offsiteFee) {
         // if we do not have a main but have an offset then error
-        if (feesForRef.isEmpty() && !offsiteFee.isEmpty()) {
+        if (feesForRef.isEmpty() && offsiteFee.isPresent()) {
             log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
         }
 

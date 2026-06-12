@@ -14,11 +14,11 @@ class StrictLocalTimeDeserializerTest {
 
     @Test
     void testDeserialize() throws Exception {
-        JsonParser parser = Mockito.mock(JsonParser.class);
+        var parser = Mockito.mock(JsonParser.class);
         when(parser.currentToken()).thenReturn(JsonToken.VALUE_STRING);
         when(parser.getText()).thenReturn("12:30");
 
-        StrictLocalTimeDeserializer deserializer = new StrictLocalTimeDeserializer();
+        var deserializer = new StrictLocalTimeDeserializer();
 
         Assertions.assertEquals(
                 LocalTime.parse("12:30:00"), deserializer.deserialize(parser, null));
@@ -26,16 +26,32 @@ class StrictLocalTimeDeserializerTest {
 
     @Test
     void testDeserializeFail() throws Exception {
-        JsonParser parser = Mockito.mock(JsonParser.class);
+        var parser = Mockito.mock(JsonParser.class);
         when(parser.currentToken()).thenReturn(JsonToken.START_ARRAY);
         when(parser.nextToken()).thenReturn(JsonToken.END_ARRAY);
 
         when(parser.getText()).thenReturn("12:30");
 
-        StrictLocalTimeDeserializer deserializer = new StrictLocalTimeDeserializer();
+        var deserializer = new StrictLocalTimeDeserializer();
 
         Assertions.assertThrows(
                 HttpMessageNotReadableException.class,
                 () -> deserializer.deserialize(parser, null));
+    }
+
+    @Test
+    void testDeserializeFailForNonStringToken() {
+        var parser = Mockito.mock(JsonParser.class);
+        when(parser.currentToken()).thenReturn(JsonToken.VALUE_NUMBER_INT);
+
+        var deserializer = new StrictLocalTimeDeserializer();
+
+        var exception =
+                Assertions.assertThrows(
+                        HttpMessageNotReadableException.class,
+                        () -> deserializer.deserialize(parser, null));
+
+        Assertions.assertEquals("Unexpected time format detected", exception.getMessage());
+        Assertions.assertNotNull(exception.getHttpInputMessage());
     }
 }

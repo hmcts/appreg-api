@@ -572,7 +572,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @deprecated use the audited move flow in {@code ApplicationEntryServiceImpl#move(UUID,
      *     MoveEntriesDto)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2026-04-21", forRemoval = false)
     @Modifying
     @Query(
             """

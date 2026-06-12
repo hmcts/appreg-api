@@ -72,8 +72,6 @@ public class PageableMapper {
             Sort.Direction defaultDirection,
             Function<String, ? extends SortableOperationEnum> findSortFieldEnum) {
 
-        // TODO: This is the one line that needs removing
-        // if we want to support multiple sort values
         validateAgainstMultipleSortSupported(sort);
 
         if (size != null && size > maxPageSize) {

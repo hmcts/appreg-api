@@ -201,7 +201,7 @@ class ApplicationEntryServiceImplTest {
     private GetEntryValidationSuccess getEntryValidationSuccess;
 
     // A null match provider that returns a null etag
-    private static MatchProvider NULL_MATCH_PROVIDER =
+    private static MatchProvider nullMatchProvider =
             new MatchProvider() {
                 @Override
                 public String getEtag() {
@@ -210,7 +210,7 @@ class ApplicationEntryServiceImplTest {
             };
 
     // Services
-    @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
+    @Spy private MatchService matchService = new MatchServiceImpl(nullMatchProvider);
 
     // Audit
     @Spy
@@ -704,7 +704,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(entryGetDetailDto);
 
         // run the test
-        MatchResponse<EntryGetDetailDto> response = service.createEntry(payload);
+        var response = service.createEntry(payload);
 
         ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
         verify(appListEntryFeeRepository, times(2)).save(captor.capture());
@@ -891,14 +891,12 @@ class ApplicationEntryServiceImplTest {
         }
 
         AppListEntryOfficialTestData officialTestData = new AppListEntryOfficialTestData();
-        List<AppListEntryOfficial> officialLst = new ArrayList<>();
         for (Official appOfficial : entryCreateDto.getOfficials()) {
-            AppListEntryOfficial official = officialTestData.someComplete();
+            var official = officialTestData.someComplete();
             when(applicationListEntryEntityMapper.toOfficial(appOfficial, applicationListEntry))
                     .thenReturn(official);
             official.setId(-1L);
             when(appListEntryOfficialRepository.save(official)).thenReturn(official);
-            officialLst.add(official);
         }
 
         Fee offsiteFee = feeTestData.someComplete();
@@ -1023,14 +1021,12 @@ class ApplicationEntryServiceImplTest {
         }
 
         AppListEntryOfficialTestData officialTestData = new AppListEntryOfficialTestData();
-        List<AppListEntryOfficial> officialLst = new ArrayList<>();
         for (Official appOfficial : entryCreateDto.getOfficials()) {
-            AppListEntryOfficial official = officialTestData.someComplete();
+            var official = officialTestData.someComplete();
             when(applicationListEntryEntityMapper.toOfficial(appOfficial, applicationListEntry))
                     .thenReturn(official);
             official.setId(-1L);
             when(appListEntryOfficialRepository.save(official)).thenReturn(official);
-            officialLst.add(official);
         }
 
         TemplateSubstitution t1 = new TemplateSubstitution();

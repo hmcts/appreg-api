@@ -582,8 +582,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenHttpMessageNotReadableUnknownPropertyException_whenThrown_thenProblemDetailIsReturned()
-                    throws Exception {
+            givenHttpMessageNotReadableUnknownPropertyException_whenThrown_thenProblemDetailIsReturned() {
         String content = "Not Readable Error";
         String body =
                 """
@@ -596,7 +595,7 @@ class AppRegExceptionHandlerTest {
                 new ObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
-        Exception cause =
+        var cause =
                 Assertions.assertThrows(
                         Exception.class,
                         () -> objectMapper.readValue(body, StrictRequestDto.class));
@@ -629,8 +628,7 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
-            givenHttpMessageNotReadableNestedUnknownPropertyException_whenThrown_thenProblemDetailUsesJsonPath()
-                    throws Exception {
+            givenHttpMessageNotReadableNestedUnknownPropertyException_whenThrown_thenProblemDetailUsesJsonPath() {
         String content = "Not Readable Error";
         String body =
                 """
@@ -644,7 +642,7 @@ class AppRegExceptionHandlerTest {
                 new ObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
-        Exception cause =
+        var cause =
                 Assertions.assertThrows(
                         Exception.class,
                         () -> objectMapper.readValue(body, StrictNestedRequestDto.class));
@@ -855,19 +853,20 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void givenNonNullStatus_whenResolvingStatusCode_thenExplicitStatusIsUsed() throws Exception {
-        Method method =
+        var method =
                 AppRegExceptionHandler.class.getDeclaredMethod(
                         "resolveStatusCode", HttpStatusCode.class, ProblemDetail.class);
         method.setAccessible(true);
 
-        int status =
+        var explicitStatus = HttpStatus.valueOf(422);
+        var status =
                 (int)
                         method.invoke(
                                 exceptionHandler,
-                                HttpStatus.UNPROCESSABLE_ENTITY,
+                                explicitStatus,
                                 ProblemDetail.forStatus(HttpStatus.BAD_REQUEST));
 
-        Assertions.assertEquals(HttpStatus.UNPROCESSABLE_ENTITY.value(), status);
+        Assertions.assertEquals(explicitStatus.value(), status);
     }
 
     @Test

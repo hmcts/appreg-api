@@ -433,7 +433,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         validateStatusDateIsNotInFuture(feeStatuses);
 
         // check that the fee status payload make sense according to the application code
-        if (isFeeStatusRequired(applicationCode, validatable) && feeStatuses.isEmpty()) {
+        if (isFeeStatusRequired(applicationCode) && feeStatuses.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
@@ -455,7 +455,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         return feeToReturn;
     }
 
-    protected boolean isFeeStatusRequired(ApplicationCode applicationCode, T validatable) {
+    protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
         return applicationCode.getFeeDue() == YesOrNo.YES;
     }
 
@@ -497,13 +497,12 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             return;
         }
 
-        LocalDate today = currentBusinessDate();
-        for (FeeStatus feeStatus : feeStatuses) {
-            if (feeStatus == null || feeStatus.getStatusDate() == null) {
-                continue;
-            }
-
-            if (feeStatus.getStatusDate().isAfter(today)) {
+        var today = currentBusinessDate();
+        for (var feeStatus : feeStatuses) {
+            if (Optional.ofNullable(feeStatus)
+                    .map(FeeStatus::getStatusDate)
+                    .filter(statusDate -> statusDate.isAfter(today))
+                    .isPresent()) {
                 throw new AppRegistryException(
                         AppListEntryError.STATUS_DATE_CANNOT_BE_IN_FUTURE,
                         "Status date cannot be after today's date");

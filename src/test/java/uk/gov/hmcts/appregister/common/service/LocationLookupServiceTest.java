@@ -82,21 +82,10 @@ class LocationLookupServiceTest {
 
     @Test
     void getCjaOrThrow_validTrimmedCode_returnsSingleCja() {
-        CriminalJusticeArea cja = new CriminalJusticeArea();
+        var cja = new CriminalJusticeArea();
         when(cjaRepository.findByCode("52")).thenReturn(List.of(cja));
 
-        CriminalJusticeArea result = service.getCjaOrThrow("52");
-
-        assertSame(cja, result);
-        verify(cjaRepository).findByCode("52");
-    }
-
-    @Test
-    void getCjaOrThrow_codeWithWhitespace_trimsAndReturnsSingleCja() {
-        CriminalJusticeArea cja = new CriminalJusticeArea();
-        when(cjaRepository.findByCode("52")).thenReturn(List.of(cja));
-
-        CriminalJusticeArea result = service.getCjaOrThrow("52");
+        var result = service.getCjaOrThrow("52");
 
         assertSame(cja, result);
         verify(cjaRepository).findByCode("52");

@@ -56,31 +56,16 @@ class WordingTemplateTest {
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
-    // TODO: Re-enable this once the decision has been made on the FE implementation.
-    /*
-    @Test
-    void testInvalidDateFormatFailure() {
-        WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                collection.substituteForTemplate(
-                                        collection.getTemplateableContents()[0], "not date"));
-        Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
-    } */
-
     @Test
     void testInvalidLengthFormatFailure() {
-        WordingTemplateSentence collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
-        AppRegistryException appRegistryException =
+        var collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
+        var templateable = collection.getTemplateableContents()[0];
+        var appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 collection.substituteForTemplate(
-                                        collection.getTemplateableContents()[0],
-                                        "this value exceeds length"));
+                                        templateable, "this value exceeds length"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
     }

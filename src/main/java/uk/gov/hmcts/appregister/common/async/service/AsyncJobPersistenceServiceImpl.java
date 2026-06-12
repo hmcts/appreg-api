@@ -117,14 +117,14 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public JobIdRequest startJob(JobTypeRequest request) {
-        AsyncJob asyncJob = new AsyncJob();
+        var asyncJob = new AsyncJob();
         asyncJob.setJobType(request.getJobType().getValue());
         asyncJob.setJobState(JobStatusType.SUBMITTED);
 
         // save the start job
         asyncJobRepository.save(asyncJob);
 
-        asyncJob = refreshEntity(asyncJob);
+        refreshEntity(asyncJob);
 
         return JobIdRequest.builder()
                 .id(asyncJob.getUuid())

@@ -57,15 +57,12 @@ class MatchServiceImplTest {
         DummyKeyableThatIsVersionable versionable1 = new DummyKeyableThatIsVersionable(1L);
         versionable1.setVersion(1L);
 
-        AppRegistryException exception =
+        Supplier<MatchResponse<String>> supplier =
+                () -> MatchResponse.of("test", List.of(versionable));
+        var exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () ->
-                                matchService.matchOnRequest(
-                                        () -> {
-                                            return MatchResponse.of("test", List.of(versionable));
-                                        },
-                                        List.of(versionable1)));
+                        () -> matchService.matchOnRequest(supplier, List.of(versionable1)));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 

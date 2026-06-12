@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.async.lifecycle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 
@@ -26,10 +25,10 @@ public abstract class AbstractCsvWriterAsyncLifecycle<T, R extends CsvPojo>
 
     @Override
     public void processing(AsyncJobLifecycleEvent<T> event) throws IOException {
-        List<T> dataToWrite = event.getData();
-        List<R> convertedData = new ArrayList<>();
+        var dataToWrite = event.getData();
+        var convertedData = new ArrayList<R>();
 
-        for (T convertFrom : dataToWrite) {
+        for (var convertFrom : dataToWrite) {
             convertedData.add(convert(convertFrom));
         }
 

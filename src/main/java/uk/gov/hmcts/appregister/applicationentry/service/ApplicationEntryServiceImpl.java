@@ -628,11 +628,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
-        if (bulkFeesUpdateDto == null || bulkFeesUpdateDto.getEntryIds() == null) {
-            return 0;
-        }
-
-        return bulkFeesUpdateDto.getEntryIds().size();
+        return Optional.ofNullable(bulkFeesUpdateDto)
+                .map(BulkFeesUpdateDto::getEntryIds)
+                .map(Set::size)
+                .orElse(0);
     }
 
     private void recordBulkFeeUpdateMetrics(
@@ -1197,7 +1196,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             success.getFee().mainFee().getId());
 
             // if we have no fees associated then create a new one
-            if (!appListEntryFeeId.isPresent()) {
+            if (appListEntryFeeId.isEmpty()) {
                 log.debug(
                         "Adding new fee {} to entry %s {}",
                         success.getFee().mainFee().getId(),
@@ -1238,7 +1237,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             success.getFee().offsiteFee().getId());
 
             // add the offsite fee
-            if (!appListEntryOffsiteFeeId.isPresent() && success.getFee().offsiteFee() != null) {
+            if (appListEntryOffsiteFeeId.isEmpty() && success.getFee().offsiteFee() != null) {
                 log.debug(
                         "Adding new offsite fee {} to entry %s {}",
                         success.getFee().offsiteFee().getId(),

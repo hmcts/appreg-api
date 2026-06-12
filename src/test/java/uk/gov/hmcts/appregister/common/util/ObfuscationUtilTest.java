@@ -115,11 +115,12 @@ class ObfuscationUtilTest {
         assertThat(obfuscated).doesNotContain("Respondent Name");
         assertThat(obfuscated).doesNotContain("SW1A 2AA");
 
-        assertThat(obfuscated).contains("\"accountNumber\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"applicant\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"respondent\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"postCode\":\"[REDACTED]\"");
-        assertThat(obfuscated).contains("\"applicationTitle\":\"Application title\"");
+        assertThat(obfuscated)
+                .contains("\"accountNumber\":\"[REDACTED]\"")
+                .contains("\"applicant\":\"[REDACTED]\"")
+                .contains("\"respondent\":\"[REDACTED]\"")
+                .contains("\"postCode\":\"[REDACTED]\"")
+                .contains("\"applicationTitle\":\"Application title\"");
     }
 
     @Test

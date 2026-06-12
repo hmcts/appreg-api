@@ -392,24 +392,6 @@ class WordingSentenceTest {
                 templateSentence.getErroneousTemplates().getFirst());
     }
 
-    // TODO: Re-enable this once the decision has been made on the FE implementation.
-    /*
-    @Test
-    void testInvalidDateFormatFailure() {
-                WordingTemplateSentence templateSentence =
-                        WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
-                AppRegistryException appRegistryException =
-                        Assertions.assertThrows(
-                                AppRegistryException.class,
-                                () ->
-                                        templateSentence.substituteForTemplate(
-                                                templateSentence.getTemplateableContents()[1],
-         "not date"));
-                Assertions.assertEquals(
-                        CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
-    }
-    */
-
     @Test
     void testInvalidLengthFormatFailure() {
         WordingTemplateSentence templateSentence =

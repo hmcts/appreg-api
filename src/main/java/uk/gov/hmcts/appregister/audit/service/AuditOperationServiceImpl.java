@@ -132,7 +132,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
         } else if (eventEnum.getType().isUpdate()
-                && (!result.isPresent()
+                && (result.isEmpty()
                         || (result.get().getNewEntity() == null || oldValue == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");

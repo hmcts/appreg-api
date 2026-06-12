@@ -82,15 +82,13 @@ class DataAuditLoggerTest {
     /** This is a programmatic error as both new and old audit values should NEVER be null. */
     @Test
     void testFailOldAndNewEntityNull() {
-        StartEvent startEvent = new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", null);
-        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, null);
+        var startEvent = new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", null);
+        var auditRequest = new CompleteEvent(startEvent, null, null);
+        var logger = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
 
-        AppRegistryException ex =
+        var ex =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                new DataAuditLogger(auditDifferentiator, dataAuditRepository)
-                                        .eventPerformed(auditRequest));
+                        AppRegistryException.class, () -> logger.eventPerformed(auditRequest));
         Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, ex.getCode());
     }
 
@@ -100,16 +98,14 @@ class DataAuditLoggerTest {
      */
     @Test
     void testFailOldAndNewEntityDifferentTypes() {
-        StartEvent startEvent =
+        var startEvent =
                 new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", new ApplicationList());
-        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, new ApplicationCode());
+        var auditRequest = new CompleteEvent(startEvent, null, new ApplicationCode());
+        var logger = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
 
-        AppRegistryException ex =
+        var ex =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                new DataAuditLogger(auditDifferentiator, dataAuditRepository)
-                                        .eventPerformed(auditRequest));
+                        AppRegistryException.class, () -> logger.eventPerformed(auditRequest));
         Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, ex.getCode());
     }
 
@@ -119,22 +115,20 @@ class DataAuditLoggerTest {
      */
     @Test
     void testFailOldAndNewEntityWithDifferentIds() {
-        ApplicationList applicationList = new ApplicationList();
+        var applicationList = new ApplicationList();
         applicationList.setId(1L);
 
-        ApplicationList applicationList2 = new ApplicationList();
+        var applicationList2 = new ApplicationList();
         applicationList2.setId(2L);
 
-        StartEvent startEvent =
+        var startEvent =
                 new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", applicationList);
-        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, applicationList2);
+        var auditRequest = new CompleteEvent(startEvent, null, applicationList2);
+        var logger = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
 
-        AppRegistryException ex =
+        var ex =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                new DataAuditLogger(auditDifferentiator, dataAuditRepository)
-                                        .eventPerformed(auditRequest));
+                        AppRegistryException.class, () -> logger.eventPerformed(auditRequest));
         Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, ex.getCode());
     }
 

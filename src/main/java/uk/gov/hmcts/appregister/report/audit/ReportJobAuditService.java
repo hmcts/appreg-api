@@ -35,7 +35,7 @@ public class ReportJobAuditService {
             JobStatus1 previousStatus,
             JobStatus1 newStatus,
             String errorReason) {
-        if (!shouldAudit(jobStatusResponse, previousStatus, newStatus, errorReason)) {
+        if (!shouldAudit(jobStatusResponse, previousStatus, newStatus)) {
             return;
         }
 
@@ -63,10 +63,7 @@ public class ReportJobAuditService {
 
     /** Applies the ticket scope: report jobs only, and only transitions into terminal status. */
     private boolean shouldAudit(
-            JobStatusResponse jobStatusResponse,
-            JobStatus1 previousStatus,
-            JobStatus1 newStatus,
-            String errorReason) {
+            JobStatusResponse jobStatusResponse, JobStatus1 previousStatus, JobStatus1 newStatus) {
         if (jobStatusResponse == null
                 || jobStatusResponse.getType() == null
                 || jobStatusResponse.getUuid() == null) {

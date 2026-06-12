@@ -28,7 +28,7 @@ public class JpaDataReader<T> implements DataReader<T> {
             ReadPagePosition position, PageReader<T> pageImporter, JobContext jobContext)
             throws IOException {
         // get the page of information
-        Page<T> page = getEntityFunction.apply(convertToPageable(position));
+        var page = getEntityFunction.apply(convertToPageable(position));
 
         // loop through all pages
         while (!page.getContent().isEmpty()) {
