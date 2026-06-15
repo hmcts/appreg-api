@@ -16,15 +16,16 @@ put:
   tags: [ application-list-entries ]
   summary: Update a closed Application List Entry
   description: >
-    Updates the AL when it is closed.
+    Appends additional notes to an Application List Entry after its parent Application List has
+    been closed. This is a command-style update and does not return an entry representation.
   requestBody:
     required: true
     content:
       application/vnd.hmcts.appreg.v1+json:
         schema: { $ref: "../../components/schemas/application-list-entries/entry_update_closed_dto.yaml" }
   responses:
-    "200":
-      description: Returns the updated Application List Entry
+    "204":
+      description: Closed Application List Entry updated successfully (no content returned)
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.

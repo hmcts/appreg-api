@@ -1377,8 +1377,9 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenAllValueAreToBeUpdate_200Returned()
-            throws Exception {
+    void
+            givenASuccessfulClosedEntryUpdate_whenParentListIsClosed_thenReturns204AndStandardGetReturns409()
+                    throws Exception {
         String notesOnCreate = "This is a note on create";
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setNumberOfRespondents(null);
