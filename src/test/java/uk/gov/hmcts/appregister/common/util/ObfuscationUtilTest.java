@@ -20,6 +20,8 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
@@ -213,5 +215,66 @@ class ObfuscationUtilTest {
                 .contains("\"resultCode\":\"RC-002\"")
                 .contains("\"pageNumber\":0")
                 .contains("\"totalElements\":1");
+    }
+
+    @Test
+    void testObfuscationFeesReportFilterDto() {
+        String standardApplicantCode = "STD-00123";
+        String applicantName = "john smith";
+
+        FeesReportFilterDto filterDto =
+                new FeesReportFilterDto()
+                        .standardApplicantCode(standardApplicantCode)
+                        .applicantName(applicantName)
+                        .location(null);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+
+        assertThat(obfuscated)
+                .doesNotContain(standardApplicantCode)
+                .doesNotContain(applicantName)
+                .contains("\"standardApplicantCode\":\"[REDACTED]\"")
+                .contains("\"applicantName\":\"[REDACTED]\"")
+                .contains("\"location\":null");
+    }
+
+    @Test
+    void testObfuscationPrivateProsecutorIndexFilterDto() {
+        String standardApplicantName = "Test Standard Applicant";
+        String applicantFirstName = "john";
+        String applicantSurname = "smith";
+        String applicantOrganisationName = "Acme Corp";
+        String respondentFirstName = "jane";
+        String respondentSurname = "doe";
+        String respondentOrganisationName = "Beta Ltd";
+
+        PrivateProsecutorsIndexFilterDto filterDto =
+                new PrivateProsecutorsIndexFilterDto()
+                        .standardApplicantName(standardApplicantName)
+                        .applicantSurname(applicantSurname)
+                        .applicantFirstName(applicantFirstName)
+                        .applicantOrganisationName(applicantOrganisationName)
+                        .respondentSurname(respondentSurname)
+                        .respondentFirstName(respondentFirstName)
+                        .respondentOrganisationName(respondentOrganisationName)
+                        .location(null);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+
+        assertThat(obfuscated)
+                .doesNotContain(standardApplicantName)
+                .doesNotContain(applicantFirstName)
+                .doesNotContain(applicantSurname)
+                .doesNotContain(applicantOrganisationName)
+                .doesNotContain(respondentSurname)
+                .doesNotContain(respondentFirstName)
+                .doesNotContain(respondentOrganisationName)
+                .contains("\"standardApplicantName\":\"[REDACTED]\"")
+                .contains("\"applicantFirstName\":\"[REDACTED]\"")
+                .contains("\"applicantSurname\":\"[REDACTED]\"")
+                .contains("\"applicantOrganisationName\":\"[REDACTED]\"")
+                .contains("\"respondentFirstname\":\"[REDACTED]\"")
+                .contains("\"respondentSurname\":\"[REDACTED]\"")
+                .contains("\"respondentOrganisationName\":\"[REDACTED]\"");
     }
 }

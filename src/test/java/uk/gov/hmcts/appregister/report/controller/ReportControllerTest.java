@@ -151,6 +151,8 @@ class ReportControllerTest {
                         .extractAuditData(CrudEnum.READ)
                         .contains(new AuditableData("report_parameters", "dateTo", "2018-05-31")));
         assertReportJobAudit(auditedParameters.get(), acknowledgement);
+
+
     }
 
     @Test
