@@ -636,7 +636,7 @@ w
 middle_name TEXT,
 last_name TEXT,";
 			additional_oracle_select="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(forename_1,'')),UNISTR('\00A6')),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|'||";
-additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(CASE WHEN forename_2 IS NOT NULL AND forename_3 IS NOT NULL THEN forename_2 || ' ' || forename_3 WHEN forename_2 IS NOT NULL THEN forename_2 ELSE forename_3 END,'')),UNISTR('\00A6')),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|'||";
+additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(TRIM(REGEXP_REPLACE(NVL(forename_2, '')|| ' ' || NVL(forename_3, ''), ' +', ' '))),UNISTR('\00A6'),''),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|'||";
 additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(surname,'')),UNISTR('\00A6')),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|#'";
 			additional_insert=",REPLACE(REPLACE(REPLACE(REPLACE(FIRST_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS FIRST_NAME,";
 			additional_insert="${additional_insert}REPLACE(REPLACE(REPLACE(REPLACE(MIDDLE_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS MIDDLE_NAME,";
