@@ -20,8 +20,10 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 
@@ -60,6 +62,8 @@ public class ObfuscationUtil {
                 new ApplicationListGetDetailDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultGetDto.class, new ResultGetDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultPage.class, new ResultPageSensitiveSerializer());
+        maskingModule.addSerializer(FeesReportFilterDto.class, new FeesReportFilterDtoSensitiveSerializer());
+        maskingModule.addSerializer(PrivateProsecutorsIndexFilterDto.class, new PrivateProsecutorIndexSensitiveSerializer());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(
@@ -216,6 +220,42 @@ public class ObfuscationUtil {
             gen.writeObjectField("entryId", value.getEntryId());
             gen.writeObjectField("resultCode", value.getResultCode());
             gen.writeObjectField("wording", value.getWording());
+            gen.writeEndObject();
+        }
+    }
+
+    static class FeesReportFilterDtoSensitiveSerializer extends JsonSerializer<FeesReportFilterDto> {
+
+        @Override
+        public void serialize(
+                FeesReportFilterDto value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("dateFrom", value.getDateFrom());
+            gen.writeObjectField("dateTo", value.getDateTo());
+            gen.writeStringField("standardApplicantCode", REDACTED);
+            gen.writeStringField("applicantName", REDACTED);
+            gen.writeObjectField("location", value.getLocation());
+            gen.writeEndObject();
+        }
+    }
+
+    static class PrivateProsecutorIndexSensitiveSerializer extends JsonSerializer<PrivateProsecutorsIndexFilterDto> {
+
+        @Override
+        public void serialize(
+                PrivateProsecutorsIndexFilterDto value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("applicantFirstName", REDACTED);
+            gen.writeStringField("applicantSurname", REDACTED);
+            gen.writeStringField("applicantOrganisationName", REDACTED);
+            gen.writeStringField("respondentSurname", REDACTED);
+            gen.writeStringField("respondentFirstname", REDACTED);
+            gen.writeStringField("respondentOrganisationName", REDACTED);
+            gen.writeStringField("standardApplicantName", REDACTED);
+            gen.writeObjectField("dateFrom", value.getDateFrom());
+            gen.writeObjectField("dateTo", value.getDateTo());
             gen.writeEndObject();
         }
     }
