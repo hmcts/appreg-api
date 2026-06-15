@@ -583,7 +583,7 @@ tasks.register('flywayArtefact', Jar) {
 tasks.register('bundleOpenApiJson', GenerateTask) {
   generatorName = 'openapi'
   inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
-  outputDir = layout.buildDirectory.dir('specmerge')
+  outputDir = layout.buildDirectory.dir('specmerge/json')
   additionalProperties = [
     outputFileName: 'openapi.json'
   ]
@@ -593,7 +593,7 @@ tasks.register('bundleOpenApiJson', GenerateTask) {
 tasks.register('bundleOpenApiYaml', GenerateTask) {
   generatorName = 'openapi-yaml'
   inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
-  outputDir = layout.buildDirectory.dir('specmerge')
+  outputDir = layout.buildDirectory.dir('specmerge/yaml')
   additionalProperties = [
     outputFile: 'openapi.yaml'
   ]
@@ -602,7 +602,7 @@ tasks.register('bundleOpenApiYaml', GenerateTask) {
 
 tasks.register('copyBundledOpenApiYamlToRoot') {
   dependsOn tasks.named('bundleOpenApiYaml')
-  def bundledSpec = layout.buildDirectory.file('specmerge/openapi.yaml')
+  def bundledSpec = layout.buildDirectory.file('specmerge/yaml/openapi.yaml')
   def rootSpec = layout.projectDirectory.file('openapi.yaml')
 
   inputs.file(bundledSpec)
@@ -622,7 +622,7 @@ tasks.named('assemble') {
 
 tasks.register('copySpecIntoLocalDebugResources', Copy) {
   dependsOn tasks.named('bundleOpenApiJson')
-  from layout.buildDirectory.file('specmerge/openapi.json')
+  from layout.buildDirectory.file('specmerge/json/openapi.json')
   into layout.buildDirectory.dir('localDebug/resources/static/specs')
 }
 
