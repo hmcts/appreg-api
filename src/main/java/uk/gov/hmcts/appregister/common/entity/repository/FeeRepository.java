@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -38,6 +39,21 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
                  f.id DESC
         """)
     List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
+
+    @Query(
+            """
+        SELECT f
+        FROM Fee f
+        WHERE LOWER(f.reference) IN :references
+          AND ((f.endDate IS NULL OR f.endDate >= :dateTime) AND f.isOffsite = false
+          AND f.startDate <= :dateTime)
+        ORDER BY LOWER(f.reference),
+                 CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+                 f.endDate DESC,
+                 f.startDate DESC,
+                 f.id DESC
+        """)
+    List<Fee> findByReferenceInBetweenDate(Collection<String> references, LocalDate dateTime);
 
     /**
      * <<<<<<< HEAD Finds a list of Fee entities by their reference and offsite status.

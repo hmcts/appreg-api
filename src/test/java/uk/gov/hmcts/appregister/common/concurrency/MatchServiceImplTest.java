@@ -59,10 +59,11 @@ class MatchServiceImplTest {
 
         Supplier<MatchResponse<String>> supplier =
                 () -> MatchResponse.of("test", List.of(versionable));
+        List<Keyable> currentValues = List.of(versionable1);
         var exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> matchService.matchOnRequest(supplier, List.of(versionable1)));
+                        () -> matchService.matchOnRequest(supplier, currentValues));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 

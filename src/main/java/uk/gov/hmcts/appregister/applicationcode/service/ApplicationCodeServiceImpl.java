@@ -69,6 +69,13 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(
                                     appCode, appTitle, searchDate, pageable.getPageable());
+                    var feePairsByReference =
+                            feeService.resolveFeePairs(
+                                    applicationCodeList.stream()
+                                            .map(ApplicationCode::getFeeReference)
+                                            .distinct()
+                                            .toList(),
+                                    searchDate);
 
                     ApplicationCodePage newPage = new ApplicationCodePage();
                     pageMapper.toPage(applicationCodeList, newPage, pageable.getSortStrings());
@@ -76,7 +83,9 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     // Map each entity to a summary DTO and add to the page content
                     applicationCodeList.map(
                             code -> {
-                                FeePair feePair = feeService.resolveFeePair(code.getFeeReference());
+                                var feePair =
+                                        feePairsByReference.getOrDefault(
+                                                code.getFeeReference(), new FeePair(null, null));
 
                                 return newPage.addContentItem(
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
