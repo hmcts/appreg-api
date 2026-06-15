@@ -62,8 +62,11 @@ public class ObfuscationUtil {
                 new ApplicationListGetDetailDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultGetDto.class, new ResultGetDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultPage.class, new ResultPageSensitiveSerializer());
-        maskingModule.addSerializer(FeesReportFilterDto.class, new FeesReportFilterDtoSensitiveSerializer());
-        maskingModule.addSerializer(PrivateProsecutorsIndexFilterDto.class, new PrivateProsecutorIndexSensitiveSerializer());
+        maskingModule.addSerializer(
+                FeesReportFilterDto.class, new FeesReportFilterDtoSensitiveSerializer());
+        maskingModule.addSerializer(
+                PrivateProsecutorsIndexFilterDto.class,
+                new PrivateProsecutorIndexSensitiveSerializer());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(
@@ -224,7 +227,8 @@ public class ObfuscationUtil {
         }
     }
 
-    static class FeesReportFilterDtoSensitiveSerializer extends JsonSerializer<FeesReportFilterDto> {
+    static class FeesReportFilterDtoSensitiveSerializer
+            extends JsonSerializer<FeesReportFilterDto> {
 
         @Override
         public void serialize(
@@ -240,11 +244,14 @@ public class ObfuscationUtil {
         }
     }
 
-    static class PrivateProsecutorIndexSensitiveSerializer extends JsonSerializer<PrivateProsecutorsIndexFilterDto> {
+    static class PrivateProsecutorIndexSensitiveSerializer
+            extends JsonSerializer<PrivateProsecutorsIndexFilterDto> {
 
         @Override
         public void serialize(
-                PrivateProsecutorsIndexFilterDto value, JsonGenerator gen, SerializerProvider serializers)
+                PrivateProsecutorsIndexFilterDto value,
+                JsonGenerator gen,
+                SerializerProvider serializers)
                 throws IOException {
             gen.writeStartObject();
             gen.writeStringField("applicantFirstName", REDACTED);
