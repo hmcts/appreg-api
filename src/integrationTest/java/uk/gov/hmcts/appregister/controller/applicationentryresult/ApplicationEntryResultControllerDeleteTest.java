@@ -158,8 +158,8 @@ class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntr
     }
 
     @Test
-    @DisplayName("Delete Application List Entry Result: 400 when entry not in list")
-    void givenEntryNotInList_whenDelete_then400() throws Exception {
+    @DisplayName("Delete Application List Entry Result: 404 when entry not in list")
+    void givenEntryNotInList_whenDelete_then404() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
@@ -167,13 +167,13 @@ class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntr
         Response resp =
                 deleteResult(list.getUuid(), entry.getUuid(), UUID.randomUUID(), getToken());
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
     }
 
     @Test
-    @DisplayName("Delete Application List Entry Result: 400 when entry result not related to entry")
-    void givenUnrelatedEntry_whenDelete_then400() throws Exception {
+    @DisplayName("Delete Application List Entry Result: 404 when entry result not related to entry")
+    void givenUnrelatedEntry_whenDelete_then404() throws Exception {
         var list = createAndSaveList(OPEN);
 
         var unrelatedEntry = createEntry(list);
@@ -191,7 +191,7 @@ class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntr
                         entryResult.getUuid(),
                         getToken());
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
     }
 
