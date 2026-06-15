@@ -8,7 +8,7 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 public enum ApplicationListEntryResultError implements ErrorCodeEnum {
     LIST_ENTRY_RESULT_NOT_FOUND(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.NOT_FOUND,
                     "No application list entry result was found that belongs to the specified entry",
                     "ALER-1")),
 
