@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -234,8 +235,7 @@ class ObfuscationUtilTest {
                 .doesNotContain(standardApplicantCode)
                 .doesNotContain(applicantName)
                 .contains("\"standardApplicantCode\":\"[REDACTED]\"")
-                .contains("\"applicantName\":\"[REDACTED]\"")
-                .contains("\"location\":null");
+                .contains("\"applicantName\":\"[REDACTED]\"");
     }
 
     @Test
@@ -269,6 +269,7 @@ class ObfuscationUtilTest {
                 .doesNotContain(respondentSurname)
                 .doesNotContain(respondentFirstName)
                 .doesNotContain(respondentOrganisationName)
+                .doesNotContain("location")
                 .contains("\"standardApplicantName\":\"[REDACTED]\"")
                 .contains("\"applicantFirstName\":\"[REDACTED]\"")
                 .contains("\"applicantSurname\":\"[REDACTED]\"")
@@ -276,6 +277,27 @@ class ObfuscationUtilTest {
                 .contains("\"respondentFirstname\":\"[REDACTED]\"")
                 .contains("\"respondentSurname\":\"[REDACTED]\"")
                 .contains("\"respondentOrganisationName\":\"[REDACTED]\"")
-                .contains("\"location\":null");
+                .doesNotContain("\"location\"");
+    }
+
+    @Test
+    void testObfuscationPrivateProsecutorIndexFilterDtoRequiredOnly() {
+        PrivateProsecutorsIndexFilterDto filterDto =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateTo(LocalDate.now())
+                        .dateFrom(LocalDate.now());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+        assertThat(obfuscated)
+                .contains("\"dateTo\":" + formatter.format(LocalDate.now()))
+                .contains("\"dateFrom\":" + formatter.format(LocalDate.now()))
+                .doesNotContain("\"standardApplicantName\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantFirstName\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantSurname\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantOrganisationName\":\"[REDACTED]\"")
+                .doesNotContain("\"respondentFirstname\":\"[REDACTED]\"")
+                .doesNotContain("\"respondentSurname\":\"[REDACTED]\"")
+                .doesNotContain("\"respondentOrganisationName\":\"[REDACTED]\"")
+                .doesNotContain("\"location\"");
     }
 }
