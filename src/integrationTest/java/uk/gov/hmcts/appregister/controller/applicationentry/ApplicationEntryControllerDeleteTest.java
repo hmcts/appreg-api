@@ -120,7 +120,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithInvalidListId_then409() throws Exception {
+    void givenValidRequest_whenDeleteWithInvalidListId_then404() throws Exception {
         var tokenGenerator = createAdminToken();
 
         // delete the entry
@@ -131,7 +131,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
                                         UUID.randomUUID(), UUID.randomUUID())),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpecDelete.then().statusCode(409);
+        responseSpecDelete.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecDelete);
     }
@@ -174,6 +174,47 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
         responseSpecDelete.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.LIST_ENTRY_NOT_FOUND.getCode(), responseSpecDelete);
+    }
+
+    @Test
+    void givenValidRequest_whenDeleteWithDeletedEntryId_then409() throws Exception {
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("test wording");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
+
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        String surnameToLookup = UUID.randomUUID().toString();
+
+        entryCreateDto.setWordingFields(List.of(substitution, substitution1));
+
+        var tokenGenerator = createAdminToken();
+
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
+        AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+
+        int rowsUpdated =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository.softDeleteByUuid(
+                                        createdDto.getDetailDto().getId()));
+        Assertions.assertEquals(1, rowsUpdated);
+
+        Response responseSpecDelete =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(
+                                DELETE_ENTRY_CONTEXT.formatted(
+                                        createdDto.getDetailDto().getListId(),
+                                        createdDto.getDetailDto().getId())),
+                        tokenGenerator.fetchTokenForRole());
+        responseSpecDelete.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode(),
+                responseSpecDelete);
     }
 
     @Test

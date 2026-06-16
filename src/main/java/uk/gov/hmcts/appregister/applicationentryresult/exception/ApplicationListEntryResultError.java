@@ -14,7 +14,7 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
 
     APPLICATION_LIST_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT, "The application list does not exist", "ALER-2")),
+                    HttpStatus.NOT_FOUND, "The application list does not exist", "ALER-2")),
 
     APPLICATION_LIST_STATE_IS_INCORRECT(
             DefaultErrorDetail.create(
@@ -24,9 +24,7 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
 
     APPLICATION_ENTRY_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT,
-                    "No application list entry exists that belongs to the specified list",
-                    "ALER-4")),
+                    HttpStatus.NOT_FOUND, "No application list entry exists", "ALER-4")),
 
     RESOLUTION_CODE_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
@@ -34,9 +32,7 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
 
     APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT,
-                    "No application list entry result exists that belongs to the specified list and entry",
-                    "ALER-6")),
+                    HttpStatus.NOT_FOUND, "No application list entry result exists", "ALER-6")),
     APPLICATION_ENTRY_RESULT_ENTRIES_NOT_IN_LIST(
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
@@ -46,7 +42,17 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Not all of the application entries are present",
-                    "ALER-8"));
+                    "ALER-8")),
+    APPLICATION_ENTRY_NOT_WITHIN_LIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The application list entry does not belong to the specified list",
+                    "ALER-9")),
+    APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The application list entry result does not belong to the specified entry",
+                    "ALER-10"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
