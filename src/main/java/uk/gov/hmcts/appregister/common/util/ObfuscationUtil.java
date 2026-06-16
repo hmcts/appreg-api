@@ -239,16 +239,19 @@ public class ObfuscationUtil {
             gen.writeObjectField("dateTo", value.getDateTo());
 
             var applicantName = value.getApplicantName();
-
             if (applicantName != null && !applicantName.isBlank()) {
                 gen.writeStringField("applicantName", REDACTED);
             }
+
             var standardApplicantCode = value.getStandardApplicantCode();
             if (standardApplicantCode != null && !standardApplicantCode.isBlank()) {
                 gen.writeStringField("standardApplicantCode", REDACTED);
             }
-            gen.writeStringField("applicantName", REDACTED);
-            gen.writeObjectField("location", value.getLocation());
+
+            var location = value.getLocation();
+            if (location != null) {
+                gen.writeObjectField("location", value.getLocation());
+            }
             gen.writeEndObject();
         }
     }
@@ -263,15 +266,40 @@ public class ObfuscationUtil {
                 SerializerProvider serializers)
                 throws IOException {
             gen.writeStartObject();
-            gen.writeStringField("applicantFirstName", REDACTED);
-            gen.writeStringField("applicantSurname", REDACTED);
-            gen.writeStringField("applicantOrganisationName", REDACTED);
-            gen.writeStringField("respondentSurname", REDACTED);
-            gen.writeStringField("respondentFirstname", REDACTED);
-            gen.writeStringField("respondentOrganisationName", REDACTED);
-            gen.writeStringField("standardApplicantName", REDACTED);
-            gen.writeObjectField("dateFrom", value.getDateFrom());
-            gen.writeObjectField("dateTo", value.getDateTo());
+
+            var applicantFirstName = value.getApplicantFirstName();
+            var applicantSurname = value.getApplicantSurname();
+            var applicantOrganisationName = value.getApplicantOrganisationName();
+            var respondentSurname = value.getRespondentSurname();
+            var respondentFirstname = value.getRespondentFirstName();
+            var respondentOrganisationName = value.getRespondentOrganisationName();
+            var standardApplicantName = value.getStandardApplicantName();
+            var location = value.getLocation();
+
+            if (applicantFirstName != null && !applicantFirstName.isBlank()) {
+                gen.writeStringField("applicantFirstName", REDACTED);
+            }
+            if (applicantSurname != null && !applicantSurname.isBlank()) {
+                gen.writeStringField("applicantSurname", REDACTED);
+            }
+            if (applicantOrganisationName != null && !applicantOrganisationName.isBlank()) {
+                gen.writeStringField("applicantOrganisationName", REDACTED);
+            }
+            if (respondentSurname != null && !respondentSurname.isBlank()) {
+                gen.writeStringField("respondentSurname", REDACTED);
+            }
+            if (respondentFirstname != null && !respondentFirstname.isBlank()) {
+                gen.writeStringField("respondentFirstname", REDACTED);
+            }
+            if (respondentOrganisationName != null && !respondentOrganisationName.isBlank()) {
+                gen.writeStringField("respondentOrganisationName", REDACTED);
+            }
+            if (standardApplicantName != null && !standardApplicantName.isBlank()) {
+                gen.writeStringField("standardApplicantName", REDACTED);
+            }
+            if (location != null) {
+                gen.writeObjectField("location", location);
+            }
             gen.writeEndObject();
         }
     }

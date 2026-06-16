@@ -275,6 +275,7 @@ class ObfuscationUtilTest {
                 .contains("\"applicantOrganisationName\":\"[REDACTED]\"")
                 .contains("\"respondentFirstname\":\"[REDACTED]\"")
                 .contains("\"respondentSurname\":\"[REDACTED]\"")
-                .contains("\"respondentOrganisationName\":\"[REDACTED]\"");
+                .contains("\"respondentOrganisationName\":\"[REDACTED]\"")
+                .contains("\"location\":null");
     }
 }
