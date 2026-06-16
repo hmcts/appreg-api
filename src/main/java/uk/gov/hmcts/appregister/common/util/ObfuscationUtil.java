@@ -146,17 +146,17 @@ public class ObfuscationUtil {
         @Override
         public void serialize(EntryPage value, JsonGenerator gen, SerializerProvider serializers)
                 throws IOException {
-            gen.writeStartObject();
-            gen.writeObjectField("pageNumber", value.getPageNumber());
-            gen.writeObjectField("pageSize", value.getPageSize());
-            gen.writeObjectField("totalElements", value.getTotalElements());
-            gen.writeObjectField("totalPages", value.getTotalPages());
-            gen.writeObjectField("sort", value.getSort());
-            gen.writeObjectField("first", value.getFirst());
-            gen.writeObjectField("last", value.getLast());
-            gen.writeObjectField("elementsOnPage", value.getElementsOnPage());
-            gen.writeObjectField("content", value.getContent());
-            gen.writeEndObject();
+            writePage(
+                    gen,
+                    value.getPageNumber(),
+                    value.getPageSize(),
+                    value.getTotalElements(),
+                    value.getTotalPages(),
+                    value.getSort(),
+                    value.getFirst(),
+                    value.getLast(),
+                    value.getElementsOnPage(),
+                    value.getContent());
         }
     }
 
@@ -317,17 +317,42 @@ public class ObfuscationUtil {
         @Override
         public void serialize(ResultPage value, JsonGenerator gen, SerializerProvider serializers)
                 throws IOException {
-            gen.writeStartObject();
-            gen.writeObjectField("pageNumber", value.getPageNumber());
-            gen.writeObjectField("pageSize", value.getPageSize());
-            gen.writeObjectField("totalElements", value.getTotalElements());
-            gen.writeObjectField("totalPages", value.getTotalPages());
-            gen.writeObjectField("sort", value.getSort());
-            gen.writeObjectField("first", value.getFirst());
-            gen.writeObjectField("last", value.getLast());
-            gen.writeObjectField("elementsOnPage", value.getElementsOnPage());
-            gen.writeObjectField("content", value.getContent());
-            gen.writeEndObject();
+            writePage(
+                    gen,
+                    value.getPageNumber(),
+                    value.getPageSize(),
+                    value.getTotalElements(),
+                    value.getTotalPages(),
+                    value.getSort(),
+                    value.getFirst(),
+                    value.getLast(),
+                    value.getElementsOnPage(),
+                    value.getContent());
         }
+    }
+
+    private static void writePage(
+            JsonGenerator gen,
+            Object pageNumber,
+            Object pageSize,
+            Object totalElements,
+            Object totalPages,
+            Object sort,
+            Object first,
+            Object last,
+            Object elementsOnPage,
+            Object content)
+            throws IOException {
+        gen.writeStartObject();
+        gen.writeObjectField("pageNumber", pageNumber);
+        gen.writeObjectField("pageSize", pageSize);
+        gen.writeObjectField("totalElements", totalElements);
+        gen.writeObjectField("totalPages", totalPages);
+        gen.writeObjectField("sort", sort);
+        gen.writeObjectField("first", first);
+        gen.writeObjectField("last", last);
+        gen.writeObjectField("elementsOnPage", elementsOnPage);
+        gen.writeObjectField("content", content);
+        gen.writeEndObject();
     }
 }
