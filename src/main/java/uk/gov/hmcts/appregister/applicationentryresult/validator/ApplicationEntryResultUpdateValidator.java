@@ -48,14 +48,23 @@ public class ApplicationEntryResultUpdateValidator
         super.validate(validatable, null);
 
         Optional<AppListEntryResolution> entryResult =
-                appListEntryResultRepository.findByUuidAndApplicationList_Uuid(
-                        validatable.getResultId(), validatable.getEntryId());
+                appListEntryResultRepository.findByUuid(validatable.getResultId());
 
         if (entryResult.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
-                    ("The application entry result %s does not exist in application list %s and in application list "
-                                    + "entry %s")
+                    "The application entry result %s does not exist"
+                            .formatted(validatable.getResultId()));
+        }
+
+        entryResult =
+                appListEntryResultRepository.findByUuidAndApplicationList_Uuid(
+                        validatable.getResultId(), validatable.getEntryId());
+        if (entryResult.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY,
+                    ("The application entry result %s does not belong to application list %s and"
+                                    + " application list entry %s")
                             .formatted(
                                     validatable.getResultId(),
                                     getApplicationListUuid(validatable),

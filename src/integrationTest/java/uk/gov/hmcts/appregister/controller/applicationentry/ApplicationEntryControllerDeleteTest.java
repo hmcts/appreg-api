@@ -131,7 +131,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
                                         UUID.randomUUID(), UUID.randomUUID())),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpecDelete.then().statusCode(409);
+        responseSpecDelete.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecDelete);
     }

@@ -182,7 +182,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         Response resp = createResult(listId, entryId, token, payload);
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -227,7 +227,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
     }
 
     @Test

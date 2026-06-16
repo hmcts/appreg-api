@@ -152,7 +152,7 @@ class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntr
 
         Response resp = deleteResult(listId, entryId, resultId, getToken());
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -168,7 +168,9 @@ class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntr
                 deleteResult(list.getUuid(), entry.getUuid(), UUID.randomUUID(), getToken());
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST.getCode(),
+                resp);
     }
 
     @Test
@@ -191,8 +193,10 @@ class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntr
                         entryResult.getUuid(),
                         getToken());
 
-        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY.getCode(),
+                resp);
     }
 
     @Test

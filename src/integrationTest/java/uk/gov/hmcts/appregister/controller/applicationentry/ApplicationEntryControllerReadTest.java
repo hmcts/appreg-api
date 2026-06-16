@@ -193,7 +193,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                                         + uuids[1]),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(409);
+        responseSpec.then().statusCode(404);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(
@@ -282,7 +282,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                                         + UUID.randomUUID()),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(409);
+        responseSpec.then().statusCode(404);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(

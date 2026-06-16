@@ -80,6 +80,8 @@ class ApplicationEntryResultUpdateValidatorTest {
         // ---- base validations (AbstractApplicationEntryResultValidator) ----
         when(applicationListRepository.findByUuidIncludingDelete(applicationListUuid))
                 .thenReturn(Optional.of(applicationList));
+        when(applicationListEntryRepository.findByUuid(applicationListEntryUuid))
+                .thenReturn(Optional.of(applicationListEntry));
 
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         applicationListEntryUuid, applicationListUuid))
@@ -91,6 +93,8 @@ class ApplicationEntryResultUpdateValidatorTest {
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
         AppListEntryResolution entryResolution = new AppListEntryResolution();
+        when(appListEntryResolutionRepository.findByUuid(resultUuid))
+                .thenReturn(Optional.of(entryResolution));
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
                         resultUuid, applicationListEntryUuid))
                 .thenReturn(Optional.of(entryResolution));
@@ -103,6 +107,21 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateEntryResultDoesNotExist() {
+        when(appListEntryResolutionRepository.findByUuid(resultUuid)).thenReturn(Optional.empty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void validateEntryResultDoesNotBelongToEntry() {
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
                         resultUuid, applicationListEntryUuid))
                 .thenReturn(Optional.empty());
@@ -112,7 +131,7 @@ class ApplicationEntryResultUpdateValidatorTest {
                         AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY
                         .getCode()
                         .getAppCode(),
                 ex.getCode().getCode().getAppCode());
@@ -136,6 +155,22 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateApplicationListEntryDoesNotExist() {
+        when(applicationListEntryRepository.findByUuid(applicationListEntryUuid))
+                .thenReturn(Optional.empty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void validateApplicationListEntryDoesNotBelongToList() {
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         applicationListEntryUuid, applicationListUuid))
                 .thenReturn(Optional.empty());
@@ -145,7 +180,7 @@ class ApplicationEntryResultUpdateValidatorTest {
                         AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST
                         .getCode()
                         .getAppCode(),
                 ex.getCode().getCode().getAppCode());

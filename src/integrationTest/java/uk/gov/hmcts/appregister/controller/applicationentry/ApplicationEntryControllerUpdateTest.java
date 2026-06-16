@@ -275,7 +275,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        responseSpecUpdate.then().statusCode(409);
+        responseSpecUpdate.then().statusCode(404);
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
@@ -1601,7 +1601,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         entryUpdateClosedDto,
                         "NOT EXISTS");
 
-        responseSpecUpdate.then().statusCode(409);
+        responseSpecUpdate.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecUpdate);
     }
@@ -1645,7 +1645,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         entryUpdateClosedDto,
                         "NOT EXISTS");
 
-        responseSpecUpdate.then().statusCode(409);
+        responseSpecUpdate.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode(), responseSpecUpdate);
     }

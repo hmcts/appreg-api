@@ -515,7 +515,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
 
-        responseSpecCreate.then().statusCode(409);
+        responseSpecCreate.then().statusCode(404);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(

@@ -181,7 +181,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
         Response resp =
                 updateResult(listId, entryId, resultId, getToken(), payload, "\"any-etag\"");
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -230,7 +230,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
     }
 
     @Test

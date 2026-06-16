@@ -88,6 +88,7 @@ class ApplicationEntryResultCreationValidatorTest {
         // Happy-path stubs
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(list));
+        when(applicationListEntryRepository.findByUuid(entryId)).thenReturn(Optional.of(entry));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
@@ -152,7 +153,22 @@ class ApplicationEntryResultCreationValidatorTest {
     }
 
     @Test
-    void validate_entryDoesNotExistOrNotBelongToList() {
+    void validate_entryDoesNotExist() {
+        when(applicationListEntryRepository.findByUuid(entryId)).thenReturn(Optional.empty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void validate_entryDoesNotBelongToList() {
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.empty());
 
@@ -161,7 +177,7 @@ class ApplicationEntryResultCreationValidatorTest {
                         AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST
                         .getCode()
                         .getAppCode(),
                 ex.getCode().getCode().getAppCode());
