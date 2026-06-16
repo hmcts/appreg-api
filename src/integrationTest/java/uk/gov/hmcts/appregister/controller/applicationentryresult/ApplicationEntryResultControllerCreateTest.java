@@ -182,13 +182,13 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         Response resp = createResult(listId, entryId, token, payload);
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: 400 when list closed")
+    @DisplayName("Create Application List Entry Result: 409 when list closed")
     void givenClosedList_whenCreate_then400() throws Exception {
         var list = createAndSaveList(CLOSED);
 
@@ -208,8 +208,8 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: 400 when entry not in list")
-    void givenEntryNotInList_whenCreate_then400() throws Exception {
+    @DisplayName("Create Application List Entry Result: 409 when entry not in list")
+    void givenEntryNotInList_whenCreate_then409() throws Exception {
         var list = createAndSaveList(OPEN);
         var list2 = createAndSaveList(OPEN);
 
@@ -227,7 +227,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
     }
 
     @Test

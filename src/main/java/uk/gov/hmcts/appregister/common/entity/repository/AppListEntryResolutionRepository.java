@@ -61,6 +61,8 @@ public interface AppListEntryResolutionRepository
     Optional<AppListEntryResolution> findByUuidAndApplicationList_Uuid(
             UUID resolutionUuid, UUID entryUuid);
 
+    Optional<AppListEntryResolution> findByUuid(UUID resolutionUuid);
+
     /**
      * Finds an AppListEntryResolution by the UUID of the associated application list entry.
      *

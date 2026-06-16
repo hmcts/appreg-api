@@ -277,7 +277,7 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
         // navigate to the second page
         Response response = getEntryResult(token, appList, detailDto, 10, 0);
 
-        Assertions.assertEquals(409, response.getStatusCode());
+        Assertions.assertEquals(404, response.getStatusCode());
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(),
                 response);
@@ -298,9 +298,27 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
         // navigate to the second page
         Response response = getEntryResult(token, appList, UUID.randomUUID(), 10, 0);
 
-        Assertions.assertEquals(409, response.getStatusCode());
+        Assertions.assertEquals(404, response.getStatusCode());
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
+                response);
+    }
+
+    @Test
+    void givenApplicationListEntryResult_whenEntryBelongsToDifferentList_thenConflictResponse()
+            throws Exception {
+        var context = givenExistingEntry();
+        var otherList = createAndSaveList(Status.OPEN);
+        var otherListEntry = createEntry(otherList);
+        persistance.save(otherListEntry);
+
+        Response response =
+                getEntryResult(
+                        context.token(), context.list().getUuid(), otherListEntry.getUuid(), 10, 0);
+
+        Assertions.assertEquals(409, response.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(),
                 response);
     }
 
@@ -386,7 +404,7 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
         // navigate to the second page
         Response actualResponse = getEntryResult(token, appList, detailDto.getId(), 10, 0);
 
-        Assertions.assertEquals(409, actualResponse.getStatusCode());
+        Assertions.assertEquals(404, actualResponse.getStatusCode());
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
                 actualResponse);
