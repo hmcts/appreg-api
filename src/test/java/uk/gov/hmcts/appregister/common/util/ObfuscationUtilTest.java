@@ -239,6 +239,22 @@ class ObfuscationUtilTest {
     }
 
     @Test
+    void testObfuscationFeesReportFilterDtoRequiredOnly() {
+        FeesReportFilterDto filterDto =
+                new FeesReportFilterDto()
+                        .dateTo(LocalDate.now())
+                        .dateFrom(LocalDate.now());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+        assertThat(obfuscated)
+                .contains("\"dateTo\":" + formatter.format(LocalDate.now()))
+                .contains("\"dateFrom\":" + formatter.format(LocalDate.now()))
+                .doesNotContain("\"standardApplicantCode\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantName\":\"[REDACTED]\"")
+                .doesNotContain("\"location\"");
+    }
+
+    @Test
     void testObfuscationPrivateProsecutorIndexFilterDto() {
         String standardApplicantName = "Test Standard Applicant";
         String applicantFirstName = "john";
