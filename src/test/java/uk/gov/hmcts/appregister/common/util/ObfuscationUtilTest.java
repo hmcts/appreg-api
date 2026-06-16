@@ -241,9 +241,7 @@ class ObfuscationUtilTest {
     @Test
     void testObfuscationFeesReportFilterDtoRequiredOnly() {
         FeesReportFilterDto filterDto =
-                new FeesReportFilterDto()
-                        .dateTo(LocalDate.now())
-                        .dateFrom(LocalDate.now());
+                new FeesReportFilterDto().dateTo(LocalDate.now()).dateFrom(LocalDate.now());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
         String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
         assertThat(obfuscated)
