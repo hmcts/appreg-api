@@ -46,7 +46,7 @@ ext {
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.5.0'
+  toolVersion = '13.6.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
