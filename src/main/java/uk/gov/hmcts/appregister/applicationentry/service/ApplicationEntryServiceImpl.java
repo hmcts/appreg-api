@@ -41,6 +41,8 @@ import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntr
 import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetClosedApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicationEntryValidator;
@@ -156,6 +158,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final EntityManager entityManager;
 
     private final GetApplicationEntryValidator getEntryValidator;
+
+    private final GetClosedApplicationEntryValidator getClosedEntryValidator;
 
     private final GetApplicationListEntriesValidator getApplicationListEntriesValidator;
 
@@ -1365,36 +1369,45 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 entry.getListId());
 
         return getEntryValidator.validate(
-                entry,
-                (req, success) ->
-                        auditService.processAudit(
-                                null,
-                                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
-                                r -> {
-                                    getKeyablesForCreateUpdateEtag(
-                                            success.getApplicationListEntry());
-                                    EntryGetDetailDto dto =
-                                            applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                                                    success.getApplicationListEntry(),
-                                                    hasOffsite(success.getApplicationListEntry()));
-                                    log.debug(
-                                            "Finished: Getting application list entry detail: {} for list: {}",
-                                            entry.getEntryId(),
-                                            entry.getListId());
-                                    AuditableResult<
-                                                    MatchResponse<EntryGetDetailDto>,
-                                                    ApplicationListEntry>
-                                            result =
-                                                    new AuditableResult<>(
-                                                            MatchResponse.of(
-                                                                    dto,
-                                                                    getKeyablesForCreateUpdateEtag(
-                                                                            success
-                                                                                    .getApplicationListEntry())),
-                                                            applicationListEntryMapStructMapper
-                                                                    .toApplicationListEntry(entry));
-                                    return Optional.of(result);
-                                }));
+                entry, (req, success) -> buildApplicationListEntryDetailResponse(entry, success));
+    }
+
+    @Override
+    public MatchResponse<EntryGetDetailDto> getClosedApplicationListEntryDetail(
+            PayloadGetEntryInList entry) {
+        log.debug(
+                "Started: Getting closed application list entry detail: {} for list: {}",
+                entry.getEntryId(),
+                entry.getListId());
+
+        return getClosedEntryValidator.validate(
+                entry, (req, success) -> buildApplicationListEntryDetailResponse(entry, success));
+    }
+
+    private MatchResponse<EntryGetDetailDto> buildApplicationListEntryDetailResponse(
+            PayloadGetEntryInList entry, GetEntryValidationSuccess success) {
+        return auditService.processAudit(
+                null,
+                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
+                r -> {
+                    EntryGetDetailDto dto =
+                            applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                                    success.getApplicationListEntry(),
+                                    hasOffsite(success.getApplicationListEntry()));
+                    log.debug(
+                            "Finished: Getting application list entry detail: {} for list: {}",
+                            entry.getEntryId(),
+                            entry.getListId());
+                    AuditableResult<MatchResponse<EntryGetDetailDto>, ApplicationListEntry> result =
+                            new AuditableResult<>(
+                                    MatchResponse.of(
+                                            dto,
+                                            getKeyablesForCreateUpdateEtag(
+                                                    success.getApplicationListEntry())),
+                                    applicationListEntryMapStructMapper.toApplicationListEntry(
+                                            entry));
+                    return Optional.of(result);
+                });
     }
 
     @Override

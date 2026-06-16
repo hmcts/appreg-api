@@ -68,6 +68,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationList
 import uk.gov.hmcts.appregister.applicationentry.validator.DeleteEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetClosedApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryClosedValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
@@ -285,6 +286,11 @@ class ApplicationEntryServiceImplTest {
                     applicationListRepository, applicationListEntryRepository);
 
     @Spy
+    private GetClosedApplicationEntryValidator getClosedEntryValidator =
+            new DummyGetClosedApplicationEntryValidator(
+                    applicationListRepository, applicationListEntryRepository);
+
+    @Spy
     private GetApplicationListEntriesValidator getApplicationListEntriesValidator =
             new DummyGetApplicationListEntriesValidator(applicationListRepository);
 
@@ -338,6 +344,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryEntityMapper,
                         entityManager,
                         getEntryValidator,
+                        getClosedEntryValidator,
                         getApplicationListEntriesValidator,
                         clock,
                         businessDateProvider,
@@ -374,6 +381,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryEntityMapper,
                         entityManager,
                         getEntryValidator,
+                        getClosedEntryValidator,
                         getApplicationListEntriesValidator,
                         clock,
                         businessDateProvider,
@@ -2453,6 +2461,21 @@ class ApplicationEntryServiceImplTest {
 
     class DummyGetApplicationEntryValidator extends GetApplicationEntryValidator {
         public DummyGetApplicationEntryValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
+            super(applicationListEntryRepository, applicationListRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadGetEntryInList validatable,
+                BiFunction<PayloadGetEntryInList, GetEntryValidationSuccess, R> validateSuccess) {
+            return validateSuccess.apply(validatable, getEntryValidationSuccess);
+        }
+    }
+
+    class DummyGetClosedApplicationEntryValidator extends GetClosedApplicationEntryValidator {
+        public DummyGetClosedApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository) {
             super(applicationListEntryRepository, applicationListRepository);
