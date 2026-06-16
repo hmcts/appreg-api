@@ -23,6 +23,7 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.generated.api.ReportsApi;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
@@ -57,12 +58,16 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createActivityAuditReport(
             ActivityAuditFilterDto activityAuditFilterDto) {
+        log.info(
+                "Activity Audit Report payload: {}",
+                ObfuscationUtil.getObfuscatedString(activityAuditFilterDto));
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
                         unused -> {
                             ReportJobCreation reportJobCreation =
                                     reportService.createActivityAuditReport(activityAuditFilterDto);
+
                             return Optional.of(
                                     new AuditableResult<>(
                                             reportJobCreation.acknowledgement(),
@@ -79,6 +84,10 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createFeesReport(
             FeesReportFilterDto feesReportFilterDto) {
+        log.info(
+                "Fees report payload: {}",
+                ObfuscationUtil.getObfuscatedString(feesReportFilterDto));
+
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
@@ -101,7 +110,9 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createWorkloadReport(
             WorkloadFilterDto workloadFilterDto) {
-
+        log.info(
+                "Workload report payload: {}",
+                ObfuscationUtil.getObfuscatedString(workloadFilterDto));
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT,
@@ -124,6 +135,10 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createSearchWarrantsReport(
             SearchWarrantsReportFilterDto searchWarrantsReportFilterDto) {
+        log.info(
+                "Search warrants report payload: {}",
+                ObfuscationUtil.getObfuscatedString(searchWarrantsReportFilterDto));
+
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
@@ -147,6 +162,10 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createDurationReport(
             DurationFilterDto durationFilterDto) {
+        log.info(
+                "Duration report payload: {}",
+                ObfuscationUtil.getObfuscatedString(durationFilterDto));
+
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
@@ -169,6 +188,10 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createListMaintenanceReport(
             ListMaintenanceFilterDto listMaintenanceFilterDto) {
+        log.info(
+                "List maintenance report payload: {}",
+                ObfuscationUtil.getObfuscatedString(listMaintenanceFilterDto));
+
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
@@ -176,6 +199,7 @@ public class ReportController implements ReportsApi {
                             ReportJobCreation reportJobCreation =
                                     reportService.createListMaintenanceReport(
                                             listMaintenanceFilterDto);
+
                             return Optional.of(
                                     new AuditableResult<>(
                                             reportJobCreation.acknowledgement(),
@@ -192,6 +216,10 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createPrivateProsecutorsIndexReport(
             PrivateProsecutorsIndexFilterDto privateProsecutorsIndexFilterDto) {
+        log.info(
+                "Private Prosecutors Index report payload: {}",
+                ObfuscationUtil.getObfuscatedString(privateProsecutorsIndexFilterDto));
+
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
@@ -199,6 +227,7 @@ public class ReportController implements ReportsApi {
                             ReportJobCreation reportJobCreation =
                                     reportService.createPrivateProsecutorsIndexReport(
                                             privateProsecutorsIndexFilterDto);
+
                             return Optional.of(
                                     new AuditableResult<>(
                                             reportJobCreation.acknowledgement(),
@@ -215,6 +244,8 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<Resource> downloadReport(UUID jobId) {
         var resourceHolder = new AtomicReference<InputStreamResource>();
+
+        log.info("Requesting report download for job: {}", jobId);
 
         auditService.processAudit(
                 ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT,
@@ -266,6 +297,7 @@ public class ReportController implements ReportsApi {
     }
 
     private ResponseEntity<JobAcknowledgement> accepted(JobAcknowledgement acknowledgement) {
+        log.info("Job acknowledgement: {}", acknowledgement);
         return ResponseEntity.accepted()
                 .location(
                         ServletUriComponentsBuilder.fromCurrentContextPath()
