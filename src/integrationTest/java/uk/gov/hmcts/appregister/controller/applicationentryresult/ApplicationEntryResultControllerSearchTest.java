@@ -305,6 +305,24 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
     }
 
     @Test
+    void givenApplicationListEntryResult_whenEntryBelongsToDifferentList_thenConflictResponse()
+            throws Exception {
+        var context = givenExistingEntry();
+        var otherList = createAndSaveList(Status.OPEN);
+        var otherListEntry = createEntry(otherList);
+        persistance.save(otherListEntry);
+
+        Response response =
+                getEntryResult(
+                        context.token(), context.list().getUuid(), otherListEntry.getUuid(), 10, 0);
+
+        Assertions.assertEquals(409, response.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(),
+                response);
+    }
+
+    @Test
     void givenApplicationListEntryResult_whenApplicationlistDeleted_thenFailureResponse()
             throws Exception {
         // create 20 results

@@ -291,6 +291,38 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
     }
 
     @Test
+    void testGetApplicationEntryListWithDeletedEntryReturns404() throws Exception {
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        int rowsUpdated =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository.softDeleteByUuid(
+                                        createdDetail.getId()));
+        Assertions.assertEquals(1, rowsUpdated);
+
+        var responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + createdDetail.getListId()
+                                        + "/entries/"
+                                        + createdDetail.getId()),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(404);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
     void testGetApplicationListEntriesForUnknownListReturns404() throws Exception {
         var tokenGenerator = createAdminToken();
 

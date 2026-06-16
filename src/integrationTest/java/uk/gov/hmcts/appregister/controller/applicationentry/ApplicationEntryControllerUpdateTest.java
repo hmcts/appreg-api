@@ -284,6 +284,40 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
+    void givenAFailureUpdate_whenAnEntryToUpdateIsDeleted_404Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        int rowsUpdated =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository.softDeleteByUuid(
+                                        createdDetail.getId()));
+        Assertions.assertEquals(1, rowsUpdated);
+
+        var tokenGenerator = createAdminToken();
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + createdDetail.getListId()
+                                        + "/entries/"
+                                        + createdDetail.getId()),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(404);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
     void givenAFailureUpdate_whenAnEtagFailingMatch_412Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 

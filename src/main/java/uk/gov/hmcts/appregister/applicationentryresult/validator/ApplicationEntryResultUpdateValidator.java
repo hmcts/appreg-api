@@ -46,7 +46,41 @@ public class ApplicationEntryResultUpdateValidator
     @Override
     public void validate(PayloadForUpdateEntryResult validatable) {
         super.validate(validatable, null);
+        validateEntryResult(validatable);
+    }
 
+    @Override
+    protected ListEntryResultUpdateValidationSuccess getResult(
+            ResolutionCode code,
+            WordingTemplateSentence wordingTemplateCollection,
+            ApplicationList applicationList,
+            ApplicationListEntry applicationListEntry,
+            PayloadForUpdateEntryResult payload) {
+        AppListEntryResolution appListEntryResult = validateEntryResult(payload);
+        return new ListEntryResultUpdateValidationSuccess(
+                wordingTemplateCollection,
+                code,
+                applicationList,
+                applicationListEntry,
+                appListEntryResult);
+    }
+
+    @Override
+    protected String getResultCode(PayloadForUpdateEntryResult validatable) {
+        return validatable.getData().getResultCode();
+    }
+
+    @Override
+    protected UUID getApplicationListUuid(PayloadForUpdateEntryResult validatable) {
+        return validatable.getId();
+    }
+
+    @Override
+    protected UUID getApplicationListEntryUuid(PayloadForUpdateEntryResult validatable) {
+        return validatable.getEntryId();
+    }
+
+    private AppListEntryResolution validateEntryResult(PayloadForUpdateEntryResult validatable) {
         Optional<AppListEntryResolution> entryResult =
                 appListEntryResultRepository.findByUuid(validatable.getResultId());
 
@@ -72,48 +106,6 @@ public class ApplicationEntryResultUpdateValidator
         }
 
         log.debug("application list entry result is found {}", validatable.getResultId());
-    }
-
-    @Override
-    protected ListEntryResultUpdateValidationSuccess getResult(
-            ResolutionCode code,
-            WordingTemplateSentence wordingTemplateCollection,
-            ApplicationList applicationList,
-            ApplicationListEntry applicationListEntry,
-            PayloadForUpdateEntryResult payload) {
-
-        AppListEntryResolution appListEntryResult =
-                appListEntryResultRepository
-                        .findByUuidAndApplicationList_Uuid(
-                                payload.getResultId(), payload.getEntryId())
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                ApplicationListEntryResultError
-                                                        .LIST_ENTRY_RESULT_NOT_FOUND,
-                                                ("No application list entry result was found for UUID '%s' that"
-                                                                + " belongs to the specified entry")
-                                                        .formatted(payload.getResultId())));
-        return new ListEntryResultUpdateValidationSuccess(
-                wordingTemplateCollection,
-                code,
-                applicationList,
-                applicationListEntry,
-                appListEntryResult);
-    }
-
-    @Override
-    protected String getResultCode(PayloadForUpdateEntryResult validatable) {
-        return validatable.getData().getResultCode();
-    }
-
-    @Override
-    protected UUID getApplicationListUuid(PayloadForUpdateEntryResult validatable) {
-        return validatable.getId();
-    }
-
-    @Override
-    protected UUID getApplicationListEntryUuid(PayloadForUpdateEntryResult validatable) {
-        return validatable.getEntryId();
+        return entryResult.get();
     }
 }
