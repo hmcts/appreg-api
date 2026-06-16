@@ -1615,7 +1615,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_409Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_404Returned() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1641,7 +1641,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_409Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_404Returned() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))

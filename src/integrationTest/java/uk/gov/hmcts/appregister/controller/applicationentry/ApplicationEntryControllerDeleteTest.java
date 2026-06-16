@@ -120,7 +120,7 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithInvalidListId_then409() throws Exception {
+    void givenValidRequest_whenDeleteWithInvalidListId_then404() throws Exception {
         var tokenGenerator = createAdminToken();
 
         // delete the entry
