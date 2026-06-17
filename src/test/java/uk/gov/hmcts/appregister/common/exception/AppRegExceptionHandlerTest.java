@@ -7,15 +7,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
-import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -160,8 +161,7 @@ class AppRegExceptionHandlerTest {
         String customMessage = "Custom message";
 
         ConstraintViolation<?> cv = Mockito.mock(ConstraintViolation.class);
-        Mockito.when(cv.getPropertyPath())
-                .thenReturn(PathImpl.createPathFromString("propertyPath"));
+        Mockito.when(cv.getPropertyPath()).thenReturn(path("propertyPath"));
         Mockito.when(cv.getMessage()).thenReturn("invalid value");
         // setup
         ConstraintViolationException exception =
@@ -197,12 +197,10 @@ class AppRegExceptionHandlerTest {
     @Test
     void givenConstraintViolations_whenHandled_thenFieldDetailsAreReturnedAndLogged() {
         ConstraintViolation<?> secondViolation = Mockito.mock(ConstraintViolation.class);
-        Mockito.when(secondViolation.getPropertyPath())
-                .thenReturn(PathImpl.createPathFromString("bField"));
+        Mockito.when(secondViolation.getPropertyPath()).thenReturn(path("bField"));
         Mockito.when(secondViolation.getMessage()).thenReturn("another invalid value");
         ConstraintViolation<?> firstViolation = Mockito.mock(ConstraintViolation.class);
-        Mockito.when(firstViolation.getPropertyPath())
-                .thenReturn(PathImpl.createPathFromString("aField"));
+        Mockito.when(firstViolation.getPropertyPath()).thenReturn(path("aField"));
         Mockito.when(firstViolation.getMessage()).thenReturn("invalid value");
 
         ConstraintViolationException exception =
@@ -904,6 +902,20 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(500, problemDetail.getBody().getStatus());
         Assertions.assertEquals(
                 "An unexpected error occurred", problemDetail.getBody().getDetail());
+    }
+
+    private static Path path(String value) {
+        return new Path() {
+            @Override
+            public Iterator<Node> iterator() {
+                return List.<Node>of().iterator();
+            }
+
+            @Override
+            public String toString() {
+                return value;
+            }
+        };
     }
 
     @SuppressWarnings("unused")
