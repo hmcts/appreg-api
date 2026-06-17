@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -904,9 +905,17 @@ class AppRegExceptionHandlerTest {
     }
 
     private static Path path(String value) {
-        Path path = Mockito.mock(Path.class);
-        Mockito.when(path.toString()).thenReturn(value);
-        return path;
+        return new Path() {
+            @Override
+            public Iterator<Node> iterator() {
+                return List.<Node>of().iterator();
+            }
+
+            @Override
+            public String toString() {
+                return value;
+            }
+        };
     }
 
     @SuppressWarnings("unused")
