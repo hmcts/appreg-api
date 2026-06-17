@@ -19,6 +19,8 @@
 #							mapping
 #						Changes to implement retention
 #						Remove unused sequences
+# 6.0		10/06/2026	Matthew Harman	ARCPOC-1432 - change
+#						name_address field names
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -27,7 +29,7 @@
 #						FULL for big bang
 #				NOTE: CRIMINAL_JUSTICE_AREA will always be big 
 #				bang as this does not have a CHANGED_DATE field
-operation_mode='INCREMENTAL';
+operation_mode='FULL';
 
 # retention_mode		Retention mode, YES to implement retention policy
 #					i.e. we won't migrate data out of retention
@@ -52,7 +54,7 @@ spool_location='/opt/moj/rman/appreg';
 incremental_tracking_file='/home/oracle/matt/appreg/incremental_tracker.txt';
 
 # postgres_schema		The schema of the database in Postgres
-postgres_schema='appreg_matt';
+postgres_schema='appreg';
 
 # postgres_schema_file		Location of the file created to reload the
 #				postgres tables for staging the data
@@ -68,7 +70,7 @@ postgres_delete_schema_file="${spool_location}/create_delete_schema.sql";
 
 # postgres_environment		Postgres environment connection string
 #				NOTE: Don't put passwords here
-postgres_environment='postgresql://pgadmin:<pwd>@appreg-stg.postgres.database.azure.com:5432/appreg-db';
+postgres_environment='postgresql://postgres:<pwd>@localhost:5432/appreg-db';
 
 # missing_user_modern_value	Missing User in modern, takes this value for changed_by
 #
@@ -210,50 +212,51 @@ TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES,APPREGISTER.CRIMINAL_JUSTICE_AR
 SEQUENCES_TO_EXTRACT='APPREGISTER.AC_SEQ,APPREGISTER.ALEFS_SEQ,APPREGISTER.ALEO_SEQ,APPREGISTER.ALER_SEQ,APPREGISTER.AL_SEQ,APPREGISTER.AR_SEQ,APPREGISTER.CJA_SEQ,APPREGISTER.FEE_SEQ,APPREGISTER.NA_SEQ,APPREGISTER.RC_SEQ,APPREGISTER.SA_SEQ';
 
 # Table Fields		Each table has specific fields, detail them here
-#		        NOTE: Add field type, postgres equivalent and whether 
-#			NULL or NOT NULL
-#			e.g. abc:VARCHAR:VARCHAR(10):N is a field called abc 
+#		        NOTE: Add field type, postgres equivalent, whether 
+#			NULL or NOT NULL, and whether the field is remapped
+#			e.g. abc:VARCHAR:VARCHAR(10):N:Y is a field called abc 
 #			which is a VARCHAR, a VARCHAR(10) in Postgres  and 
-#			nulls not allowed (NOT NULL)
-APPLICATION_CODES_FIELDS='AC_ID:NUMBER:NUMERIC:N,APPLICATION_CODE:VARCHAR:VARCHAR(10):N,APPLICATION_CODE_TITLE:VARCHAR:VARCHAR(500):N,APPLICATION_CODE_WORDING:CLOB:TEXT:N,APPLICATION_LEGISLATION:CLOB:TEXT:Y,FEE_DUE:CHAR:CHAR(1):N,APPLICATION_CODE_RESPONDENT:CHAR:CHAR(1):N,AC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR:VARCHAR(253):Y,AC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR:VARCHAR(253):Y,APPLICATION_CODE_START_DATE:DATE:TEXT:N,APPLICATION_CODE_END_DATE:DATE:TEXT:Y,BULK_RESPONDENT_ALLOWED:CHAR:CHAR(1):N,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TEXT:N,USER_NAME:VARCHAR:VARCHAR(250):Y,AC_FEE_REFERENCE:VARCHAR:VARCHAR(12):Y';
+#			nulls not allowed (NOT NULL), and the field is remapped
+#			in postgres
+APPLICATION_CODES_FIELDS='AC_ID:NUMBER:NUMERIC:N:N,APPLICATION_CODE:VARCHAR:VARCHAR(10):N:N,APPLICATION_CODE_TITLE:VARCHAR:VARCHAR(500):N:N,APPLICATION_CODE_WORDING:CLOB:TEXT:N:N,APPLICATION_LEGISLATION:CLOB:TEXT:Y:N,FEE_DUE:CHAR:CHAR(1):N:N,APPLICATION_CODE_RESPONDENT:CHAR:CHAR(1):N:N,AC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR:VARCHAR(253):Y:N,AC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR:VARCHAR(253):Y:N,APPLICATION_CODE_START_DATE:DATE:TEXT:N:N,APPLICATION_CODE_END_DATE:DATE:TEXT:Y:N,BULK_RESPONDENT_ALLOWED:CHAR:CHAR(1):N:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TEXT:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N,AC_FEE_REFERENCE:VARCHAR:VARCHAR(12):Y:N';
 
-APPLICATION_LISTS_FIELDS='AL_ID:NUMBER:NUMERIC:N,APPLICATION_LIST_STATUS:VARCHAR:VARCHAR(6):Y,APPLICATION_LIST_DATE:DATE:TIMESTAMP:N,APPLICATION_LIST_TIME:TIMESTAMP:TIMESTAMP:N,COURTHOUSE_CODE:VARCHAR:VARCHAR(10):Y,OTHER_COURTHOUSE:VARCHAR:VARCHAR(200):Y,LIST_DESCRIPTION:VARCHAR:VARCHAR(200):N,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):Y,COURTHOUSE_NAME:VARCHAR:VARCHAR(200):Y,DURATION_HOUR:NUMBER:SMALLINT:Y,DURATION_MINUTE:NUMBER:SMALLINT:Y,CJA_CJA_ID:NUMBER:NUMERIC:Y';
+APPLICATION_LISTS_FIELDS='AL_ID:NUMBER:NUMERIC:N:N,APPLICATION_LIST_STATUS:VARCHAR:VARCHAR(6):Y:N,APPLICATION_LIST_DATE:DATE:TIMESTAMP:N:N,APPLICATION_LIST_TIME:TIMESTAMP:TIMESTAMP:N:N,COURTHOUSE_CODE:VARCHAR:VARCHAR(10):Y:N,OTHER_COURTHOUSE:VARCHAR:VARCHAR(200):Y:N,LIST_DESCRIPTION:VARCHAR:VARCHAR(200):N:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N,COURTHOUSE_NAME:VARCHAR:VARCHAR(200):Y:N,DURATION_HOUR:NUMBER:SMALLINT:Y:N,DURATION_MINUTE:NUMBER:SMALLINT:Y:N,CJA_CJA_ID:NUMBER:NUMERIC:Y:N';
 
-APPLICATION_LIST_ENTRIES_FIELDS='ALE_ID:NUMBER:NUMERIC:N,AL_AL_ID:NUMBER:NUMERIC:N,SA_SA_ID:NUMBER:NUMERIC:Y,AC_AC_ID:NUMBER:NUMERIC:N,A_NA_ID:NUMBER:NUMERIC:Y,R_NA_ID:NUMBER:NUMERIC:Y,NUMBER_OF_BULK_RESPONDENTS:NUMBER:SMALLINT:Y,APPLICATION_LIST_ENTRY_WORDING:CLOB:TEXT:N,CASE_REFERENCE:VARCHAR:VARCHAR(15):Y,ACCOUNT_NUMBER:VARCHAR:VARCHAR(20):Y,ENTRY_RESCHEDULED:CHAR:CHAR(1):N,NOTES:VARCHAR:VARCHAR(4000):Y,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMSTAMP:N,BULK_UPLOAD:VARCHAR:VARCHAR(1):Y,USER_NAME:VARCHAR:VARCHAR(250):Y,SEQUENCE_NUMBER:NUMBER:SMALLINT:N,TCEP_STATUS:VARCHAR:VARCHAR(2):Y,MESSAGE_UUID:VARCHAR:VARCHAR(36):Y,RETRY_COUNT:VARCHAR:VARCHAR(36):Y,LODGEMENT_DATE:DATE:TIMESTAMP:N';
+APPLICATION_LIST_ENTRIES_FIELDS='ALE_ID:NUMBER:NUMERIC:N:N,AL_AL_ID:NUMBER:NUMERIC:N:N,SA_SA_ID:NUMBER:NUMERIC:Y:N,AC_AC_ID:NUMBER:NUMERIC:N:N,A_NA_ID:NUMBER:NUMERIC:Y:N,R_NA_ID:NUMBER:NUMERIC:Y:N,NUMBER_OF_BULK_RESPONDENTS:NUMBER:SMALLINT:Y:N,APPLICATION_LIST_ENTRY_WORDING:CLOB:TEXT:N:N,CASE_REFERENCE:VARCHAR:VARCHAR(15):Y:N,ACCOUNT_NUMBER:VARCHAR:VARCHAR(20):Y:N,ENTRY_RESCHEDULED:CHAR:CHAR(1):N:N,NOTES:VARCHAR:VARCHAR(4000):Y:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMSTAMP:N:N,BULK_UPLOAD:VARCHAR:VARCHAR(1):Y:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N,SEQUENCE_NUMBER:NUMBER:SMALLINT:N:N,TCEP_STATUS:VARCHAR:VARCHAR(2):Y:N,MESSAGE_UUID:VARCHAR:VARCHAR(36):Y:N,RETRY_COUNT:VARCHAR:VARCHAR(36):Y:N,LODGEMENT_DATE:DATE:TIMESTAMP:N:N';
 
-APPLICATION_REGISTER_FIELDS='AR_ID:NUMBER:NUMERIC:N,AL_AL_ID:NUMBER:NUMERIC:N,TEXT:CLOB:TEXT:Y,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:TIMESTAMP:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):Y';
+APPLICATION_REGISTER_FIELDS='AR_ID:NUMBER:NUMERIC:N:N,AL_AL_ID:NUMBER:NUMERIC:N:N,TEXT:CLOB:TEXT:Y:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:TIMESTAMP:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N';
 
-APP_LIST_ENTRY_FEE_ID_FIELDS='ALE_ALE_ID:NUMBER:NUMERIC:N,FEE_FEE_ID:NUMBER:NUMERIC:N,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):N';
+APP_LIST_ENTRY_FEE_ID_FIELDS='ALE_ALE_ID:NUMBER:NUMERIC:N:N,FEE_FEE_ID:NUMBER:NUMERIC:N:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):N:N';
 
-APP_LIST_ENTRY_FEE_STATUS_FIELDS='ALEFS_ID:NUMBER:NUMERIC:N,ALEFS_ALE_ID:NUMBER:NUMERIC:N,ALEFS_PAYMENT_REFERENCE:VARCHAR:VARCHAR(15):Y,ALEFS_FEE_STATUS:VARCHAR:VARCHAR(1):N,ALEFS_FEE_STATUS_DATE:DATE:TIMESTAMP:N,ALEFS_VERSION:NUMBER:NUMERIC:N,ALEFS_CHANGED_BY:NUMBER:NUMERIC:N,ALEFS_CHANGED_DATE:DATE:TIMESTAMP:N,ALEFS_USER_NAME:VARCHAR:VARCHAR(250):N,ALEFS_STATUS_CREATION_DATE:DATE:TIMESTAMP:Y';
+APP_LIST_ENTRY_FEE_STATUS_FIELDS='ALEFS_ID:NUMBER:NUMERIC:N:N,ALEFS_ALE_ID:NUMBER:NUMERIC:N:N,ALEFS_PAYMENT_REFERENCE:VARCHAR:VARCHAR(15):Y:N,ALEFS_FEE_STATUS:VARCHAR:VARCHAR(1):N:N,ALEFS_FEE_STATUS_DATE:DATE:TIMESTAMP:N:N,ALEFS_VERSION:NUMBER:NUMERIC:N:N,ALEFS_CHANGED_BY:NUMBER:NUMERIC:N:N,ALEFS_CHANGED_DATE:DATE:TIMESTAMP:N:N,ALEFS_USER_NAME:VARCHAR:VARCHAR(250):N:N,ALEFS_STATUS_CREATION_DATE:DATE:TIMESTAMP:Y:N';
 
-APP_LIST_ENTRY_OFFICIAL_FIELDS='ALEO_ID:NUMBER:NUMERIC:N,ALE_ALE_ID:NUMBER:NUMERIC:N,TITLE:VARCHAR:VARCHAR(100):Y,FORENAME:VARCHAR:VARCHAR(100):Y,SURNAME:VARCHAR:VARCHAR(100):Y,OFFICIAL_TYPE:VARCHAR:VARCHAR(1):N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):N';
+APP_LIST_ENTRY_OFFICIAL_FIELDS='ALEO_ID:NUMBER:NUMERIC:N:N,ALE_ALE_ID:NUMBER:NUMERIC:N:N,TITLE:VARCHAR:VARCHAR(100):Y:N,FORENAME:VARCHAR:VARCHAR(100):Y:N,SURNAME:VARCHAR:VARCHAR(100):Y:N,OFFICIAL_TYPE:VARCHAR:VARCHAR(1):N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):N:N';
 
-APP_LIST_ENTRY_RESOLUTIONS_FIELDS='ALER_ID:NUMBER:NUMERIC:N,RC_RC_ID:NUMBER:NUMERIC:N,ALE_ALE_ID:NUMBER:NUMERIC:N,AL_ENTRY_RESOLUTION_WORDING:CLOB:TEXT:N,AL_ENTRY_RESOLUTION_OFFICER:VARCHAR:VARCHAR(1000):N,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):Y';
+APP_LIST_ENTRY_RESOLUTIONS_FIELDS='ALER_ID:NUMBER:NUMERIC:N:N,RC_RC_ID:NUMBER:NUMERIC:N:N,ALE_ALE_ID:NUMBER:NUMERIC:N:N,AL_ENTRY_RESOLUTION_WORDING:CLOB:TEXT:N:N,AL_ENTRY_RESOLUTION_OFFICER:VARCHAR:VARCHAR(1000):N:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N';
 
-CRIMINAL_JUSTICE_AREA_FIELDS='CJA_ID:NUMBER:NUMERIC:N,CJA_CODE:VARCHAR:VARCHAR(2):N,CJA_DESCRIPTION:VARCHAR:VARCHAR(35):N';
+CRIMINAL_JUSTICE_AREA_FIELDS='CJA_ID:NUMBER:NUMERIC:N:N,CJA_CODE:VARCHAR:VARCHAR(2):N:N,CJA_DESCRIPTION:VARCHAR:VARCHAR(35):N:N';
 
-DATA_AUDIT_FIELDS='DATA_ID:NUMBER:NUMERIC:N,SCHEMA_NAME:VARCHAR:VARCHAR(32):N,TABLE_NAME:VARCHAR:VARCHAR(32):N,COLUMN_NAME:VARCHAR:VARCHAR(32):N,OLD_VALUE:VARCHAR:VARCHAR(4000):Y,NEW_VALUE:VARCHAR:VARCHAR(4000):Y,USER_ID:VARCHAR:VARCHAR(32):Y,LINK:VARCHAR:VARCHAR(100):Y,CREATED_DATE:TIMESTAMP:TIMESTAMP:N,OLD_CLOB_VALUE:CLOB:TEXT:Y,NEW_CLOB_VALUE:CLOB:TEXT:Y,RELATED_KEY:NUMBER:NUMERIC:Y,UPDATE_TYPE:VARCHAR:VARCHAR(1):N,DATA_TYPE:VARCHAR:VARCHAR(1000):Y,CASE_ID:NUMBER:NUMERIC:Y,RELATED_ITEMS_IDENTIFIER:VARCHAR:VARCHAR(30):Y,RELATED_ITEMS_IDENTIFIER_INDEX:VARCHAR:VARCHAR(30):Y,EVENT_NAME:VARCHAR:VARCHAR(100):Y,USER_NAME:VARCHAR:VARCHAR(250):Y';
+DATA_AUDIT_FIELDS='DATA_ID:NUMBER:NUMERIC:N:N,SCHEMA_NAME:VARCHAR:VARCHAR(32):N:N,TABLE_NAME:VARCHAR:VARCHAR(32):N:N,COLUMN_NAME:VARCHAR:VARCHAR(32):N:N,OLD_VALUE:VARCHAR:VARCHAR(4000):Y:N,NEW_VALUE:VARCHAR:VARCHAR(4000):Y:N,USER_ID:VARCHAR:VARCHAR(32):Y:N,LINK:VARCHAR:VARCHAR(100):Y:N,CREATED_DATE:TIMESTAMP:TIMESTAMP:N:N,OLD_CLOB_VALUE:CLOB:TEXT:Y:N,NEW_CLOB_VALUE:CLOB:TEXT:Y:N,RELATED_KEY:NUMBER:NUMERIC:Y:N,UPDATE_TYPE:VARCHAR:VARCHAR(1):N:N,DATA_TYPE:VARCHAR:VARCHAR(1000):Y:N,CASE_ID:NUMBER:NUMERIC:Y:N,RELATED_ITEMS_IDENTIFIER:VARCHAR:VARCHAR(30):Y:N,RELATED_ITEMS_IDENTIFIER_INDEX:VARCHAR:VARCHAR(30):Y:N,EVENT_NAME:VARCHAR:VARCHAR(100):Y:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N';
 
-FEE_FIELDS='FEE_ID:NUMBER:NUMERIC:N,FEE_REFERENCE:VARCHAR:VARCHAR(12):N,FEE_DESCRIPTION:VARCHAR:VARCHAR(250):N,FEE_VALUE:NUMBER:DOUBLE PRECISION:N,FEE_START_DATE:DATE:TIMESTAMP:N,FEE_END_DATE:DATE:TIMESTAMP:Y,FEE_VERSION:NUMBER:NUMERIC:N,FEE_CHANGED_BY:NUMBER:NUMERIC:N,FEE_CHANGED_DATE:DATE:TIMESTAMP:N,FEE_USER_NAME:VARCHAR:VARCHAR(250):N';
+FEE_FIELDS='FEE_ID:NUMBER:NUMERIC:N:N,FEE_REFERENCE:VARCHAR:VARCHAR(12):N:N,FEE_DESCRIPTION:VARCHAR:VARCHAR(250):N:N,FEE_VALUE:NUMBER:DOUBLE PRECISION:N:N,FEE_START_DATE:DATE:TIMESTAMP:N:N,FEE_END_DATE:DATE:TIMESTAMP:Y:N,FEE_VERSION:NUMBER:NUMERIC:N:N,FEE_CHANGED_BY:NUMBER:NUMERIC:N:N,FEE_CHANGED_DATE:DATE:TIMESTAMP:N:N,FEE_USER_NAME:VARCHAR:VARCHAR(250):N:N';
 
-NAME_ADDRESS_FIELDS='NA_ID:NUMBER:NUMERIC:N,CODE:VARCHAR:VARCHAR(10):Y,NAME:VARCHAR:VARCHAR(100):Y,TITLE:VARCHAR:VARCHAR(100):Y,FORENAME_1:VARCHAR:VARCHAR(100):Y,FORENAME_2:VARCHAR:VARCHAR(100):Y,FORENAME_3:VARCHAR:VARCHAR(100):Y,SURNAME:VARCHAR:VARCHAR(100):Y,ADDRESS_L1:VARCHAR:VARCHAR(35):N,ADDRESS_L2:VARCHAR:VARCHAR(35):Y,ADDRESS_L3:VARCHAR:VARCHAR(35):Y,ADDRESS_L4:VARCHAR:VARCHAR(35):Y,ADDRESS_L5:VARCHAR:VARCHAR(35):Y,POSTCODE:VARCHAR:VARCHAR(8):Y,EMAIL_ADDRESS:VARCHAR:VARCHAR(253):Y,TELEPHONE_NUMBER:VARCHAR:VARCHAR(20):Y,MOBILE_NUMBER:VARCHAR:VARCHAR(20):Y,VERSION:NUMBER:NUMERIC:Y,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):Y,DATE_OF_BIRTH:DATE:TIMESTAMP:Y,DMS_ID:VARCHAR:VARCHAR(20):Y';
+NAME_ADDRESS_FIELDS='NA_ID:NUMBER:NUMERIC:N:N,CODE:VARCHAR:VARCHAR(10):Y:N,NAME:VARCHAR:VARCHAR(100):Y:N,TITLE:VARCHAR:VARCHAR(100):Y:N,FORENAME_1:VARCHAR:VARCHAR(100):Y:Y,FORENAME_2:VARCHAR:VARCHAR(100):Y:Y,FORENAME_3:VARCHAR:VARCHAR(100):Y:Y,SURNAME:VARCHAR:VARCHAR(100):Y:Y,ADDRESS_L1:VARCHAR:VARCHAR(35):N:N,ADDRESS_L2:VARCHAR:VARCHAR(35):Y:N,ADDRESS_L3:VARCHAR:VARCHAR(35):Y:N,ADDRESS_L4:VARCHAR:VARCHAR(35):Y:N,ADDRESS_L5:VARCHAR:VARCHAR(35):Y:N,POSTCODE:VARCHAR:VARCHAR(8):Y:N,EMAIL_ADDRESS:VARCHAR:VARCHAR(253):Y:N,TELEPHONE_NUMBER:VARCHAR:VARCHAR(20):Y:N,MOBILE_NUMBER:VARCHAR:VARCHAR(20):Y:N,VERSION:NUMBER:NUMERIC:Y:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N,DATE_OF_BIRTH:DATE:TIMESTAMP:Y:N,DMS_ID:VARCHAR:VARCHAR(20):Y:N';
 
-RESOLUTION_CODES_FIELDS='RC_ID:NUMBER:NUMERIC:N,RESOLUTION_CODE:VARCHAR:VARCHAR(10):N,RESOLUTION_CODE_TITLE:VARCHAR:VARCHAR(500):N,RESOLUTION_CODE_WORDING:CLOB:TEXT:N,RESOLUTION_LEGISLATION:CLOB:TEXT:Y,RC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR:VARCHAR(253):Y,RC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR:VARCHAR(253):Y,RESOLUTION_CODE_START_DATE:DATE:TIMESTAMP:N,RESOLUTION_CODE_END_DATE:DATE:TIMESTAMP:Y,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):Y';
+RESOLUTION_CODES_FIELDS='RC_ID:NUMBER:NUMERIC:N:N,RESOLUTION_CODE:VARCHAR:VARCHAR(10):N:N,RESOLUTION_CODE_TITLE:VARCHAR:VARCHAR(500):N:N,RESOLUTION_CODE_WORDING:CLOB:TEXT:N:N,RESOLUTION_LEGISLATION:CLOB:TEXT:Y:N,RC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR:VARCHAR(253):Y:N,RC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR:VARCHAR(253):Y:N,RESOLUTION_CODE_START_DATE:DATE:TIMESTAMP:N:N,RESOLUTION_CODE_END_DATE:DATE:TIMESTAMP:Y:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N';
 
-STANDARD_APPLICANTS_FIELDS='SA_ID:NUMBER:NUMERIC:N,STANDARD_APPLICANT_CODE:VARCHAR:VARCHAR(10):N,STANDARD_APPLICANT_START_DATE:DATE:TIMESTAMP:N,STANDARD_APPLICANT_END_DATE:DATE:TIMESTAMP:Y,VERSION:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:NUMERIC:N,CHANGED_DATE:DATE:TIMESTAMP:N,USER_NAME:VARCHAR:VARCHAR(250):Y,NAME:VARCHAR:VARCHAR(100):Y,TITLE:VARCHAR:VARCHAR(100):Y,FORENAME_1:VARCHAR:VARCHAR(100):Y,FORENAME_2:VARCHAR:VARCHAR(100):Y,FORENAME_3:VARCHAR:VARCHAR(100):Y,SURNAME:VARCHAR:VARCHAR(100):Y,ADDRESS_L1:VARCHAR:VARCHAR(35):N,ADDRESS_L2:VARCHAR:VARCHAR(35):Y,ADDRESS_L3:VARCHAR:VARCHAR(35):Y,ADDRESS_L4:VARCHAR:VARCHAR(35):Y,ADDRESS_L5:VARCHAR:VARCHAR(35):Y,POSTCODE:VARCHAR:VARCHAR(8):Y,EMAIL_ADDRESS:VARCHAR:VARCHAR(253):Y,TELEPHONE_NUMBER:VARCHAR:VARCHAR(20):Y,MOBILE_NUMBER:VARCHAR:VARCHAR(20):Y';
+STANDARD_APPLICANTS_FIELDS='SA_ID:NUMBER:NUMERIC:N:N,STANDARD_APPLICANT_CODE:VARCHAR:VARCHAR(10):N:N,STANDARD_APPLICANT_START_DATE:DATE:TIMESTAMP:N:N,STANDARD_APPLICANT_END_DATE:DATE:TIMESTAMP:Y:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N,NAME:VARCHAR:VARCHAR(100):Y:N,TITLE:VARCHAR:VARCHAR(100):Y:N,FORENAME_1:VARCHAR:VARCHAR(100):Y:N,FORENAME_2:VARCHAR:VARCHAR(100):Y:N,FORENAME_3:VARCHAR:VARCHAR(100):Y:N,SURNAME:VARCHAR:VARCHAR(100):Y:N,ADDRESS_L1:VARCHAR:VARCHAR(35):N:N,ADDRESS_L2:VARCHAR:VARCHAR(35):Y:N,ADDRESS_L3:VARCHAR:VARCHAR(35):Y:N,ADDRESS_L4:VARCHAR:VARCHAR(35):Y:N,ADDRESS_L5:VARCHAR:VARCHAR(35):Y:N,POSTCODE:VARCHAR:VARCHAR(8):Y:N,EMAIL_ADDRESS:VARCHAR:VARCHAR(253):Y:N,TELEPHONE_NUMBER:VARCHAR:VARCHAR(20):Y:N,MOBILE_NUMBER:VARCHAR:VARCHAR(20):Y:N';
 
-NATIONAL_COURT_HOUSES_FIELDS='NCH_ID:NUMBER:BIGINT:N,COURTHOUSE_NAME:VARCHAR:VARCHAR(100):N,VERSION_NUMBER:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:BIGINT:N,CHANGED_DATE:DATE:TIMESTAMP:N,COURT_TYPE:VARCHAR:VARCHAR(10):N,START_DATE:DATE:TIMESTAMP:N,END_DATE:DATE:TIMESTAMP:Y,LOC_LOC_ID:NUMBER:BIGINT:Y,PSA_PSA_ID:NUMBER:BIGINT:Y,COURT_LOCATION_CODE:VARCHAR:VARCHAR(10):Y,SL_COURTHOUSE_NAME:VARCHAR:VARCHAR(100):Y,NORG_ID:NUMBER:BIGINT:Y';
+NATIONAL_COURT_HOUSES_FIELDS='NCH_ID:NUMBER:BIGINT:N:N,COURTHOUSE_NAME:VARCHAR:VARCHAR(100):N:N,VERSION_NUMBER:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:BIGINT:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,COURT_TYPE:VARCHAR:VARCHAR(10):N:N,START_DATE:DATE:TIMESTAMP:N:N,END_DATE:DATE:TIMESTAMP:Y:N,LOC_LOC_ID:NUMBER:BIGINT:Y:N,PSA_PSA_ID:NUMBER:BIGINT:Y:N,COURT_LOCATION_CODE:VARCHAR:VARCHAR(10):Y:N,SL_COURTHOUSE_NAME:VARCHAR:VARCHAR(100):Y:N,NORG_ID:NUMBER:BIGINT:Y:N';
 
-LINK_ADDRESSES_FIELDS='LA_ID:NUMBER:BIGINT:N,NO_FIXED_ABODE:VARCHAR:VARCHAR(1):N,LA_TYPE:VARCHAR:VARCHAR(5):N,START_DATE:DATE:TIMESTAMP:N,END_DATE:DATE:TIMESTAMP:Y,VERSION_NUMBER:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:BIGINT:N,CHANGED_DATE:DATE:TIMESTAMP:N,ADR_ADR_ID:NUMBER:BIGINT:N,BU_BU_ID:NUMBER:BIGINT:N,ER_ER_ID:NUMBER:BIGINT:Y,LOC_LOC_ID:NUMBER:BIGINT:Y,HEAD_OFFICE_INDICATOR:VARCHAR:VARCHAR(1):Y';
+LINK_ADDRESSES_FIELDS='LA_ID:NUMBER:BIGINT:N:N,NO_FIXED_ABODE:VARCHAR:VARCHAR(1):N:N,LA_TYPE:VARCHAR:VARCHAR(5):N:N,START_DATE:DATE:TIMESTAMP:N:N,END_DATE:DATE:TIMESTAMP:Y:N,VERSION_NUMBER:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:BIGINT:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,ADR_ADR_ID:NUMBER:BIGINT:N:N,BU_BU_ID:NUMBER:BIGINT:N:N,ER_ER_ID:NUMBER:BIGINT:Y:N,LOC_LOC_ID:NUMBER:BIGINT:Y:N,HEAD_OFFICE_INDICATOR:VARCHAR:VARCHAR(1):Y:N';
 
-ADDRESSES_FIELDS='ADR_ID:NUMBER:BIGINT:N,LINE1:VARCHAR:VARCHAR(35):Y,LINE2:VARCHAR:VARCHAR(35):Y,LINE3:VARCHAR:VARCHAR(35):Y,LINE4:VARCHAR:VARCHAR(35):Y,LINE5:VARCHAR:VARCHAR(35):Y,POSTCODE:VARCHAR:VARCHAR(8):Y,START_DATE:DATE:TIMESTAMP:N,END_DATE:DATE:TIMESTAMP:Y,VERSION_NUMBER:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:BIGINT:N,CHANGED_DATE:DATE:TIMESTAMP:N,MCC_MCC_ID:NUMBER:BIGINT:Y';
+ADDRESSES_FIELDS='ADR_ID:NUMBER:BIGINT:N:N,LINE1:VARCHAR:VARCHAR(35):Y:N,LINE2:VARCHAR:VARCHAR(35):Y:N,LINE3:VARCHAR:VARCHAR(35):Y:N,LINE4:VARCHAR:VARCHAR(35):Y:N,LINE5:VARCHAR:VARCHAR(35):Y:N,POSTCODE:VARCHAR:VARCHAR(8):Y:N,START_DATE:DATE:TIMESTAMP:N:N,END_DATE:DATE:TIMESTAMP:Y:N,VERSION_NUMBER:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:BIGINT:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,MCC_MCC_ID:NUMBER:BIGINT:Y:N';
 
-LINK_COMMUNICATION_MEDIA_FIELDS='LCM_ID:NUMBER:BIGINT:N,LCM_TYPE:VARCHAR:VARCHAR(2):N,START_DATE:DATE:TIMESTAMP:Y,END_DATE:DATE:TIMESTAMP:Y,VERSION_NUMBER:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:BIGINT:N,CHANGED_DATE:DATE:TIMESTAMP:N,COMM_COMM_ID:NUMBER:BIGINT:N,LOC_LOC_ID:NUMBER:BIGINT:Y,ER_ER_ID:NUMBER:BIGINT:Y,BU_BU_ID:NUMBER:BIGINT:Y';
+LINK_COMMUNICATION_MEDIA_FIELDS='LCM_ID:NUMBER:BIGINT:N:N,LCM_TYPE:VARCHAR:VARCHAR(2):N:N,START_DATE:DATE:TIMESTAMP:Y:N,END_DATE:DATE:TIMESTAMP:Y:N,VERSION_NUMBER:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:BIGINT:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,COMM_COMM_ID:NUMBER:BIGINT:N:N,LOC_LOC_ID:NUMBER:BIGINT:Y:N,ER_ER_ID:NUMBER:BIGINT:Y:N,BU_BU_ID:NUMBER:BIGINT:Y:N';
 
-COMMUNICATION_MEDIA_FIELDS='COMM_ID:NUMBER:BIGINT:N,DETAIL:VARCHAR:VARCHAR(254):N,START_DATE:DATE:TIMESTAMP:N,END_DATE:DATE:TIMESTAMP:Y,VERSION_NUMBER:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:BIGINT:N,CHANGED_DATE:DATE:TIMESTAMP:N';
+COMMUNICATION_MEDIA_FIELDS='COMM_ID:NUMBER:BIGINT:N:N,DETAIL:VARCHAR:VARCHAR(254):N:N,START_DATE:DATE:TIMESTAMP:N:N,END_DATE:DATE:TIMESTAMP:Y:N,VERSION_NUMBER:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:BIGINT:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N';
 
-PETTY_SESSIONAL_AREAS_FIELDS='PSA_ID:NUMBER:BIGINT:N,PSA_NAME:VARCHAR:VARCHAR(100):Y,SHORT_NAME:VARCHAR:VARCHAR(10):Y,VERSION_NUMBER:NUMBER:NUMERIC:N,CHANGED_BY:NUMBER:BIGINT:N,CHANGED_DATE:DATE:TIMESTAMP:N,CMA_CMA_ID:NUMBER:BIGINT:Y,PSA_CODE:VARCHAR:VARCHAR(4):N,START_DATE:DATE:TIMESTAMP:Y,END_DATE:DATE:TIMESTAMP:Y,JC_NAME:VARCHAR:VARCHAR(200):Y,COURT_TYPE:VARCHAR:VARCHAR(10):N,CRIME_CASES_LOC_ID:NUMBER:BIGINT:Y,FINE_ACCOUNTS_LOC_ID:NUMBER:BIGINT:Y,MAINTENANCE_ENFORCEMENT_LOC_ID:NUMBER:BIGINT:Y,FAMILY_CASES_LOC_ID:NUMBER:BIGINT:Y,COURT_LOCATION_CODE:VARCHAR:VARCHAR(10):Y,CENTRAL_FINANCE_LOC_ID:NUMBER:BIGINT:Y,SL_PSA_NAME:VARCHAR:VARCHAR(100):Y,NORG_ID:NUMBER:BIGINT:Y';
+PETTY_SESSIONAL_AREAS_FIELDS='PSA_ID:NUMBER:BIGINT:N:N,PSA_NAME:VARCHAR:VARCHAR(100):Y:N,SHORT_NAME:VARCHAR:VARCHAR(10):Y:N,VERSION_NUMBER:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:BIGINT:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,CMA_CMA_ID:NUMBER:BIGINT:Y:N,PSA_CODE:VARCHAR:VARCHAR(4):N:N,START_DATE:DATE:TIMESTAMP:Y:N,END_DATE:DATE:TIMESTAMP:Y:N,JC_NAME:VARCHAR:VARCHAR(200):Y:N,COURT_TYPE:VARCHAR:VARCHAR(10):N:N,CRIME_CASES_LOC_ID:NUMBER:BIGINT:Y:N,FINE_ACCOUNTS_LOC_ID:NUMBER:BIGINT:Y:N,MAINTENANCE_ENFORCEMENT_LOC_ID:NUMBER:BIGINT:Y:N,FAMILY_CASES_LOC_ID:NUMBER:BIGINT:Y:N,COURT_LOCATION_CODE:VARCHAR:VARCHAR(10):Y:N,CENTRAL_FINANCE_LOC_ID:NUMBER:BIGINT:Y:N,SL_PSA_NAME:VARCHAR:VARCHAR(100):Y:N,NORG_ID:NUMBER:BIGINT:Y:N';
 
 # Further configuration that should not need changing
 sql_header1="SET PAGESIZE 0 HEADING OFF FEEDBACK OFF VERIFY OFF";
@@ -316,6 +319,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="AC_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APPLICATION_LISTS)
 			echo "in APPLICATION_LISTS"
@@ -340,6 +350,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			# extract all LISTS, it is the data off the LISTS
 			# that is subject to retention
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APPLICATION_LIST_ENTRIES)
 			echo "in APPLICATION_LIST_ENTRIES"
@@ -361,6 +378,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="ALE_ID";
 			changed_by='CHANGED_BY';
 			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APPLICATION_REGISTER)
 			echo "in APPLICATION_REGISTER"
@@ -382,6 +406,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="AR_ID";
 			changed_by='CHANGED_BY';
 			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
@@ -403,6 +434,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="ALE_ALE_ID";
 			changed_by='CHANGED_BY';
 			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
 			echo "in APP_LIST_ENTRY_FEE_STATUS"
@@ -424,6 +462,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="ALEFS_ID";
 			changed_by='ALEFS_CHANGED_BY';
 			retention_clause="ALEFS_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
 			echo "in APP_LIST_ENTRY_OFFICIAL"
@@ -445,6 +490,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="ALEO_ID";
 			changed_by='CHANGED_BY';
 			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
 			echo "in APP_LIST_ENTRY_RESOLUTIONS"
@@ -466,6 +518,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="ALER_ID";
 			changed_by='CHANGED_BY';
 			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.CRIMINAL_JUSTICE_AREA)
 			echo "in CRIMINAL_JUSTICE_AREA"
@@ -488,6 +547,13 @@ echo "running case: $tables_to_extract $lower_table_name";
 			shard_field="CJA_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.DATA_AUDIT)
 			echo "in DATA_AUDIT"
@@ -510,6 +576,13 @@ w
 			shard_field="DATA_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.FEE)
 			echo "in FEE"
@@ -531,6 +604,13 @@ w
 			shard_field="FEE_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.NAME_ADDRESS)
 			echo "in NAME_ADDRESS"
@@ -552,6 +632,21 @@ w
 			shard_field="NA_ID";
 			changed_by='CHANGED_BY';
 			retention_clause="(NA_ID IN (SELECT A_NA_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))) OR NA_ID IN (SELECT R_NA_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))))";
+			additional_postgres_fields="first_name TEXT,
+middle_name TEXT,
+last_name TEXT,";
+			additional_oracle_select="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(forename_1,'')),UNISTR('\00A6')),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|'||";
+additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(TRIM(REGEXP_REPLACE(NVL(forename_2, '')|| ' ' || NVL(forename_3, ''), ' +', ' '))),UNISTR('\00A6'),''),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|'||";
+additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(surname,'')),UNISTR('\00A6')),'\','\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')||'|#'";
+			additional_insert=",REPLACE(REPLACE(REPLACE(REPLACE(FIRST_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS FIRST_NAME,";
+			additional_insert="${additional_insert}REPLACE(REPLACE(REPLACE(REPLACE(MIDDLE_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS MIDDLE_NAME,";
+			additional_insert="${additional_insert}REPLACE(REPLACE(REPLACE(REPLACE(LAST_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS LAST_NAME";
+			backslashes=",REPLACE(FIRST_NAME,'\\','\') AS FIRST_NAME,";
+			backslashes="${backslashes}REPLACE(MIDDLE_NAME,'\\','\') AS MIDDLE_NAME,";
+			backslashes="${backslashes}REPLACE(LAST_NAME,'\\','\') AS LAST_NAME";
+			additional_fields=", FIRST_NAME, MIDDLE_NAME, LAST_NAME";
+			additional_fields_nullif=",NULLIF(left(FIRST_NAME, 100),''),NULLIF(left(MIDDLE_NAME, 100),''),NULLIF(left(LAST_NAME, 100),'')";
+			excluded_fields=", FIRST_NAME = EXCLUDED.FIRST_NAME, MIDDLE_NAME = EXCLUDED.MIDDLE_NAME, LAST_NAME = EXCLUDED.LAST_NAME";
 			;;
 		APPREGISTER.RESOLUTION_CODES)
 			echo "in RESOLUTION_CODES"
@@ -573,6 +668,13 @@ w
 			shard_field="RC_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		APPREGISTER.STANDARD_APPLICANTS)
 			echo "in STANDARD_APPLICANTS"
@@ -594,6 +696,13 @@ w
 			shard_field="SA_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 		LIBRA.NATIONAL_COURT_HOUSES)
 			echo "in NATIONAL_COURT_HOUSES"
@@ -615,6 +724,13 @@ w
 			shard_field="NCH_ID";
 			changed_by='';
 			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
 			;;
 	esac
 
@@ -678,260 +794,287 @@ echo "sql2: $sql_script"
 			field_type=`echo ${field_info}|awk -F":" '{print $2}'`
 			postgres_field_type=`echo ${field_info}|awk -F":" '{print $3}'`
 			field_nullable=`echo ${field_info}|awk -F":" '{print $4}'`
+			remapped=`echo ${field_info}|awk -F":" '{print $5}'`
 
-			case $field_type in
-				NUMBER)
-					echo "field is a number";
-					if [[ $field_name == $changed_by ]] 
-					then
-						# we need to map this to the new
-						# modern value
-						if [[ $field_nullable == "Y" ]]
+			# only do this if field is not remapped
+			if [[ ${remapped} == "N" ]]; then
+				case $field_type in
+					NUMBER)
+						echo "field is a number";
+						if [[ $field_name == $changed_by ]] 
 						then
+							# we need to map this to the new
+							# modern value
+							if [[ $field_nullable == "Y" ]]
+							then
 echo "is nulls"
-							sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(appregister.appreg_get_user_mapping(${field_name})),''))"
-						else
+								sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(appregister.appreg_get_user_mapping(${field_name})),''))"
+							else
 echo "is notnull"
-							sql_script="${sql_script}TO_CLOB(TO_CHAR(appregister.appreg_get_user_mapping(${field_name})))"
-						fi
-					else
-						if [[ $field_nullable == "Y" ]]
-						then
+								sql_script="${sql_script}TO_CLOB(TO_CHAR(appregister.appreg_get_user_mapping(${field_name})))"
+							fi
+						else
+							if [[ $field_nullable == "Y" ]]
+							then
 echo "is nulls"
-							sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name}),''))"
-						else
+								sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name}),''))"
+							else
 echo "is notnull"
-							sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name}))"
+								sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name}))"
+							fi
 						fi
-					fi
 			
-					if [[ $field_count -eq $counter ]]
-					then
-						sql_postgres="${sql_postgres}${field_name}${NEWLINE}";
-						sql_postgres2="${sql_postgres2}${field_name}";
-						sql_postgres3="${sql_postgres3}${field_name}";
-						sql_postgres4="${sql_postgres4}${field_name}";
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					else
-						sql_postgres="${sql_postgres}${field_name},${NEWLINE}";
-						sql_postgres2="${sql_postgres2}${field_name},${NEWLINE}";
-						sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
-						sql_postgres4="${sql_postgres4}${field_name},${NEWLINE}";
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					fi
-					;;
-				VARCHAR)
-					echo "field is a varchar";
-					# we will also need to strip any broken bars in
-					# the test data
-					if [[ $field_nullable == "Y" ]]
-					then
-						sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),UNISTR('\00A6')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
-					else
-						sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),UNISTR('\00A6')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
-					fi
-					field_size=`echo ${postgres_field_type}|awk -F"(" '{print $2}'`
-					if [[ $field_count -eq $counter ]]
-					then
-						sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name}${NEWLINE}";
-						sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name}";
-						sql_postgres3="${sql_postgres3}${field_name}";
-						if [[ $field_nullable == "Y" ]]
+						if [[ $field_count -eq $counter ]]
 						then
-							sql_postgres4="${sql_postgres4}NULLIF(left(${field_name}, ${field_size},'')";
-						else
-							sql_postgres4="${sql_postgres4}left(${field_name}, ${field_size}";
-						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					else
-						sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name},${NEWLINE}";
-						sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name},${NEWLINE}";
-						sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
-						if [[ $field_nullable == "Y" ]]
-						then
-							sql_postgres4="${sql_postgres4}NULLIF(left(${field_name}, ${field_size},''),${NEWLINE}";
-						else
-							sql_postgres4="${sql_postgres4}left(${field_name}, ${field_size},${NEWLINE}";
-						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					fi
-					;;
-				CLOB)
-echo "field_nullable: $field_nullable";
-					echo "field is a clob";
-					if [[ $field_nullable == "Y" ]]
-					#if [[ $field_nullable == "Y" ]]
-					then
-echo "field is NULL"
-						sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
-					else
-						sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),'\','\\\\'),'|','\p'),CHR(14),'\r'),CHR(10),'\n'),CHR(9),'\t')"
-echo "NOTNULL field"
-					fi
-					if [[ $field_count -eq $counter ]]
-					then
-						sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name}${NEWLINE}";
-						sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name}";
-						if [[ $field_nullable == "Y" ]]
-						then
-							sql_postgres3="${sql_postgres3}${field_name}";
-							sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')";
-						else
+							sql_postgres="${sql_postgres}${field_name}${NEWLINE}";
+							sql_postgres2="${sql_postgres2}${field_name}";
 							sql_postgres3="${sql_postgres3}${field_name}";
 							sql_postgres4="${sql_postgres4}${field_name}";
-						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					else
-echo "aa"
-						sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name},${NEWLINE}";
-echo "bb"
-						sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name},${NEWLINE}";
-echo "cc"
-						if [[ $field_nullable == "Y" ]]
-						then
-echo "cca"
-							sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
-							sql_postgres4="${sql_postgres4}NULLIF(${field_name},''),${NEWLINE}";
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
 						else
-echo "ccb"
+							sql_postgres="${sql_postgres}${field_name},${NEWLINE}";
+							sql_postgres2="${sql_postgres2}${field_name},${NEWLINE}";
 							sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
 							sql_postgres4="${sql_postgres4}${field_name},${NEWLINE}";
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
 						fi
+						;;
+					VARCHAR)
+						echo "field is a varchar";
+						# we will also need to strip any broken bars in
+						# the test data
+						if [[ $field_nullable == "Y" ]]
+						then
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),UNISTR('\00A6')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
+							else
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),UNISTR('\00A6')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
+						fi
+						field_size=`echo ${postgres_field_type}|awk -F"(" '{print $2}'`
+						if [[ $field_count -eq $counter ]]
+						then
+							sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name}${NEWLINE}";
+							sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name}";
+							sql_postgres3="${sql_postgres3}${field_name}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres4="${sql_postgres4}NULLIF(left(${field_name}, ${field_size},'')";
+							else
+								sql_postgres4="${sql_postgres4}left(${field_name}, ${field_size}";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						else
+							sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name},${NEWLINE}";
+							sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name},${NEWLINE}";
+							sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres4="${sql_postgres4}NULLIF(left(${field_name}, ${field_size},''),${NEWLINE}";
+							else
+								sql_postgres4="${sql_postgres4}left(${field_name}, ${field_size},${NEWLINE}";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						fi
+						;;
+					CLOB)
+echo "field_nullable: $field_nullable";
+						echo "field is a clob";
+						if [[ $field_nullable == "Y" ]]
+						#if [[ $field_nullable == "Y" ]]
+						then
+echo "field is NULL"
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
+						else
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),'\','\\\\'),'|','\p'),CHR(14),'\r'),CHR(10),'\n'),CHR(9),'\t')"
+echo "NOTNULL field"
+						fi
+						if [[ $field_count -eq $counter ]]
+						then
+							sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name}${NEWLINE}";
+							sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres3="${sql_postgres3}${field_name}";
+								sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')";
+							else
+								sql_postgres3="${sql_postgres3}${field_name}";
+								sql_postgres4="${sql_postgres4}${field_name}";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						else
+echo "aa"
+							sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name},${NEWLINE}";
+echo "bb"
+							sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name},${NEWLINE}";
+echo "cc"
+							if [[ $field_nullable == "Y" ]]
+							then
+echo "cca"
+								sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+								sql_postgres4="${sql_postgres4}NULLIF(${field_name},''),${NEWLINE}";
+							else
+echo "ccb"
+								sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+								sql_postgres4="${sql_postgres4}${field_name},${NEWLINE}";
+							fi
 echo "dd"
 echo "sql_postgres5: ${sql_postgres5}"
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
 echo "ee"
 echo "sql_postgres5: ${sql_postgres5}"
-					fi
-					;;
-				CHAR)
-					echo "field is a char";
-					if [[ $field_nullable == "Y" ]]
-					then
-						sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL((${field_name},'')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
-					else
-						sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
-					fi
-					field_size=`echo ${postgres_field_type}|awk -F"(" '{print $2}'`
-					if [[ $field_count -eq $counter ]]
-					then
-						sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name}${NEWLINE}";
-						sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name}";
-						sql_postgres3="${sql_postgres3}${field_name}";
-						sql_postgres4="${sql_postgres4}left(${field_name},${field_size}";
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					else
-						sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name},${NEWLINE}";
-						sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name},${NEWLINE}";
-						sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
-						sql_postgres4="${sql_postgres4}left(${field_name},${field_size},${NEWLINE}";
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					fi
-					;;
-				DATE)
-					echo "field is a date";
-					if [[ $field_nullable == "Y" ]]
-					then
-						sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS'),''))"
-					else
-						sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS'))"
-					fi
-					if [[ $field_count -eq $counter ]]
-					then
-						sql_postgres="${sql_postgres}${field_name}${NEWLINE}";
-						sql_postgres2="${sql_postgres2}${field_name}";
-						sql_postgres3="${sql_postgres3}${field_name}";
+						fi
+						;;
+					CHAR)
+						echo "field is a char";
 						if [[ $field_nullable == "Y" ]]
 						then
-							sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp";
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL((${field_name},'')),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
 						else
-							sql_postgres4="${sql_postgres4}(${field_name})::timestamp";
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t')"
 						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					else
-						sql_postgres="${sql_postgres}${field_name},${NEWLINE}";
-						sql_postgres2="${sql_postgres2}${field_name},${NEWLINE}";
-						sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+						field_size=`echo ${postgres_field_type}|awk -F"(" '{print $2}'`
+						if [[ $field_count -eq $counter ]]
+						then
+							sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name}${NEWLINE}";
+							sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name}";
+							sql_postgres3="${sql_postgres3}${field_name}";
+							sql_postgres4="${sql_postgres4}left(${field_name},${field_size}";
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						else
+							sql_postgres="${sql_postgres}REPLACE(REPLACE(REPLACE(REPLACE(${field_name},'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS ${field_name},${NEWLINE}";
+							sql_postgres2="${sql_postgres2}REPLACE(${field_name},'\\\\','\') AS ${field_name},${NEWLINE}";
+							sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+							sql_postgres4="${sql_postgres4}left(${field_name},${field_size},${NEWLINE}";
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						fi
+						;;
+					DATE)
+						echo "field is a date";
 						if [[ $field_nullable == "Y" ]]
 						then
-							sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp,${NEWLINE}";
+							sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS'),''))"
 						else
-							sql_postgres4="${sql_postgres4}(${field_name})::timestamp,${NEWLINE}";
+							sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS'))"
 						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					fi
-					;;
-				TIMESTAMP)
-					echo "field is a timestamp";
-					if [[ $field_nullable == "Y" ]]
-					then
-						sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS.FF6'),''))"
-					else
-						sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS.FF6'))"
-					fi
-					if [[ $field_count -eq $counter ]]
-					then
-						sql_postgres="${sql_postgres}${field_name}${NEWLINE}";
-						sql_postgres2="${sql_postgres2}${field_name}";
-						sql_postgres3="${sql_postgres3}${field_name}";
+						if [[ $field_count -eq $counter ]]
+						then
+							sql_postgres="${sql_postgres}${field_name}${NEWLINE}";
+							sql_postgres2="${sql_postgres2}${field_name}";
+							sql_postgres3="${sql_postgres3}${field_name}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp";
+							else
+								sql_postgres4="${sql_postgres4}(${field_name})::timestamp";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						else
+							sql_postgres="${sql_postgres}${field_name},${NEWLINE}";
+							sql_postgres2="${sql_postgres2}${field_name},${NEWLINE}";
+							sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp,${NEWLINE}";
+							else
+								sql_postgres4="${sql_postgres4}(${field_name})::timestamp,${NEWLINE}";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
+						fi
+						;;
+					TIMESTAMP)
+						echo "field is a timestamp";
 						if [[ $field_nullable == "Y" ]]
 						then
-							sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp";
+							sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS.FF6'),''))"
 						else
-							sql_postgres4="${sql_postgres4}(${field_name})::timestamp";
+							sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name},'YYYY-MM-DD HH24:MI:SS.FF6'))"
 						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					else
-						sql_postgres="${sql_postgres}${field_name},${NEWLINE}";
-						sql_postgres2="${sql_postgres2}${field_name},${NEWLINE}";
-						sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
-						if [[ $field_nullable == "Y" ]]
+						if [[ $field_count -eq $counter ]]
 						then
-							sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp,${NEWLINE}";
+							sql_postgres="${sql_postgres}${field_name}${NEWLINE}";
+							sql_postgres2="${sql_postgres2}${field_name}";
+							sql_postgres3="${sql_postgres3}${field_name}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp";
+							else
+								sql_postgres4="${sql_postgres4}(${field_name})::timestamp";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
 						else
-							sql_postgres4="${sql_postgres4}(${field_name})::timestamp,${NEWLINE}";
+							sql_postgres="${sql_postgres}${field_name},${NEWLINE}";
+							sql_postgres2="${sql_postgres2}${field_name},${NEWLINE}";
+							sql_postgres3="${sql_postgres3}${field_name},${NEWLINE}";
+							if [[ $field_nullable == "Y" ]]
+							then
+								sql_postgres4="${sql_postgres4}NULLIF(${field_name},'')::timestamp,${NEWLINE}";
+							else
+								sql_postgres4="${sql_postgres4}(${field_name})::timestamp,${NEWLINE}";
+							fi
+							sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
 						fi
-						sql_postgres5="${sql_postgres5}$(pop_postgres5 "${field_name}" "${conflict_field}" "${field_count}" "${counter}")"
-					fi
-					;;
-			
-			esac
-echo "checking: ${field_name} ${counter} ${field_count}";
-
-			if [[ $counter -lt $field_count ]]
-			then
-echo "a1";
-				sql_script="${sql_script}||'|'||${NEWLINE}";
-			else
-echo "a2";
-				sql_script="${sql_script}||'|#'${NEWLINE}";
+						;;
+				
+				esac
 			fi
+echo "c	hecking: ${field_name} ${counter} ${field_count}";
+	
+			if [[ ${remapped} == "N" ]]; then
+				if [[ $counter -lt $field_count ]]
+				then
+echo "a	1";
+					sql_script="${sql_script}||'|'||${NEWLINE}";
+				else
+					# Add in the additional oracle select if
+					# applicable
+					if [[ -n "${additional_oracle_select}" ]]; then
+					
+						sql_script="${sql_script}||'|'||${NEWLINE}";
+						sql_script="${sql_script}${additional_oracle_select}${NEWLINE}";
+					else
+						sql_script="${sql_script}||'|#'${NEWLINE}";
+					fi
+echo "a2";
+				fi
 echo "end checking";
 echo "sqlaa: $sql_script";
 	
+			fi
 
 			
 			# Write out the postgres create schema file
-			if [[ ${field_type} == "NUMBER" ]]
+			# only if field is not remapped
+			if [[ ${remapped} == "N" ]] 
 			then
-				# check if we are mapping the field
-				if [[ $field_name == $changed_by ]] 
+				if [[ ${field_type} == "NUMBER" ]]
 				then
-					echo "${lower_field_name} CHARACTER VARYING(73),">>${postgres_schema_file};
+					# check if we are mapping the field
+					if [[ $field_name == $changed_by ]] 
+					then
+						echo "${lower_field_name} CHARACTER VARYING(73),">>${postgres_schema_file};
+					else
+						echo "${lower_field_name} NUMERIC,">>${postgres_schema_file};
+					fi
 				else
-					echo "${lower_field_name} NUMERIC,">>${postgres_schema_file};
+					echo "${lower_field_name} TEXT,">>${postgres_schema_file};
 				fi
-			else
-				echo "${lower_field_name} TEXT,">>${postgres_schema_file};
-			fi
 			
-			field_nullable='';
+				field_nullable='';
+			fi
 
 		done
 
+		# add the additional insert if applicable
+		if [[ -n "${additional_insert}" ]]; then
+			sql_postgres="${sql_postgres}${additional_insert}${NEWLINE}";
+		fi
 		sql_postgres="${sql_postgres}FROM ${postgres_schema}.${lower_table_name}_temp${NEWLINE}";
 		sql_postgres="${sql_postgres}),${NEWLINE}";
 		sql_postgres="${sql_postgres}backslashes_fixed AS (";
+
+		# Add the additional postgres fields
+		if [ -n "${additional_postgres_fields}" ]; then
+			echo "${additional_postgres_fields}">>${postgres_schema_file}
+		fi
 
 		# Add the marker field
 		echo "marker text">>${postgres_schema_file}
@@ -979,7 +1122,7 @@ echo "AAAAA ${thread_count}";
 echo "BBBBB";
 echo "${threads}";
 			# Populate the postgres commands file
-			echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
+			echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
 
 			sql_spool="spool ${spool_location}/${tables_to_extract}_part_${threads}.csv;";
 			sql_script=$sql_script_base;
@@ -1022,19 +1165,40 @@ echo "DDDDD";
 		# Write the postgres to a file
 		echo "${sql_postgres}">>$postgres_insert_file;
 		echo "${sql_postgres2}">>$postgres_insert_file;
+	
+		# Add the backslashes if applicable
+		if [[ -n "${backslashes}" ]]; then
+			echo "${backslashes}">>$postgres_insert_file;
+		fi
 		echo "FROM cleaned">>$postgres_insert_file;
 		echo ")">>$postgres_insert_file;
 		echo "${sql_postgres3}">>$postgres_insert_file;	
+		
+		# Add the additional fields if applicable
+		if [[ -n "${additional_fields}" ]]; then
+			echo "${additional_fields}">>$postgres_insert_file;
+		fi
 		echo ")">>$postgres_insert_file;
 		echo "${sql_postgres4}">>$postgres_insert_file;
+
+		# Add the additional fields nullif if applicable
+		if [[ -n "${additional_fields_nullif}" ]]; then
+			echo "${additional_fields_nullif}">>$postgres_insert_file;
+		fi
 		echo "FROM backslashes_fixed">>$postgres_insert_file;
 		if [[ ${conflict_constraint} == "NO" ]]
 		then
 			echo "ON CONFLICT (${conflict_field}) DO UPDATE SET">>$postgres_insert_file;
 		else
 			echo "ON CONFLICT ON CONSTRAINT ${conflict_constraint_name} DO UPDATE SET">>$postgres_insert_file;
+
 		fi
 		echo "${sql_postgres5}">>$postgres_insert_file;
+		
+		# Added the excluded fields if applicable
+		if [[ -n "${excluded_fields}" ]]; then
+			echo "${excluded_fields}">>$postgres_insert_file;
+		fi
 		echo ";${NEWLINE}">>$postgres_insert_file;
 
 		if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
@@ -1398,7 +1562,7 @@ echo "AAAAA ${thread_count}";
 echo "BBBBB";
 echo "${threads}";
 				# Populate the postgres commands file
-				echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
+				echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
 
 				sql_spool="spool ${spool_location}/${tables_to_extract}_part_${threads}.csv;";
 				sql_script=$sql_script_base;
@@ -1890,7 +2054,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			echo "">>deletes.sql
 	
 			# Populate the postgres commands file
-			echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_delete_temp FROM '${lower_with_schema}.deletes.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>$postgres_delete_commands_file;
+			echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_delete_temp FROM '${lower_with_schema}.deletes.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>$postgres_delete_commands_file;
 	
 		fi
 	fi

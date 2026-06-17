@@ -20,8 +20,10 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 
@@ -60,6 +62,11 @@ public class ObfuscationUtil {
                 new ApplicationListGetDetailDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultGetDto.class, new ResultGetDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultPage.class, new ResultPageSensitiveSerializer());
+        maskingModule.addSerializer(
+                FeesReportFilterDto.class, new FeesReportFilterDtoSensitiveSerializer());
+        maskingModule.addSerializer(
+                PrivateProsecutorsIndexFilterDto.class,
+                new PrivateProsecutorIndexSensitiveSerializer());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(
@@ -216,6 +223,91 @@ public class ObfuscationUtil {
             gen.writeObjectField("entryId", value.getEntryId());
             gen.writeObjectField("resultCode", value.getResultCode());
             gen.writeObjectField("wording", value.getWording());
+            gen.writeEndObject();
+        }
+    }
+
+    static class FeesReportFilterDtoSensitiveSerializer
+            extends JsonSerializer<FeesReportFilterDto> {
+
+        @Override
+        public void serialize(
+                FeesReportFilterDto value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("dateFrom", value.getDateFrom());
+            gen.writeObjectField("dateTo", value.getDateTo());
+
+            var applicantName = value.getApplicantName();
+            if (applicantName != null && !applicantName.isBlank()) {
+                gen.writeStringField("applicantName", REDACTED);
+            }
+
+            var standardApplicantCode = value.getStandardApplicantCode();
+            if (standardApplicantCode != null && !standardApplicantCode.isBlank()) {
+                gen.writeStringField("standardApplicantCode", REDACTED);
+            }
+
+            var location = value.getLocation();
+            if (location != null) {
+                gen.writeObjectField("location", value.getLocation());
+            }
+            gen.writeEndObject();
+        }
+    }
+
+    static class PrivateProsecutorIndexSensitiveSerializer
+            extends JsonSerializer<PrivateProsecutorsIndexFilterDto> {
+
+        @Override
+        public void serialize(
+                PrivateProsecutorsIndexFilterDto value,
+                JsonGenerator gen,
+                SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("dateFrom", value.getDateFrom());
+            gen.writeObjectField("dateTo", value.getDateTo());
+
+            var applicantFirstName = value.getApplicantFirstName();
+            if (applicantFirstName != null && !applicantFirstName.isBlank()) {
+                gen.writeStringField("applicantFirstName", REDACTED);
+            }
+
+            var applicantSurname = value.getApplicantSurname();
+            if (applicantSurname != null && !applicantSurname.isBlank()) {
+                gen.writeStringField("applicantSurname", REDACTED);
+            }
+
+            var applicantOrganisationName = value.getApplicantOrganisationName();
+            if (applicantOrganisationName != null && !applicantOrganisationName.isBlank()) {
+                gen.writeStringField("applicantOrganisationName", REDACTED);
+            }
+
+            var respondentSurname = value.getRespondentSurname();
+            if (respondentSurname != null && !respondentSurname.isBlank()) {
+                gen.writeStringField("respondentSurname", REDACTED);
+            }
+
+            var respondentFirstname = value.getRespondentFirstName();
+            if (respondentFirstname != null && !respondentFirstname.isBlank()) {
+                gen.writeStringField("respondentFirstname", REDACTED);
+            }
+
+            var respondentOrganisationName = value.getRespondentOrganisationName();
+            if (respondentOrganisationName != null && !respondentOrganisationName.isBlank()) {
+                gen.writeStringField("respondentOrganisationName", REDACTED);
+            }
+
+            var standardApplicantName = value.getStandardApplicantName();
+            if (standardApplicantName != null && !standardApplicantName.isBlank()) {
+                gen.writeStringField("standardApplicantName", REDACTED);
+            }
+
+            var location = value.getLocation();
+            if (location != null) {
+                gen.writeObjectField("location", location);
+            }
             gen.writeEndObject();
         }
     }

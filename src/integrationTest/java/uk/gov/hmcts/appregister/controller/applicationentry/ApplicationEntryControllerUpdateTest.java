@@ -275,7 +275,41 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        responseSpecUpdate.then().statusCode(409);
+        responseSpecUpdate.then().statusCode(404);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    void givenAFailureUpdate_whenAnEntryToUpdateIsDeleted_404Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        int rowsUpdated =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository.softDeleteByUuid(
+                                        createdDetail.getId()));
+        Assertions.assertEquals(1, rowsUpdated);
+
+        var tokenGenerator = createAdminToken();
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + createdDetail.getListId()
+                                        + "/entries/"
+                                        + createdDetail.getId()),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(404);
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
@@ -1377,8 +1411,9 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenAllValueAreToBeUpdate_200Returned()
-            throws Exception {
+    void
+            givenASuccessfulClosedEntryUpdate_whenParentListIsClosed_thenReturns204AndStandardGetReturns409()
+                    throws Exception {
         String notesOnCreate = "This is a note on create";
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setNumberOfRespondents(null);
@@ -1580,7 +1615,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_409Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_404Returned() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1600,13 +1635,13 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         entryUpdateClosedDto,
                         "NOT EXISTS");
 
-        responseSpecUpdate.then().statusCode(409);
+        responseSpecUpdate.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecUpdate);
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_409Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_404Returned() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1644,7 +1679,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         entryUpdateClosedDto,
                         "NOT EXISTS");
 
-        responseSpecUpdate.then().statusCode(409);
+        responseSpecUpdate.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode(), responseSpecUpdate);
     }

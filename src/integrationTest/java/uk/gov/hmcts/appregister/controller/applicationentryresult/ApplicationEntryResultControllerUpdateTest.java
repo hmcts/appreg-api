@@ -181,7 +181,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
         Response resp =
                 updateResult(listId, entryId, resultId, getToken(), payload, "\"any-etag\"");
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -230,7 +230,51 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 404 when result does not exist")
+    void givenMissingResult_whenUpdate_then404() throws Exception {
+        var existingResult = givenExistingEntryResult();
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+                updateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        UUID.randomUUID(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST.getCode(),
+                resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 409 when result belongs to different entry")
+    void givenResultBelongsToDifferentEntry_whenUpdate_then409() throws Exception {
+        var existingResult = givenExistingEntryResult();
+        var otherEntry = createEntry(existingResult.list());
+        persistance.save(otherEntry);
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+                updateResult(
+                        existingResult.list().getUuid(),
+                        otherEntry.getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY.getCode(),
+                resp);
     }
 
     @Test

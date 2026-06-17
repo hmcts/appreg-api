@@ -45,6 +45,8 @@ class ApplicationEntryResultGetValidatorTest {
 
         Mockito.when(applicationListRepository.findByUuidIncludingDelete(payload.getListId()))
                 .thenReturn(java.util.Optional.of(applicationList));
+        Mockito.when(applicationListEntryRepository.findByUuid(payload.getEntryId()))
+                .thenReturn(java.util.Optional.of(new ApplicationListEntry()));
 
         Mockito.when(
                         applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
@@ -56,6 +58,7 @@ class ApplicationEntryResultGetValidatorTest {
 
         // assert the expectations
         Mockito.verify(applicationListRepository).findByUuidIncludingDelete(payload.getListId());
+        Mockito.verify(applicationListEntryRepository).findByUuid(payload.getEntryId());
         Mockito.verify(applicationListEntryRepository)
                 .findActiveByUuidAndApplicationListUuid(payload.getEntryId(), payload.getListId());
     }
@@ -124,6 +127,31 @@ class ApplicationEntryResultGetValidatorTest {
                         AppRegistryException.class, () -> validator.validate(payload));
         Assertions.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
+                appRegistryException.getCode().getCode());
+    }
+
+    @Test
+    void testGetApplicationListEntryResultFailOnApplicationListEntryNotWithinList() {
+        PayloadGetEntryResultInList payload =
+                PayloadGetEntryResultInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.OPEN);
+        applicationList.setDeleted(YesOrNo.NO);
+
+        Mockito.when(applicationListRepository.findByUuidIncludingDelete(payload.getListId()))
+                .thenReturn(java.util.Optional.of(applicationList));
+        Mockito.when(applicationListEntryRepository.findByUuid(payload.getEntryId()))
+                .thenReturn(java.util.Optional.of(new ApplicationListEntry()));
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(),
                 appRegistryException.getCode().getCode());
     }
 }

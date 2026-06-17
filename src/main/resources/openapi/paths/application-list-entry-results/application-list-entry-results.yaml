@@ -38,6 +38,8 @@ get:
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
     "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
@@ -70,4 +72,6 @@ post:
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
