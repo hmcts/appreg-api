@@ -212,6 +212,37 @@ class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    void givenReportCreatedFilter_whenCreatingActivityAuditReport_thenRelevantEventsAreReturned()
+            throws Exception {
+        createReportJobAndAwaitCompletion(
+                WORKLOAD_REPORT_WEB_CONTEXT,
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2031, Month.JANUARY, 2))
+                        .dateTo(LocalDate.of(2031, Month.JANUARY, 2)),
+                JobType.WORKLOAD_REPORT);
+        createReportJobAndAwaitCompletion(
+                SEARCH_WARRANTS_REPORT_WEB_CONTEXT,
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2032, Month.FEBRUARY, 3))
+                        .dateTo(LocalDate.of(2032, Month.FEBRUARY, 3))
+                        .location(new LegacyReportLocation().courtLocationCode("CCC003")),
+                JobType.SEARCH_WARRANTS_REPORT);
+
+        String report =
+                createAndDownloadActivityAuditReport(
+                        new ActivityAuditFilterDto()
+                                .dateFrom(LocalDate.now(java.time.ZoneOffset.UTC))
+                                .dateTo(LocalDate.now(java.time.ZoneOffset.UTC))
+                                .activityTypes(List.of(ActivityType.REPORT_CREATED)));
+
+        assertThat(report).contains("Activity Audit Report");
+        assertThat(report).contains("Create Workload Report");
+        assertThat(report).contains("2031-01-02");
+        assertThat(report).contains("Create Search Warrants Report");
+        assertThat(report).contains("2032-02-03");
+    }
+
+    @Test
     void givenActivityAuditReportRequestContainsUnsupportedField_whenCreatingReport_thenBadRequest()
             throws Exception {
         TokenGenerator tokenGenerator =
@@ -1030,6 +1061,59 @@ class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     void
+            givenWorkloadReportCjaAndOtherLocationFilter_whenCreatingReport_thenCsvIsFilteredByBothValues()
+                    throws Exception {
+        val listDate = LocalDate.of(2026, Month.JUNE, 19);
+        val includedApplicant = "ARCPOC 1463 Workload CJA Other Included";
+        val excludedApplicant = "ARCPOC 1463 Workload CJA Other Excluded";
+        val matchingLocation = "ARCPOC 1463 Shared Hall";
+        val excludedCjaId = insertCjaRow("W9", "ARCPOC 1463 Excluded CJA");
+
+        val includedListId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD146",
+                        matchingLocation,
+                        "Workload Report - CJA And Other Included",
+                        "Workload Included Court",
+                        0,
+                        0,
+                        3);
+        insertEntry(listDate, includedListId, includedApplicant, 1, "N");
+
+        val excludedListId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XW9146",
+                        matchingLocation,
+                        "Workload Report - CJA And Other Excluded",
+                        "Workload Excluded Court",
+                        0,
+                        0,
+                        excludedCjaId.intValue());
+        insertEntry(listDate, excludedListId, excludedApplicant, 1, "N");
+
+        val report =
+                createAndDownloadWorkloadReport(
+                        new WorkloadFilterDto()
+                                .dateFrom(listDate)
+                                .dateTo(listDate)
+                                .location(
+                                        new LegacyReportLocation()
+                                                .cjaCode("CD")
+                                                .otherLocationDescription("arcpoc 1463 shared")));
+
+        assertThat(report).contains("Workload Report");
+        assertThat(report).contains(includedApplicant);
+        assertThat(report).contains(matchingLocation);
+        assertThat(report).doesNotContain(excludedApplicant);
+        assertThat(report).doesNotContain("Workload Excluded Court");
+    }
+
+    @Test
+    void
             givenValidWorkloadReportWithJustCJACode_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
 
@@ -1261,6 +1345,53 @@ class ReportingControllerPostTest extends BaseIntegration {
                         request);
 
         createResponse.then().statusCode(400);
+    }
+
+    @Test
+    void givenWorkloadReportCourtOnly_whenCreatingReport_thenCsvIsFilteredByCourt()
+            throws Exception {
+        val listDate = LocalDate.of(2026, Month.JUNE, 20);
+        val includedApplicant = "ARCPOC 1463 Workload Court Included";
+        val excludedApplicant = "ARCPOC 1463 Workload Court Excluded";
+
+        val includedListId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "CCC003",
+                        null,
+                        "Workload Report - Court Only Included",
+                        "Cardiff Crown Court",
+                        0,
+                        0,
+                        3);
+        insertEntry(listDate, includedListId, includedApplicant, 1, "N");
+
+        val excludedListId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "BCC006",
+                        null,
+                        "Workload Report - Court Only Excluded",
+                        "Bristol Crown Court",
+                        0,
+                        0,
+                        3);
+        insertEntry(listDate, excludedListId, excludedApplicant, 1, "N");
+
+        val report =
+                createAndDownloadWorkloadReport(
+                        new WorkloadFilterDto()
+                                .dateFrom(listDate)
+                                .dateTo(listDate)
+                                .location(new LegacyReportLocation().courtLocationCode("CCC003")));
+
+        assertThat(report).contains("Workload Report");
+        assertThat(report).contains(includedApplicant);
+        assertThat(report).contains("CCC003 - Cardiff Crown Court");
+        assertThat(report).doesNotContain(excludedApplicant);
+        assertThat(report).doesNotContain("BCC006 - Bristol Crown Court");
     }
 
     @Test
@@ -2127,6 +2258,20 @@ class ReportingControllerPostTest extends BaseIntegration {
                 "Duplicate CJA 1",
                 code,
                 "Duplicate CJA 2");
+    }
+
+    private Long insertCjaRow(String code, String description) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.criminal_justice_area (cja_id, cja_code, cja_description)
+                    VALUES (nextval('%s.cja_seq'), ?, ?)
+                    RETURNING cja_id
+                    """,
+                        schema, schema),
+                Long.class,
+                code,
+                description);
     }
 
     private void insertApplicationListRow(
@@ -3125,6 +3270,74 @@ class ReportingControllerPostTest extends BaseIntegration {
         try (var responseStream = downloadResponse.getBody().asInputStream()) {
             return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private String createAndDownloadActivityAuditReport(ActivityAuditFilterDto request)
+            throws Exception {
+        val token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+        val createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(ACTIVITY_AUDIT_REPORT_WEB_CONTEXT), token, request);
+        createResponse.then().statusCode(202);
+
+        val createdJob = createResponse.as(JobAcknowledgement.class);
+
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.ACTIVITY_AUDIT_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    val jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+                    return jobResponse.statusCode() == 200
+                            && jobResponse.as(JobAcknowledgement.class).getStatus()
+                                    == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        val downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (var responseStream = downloadResponse.getBody().asInputStream()) {
+            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private void createReportJobAndAwaitCompletion(
+            String webContext, Object request, JobType expectedJobType) throws Exception {
+        val token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+        val createResponse =
+                restAssuredClient.executePostRequest(getLocalUrl(webContext), token, request);
+        createResponse.then().statusCode(202);
+
+        val createdJob = createResponse.as(JobAcknowledgement.class);
+
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(expectedJobType, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    val jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+                    return jobResponse.statusCode() == 200
+                            && jobResponse.as(JobAcknowledgement.class).getStatus()
+                                    == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
     }
 
     private String createAndDownloadListMaintenanceReport(ListMaintenanceFilterDto request)
