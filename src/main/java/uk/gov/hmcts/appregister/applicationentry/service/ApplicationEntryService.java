@@ -108,12 +108,12 @@ public interface ApplicationEntryService {
     MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(PayloadGetEntryInList entry);
 
     /**
-     * Retrieves an entry representation from a closed application list.
+     * Retrieves an entry representation when its parent application list is closed.
      *
      * @param entry The entry and closed list identifiers
      * @return A MatchResponse containing the entry details
      */
-    MatchResponse<EntryGetDetailDto> getClosedApplicationListEntryDetail(
+    MatchResponse<EntryGetDetailDto> getApplicationListEntryDetailFromClosedList(
             PayloadGetEntryInList entry);
 
     EntryPage getApplicationListEntries(

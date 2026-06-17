@@ -159,13 +159,13 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
-    public ResponseEntity<EntryGetDetailDto> getClosedApplicationListEntry(
+    public ResponseEntity<EntryGetDetailDto> getApplicationListEntryFromClosedList(
             UUID listId, UUID entryId) {
         PayloadGetEntryInList payloadForGet =
                 PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
 
         MatchResponse<EntryGetDetailDto> matchResponse =
-                applicationEntryService.getClosedApplicationListEntryDetail(payloadForGet);
+                applicationEntryService.getApplicationListEntryDetailFromClosedList(payloadForGet);
         return ResponseEntity.ok()
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)

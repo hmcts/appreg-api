@@ -39,9 +39,9 @@ import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsVa
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryFromClosedListValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
-import uk.gov.hmcts.appregister.applicationentry.validator.GetClosedApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
@@ -159,7 +159,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final GetApplicationEntryValidator getEntryValidator;
 
-    private final GetClosedApplicationEntryValidator getClosedEntryValidator;
+    private final GetApplicationEntryFromClosedListValidator getEntryFromClosedListValidator;
 
     private final GetApplicationListEntriesValidator getApplicationListEntriesValidator;
 
@@ -1373,14 +1373,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    public MatchResponse<EntryGetDetailDto> getClosedApplicationListEntryDetail(
+    public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetailFromClosedList(
             PayloadGetEntryInList entry) {
         log.debug(
-                "Started: Getting closed application list entry detail: {} for list: {}",
+                "Started: Getting application list entry detail from closed list: {} for list: {}",
                 entry.getEntryId(),
                 entry.getListId());
 
-        return getClosedEntryValidator.validate(
+        return getEntryFromClosedListValidator.validate(
                 entry, (req, success) -> buildApplicationListEntryDetailResponse(entry, success));
     }
 

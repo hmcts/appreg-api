@@ -2486,7 +2486,7 @@ paths:
     get:
       description: |
         Returns the selected Application List Entry details and existing notes when the parent Application List is closed.
-      operationId: getClosedApplicationListEntry
+      operationId: getApplicationListEntryFromClosedList
       parameters:
       - description: Public identifier of the Application List.
         example: 123e4567-e89b-12d3-a456-426655440000
@@ -2510,8 +2510,8 @@ paths:
             application/vnd.hmcts.appreg.v1+json:
               schema:
                 $ref: "#/components/schemas/entry-get-detail-dto_1"
-          description: Returns a detailed Application List Entry from a closed Application
-            List
+          description: Returns a detailed Application List Entry whose parent Application
+            List is closed
           headers:
             Vary:
               description: Response varies by Accept for media-type versioning.
@@ -2596,12 +2596,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/problem"
           description: Unexpected server error.
-      summary: Get an Application List Entry from a closed Application List
+      summary: Get an Application List Entry whose Application List is closed
       tags:
       - application-list-entries
     put:
       description: |
-        Updates the AL when it is closed.
+        Updates notes for an Application List Entry when its parent Application List is closed.
       operationId: updateClosedApplicationListEntry
       parameters:
       - description: Public identifier of the Application List.
@@ -2707,7 +2707,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/problem"
           description: Unexpected server error.
-      summary: Update a closed Application List Entry
+      summary: Update notes for an Application List Entry whose Application List is
+        closed
       tags:
       - application-list-entries
   /application-lists/{listId}/entries/results:
@@ -6229,7 +6230,7 @@ components:
     entry_update_closed_dto:
       additionalProperties: false
       description: |
-        Request payload to update a closed Application List Entry.
+        Request payload to update notes for an Application List Entry whose Application List is closed.
       properties:
         additionalNotes:
           description: The additional notes to add to append to the Application List

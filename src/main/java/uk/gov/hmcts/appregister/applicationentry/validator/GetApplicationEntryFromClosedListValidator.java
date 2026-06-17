@@ -16,11 +16,11 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 /**
- * Validates that an application list entry can be read from a closed application list.
+ * Validates that an application list entry can be read when its parent application list is closed.
  */
 @Component
 @RequiredArgsConstructor
-public class GetClosedApplicationEntryValidator
+public class GetApplicationEntryFromClosedListValidator
         implements Validator<PayloadGetEntryInList, GetEntryValidationSuccess> {
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
@@ -49,7 +49,7 @@ public class GetClosedApplicationEntryValidator
         if (applicationList.get().getStatus() != Status.CLOSED) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
-                    "The application list is not closed %s".formatted(validatable.getListId()));
+                    "The application list %s is not closed".formatted(validatable.getListId()));
         }
 
         Optional<ApplicationListEntry> entry =
@@ -66,8 +66,8 @@ public class GetClosedApplicationEntryValidator
         if (entry.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST,
-                    "The application list entry does not exist %s"
-                            .formatted(validatable.getEntryId()));
+                    "The application list entry %s does not belong to application list %s"
+                            .formatted(validatable.getEntryId(), validatable.getListId()));
         }
 
         return validateSuccess.apply(

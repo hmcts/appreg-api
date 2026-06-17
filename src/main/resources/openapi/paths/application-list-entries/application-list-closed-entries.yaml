@@ -12,15 +12,15 @@ parameters:
     description: Public identifier of the Application List Entry.
     example: "123e4567-e89b-12d3-a456-426655440000"
 get:
-  operationId: getClosedApplicationListEntry
+  operationId: getApplicationListEntryFromClosedList
   tags: [ application-list-entries ]
-  summary: Get an Application List Entry from a closed Application List
+  summary: Get an Application List Entry whose Application List is closed
   description: >
     Returns the selected Application List Entry details and existing notes when the parent
     Application List is closed.
   responses:
     "200":
-      description: Returns a detailed Application List Entry from a closed Application List
+      description: Returns a detailed Application List Entry whose parent Application List is closed
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -45,9 +45,9 @@ get:
 put:
   operationId: updateClosedApplicationListEntry
   tags: [ application-list-entries ]
-  summary: Update a closed Application List Entry
+  summary: Update notes for an Application List Entry whose Application List is closed
   description: >
-    Updates the AL when it is closed.
+    Updates notes for an Application List Entry when its parent Application List is closed.
   requestBody:
     required: true
     content:

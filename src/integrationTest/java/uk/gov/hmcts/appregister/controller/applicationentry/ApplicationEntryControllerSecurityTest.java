@@ -34,6 +34,8 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
     private static final String CREATE_ENTRY_CONTEXT = "application-lists";
     protected static final String WEB_CONTEXT_UPDATE_CLOSED_ENTRY =
             "application-lists/%s/entries/closed/%s";
+    protected static final String WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST =
+            "application-lists/%s/entries/closed/%s";
     private static final String DELETE_ENTRY_CONTEXT = "application-lists/%s/entries/%s";
 
     @Autowired private TransactionalUnitOfWork unitOfWork;
@@ -113,6 +115,15 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
                         .url(getLocalUrl(DELETE_ENTRY_CONTEXT.formatted(listId, entryId)))
                         .method(HttpMethod.DELETE)
                         .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST.formatted(
+                                                listId, entryId)))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
                         .build(),
                 RestEndpointDescription.builder()
                         .url(

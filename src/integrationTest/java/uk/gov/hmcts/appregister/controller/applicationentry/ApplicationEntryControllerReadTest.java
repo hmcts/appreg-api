@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Month;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import lombok.val;
 import org.hamcrest.Matchers;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,15 +49,21 @@ import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
+import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -291,6 +299,102 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
     }
 
     @Test
+    void givenEntryBelongsToClosedList_whenGetEntryFromClosedList_thenReturnsEntryNotesAndEtag()
+            throws Exception {
+        String notes = "Existing notes for closed list read";
+        EntryInClosedListFixture fixture = createEntryInClosedList(notes);
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST.formatted(
+                                        fixture.listId(), fixture.entryId())),
+                        createAdminToken().fetchTokenForRole());
+
+        responseSpec.then().statusCode(HttpStatus.OK.value());
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpec));
+
+        EntryGetDetailDto entryGetDetailDto = responseSpec.as(EntryGetDetailDto.class);
+        Assertions.assertEquals(fixture.entryId(), entryGetDetailDto.getId());
+        Assertions.assertEquals(fixture.listId(), entryGetDetailDto.getListId());
+        Assertions.assertEquals(
+                fixture.createdEntry().getApplicationCode(),
+                entryGetDetailDto.getApplicationCode());
+        Assertions.assertEquals(notes, entryGetDetailDto.getNotes());
+        Assertions.assertNotNull(entryGetDetailDto.getApplicant());
+
+        Response openListGetResponse =
+                getAppEntryDataForAppListId(fixture.listId(), fixture.entryId());
+        Assertions.assertEquals(HttpStatus.CONFLICT.value(), openListGetResponse.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                openListGetResponse);
+    }
+
+    @Test
+    void givenMissingListId_whenGetEntryFromClosedList_thenReturnsNotFound() throws Exception {
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST.formatted(
+                                        UUID.randomUUID(), UUID.randomUUID())),
+                        createAdminToken().fetchTokenForRole());
+
+        responseSpec.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(ApplicationListError.LIST_NOT_FOUND.getCode(), responseSpec);
+    }
+
+    @Test
+    void givenMissingEntryId_whenGetEntryFromClosedList_thenReturnsNotFound() throws Exception {
+        EntryInClosedListFixture fixture = createEntryInClosedList("Existing notes");
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST.formatted(
+                                        fixture.listId(), UUID.randomUUID())),
+                        createAdminToken().fetchTokenForRole());
+
+        responseSpec.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.LIST_ENTRY_NOT_FOUND.getCode(), responseSpec);
+    }
+
+    @Test
+    void givenEntryBelongsToDifferentList_whenGetEntryFromClosedList_thenReturnsConflict()
+            throws Exception {
+        EntryInClosedListFixture fixture = createEntryInClosedList("Existing notes");
+        EntryGetDetailDto otherEntry = createListEntryWithAllData().as(EntryGetDetailDto.class);
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST.formatted(
+                                        fixture.listId(), otherEntry.getId())),
+                        createAdminToken().fetchTokenForRole());
+
+        responseSpec.then().statusCode(HttpStatus.CONFLICT.value());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST.getCode(), responseSpec);
+    }
+
+    @Test
+    void givenParentListIsOpen_whenGetEntryFromClosedList_thenReturnsConflict() throws Exception {
+        EntryGetDetailDto openListEntry = createListEntryWithAllData().as(EntryGetDetailDto.class);
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST.formatted(
+                                        openListEntry.getListId(), openListEntry.getId())),
+                        createAdminToken().fetchTokenForRole());
+
+        responseSpec.then().statusCode(HttpStatus.CONFLICT.value());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), responseSpec);
+    }
+
+    @Test
     void testGetApplicationListEntriesForUnknownListReturns404() throws Exception {
         var tokenGenerator = createAdminToken();
 
@@ -310,6 +414,67 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 ApplicationListError.LIST_NOT_FOUND.getCode().getMessage(),
                 problemDetail.getDetail());
     }
+
+    private EntryInClosedListFixture createEntryInClosedList(String notes) throws Exception {
+        Response responseSpecCreate =
+                createListEntryWithAllData(
+                        Optional.empty(),
+                        dto -> {
+                            dto.setNumberOfRespondents(null);
+                            dto.setNotes(notes);
+
+                            Official official = Instancio.create(Official.class);
+                            dto.setOfficials(List.of(official));
+
+                            FeeStatus feeStatus = Instancio.create(FeeStatus.class);
+                            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        });
+
+        EntryGetDetailDto createdEntry = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        ResultCreateDto resultCreateDto = Instancio.create(ResultCreateDto.class);
+        resultCreateDto.setWordingFields(List.of());
+        resultCreateDto.setResultCode("CASE");
+
+        var token = createAdminToken().fetchTokenForRole();
+
+        Response responseResult =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_CREATE_ENTRY_RESULT.formatted(
+                                        createdEntry.getListId(), createdEntry.getId())),
+                        token,
+                        resultCreateDto);
+
+        responseResult.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListUpdateDto updateDto =
+                new ApplicationListUpdateDto()
+                        .courtLocationCode("CCC003")
+                        .otherLocationDescription(null)
+                        .cjaCode(null)
+                        .durationHours(2)
+                        .durationMinutes(23)
+                        .date(LocalDate.now(java.time.ZoneOffset.UTC))
+                        .time(LocalTime.now(java.time.Clock.systemUTC()))
+                        .description("description")
+                        .status(ApplicationListStatus.CLOSED);
+
+        Response responseSpecPut =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + createdEntry.getListId()),
+                        token,
+                        updateDto);
+
+        responseSpecPut.then().statusCode(HttpStatus.OK.value());
+
+        return new EntryInClosedListFixture(
+                createdEntry.getListId(), createdEntry.getId(), createdEntry);
+    }
+
+    private record EntryInClosedListFixture(
+            UUID listId, UUID entryId, EntryGetDetailDto createdEntry) {}
 
     @Test
     @DisplayName("GET Application List Entries persists read audit rows")

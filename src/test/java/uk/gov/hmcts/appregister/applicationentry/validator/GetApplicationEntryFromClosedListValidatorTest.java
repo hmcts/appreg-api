@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -23,13 +24,13 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 
 @ExtendWith(MockitoExtension.class)
-class GetClosedApplicationEntryValidatorTest {
+class GetApplicationEntryFromClosedListValidatorTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
 
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
-    @InjectMocks private GetClosedApplicationEntryValidator validator;
+    @InjectMocks private GetApplicationEntryFromClosedListValidator validator;
 
     @Test
     void givenClosedListAndMatchingEntry_whenValidate_thenReturnsSuccess() {
@@ -66,7 +67,7 @@ class GetClosedApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(ApplicationListError.LIST_NOT_FOUND, exception);
+        assertError(ApplicationListError.LIST_NOT_FOUND, HttpStatus.NOT_FOUND, exception);
     }
 
     @Test
@@ -82,7 +83,7 @@ class GetClosedApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(ApplicationListError.LIST_NOT_FOUND, exception);
+        assertError(ApplicationListError.LIST_NOT_FOUND, HttpStatus.NOT_FOUND, exception);
     }
 
     @Test
@@ -98,7 +99,10 @@ class GetClosedApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT, exception);
+        assertError(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                HttpStatus.CONFLICT,
+                exception);
     }
 
     @Test
@@ -115,7 +119,7 @@ class GetClosedApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(AppListEntryError.LIST_ENTRY_NOT_FOUND, exception);
+        assertError(AppListEntryError.LIST_ENTRY_NOT_FOUND, HttpStatus.NOT_FOUND, exception);
     }
 
     @Test
@@ -135,7 +139,7 @@ class GetClosedApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST, exception);
+        assertError(AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST, HttpStatus.CONFLICT, exception);
     }
 
     private static ApplicationList applicationList(Status status, YesOrNo deleted) {
@@ -149,8 +153,9 @@ class GetClosedApplicationEntryValidatorTest {
         return PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
     }
 
-    private static void assertError(ErrorCodeEnum expected, AppRegistryException exception) {
-        Assertions.assertEquals(
-                expected.getCode().getType(), exception.getCode().getCode().getType());
+    private static void assertError(
+            ErrorCodeEnum expected, HttpStatus expectedStatus, AppRegistryException exception) {
+        Assertions.assertSame(expected, exception.getCode());
+        Assertions.assertEquals(expectedStatus, exception.getCode().getCode().getHttpCode());
     }
 }

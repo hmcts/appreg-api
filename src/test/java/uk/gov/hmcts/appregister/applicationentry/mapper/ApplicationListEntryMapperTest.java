@@ -959,7 +959,7 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
-    void givenClosedReadEntry_whenToEntryGetDetailDto_thenMapsContextCodeIdsAndNotes() {
+    void givenEntryFromClosedList_whenToEntryGetDetailDto_thenMapsContextCodeIdsAndNotes() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
         NameAddress applicant = new NameAddressTestData().somePerson();
