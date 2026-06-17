@@ -106,41 +106,7 @@ class PrivateProsecutorsIndexReportDataReader
                             LIKE '%' || UPPER(:respondentOrganisationName) || '%'
                     )
                     AND (
-                        (
-                            :cjaCode IS NOT NULL
-                            AND UPPER(cja.cja_code) = UPPER(:cjaCode)
-                            AND UPPER(al.other_courthouse)
-                                LIKE '%' || UPPER(:otherCourthouse) || '%'
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND (
-                                UPPER(al.other_courthouse)
-                                    LIKE '%' || UPPER(:otherCourthouse) || '%'
-                                OR :otherCourthouse IS NULL
-                            )
-                            AND (
-                                UPPER(al.courthouse_code)
-                                    LIKE '%' || UPPER(:courthouseCode) || '%'
-                                OR :courthouseCode IS NULL
-                            )
-                        )
-                        OR (
-                            :cjaCode IS NOT NULL
-                            AND (
-                                UPPER(SUBSTRING(al.courthouse_code FROM 2 FOR 2))
-                                    = UPPER(:cjaCode)
-                                OR UPPER(cja.cja_code) = UPPER(:cjaCode)
-                            )
-                            AND :otherCourthouse IS NULL
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND :otherCourthouse IS NULL
-                            AND :courthouseCode IS NULL
-                        )
+                        {{LEGACY_LOCATION_PREDICATE}}
                     )
                 UNION ALL
                 SELECT
@@ -202,41 +168,7 @@ class PrivateProsecutorsIndexReportDataReader
                             LIKE '%' || UPPER(:respondentOrganisationName) || '%'
                     )
                     AND (
-                        (
-                            :cjaCode IS NOT NULL
-                            AND UPPER(cja.cja_code) = UPPER(:cjaCode)
-                            AND UPPER(al.other_courthouse)
-                                LIKE '%' || UPPER(:otherCourthouse) || '%'
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND (
-                                UPPER(al.other_courthouse)
-                                    LIKE '%' || UPPER(:otherCourthouse) || '%'
-                                OR :otherCourthouse IS NULL
-                            )
-                            AND (
-                                UPPER(al.courthouse_code)
-                                    LIKE '%' || UPPER(:courthouseCode) || '%'
-                                OR :courthouseCode IS NULL
-                            )
-                        )
-                        OR (
-                            :cjaCode IS NOT NULL
-                            AND (
-                                UPPER(SUBSTRING(al.courthouse_code FROM 2 FOR 2))
-                                    = UPPER(:cjaCode)
-                                OR UPPER(cja.cja_code) = UPPER(:cjaCode)
-                            )
-                            AND :otherCourthouse IS NULL
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND :otherCourthouse IS NULL
-                            AND :courthouseCode IS NULL
-                        )
+                        {{LEGACY_LOCATION_PREDICATE}}
                     )
             ),
             filtered_apps AS (
@@ -298,7 +230,14 @@ class PrivateProsecutorsIndexReportDataReader
             LEFT JOIN result_pivot rp
                 ON rp.ale_ale_id = fa.ale_id
             ORDER BY fa.application_list_date DESC, fa.ale_id DESC
-            """;
+            """
+                    .replace(
+                            "{{LEGACY_LOCATION_PREDICATE}}",
+                            LegacyMisReportLocationSql.predicate(
+                                    "al.courthouse_code",
+                                    "al.other_courthouse",
+                                    "cja.cja_code",
+                                    "otherCourthouse"));
 
     private static final RowMapper<PrivateProsecutorsIndexReportRow> ROW_MAPPER =
             new PrivateProsecutorsIndexReportRowMapper();

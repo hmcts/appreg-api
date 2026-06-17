@@ -118,41 +118,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                     -- Maintains legacy MIS Workload report AR5-7 location semantics.
                     AND (
-                        (
-                            :cjaCode IS NOT NULL
-                            AND UPPER(cja.cja_code) = UPPER(:cjaCode)
-                            AND UPPER(al.other_courthouse)
-                                LIKE '%' || UPPER(:otherLocation) || '%'
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND (
-                                UPPER(al.other_courthouse)
-                                    LIKE '%' || UPPER(:otherLocation) || '%'
-                                OR :otherLocation IS NULL
-                            )
-                            AND (
-                                UPPER(al.courthouse_code)
-                                    LIKE '%' || UPPER(:courthouseCode) || '%'
-                                OR :courthouseCode IS NULL
-                            )
-                        )
-                        OR (
-                            :cjaCode IS NOT NULL
-                            AND (
-                                UPPER(SUBSTRING(al.courthouse_code FROM 2 FOR 2))
-                                    = UPPER(:cjaCode)
-                                OR UPPER(cja.cja_code) = UPPER(:cjaCode)
-                            )
-                            AND :otherLocation IS NULL
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND :otherLocation IS NULL
-                            AND :courthouseCode IS NULL
-                        )
+                        {{LEGACY_LOCATION_PREDICATE}}
                     )
                     AND(:hasCursor IS FALSE
                            OR :lastListDate IS NULL
@@ -184,7 +150,14 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     list_date DESC,
                     ale.ale_id DESC
                 LIMIT :limit
-            """;
+            """
+                    .replace(
+                            "{{LEGACY_LOCATION_PREDICATE}}",
+                            LegacyMisReportLocationSql.predicate(
+                                    "al.courthouse_code",
+                                    "al.other_courthouse",
+                                    "cja.cja_code",
+                                    "otherLocation"));
 
     private static final RowMapper<WorkloadReportRow> ROW_MAPPER = new WorkloadReportRowMapper();
 
