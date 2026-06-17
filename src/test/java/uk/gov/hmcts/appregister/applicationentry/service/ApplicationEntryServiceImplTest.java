@@ -1196,6 +1196,41 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void
+            givenClosedReadRequest_whenGetClosedApplicationListEntryDetail_thenMapsEntryAndReturnsEtag() {
+        ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        getEntryValidationSuccess =
+                GetEntryValidationSuccess.builder()
+                        .applicationListEntry(applicationListEntry)
+                        .applicationList(applicationList)
+                        .build();
+
+        applicationListEntry.getEntryFeeIds().clear();
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, false))
+                .thenReturn(entryGetDetailDto);
+
+        PayloadGetEntryInList payload =
+                PayloadGetEntryInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                service.getClosedApplicationListEntryDetail(payload);
+
+        Assertions.assertEquals(entryGetDetailDto, matchResponse.getPayload());
+        Assertions.assertNotNull(matchResponse.getEtag());
+        verify(getClosedEntryValidator).validate(eq(payload), any());
+        verify(getEntryValidator, never()).validate(eq(payload), any());
+        verify(applicationListEntryMapStructMapper)
+                .toEntryGetDetailDto(applicationListEntry, false);
+    }
+
+    @Test
     void testGetApplicationListEntries_success() {
         ApplicationList applicationList = new AppListTestData().someComplete();
 

@@ -959,6 +959,38 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void givenClosedReadEntry_whenToEntryGetDetailDto_thenMapsContextCodeIdsAndNotes() {
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        NameAddress applicant = new NameAddressTestData().somePerson();
+        ApplicationListEntry appListEntry = new AppListEntryTestData().someComplete();
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+
+        appListEntry.setUuid(entryId);
+        appListEntry.getApplicationList().setUuid(listId);
+        appListEntry.setAnamedaddress(applicant);
+        appListEntry.setStandardApplicant(null);
+        appListEntry.setNotes("Existing notes for closed update journey");
+        appListEntry.setApplicationListEntryWording("Closed read wording");
+
+        applicationCode.setCode("AD99002");
+        applicationCode.setWording("Closed read wording");
+        appListEntry.setApplicationCode(applicationCode);
+
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        EntryGetDetailDto dto = mapper.toEntryGetDetailDto(appListEntry, false);
+
+        Assertions.assertEquals(entryId, dto.getId());
+        Assertions.assertEquals(listId, dto.getListId());
+        Assertions.assertEquals("AD99002", dto.getApplicationCode());
+        Assertions.assertEquals("Existing notes for closed update journey", dto.getNotes());
+        Assertions.assertFalse(dto.getHasOffsiteFee());
+        validateApplicantPerson(applicant, dto.getApplicant());
+    }
+
+    @Test
     void
             toEntryGetDetailDtoApplicantPersonRespondentOrg_provideValidData_validModelListGenerated() {
         AppListEntryTestData appListEntryTestData = new AppListEntryTestData();
