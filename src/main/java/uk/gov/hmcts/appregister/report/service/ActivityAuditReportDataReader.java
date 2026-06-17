@@ -123,7 +123,11 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                                             .getEventName(),
                                     ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT
                                             .getEventName(),
+                                    ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT
+                                            .getEventName(),
                                     ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT
+                                            .getEventName(),
+                                    ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT
                                             .getEventName(),
                                     ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT
                                             .getEventName(),

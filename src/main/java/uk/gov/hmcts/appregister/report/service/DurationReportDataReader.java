@@ -42,40 +42,7 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                 AND (al.is_deleted IS NULL OR al.is_deleted <> 'Y')
                 -- Maintains legacy MIS Duration report AR5-7 location semantics.
                 AND (
-                    (
-                        :cjaCode IS NOT NULL
-                        AND UPPER(cja.cja_code) = UPPER(:cjaCode)
-                        AND UPPER(al.other_courthouse)
-                            LIKE '%' || UPPER(:otherCourthouse) || '%'
-                        AND :courthouseCode IS NULL
-                    )
-                    OR (
-                        :cjaCode IS NULL
-                        AND (
-                            UPPER(al.other_courthouse)
-                                LIKE '%' || UPPER(:otherCourthouse) || '%'
-                            OR :otherCourthouse IS NULL
-                        )
-                        AND (
-                            UPPER(al.courthouse_code)
-                                LIKE '%' || UPPER(:courthouseCode) || '%'
-                            OR :courthouseCode IS NULL
-                        )
-                    )
-                    OR (
-                        :cjaCode IS NOT NULL
-                        AND (
-                            UPPER(SUBSTRING(al.courthouse_code FROM 2 FOR 2)) = UPPER(:cjaCode)
-                            OR UPPER(cja.cja_code) = UPPER(:cjaCode)
-                        )
-                        AND :otherCourthouse IS NULL
-                        AND :courthouseCode IS NULL
-                    )
-                    OR (
-                        :cjaCode IS NULL
-                        AND :otherCourthouse IS NULL
-                        AND :courthouseCode IS NULL
-                    )
+                    {{LEGACY_LOCATION_PREDICATE}}
                 )
                 AND (
                     :hasCursor IS FALSE
@@ -87,7 +54,14 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                 )
             ORDER BY al.application_list_date DESC, al.al_id DESC
             LIMIT :limit
-            """;
+            """
+                    .replace(
+                            "{{LEGACY_LOCATION_PREDICATE}}",
+                            LegacyMisReportLocationSql.predicate(
+                                    "al.courthouse_code",
+                                    "al.other_courthouse",
+                                    "cja.cja_code",
+                                    "otherCourthouse"));
 
     private static final RowMapper<DurationReportRow> ROW_MAPPER = new DurationReportRowMapper();
 

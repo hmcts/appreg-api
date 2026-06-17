@@ -137,7 +137,9 @@ class ActivityAuditReportDataReaderTest {
                         "Update Entry Application List",
                         "Create Activity Audit Report",
                         "Create Fees Report",
+                        "Create Search Warrants Report",
                         "Create Duration Report",
+                        "Create Workload Report",
                         "Create List Maintenance Report",
                         "Create Private Prosecutors Index Report",
                         "Report Job Status Transition",
@@ -152,13 +154,15 @@ class ActivityAuditReportDataReaderTest {
         Assertions.assertEquals("Update Entry Application List", parameters.getValue("eventName3"));
         Assertions.assertEquals("Create Activity Audit Report", parameters.getValue("eventName4"));
         Assertions.assertEquals("Create Fees Report", parameters.getValue("eventName5"));
-        Assertions.assertEquals("Create Duration Report", parameters.getValue("eventName6"));
+        Assertions.assertEquals("Create Search Warrants Report", parameters.getValue("eventName6"));
+        Assertions.assertEquals("Create Duration Report", parameters.getValue("eventName7"));
+        Assertions.assertEquals("Create Workload Report", parameters.getValue("eventName8"));
         Assertions.assertEquals(
-                "Create List Maintenance Report", parameters.getValue("eventName7"));
+                "Create List Maintenance Report", parameters.getValue("eventName9"));
         Assertions.assertEquals(
-                "Create Private Prosecutors Index Report", parameters.getValue("eventName8"));
-        Assertions.assertEquals("Report Job Status Transition", parameters.getValue("eventName9"));
-        Assertions.assertEquals("Download Report", parameters.getValue("eventName10"));
+                "Create Private Prosecutors Index Report", parameters.getValue("eventName10"));
+        Assertions.assertEquals("Report Job Status Transition", parameters.getValue("eventName11"));
+        Assertions.assertEquals("Download Report", parameters.getValue("eventName12"));
 
         if (expectedCursor) {
             Assertions.assertEquals(
