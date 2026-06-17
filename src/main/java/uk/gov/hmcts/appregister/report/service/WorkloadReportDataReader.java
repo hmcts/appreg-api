@@ -59,7 +59,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                           FROM (
                               SELECT *,
                                      ROW_NUMBER() OVER
-                                     (PARTITION BY ale_ale_id, official_type ORDER BY official_type DESC) AS rn
+                                     (PARTITION BY ale_ale_id, official_type ORDER BY aleo_id) AS rn
                               FROM app_list_entry_official
                           ) ranked
                           GROUP BY ale_ale_id
@@ -116,12 +116,10 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     AND (ale.is_deleted = 'N' OR ale.is_deleted IS NULL)
                     AND al.application_list_date >= :dateFrom
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
-                    AND(:courthouseCode IS NULL
-                           OR UPPER(al.courthouse_code) LIKE '%' || UPPER(:courthouseCode) || '%')
-                    AND(:otherLocation IS NULL
-                           OR UPPER(al.other_courthouse) LIKE '%' || UPPER(:otherLocation) || '%')
-                    AND( :cjaCode IS NULL
-                           OR UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%')
+                    -- Maintains legacy MIS Workload report AR5-7 location semantics.
+                    AND (
+                        {{LEGACY_LOCATION_PREDICATE}}
+                    )
                     AND(:hasCursor IS FALSE
                            OR :lastListDate IS NULL
                            OR al.application_list_date < :lastListDate
@@ -152,7 +150,14 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     list_date DESC,
                     ale.ale_id DESC
                 LIMIT :limit
-            """;
+            """
+                    .replace(
+                            "{{LEGACY_LOCATION_PREDICATE}}",
+                            LegacyMisReportLocationSql.predicate(
+                                    "al.courthouse_code",
+                                    "al.other_courthouse",
+                                    "cja.cja_code",
+                                    "otherLocation"));
 
     private static final RowMapper<WorkloadReportRow> ROW_MAPPER = new WorkloadReportRowMapper();
 

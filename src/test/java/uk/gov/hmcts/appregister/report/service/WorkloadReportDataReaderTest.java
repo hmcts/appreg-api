@@ -183,6 +183,9 @@ class WorkloadReportDataReaderTest {
         assertThat(normalisedQuery).contains("middle_name as forename_2");
         assertThat(normalisedQuery).contains("null as forename_3");
         assertThat(normalisedQuery).contains("last_name as surname");
+        assertThat(normalisedQuery).contains("ROW_NUMBER() OVER");
+        assertThat(normalisedQuery)
+                .contains("(PARTITION BY ale_ale_id, official_type ORDER BY aleo_id) AS rn");
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(al.other_courthouse) "
@@ -191,8 +194,13 @@ class WorkloadReportDataReaderTest {
                 normalisedQuery.contains(
                         "UPPER(al.courthouse_code) "
                                 + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
+        Assertions.assertTrue(normalisedQuery.contains("UPPER(cja.cja_code) = UPPER(:cjaCode)"));
         Assertions.assertTrue(
-                normalisedQuery.contains("UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%'"));
+                normalisedQuery.contains(
+                        "UPPER(SUBSTRING(al.courthouse_code FROM 2 FOR 2)) = UPPER(:cjaCode)"));
+        assertThat(normalisedQuery).contains("OR :otherLocation IS NULL");
+        assertThat(normalisedQuery).contains("AND :otherLocation IS NULL");
+        assertThat(normalisedQuery).contains("AND :courthouseCode IS NULL");
     }
 
     private ResultSet resultSet() throws Exception {
