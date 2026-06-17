@@ -100,9 +100,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
                         () -> validator.validate(payload(listId, entryId)));
 
         assertError(
-                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
-                HttpStatus.CONFLICT,
-                exception);
+                AppListEntryError.APPLICATION_LIST_MUST_BE_CLOSED, HttpStatus.CONFLICT, exception);
     }
 
     @Test

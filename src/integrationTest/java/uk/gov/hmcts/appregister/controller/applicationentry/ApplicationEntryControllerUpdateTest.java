@@ -1717,8 +1717,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         Assertions.assertEquals(409, responseSpecUpdate.getStatusCode());
         ProblemAssertUtil.assertEquals(
-                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
-                responseSpecUpdate);
+                AppListEntryError.APPLICATION_LIST_MUST_BE_CLOSED.getCode(), responseSpecUpdate);
     }
 
     @Test

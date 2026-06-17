@@ -964,7 +964,6 @@ class ApplicationListEntryMapperTest {
         UUID entryId = UUID.randomUUID();
         NameAddress applicant = new NameAddressTestData().somePerson();
         ApplicationListEntry appListEntry = new AppListEntryTestData().someComplete();
-        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         appListEntry.setUuid(entryId);
         appListEntry.getApplicationList().setUuid(listId);
@@ -973,6 +972,7 @@ class ApplicationListEntryMapperTest {
         appListEntry.setNotes("Existing notes for closed update journey");
         appListEntry.setApplicationListEntryWording("Closed read wording");
 
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         applicationCode.setCode("AD99002");
         applicationCode.setWording("Closed read wording");
         appListEntry.setApplicationCode(applicationCode);

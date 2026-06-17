@@ -391,7 +391,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         responseSpec.then().statusCode(HttpStatus.CONFLICT.value());
         ProblemAssertUtil.assertEquals(
-                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), responseSpec);
+                AppListEntryError.APPLICATION_LIST_MUST_BE_CLOSED.getCode(), responseSpec);
     }
 
     @Test

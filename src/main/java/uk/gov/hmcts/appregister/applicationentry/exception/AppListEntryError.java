@@ -216,7 +216,11 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     OFFICIAL_SURNAME_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44"));
+                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44")),
+
+    APPLICATION_LIST_MUST_BE_CLOSED(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT, "The application list must be closed", "ALE-45"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
