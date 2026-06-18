@@ -23,6 +23,8 @@ public class UpdateClosedApplicationEntryValidator
         implements Validator<
                 PayloadForUpdateClosedEntry, UpdateApplicationEntryClosedValidationSuccess> {
 
+    private static final int MAX_NOTES_LENGTH = 4000;
+
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
     private final ApplicationListRepository applicationListRepository;
@@ -77,6 +79,12 @@ public class UpdateClosedApplicationEntryValidator
                     "The application list is not closed %s".formatted(validatable.getId()));
         }
 
+        validateCombinedNotesLength(validatable, entry.get());
+
+        if (validateSuccess == null) {
+            return null;
+        }
+
         // make the callback to the success callback
         return validateSuccess.apply(
                 validatable,
@@ -84,5 +92,23 @@ public class UpdateClosedApplicationEntryValidator
                         .applicationList(applicationList.get())
                         .applicationEntryId(entry.get())
                         .build());
+    }
+
+    private void validateCombinedNotesLength(
+            PayloadForUpdateClosedEntry validatable, ApplicationListEntry entry) {
+        String existingNotes = entry.getNotes() == null ? "" : entry.getNotes();
+        String additionalNotes = validatable.getData().getAdditionalNotes();
+        int separatorLength = existingNotes.isEmpty() || additionalNotes == null ? 0 : 1;
+        int combinedNotesLength =
+                existingNotes.length()
+                        + separatorLength
+                        + (additionalNotes == null ? 0 : additionalNotes.length());
+
+        if (combinedNotesLength > MAX_NOTES_LENGTH) {
+            throw new AppRegistryException(
+                    AppListEntryError.NOTES_TOO_LONG,
+                    "Combined notes length %d exceeds the 4000 character limit"
+                            .formatted(combinedNotesLength));
+        }
     }
 }

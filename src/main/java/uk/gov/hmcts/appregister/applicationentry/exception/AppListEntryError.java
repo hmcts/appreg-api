@@ -216,7 +216,13 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     OFFICIAL_SURNAME_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44"));
+                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44")),
+
+    NOTES_TOO_LONG(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Combined notes must not exceed 4000 characters",
+                    "ALE-45"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

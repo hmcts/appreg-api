@@ -515,12 +515,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 req -> {
                                                     success.getApplicationEntryId()
                                                             .setNotes(
-                                                                    success.getApplicationEntryId()
-                                                                                    .getNotes()
-                                                                            + " "
-                                                                            + updateEntry
+                                                                    appendAdditionalNotes(
+                                                                            success.getApplicationEntryId()
+                                                                                    .getNotes(),
+                                                                            updateEntry
                                                                                     .getData()
-                                                                                    .getAdditionalNotes());
+                                                                                    .getAdditionalNotes()));
 
                                                     // update the notes by appending with the
                                                     // alternative
@@ -540,6 +540,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 }),
                                 // return the latest entities for the entry read on the update
                                 getKeyablesForCreateUpdateEtag(success.getApplicationEntryId())));
+    }
+
+    private static String appendAdditionalNotes(String existingNotes, String additionalNotes) {
+        if (existingNotes == null || existingNotes.isEmpty()) {
+            return additionalNotes;
+        }
+        if (additionalNotes == null || additionalNotes.isEmpty()) {
+            return existingNotes;
+        }
+        return existingNotes + " " + additionalNotes;
     }
 
     @Transactional
