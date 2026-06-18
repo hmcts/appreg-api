@@ -2539,6 +2539,122 @@ paths:
       tags:
       - application-list-entries
   /application-lists/{listId}/entries/closed/{entryId}:
+    get:
+      description: |
+        Returns the selected Application List Entry details and existing notes when the parent Application List is closed.
+      operationId: getApplicationListEntryFromClosedList
+      parameters:
+      - description: Public identifier of the Application List.
+        example: 123e4567-e89b-12d3-a456-426655440000
+        in: path
+        name: listId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Public identifier of the Application List Entry.
+        example: 123e4567-e89b-12d3-a456-426655440000
+        in: path
+        name: entryId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/vnd.hmcts.appreg.v1+json:
+              schema:
+                $ref: "#/components/schemas/entry-get-detail-dto_1"
+          description: Returns a detailed Application List Entry whose parent Application
+            List is closed
+          headers:
+            Vary:
+              description: Response varies by Accept for media-type versioning.
+              schema:
+                example: Accept
+                type: string
+            ETag:
+              description: Entity tag for optimistic concurrency in the follow-on
+                update flow.
+              schema:
+                example: '"9f2d6d4f4f2d6d4f4f2d6d4f4f2d6d4f"'
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Invalid request parameters.
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "404":
+          content:
+            application/problem+json:
+              examples:
+                missing:
+                  value:
+                    type: https://errors.hmcts.net/appreg/not-found
+                    title: Not Found
+                    status: 404
+                    detail: Result code with id=123 was not found
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: The requested resource was not found.
+        "409":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/conflict
+                    title: Conflict
+                    status: 409
+                    detail: The Application List could not be modified due to a conflict
+                      with its current state
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Conflict with the current state of the resource.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+      summary: Get an Application List Entry whose Application List is closed
+      tags:
+      - application-list-entries
     put:
       description: |
         Appends additional notes to an Application List Entry after its parent Application List has been closed. This is a command-style update and does not return an entry representation.
@@ -2648,7 +2764,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/problem"
           description: Unexpected server error.
-      summary: Update a closed Application List Entry
+      summary: Update notes for an Application List Entry whose Application List is
+        closed
       tags:
       - application-list-entries
   /application-lists/{listId}/entries/results:
@@ -6224,7 +6341,7 @@ components:
     entry_update_closed_dto:
       additionalProperties: false
       description: |
-        Request payload to update a closed Application List Entry.
+        Request payload to update notes for an Application List Entry whose Application List is closed.
       properties:
         additionalNotes:
           description: The additional notes to add to append to the Application List

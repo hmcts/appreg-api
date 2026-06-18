@@ -70,7 +70,7 @@ public interface ApplicationEntryService {
     MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry);
 
     /**
-     * <<<<<<< HEAD Updates a closed application entry.
+     * Updates a closed application entry.
      *
      * @param updateEntry The entry update data that representing the list data to be update
      * @return The match response with no data but an etag for concurrency control.
@@ -106,6 +106,15 @@ public interface ApplicationEntryService {
      * @return A MatchResponse containing the entry details
      */
     MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(PayloadGetEntryInList entry);
+
+    /**
+     * Retrieves an entry representation when its parent application list is closed.
+     *
+     * @param entry The entry and closed list identifiers
+     * @return A MatchResponse containing the entry details
+     */
+    MatchResponse<EntryGetDetailDto> getApplicationListEntryDetailFromClosedList(
+            PayloadGetEntryInList entry);
 
     EntryPage getApplicationListEntries(
             PayloadGetEntryInList payloadForGet,

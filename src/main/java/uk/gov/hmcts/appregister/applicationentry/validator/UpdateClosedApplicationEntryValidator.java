@@ -73,7 +73,7 @@ public class UpdateClosedApplicationEntryValidator
         // if the status is not closed then error
         if (applicationList.get().getStatus() != Status.CLOSED) {
             throw new AppRegistryException(
-                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                    AppListEntryError.APPLICATION_LIST_MUST_BE_CLOSED,
                     "The application list is not closed %s".formatted(validatable.getId()));
         }
 
