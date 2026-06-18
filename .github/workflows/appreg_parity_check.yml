@@ -60,7 +60,7 @@ jobs:
         run: echo "OUTPUT_DIR=${RUNNER_TEMP}/parity-output" >>"${GITHUB_ENV}"
 
       - name: Checkout default branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.DEFAULT_BRANCH }}
           fetch-depth: 0
