@@ -263,8 +263,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
         return getDto;
     }
 
-    @Transactional
     @Override
+    @Transactional(readOnly = true)
     public ResultPage search(
             PayloadGetEntryResultInList payloadGetEntryResultInList, PagingWrapper pageWrapper) {
         ResultPage resultPage = new ResultPage();

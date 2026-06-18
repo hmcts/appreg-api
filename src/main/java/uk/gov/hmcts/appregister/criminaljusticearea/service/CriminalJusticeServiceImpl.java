@@ -5,6 +5,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -22,6 +23,7 @@ import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;

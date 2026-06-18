@@ -32,12 +32,12 @@ import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.audit.service.NestedAuditPersistenceManager;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -47,7 +47,7 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 class DataAuditLoggerTest {
     @Mock private Auditor auditDifferentiator;
 
-    @Mock private DataAuditRepository dataAuditRepository;
+    @Mock private NestedAuditPersistenceManager nestedAuditPersistenceManager;
 
     @InjectMocks private DataAuditLogger dataAuditLogger;
 
@@ -59,9 +59,10 @@ class DataAuditLoggerTest {
         StartEvent startEvent =
                 new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(startEvent);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(startEvent);
 
-        verify(dataAuditRepository, never()).saveAll(any());
+        verify(nestedAuditPersistenceManager, never()).persistOrBuffer(any());
     }
 
     @Test
@@ -74,9 +75,10 @@ class DataAuditLoggerTest {
                         testData.someComplete());
         FailEvent auditRequest = new FailEvent(startEvent);
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, never()).saveAll(any());
+        verify(nestedAuditPersistenceManager, never()).persistOrBuffer(any());
     }
 
     /** This is a programmatic error as both new and old audit values should NEVER be null. */
@@ -84,7 +86,7 @@ class DataAuditLoggerTest {
     void testFailOldAndNewEntityNull() {
         var startEvent = new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", null);
         var auditRequest = new CompleteEvent(startEvent, null, null);
-        var logger = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
+        var logger = new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager);
 
         var ex =
                 Assertions.assertThrows(
@@ -101,7 +103,7 @@ class DataAuditLoggerTest {
         var startEvent =
                 new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", new ApplicationList());
         var auditRequest = new CompleteEvent(startEvent, null, new ApplicationCode());
-        var logger = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
+        var logger = new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager);
 
         var ex =
                 Assertions.assertThrows(
@@ -124,7 +126,7 @@ class DataAuditLoggerTest {
         var startEvent =
                 new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", applicationList);
         var auditRequest = new CompleteEvent(startEvent, null, applicationList2);
-        var logger = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
+        var logger = new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager);
 
         var ex =
                 Assertions.assertThrows(
@@ -142,10 +144,11 @@ class DataAuditLoggerTest {
                 new StartEvent(
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", oldCode);
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
         // repo was not called as this is a get operation
-        verify(dataAuditRepository, never()).saveAll(any());
+        verify(nestedAuditPersistenceManager, never()).persistOrBuffer(any());
     }
 
     @Test
@@ -170,9 +173,10 @@ class DataAuditLoggerTest {
                         List.of(
                                 new AuditableData(tableName, field, newValue),
                                 new AuditableData(tableName, field1, newValue2)));
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
 
         DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -208,9 +212,10 @@ class DataAuditLoggerTest {
         when(auditDifferentiator.extractAuditData(CrudEnum.READ, newCode))
                 .thenReturn(List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "")));
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, never()).saveAll(any());
+        verify(nestedAuditPersistenceManager, never()).persistOrBuffer(any());
     }
 
     @Test
@@ -227,9 +232,10 @@ class DataAuditLoggerTest {
                 .thenReturn(
                         List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "value")));
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
         Assertions.assertEquals("value", auditListCaptor.getValue().getFirst().getNewValue());
         Assertions.assertEquals(
                 CrudEnum.READ, auditListCaptor.getValue().getFirst().getUpdateType());
@@ -247,9 +253,10 @@ class DataAuditLoggerTest {
         when(auditDifferentiator.extractAuditData(CrudEnum.CREATE, newCode))
                 .thenReturn(List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "")));
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
         Assertions.assertEquals("", auditListCaptor.getValue().getFirst().getNewValue());
         Assertions.assertEquals(
                 CrudEnum.CREATE, auditListCaptor.getValue().getFirst().getUpdateType());
@@ -262,17 +269,23 @@ class DataAuditLoggerTest {
         val id = 123L;
         newCode.setId(id);
         val logCaptor = LogCaptor.forClass(AuditOperationServiceImpl.class);
+        val dataAuditLogCaptor = LogCaptor.forClass(DataAuditLogger.class);
         logCaptor.clearLogs();
+        dataAuditLogCaptor.clearLogs();
 
         when(auditDifferentiator.extractAuditData(CrudEnum.CREATE, newCode))
                 .thenReturn(
-                        List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "value")));
+                        List.of(
+                                new AuditableData(TableNames.APPLICATION_CODES, "field", "value"),
+                                new AuditableData(
+                                        TableNames.APPLICATION_CODES, "field1", "value1")));
         // Simulate the repository being unavailable at the point audit rows are written.
-        when(dataAuditRepository.saveAll(any()))
-                .thenThrow(new RuntimeException("audit persistence failed"));
+        Mockito.doThrow(new RuntimeException("audit persistence failed"))
+                .when(nestedAuditPersistenceManager)
+                .persistOrBuffer(any());
 
         val auditOperationService = new AuditOperationServiceImpl(new ObjectMapper(), List.of());
-        val listener = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
+        val listener = new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager);
         val result =
                 Assertions.assertDoesNotThrow(
                         // This exercises the real failing listener through the central audit
@@ -287,7 +300,7 @@ class DataAuditLoggerTest {
                                         listener));
 
         Assertions.assertEquals("business-result", result);
-        verify(dataAuditRepository).saveAll(any());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(any());
         // The logger should preserve the exact failed field name without logging the field value.
         val failureLog =
                 logCaptor.getErrorLogs().stream()
@@ -301,6 +314,26 @@ class DataAuditLoggerTest {
                 "Expected table name in failure log");
         Assertions.assertFalse(
                 failureLog.contains("value"),
+                "Audit field values should not be included in the failure log");
+        var dataAuditErrorLogs = dataAuditLogCaptor.getErrorLogs();
+        Assertions.assertTrue(
+                dataAuditErrorLogs.stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains("Failed to persist audit field field")
+                                                && log.contains(
+                                                        "on table "
+                                                                + TableNames.APPLICATION_CODES)));
+        Assertions.assertTrue(
+                dataAuditErrorLogs.stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains("Failed to persist audit field field1")
+                                                && log.contains(
+                                                        "on table "
+                                                                + TableNames.APPLICATION_CODES)));
+        Assertions.assertFalse(
+                dataAuditErrorLogs.stream().anyMatch(log -> log.contains("value1")),
                 "Audit field values should not be included in the failure log");
     }
 
@@ -344,9 +377,10 @@ class DataAuditLoggerTest {
                                 new AuditableData(tableName, field, oneValue),
                                 new AuditableData(tableName, field1, oneValue1)));
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
 
         DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -415,9 +449,10 @@ class DataAuditLoggerTest {
                                 new AuditableData(tableName, field, oneValue),
                                 new AuditableData(tableName, field1, oneValue1)));
 
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
 
         DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -471,9 +506,10 @@ class DataAuditLoggerTest {
                         List.of(
                                 new AuditableData(tableName, field, oldValue),
                                 new AuditableData(tableName, field1, oldValue2)));
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
         verify(auditDifferentiator).extractAuditData(any(), any());
 
         DataAudit dataAudit1 = auditListCaptor.getValue().get(0);
@@ -521,9 +557,10 @@ class DataAuditLoggerTest {
 
         when(differentiableOld.extractAuditData(TestAuditOperation.DELETE.getType()))
                 .thenReturn(List.of(new AuditableData(tableName, field1, oldValue)));
-        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
 
-        verify(dataAuditRepository).saveAll(auditListCaptor.capture());
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
         verify(auditDifferentiator, never()).extractAuditData(any(), any());
 
         DataAudit dataAudit1 = auditListCaptor.getValue().get(0);

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
-import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -10,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExi
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
+@Transactional(readOnly = true)
 public class StandardApplicationServiceImpl implements StandardApplicantService {
     private final StandardApplicantRepository repository;
     private final StandardApplicantMapper mapper;
