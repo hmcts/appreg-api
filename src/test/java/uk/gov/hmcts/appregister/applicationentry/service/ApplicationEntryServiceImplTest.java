@@ -2351,6 +2351,33 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void testUpdateClosedListWithNullExistingNote() {
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+        applicationListEntry.setId(1000L);
+        applicationListEntry.setVersion(232L);
+
+        updateClosedEntriesValidator.setSuccess(
+                new UpdateApplicationEntryClosedValidationSuccess(
+                        new ApplicationList(), applicationListEntry));
+
+        ArgumentCaptor<ApplicationListEntry> captorEntry =
+                ArgumentCaptor.forClass(ApplicationListEntry.class);
+
+        PayloadForUpdateClosedEntry payload =
+                new PayloadForUpdateClosedEntry(
+                        entryUpdateClosedDto, UUID.randomUUID(), UUID.randomUUID());
+
+        service.updateClosedEntry(payload);
+
+        verify(applicationListEntryRepository).save(captorEntry.capture());
+        Assertions.assertEquals(
+                entryUpdateClosedDto.getAdditionalNotes(), captorEntry.getValue().getNotes());
+    }
+
+    @Test
     void deleteEntrySuccess() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
 
