@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
-import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -55,7 +54,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
     }
 
     @Test
-    void givenMissingList_whenValidate_thenThrowsListNotFound() {
+    void givenMissingList_whenValidate_thenThrowsApplicationListDoesNotExist() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
@@ -67,11 +66,12 @@ class GetApplicationEntryFromClosedListValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(ApplicationListError.LIST_NOT_FOUND, HttpStatus.NOT_FOUND, exception);
+        assertError(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, HttpStatus.NOT_FOUND, exception);
     }
 
     @Test
-    void givenDeletedList_whenValidate_thenThrowsListNotFound() {
+    void givenDeletedList_whenValidate_thenThrowsApplicationListDoesNotExist() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
@@ -83,7 +83,8 @@ class GetApplicationEntryFromClosedListValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(ApplicationListError.LIST_NOT_FOUND, HttpStatus.NOT_FOUND, exception);
+        assertError(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, HttpStatus.NOT_FOUND, exception);
     }
 
     @Test
@@ -104,7 +105,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
     }
 
     @Test
-    void givenMissingEntry_whenValidate_thenThrowsEntryNotFound() {
+    void givenMissingEntry_whenValidate_thenThrowsEntryDoesNotExist() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
@@ -117,7 +118,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
                         AppRegistryException.class,
                         () -> validator.validate(payload(listId, entryId)));
 
-        assertError(AppListEntryError.LIST_ENTRY_NOT_FOUND, HttpStatus.NOT_FOUND, exception);
+        assertError(AppListEntryError.ENTRY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND, exception);
     }
 
     @Test

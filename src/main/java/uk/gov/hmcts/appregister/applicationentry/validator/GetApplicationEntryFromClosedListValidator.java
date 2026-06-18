@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
-import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -41,7 +40,7 @@ public class GetApplicationEntryFromClosedListValidator
                 applicationListRepository.findByUuidIncludingDelete(validatable.getListId());
         if (applicationList.isEmpty() || applicationList.get().isDeleted()) {
             throw new AppRegistryException(
-                    ApplicationListError.LIST_NOT_FOUND,
+                    AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
                     "The application list with id %s was not found"
                             .formatted(validatable.getListId()));
         }
@@ -56,7 +55,7 @@ public class GetApplicationEntryFromClosedListValidator
                 applicationListEntryRepository.findByUuid(validatable.getEntryId());
         if (entry.isEmpty()) {
             throw new AppRegistryException(
-                    AppListEntryError.LIST_ENTRY_NOT_FOUND,
+                    AppListEntryError.ENTRY_DOES_NOT_EXIST,
                     "The application entry %s does not exist".formatted(validatable.getEntryId()));
         }
 

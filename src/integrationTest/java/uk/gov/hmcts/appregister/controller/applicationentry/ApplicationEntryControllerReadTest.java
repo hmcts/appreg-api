@@ -373,7 +373,8 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                         createAdminToken().fetchTokenForRole());
 
         responseSpec.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemAssertUtil.assertEquals(ApplicationListError.LIST_NOT_FOUND.getCode(), responseSpec);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpec);
     }
 
     @Test
@@ -389,7 +390,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         responseSpec.then().statusCode(HttpStatus.NOT_FOUND.value());
         ProblemAssertUtil.assertEquals(
-                AppListEntryError.LIST_ENTRY_NOT_FOUND.getCode(), responseSpec);
+                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode(), responseSpec);
     }
 
     @Test
