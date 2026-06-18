@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashSet;
@@ -61,7 +63,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
             "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
     @BeforeEach
-    void before() {
+    void beforeEach() {
         when(provider.getUserId()).thenReturn("user");
         when(provider.getEmail()).thenReturn("email");
         when(provider.getRoles()).thenReturn(new String[] {"role"});
@@ -75,7 +77,8 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     @Test
     @DisplayName("Move Application List Entries")
-    void givenValidRequest_whenMove_then200() throws Exception {
+    void givenValidRequest_whenMove_then200()
+            throws MalformedURLException, JOSEException, URISyntaxException {
         ApplicationListEntry sourceEntry = new AppListEntryTestData().someMinimal().build();
 
         ApplicationList sourceList = createOpenListWithEntry(sourceEntry);
@@ -226,20 +229,45 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         Assertions.assertEquals(sourceList.getId(), persistedFirst.getApplicationList().getId());
         Assertions.assertEquals(sourceList.getId(), persistedSecond.getApplicationList().getId());
 
-        // The audit rows for the move must also roll back with the business transaction.
-        Assertions.assertTrue(
+        // The business move rolls back, but the attempted move audit remains persisted in line
+        // with the legacy autonomous-audit behaviour.
+        val moveAuditRows =
                 dataAuditRepository.findAll().stream()
-                        .noneMatch(
+                        .filter(
                                 row ->
                                         AppListEntryAuditOperation.MOVE_APP_ENTRY
                                                 .getEventName()
-                                                .equals(row.getEventName())));
+                                                .equals(row.getEventName()))
+                        .toList();
+
+        Assertions.assertFalse(moveAuditRows.isEmpty());
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
+                                row ->
+                                        TableNames.APPLICATION_LISTS.equals(row.getTableName())
+                                                && "al_id".equals(row.getColumnName())
+                                                && sourceList
+                                                        .getId()
+                                                        .toString()
+                                                        .equals(row.getOldValue())
+                                                && targetList
+                                                        .getId()
+                                                        .toString()
+                                                        .equals(row.getNewValue())));
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
+                                row ->
+                                        TableNames.APPLICATION_LISTS_ENTRY.equals(
+                                                        row.getTableName())
+                                                && "version".equals(row.getColumnName())));
     }
 
     @Test
     @DisplayName("Move Application List Entries: 404 when source list unknown")
     void givenUnknownTargetApplicationList_whenMoveApplicationListEntries_then404()
-            throws Exception {
+            throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -266,7 +294,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
     @Test
     @DisplayName("Move Application List Entries: 404 when target list unknown")
     void givenUnknownSourceApplicationList_whenMoveApplicationListEntries_then404()
-            throws Exception {
+            throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -292,7 +320,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     @Test
     @DisplayName("Move Application List Entries: 400 when source list not open")
-    void givenClosedSourceList_whenMove_then400() throws Exception {
+    void givenClosedSourceList_whenMove_then400() throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.CLOSED);
@@ -320,7 +348,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     @Test
     @DisplayName("Move Application List Entries: 400 when target list not open")
-    void givenClosedTargetList_whenMove_then400() throws Exception {
+    void givenClosedTargetList_whenMove_then400() throws JOSEException, MalformedURLException {
         var token = getToken();
 
         Response resp =
@@ -356,7 +384,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     @Test
     @DisplayName("Move Application List Entries: 400 when entry unknown")
-    void givenUnknownEntry_whenMove_then400() throws Exception {
+    void givenUnknownEntry_whenMove_then400() throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -383,7 +411,8 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     @Test
     @DisplayName("Move Application List Entries: 400 when entry not in source list")
-    void givenEntryNotInSourceList_whenMove_then400() throws Exception {
+    void givenEntryNotInSourceList_whenMove_then400()
+            throws JOSEException, MalformedURLException, URISyntaxException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -416,7 +445,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     @Test
     @DisplayName("Move Application List Entries: 400 when entry is deleted")
-    void givenDeletedEntry_whenMove_then400() throws Exception {
+    void givenDeletedEntry_whenMove_then400() throws MalformedURLException, JOSEException {
         ApplicationListEntry deletedEntry = new AppListEntryTestData().someMinimal().build();
         deletedEntry.setDeleted(YES);
 
@@ -437,7 +466,8 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
     @Test
     @DisplayName(
             "Move Application List Entries: 400 with invalid_entry_ids when some entries are missing")
-    void givenMixedValidAndInvalidEntries_whenMove_then400WithInvalidIds() throws Exception {
+    void givenMixedValidAndInvalidEntries_whenMove_then400WithInvalidIds()
+            throws JOSEException, MalformedURLException, URISyntaxException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -479,7 +509,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
     }
 
     private ApplicationListPage getApplicationListPage(
-            TokenAndJwksKey token, ApplicationListStatus open) throws Exception {
+            TokenAndJwksKey token, ApplicationListStatus open) throws MalformedURLException {
         Response resp =
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(3),
@@ -531,7 +561,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     private Response moveEntries(
             ApplicationList sourceList, ApplicationList targetList, Set<UUID> uuidsToMove)
-            throws Exception {
+            throws MalformedURLException, JOSEException {
         return getMoveApplicationListEntriesResponse(
                 sourceList.getUuid(), targetList.getUuid(), uuidsToMove, getToken());
     }

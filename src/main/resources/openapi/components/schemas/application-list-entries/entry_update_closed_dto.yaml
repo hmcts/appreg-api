@@ -1,6 +1,6 @@
 type: object
 description: >
-  Request payload to update a closed Application List Entry.
+  Request payload to update notes for an Application List Entry whose Application List is closed.
 additionalProperties: false
 required:
   - additionalNotes

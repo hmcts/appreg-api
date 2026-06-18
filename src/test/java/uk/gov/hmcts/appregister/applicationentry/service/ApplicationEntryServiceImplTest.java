@@ -66,6 +66,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntr
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.DeleteEntryValidationSuccess;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryFromClosedListValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
@@ -285,6 +286,11 @@ class ApplicationEntryServiceImplTest {
                     applicationListRepository, applicationListEntryRepository);
 
     @Spy
+    private GetApplicationEntryFromClosedListValidator getEntryFromClosedListValidator =
+            new DummyGetApplicationEntryFromClosedListValidator(
+                    applicationListRepository, applicationListEntryRepository);
+
+    @Spy
     private GetApplicationListEntriesValidator getApplicationListEntriesValidator =
             new DummyGetApplicationListEntriesValidator(applicationListRepository);
 
@@ -338,6 +344,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryEntityMapper,
                         entityManager,
                         getEntryValidator,
+                        getEntryFromClosedListValidator,
                         getApplicationListEntriesValidator,
                         clock,
                         businessDateProvider,
@@ -374,6 +381,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryEntityMapper,
                         entityManager,
                         getEntryValidator,
+                        getEntryFromClosedListValidator,
                         getApplicationListEntriesValidator,
                         clock,
                         businessDateProvider,
@@ -1185,6 +1193,41 @@ class ApplicationEntryServiceImplTest {
 
         // no fees were found or called for
         verify(feeRepository, never()).findByIdsBetweenDate(notNull(), notNull());
+    }
+
+    @Test
+    void
+            givenClosedListReadRequest_whenGetApplicationListEntryDetailFromClosedList_thenMapsEntryAndReturnsEtag() {
+        ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        getEntryValidationSuccess =
+                GetEntryValidationSuccess.builder()
+                        .applicationListEntry(applicationListEntry)
+                        .applicationList(applicationList)
+                        .build();
+
+        applicationListEntry.getEntryFeeIds().clear();
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, false))
+                .thenReturn(entryGetDetailDto);
+
+        PayloadGetEntryInList payload =
+                PayloadGetEntryInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                service.getApplicationListEntryDetailFromClosedList(payload);
+
+        Assertions.assertEquals(entryGetDetailDto, matchResponse.getPayload());
+        Assertions.assertNotNull(matchResponse.getEtag());
+        verify(getEntryFromClosedListValidator).validate(eq(payload), any());
+        verify(getEntryValidator, never()).validate(eq(payload), any());
+        verify(applicationListEntryMapStructMapper)
+                .toEntryGetDetailDto(applicationListEntry, false);
     }
 
     @Test
@@ -2480,6 +2523,22 @@ class ApplicationEntryServiceImplTest {
 
     class DummyGetApplicationEntryValidator extends GetApplicationEntryValidator {
         public DummyGetApplicationEntryValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
+            super(applicationListEntryRepository, applicationListRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadGetEntryInList validatable,
+                BiFunction<PayloadGetEntryInList, GetEntryValidationSuccess, R> validateSuccess) {
+            return validateSuccess.apply(validatable, getEntryValidationSuccess);
+        }
+    }
+
+    class DummyGetApplicationEntryFromClosedListValidator
+            extends GetApplicationEntryFromClosedListValidator {
+        public DummyGetApplicationEntryFromClosedListValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository) {
             super(applicationListEntryRepository, applicationListRepository);

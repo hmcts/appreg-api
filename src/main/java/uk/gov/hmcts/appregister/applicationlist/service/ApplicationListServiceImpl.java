@@ -179,7 +179,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable) {
 
         return auditService.processAudit(
@@ -421,8 +421,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param pageable pagination and sorting information
      * @return a populated {@link ApplicationListPage} with metadata and summary items
      */
-    @Transactional
     @Override
+    @Transactional(readOnly = true)
     public ApplicationListPage getPage(ApplicationListGetFilterDto dto, PagingWrapper pageable) {
         TimeWindow timeWindow = computeTimeWindow(dto);
 
@@ -457,7 +457,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationListGetPrintDto print(UUID id) {
         return auditService.processAudit(
                 null,

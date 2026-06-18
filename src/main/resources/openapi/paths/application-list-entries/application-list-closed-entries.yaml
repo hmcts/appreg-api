@@ -11,10 +11,41 @@ parameters:
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List Entry.
     example: "123e4567-e89b-12d3-a456-426655440000"
+get:
+  operationId: getApplicationListEntryFromClosedList
+  tags: [ application-list-entries ]
+  summary: Get an Application List Entry whose Application List is closed
+  description: >
+    Returns the selected Application List Entry details and existing notes when the parent
+    Application List is closed.
+  responses:
+    "200":
+      description: Returns a detailed Application List Entry whose parent Application List is closed
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+        ETag:
+          description: Entity tag for optimistic concurrency in the follow-on update flow.
+          schema:
+            type: string
+            example: "\"9f2d6d4f4f2d6d4f4f2d6d4f4f2d6d4f\""
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-get-detail-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
 put:
   operationId: updateClosedApplicationListEntry
   tags: [ application-list-entries ]
-  summary: Update a closed Application List Entry
+  summary: Update notes for an Application List Entry whose Application List is closed
   description: >
     Appends additional notes to an Application List Entry after its parent Application List has
     been closed. This is a command-style update and does not return an entry representation.

@@ -6,9 +6,11 @@ spring:
     show-sql: false
     properties:
       hibernate:
+        default_batch_fetch_size: 25
         jdbc:
           batch_size: 25
         order_inserts: true
+        order_updates: true
 
 logging:
   level:

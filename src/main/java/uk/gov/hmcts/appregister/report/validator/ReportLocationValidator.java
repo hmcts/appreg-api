@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.report.validator;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
@@ -12,6 +13,7 @@ import uk.gov.hmcts.appregister.report.exception.ReportError;
 
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ReportLocationValidator {
     private static final int SINGLE_RECORD = 1;
 

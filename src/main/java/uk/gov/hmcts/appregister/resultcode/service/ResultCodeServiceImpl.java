@@ -38,7 +38,7 @@ import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
+@Transactional(readOnly = true)
 public class ResultCodeServiceImpl implements ResultCodeService {
 
     // Service for wrapping operations in an auditable context.

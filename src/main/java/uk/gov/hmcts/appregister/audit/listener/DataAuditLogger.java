@@ -14,9 +14,9 @@ import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.audit.service.NestedAuditPersistenceManager;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -37,7 +37,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
     private final Auditor auditor;
 
-    private final DataAuditRepository dataAuditRepository;
+    private final NestedAuditPersistenceManager nestedAuditPersistenceManager;
 
     private static final String SAVING_OLD_AUDIT_MESSAGE = "Saving data audit old: {}";
     private static final String SAVING_NEW_AUDIT_MESSAGE = "Saving data audit new: {}";
@@ -175,9 +175,9 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
         }
 
         try {
-            dataAuditRepository.saveAll(auditsToPersist);
-            auditsToPersist.forEach(audit -> log.debug("Saved data audit entity: {}", audit));
+            nestedAuditPersistenceManager.persistOrBuffer(auditsToPersist);
         } catch (RuntimeException e) {
+            logAuditPersistenceFailure(auditsToPersist, e);
             val firstAudit = auditsToPersist.getFirst();
             throw new RuntimeException(
                     "Failed to persist audit field %s on table %s"
@@ -189,6 +189,16 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     private boolean shouldSkipAuditPersistence(CompleteEvent event, DataAudit audit) {
         return event.getRequestAction().getType() == CrudEnum.READ
                 && EMPTY_VALUE.equals(audit.getNewValue());
+    }
+
+    private void logAuditPersistenceFailure(List<DataAudit> auditsToPersist, RuntimeException e) {
+        auditsToPersist.forEach(
+                audit ->
+                        log.error(
+                                "Failed to persist audit field {} on table {}",
+                                audit.getColumnName(),
+                                audit.getTableName(),
+                                e));
     }
 
     /**
@@ -269,6 +279,6 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
     @Override
     protected void finishFail(FailEvent event) {
-        log.info("Failed data audit operation for {}", event);
+        log.info("Business operation failed for audited event {}", event);
     }
 }

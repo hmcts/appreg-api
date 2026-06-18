@@ -3,9 +3,11 @@ package uk.gov.hmcts.appregister.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.nimbusds.jose.JOSEException;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +35,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
@@ -84,7 +87,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
     @Autowired private ApplicationListEntryAssertion applicationListEntryAssertion;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() throws JOSEException, ParseException {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -852,10 +855,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(Keyable::getId).toList();
 
         MatchResponse<EntryGetDetailDto> update =
                 applicationEntryService.updateEntry(payloadForCreate);
@@ -966,10 +968,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(Keyable::getId).toList();
 
         MatchResponse<EntryGetDetailDto> update =
                 applicationEntryService.updateEntry(payloadForCreate);
@@ -1062,10 +1063,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         applicationListEntry.get().getId());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(AppListEntryOfficial::getId).toList();
 
         // get the existing applicant and respondent for later comparison
         final NameAddress respondentBeforeUpdate =
@@ -1195,10 +1195,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         applicationListEntry.get().getId());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(Keyable::getId).toList();
 
         // get the existing applicant and respondent for later comparison
         final NameAddress respondentBeforeUpdate =
@@ -1316,10 +1315,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         applicationListEntry.get().getId());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(Keyable::getId).toList();
 
         // get the existing applicant and respondent for later comparison
         final NameAddress respondentBeforeUpdate =
@@ -1465,10 +1463,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(Keyable::getId).toList();
 
         MatchResponse<EntryGetDetailDto> update =
                 applicationEntryService.updateEntry(payloadForCreate);
@@ -1579,10 +1576,9 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
         // get the ids of the status and officials
-        final List<Long> feeStatusBeforeUpdate =
-                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(fs -> fs.getId()).toList();
+                feeOfficial.stream().map(Keyable::getId).toList();
 
         MatchResponse<EntryGetDetailDto> update =
                 applicationEntryService.updateEntry(payloadForCreate);
@@ -1687,7 +1683,6 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    @Transactional
     void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
