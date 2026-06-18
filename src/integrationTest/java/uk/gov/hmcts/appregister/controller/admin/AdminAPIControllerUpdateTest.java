@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.controller.admin;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;

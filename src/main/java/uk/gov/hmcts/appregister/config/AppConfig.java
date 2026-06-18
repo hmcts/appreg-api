@@ -20,7 +20,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
 import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.audit.service.NestedAuditPersistenceManager;
 
 @Configuration
 @EnableAspectJAutoProxy
@@ -74,8 +74,10 @@ public class AppConfig implements WebMvcConfigurer {
      * level. See {@link uk.gov.hmcts.appregister.audit.service.AuditOperationService}
      */
     @Bean
-    public DataAuditLogger auditDifferentiator(DataAuditRepository dataAuditRepository) {
-        return new DataAuditLogger(new ReflectiveAuditor(complexDiffEnabled), dataAuditRepository);
+    public DataAuditLogger auditDifferentiator(
+            NestedAuditPersistenceManager nestedAuditPersistenceManager) {
+        return new DataAuditLogger(
+                new ReflectiveAuditor(complexDiffEnabled), nestedAuditPersistenceManager);
     }
 
     /**

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -20,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
@@ -49,6 +49,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicati
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
+import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -170,6 +171,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final MeterRegistry meterRegistry;
 
     @Override
+    @Transactional(readOnly = true)
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         log.debug(
                 "Started find application entries page={} size={}",
@@ -227,6 +229,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EntryIdsDto getEntryIds(EntryGetFilterDto filterDto) {
         EntryGetFilterDto safeFilterDto = filterDto == null ? new EntryGetFilterDto() : filterDto;
 
@@ -279,6 +282,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
+    @NestedAudit
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
         return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
@@ -377,6 +381,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
+    @NestedAudit
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
         return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
@@ -384,6 +389,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
+    @NestedAudit
     public MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry) {
         log.debug(
                 "Started update application entry {} in list {}",
@@ -1361,6 +1367,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
             PayloadGetEntryInList entry) {
         log.debug(
@@ -1411,6 +1418,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EntryPage getApplicationListEntries(
             PayloadGetEntryInList payloadForGet,
             PagingWrapper pageable,
@@ -1476,6 +1484,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EntryIdsDto getApplicationListEntryIds(
             PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filterDto) {
         log.debug(
@@ -1563,7 +1572,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
         var payload = new MoveEntriesPayload(sourceListId, moveEntriesDto);
         final ApplicationList targetList =
@@ -1615,7 +1624,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void deleteEntry(PayloadForDeleteEntry idToDelete) {
         deleteApplicationListEntryValidator.validate(
                 idToDelete,

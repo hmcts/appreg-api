@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -16,6 +17,7 @@ import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class JobServiceImpl implements JobService {
     private final JobMapper jobMapper;
 
