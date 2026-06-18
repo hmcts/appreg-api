@@ -515,12 +515,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 req -> {
                                                     success.getApplicationEntryId()
                                                             .setNotes(
-                                                                    success.getApplicationEntryId()
-                                                                                    .getNotes()
-                                                                            + " "
-                                                                            + updateEntry
+                                                                    appendNotes(
+                                                                            success.getApplicationEntryId()
+                                                                                    .getNotes(),
+                                                                            updateEntry
                                                                                     .getData()
-                                                                                    .getAdditionalNotes());
+                                                                                    .getAdditionalNotes()));
 
                                                     // update the notes by appending with the
                                                     // alternative
@@ -540,6 +540,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 }),
                                 // return the latest entities for the entry read on the update
                                 getKeyablesForCreateUpdateEtag(success.getApplicationEntryId())));
+    }
+
+    private static String appendNotes(String existingNotes, String additionalNotes) {
+        if (existingNotes == null || existingNotes.isBlank()) {
+            return additionalNotes;
+        }
+
+        return existingNotes + " " + additionalNotes;
     }
 
     @Transactional
