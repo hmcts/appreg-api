@@ -32,6 +32,14 @@ public interface AppListEntryOfficialRepository extends JpaRepository<AppListEnt
     List<AppListEntryOfficial> getOfficialByEntryUuid(UUID entryId);
 
     /**
+     * Finds all official records for the supplied application list entry UUIDs.
+     *
+     * @param entryUuids the application list entry UUIDs
+     * @return the matching official records
+     */
+    List<AppListEntryOfficial> findByAppListEntry_UuidIn(List<UUID> entryUuids);
+
+    /**
      * deletes the official.
      *
      * @param entryId The entry id that the officials map to

@@ -11,7 +11,6 @@ import org.springframework.core.NamedThreadLocal;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 
 /**
@@ -22,7 +21,8 @@ import uk.gov.hmcts.appregister.common.entity.DataAudit;
 @Component
 @RequiredArgsConstructor
 public class NestedAuditPersistenceManager {
-    private static final Logger DATA_AUDIT_LOGGER = LoggerFactory.getLogger(DataAuditLogger.class);
+    private static final Logger DATA_AUDIT_LOGGER =
+            LoggerFactory.getLogger(NestedAuditPersistenceManager.class);
 
     private final DataAuditPersistenceService dataAuditPersistenceService;
 

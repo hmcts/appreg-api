@@ -523,7 +523,7 @@ class ApplicationListServiceImplTest {
         when(entryMapper.toStatus(ApplicationListStatus.CLOSED)).thenReturn(Status.CLOSED);
 
         // When
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         // Then
         assertThat(result).isNotNull();
@@ -577,7 +577,7 @@ class ApplicationListServiceImplTest {
                         .cjaCode("52")
                         .otherLocationDescription("town");
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -618,7 +618,7 @@ class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -733,7 +733,7 @@ class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(row, 0L, "CJA Name");
@@ -774,7 +774,7 @@ class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(row, 0L, "Some Court");
@@ -813,7 +813,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(row, 0L, "Location not set");
@@ -877,7 +877,7 @@ class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        service.getPage(filter, wrapper);
 
         // Then
         verify(repository)

@@ -57,14 +57,14 @@ class GetApplicationEntryFromClosedListValidatorTest {
     void givenMissingList_whenValidate_thenThrowsApplicationListDoesNotExist() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
+        PayloadGetEntryInList request = payload(listId, entryId);
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.empty());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(payload(listId, entryId)));
+                        AppRegistryException.class, () -> validator.validate(request));
 
         assertError(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, HttpStatus.NOT_FOUND, exception);
@@ -74,14 +74,14 @@ class GetApplicationEntryFromClosedListValidatorTest {
     void givenDeletedList_whenValidate_thenThrowsApplicationListDoesNotExist() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
+        PayloadGetEntryInList request = payload(listId, entryId);
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList(Status.CLOSED, YesOrNo.YES)));
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(payload(listId, entryId)));
+                        AppRegistryException.class, () -> validator.validate(request));
 
         assertError(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, HttpStatus.NOT_FOUND, exception);
@@ -91,14 +91,14 @@ class GetApplicationEntryFromClosedListValidatorTest {
     void givenOpenList_whenValidate_thenThrowsIncorrectState() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
+        PayloadGetEntryInList request = payload(listId, entryId);
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList(Status.OPEN, YesOrNo.NO)));
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(payload(listId, entryId)));
+                        AppRegistryException.class, () -> validator.validate(request));
 
         assertError(
                 AppListEntryError.APPLICATION_LIST_MUST_BE_CLOSED, HttpStatus.CONFLICT, exception);
@@ -108,6 +108,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
     void givenMissingEntry_whenValidate_thenThrowsEntryDoesNotExist() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
+        PayloadGetEntryInList request = payload(listId, entryId);
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList(Status.CLOSED, YesOrNo.NO)));
@@ -115,8 +116,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(payload(listId, entryId)));
+                        AppRegistryException.class, () -> validator.validate(request));
 
         assertError(AppListEntryError.ENTRY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND, exception);
     }
@@ -125,6 +125,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
     void givenEntryInDifferentList_whenValidate_thenThrowsEntryNotWithinList() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
+        PayloadGetEntryInList request = payload(listId, entryId);
         ApplicationListEntry entry = new ApplicationListEntry();
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
@@ -135,8 +136,7 @@ class GetApplicationEntryFromClosedListValidatorTest {
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(payload(listId, entryId)));
+                        AppRegistryException.class, () -> validator.validate(request));
 
         assertError(AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST, HttpStatus.CONFLICT, exception);
     }
