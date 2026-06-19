@@ -6344,9 +6344,10 @@ components:
         Request payload to update notes for an Application List Entry whose Application List is closed.
       properties:
         additionalNotes:
-          description: The additional notes to add to append to the Application List
-            Entry.
+          description: |
+            The additional notes to append to the Application List Entry (maximum 4000 characters).
           example: Additional notes
+          maxLength: 4000
           minLength: 1
           type: string
       required:
