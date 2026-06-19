@@ -13,6 +13,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 @Entity
 @Table(name = TableNames.RETENTION_POLICY)
@@ -22,7 +26,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class RetentionPolicy {
+@AuditEnabled(types = {CrudEnum.READ, CrudEnum.UPDATE})
+public class RetentionPolicy implements Keyable {
     @Id
     @Column(name = "rp_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rp_gen")
@@ -31,14 +36,22 @@ public class RetentionPolicy {
     private Long id;
 
     @Column(name = "dj_dj_id", nullable = false)
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE})
     private Long databaseJobId;
 
     @Column(name = "config_key")
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE})
     private String configKey;
 
     @Column(name = "config_value")
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE})
     private String configValue;
 
     @Column(name = "config_notes")
     private String configNotes;
+
+    @Override
+    public Long getId() {
+        return id;
+    }
 }

@@ -48,7 +48,9 @@ public class AsyncJobServiceImpl implements AsyncJobService {
 
     /**
      * A shared executor. We use virtual threads here as most of the processing will be IO which
-     * should mean our service can scale better than a more traditional thread pool.
+     * should mean our service can scale better than a more traditional thread pool. TODO: Move this
+     * async boundary to a Spring-managed TaskExecutor/@Async flow if we want the service to stop
+     * owning thread policy directly.
      */
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -69,7 +71,6 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize);
     }
 
-    @Override
     public <T> TrackJobStatusResponse startJob(
             JobTypeRequest jobRequest,
             DataReader<T> dataReader,

@@ -171,12 +171,11 @@ public class PageableMapper {
             }
 
             // if we have a sort that is empty then error else parse
-            if (!prop.isEmpty()) {
-                orders.add(new Sort.Order(dir, prop).nullsLast());
-            } else {
+            if (prop.isEmpty()) {
                 throw new AppRegistryException(
                         CommonAppError.SORT_NOT_SUITABLE, "Sort value %s is not suitable");
             }
+            orders.add(new Sort.Order(dir, prop).nullsLast());
         }
 
         return Sort.by(orders);

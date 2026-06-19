@@ -9,6 +9,7 @@ get:
   operationId: getApplicationList
   tags: [ application-lists ]
   summary: Get an Application List by id
+  description: Returns the Application List identified by `listId`.
   parameters:
     - in: query
       name: pageNumber
@@ -21,14 +22,14 @@ get:
     - in: query
       name: sort
       description: >
-        Repeatable sort parameter. Format per item: `property,(asc|desc)`.
-        Example: `?sort=name,asc&sort=code,desc`.
+        Sort parameter. Format: `property,(asc|desc)`.
+        Currently only a single sort value is supported. Example: `?sort=name,asc`.
       style: form
       explode: true
       schema:
         type: array
         items: { type: string }
-        example: [ "name,asc", "code,desc" ]
+        example: [ "name,asc" ]
   responses:
     "200":
       description: Application List detail

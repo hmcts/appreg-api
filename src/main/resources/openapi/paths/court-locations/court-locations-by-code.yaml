@@ -18,6 +18,7 @@ get:
   operationId: getCourtLocationByCodeAndDate
   tags: [court-locations]
   summary: Get a specific Court Location by code and date.
+  description: Returns the Court Location matching the supplied code and valid on the supplied date.
   responses:
     "200":
       description: Court Location found

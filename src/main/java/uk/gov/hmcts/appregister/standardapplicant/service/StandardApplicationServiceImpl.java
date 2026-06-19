@@ -3,14 +3,12 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
@@ -43,7 +41,6 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     private final StandardApplicantExistsValidator validator;
 
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final ApplicantMapper applicantMapper;
 
     @Override
@@ -103,8 +100,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             new AuditableResult<>(newPage, mapper.toEntity(codeAndName));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override
@@ -112,8 +108,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         return auditService.processAudit(
                 null,
                 StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE,
-                req -> findByCodeAuditResult(code),
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                req -> findByCodeAuditResult(code));
     }
 
     private Optional<AuditableResult<StandardApplicantGetDetailDto, StandardApplicant>>

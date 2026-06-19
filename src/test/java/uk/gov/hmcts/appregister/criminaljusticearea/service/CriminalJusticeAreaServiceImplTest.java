@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -41,8 +40,7 @@ class CriminalJusticeAreaServiceImplTest {
             List.of(new AuditOperationSlf4jLogger());
 
     @Spy
-    private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper(), listeners);
+    private AuditOperationService auditOperationService = new AuditOperationServiceImpl(listeners);
 
     @Spy private CriminalJusticeMapper criminalJusticeMapper = new CriminalJusticeMapperImpl();
 
@@ -70,7 +68,6 @@ class CriminalJusticeAreaServiceImplTest {
                 .processAudit(
                         isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
-                        notNull(),
                         notNull());
     }
 
@@ -94,7 +91,6 @@ class CriminalJusticeAreaServiceImplTest {
                 .processAudit(
                         isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
-                        notNull(),
                         notNull());
     }
 
@@ -118,7 +114,6 @@ class CriminalJusticeAreaServiceImplTest {
                 .processAudit(
                         isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
-                        notNull(),
                         notNull());
     }
 
@@ -131,8 +126,7 @@ class CriminalJusticeAreaServiceImplTest {
         CapturingAuditListener listener = new CapturingAuditListener();
         CriminalJusticeServiceImpl localService =
                 new CriminalJusticeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         criminalJusticeMapper,
                         pageMapper,

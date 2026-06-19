@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.common.async.mapper;
 
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.enumeration.JobStatusType;
@@ -11,8 +9,6 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
  * This mapper works for the asynchronous job status mapper.
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-@Setter
-@Slf4j
 public abstract class JobStatusMapper {
 
     /**
@@ -22,19 +18,17 @@ public abstract class JobStatusMapper {
      * @return The database status
      */
     public JobStatusType getJobStatus(JobStatus1 status) {
-        if (status == JobStatus1.RECEIVED) {
-            return JobStatusType.SUBMITTED;
-        } else if (status == JobStatus1.VALIDATING) {
-            return JobStatusType.PENDING;
-        } else if (status == JobStatus1.COMPLETED) {
-            return JobStatusType.COMPLETED;
-        } else if (status == JobStatus1.FAILED) {
-            return JobStatusType.FAILED;
-        } else if (status == JobStatus1.PROCESSING) {
-            return JobStatusType.RUNNING;
+        if (status == null) {
+            return null;
         }
 
-        return null;
+        return switch (status) {
+            case RECEIVED -> JobStatusType.SUBMITTED;
+            case VALIDATING -> JobStatusType.PENDING;
+            case COMPLETED -> JobStatusType.COMPLETED;
+            case FAILED -> JobStatusType.FAILED;
+            case PROCESSING -> JobStatusType.RUNNING;
+        };
     }
 
     /**
@@ -44,18 +38,16 @@ public abstract class JobStatusMapper {
      * @return The status
      */
     public JobStatus1 getJobStatus(JobStatusType status) {
-        if (status == JobStatusType.PENDING) {
-            return JobStatus1.VALIDATING;
-        } else if (status == JobStatusType.SUBMITTED) {
-            return JobStatus1.RECEIVED;
-        } else if (status == JobStatusType.COMPLETED) {
-            return JobStatus1.COMPLETED;
-        } else if (status == JobStatusType.FAILED) {
-            return JobStatus1.FAILED;
-        } else if (status == JobStatusType.RUNNING) {
-            return JobStatus1.PROCESSING;
+        if (status == null) {
+            return null;
         }
 
-        return null;
+        return switch (status) {
+            case PENDING -> JobStatus1.VALIDATING;
+            case SUBMITTED -> JobStatus1.RECEIVED;
+            case COMPLETED -> JobStatus1.COMPLETED;
+            case FAILED -> JobStatus1.FAILED;
+            case RUNNING -> JobStatus1.PROCESSING;
+        };
     }
 }

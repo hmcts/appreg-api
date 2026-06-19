@@ -17,9 +17,6 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
  * filters.
  */
 public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, Long> {
-
-    List<ResolutionCode> findByIdGreaterThanEqual(Integer value);
-
     /**
      * Find active Resolution Codes by code on a given date.
      *

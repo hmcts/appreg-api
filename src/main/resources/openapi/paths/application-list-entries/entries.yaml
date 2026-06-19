@@ -29,7 +29,6 @@ get:
       explode: true
       schema:
         type: array
-        maxItems: 1
         items: { type: string }
         example: [ "date,desc" ]
   responses:

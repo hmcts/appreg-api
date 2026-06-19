@@ -142,9 +142,7 @@ public class ReflectiveAuditor implements Auditor {
                 }
 
                 // if the object is not complex wrap it
-                if (!isComplexWrapper(method.method().getReturnType())) {
-                    storeAuditDiffData(val, differenceList, method, processed);
-                } else {
+                if (isComplexWrapper(method.method().getReturnType())) {
                     extractAuditDataFromComplex(
                             recurseNestedObjects,
                             method,
@@ -153,6 +151,8 @@ public class ReflectiveAuditor implements Auditor {
                             differenceList,
                             processed,
                             useAnnotations);
+                } else {
+                    storeAuditDiffData(val, differenceList, method, processed);
                 }
             }
         }
@@ -252,7 +252,9 @@ public class ReflectiveAuditor implements Auditor {
         if (target != null) {
             var processedKey = new ProcessedMethodTarget(method, System.identityHashCode(target));
 
-            if (!processed.contains(processedKey)) {
+            if (processed.contains(processedKey)) {
+                log.warn("Already processed {} using {}", method.method(), target);
+            } else {
                 try {
                     Object m = method.method().invoke(target);
                     processed.add(processedKey);
@@ -265,8 +267,6 @@ public class ReflectiveAuditor implements Auditor {
                         | SecurityException e) {
                     log.warn("Carrying on processing", e);
                 }
-            } else {
-                log.warn("Already processed {} using {}", method.method(), target);
             }
         }
         return null;

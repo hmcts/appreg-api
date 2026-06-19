@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import uk.gov.hmcts.appregister.applicationcode.enumeration.ApplicationCodeTypeEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
@@ -479,8 +480,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             boolean isDue = feeStatus.getPaymentStatus() == DUE;
 
             String paymentReference = feeStatus.getPaymentReference();
-            boolean paymentReferencePassed =
-                    paymentReference != null && !paymentReference.trim().isEmpty();
+            boolean paymentReferencePassed = StringUtils.isNotBlank(paymentReference);
 
             if (isDue && paymentReferencePassed) {
                 throw new AppRegistryException(

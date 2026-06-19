@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
@@ -12,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -27,6 +30,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.report.service.ReportDownload;
 
 class ObfuscationUtilTest {
 
@@ -311,5 +315,22 @@ class ObfuscationUtilTest {
                 .doesNotContain("\"respondentSurname\":\"[REDACTED]\"")
                 .doesNotContain("\"respondentOrganisationName\":\"[REDACTED]\"")
                 .doesNotContain("\"location\"");
+    }
+
+    @Test
+    void testObfuscationReportDownloadDoesNotConsumeStream() throws Exception {
+        var resource =
+                new InputStreamResource(
+                        new ByteArrayInputStream("report".getBytes(StandardCharsets.UTF_8)));
+        var reportDownload = new ReportDownload("report.csv", resource);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(reportDownload);
+
+        assertThat(obfuscated)
+                .contains("\"filename\":\"report.csv\"")
+                .contains("\"resource\":\"[REDACTED]\"");
+        Assertions.assertArrayEquals(
+                "report".getBytes(StandardCharsets.UTF_8),
+                resource.getInputStream().readAllBytes());
     }
 }

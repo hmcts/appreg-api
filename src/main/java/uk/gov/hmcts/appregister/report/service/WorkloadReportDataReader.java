@@ -172,6 +172,10 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
         this.schema = schema;
     }
 
+    WorkloadFilterDto filter() {
+        return filterDto;
+    }
+
     @Override
     public void readData(
             ReadPagePosition position,

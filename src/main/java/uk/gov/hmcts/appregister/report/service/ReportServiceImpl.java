@@ -1,28 +1,32 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
+import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
@@ -36,23 +40,45 @@ import uk.gov.hmcts.appregister.report.audit.WorkloadReportParameterAudit;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @Service
-@RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
+    public static final String REPORT_DOWNLOAD_FILENAME = "report.csv";
+
     private final AsyncJobService asyncJobService;
+    private final JobService jobService;
     private final UserProvider userProvider;
     private final JobMapper jobMapper;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final ReportJobAuditService reportJobAuditService;
     private final ReportFilterNormaliser reportFilterNormaliser;
     private final ReportLocationValidator reportLocationValidator;
+    private final String schema;
+    private final int reportPageSize;
 
-    @Value("${spring.jpa.properties.hibernate.default_schema}")
-    private String schema;
-
-    @Value("${appreg.report.page-size}")
-    private int reportPageSize;
+    public ReportServiceImpl(
+            AsyncJobService asyncJobService,
+            JobService jobService,
+            UserProvider userProvider,
+            JobMapper jobMapper,
+            NamedParameterJdbcTemplate jdbcTemplate,
+            AuditOperationService auditService,
+            ReportJobAuditService reportJobAuditService,
+            ReportFilterNormaliser reportFilterNormaliser,
+            ReportLocationValidator reportLocationValidator,
+            @Value("${spring.jpa.properties.hibernate.default_schema}") String schema,
+            @Value("${appreg.report.page-size}") int reportPageSize) {
+        this.asyncJobService = asyncJobService;
+        this.jobService = jobService;
+        this.userProvider = userProvider;
+        this.jobMapper = jobMapper;
+        this.jdbcTemplate = jdbcTemplate;
+        this.auditService = auditService;
+        this.reportJobAuditService = reportJobAuditService;
+        this.reportFilterNormaliser = reportFilterNormaliser;
+        this.reportLocationValidator = reportLocationValidator;
+        this.schema = schema;
+        this.reportPageSize = reportPageSize;
+    }
 
     @Override
     public ReportJobCreation createActivityAuditReport(ActivityAuditFilterDto filter) {
@@ -69,11 +95,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create activity audit report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.ACTIVITY_AUDIT_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.ACTIVITY_AUDIT_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -105,11 +127,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create fees report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.FEES_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.FEES_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -142,11 +160,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create search warrant report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.SEARCH_WARRANTS_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.SEARCH_WARRANTS_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -178,11 +192,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create duration report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.DURATION_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.DURATION_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -213,11 +223,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create workload report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.WORKLOAD_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.WORKLOAD_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -249,11 +255,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create list maintenance report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.LIST_MAINTENANCE_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.LIST_MAINTENANCE_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -287,11 +289,7 @@ public class ReportServiceImpl implements ReportService {
                                 "Unable to create private prosecutors index report output file", e);
                     }
 
-                    var jobRequest =
-                            JobTypeRequest.builder()
-                                    .jobType(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT)
-                                    .userName(userProvider.getUserId())
-                                    .build();
+                    var jobRequest = jobRequest(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT);
 
                     var response =
                             asyncJobService.startJob(
@@ -308,8 +306,44 @@ public class ReportServiceImpl implements ReportService {
                 });
     }
 
+    @Override
+    public ReportDownload downloadReport(UUID jobId) {
+        return auditService.processAudit(
+                ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT,
+                unused -> {
+                    JobStatusResponse jobStatusResponse = jobService.getJobStatusById(jobId);
+                    if (jobStatusResponse.getStatus() != JobStatus1.COMPLETED) {
+                        throw new AppRegistryException(
+                                JobError.JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD,
+                                "Download stream not available");
+                    }
+
+                    try {
+                        InputStreamResource resource = jobStatusResponse.read();
+                        if (resource == null) {
+                            throw noDownloadStream(null);
+                        }
+
+                        var reportDownload = new ReportDownload(REPORT_DOWNLOAD_FILENAME, resource);
+                        return Optional.of(
+                                new AuditableResult<>(
+                                        reportDownload,
+                                        ReportJobAudit.downloaded(
+                                                jobStatusResponse,
+                                                userProvider.getUserId(),
+                                                reportDownload.filename())));
+                    } catch (IOException e) {
+                        throw noDownloadStream(e);
+                    }
+                });
+    }
+
     private <T> AuditedReportLifecycle<T> audited(ReportCsvLifecycle<T> lifecycle) {
         return new AuditedReportLifecycle<>(lifecycle, reportJobAuditService);
+    }
+
+    private JobTypeRequest jobRequest(JobType jobType) {
+        return JobTypeRequest.builder().jobType(jobType).userName(userProvider.getUserId()).build();
     }
 
     private ReportJobCreation auditCreate(
@@ -325,8 +359,19 @@ public class ReportServiceImpl implements ReportService {
                                             reportJobCreation.acknowledgement(),
                                             userProvider.getUserId(),
                                             reportJobCreation.reportParameters())));
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
+    }
+
+    private AppRegistryException noDownloadStream(Exception cause) {
+        if (cause == null) {
+            return new AppRegistryException(
+                    JobError.JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                    "Download stream not available");
+        }
+        return new AppRegistryException(
+                JobError.JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                "Download stream not available",
+                cause);
     }
 
     @FunctionalInterface

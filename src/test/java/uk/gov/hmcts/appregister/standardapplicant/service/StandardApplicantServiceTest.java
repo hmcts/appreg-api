@@ -8,7 +8,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -61,8 +60,7 @@ class StandardApplicantServiceTest {
             List.of(new AuditOperationSlf4jLogger());
 
     @Spy
-    private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper(), listeners);
+    private AuditOperationService auditOperationService = new AuditOperationServiceImpl(listeners);
 
     @Spy
     private StandardApplicantMapperImpl standardApplicantMapper = new StandardApplicantMapperImpl();
@@ -166,7 +164,6 @@ class StandardApplicantServiceTest {
                 .processAudit(
                         isNull(),
                         eq(StandardApplicantOperation.GET_STANDARD_APPLICANTS),
-                        notNull(),
                         notNull());
     }
 
@@ -182,7 +179,6 @@ class StandardApplicantServiceTest {
                 .processAudit(
                         isNull(),
                         eq(StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE),
-                        notNull(),
                         notNull());
     }
 
@@ -204,8 +200,7 @@ class StandardApplicantServiceTest {
                         ukZone,
                         pageMapper,
                         validator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new ApplicantMapperImpl());
 
         val actual = localService.findByCode(code);
@@ -258,8 +253,7 @@ class StandardApplicantServiceTest {
                         ukZone,
                         pageMapper,
                         validator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new ApplicantMapperImpl());
 
         // Execute the search with every currently in-scope DB-backed filter populated so the
@@ -316,8 +310,7 @@ class StandardApplicantServiceTest {
                         ukZone,
                         pageMapper,
                         validator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new ApplicantMapperImpl());
 
         localService.findAll(

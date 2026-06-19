@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.applicationcode.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +14,6 @@ import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -40,7 +38,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final ApplicationCodeMapper applicationCodeMapper;
     private final ApplicationFeeService feeService;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final PageMapper pageMapper;
     private final Clock clock;
     private final ZoneId ukZone;
@@ -105,8 +102,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                     newPage, applicationCodeMapper.toEntity(codeAndTitle));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override

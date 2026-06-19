@@ -20,7 +20,7 @@ public class JobContext {
      * until the end. This is false by default, so the underlying job will continue to validate each
      * page of data until the end.
      */
-    private boolean isStoppedValidating = false;
+    private boolean isStoppedValidating;
 
     /**
      * determines if any failures have been made.

@@ -243,12 +243,12 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
                             .formatted(
-                                    !invalidFormatException.getPath().isEmpty()
-                                            ? invalidFormatException
+                                    invalidFormatException.getPath().isEmpty()
+                                            ? UNKNOWN_FIELD
+                                            : invalidFormatException
                                                     .getPath()
                                                     .getFirst()
-                                                    .getFieldName()
-                                            : UNKNOWN_FIELD));
+                                                    .getFieldName()));
         } else {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
@@ -288,11 +288,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         for (var reference : exception.getPath()) {
             if (reference.getFieldName() != null) {
                 if (!path.isEmpty()) {
-                    path.append(".");
+                    path.append('.');
                 }
                 path.append(reference.getFieldName());
             } else if (reference.getIndex() >= 0) {
-                path.append("[").append(reference.getIndex()).append("]");
+                path.append('[').append(reference.getIndex()).append(']');
             }
         }
 

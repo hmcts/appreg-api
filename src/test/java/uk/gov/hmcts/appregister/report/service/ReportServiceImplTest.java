@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
@@ -24,10 +25,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -54,6 +54,7 @@ import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.exception.ReportError;
@@ -69,6 +70,7 @@ import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
     @Mock private AsyncJobService asyncJobService;
+    @Mock private JobService jobService;
     @Mock private UserProvider userProvider;
     @Mock private JobMapper jobMapper;
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
@@ -79,14 +81,94 @@ class ReportServiceImplTest {
     private ReportServiceImpl service() {
         return new ReportServiceImpl(
                 asyncJobService,
+                jobService,
                 userProvider,
                 jobMapper,
                 jdbcTemplate,
                 auditService,
-                List.of(),
                 reportJobAuditService,
                 new ReportFilterNormaliser(),
-                reportLocationValidator);
+                reportLocationValidator,
+                "appreg",
+                500);
+    }
+
+    @Test
+    void givenCompletedReportJob_whenDownloadingReport_thenReturnsResourceAndAuditsReportJob()
+            throws Exception {
+        UUID jobId = UUID.randomUUID();
+        JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
+        var resource =
+                new InputStreamResource(
+                        new ByteArrayInputStream(
+                                "report".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+
+        when(userProvider.getUserId()).thenReturn("requesting-user");
+        when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.COMPLETED);
+        when(jobStatusResponse.getUuid()).thenReturn(jobId);
+        when(jobStatusResponse.getType()).thenReturn(JobType.FEES_REPORT);
+        when(jobStatusResponse.read()).thenReturn(resource);
+        AtomicReference<Auditable> auditedDownload = new AtomicReference<>();
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT, auditedDownload);
+
+        var result = service().downloadReport(jobId);
+
+        Assertions.assertEquals("report.csv", result.filename());
+        Assertions.assertSame(resource, result.resource());
+        var auditData = auditedDownload.get().extractAuditData(CrudEnum.READ);
+        Assertions.assertTrue(
+                auditData.contains(new AuditableData("report_jobs", "jobId", jobId.toString())));
+        Assertions.assertTrue(
+                auditData.contains(new AuditableData("report_jobs", "reportType", "FEES_REPORT")));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "requestingUser", "requesting-user")));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "fileReference", "report.csv")));
+    }
+
+    @Test
+    void givenIncompleteReportJob_whenDownloadingReport_thenThrows() {
+        UUID jobId = UUID.randomUUID();
+        JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
+
+        when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.RECEIVED);
+        runAuditPassThrough();
+        ReportServiceImpl service = service();
+
+        var ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.downloadReport(jobId));
+
+        Assertions.assertSame(
+                uk.gov.hmcts.appregister.common.async.exception.JobError
+                        .JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD,
+                ex.getCode());
+    }
+
+    @Test
+    void givenReportReadFails_whenDownloadingReport_thenThrows() throws Exception {
+        UUID jobId = UUID.randomUUID();
+        JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
+
+        when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.COMPLETED);
+        when(jobStatusResponse.read()).thenThrow(new IOException("boom"));
+        runAuditPassThrough();
+        ReportServiceImpl service = service();
+
+        var ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.downloadReport(jobId));
+
+        Assertions.assertSame(
+                uk.gov.hmcts.appregister.common.async.exception.JobError
+                        .JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                ex.getCode());
     }
 
     @Test
@@ -113,8 +195,6 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
                         .dateFrom(expectedDateTo)
@@ -124,9 +204,7 @@ class ReportServiceImplTest {
         try {
             ReportJobCreation result = service.createActivityAuditReport(filter);
 
-            ActivityAuditFilterDto readerFilter =
-                    (ActivityAuditFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            ActivityAuditFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -167,16 +245,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
                 new FeesReportFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createFeesReport(filter);
 
-            FeesReportFilterDto readerFilter =
-                    (FeesReportFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
+            FeesReportFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -242,8 +317,6 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         SearchWarrantsReportFilterDto filter =
                 new SearchWarrantsReportFilterDto()
                         .dateFrom(expectedDateTo)
@@ -252,9 +325,7 @@ class ReportServiceImplTest {
         try {
             ReportJobCreation result = service.createSearchWarrantsReport(filter);
 
-            SearchWarrantsReportFilterDto readerFilter =
-                    (SearchWarrantsReportFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            SearchWarrantsReportFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -296,16 +367,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
                 new DurationFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createDurationReport(filter);
 
-            DurationFilterDto readerFilter =
-                    (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
+            DurationFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -346,16 +414,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         WorkloadFilterDto filter =
                 new WorkloadFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createWorkloadReport(filter);
 
-            WorkloadFilterDto readerFilter =
-                    (WorkloadFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filterDto");
+            WorkloadFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -422,17 +487,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ListMaintenanceFilterDto filter =
                 new ListMaintenanceFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createListMaintenanceReport(filter);
 
-            ListMaintenanceFilterDto readerFilter =
-                    (ListMaintenanceFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            ListMaintenanceFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -479,8 +540,6 @@ class ReportServiceImplTest {
                 createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         PrivateProsecutorsIndexFilterDto filter =
                 new PrivateProsecutorsIndexFilterDto()
                         .dateFrom(expectedDateTo)
@@ -490,9 +549,7 @@ class ReportServiceImplTest {
         try {
             ReportJobCreation result = service.createPrivateProsecutorsIndexReport(filter);
 
-            PrivateProsecutorsIndexFilterDto readerFilter =
-                    (PrivateProsecutorsIndexFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            PrivateProsecutorsIndexFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -591,8 +648,6 @@ class ReportServiceImplTest {
         runAuditPassThrough();
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
@@ -602,8 +657,7 @@ class ReportServiceImplTest {
         try {
             service.createDurationReport(filter);
 
-            DurationFilterDto readerFilter =
-                    (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
+            DurationFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertSame(location, readerFilter.getLocation());
             Mockito.verify(asyncJobService)
                     .startJob(
@@ -657,10 +711,7 @@ class ReportServiceImplTest {
                             return result.getResultingValue();
                         })
                 .when(auditService)
-                .processAudit(
-                        eq(operation),
-                        any(Function.class),
-                        any(AuditOperationLifecycleListener[].class));
+                .processAudit(eq(operation), any(Function.class));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -672,10 +723,7 @@ class ReportServiceImplTest {
                             return execution.apply(null).orElseThrow().getResultingValue();
                         })
                 .when(auditService)
-                .processAudit(
-                        any(ReportAuditOperation.class),
-                        any(Function.class),
-                        any(AuditOperationLifecycleListener[].class));
+                .processAudit(any(ReportAuditOperation.class), any(Function.class));
     }
 
     private <T> void closeLifecycle(AtomicReference<AsyncJobLifecycle<T>> lifecycle)

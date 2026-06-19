@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Comparator;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -22,6 +25,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -37,6 +41,7 @@ import uk.gov.hmcts.appregister.generated.model.RespondentPerson;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryCrudTest {
 
@@ -79,6 +84,73 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));
     }
 
+    @Test
+    void givenInvalidBulkUploadHeader_whenBulkUploadApplicationListEntries_thenReturns400()
+            throws Exception {
+        TokenAndJwksKey token = createAdminToken().fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        try (var file = tempCsv("APPLICANT_CODE|APPLICATION_CODE\nAPP001|AP99001\n")) {
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+
+            response.then().statusCode(400);
+            ProblemAssertUtil.assertEquals(
+                    AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT.getCode(), response);
+        }
+    }
+
+    @Test
+    void givenBusinessInvalidBulkUploadRow_whenBulkUploadApplicationListEntries_thenJobFails()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        try (var file =
+                tempCsv(
+                        "APPLICANT_CODE|RESP_TITLE|RESP_NAME_ORG|RESP_FORENAME1|RESP_FORENAME2"
+                                + "|RESP_FORENAME3|RESP_SURNAME|RESP_ADDLINE1|RESP_ADDLINE2"
+                                + "|RESP_ADDLINE3|RESP_ADDLINE4|RESP_ADDLINE5|RESP_POSTCODE"
+                                + "|RESP_EMAIL|RESP_TEL|RESP_MOBILE|ACCOUNT_NUMBER"
+                                + "|APPLICATION_CODE|APPLICATION_TEXT1|APPLICATION_TEXT2\n"
+                                + "APP001||Alpha Holdings Ltd|||||1 Alpha Street|Suite 10"
+                                + "|North Quarter|London|Greater London|AA1 1AA"
+                                + "|alpha.holdings@example.com|0207 1111111|07771 111111"
+                                + "|AC2023110001|ZZ99999||\n")) {
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+
+            response.then().statusCode(202);
+            JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+
+            JobAcknowledgement completedJob =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient,
+                            getLocalUrl("jobs/" + acknowledgement.getId()),
+                            tokenGenerator.fetchTokenForRole());
+
+            Assertions.assertEquals(JobStatus1.FAILED, completedJob.getStatus());
+            assertThat(completedJob.getErrorDescription())
+                    .isNotBlank()
+                    .contains("Row 2 [APPLICATION_CODE]")
+                    .contains("ZZ99999");
+            Assertions.assertEquals(0, countEntriesForList(listId));
+        }
+    }
+
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
         var createListRequest =
                 new ApplicationListCreateDto()
@@ -101,6 +173,19 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
     private File csvFile() throws URISyntaxException {
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
+    }
+
+    private static AutoDeletingFile tempCsv(String content) throws IOException {
+        File file = AppRegTempFileUtil.generateTempFile("bulk-upload-test");
+        Files.writeString(file.toPath(), content);
+        return new AutoDeletingFile(file);
+    }
+
+    private record AutoDeletingFile(File file) implements AutoCloseable {
+        @Override
+        public void close() throws IOException {
+            Files.deleteIfExists(file.toPath());
+        }
     }
 
     private List<PersistedEntry> persistedEntriesForList(UUID listId) {

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -22,10 +21,9 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 
 /**
- * Encapsulates a unit of work for the lifecycle of an auditable operation. Behaviour of each audit
- * lifecycle event can be controlled by passing in {@link
- * uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener} that will be invoked at
- * the start and end of the operation.
+ * Encapsulates a unit of work for the lifecycle of an auditable operation. Registered {@link
+ * uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener} instances are invoked at
+ * the start and end of each operation.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -35,19 +33,13 @@ public class AuditOperationServiceImpl implements AuditOperationService {
     /** The trace id name that is inserted by micrometer. */
     public static final String TRACE_ID = "traceId";
 
-    private final ObjectMapper mapper;
-
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     @Override
     public <T, E extends Keyable> T processAudit(
             AuditOperation auditType,
             Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-        return processAudit(
-                null,
-                auditType,
-                execution,
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+        return processAudit(null, auditType, execution);
     }
 
     @Override
@@ -55,31 +47,10 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             E oldValue,
             AuditOperation auditType,
             Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-        return processAudit(
-                oldValue,
-                auditType,
-                execution,
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-    }
-
-    @Override
-    public <T, E extends Keyable> T processAudit(
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-            AuditOperationLifecycleListener... listener) {
-        return processAudit(null, auditType, execution, listener);
-    }
-
-    @Override
-    public <T, E extends Keyable> T processAudit(
-            E oldValue,
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-            AuditOperationLifecycleListener... listener) {
         StartEvent event = new StartEvent(auditType, getTraceId(), oldValue);
 
         // before execution hook
-        fireAuditEvent(event, listener);
+        fireAuditEvent(event);
 
         log.debug("Processed start of auditable operation: {}", auditType.getEventName());
         Optional<AuditableResult<T, E>> responsePayload;
@@ -90,24 +61,25 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             checkIfAuditOperationIsSuitableForResult(auditType, oldValue, responsePayload);
 
             if (responsePayload.isPresent()) {
+                var result = responsePayload.get();
                 // fire after the completed operation
                 fireAuditEvent(
                         new CompleteEvent(
                                 event,
-                                responsePayload.get().getResultingValue() != null
-                                        ? getBodyAsString(responsePayload.get().getResultingValue())
+                                result.getResultingValue() != null
+                                        ? ObfuscationUtil.getObfuscatedString(
+                                                result.getResultingValue())
                                         : null,
-                                responsePayload.get().getNewEntity()),
-                        listener);
+                                result.getNewEntity()));
             } else {
                 // fire after the completed operation
-                fireAuditEvent(new CompleteEvent(event, null, null), listener);
+                fireAuditEvent(new CompleteEvent(event, null, null));
             }
 
             log.debug("Processed success auditable operation: {}", auditType.getEventName());
         } catch (Exception e) {
             // fire after the failure of an operation
-            fireAuditEvent(new FailEvent(event), listener);
+            fireAuditEvent(new FailEvent(event));
 
             log.debug("Processed failure auditable operation: {}", auditType.getEventName());
             throw e;
@@ -146,23 +118,12 @@ public class AuditOperationServiceImpl implements AuditOperationService {
     }
 
     /**
-     * gets the json body in string form that will be part of the audit response.
-     *
-     * @return The body as a string or defaulted on an marshalling error
-     */
-    private String getBodyAsString(Object body) {
-        return ObfuscationUtil.getObfuscatedString(body);
-    }
-
-    /**
      * fires the audit event for an operation.
      *
-     * @param listener The listener to fire with the event
      * @param auditEvent The audit event to fire
      */
-    private void fireAuditEvent(
-            AuditEvent auditEvent, AuditOperationLifecycleListener... listener) {
-        for (var l : listener) {
+    private void fireAuditEvent(AuditEvent auditEvent) {
+        for (var l : auditLifecycleListeners) {
             try {
                 l.eventPerformed(auditEvent);
             } catch (Exception e) {
@@ -189,7 +150,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
         try {
             String traceId = MDC.get(TRACE_ID);
             if (traceId != null) {
-                return MDC.get(TRACE_ID);
+                return traceId;
             }
         } catch (IllegalArgumentException e) {
             log.warn("Couldn't find the trace id defaulting", e);

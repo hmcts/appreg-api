@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -91,6 +90,6 @@ class ListMaintenanceReportLifecycleTest {
     }
 
     private File getOutputFile(ListMaintenanceReportLifecycle lifecycle) {
-        return (File) ReflectionTestUtils.getField(lifecycle, "file");
+        return lifecycle.outputFile();
     }
 }

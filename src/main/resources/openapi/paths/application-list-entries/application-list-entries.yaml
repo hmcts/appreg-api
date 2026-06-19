@@ -28,7 +28,8 @@ get:
     - in: query
       name: sort
       description: >
-        Sort order. Supported properties are sequenceNumber, applicationTitle, applicantName,
+        Sort order. A single value is currently supported. Format: `property,(asc|desc)`.
+        Supported properties are sequenceNumber, applicationTitle, applicantName,
         respondentName, respondentPostcode, accountReference, feeRequired, and resulted.
         applicantName sorts by organisation name for organisation applicants, otherwise by
         first name and last name.
@@ -61,6 +62,7 @@ post:
   operationId: createApplicationListEntry
   tags: [ application-list-entries ]
   summary: Create an Application List Entry
+  description: Creates a new Application List Entry within the Application List identified by `listId`.
   requestBody:
     required: true
     content:
