@@ -1887,7 +1887,7 @@ paths:
   /application-lists/{listId}/entries/fees:
     put:
       description: |
-        Atomically appends the supplied fee status rows to each specified entry in the source list (path `listId`). Existing fee status rows are preserved to retain fee-status history. If any entry cannot be updated, no fee status rows are changed.
+        Atomically appends the supplied fee status rows to each specified entry in the source list (path `listId`). Existing fee status rows are preserved to retain fee-status history. If any supplied fee detail has `hasOffsiteFee=true`, the selected entries will be ensured to have an off-site fee mapping. `hasOffsiteFee=false` does not remove an existing off-site fee mapping. If any entry cannot be updated, no fee status rows are changed.
       operationId: bulkUpdateApplicationListEntryFees
       parameters:
       - description: ID of the Application List that owns the entries whose fee details
@@ -7199,7 +7199,8 @@ components:
           minLength: 1
           type: string
         hasOffsiteFee:
-          description: Indicates whether an off-site fee applies.
+          description: |
+            When true on any supplied fee detail, ensures the selected entries have an off-site fee mapping. False does not remove an existing off-site fee mapping.
           example: true
           type: boolean
       required:

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import lombok.val;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
@@ -169,6 +170,44 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 feeStatus(PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null),
                 feeStatus(PaymentStatus.PAID, UPDATED_STATUS_DATE, "PAY-BULK-1"),
                 feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, "PAY-BULK-2"));
+    }
+
+    @Test
+    void
+            givenEntryAlreadyHasOffsiteFee_whenBulkUpdateFeesWithoutOffsiteFlag_thenOffsiteFeeIsPreserved()
+                    throws Exception {
+        val tokenGenerator = createAdminToken();
+        val entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        true);
+
+        differenceLogAsserter.clearLogs();
+
+        val response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entry.getId()))
+                                .feeDetails(
+                                        List.of(
+                                                feeDetails(
+                                                        PaymentStatus.REMITTED,
+                                                        UPDATED_STATUS_DATE,
+                                                        UPDATED_PAYMENT_REFERENCE,
+                                                        false))));
+
+        response.then().statusCode(200);
+
+        assertFeeDetails(
+                getEntry(tokenGenerator, entry.getListId(), entry.getId()),
+                true,
+                feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
     }
 
     @Test

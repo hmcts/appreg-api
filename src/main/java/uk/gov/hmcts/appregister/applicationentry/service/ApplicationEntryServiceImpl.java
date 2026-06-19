@@ -691,7 +691,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         for (BulkFeeDetailsDto feeDetail : feeDetails) {
             saveFeeStatus(createBulkFeeStatus(entry, feeDetail), new ArrayList<>());
         }
-        updateOffsiteFeeMapping(entry, hasOffsiteFee, offsiteFeeSupplier);
+
+        if (hasOffsiteFee) {
+            ensureOffsiteFeeMapping(entry, offsiteFeeSupplier);
+        }
     }
 
     private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
@@ -919,15 +922,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         "Offsite fee does not exist"));
     }
 
-    private void updateOffsiteFeeMapping(
-            ApplicationListEntry entry, boolean hasOffsiteFee, Supplier<Fee> offsiteFeeSupplier) {
+    private void ensureOffsiteFeeMapping(
+            ApplicationListEntry entry, Supplier<Fee> offsiteFeeSupplier) {
         List<AppListEntryFeeId> existingOffsiteMappings =
                 appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId());
-
-        if (!hasOffsiteFee) {
-            deleteOffsiteFeeMappings(existingOffsiteMappings);
-            return;
-        }
 
         if (!existingOffsiteMappings.isEmpty()) {
             return;
@@ -953,22 +951,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                     return Optional.of(new AuditableResult<>(null, savedOffsiteEntryFee));
                 });
-    }
-
-    private void deleteOffsiteFeeMappings(List<AppListEntryFeeId> existingOffsiteMappings) {
-        for (AppListEntryFeeId existingOffsiteMapping : existingOffsiteMappings) {
-            auditService.processAudit(
-                    existingOffsiteMapping,
-                    AppListEntryAuditOperation.DELETE_FEE_ENTRY,
-                    req -> {
-                        appListEntryFeeRepository.delete(existingOffsiteMapping);
-                        return Optional.empty();
-                    });
-        }
-
-        if (!existingOffsiteMappings.isEmpty()) {
-            appListEntryFeeRepository.flush();
-        }
     }
 
     /**

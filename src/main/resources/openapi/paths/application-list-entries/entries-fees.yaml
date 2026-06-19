@@ -13,7 +13,9 @@ put:
   description: >
     Atomically appends the supplied fee status rows to each specified entry in the source list
     (path `listId`). Existing fee status rows are preserved to retain fee-status history.
-    If any entry cannot be updated, no fee status rows are changed.
+    If any supplied fee detail has `hasOffsiteFee=true`, the selected entries will be ensured to
+    have an off-site fee mapping. `hasOffsiteFee=false` does not remove an existing off-site fee
+    mapping. If any entry cannot be updated, no fee status rows are changed.
   requestBody:
     required: true
     content:

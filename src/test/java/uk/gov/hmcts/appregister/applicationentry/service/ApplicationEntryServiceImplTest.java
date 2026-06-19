@@ -1992,7 +1992,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_deletesOffsiteFeeMappingWhenNotRequested() {
+    void bulkUpdateFees_preservesExistingOffsiteFeeMappingWhenNotRequested() {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
@@ -2014,8 +2014,9 @@ class ApplicationEntryServiceImplTest {
 
         service.bulkUpdateFees(listId, dto);
 
-        verify(appListEntryFeeRepository).delete(existingOffsiteMapping);
-        verify(appListEntryFeeRepository).flush();
+        verify(appListEntryFeeRepository, never()).delete(existingOffsiteMapping);
+        verify(appListEntryFeeRepository, never()).flush();
+        verify(appListEntryFeeRepository, never()).save(any(AppListEntryFeeId.class));
     }
 
     private ApplicationList openApplicationList(UUID listId) {
