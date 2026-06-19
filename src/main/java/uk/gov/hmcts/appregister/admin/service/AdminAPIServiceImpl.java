@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyReposito
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
@@ -44,18 +45,33 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     }
 
     @Override
+    @Transactional
     public void enableDisableDatabaseJobByName(AdminJobType jobName, Boolean enable) {
         var databaseJob = databaseJobRepository.findByName(jobName.getValue());
-        databaseJob.setEnabled(Boolean.TRUE.equals(enable) ? YesOrNo.YES : YesOrNo.NO);
-        databaseJobRepository.save(databaseJob);
+        var oldDatabaseJob = BeanUtil.copyBean(databaseJob);
+
+        auditService.processAudit(
+                oldDatabaseJob,
+                AdminAuditOperation.UPDATE_DATABASE_JOB_STATUS_AUDIT_EVENT,
+                unused -> {
+                    databaseJob.setEnabled(Boolean.TRUE.equals(enable) ? YesOrNo.YES : YesOrNo.NO);
+                    var savedDatabaseJob = databaseJobRepository.save(databaseJob);
+                    return Optional.of(new AuditableResult<>(null, savedDatabaseJob));
+                });
     }
 
     @Override
     public JobRetentionPolicy getDatabaseJobRetentionPeriodByName(AdminJobType jobName) {
-        var retentionPolicy = getRetentionPolicyByJobName(jobName);
-
-        return new JobRetentionPolicy()
-                .retentionPeriodDays(Integer.valueOf(retentionPolicy.getConfigValue()));
+        return auditService.processAudit(
+                AdminAuditOperation.GET_DATABASE_JOB_RETENTION_PERIOD_AUDIT_EVENT,
+                unused -> {
+                    var retentionPolicy = getRetentionPolicyByJobName(jobName);
+                    var response =
+                            new JobRetentionPolicy()
+                                    .retentionPeriodDays(
+                                            Integer.valueOf(retentionPolicy.getConfigValue()));
+                    return Optional.of(new AuditableResult<>(response, retentionPolicy));
+                });
     }
 
     @Override
@@ -63,8 +79,16 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     public void updateDatabaseJobRetentionPeriodByName(
             AdminJobType jobName, Integer retentionPeriodDays) {
         var retentionPolicy = getRetentionPolicyByJobName(jobName);
-        retentionPolicy.setConfigValue(retentionPeriodDays.toString());
-        retentionPolicyRepository.save(retentionPolicy);
+        var oldRetentionPolicy = BeanUtil.copyBean(retentionPolicy);
+
+        auditService.processAudit(
+                oldRetentionPolicy,
+                AdminAuditOperation.UPDATE_DATABASE_JOB_RETENTION_PERIOD_AUDIT_EVENT,
+                unused -> {
+                    retentionPolicy.setConfigValue(retentionPeriodDays.toString());
+                    var savedRetentionPolicy = retentionPolicyRepository.save(retentionPolicy);
+                    return Optional.of(new AuditableResult<>(null, savedRetentionPolicy));
+                });
     }
 
     private RetentionPolicy getRetentionPolicyByJobName(AdminJobType jobName) {

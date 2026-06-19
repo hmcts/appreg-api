@@ -8,7 +8,12 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @RequiredArgsConstructor
 @Getter
 public enum AdminAuditOperation implements AuditOperation {
-    GET_DATABASE_JOB_STATUS_AUDIT_EVENT("Get Database Job Status", CrudEnum.READ);
+    GET_DATABASE_JOB_STATUS_AUDIT_EVENT("Get Database Job Status", CrudEnum.READ),
+    UPDATE_DATABASE_JOB_STATUS_AUDIT_EVENT("Update Database Job Status", CrudEnum.UPDATE),
+    GET_DATABASE_JOB_RETENTION_PERIOD_AUDIT_EVENT(
+            "Get Database Job Retention Period", CrudEnum.READ),
+    UPDATE_DATABASE_JOB_RETENTION_PERIOD_AUDIT_EVENT(
+            "Update Database Job Retention Period", CrudEnum.UPDATE);
 
     private final String eventName;
 
