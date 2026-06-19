@@ -116,6 +116,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final String METRIC_STATUS_TAG = "status";
     private static final String METRIC_SUCCEEDED = "succeeded";
     private static final String METRIC_FAILED = "failed";
+    private static final int NOTES_MAX_LENGTH = 4000;
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -527,14 +528,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 AppListEntryAuditOperation
                                                         .UPDATE_CLOSED_APP_ENTRY_LIST,
                                                 req -> {
+                                                    String updatedNotes =
+                                                            appendNotes(
+                                                                    success.getApplicationEntryId()
+                                                                            .getNotes(),
+                                                                    updateEntry
+                                                                            .getData()
+                                                                            .getAdditionalNotes());
+                                                    validateNotesLength(updatedNotes);
                                                     success.getApplicationEntryId()
-                                                            .setNotes(
-                                                                    appendNotes(
-                                                                            success.getApplicationEntryId()
-                                                                                    .getNotes(),
-                                                                            updateEntry
-                                                                                    .getData()
-                                                                                    .getAdditionalNotes()));
+                                                            .setNotes(updatedNotes);
 
                                                     // update the notes by appending with the
                                                     // alternative
@@ -554,6 +557,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 }),
                                 // return the latest entities for the entry read on the update
                                 getKeyablesForCreateUpdateEtag(success.getApplicationEntryId())));
+    }
+
+    private static void validateNotesLength(String notes) {
+        if (notes != null && notes.length() > NOTES_MAX_LENGTH) {
+            throw new AppRegistryException(
+                    AppListEntryError.NOTES_TOO_LONG,
+                    "notes must not be longer than %s characters".formatted(NOTES_MAX_LENGTH));
+        }
     }
 
     private static String appendNotes(String existingNotes, String additionalNotes) {

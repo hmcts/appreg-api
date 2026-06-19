@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.report.controller;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.exception.JobError;
@@ -37,7 +35,6 @@ import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAudit;
-import uk.gov.hmcts.appregister.report.service.ReportJobCreation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
@@ -52,7 +49,6 @@ public class ReportController implements ReportsApi {
     private final ReportService reportService;
     private final JobService jobService;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final UserProvider userProvider;
 
     @Override
@@ -61,24 +57,8 @@ public class ReportController implements ReportsApi {
         log.info(
                 "Activity Audit Report payload: {}",
                 ObfuscationUtil.getObfuscatedString(activityAuditFilterDto));
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createActivityAuditReport(activityAuditFilterDto);
-
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(
+                reportService.createActivityAuditReport(activityAuditFilterDto).acknowledgement());
     }
 
     @Override
@@ -87,24 +67,7 @@ public class ReportController implements ReportsApi {
         log.info(
                 "Fees report payload: {}",
                 ObfuscationUtil.getObfuscatedString(feesReportFilterDto));
-
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createFeesReport(feesReportFilterDto);
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(reportService.createFeesReport(feesReportFilterDto).acknowledgement());
     }
 
     @Override
@@ -113,23 +76,7 @@ public class ReportController implements ReportsApi {
         log.info(
                 "Workload report payload: {}",
                 ObfuscationUtil.getObfuscatedString(workloadFilterDto));
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createWorkloadReport(workloadFilterDto);
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(reportService.createWorkloadReport(workloadFilterDto).acknowledgement());
     }
 
     @Override
@@ -138,25 +85,10 @@ public class ReportController implements ReportsApi {
         log.info(
                 "Search warrants report payload: {}",
                 ObfuscationUtil.getObfuscatedString(searchWarrantsReportFilterDto));
-
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createSearchWarrantsReport(
-                                            searchWarrantsReportFilterDto);
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(
+                reportService
+                        .createSearchWarrantsReport(searchWarrantsReportFilterDto)
+                        .acknowledgement());
     }
 
     @Override
@@ -165,24 +97,7 @@ public class ReportController implements ReportsApi {
         log.info(
                 "Duration report payload: {}",
                 ObfuscationUtil.getObfuscatedString(durationFilterDto));
-
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createDurationReport(durationFilterDto);
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(reportService.createDurationReport(durationFilterDto).acknowledgement());
     }
 
     @Override
@@ -191,26 +106,10 @@ public class ReportController implements ReportsApi {
         log.info(
                 "List maintenance report payload: {}",
                 ObfuscationUtil.getObfuscatedString(listMaintenanceFilterDto));
-
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createListMaintenanceReport(
-                                            listMaintenanceFilterDto);
-
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(
+                reportService
+                        .createListMaintenanceReport(listMaintenanceFilterDto)
+                        .acknowledgement());
     }
 
     @Override
@@ -219,26 +118,10 @@ public class ReportController implements ReportsApi {
         log.info(
                 "Private Prosecutors Index report payload: {}",
                 ObfuscationUtil.getObfuscatedString(privateProsecutorsIndexFilterDto));
-
-        JobAcknowledgement acknowledgement =
-                auditService.processAudit(
-                        ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
-                        unused -> {
-                            ReportJobCreation reportJobCreation =
-                                    reportService.createPrivateProsecutorsIndexReport(
-                                            privateProsecutorsIndexFilterDto);
-
-                            return Optional.of(
-                                    new AuditableResult<>(
-                                            reportJobCreation.acknowledgement(),
-                                            ReportJobAudit.created(
-                                                    reportJobCreation.acknowledgement(),
-                                                    userProvider.getUserId(),
-                                                    reportJobCreation.reportParameters())));
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-
-        return accepted(acknowledgement);
+        return accepted(
+                reportService
+                        .createPrivateProsecutorsIndexReport(privateProsecutorsIndexFilterDto)
+                        .acknowledgement());
     }
 
     @Override
@@ -283,8 +166,7 @@ public class ReportController implements ReportsApi {
                                 JobError.JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
                                 "Download stream not available");
                     }
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
 
         return ResponseEntity.ok()
                 .header(

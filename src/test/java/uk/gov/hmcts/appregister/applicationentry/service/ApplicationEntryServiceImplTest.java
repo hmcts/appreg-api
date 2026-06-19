@@ -51,6 +51,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -2375,6 +2376,41 @@ class ApplicationEntryServiceImplTest {
         verify(applicationListEntryRepository).save(captorEntry.capture());
         Assertions.assertEquals(
                 entryUpdateClosedDto.getAdditionalNotes(), captorEntry.getValue().getNotes());
+    }
+
+    @Test
+    void givenUpdateClosedListWhenCombinedNotesExceedLimitThenThrowsBadRequestAndDoesNotSave() {
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+        String existingNotes = "a".repeat(3990);
+        applicationListEntry.setNotes(existingNotes);
+        applicationListEntry.setId(1000L);
+        applicationListEntry.setVersion(232L);
+
+        updateClosedEntriesValidator.setSuccess(
+                new UpdateApplicationEntryClosedValidationSuccess(
+                        new ApplicationList(), applicationListEntry));
+
+        PayloadForUpdateClosedEntry payload =
+                new PayloadForUpdateClosedEntry(
+                        entryUpdateClosedDto, UUID.randomUUID(), UUID.randomUUID());
+
+        assertThatThrownBy(() -> service.updateClosedEntry(payload))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        ex -> {
+                            AppRegistryException appEx = (AppRegistryException) ex;
+                            Assertions.assertEquals(
+                                    AppListEntryError.NOTES_TOO_LONG, appEx.getCode());
+                            Assertions.assertEquals(
+                                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                                    appEx.getCode().getCode().getHttpCode());
+                        });
+
+        verify(applicationListEntryRepository, never()).save(any(ApplicationListEntry.class));
+        Assertions.assertEquals(existingNotes, applicationListEntry.getNotes());
     }
 
     @Test
