@@ -27,7 +27,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
@@ -89,7 +88,9 @@ class ReportServiceImplTest {
                 auditService,
                 reportJobAuditService,
                 new ReportFilterNormaliser(),
-                reportLocationValidator);
+                reportLocationValidator,
+                "appreg",
+                500);
     }
 
     @Test
@@ -194,8 +195,6 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
                         .dateFrom(expectedDateTo)
@@ -205,9 +204,7 @@ class ReportServiceImplTest {
         try {
             ReportJobCreation result = service.createActivityAuditReport(filter);
 
-            ActivityAuditFilterDto readerFilter =
-                    (ActivityAuditFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            ActivityAuditFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -248,16 +245,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
                 new FeesReportFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createFeesReport(filter);
 
-            FeesReportFilterDto readerFilter =
-                    (FeesReportFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
+            FeesReportFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -323,8 +317,6 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         SearchWarrantsReportFilterDto filter =
                 new SearchWarrantsReportFilterDto()
                         .dateFrom(expectedDateTo)
@@ -333,9 +325,7 @@ class ReportServiceImplTest {
         try {
             ReportJobCreation result = service.createSearchWarrantsReport(filter);
 
-            SearchWarrantsReportFilterDto readerFilter =
-                    (SearchWarrantsReportFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            SearchWarrantsReportFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -377,16 +367,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
                 new DurationFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createDurationReport(filter);
 
-            DurationFilterDto readerFilter =
-                    (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
+            DurationFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -427,16 +414,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         WorkloadFilterDto filter =
                 new WorkloadFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createWorkloadReport(filter);
 
-            WorkloadFilterDto readerFilter =
-                    (WorkloadFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filterDto");
+            WorkloadFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -503,17 +487,13 @@ class ReportServiceImplTest {
                 ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT, createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ListMaintenanceFilterDto filter =
                 new ListMaintenanceFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
             ReportJobCreation result = service.createListMaintenanceReport(filter);
 
-            ListMaintenanceFilterDto readerFilter =
-                    (ListMaintenanceFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            ListMaintenanceFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -560,8 +540,6 @@ class ReportServiceImplTest {
                 createdAudit);
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         PrivateProsecutorsIndexFilterDto filter =
                 new PrivateProsecutorsIndexFilterDto()
                         .dateFrom(expectedDateTo)
@@ -571,9 +549,7 @@ class ReportServiceImplTest {
         try {
             ReportJobCreation result = service.createPrivateProsecutorsIndexReport(filter);
 
-            PrivateProsecutorsIndexFilterDto readerFilter =
-                    (PrivateProsecutorsIndexFilterDto)
-                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            PrivateProsecutorsIndexFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
@@ -672,8 +648,6 @@ class ReportServiceImplTest {
         runAuditPassThrough();
 
         ReportServiceImpl service = service();
-        ReflectionTestUtils.setField(service, "schema", "appreg");
-        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
@@ -683,8 +657,7 @@ class ReportServiceImplTest {
         try {
             service.createDurationReport(filter);
 
-            DurationFilterDto readerFilter =
-                    (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
+            DurationFilterDto readerFilter = dataReader.get().filter();
             Assertions.assertSame(location, readerFilter.getLocation());
             Mockito.verify(asyncJobService)
                     .startJob(

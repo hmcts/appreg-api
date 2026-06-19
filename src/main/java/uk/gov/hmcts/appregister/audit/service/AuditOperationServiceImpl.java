@@ -61,15 +61,16 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             checkIfAuditOperationIsSuitableForResult(auditType, oldValue, responsePayload);
 
             if (responsePayload.isPresent()) {
+                var result = responsePayload.get();
                 // fire after the completed operation
                 fireAuditEvent(
                         new CompleteEvent(
                                 event,
-                                responsePayload.get().getResultingValue() != null
+                                result.getResultingValue() != null
                                         ? ObfuscationUtil.getObfuscatedString(
-                                                responsePayload.get().getResultingValue())
+                                                result.getResultingValue())
                                         : null,
-                                responsePayload.get().getNewEntity()));
+                                result.getNewEntity()));
             } else {
                 // fire after the completed operation
                 fireAuditEvent(new CompleteEvent(event, null, null));
@@ -149,7 +150,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
         try {
             String traceId = MDC.get(TRACE_ID);
             if (traceId != null) {
-                return MDC.get(TRACE_ID);
+                return traceId;
             }
         } catch (IllegalArgumentException e) {
             log.warn("Couldn't find the trace id defaulting", e);

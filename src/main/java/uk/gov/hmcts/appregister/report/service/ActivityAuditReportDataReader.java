@@ -181,6 +181,10 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
         this.schema = schema;
     }
 
+    ActivityAuditFilterDto filter() {
+        return filter;
+    }
+
     @Override
     public void readData(
             ReadPagePosition position,

@@ -19,7 +19,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
@@ -56,7 +55,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
         source = AppRegTempFileUtil.generateTempFile("csv-reader");
         try (InputStream closeableis = is;
                 FileOutputStream fileOutputStream = new FileOutputStream(source)) {
-            IOUtils.copy(closeableis, fileOutputStream);
+            closeableis.transferTo(fileOutputStream);
             this.cls = cls;
         }
     }

@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.report.service.ReportService;
 public class ReportController implements ReportsApi {
     private static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+    private static final MediaType TEXT_CSV = MediaType.parseMediaType("text/csv");
 
     private final ReportService reportService;
 
@@ -117,7 +118,7 @@ public class ReportController implements ReportsApi {
                         "attachment; filename=\"" + reportDownload.filename() + "\"")
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .varyBy(HttpHeaders.ACCEPT)
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentType(TEXT_CSV)
                 .body(reportDownload.resource());
     }
 
