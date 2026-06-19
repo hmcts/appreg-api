@@ -1887,7 +1887,7 @@ paths:
   /application-lists/{listId}/entries/fees:
     put:
       description: |
-        Atomically updates the fee details for each specified entry in the source list (path `listId`). If any entry cannot be updated, no fee details are changed.
+        Atomically appends the supplied fee status rows to each specified entry in the source list (path `listId`). Existing fee status rows are preserved to retain fee-status history. If any entry cannot be updated, no fee status rows are changed.
       operationId: bulkUpdateApplicationListEntryFees
       parameters:
       - description: ID of the Application List that owns the entries whose fee details
@@ -1911,7 +1911,7 @@ paths:
             application/vnd.hmcts.appreg.v1+json:
               schema:
                 $ref: "#/components/schemas/bulk-update-response-dto"
-          description: Fee details updated for all entries.
+          description: Fee status rows appended for all entries.
           headers:
             Vary:
               description: Response varies by Accept for media-type versioning.
@@ -1990,7 +1990,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/problem"
           description: Unexpected server error.
-      summary: Bulk update fee details for multiple Application List Entries.
+      summary: Bulk append fee status rows for multiple Application List Entries.
       tags:
       - application-list-entries
   /application-lists/{listId}/entries/{entryId}:
@@ -2209,7 +2209,7 @@ paths:
       - application-list-entries
     put:
       description: |
-        Full replacement (PUT) of an existing Application List Entry.
+        Full replacement (PUT) of an existing Application List Entry, except that any supplied `feeStatuses` are appended to the existing fee-status history rather than replacing it.
       operationId: updateApplicationListEntry
       parameters:
       - description: Public identifier of the Application List.
@@ -6094,12 +6094,12 @@ components:
       type: object
     bulk-fees-update-dto:
       additionalProperties: false
-      description: Update fee details for multiple Application List Entries in one
-        atomic operation.
+      description: Append fee-status rows for multiple Application List Entries in
+        one atomic operation.
       properties:
         entryIds:
           description: |
-            Array of entry IDs whose fee details should be updated. All must belong to the list in the path. Requests with more than 500 entry IDs are rejected with 400 Bad Request.
+            Array of entry IDs whose fee-status history should be appended to. All must belong to the list in the path. Requests with more than 500 entry IDs are rejected with 400 Bad Request.
           example:
           - 3fa85f64-5717-4562-b3fc-2c963f66afa6
           - 3fa85f64-5717-4562-b3fc-2c963f66afa7
@@ -6112,7 +6112,7 @@ components:
           uniqueItems: true
         feeDetails:
           description: |
-            Array of fee detail rows to apply to every selected Application List Entry. At least one fee detail row must be provided.
+            Array of fee-status rows to append to every selected Application List Entry. At least one fee-status row must be provided.
           items:
             $ref: "#/components/schemas/bulk-fee-details-dto"
           minItems: 1
@@ -6225,7 +6225,7 @@ components:
     entry-update-dto:
       additionalProperties: false
       description: |
-        Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced. Blank fields will be rejected, nulls should be used instead.
+        Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced. The exception is `feeStatuses`, which appends new fee-status rows to preserve history. Blank fields will be rejected, nulls should be used instead.
       properties:
         standardApplicantCode:
           description: Code that identifies the Standard Applicant.
@@ -6255,6 +6255,8 @@ components:
             $ref: "#/components/schemas/template-substitution"
           type: array
         feeStatuses:
+          description: |
+            New fee-status rows to append to the existing fee-status history. `null` means no fee-status rows are appended.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array

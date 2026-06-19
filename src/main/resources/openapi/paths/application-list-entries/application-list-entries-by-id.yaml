@@ -43,7 +43,8 @@ put:
   tags: [ application-list-entries ]
   summary: Update an Application List Entry
   description: >
-    Full replacement (PUT) of an existing Application List Entry.
+    Full replacement (PUT) of an existing Application List Entry, except that any supplied
+    `feeStatuses` are appended to the existing fee-status history rather than replacing it.
   requestBody:
     required: true
     content:

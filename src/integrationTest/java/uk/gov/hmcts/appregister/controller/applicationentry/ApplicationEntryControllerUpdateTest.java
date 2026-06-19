@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -74,7 +75,10 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         assertThat(responseSpecUpdate.asString()).doesNotContain("\"entries\"");
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
-        LocalDate createdDate = responseSpecCreate.as(EntryGetDetailDto.class).getLodgementDate();
+        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
+        LocalDate createdDate = createdDto.getLodgementDate();
+        List<FeeStatus> expectedFeeStatuses = new ArrayList<>(createdDto.getFeeStatuses());
+        expectedFeeStatuses.addAll(entryUpdateDto.getFeeStatuses());
 
         // make sure the update does not change the lodgement date and the
         // date it was created persists
@@ -83,7 +87,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                 entryUpdateDto,
                 updatedDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}",
-                entryUpdateDto.getFeeStatuses());
+                expectedFeeStatuses);
 
         Response responseFindEntrySpec =
                 restAssuredClient.executeGetRequestWithPaging(
@@ -158,12 +162,15 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecUpdate.then().statusCode(200);
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
+        List<FeeStatus> expectedFeeStatuses = new ArrayList<>(createdDto.getFeeStatuses());
+        expectedFeeStatuses.addAll(entryUpdateDto.getFeeStatuses());
 
         validateEntryUpdateResponse(
                 entryUpdateDto,
                 updatedDto,
                 "This is a test enforcement fine with no wording template substitution required",
-                entryUpdateDto.getFeeStatuses());
+                expectedFeeStatuses);
 
         Response responseFindEntrySpec =
                 restAssuredClient.executeGetRequestWithPaging(
@@ -1147,8 +1154,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // Ignore the setup create rows so these assertions only inspect the update request.
         dataAuditRepository.deleteAll();
 
-        // Drive the real update endpoint so all child replacements run through the production
-        // delete/create audit operations.
+        // Drive the real update endpoint so fee-status history is appended while the other child
+        // replacements still run through the production delete/create audit operations.
         val responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
@@ -1237,7 +1244,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                 AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY.getEventName(),
                 deletedOfficialAuditRow.getEventName());
 
-        // Fee statuses should now audit both the removed row and the replacement row on update.
+        // Fee statuses should preserve history, so only the appended row should be audited.
         val missingCreatedFeeStatusAuditMessage =
                 "Expected a created fee-status payment reference audit row";
         val createdFeeStatusAuditRow =
@@ -1250,19 +1257,13 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName(),
                 createdFeeStatusAuditRow.getEventName());
-
-        val missingDeletedFeeStatusAuditMessage =
-                "Expected a deleted fee-status payment reference audit row";
-        val deletedFeeStatusAuditRow =
+        Assertions.assertTrue(
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndOldValue(
                                 TableNames.APPLICATION_LISTS_FEE_STATUS,
                                 "alefs_payment_reference",
                                 "PAY-OLD-001")
-                        .orElseThrow(() -> new AssertionError(missingDeletedFeeStatusAuditMessage));
-        Assertions.assertEquals(
-                AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName(),
-                deletedFeeStatusAuditRow.getEventName());
+                        .isEmpty());
     }
 
     @Test
@@ -1402,11 +1403,14 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecUpdate.then().statusCode(200);
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
+        List<FeeStatus> expectedFeeStatuses = new ArrayList<>(createdDto.getFeeStatuses());
+        expectedFeeStatuses.addAll(entryUpdateDto.getFeeStatuses());
         validateEntryUpdateResponse(
                 entryUpdateDto,
                 updatedDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}",
-                entryUpdateDto.getFeeStatuses());
+                expectedFeeStatuses);
         assertThat(updatedDto.getOfficials()).isEmpty();
     }
 

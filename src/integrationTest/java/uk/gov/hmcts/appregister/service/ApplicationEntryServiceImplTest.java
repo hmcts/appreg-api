@@ -150,12 +150,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListRepository
                                     .findAll(Sort.by(Sort.Direction.ASC, "id"))
                                     .getFirst();
-                    List<ApplicationListEntry> entries =
-                            applicationListEntryRepository.findByApplicationListId(
-                                    applicationList.getId());
-
-                    // gets the last added entry
-                    ApplicationListEntry applicationListEntry = entries.getLast();
+                    ApplicationListEntry applicationListEntry =
+                            applicationListEntryRepository
+                                    .findByUuid(response.getPayload().getId())
+                                    .orElseThrow();
 
                     // validate the database based on the request data and the response
                     // based on the database contents
@@ -246,12 +244,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListRepository
                                     .findAll(Sort.by(Sort.Direction.ASC, "id"))
                                     .getFirst();
-                    List<ApplicationListEntry> entries =
-                            applicationListEntryRepository.findByApplicationListId(
-                                    applicationList.getId());
-
-                    // gets the last added entry
-                    ApplicationListEntry applicationListEntry = entries.getLast();
+                    ApplicationListEntry applicationListEntry =
+                            applicationListEntryRepository
+                                    .findByUuid(response.getPayload().getId())
+                                    .orElseThrow();
 
                     // validate the database based on the request data and the response
                     // based on the database contents
@@ -893,14 +889,17 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure we have replaced the old status fees
+        // make sure fee-status history is preserved and the new rows were appended
         Assertions.assertEquals(
-                entryUpdateDto.getFeeStatuses().size(),
+                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
                 update.getPayload().getFeeStatuses().size());
+        Assertions.assertEquals(
+                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
+                feeStatusesUpdated.size());
         for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertFalse(
+            Assertions.assertTrue(
                     feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Found fee status with id " + id + " that should have been replaced");
+                    "Expected fee status with id " + id + " to be preserved");
         }
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
@@ -911,7 +910,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
-                List.of(),
+                feeStatusBeforeUpdate,
                 2);
     }
 
@@ -1006,14 +1005,17 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure we have replaced the old status fees
+        // make sure fee-status history is preserved and the new rows were appended
         Assertions.assertEquals(
-                entryUpdateDto.getFeeStatuses().size(),
+                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
                 update.getPayload().getFeeStatuses().size());
+        Assertions.assertEquals(
+                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
+                feeStatusesUpdated.size());
         for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertFalse(
+            Assertions.assertTrue(
                     feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Found fee status with id " + id + " that should have been replaced");
+                    "Expected fee status with id " + id + " to be preserved");
         }
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
@@ -1024,7 +1026,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
-                List.of(),
+                feeStatusBeforeUpdate,
                 2);
 
         // validate that the fee records have not changed except for the offsite fee being added
@@ -1151,13 +1153,15 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure fee statuses were replaced
-        Assertions.assertEquals(entryUpdateDto.getFeeStatuses().size(), feeStatusesUpdated.size());
+        // make sure fee-status history is preserved and the new rows were appended
+        Assertions.assertEquals(
+                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
+                feeStatusesUpdated.size());
 
         for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertFalse(
+            Assertions.assertTrue(
                     feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Found fee status with id " + id + " that should have been replaced");
+                    "Expected fee status with id " + id + " to be preserved");
         }
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
@@ -1172,7 +1176,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at {{Premises Address}} "
                         + "for date {{Premises Date}}",
                 entryUpdateDto.getWordingFields(),
-                List.of(),
+                feeStatusBeforeUpdate,
                 1);
     }
 
@@ -1271,13 +1275,15 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure we have replaced the old status fees
-        Assertions.assertEquals(updateDto.getFeeStatuses().size(), feeStatusesUpdated.size());
+        // make sure fee-status history is preserved and the new rows were appended
+        Assertions.assertEquals(
+                feeStatusBeforeUpdate.size() + updateDto.getFeeStatuses().size(),
+                feeStatusesUpdated.size());
 
         for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertFalse(
+            Assertions.assertTrue(
                     feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Found fee status with id " + id + " that should have been replaced");
+                    "Expected fee status with id " + id + " to be preserved");
         }
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
@@ -1292,7 +1298,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at "
                         + "{{Premises Address}} for date {{Premises Date}}",
                 List.of(updateDto.getWordingFields().toArray(new TemplateSubstitution[0])),
-                List.of(),
+                feeStatusBeforeUpdate,
                 1);
     }
 
@@ -1386,13 +1392,15 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure we have replaced the old status fees
-        Assertions.assertEquals(0, feeStatusesUpdated.size());
+        // make sure a null feeStatuses payload appends nothing and preserves history
+        Assertions.assertEquals(feeStatusBeforeUpdate.size(), feeStatusesUpdated.size());
+        Assertions.assertEquals(
+                feeStatusBeforeUpdate.size(), update.getPayload().getFeeStatuses().size());
 
         for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertFalse(
+            Assertions.assertTrue(
                     feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Found fee status with id " + id + " that should have been replaced");
+                    "Expected fee status with id " + id + " to be preserved");
         }
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
@@ -1407,7 +1415,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + " to answer an application for a liability order in relation to unpaid council tax "
                         + "(reference {{Reference}})",
                 updateDto.getWordingFields(),
-                List.of(),
+                feeStatusBeforeUpdate,
                 1);
     }
 
@@ -1509,7 +1517,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request for copy documents on computer disc or in electronic form",
                 "Request for copy documents on computer disc or in electronic form",
                 List.of(),
-                List.of(),
+                feeStatusBeforeUpdate,
                 2);
     }
 
@@ -1624,7 +1632,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at"
                         + " {{Premises Address}} for date {{Premises Date}}",
                 List.of(substitution, substitution1),
-                List.of(),
+                feeStatusBeforeUpdate,
                 1);
     }
 
@@ -1922,27 +1930,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         // make the assertions
         unitOfWork.inTransaction(
                 () -> {
-                    ApplicationList applicationList =
-                            applicationListRepository
-                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
-                                    .getFirst();
-                    List<ApplicationListEntry> entries =
-                            applicationListEntryRepository.findByApplicationListId(
-                                    applicationList.getId());
-
-                    // gets the last added entry
-                    ApplicationListEntry applicationListEntry = entries.getLast();
-
-                    // validate the database based on the request data and the response
-                    // based on the database contents
-                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
-                            new ApplicationListEntryWrapperDto(entryCreateDto),
-                            applicationListEntry,
-                            response.getPayload(),
-                            "Request to copy documents",
-                            "Request to copy documents",
-                            List.of(),
-                            1);
+                    Assertions.assertTrue(
+                            applicationListEntryRepository
+                                    .findByUuid(response.getPayload().getId())
+                                    .isPresent());
                 });
         return response.getPayload().getId();
     }

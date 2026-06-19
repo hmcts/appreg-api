@@ -68,7 +68,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
     }
 
     @Test
-    void givenValidEntries_whenBulkUpdateFees_thenFeeDetailsAreReplacedForEveryEntry()
+    void givenValidEntries_whenBulkUpdateFees_thenFeeStatusesAreAppendedForEveryEntry()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         EntryGetDetailDto firstEntry =
@@ -103,20 +103,18 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
 
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
-                PaymentStatus.REMITTED,
-                UPDATED_STATUS_DATE,
-                UPDATED_PAYMENT_REFERENCE,
-                true);
+                true,
+                feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()),
-                PaymentStatus.REMITTED,
-                UPDATED_STATUS_DATE,
-                UPDATED_PAYMENT_REFERENCE,
-                true);
+                true,
+                feeStatus(PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
     }
 
     @Test
-    void givenValidEntriesAndMultipleFeeDetails_whenBulkUpdateFees_thenAllFeeDetailsAreReplaced()
+    void givenValidEntriesAndMultipleFeeDetails_whenBulkUpdateFees_thenAllFeeDetailsAreAppended()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         EntryGetDetailDto firstEntry =
@@ -162,11 +160,13 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
                 true,
+                feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
                 feeStatus(PaymentStatus.PAID, UPDATED_STATUS_DATE, "PAY-BULK-1"),
                 feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, "PAY-BULK-2"));
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()),
                 true,
+                feeStatus(PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null),
                 feeStatus(PaymentStatus.PAID, UPDATED_STATUS_DATE, "PAY-BULK-1"),
                 feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, "PAY-BULK-2"));
     }
@@ -370,14 +370,6 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
 
     private void assertSuccessfulBulkUpdateAudited() {
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LISTS_FEE_STATUS,
-                        "alefs_fee_status",
-                        "PAID",
-                        null,
-                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getType().name(),
-                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName()));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_FEE_STATUS,
