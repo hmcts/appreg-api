@@ -140,7 +140,8 @@ class ReportServiceImplTest {
         ReportServiceImpl service = service();
 
         var ex =
-                Assertions.assertThrows(AppRegistryException.class, () -> service.downloadReport(jobId));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.downloadReport(jobId));
 
         Assertions.assertSame(
                 uk.gov.hmcts.appregister.common.async.exception.JobError
@@ -160,7 +161,8 @@ class ReportServiceImplTest {
         ReportServiceImpl service = service();
 
         var ex =
-                Assertions.assertThrows(AppRegistryException.class, () -> service.downloadReport(jobId));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.downloadReport(jobId));
 
         Assertions.assertSame(
                 uk.gov.hmcts.appregister.common.async.exception.JobError
