@@ -55,7 +55,7 @@ get:
       name: sort
       description: >
         Sort parameter. Format: `property,(asc|desc)`.
-        Example: `?sort=name,asc`.
+        Currently only a single sort value is supported. Example: `?sort=name,asc`.
 
         Supported properties:
           - `code`
@@ -68,7 +68,7 @@ get:
       schema:
         type: array
         items: { type: string }
-        example: [name,asc]
+        example: [ "name,asc" ]
   responses:
     "200":
       description: Page of Standard Applicants.

@@ -434,7 +434,7 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Sort parameter. Format: `property,(asc|desc)`. Example: `?sort=title,asc`.
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=title,asc`.
           Supported properties:
             - `title`
             - `code`
@@ -445,8 +445,7 @@ paths:
         name: sort
         schema:
           example:
-          - title
-          - asc
+          - "title,asc"
           items:
             type: string
           type: array
@@ -661,13 +660,14 @@ paths:
           maximum: 100
           minimum: 1
           type: integer
-      - explode: true
+      - description: |
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=date,desc`.
+        explode: true
         in: query
         name: sort
         schema:
           example:
           - "date,desc"
-          - "status,asc"
           items:
             type: string
           type: array
@@ -947,14 +947,13 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Repeatable sort parameter. Format per item: `property,(asc|desc)`. Example: `?sort=name,asc&sort=code,desc`.
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=name,asc`.
         explode: true
         in: query
         name: sort
         schema:
           example:
           - "name,asc"
-          - "code,desc"
           items:
             type: string
           type: array
@@ -1268,7 +1267,6 @@ paths:
           - "date,desc"
           items:
             type: string
-          maxItems: 1
           type: array
         style: form
       responses:
@@ -1469,7 +1467,7 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Sort order. Supported properties are sequenceNumber, applicationTitle, applicantName, respondentName, respondentPostcode, accountReference, feeRequired, and resulted. applicantName sorts by organisation name for organisation applicants, otherwise by first name and last name.
+          Sort order. A single value is currently supported. Format: `property,(asc|desc)`. Supported properties are sequenceNumber, applicationTitle, applicantName, respondentName, respondentPostcode, accountReference, feeRequired, and resulted. applicantName sorts by organisation name for organisation applicants, otherwise by first name and last name.
         explode: true
         in: query
         name: sort
@@ -3520,14 +3518,13 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Repeatable sort parameter. Format per item: `property,(asc|desc)`. Example: `?sort=name,asc&sort=code,desc`.
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=name,asc`.
         explode: true
         in: query
         name: sort
         schema:
           example:
           - "name,asc"
-          - "code,desc"
           items:
             type: string
           type: array
@@ -3757,14 +3754,13 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Repeatable sort parameter. Format per item: `property,(asc|desc)`. Example: `?sort=description,asc&sort=code,desc`.
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=description,asc`.
         explode: true
         in: query
         name: sort
         schema:
           example:
           - "description,asc"
-          - "code,desc"
           items:
             type: string
           type: array
@@ -4708,14 +4704,13 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Repeatable sort parameter. Format per item: `property,(asc|desc)`. Example: `?sort=title,asc&sort=code,desc`.
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=title,asc`.
         explode: true
         in: query
         name: sort
         schema:
           example:
           - "title,asc"
-          - "code,desc"
           items:
             type: string
           type: array
@@ -4969,7 +4964,7 @@ paths:
           minimum: 1
           type: integer
       - description: |
-          Sort parameter. Format: `property,(asc|desc)`. Example: `?sort=name,asc`.
+          Sort parameter. Format: `property,(asc|desc)`. Currently only a single sort value is supported. Example: `?sort=name,asc`.
           Supported properties:
             - `code`
             - `name`
@@ -4981,8 +4976,7 @@ paths:
         name: sort
         schema:
           example:
-          - name
-          - asc
+          - "name,asc"
           items:
             type: string
           type: array
