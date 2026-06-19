@@ -155,7 +155,6 @@ class ApplicationEntryResultServiceImplTest {
                         bulkResultEntry,
                         matchService,
                         auditOperationService,
-                        List.of(auditOperationLifecycleListener),
                         applicationListEntryResultMapper,
                         applicationListEntryResultEntityMapper,
                         new PageMapper(),
@@ -480,9 +479,7 @@ class ApplicationEntryResultServiceImplTest {
         public <T, E extends Keyable> T processAudit(
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-
-            return processAudit(
-                    null, auditType, execution, (AuditOperationLifecycleListener[]) null);
+            return processAudit(null, auditType, execution);
         }
 
         @Override
@@ -490,27 +487,6 @@ class ApplicationEntryResultServiceImplTest {
                 E oldValue,
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-
-            return processAudit(
-                    oldValue, auditType, execution, (AuditOperationLifecycleListener[]) null);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-
-            return processAudit(null, auditType, execution, listener);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                E oldValue,
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-
             StartEvent event = new StartEvent(auditType, "test-trace-id", oldValue);
             Optional<AuditableResult<T, E>> result = execution.apply(event);
             return result.map(AuditableResult::getResultingValue).orElse(null);

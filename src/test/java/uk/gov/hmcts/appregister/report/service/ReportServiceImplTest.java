@@ -27,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -83,7 +82,6 @@ class ReportServiceImplTest {
                 jobMapper,
                 jdbcTemplate,
                 auditService,
-                List.of(),
                 reportJobAuditService,
                 new ReportFilterNormaliser(),
                 reportLocationValidator);
@@ -657,10 +655,7 @@ class ReportServiceImplTest {
                             return result.getResultingValue();
                         })
                 .when(auditService)
-                .processAudit(
-                        eq(operation),
-                        any(Function.class),
-                        any(AuditOperationLifecycleListener[].class));
+                .processAudit(eq(operation), any(Function.class));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -672,10 +667,7 @@ class ReportServiceImplTest {
                             return execution.apply(null).orElseThrow().getResultingValue();
                         })
                 .when(auditService)
-                .processAudit(
-                        any(ReportAuditOperation.class),
-                        any(Function.class),
-                        any(AuditOperationLifecycleListener[].class));
+                .processAudit(any(ReportAuditOperation.class), any(Function.class));
     }
 
     private <T> void closeLifecycle(AtomicReference<AsyncJobLifecycle<T>> lifecycle)

@@ -53,8 +53,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
-                        List.of());
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()));
     }
 
     @Test
@@ -73,8 +72,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
-                        List.of());
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()));
 
         val status =
                 service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
@@ -208,8 +206,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener));
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)));
 
         // Execute the same service method used by the controller and capture the completed audit
         // event so we can inspect the surrogate entity sent to data audit.

@@ -284,8 +284,9 @@ class DataAuditLoggerTest {
                 .when(nestedAuditPersistenceManager)
                 .persistOrBuffer(any());
 
-        val auditOperationService = new AuditOperationServiceImpl(new ObjectMapper(), List.of());
         val listener = new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager);
+        val auditOperationService =
+                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener));
         val result =
                 Assertions.assertDoesNotThrow(
                         // This exercises the real failing listener through the central audit
@@ -296,8 +297,7 @@ class DataAuditLoggerTest {
                                         req ->
                                                 Optional.of(
                                                         new AuditableResult<>(
-                                                                "business-result", newCode)),
-                                        listener));
+                                                                "business-result", newCode))));
 
         Assertions.assertEquals("business-result", result);
         verify(nestedAuditPersistenceManager).persistOrBuffer(any());

@@ -71,8 +71,7 @@ class JobServiceImplTest {
                 new JobServiceImpl(
                         jobMapper,
                         jobExistanceValidator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener));
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)));
 
         // Execute the same service method used by the controller and capture the audit event that
         // is emitted when the request completes.

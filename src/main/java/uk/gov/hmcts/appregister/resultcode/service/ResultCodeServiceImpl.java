@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
@@ -43,9 +42,6 @@ public class ResultCodeServiceImpl implements ResultCodeService {
 
     // Service for wrapping operations in an auditable context.
     private final AuditOperationService auditService;
-
-    // Lifecycle listeners invoked during audit processing.
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     // Repository for querying {@link ResolutionCode} entities.
     private final ResolutionCodeRepository repository;
@@ -99,8 +95,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                     return Optional.of(
                             new AuditableResult<ResultCodeGetDetailDto, Keyable>(
                                     mapper.toDetailDto(selected), mapper.toEntity(code, date)));
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     /**
@@ -147,7 +142,6 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                     AuditableResult<ResultCodePage, Keyable> result =
                             new AuditableResult<>(responsePage, mapper.toEntity(codeAndTitle));
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 }

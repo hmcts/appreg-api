@@ -91,10 +91,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -115,10 +112,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -148,10 +142,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull());
     }
 
     @Test
@@ -169,7 +160,6 @@ class CourtLocationServiceImplTest {
         CourtLocationServiceImpl localService =
                 new CourtLocationServiceImpl(
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
                         repository,
                         mapper,
                         pageMapper,
@@ -242,10 +232,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -288,10 +275,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

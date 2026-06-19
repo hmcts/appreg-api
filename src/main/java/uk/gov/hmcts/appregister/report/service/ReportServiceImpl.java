@@ -1,13 +1,11 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
@@ -43,7 +41,6 @@ public class ReportServiceImpl implements ReportService {
     private final JobMapper jobMapper;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final ReportJobAuditService reportJobAuditService;
     private final ReportFilterNormaliser reportFilterNormaliser;
     private final ReportLocationValidator reportLocationValidator;
@@ -325,8 +322,7 @@ public class ReportServiceImpl implements ReportService {
                                             reportJobCreation.acknowledgement(),
                                             userProvider.getUserId(),
                                             reportJobCreation.reportParameters())));
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @FunctionalInterface

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.admin.service;
 
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.admin.audit.AdminAuditOperation;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapper;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.RetentionPolicy;
@@ -31,7 +29,6 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     private final RetentionPolicyRepository retentionPolicyRepository;
     private final DatabaseJobsMapper databaseJobsMapper;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     @Override
     public JobStatus getDatabaseJobStatusByName(AdminJobType jobName) {
@@ -43,8 +40,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
                                         databaseJobsMapper.toDatabaseJobStatus(
                                                 databaseJobRepository.findByName(
                                                         jobName.getValue())),
-                                        databaseJobsMapper.toEntity(jobName))),
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                                        databaseJobsMapper.toEntity(jobName))));
     }
 
     @Override

@@ -166,7 +166,6 @@ class StandardApplicantServiceTest {
                 .processAudit(
                         isNull(),
                         eq(StandardApplicantOperation.GET_STANDARD_APPLICANTS),
-                        notNull(),
                         notNull());
     }
 
@@ -182,7 +181,6 @@ class StandardApplicantServiceTest {
                 .processAudit(
                         isNull(),
                         eq(StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE),
-                        notNull(),
                         notNull());
     }
 
@@ -205,7 +203,6 @@ class StandardApplicantServiceTest {
                         pageMapper,
                         validator,
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
                         new ApplicantMapperImpl());
 
         val actual = localService.findByCode(code);
@@ -259,7 +256,6 @@ class StandardApplicantServiceTest {
                         pageMapper,
                         validator,
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
                         new ApplicantMapperImpl());
 
         // Execute the search with every currently in-scope DB-backed filter populated so the
@@ -317,7 +313,6 @@ class StandardApplicantServiceTest {
                         pageMapper,
                         validator,
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
                         new ApplicantMapperImpl());
 
         localService.findAll(

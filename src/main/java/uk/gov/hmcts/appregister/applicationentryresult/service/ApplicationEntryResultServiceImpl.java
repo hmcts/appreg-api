@@ -24,7 +24,6 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntr
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultGetValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -67,7 +66,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
     // Audit
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     // Mappers
     private final ApplicationListEntryResultMapper applicationListEntryResultMapper;
@@ -108,9 +106,7 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                     auditService.processAudit(
                             ApplicationListEntryResultAudit.from(BeanUtil.copyBean(entity)),
                             AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT,
-                            ev -> Optional.empty(),
-                            auditLifecycleListeners.toArray(
-                                    new AuditOperationLifecycleListener[0]));
+                            ev -> Optional.empty());
 
                     return null;
                 });

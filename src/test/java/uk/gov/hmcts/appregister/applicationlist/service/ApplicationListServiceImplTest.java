@@ -195,8 +195,7 @@ class ApplicationListServiceImplTest {
                         deletionValidator,
                         matchService,
                         entityManager,
-                        auditOperationService,
-                        List.of(auditOperationLifecycleListener));
+                        auditOperationService);
     }
 
     @Test
@@ -1121,32 +1120,6 @@ class ApplicationListServiceImplTest {
                 E oldValue,
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(
-                    oldValue, auditType, execution, (AuditOperationLifecycleListener) null);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(null, auditType, execution);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-            return processAudit(null, auditType, execution, listener);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                E oldValue,
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-
             lastAuditType = auditType;
             Optional<AuditableResult<T, E>> optional =
                     execution.apply(
@@ -1159,6 +1132,13 @@ class ApplicationListServiceImplTest {
                                     null));
             lastNewEntity = optional.map(AuditableResult::getNewEntity).orElse(null);
             return optional.map(AuditableResult::getResultingValue).orElse(null);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+            return processAudit(null, auditType, execution);
         }
     }
 

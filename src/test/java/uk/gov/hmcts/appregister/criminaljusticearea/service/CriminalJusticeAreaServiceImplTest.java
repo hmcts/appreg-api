@@ -70,7 +70,6 @@ class CriminalJusticeAreaServiceImplTest {
                 .processAudit(
                         isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
-                        notNull(),
                         notNull());
     }
 
@@ -94,7 +93,6 @@ class CriminalJusticeAreaServiceImplTest {
                 .processAudit(
                         isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
-                        notNull(),
                         notNull());
     }
 
@@ -118,7 +116,6 @@ class CriminalJusticeAreaServiceImplTest {
                 .processAudit(
                         isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
-                        notNull(),
                         notNull());
     }
 
@@ -132,7 +129,6 @@ class CriminalJusticeAreaServiceImplTest {
         CriminalJusticeServiceImpl localService =
                 new CriminalJusticeServiceImpl(
                         new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
                         repository,
                         criminalJusticeMapper,
                         pageMapper,
