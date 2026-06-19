@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +52,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()));
+                        new AuditOperationServiceImpl(List.of()));
     }
 
     @Test
@@ -72,7 +71,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()));
+                        new AuditOperationServiceImpl(List.of()));
 
         val status =
                 service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
@@ -206,7 +205,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)));
+                        new AuditOperationServiceImpl(List.of(listener)));
 
         // Execute the same service method used by the controller and capture the completed audit
         // event so we can inspect the surrogate entity sent to data audit.

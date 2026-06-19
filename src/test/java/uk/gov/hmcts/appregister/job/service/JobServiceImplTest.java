@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -71,7 +70,7 @@ class JobServiceImplTest {
                 new JobServiceImpl(
                         jobMapper,
                         jobExistanceValidator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)));
+                        new AuditOperationServiceImpl(List.of(listener)));
 
         // Execute the same service method used by the controller and capture the audit event that
         // is emitted when the request completes.

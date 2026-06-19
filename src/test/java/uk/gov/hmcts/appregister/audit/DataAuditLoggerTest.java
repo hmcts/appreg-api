@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import lombok.val;
@@ -285,8 +284,7 @@ class DataAuditLoggerTest {
                 .persistOrBuffer(any());
 
         val listener = new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager);
-        val auditOperationService =
-                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener));
+        val auditOperationService = new AuditOperationServiceImpl(List.of(listener));
         val result =
                 Assertions.assertDoesNotThrow(
                         // This exercises the real failing listener through the central audit

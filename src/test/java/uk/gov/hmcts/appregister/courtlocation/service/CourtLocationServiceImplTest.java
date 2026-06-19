@@ -8,7 +8,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -58,7 +57,7 @@ class CourtLocationServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper(), auditListeners);
+            new AuditOperationServiceImpl(auditListeners);
 
     @Spy private CourtLocationMapper mapper = new CourtLocationMapperImpl();
 
@@ -159,7 +158,7 @@ class CourtLocationServiceImplTest {
         CapturingAuditListener listener = new CapturingAuditListener();
         CourtLocationServiceImpl localService =
                 new CourtLocationServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         mapper,
                         pageMapper,

@@ -444,7 +444,9 @@ paths:
         in: query
         name: sort
         schema:
-          example: "title,asc"
+          example:
+          - title
+          - asc
           items:
             type: string
           type: array
@@ -525,6 +527,8 @@ paths:
       - application-codes
   /application-codes/{code}:
     get:
+      description: Returns the Application Code matching the supplied code and valid
+        on the supplied date.
       operationId: getApplicationCodeByCodeAndDate
       parameters:
       - description: Code used to identify the Application Code (case-insensitive).
@@ -743,6 +747,7 @@ paths:
       tags:
       - application-lists
     post:
+      description: Creates a new Application List from the supplied request body.
       operationId: createApplicationList
       requestBody:
         content:
@@ -913,6 +918,7 @@ paths:
       tags:
       - application-lists
     get:
+      description: Returns the Application List identified by `listId`.
       operationId: getApplicationList
       parameters:
       - description: Public identifier of the Application List.
@@ -1562,6 +1568,8 @@ paths:
       tags:
       - application-list-entries
     post:
+      description: Creates a new Application List Entry within the Application List
+        identified by `listId`.
       operationId: createApplicationListEntry
       parameters:
       - description: Public identifier of the Application List.
@@ -3116,6 +3124,8 @@ paths:
       tags:
       - application-list-entry-results
     post:
+      description: Creates a new Result for the Application List Entry identified
+        by `entryId` within `listId`.
       operationId: createApplicationListEntryResult
       parameters:
       - description: Public identifier of the Application List.
@@ -3598,6 +3608,8 @@ paths:
       - court-locations
   /court-locations/{code}:
     get:
+      description: Returns the Court Location matching the supplied code and valid
+        on the supplied date.
       operationId: getCourtLocationByCodeAndDate
       parameters:
       - description: Code used to identify the Court Location (case-insensitive).
@@ -3833,6 +3845,7 @@ paths:
       - criminal-justice-areas
   /criminal-justice-areas/{code}:
     get:
+      description: Returns the Criminal Justice Area matching the supplied code.
       operationId: getCriminalJusticeAreaByCode
       parameters:
       - description: Code used to identify the Result Code (case-insensitive).
@@ -4783,6 +4796,8 @@ paths:
       - result-codes
   /result-codes/{code}:
     get:
+      description: Returns the Result Code matching the supplied code and valid on
+        the supplied date.
       operationId: getResultCodeByCodeAndDate
       parameters:
       - description: Code used to identify the Result Code (case-insensitive).
@@ -4965,7 +4980,9 @@ paths:
         in: query
         name: sort
         schema:
-          example: "name,asc"
+          example:
+          - name
+          - asc
           items:
             type: string
           type: array
@@ -5334,7 +5351,7 @@ components:
           type: string
         enabled:
           description: Whether the job is currently enabled.
-          example: false
+          example: true
           type: boolean
       type: object
     problem:
@@ -5473,7 +5490,7 @@ components:
           type: string
         time:
           description: Single time of the Application List.
-          example: 10:30
+          example: 10:30:00
           format: time
           type: string
         courtLocationCode:
@@ -5521,7 +5538,7 @@ components:
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
-          example: 10:30
+          example: 10:30:00
           format: time
           type: string
         description:
@@ -5579,7 +5596,7 @@ components:
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
-          example: 10:30
+          example: 10:30:00
           format: time
           type: string
         description:
@@ -5655,7 +5672,7 @@ components:
           type: string
         time:
           description: The time of day at which the Application List is scheduled.
-          example: 10:30
+          example: 10:30:00
           format: time
           type: string
         description:
@@ -5715,7 +5732,7 @@ components:
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
-          example: 10:30
+          example: 10:30:00
           format: time
           type: string
         courtName:
@@ -5756,7 +5773,7 @@ components:
         courtCode:
           description: Name of the court or session where the application is being
             heard. This has to be Exact.
-          example: Royal Courts of Justice
+          example: LOC123
           maxLength: 10
           type: string
         otherLocationDescription:
@@ -5768,7 +5785,7 @@ components:
         cjaCode:
           description: The Criminal Justice Area (CJA) associated with the application.
             This has to be Exact.
-          example: CJA-2025-001
+          example: "52"
           maxLength: 2
           type: string
         applicantOrganisation:
@@ -5900,7 +5917,7 @@ components:
         feeRequired:
           description: Whether a fee is required for the application. This has to
             be Exact.
-          example: false
+          example: true
           type: boolean
         resulted:
           description: The application resolution code. This can be Partial.
@@ -6073,8 +6090,9 @@ components:
         entryIds:
           description: Array of entry IDs whose officials should be replaced. All
             must belong to the list in the path.
-          example: "[\"3fa85f64-5717-4562-b3fc-2c963f66afa6\", \"3fa85f64-5717-4562-b3fc-2c963f66afa7\"\
-            ]"
+          example:
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa7
           items:
             format: uuid
             type: string
@@ -6235,7 +6253,7 @@ components:
           type: string
         applicationCode:
           description: Code that identifies the Application Code.
-          example: APP-CODE-001
+          example: APP001
           maxLength: 10
           minLength: 1
           type: string
@@ -6326,8 +6344,9 @@ components:
         entryIds:
           description: Array of entry IDs to move. All must currently belong to the
             source list.
-          example: "[\"3fa85f64-5717-4562-b3fc-2c963f66afa6\", \"3fa85f64-5717-4562-b3fc-2c963f66afa7\"\
-            ]"
+          example:
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa7
           items:
             format: uuid
             type: string
@@ -6360,8 +6379,9 @@ components:
         entryIds:
           description: Array of entry IDs to result. All must belong to the list in
             the path.
-          example: "[\"3fa85f64-5717-4562-b3fc-2c963f66afa6\", \"3fa85f64-5717-4562-b3fc-2c963f66afa7\"\
-            ]"
+          example:
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa7
           items:
             format: uuid
             type: string
@@ -6894,7 +6914,7 @@ components:
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
-          example: 10:30
+          example: 10:30:00
           format: time
           type: string
         location:

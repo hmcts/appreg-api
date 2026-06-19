@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.audit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -35,15 +33,11 @@ class AuditOperationServiceImplTest {
 
     @Captor ArgumentCaptor<AuditEvent> requestArgumentCaptor;
 
-    private ObjectMapper objectMapper;
-
     private LogCaptor logCaptor;
 
     @BeforeEach
     void setup() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper, List.of());
+        auditOperationServiceImpl = new AuditOperationServiceImpl(List.of());
         logCaptor = LogCaptor.forClass(AuditOperationServiceImpl.class);
         logCaptor.clearLogs();
     }
@@ -296,6 +290,6 @@ class AuditOperationServiceImplTest {
 
     private AuditOperationServiceImpl serviceWithListeners(
             AuditOperationLifecycleListener... listeners) {
-        return new AuditOperationServiceImpl(objectMapper, List.of(listeners));
+        return new AuditOperationServiceImpl(List.of(listeners));
     }
 }

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -33,8 +32,6 @@ public class AuditOperationServiceImpl implements AuditOperationService {
 
     /** The trace id name that is inserted by micrometer. */
     public static final String TRACE_ID = "traceId";
-
-    private final ObjectMapper mapper;
 
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
@@ -69,7 +66,8 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                         new CompleteEvent(
                                 event,
                                 responsePayload.get().getResultingValue() != null
-                                        ? getBodyAsString(responsePayload.get().getResultingValue())
+                                        ? ObfuscationUtil.getObfuscatedString(
+                                                responsePayload.get().getResultingValue())
                                         : null,
                                 responsePayload.get().getNewEntity()));
             } else {
@@ -116,15 +114,6 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Read audit cannot have old entity");
         }
-    }
-
-    /**
-     * gets the json body in string form that will be part of the audit response.
-     *
-     * @return The body as a string or defaulted on an marshalling error
-     */
-    private String getBodyAsString(Object body) {
-        return ObfuscationUtil.getObfuscatedString(body);
     }
 
     /**

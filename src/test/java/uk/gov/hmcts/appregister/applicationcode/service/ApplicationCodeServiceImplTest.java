@@ -8,8 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -64,13 +62,12 @@ class ApplicationCodeServiceImplTest {
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 
     @Mock private ApplicationFeeService feeService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Spy private final List<AuditOperationLifecycleListener> auditLifecycleListeners = List.of();
 
     @Spy
     private final AuditOperationService auditService =
-            new AuditOperationServiceImpl(objectMapper, auditLifecycleListeners);
+            new AuditOperationServiceImpl(auditLifecycleListeners);
 
     @Spy private final PageMapper pageMapper = new PageMapper();
 
@@ -83,7 +80,6 @@ class ApplicationCodeServiceImplTest {
 
     @BeforeEach
     void setup() {
-        objectMapper.registerModule(new JavaTimeModule());
         ukZone = ZoneId.of("Europe/London");
         fixedClock = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));
 
@@ -490,7 +486,7 @@ class ApplicationCodeServiceImplTest {
                 repository,
                 applicationCodeMapper,
                 feeService,
-                new AuditOperationServiceImpl(objectMapper, listeners),
+                new AuditOperationServiceImpl(listeners),
                 pageMapper,
                 fixedClock,
                 ukZone,
