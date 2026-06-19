@@ -9,10 +9,13 @@ parameters:
 put:
   operationId: bulkUpdateApplicationListEntryFees
   tags: [ application-list-entries ]
-  summary: Bulk update fee details for multiple Application List Entries.
+  summary: Bulk append fee status rows for multiple Application List Entries.
   description: >
-    Atomically updates the fee details for each specified entry in the source list (path `listId`).
-    If any entry cannot be updated, no fee details are changed.
+    Atomically appends the supplied fee status rows to each specified entry in the source list
+    (path `listId`). Existing fee status rows are preserved to retain fee-status history.
+    If any supplied fee detail has `hasOffsiteFee=true`, the selected entries will be ensured to
+    have an off-site fee mapping. `hasOffsiteFee=false` does not remove an existing off-site fee
+    mapping. If any entry cannot be updated, no fee status rows are changed.
   requestBody:
     required: true
     content:
@@ -21,7 +24,7 @@ put:
           $ref: "../../components/schemas/application-list-entries/bulk-fees-update-dto.yaml"
   responses:
     "200":
-      description: Fee details updated for all entries.
+      description: Fee status rows appended for all entries.
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
