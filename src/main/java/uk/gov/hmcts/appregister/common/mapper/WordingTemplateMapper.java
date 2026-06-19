@@ -28,7 +28,7 @@ public class WordingTemplateMapper {
      */
     public TemplateDetail getTemplateDetail(
             Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
-        log.debug("Parsing template ", wordingTemplateSupplier.get());
+        log.debug("Parsing template {}", wordingTemplateSupplier.get());
 
         WordingTemplateSentence wordingTemplate =
                 WordingTemplateSentence.with(wordingTemplateSupplier.get());

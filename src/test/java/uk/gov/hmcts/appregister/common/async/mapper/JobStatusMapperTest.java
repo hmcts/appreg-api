@@ -7,7 +7,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 
 class JobStatusMapperTest {
     @Test
-    void testMap() {
+    void given_api_status_when_mapped_then_database_status_is_returned() {
         JobStatusMapperImpl mapper = new JobStatusMapperImpl();
         Assertions.assertEquals(JobStatusType.SUBMITTED, mapper.getJobStatus(JobStatus1.RECEIVED));
         Assertions.assertEquals(JobStatusType.PENDING, mapper.getJobStatus(JobStatus1.VALIDATING));
@@ -17,7 +17,7 @@ class JobStatusMapperTest {
     }
 
     @Test
-    void testInverseMap() {
+    void given_database_status_when_mapped_then_api_status_is_returned() {
         JobStatusMapperImpl mapper = new JobStatusMapperImpl();
 
         Assertions.assertEquals(JobStatus1.RECEIVED, mapper.getJobStatus(JobStatusType.SUBMITTED));
@@ -25,5 +25,19 @@ class JobStatusMapperTest {
         Assertions.assertEquals(JobStatus1.FAILED, mapper.getJobStatus(JobStatusType.FAILED));
         Assertions.assertEquals(JobStatus1.PROCESSING, mapper.getJobStatus(JobStatusType.RUNNING));
         Assertions.assertEquals(JobStatus1.COMPLETED, mapper.getJobStatus(JobStatusType.COMPLETED));
+    }
+
+    @Test
+    void given_null_api_status_when_mapped_then_null_is_returned() {
+        JobStatusMapperImpl mapper = new JobStatusMapperImpl();
+
+        Assertions.assertNull(mapper.getJobStatus((JobStatus1) null));
+    }
+
+    @Test
+    void given_null_database_status_when_mapped_then_null_is_returned() {
+        JobStatusMapperImpl mapper = new JobStatusMapperImpl();
+
+        Assertions.assertNull(mapper.getJobStatus((JobStatusType) null));
     }
 }

@@ -104,8 +104,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
-    private static final String CREATED_OFFSITE_FEE_LOG =
-            "Created Offsite Fee: {} to Entry: {} mapping: {}";
+    private static final String CREATED_OFFSITE_FEE_LOG = "Created Offsite Fee: {} to Entry: {}";
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
             "appregister.application_entry.bulk_fee_update.requests";
@@ -727,7 +726,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 appListEntryFeeRepository.save(appListEntryFeeId);
 
                         log.debug(
-                                "Created Fee: {} to Entry: {} mapping: {}",
+                                "Created Fee: {} to Entry: {}",
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
@@ -1213,7 +1212,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             // if we have no fees associated then create a new one
             if (appListEntryFeeId.isEmpty()) {
                 log.debug(
-                        "Adding new fee {} to entry %s {}",
+                        "Adding new fee {} to entry {}",
                         success.getFee().mainFee().getId(),
                         success.getApplicationEntryId().getId());
 
@@ -1232,7 +1231,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     appListEntryFeeRepository.save(newAppListEntryFeeId);
 
                             log.debug(
-                                    "Created Fee: {} to Entry: {} mapping: {}",
+                                    "Created Fee: {} to Entry: {}",
                                     newAppListEntryFeeId.getFeeId(),
                                     newAppListEntryFeeId.getAppListEntryId());
 
@@ -1254,7 +1253,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             // add the offsite fee
             if (appListEntryOffsiteFeeId.isEmpty() && success.getFee().offsiteFee() != null) {
                 log.debug(
-                        "Adding new offsite fee {} to entry %s {}",
+                        "Adding new offsite fee {} to entry {}",
                         success.getFee().offsiteFee().getId(),
                         success.getApplicationEntryId().getId());
                 auditService.processAudit(

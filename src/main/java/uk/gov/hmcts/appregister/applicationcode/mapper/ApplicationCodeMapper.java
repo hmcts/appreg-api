@@ -122,15 +122,6 @@ public abstract class ApplicationCodeMapper {
             source = "offsiteFee.reference",
             qualifiedByName = "mapFeeReference")
     @Mapping(target = "offsiteFeeDescription", source = "offsiteFee.description")
-
-    /**
-     * maps the application code entity to summary dto.
-     *
-     * @param entity the application code entity
-     * @param fee the fee (main fee)*
-     * @param offsiteFee the offsite fee
-     * @return The application code detail dto
-     */
     public abstract ApplicationCodeGetSummaryDto toApplicationCodeGetSummaryDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
 

@@ -259,7 +259,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
     }
 
     private String activityOrderExpression(List<String> orderedEventNames) {
-        StringBuilder expression = new StringBuilder("CASE da.event_name");
+        StringBuilder expression = new StringBuilder(50).append("CASE da.event_name");
         for (int index = 0; index < orderedEventNames.size(); index++) {
             expression.append(" WHEN :eventName").append(index).append(" THEN ").append(index);
         }

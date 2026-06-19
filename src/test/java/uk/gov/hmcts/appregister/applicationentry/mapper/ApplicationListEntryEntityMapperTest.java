@@ -111,6 +111,19 @@ class ApplicationListEntryEntityMapperTest {
     }
 
     @Test
+    void testToApplicationListEntryUsesProvidedLodgementDate() {
+        EntryCreateDto entryCreateDto = new EntryCreateDto();
+        LocalDate lodgementDate = LocalDate.of(2025, Month.FEBRUARY, 14);
+        entryCreateDto.setLodgementDate(lodgementDate);
+
+        ApplicationListEntry applicationListEntry =
+                mapper.toApplicationListEntry(
+                        entryCreateDto, null, null, null, null, null, null, YesOrNo.NO);
+
+        Assertions.assertEquals(lodgementDate, applicationListEntry.getLodgementDate());
+    }
+
+    @Test
     void testToFeeStatus() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         ApplicationListEntry applicationList =

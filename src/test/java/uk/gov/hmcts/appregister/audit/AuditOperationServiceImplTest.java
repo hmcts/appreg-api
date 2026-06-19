@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import nl.altindag.log.LogCaptor;
 import org.instancio.Instancio;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
@@ -40,6 +43,11 @@ class AuditOperationServiceImplTest {
         auditOperationServiceImpl = new AuditOperationServiceImpl(List.of());
         logCaptor = LogCaptor.forClass(AuditOperationServiceImpl.class);
         logCaptor.clearLogs();
+    }
+
+    @AfterEach
+    void tearDown() {
+        MDC.clear();
     }
 
     @Test
@@ -124,6 +132,65 @@ class AuditOperationServiceImplTest {
                                                         "failureMessage=audit listener failed")
                                                 && log.contains(
                                                         "correlationId=No Correlation Id Found")));
+    }
+
+    @Test
+    void testAuditOperationFlowDoesNotFailSuccessfulBusinessOperationWhenAuditStartFails() {
+        var listener = Mockito.mock(AuditOperationLifecycleListener.class);
+        auditOperationServiceImpl = serviceWithListeners(listener);
+        Mockito.doAnswer(
+                        invocation -> {
+                            var event = invocation.getArgument(0);
+                            if (event instanceof StartEvent) {
+                                throw new IllegalStateException("start listener failed");
+                            }
+                            return null;
+                        })
+                .when(listener)
+                .eventPerformed(Mockito.any());
+
+        String result =
+                Assertions.assertDoesNotThrow(
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.CREATE,
+                                        req ->
+                                                Optional.of(
+                                                        new AuditableResult<>(
+                                                                "business-result",
+                                                                new ApplicationList()))));
+
+        Assertions.assertEquals("business-result", result);
+        Mockito.verify(listener, Mockito.times(2)).eventPerformed(Mockito.any());
+        Assertions.assertTrue(
+                logCaptor.getErrorLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains("Audit listener failure suppressed.")
+                                                && log.contains("eventName=Create")
+                                                && log.contains("eventType=StartEvent")
+                                                && log.contains(
+                                                        "failureMessage=start listener failed")));
+    }
+
+    @Test
+    void testAuditOperationFlowUsesTraceIdFromMdc() {
+        EntryCreateDto entryCreateDto = Instancio.create(EntryCreateDto.class);
+        MDC.put(AuditOperationServiceImpl.TRACE_ID, "trace-123");
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        auditOperationServiceImpl = serviceWithListeners(listener);
+
+        auditOperationServiceImpl.processAudit(
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
+                req -> Optional.of(new AuditableResult<>(entryCreateDto, null)));
+
+        Mockito.verify(listener, Mockito.times(2)).eventPerformed(requestArgumentCaptor.capture());
+        Assertions.assertEquals(
+                List.of("trace-123", "trace-123"),
+                requestArgumentCaptor.getAllValues().stream()
+                        .map(AuditEvent::getMessageUuid)
+                        .toList());
     }
 
     @Test
