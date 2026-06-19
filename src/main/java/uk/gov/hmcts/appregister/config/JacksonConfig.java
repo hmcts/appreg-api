@@ -21,7 +21,7 @@ import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
  *     yet available
  */
 @Deprecated(since = "2026-01-29", forRemoval = false)
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "java:S1133"})
 @Configuration
 @RequiredArgsConstructor
 public class JacksonConfig {

@@ -90,6 +90,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "entryRescheduled", constant = "N")
     @Mapping(target = "sequenceNumber", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @SuppressWarnings("java:S107")
     public abstract ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,
             String substituteWording,

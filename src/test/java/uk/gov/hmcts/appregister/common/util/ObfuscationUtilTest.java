@@ -113,12 +113,11 @@ class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(summary);
 
-        assertThat(obfuscated).doesNotContain("ACC-12345");
-        assertThat(obfuscated).doesNotContain("Applicant Name");
-        assertThat(obfuscated).doesNotContain("Respondent Name");
-        assertThat(obfuscated).doesNotContain("SW1A 2AA");
-
         assertThat(obfuscated)
+                .doesNotContain("ACC-12345")
+                .doesNotContain("Applicant Name")
+                .doesNotContain("Respondent Name")
+                .doesNotContain("SW1A 2AA")
                 .contains("\"accountNumber\":\"[REDACTED]\"")
                 .contains("\"applicant\":\"[REDACTED]\"")
                 .contains("\"respondent\":\"[REDACTED]\"")
@@ -240,13 +239,13 @@ class ObfuscationUtilTest {
 
     @Test
     void testObfuscationFeesReportFilterDtoRequiredOnly() {
-        FeesReportFilterDto filterDto =
-                new FeesReportFilterDto().dateTo(LocalDate.now()).dateFrom(LocalDate.now());
+        var today = LocalDate.of(2026, Month.JUNE, 17);
+        FeesReportFilterDto filterDto = new FeesReportFilterDto().dateTo(today).dateFrom(today);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
         String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
         assertThat(obfuscated)
-                .contains("\"dateTo\":" + formatter.format(LocalDate.now()))
-                .contains("\"dateFrom\":" + formatter.format(LocalDate.now()))
+                .contains("\"dateTo\":" + formatter.format(today))
+                .contains("\"dateFrom\":" + formatter.format(today))
                 .doesNotContain("\"standardApplicantCode\":\"[REDACTED]\"")
                 .doesNotContain("\"applicantName\":\"[REDACTED]\"")
                 .doesNotContain("\"location\"");
@@ -296,15 +295,14 @@ class ObfuscationUtilTest {
 
     @Test
     void testObfuscationPrivateProsecutorIndexFilterDtoRequiredOnly() {
+        var today = LocalDate.of(2026, Month.JUNE, 17);
         PrivateProsecutorsIndexFilterDto filterDto =
-                new PrivateProsecutorsIndexFilterDto()
-                        .dateTo(LocalDate.now())
-                        .dateFrom(LocalDate.now());
+                new PrivateProsecutorsIndexFilterDto().dateTo(today).dateFrom(today);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
         String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
         assertThat(obfuscated)
-                .contains("\"dateTo\":" + formatter.format(LocalDate.now()))
-                .contains("\"dateFrom\":" + formatter.format(LocalDate.now()))
+                .contains("\"dateTo\":" + formatter.format(today))
+                .contains("\"dateFrom\":" + formatter.format(today))
                 .doesNotContain("\"standardApplicantName\":\"[REDACTED]\"")
                 .doesNotContain("\"applicantFirstName\":\"[REDACTED]\"")
                 .doesNotContain("\"applicantSurname\":\"[REDACTED]\"")

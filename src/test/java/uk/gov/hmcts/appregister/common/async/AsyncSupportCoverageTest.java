@@ -39,7 +39,7 @@ class AsyncSupportCoverageTest {
 
         var exception =
                 assertThrows(
-                        RuntimeException.class,
+                        IllegalStateException.class,
                         () ->
                                 unitOfWork.inTransaction(
                                         () -> {

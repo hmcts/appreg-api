@@ -62,7 +62,6 @@ spring:
           batch_size: 25
         order_inserts: true
         order_updates: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: ${ENABLE_DB_MIGRATE:false}
     locations: classpath:/migrations

@@ -73,6 +73,14 @@ public interface AppListEntryResolutionRepository
     List<AppListEntryResolution> findByApplicationListUuid(UUID listUuid);
 
     /**
+     * Finds all AppListEntryResolution entities for the supplied application list entry UUIDs.
+     *
+     * @param entryUuids the application list entry UUIDs
+     * @return the matching resolutions
+     */
+    List<AppListEntryResolution> findByApplicationList_UuidIn(List<UUID> entryUuids);
+
+    /**
      * gets the result with the result code for the page of data.
      *
      * @param applicationListUuid The application list uuid
