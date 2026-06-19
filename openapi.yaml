@@ -2209,7 +2209,7 @@ paths:
       - application-list-entries
     put:
       description: |
-        Full replacement (PUT) of an existing Application List Entry, except that any supplied `feeStatuses` are appended to the existing fee-status history rather than replacing it.
+        Full replacement (PUT) of an existing Application List Entry. When `feeStatuses` is supplied, the existing fee-status rows for the entry are replaced by the provided list. When `feeStatuses` is `null`, fee-status rows are left unchanged.
       operationId: updateApplicationListEntry
       parameters:
       - description: Public identifier of the Application List.
@@ -6225,7 +6225,7 @@ components:
     entry-update-dto:
       additionalProperties: false
       description: |
-        Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced. The exception is `feeStatuses`, which appends new fee-status rows to preserve history. Blank fields will be rejected, nulls should be used instead.
+        Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced. When `feeStatuses` is supplied it replaces the existing fee-status rows for the entry. When `feeStatuses` is `null`, fee-status rows are left unchanged. Blank fields will be rejected, nulls should be used instead.
       properties:
         standardApplicantCode:
           description: Code that identifies the Standard Applicant.
@@ -6256,7 +6256,7 @@ components:
           type: array
         feeStatuses:
           description: |
-            New fee-status rows to append to the existing fee-status history. `null` means no fee-status rows are appended.
+            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array

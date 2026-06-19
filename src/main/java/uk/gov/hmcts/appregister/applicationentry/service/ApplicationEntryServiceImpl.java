@@ -1145,7 +1145,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     /**
-     * Appends any supplied fee statuses to preserve fee-status history.
+     * Replaces the entry fee statuses when a new list is supplied. A null fee-status payload is
+     * treated as no change so existing history is preserved.
      *
      * @param updateEntry The update payload
      * @param success The successful validation result
@@ -1157,6 +1158,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         if (updateEntry.getData().getFeeStatuses() != null) {
+            deleteFeeStatusesForEntry(success.getApplicationEntryId().getUuid());
+
             // create the fee statuses and map to entry
             for (FeeStatus feeStatus : updateEntry.getData().getFeeStatuses()) {
                 auditService.processAudit(

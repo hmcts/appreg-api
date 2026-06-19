@@ -1,8 +1,9 @@
 type: object
 description: >
   Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced.
-  The exception is `feeStatuses`, which appends new fee-status rows to preserve history. Blank fields
-  will be rejected, nulls should be used instead.
+  When `feeStatuses` is supplied it replaces the existing fee-status rows for the entry. When
+  `feeStatuses` is `null`, fee-status rows are left unchanged. Blank fields will be rejected,
+  nulls should be used instead.
 additionalProperties: false
 required:
   - applicationCode
@@ -44,8 +45,8 @@ properties:
     type: array
     items: { $ref: '../fee-status/fee-status.yaml' }
     description: >
-      New fee-status rows to append to the existing fee-status history. `null` means no fee-status
-      rows are appended.
+      Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status
+      rows. `null` means the existing fee-status rows are left unchanged.
 
   hasOffsiteFee:
     type: boolean

@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -77,8 +76,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
         EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
         LocalDate createdDate = createdDto.getLodgementDate();
-        List<FeeStatus> expectedFeeStatuses = new ArrayList<>(createdDto.getFeeStatuses());
-        expectedFeeStatuses.addAll(entryUpdateDto.getFeeStatuses());
+        List<FeeStatus> expectedFeeStatuses = entryUpdateDto.getFeeStatuses();
 
         // make sure the update does not change the lodgement date and the
         // date it was created persists
@@ -162,9 +160,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecUpdate.then().statusCode(200);
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
-        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
-        List<FeeStatus> expectedFeeStatuses = new ArrayList<>(createdDto.getFeeStatuses());
-        expectedFeeStatuses.addAll(entryUpdateDto.getFeeStatuses());
+        List<FeeStatus> expectedFeeStatuses = entryUpdateDto.getFeeStatuses();
 
         validateEntryUpdateResponse(
                 entryUpdateDto,
@@ -1244,7 +1240,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                 AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY.getEventName(),
                 deletedOfficialAuditRow.getEventName());
 
-        // Fee statuses should preserve history, so only the appended row should be audited.
+        // Fee statuses are replaced on the single-entry endpoint, so we expect both delete and
+        // create audit rows.
         val missingCreatedFeeStatusAuditMessage =
                 "Expected a created fee-status payment reference audit row";
         val createdFeeStatusAuditRow =
@@ -1257,13 +1254,19 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName(),
                 createdFeeStatusAuditRow.getEventName());
-        Assertions.assertTrue(
+        val deletedFeeStatusAuditRow =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndOldValue(
                                 TableNames.APPLICATION_LISTS_FEE_STATUS,
                                 "alefs_payment_reference",
                                 "PAY-OLD-001")
-                        .isEmpty());
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected a deleted fee-status payment reference audit row"));
+        Assertions.assertEquals(
+                AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName(),
+                deletedFeeStatusAuditRow.getEventName());
     }
 
     @Test
@@ -1403,9 +1406,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecUpdate.then().statusCode(200);
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
-        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
-        List<FeeStatus> expectedFeeStatuses = new ArrayList<>(createdDto.getFeeStatuses());
-        expectedFeeStatuses.addAll(entryUpdateDto.getFeeStatuses());
+        List<FeeStatus> expectedFeeStatuses = entryUpdateDto.getFeeStatuses();
         validateEntryUpdateResponse(
                 entryUpdateDto,
                 updatedDto,

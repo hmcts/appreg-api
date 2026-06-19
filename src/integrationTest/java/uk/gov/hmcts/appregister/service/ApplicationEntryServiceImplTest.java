@@ -889,18 +889,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure fee-status history is preserved and the new rows were appended
         Assertions.assertEquals(
-                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
+                entryUpdateDto.getFeeStatuses().size(),
                 update.getPayload().getFeeStatuses().size());
-        Assertions.assertEquals(
-                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
-                feeStatusesUpdated.size());
-        for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Expected fee status with id " + id + " to be preserved");
-        }
+        Assertions.assertEquals(entryUpdateDto.getFeeStatuses().size(), feeStatusesUpdated.size());
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
         applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
@@ -910,7 +902,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
-                feeStatusBeforeUpdate,
+                List.of(),
                 2);
     }
 
@@ -1005,18 +997,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure fee-status history is preserved and the new rows were appended
         Assertions.assertEquals(
-                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
+                entryUpdateDto.getFeeStatuses().size(),
                 update.getPayload().getFeeStatuses().size());
-        Assertions.assertEquals(
-                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
-                feeStatusesUpdated.size());
-        for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Expected fee status with id " + id + " to be preserved");
-        }
+        Assertions.assertEquals(entryUpdateDto.getFeeStatuses().size(), feeStatusesUpdated.size());
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
         applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
@@ -1026,7 +1010,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
-                feeStatusBeforeUpdate,
+                List.of(),
                 2);
 
         // validate that the fee records have not changed except for the offsite fee being added
@@ -1153,16 +1137,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure fee-status history is preserved and the new rows were appended
-        Assertions.assertEquals(
-                feeStatusBeforeUpdate.size() + entryUpdateDto.getFeeStatuses().size(),
-                feeStatusesUpdated.size());
-
-        for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Expected fee status with id " + id + " to be preserved");
-        }
+        Assertions.assertEquals(entryUpdateDto.getFeeStatuses().size(), feeStatusesUpdated.size());
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
 
@@ -1176,7 +1151,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at {{Premises Address}} "
                         + "for date {{Premises Date}}",
                 entryUpdateDto.getWordingFields(),
-                feeStatusBeforeUpdate,
+                List.of(),
                 1);
     }
 
@@ -1275,16 +1250,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure fee-status history is preserved and the new rows were appended
-        Assertions.assertEquals(
-                feeStatusBeforeUpdate.size() + updateDto.getFeeStatuses().size(),
-                feeStatusesUpdated.size());
-
-        for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Expected fee status with id " + id + " to be preserved");
-        }
+        Assertions.assertEquals(updateDto.getFeeStatuses().size(), feeStatusesUpdated.size());
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
         applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
@@ -1298,7 +1264,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at "
                         + "{{Premises Address}} for date {{Premises Date}}",
                 List.of(updateDto.getWordingFields().toArray(new TemplateSubstitution[0])),
-                feeStatusBeforeUpdate,
+                List.of(),
                 1);
     }
 
@@ -1392,7 +1358,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure a null feeStatuses payload appends nothing and preserves history
+        // make sure a null feeStatuses payload makes no fee-status change and preserves history
         Assertions.assertEquals(feeStatusBeforeUpdate.size(), feeStatusesUpdated.size());
         Assertions.assertEquals(
                 feeStatusBeforeUpdate.size(), update.getPayload().getFeeStatuses().size());
