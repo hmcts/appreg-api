@@ -18,6 +18,7 @@ get:
   operationId: getResultCodeByCodeAndDate
   tags: [result-codes]
   summary: Get a specific Result Code by code and date.
+  description: Returns the Result Code matching the supplied code and valid on the supplied date.
   responses:
     "200":
       description: Result Code found

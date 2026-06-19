@@ -53,7 +53,7 @@ get:
       schema:
         type: array
         items: { type: string }
-        example: "title,asc"
+        example: [title,asc]
   responses:
     "200":
       description: Page of Application Codes
@@ -69,4 +69,3 @@ get:
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
-

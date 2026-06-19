@@ -9,4 +9,4 @@ properties:
   enabled:
     type: boolean
     description: Whether the job is currently enabled.
-    example: "Yes"
+    example: true

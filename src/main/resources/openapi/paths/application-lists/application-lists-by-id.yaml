@@ -9,6 +9,7 @@ get:
   operationId: getApplicationList
   tags: [ application-lists ]
   summary: Get an Application List by id
+  description: Returns the Application List identified by `listId`.
   parameters:
     - in: query
       name: pageNumber

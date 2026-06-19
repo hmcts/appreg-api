@@ -61,6 +61,7 @@ post:
   operationId: createApplicationListEntry
   tags: [ application-list-entries ]
   summary: Create an Application List Entry
+  description: Creates a new Application List Entry within the Application List identified by `listId`.
   requestBody:
     required: true
     content:

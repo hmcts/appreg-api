@@ -18,7 +18,7 @@ properties:
   applicationCode:
     type: string
     description: Code that identifies the Application Code.
-    example: "APP-CODE-001"
+    example: "APP001"
     maxLength: 10
     minLength: 1
 

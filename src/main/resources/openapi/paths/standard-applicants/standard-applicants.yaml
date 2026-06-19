@@ -68,7 +68,7 @@ get:
       schema:
         type: array
         items: { type: string }
-        example: "name,asc"
+        example: [name,asc]
   responses:
     "200":
       description: Page of Standard Applicants.

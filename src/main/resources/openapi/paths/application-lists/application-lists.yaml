@@ -48,6 +48,7 @@ post:
   operationId: createApplicationList
   tags: [ application-lists ]
   summary: Create an Application List
+  description: Creates a new Application List from the supplied request body.
   requestBody:
     required: true
     content:
