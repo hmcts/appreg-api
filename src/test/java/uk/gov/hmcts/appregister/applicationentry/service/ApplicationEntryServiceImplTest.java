@@ -1708,7 +1708,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_replacesExistingStatusesForValidatedEntries() {
+    void bulkUpdateFees_appendsStatusesForValidatedEntries() {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
 
@@ -1742,8 +1742,8 @@ class ApplicationEntryServiceImplTest {
 
         ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository).delete(existingStatus1);
-        verify(appListEntryFeeStatusRepository).delete(existingStatus2);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
         verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
 
         List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
@@ -1799,7 +1799,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_replacesExistingStatusesWithAllProvidedFeeDetails() {
+    void bulkUpdateFees_appendsAllProvidedFeeDetails() {
         val entryId = UUID.randomUUID();
         val existingStatus = new AppListEntryFeeStatus();
         existingStatus.setId(201L);
@@ -1827,7 +1827,7 @@ class ApplicationEntryServiceImplTest {
 
         ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository).delete(existingStatus);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus);
         verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
 
         List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
@@ -1992,7 +1992,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_deletesOffsiteFeeMappingWhenNotRequested() {
+    void bulkUpdateFees_preservesExistingOffsiteFeeMappingWhenNotRequested() {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
@@ -2014,8 +2014,9 @@ class ApplicationEntryServiceImplTest {
 
         service.bulkUpdateFees(listId, dto);
 
-        verify(appListEntryFeeRepository).delete(existingOffsiteMapping);
-        verify(appListEntryFeeRepository).flush();
+        verify(appListEntryFeeRepository, never()).delete(existingOffsiteMapping);
+        verify(appListEntryFeeRepository, never()).flush();
+        verify(appListEntryFeeRepository, never()).save(any(AppListEntryFeeId.class));
     }
 
     private ApplicationList openApplicationList(UUID listId) {
