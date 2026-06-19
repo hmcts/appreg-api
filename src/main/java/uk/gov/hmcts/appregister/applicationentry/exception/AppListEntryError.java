@@ -220,7 +220,13 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     APPLICATION_LIST_MUST_BE_CLOSED(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT, "The application list must be closed", "ALE-45"));
+                    HttpStatus.CONFLICT, "The application list must be closed", "ALE-45")),
+
+    NOTES_TOO_LONG(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Notes must not be longer than 4000 characters",
+                    "ALE-46"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
