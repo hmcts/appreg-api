@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.common.exception.JwtError;
  */
 @Component
 @Profile("!nosecurity")
-@SuppressWarnings({"java:S1135", "java:S3516"})
+@SuppressWarnings("java:S3516")
 public class UserProvider {
 
     public static final String ROLES_CLAIM = "roles";

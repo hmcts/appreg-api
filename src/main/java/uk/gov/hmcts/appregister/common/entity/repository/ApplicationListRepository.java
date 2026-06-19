@@ -144,6 +144,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
                   LIKE concat('%', lower(cast(:otherDesc AS string)), '%') ESCAPE '\\')
           AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
+    @SuppressWarnings("java:S107")
     Page<ApplicationListSummaryProjection> findAllByFilter(
             @Param("status") Status status,
             @Param("courtCode") String courtCode,

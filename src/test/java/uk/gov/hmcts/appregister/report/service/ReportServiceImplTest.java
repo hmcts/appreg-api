@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
@@ -8,9 +9,11 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -23,8 +26,12 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -45,7 +52,9 @@ import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.exception.ReportError;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
@@ -54,6 +63,7 @@ import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 import uk.gov.hmcts.appregister.report.model.ListMaintenanceReportRow;
 import uk.gov.hmcts.appregister.report.model.PrivateProsecutorsIndexReportRow;
 import uk.gov.hmcts.appregister.report.model.SearchWarrantsReportRow;
+import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,8 +72,22 @@ class ReportServiceImplTest {
     @Mock private UserProvider userProvider;
     @Mock private JobMapper jobMapper;
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
+    @Mock private AuditOperationService auditService;
     @Mock private ReportJobAuditService reportJobAuditService;
     @Mock private ReportLocationValidator reportLocationValidator;
+
+    private ReportServiceImpl service() {
+        return new ReportServiceImpl(
+                asyncJobService,
+                userProvider,
+                jobMapper,
+                jdbcTemplate,
+                auditService,
+                List.of(),
+                reportJobAuditService,
+                new ReportFilterNormaliser(),
+                reportLocationValidator);
+    }
 
     @Test
     void givenActivityAuditFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
@@ -74,6 +98,7 @@ class ReportServiceImplTest {
         AtomicReference<ActivityAuditReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<ActivityAuditReportRow>> lifecycle =
                 new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -83,17 +108,11 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT, createdAudit);
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
@@ -111,6 +130,8 @@ class ReportServiceImplTest {
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
@@ -131,6 +152,7 @@ class ReportServiceImplTest {
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.FEES_REPORT);
         AtomicReference<FeesReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<FeesReportRow>> lifecycle = new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -140,17 +162,11 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, createdAudit);
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
@@ -164,6 +180,8 @@ class ReportServiceImplTest {
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(request -> request.getJobType() == JobType.FEES_REPORT),
@@ -187,16 +205,9 @@ class ReportServiceImplTest {
                 new AppRegistryException(
                         ReportError.CJA_NOT_FOUND, "No Criminal Justice Areas found for code 'XX'");
         doThrow(exception).when(reportLocationValidator).validate(location);
+        runAuditPassThrough();
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
 
         AppRegistryException actual =
                 Assertions.assertThrows(
@@ -216,6 +227,7 @@ class ReportServiceImplTest {
         AtomicReference<SearchWarrantsReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<SearchWarrantsReportRow>> lifecycle =
                 new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -225,17 +237,11 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT, createdAudit);
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         SearchWarrantsReportFilterDto filter =
@@ -252,6 +258,8 @@ class ReportServiceImplTest {
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
@@ -273,6 +281,7 @@ class ReportServiceImplTest {
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.DURATION_REPORT);
         AtomicReference<DurationReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<DurationReportRow>> lifecycle = new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -282,17 +291,11 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, createdAudit);
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
@@ -306,10 +309,62 @@ class ReportServiceImplTest {
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
                                     request -> request.getJobType() == JobType.DURATION_REPORT),
+                            Mockito.same(dataReader.get()),
+                            Mockito.same(lifecycle.get()),
+                            Mockito.eq(500));
+        } finally {
+            closeLifecycle(lifecycle);
+        }
+    }
+
+    @Test
+    void givenWorkloadFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
+            throws IOException {
+        final LocalDate expectedDateFrom = LocalDate.of(2018, Month.MAY, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, Month.MAY, 31);
+        TrackJobStatusResponse jobResponse = createJobResponse(JobType.WORKLOAD_REPORT);
+        AtomicReference<WorkloadReportDataReader> dataReader = new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<WorkloadReportRow>> lifecycle = new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
+
+        when(userProvider.getUserId()).thenReturn("user-id");
+        when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
+                .thenAnswer(
+                        invocation -> {
+                            dataReader.set(invocation.getArgument(1));
+                            lifecycle.set(invocation.getArgument(2));
+                            return jobResponse;
+                        });
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, createdAudit);
+
+        ReportServiceImpl service = service();
+        ReflectionTestUtils.setField(service, "schema", "appreg");
+        ReflectionTestUtils.setField(service, "reportPageSize", 500);
+        WorkloadFilterDto filter =
+                new WorkloadFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
+
+        try {
+            ReportJobCreation result = service.createWorkloadReport(filter);
+
+            WorkloadFilterDto readerFilter =
+                    (WorkloadFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filterDto");
+            Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
+            Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
+            Mockito.verify(asyncJobService)
+                    .startJob(
+                            Mockito.argThat(
+                                    request -> request.getJobType() == JobType.WORKLOAD_REPORT),
                             Mockito.same(dataReader.get()),
                             Mockito.same(lifecycle.get()),
                             Mockito.eq(500));
@@ -330,16 +385,9 @@ class ReportServiceImplTest {
                 new AppRegistryException(
                         ReportError.COURT_NOT_FOUND, "No court found for code 'BADCRT'");
         doThrow(exception).when(reportLocationValidator).validate(location);
+        runAuditPassThrough();
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
 
         AppRegistryException actual =
                 Assertions.assertThrows(
@@ -359,6 +407,7 @@ class ReportServiceImplTest {
         AtomicReference<ListMaintenanceReportDataReader> dataReader = new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<ListMaintenanceReportRow>> lifecycle =
                 new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -368,17 +417,11 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT, createdAudit);
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ListMaintenanceFilterDto filter =
@@ -393,6 +436,8 @@ class ReportServiceImplTest {
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
@@ -418,6 +463,7 @@ class ReportServiceImplTest {
                 new AtomicReference<>();
         AtomicReference<AsyncJobLifecycle<PrivateProsecutorsIndexReportRow>> lifecycle =
                 new AtomicReference<>();
+        final AtomicReference<Auditable> createdAudit = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -427,17 +473,12 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                createdAudit);
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         PrivateProsecutorsIndexFilterDto filter =
@@ -455,6 +496,15 @@ class ReportServiceImplTest {
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            Assertions.assertTrue(
+                    createdAudit
+                            .get()
+                            .extractAuditData(CrudEnum.CREATE)
+                            .contains(
+                                    new AuditableData(
+                                            "report_parameters", "applicantSurname", "Smith")));
+            assertAuditDateRange(createdAudit.get(), expectedDateFrom, expectedDateTo);
+            assertReportJobAudit(createdAudit.get(), "user-id");
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
@@ -481,16 +531,9 @@ class ReportServiceImplTest {
                 new AppRegistryException(
                         ReportError.COURT_NOT_FOUND, "No court found for code 'BADCRT'");
         doThrow(exception).when(reportLocationValidator).validate(location);
+        runAuditPassThrough();
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
 
         AppRegistryException actual =
                 Assertions.assertThrows(
@@ -514,16 +557,9 @@ class ReportServiceImplTest {
                 new AppRegistryException(
                         ReportError.COURT_NOT_FOUND, "No court found for code 'BADCRT'");
         doThrow(exception).when(reportLocationValidator).validate(location);
+        runAuditPassThrough();
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
 
         AppRegistryException actual =
                 Assertions.assertThrows(
@@ -551,17 +587,10 @@ class ReportServiceImplTest {
                             lifecycle.set(invocation.getArgument(2));
                             return jobResponse;
                         });
-        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement(jobResponse));
+        runAuditPassThrough();
 
-        ReportServiceImpl service =
-                new ReportServiceImpl(
-                        asyncJobService,
-                        userProvider,
-                        jobMapper,
-                        jdbcTemplate,
-                        reportJobAuditService,
-                        new ReportFilterNormaliser(),
-                        reportLocationValidator);
+        ReportServiceImpl service = service();
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
@@ -609,6 +638,46 @@ class ReportServiceImplTest {
         return new TrackJobStatusResponse(response, CompletableFuture.completedFuture(null));
     }
 
+    private JobAcknowledgement acknowledgement(TrackJobStatusResponse jobResponse) {
+        return new JobAcknowledgement()
+                .id(jobResponse.getUuid())
+                .type(jobResponse.getType())
+                .status(jobResponse.getStatus());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void runAuditAndCaptureParameters(
+            ReportAuditOperation operation, AtomicReference<Auditable> auditedParameters) {
+        Mockito.doAnswer(
+                        invocation -> {
+                            Function<BaseAuditEvent, Optional<AuditableResult>> execution =
+                                    invocation.getArgument(1);
+                            AuditableResult result = execution.apply(null).orElseThrow();
+                            auditedParameters.set((Auditable) result.getNewEntity());
+                            return result.getResultingValue();
+                        })
+                .when(auditService)
+                .processAudit(
+                        eq(operation),
+                        any(Function.class),
+                        any(AuditOperationLifecycleListener[].class));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void runAuditPassThrough() {
+        Mockito.doAnswer(
+                        invocation -> {
+                            Function<BaseAuditEvent, Optional<AuditableResult>> execution =
+                                    invocation.getArgument(1);
+                            return execution.apply(null).orElseThrow().getResultingValue();
+                        })
+                .when(auditService)
+                .processAudit(
+                        any(ReportAuditOperation.class),
+                        any(Function.class),
+                        any(AuditOperationLifecycleListener[].class));
+    }
+
     private <T> void closeLifecycle(AtomicReference<AsyncJobLifecycle<T>> lifecycle)
             throws IOException {
         if (lifecycle.get() != null) {
@@ -621,7 +690,7 @@ class ReportServiceImplTest {
 
     private void assertAuditDateRange(
             Auditable reportParameters, LocalDate expectedDateFrom, LocalDate expectedDateTo) {
-        List<AuditableData> auditData = reportParameters.extractAuditData(CrudEnum.READ);
+        List<AuditableData> auditData = reportParameters.extractAuditData(CrudEnum.CREATE);
         Assertions.assertTrue(
                 auditData.contains(
                         new AuditableData(
@@ -630,5 +699,16 @@ class ReportServiceImplTest {
                 auditData.contains(
                         new AuditableData(
                                 "report_parameters", "dateTo", expectedDateTo.toString())));
+    }
+
+    private void assertReportJobAudit(Auditable auditedParameters, String expectedUserId) {
+        List<AuditableData> auditData = auditedParameters.extractAuditData(CrudEnum.CREATE);
+        Assertions.assertTrue(
+                auditData.stream().anyMatch(data -> "jobId".equals(data.getFieldName())));
+        Assertions.assertTrue(
+                auditData.stream().anyMatch(data -> "reportType".equals(data.getFieldName())));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "requestingUser", expectedUserId)));
     }
 }

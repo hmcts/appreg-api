@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -20,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
@@ -49,6 +49,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicati
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
+import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -115,6 +116,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final String METRIC_STATUS_TAG = "status";
     private static final String METRIC_SUCCEEDED = "succeeded";
     private static final String METRIC_FAILED = "failed";
+    private static final int NOTES_MAX_LENGTH = 4000;
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -170,6 +172,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final MeterRegistry meterRegistry;
 
     @Override
+    @Transactional(readOnly = true)
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         log.debug(
                 "Started find application entries page={} size={}",
@@ -227,6 +230,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EntryIdsDto getEntryIds(EntryGetFilterDto filterDto) {
         EntryGetFilterDto safeFilterDto = filterDto == null ? new EntryGetFilterDto() : filterDto;
 
@@ -279,6 +283,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
+    @NestedAudit
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
         return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
@@ -377,6 +382,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
+    @NestedAudit
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
         return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
@@ -384,6 +390,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
+    @NestedAudit
     public MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry) {
         log.debug(
                 "Started update application entry {} in list {}",
@@ -517,14 +524,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 AppListEntryAuditOperation
                                                         .UPDATE_CLOSED_APP_ENTRY_LIST,
                                                 req -> {
-                                                    success.getApplicationEntryId()
-                                                            .setNotes(
+                                                    String updatedNotes =
+                                                            appendNotes(
                                                                     success.getApplicationEntryId()
-                                                                                    .getNotes()
-                                                                            + " "
-                                                                            + updateEntry
-                                                                                    .getData()
-                                                                                    .getAdditionalNotes());
+                                                                            .getNotes(),
+                                                                    updateEntry
+                                                                            .getData()
+                                                                            .getAdditionalNotes());
+                                                    validateNotesLength(updatedNotes);
+                                                    success.getApplicationEntryId()
+                                                            .setNotes(updatedNotes);
 
                                                     // update the notes by appending with the
                                                     // alternative
@@ -544,6 +553,22 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 }),
                                 // return the latest entities for the entry read on the update
                                 getKeyablesForCreateUpdateEtag(success.getApplicationEntryId())));
+    }
+
+    private static void validateNotesLength(String notes) {
+        if (notes != null && notes.length() > NOTES_MAX_LENGTH) {
+            throw new AppRegistryException(
+                    AppListEntryError.NOTES_TOO_LONG,
+                    "notes must not be longer than %s characters".formatted(NOTES_MAX_LENGTH));
+        }
+    }
+
+    private static String appendNotes(String existingNotes, String additionalNotes) {
+        if (existingNotes == null || existingNotes.isBlank()) {
+            return additionalNotes;
+        }
+
+        return existingNotes + " " + additionalNotes;
     }
 
     @Transactional
@@ -1361,6 +1386,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
             PayloadGetEntryInList entry) {
         log.debug(
@@ -1411,6 +1437,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EntryPage getApplicationListEntries(
             PayloadGetEntryInList payloadForGet,
             PagingWrapper pageable,
@@ -1476,6 +1503,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EntryIdsDto getApplicationListEntryIds(
             PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filterDto) {
         log.debug(
@@ -1563,7 +1591,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
         var payload = new MoveEntriesPayload(sourceListId, moveEntriesDto);
         final ApplicationList targetList =
@@ -1615,7 +1643,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void deleteEntry(PayloadForDeleteEntry idToDelete) {
         deleteApplicationListEntryValidator.validate(
                 idToDelete,

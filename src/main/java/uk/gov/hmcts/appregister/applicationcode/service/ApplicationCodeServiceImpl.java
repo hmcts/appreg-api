@@ -47,7 +47,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final GetApplicationCodeValidator getApplicationCodeValidator;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationCodePage findAll(
             String appCode, String appTitle, LocalDate effectiveDate, PagingWrapper pageable) {
 
@@ -110,7 +110,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet) {
         return auditService.processAudit(
                 null,

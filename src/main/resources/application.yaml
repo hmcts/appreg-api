@@ -56,11 +56,12 @@ spring:
       hibernate:
         format_sql: true
         default_schema: ${spring.sql.init.schema-locations}
+        default_batch_fetch_size: 25
         jdbc:
           time_zone: UTC
           batch_size: 25
         order_inserts: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+        order_updates: true
   flyway:
     enabled: ${ENABLE_DB_MIGRATE:false}
     locations: classpath:/migrations

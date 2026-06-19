@@ -331,6 +331,7 @@ public class ObfuscationUtil {
         }
     }
 
+    @SuppressWarnings("java:S107")
     private static void writePage(
             JsonGenerator gen,
             Object pageNumber,

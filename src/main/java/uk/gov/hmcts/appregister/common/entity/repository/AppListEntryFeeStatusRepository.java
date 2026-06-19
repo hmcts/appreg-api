@@ -39,4 +39,12 @@ public interface AppListEntryFeeStatusRepository
         WHERE appStatus.appListEntry.uuid = :entryId
         """)
     List<AppListEntryFeeStatus> getFeeStatusByEntryUuid(UUID entryId);
+
+    /**
+     * Finds all fee statuses for the supplied application list entry UUIDs.
+     *
+     * @param entryUuids the application list entry UUIDs
+     * @return the matching fee statuses
+     */
+    List<AppListEntryFeeStatus> findByAppListEntry_UuidIn(List<UUID> entryUuids);
 }

@@ -2,9 +2,12 @@ package uk.gov.hmcts.appregister.applicationlist.validator;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -140,12 +143,29 @@ public class ApplicationUpdateListLocationValidator
         // gets the application list entries
         List<ApplicationListEntry> listEntries =
                 applicationListEntryRepository.findByApplicationListId(listBeingUpdated.getId());
+        List<UUID> entryUuids = listEntries.stream().map(ApplicationListEntry::getUuid).toList();
+
+        Map<UUID, List<AppListEntryResolution>> listEntryResolutionsByEntryUuid =
+                appListEntryResolutionRepository.findByApplicationList_UuidIn(entryUuids).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        resolution -> resolution.getApplicationList().getUuid()));
+        Map<UUID, List<AppListEntryOfficial>> listEntryOfficialsByEntryUuid =
+                appListEntryOfficialRepository.findByAppListEntry_UuidIn(entryUuids).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        official -> official.getAppListEntry().getUuid()));
+        Map<UUID, List<AppListEntryFeeStatus>> listEntryFeeStatusesByEntryUuid =
+                appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(entryUuids).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        feeStatus -> feeStatus.getAppListEntry().getUuid()));
 
         for (ApplicationListEntry listEntry : listEntries) {
 
             // check each of the resolutions are set for each entry
             List<AppListEntryResolution> listEntryResolutions =
-                    appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid());
+                    listEntryResolutionsByEntryUuid.getOrDefault(listEntry.getUuid(), List.of());
             if (listEntryResolutions.isEmpty()) {
                 throw new AppRegistryException(
                         ApplicationListError.INVALID_FOR_CLOSE_NOT_RESULTED,
@@ -156,7 +176,7 @@ public class ApplicationUpdateListLocationValidator
 
             // make sure the officials are set for each entry
             List<AppListEntryOfficial> listEntryOfficials =
-                    appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid());
+                    listEntryOfficialsByEntryUuid.getOrDefault(listEntry.getUuid(), List.of());
             if (listEntryOfficials.isEmpty()) {
                 throw new AppRegistryException(
                         ApplicationListError.INVALID_FOR_CLOSE_NO_OFFICIAL,
@@ -165,7 +185,9 @@ public class ApplicationUpdateListLocationValidator
 
             log.debug("Validated application entry officials with entry id {}", listEntry.getId());
 
-            validStatusIsPaid(listEntry);
+            validStatusIsPaid(
+                    listEntry,
+                    listEntryFeeStatusesByEntryUuid.getOrDefault(listEntry.getUuid(), List.of()));
         }
 
         log.debug("Validated application list with id {} for closure", listBeingUpdated.getId());
@@ -175,14 +197,13 @@ public class ApplicationUpdateListLocationValidator
      * validate the app list entry has a paid status.
      *
      * @param listEntry The list entry to validate if it has been paid.
+     * @param listStatuses The list entry fee statuses.
      */
-    private void validStatusIsPaid(ApplicationListEntry listEntry) {
+    private void validStatusIsPaid(
+            ApplicationListEntry listEntry, List<AppListEntryFeeStatus> listStatuses) {
         // make sure the fee status has been paid or REMITTED
         YesOrNo yesOrNo = listEntry.getApplicationCode().getFeeDue();
         if (yesOrNo.isYes()) {
-            List<AppListEntryFeeStatus> listStatuses =
-                    appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId());
-
             // determine if one of the fee statuses has been paid
             boolean acceptable = false;
             for (AppListEntryFeeStatus status : listStatuses) {
