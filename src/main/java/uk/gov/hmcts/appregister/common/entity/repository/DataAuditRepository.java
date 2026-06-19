@@ -25,15 +25,6 @@ public interface DataAuditRepository extends JpaRepository<DataAudit, Long> {
             String table, String column, String oldValue);
 
     /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<DataAudit> findByIdGreaterThanEqual(Integer value);
-
-    /**
      * finds a unique record for a data audit record with a new value.
      *
      * @param table The table

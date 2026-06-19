@@ -25,15 +25,6 @@ public interface AppListEntryResolutionRepository
             Long resultId, Long applicationId, Long listId, String userId);
 
     /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<AppListEntryResolution> findByIdGreaterThanEqual(Integer value);
-
-    /**
      * Retrieves all result wordings for a given application list.
      *
      * @param listUuid the UUID of the ApplicationList

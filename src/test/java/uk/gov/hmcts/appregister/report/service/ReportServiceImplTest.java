@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
@@ -24,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
@@ -53,6 +55,7 @@ import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.exception.ReportError;
@@ -68,6 +71,7 @@ import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
     @Mock private AsyncJobService asyncJobService;
+    @Mock private JobService jobService;
     @Mock private UserProvider userProvider;
     @Mock private JobMapper jobMapper;
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
@@ -78,6 +82,7 @@ class ReportServiceImplTest {
     private ReportServiceImpl service() {
         return new ReportServiceImpl(
                 asyncJobService,
+                jobService,
                 userProvider,
                 jobMapper,
                 jdbcTemplate,
@@ -85,6 +90,82 @@ class ReportServiceImplTest {
                 reportJobAuditService,
                 new ReportFilterNormaliser(),
                 reportLocationValidator);
+    }
+
+    @Test
+    void givenCompletedReportJob_whenDownloadingReport_thenReturnsResourceAndAuditsReportJob()
+            throws Exception {
+        UUID jobId = UUID.randomUUID();
+        JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
+        var resource =
+                new InputStreamResource(
+                        new ByteArrayInputStream(
+                                "report".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+
+        when(userProvider.getUserId()).thenReturn("requesting-user");
+        when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.COMPLETED);
+        when(jobStatusResponse.getUuid()).thenReturn(jobId);
+        when(jobStatusResponse.getType()).thenReturn(JobType.FEES_REPORT);
+        when(jobStatusResponse.read()).thenReturn(resource);
+        AtomicReference<Auditable> auditedDownload = new AtomicReference<>();
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT, auditedDownload);
+
+        var result = service().downloadReport(jobId);
+
+        Assertions.assertEquals("report.csv", result.filename());
+        Assertions.assertSame(resource, result.resource());
+        var auditData = auditedDownload.get().extractAuditData(CrudEnum.READ);
+        Assertions.assertTrue(
+                auditData.contains(new AuditableData("report_jobs", "jobId", jobId.toString())));
+        Assertions.assertTrue(
+                auditData.contains(new AuditableData("report_jobs", "reportType", "FEES_REPORT")));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "requestingUser", "requesting-user")));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "fileReference", "report.csv")));
+    }
+
+    @Test
+    void givenIncompleteReportJob_whenDownloadingReport_thenThrows() {
+        UUID jobId = UUID.randomUUID();
+        JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
+
+        when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.RECEIVED);
+        runAuditPassThrough();
+        ReportServiceImpl service = service();
+
+        var ex =
+                Assertions.assertThrows(AppRegistryException.class, () -> service.downloadReport(jobId));
+
+        Assertions.assertSame(
+                uk.gov.hmcts.appregister.common.async.exception.JobError
+                        .JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD,
+                ex.getCode());
+    }
+
+    @Test
+    void givenReportReadFails_whenDownloadingReport_thenThrows() throws Exception {
+        UUID jobId = UUID.randomUUID();
+        JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
+
+        when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.COMPLETED);
+        when(jobStatusResponse.read()).thenThrow(new IOException("boom"));
+        runAuditPassThrough();
+        ReportServiceImpl service = service();
+
+        var ex =
+                Assertions.assertThrows(AppRegistryException.class, () -> service.downloadReport(jobId));
+
+        Assertions.assertSame(
+                uk.gov.hmcts.appregister.common.async.exception.JobError
+                        .JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                ex.getCode());
     }
 
     @Test

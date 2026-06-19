@@ -12,6 +12,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullableModule;
+import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -67,6 +68,7 @@ public class ObfuscationUtil {
         maskingModule.addSerializer(
                 PrivateProsecutorsIndexFilterDto.class,
                 new PrivateProsecutorIndexSensitiveSerializer());
+        maskingModule.addSerializer(InputStreamResource.class, new RedactedSerializer<>());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(

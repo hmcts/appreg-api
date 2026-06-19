@@ -71,14 +71,6 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             @Param("code") String code, @Param("active") LocalDate active);
 
     /**
-     * Finds the ids that are greater than this value.
-     *
-     * @param value the minimum ID value
-     * @return a list of ApplicationCode entities with IDs >= value
-     */
-    List<StandardApplicant> findByIdGreaterThanEqual(Integer value);
-
-    /**
      * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).
      *
      * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)

@@ -37,15 +37,6 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
     List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
     /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
-
-    /**
      * Retrieve a page of active Application Codes filtered by code/title (case-insensitive).
      *
      * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)

@@ -77,14 +77,6 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
             String reference, LocalDate dateTime, boolean offsiteStatus);
 
     /**
-     * Finds Fee entities with IDs greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value
-     * @return a list of Fee entities with IDs >= value
-     */
-    List<Fee> findByIdGreaterThanEqual(Integer value);
-
-    /**
      * find the fee associated fees with the given ids that is within the window of the date.
      *
      * @param ids The fee ids

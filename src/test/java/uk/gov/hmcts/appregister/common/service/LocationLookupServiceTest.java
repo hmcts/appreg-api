@@ -6,79 +6,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
-import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 
 @ExtendWith(MockitoExtension.class)
 class LocationLookupServiceTest {
-
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
-
-    @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
-    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private LocationLookupService service;
-
-    // -------- getActiveCourtOrThrow --------
-
-    @Test
-    void getActiveCourtOrThrow_validCode_returnsSingleCourt() {
-        NationalCourtHouse court = new NationalCourtHouse();
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(courtHouseRepository.findActiveCourts("ABC123", TODAY_UK)).thenReturn(List.of(court));
-
-        NationalCourtHouse result = service.getActiveCourtOrThrow("ABC123");
-
-        assertSame(court, result);
-        verify(courtHouseRepository).findActiveCourts("ABC123", TODAY_UK);
-    }
-
-    @Test
-    void getActiveCourtOrThrow_noMatch_throwsAppRegistryException() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(courtHouseRepository.findActiveCourts("XYZ", TODAY_UK)).thenReturn(List.of());
-
-        AppRegistryException ex =
-                assertThrows(
-                        AppRegistryException.class, () -> service.getActiveCourtOrThrow("XYZ"));
-        assertThat(ex.getMessage()).contains("No court found for code 'XYZ'");
-        verify(courtHouseRepository).findActiveCourts("XYZ", TODAY_UK);
-    }
-
-    @Test
-    void getActiveCourtOrThrow_multipleMatches_returnsFirstCourtAndLogsWarning() {
-        NationalCourtHouse preferred = new NationalCourtHouse();
-        preferred.setCourtLocationCode("DUPE");
-        NationalCourtHouse alternative = new NationalCourtHouse();
-        alternative.setCourtLocationCode("DUPE");
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(courtHouseRepository.findActiveCourts("DUPE", TODAY_UK))
-                .thenReturn(List.of(preferred, alternative));
-
-        LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
-
-        NationalCourtHouse result = service.getActiveCourtOrThrow("DUPE");
-
-        assertSame(preferred, result);
-        assertThat(logCaptor.getWarnLogs().getFirst()).contains("Data quality warning");
-        verify(courtHouseRepository).findActiveCourts("DUPE", TODAY_UK);
-    }
-
-    // -------- getCjaOrThrow --------
 
     @Test
     void getCjaOrThrow_validTrimmedCode_returnsSingleCja() {

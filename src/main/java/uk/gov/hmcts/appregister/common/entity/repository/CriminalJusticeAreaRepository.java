@@ -41,14 +41,4 @@ public interface CriminalJusticeAreaRepository extends JpaRepository<CriminalJus
             @Param("code") String code,
             @LikeParam @Param("description") String description,
             Pageable pageable);
-
-    /**
-     * Finds all CriminalJusticeArea entities with an ID greater than or equal to the specified
-     * value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of CriminalJusticeArea entities with IDs greater than or equal to the
-     *     specified value
-     */
-    List<CriminalJusticeArea> findByIdGreaterThanEqual(Integer value);
 }

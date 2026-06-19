@@ -2,25 +2,32 @@ package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
+import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
@@ -36,7 +43,10 @@ import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 @Service
 @RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
+    public static final String REPORT_DOWNLOAD_FILENAME = "report.csv";
+
     private final AsyncJobService asyncJobService;
+    private final JobService jobService;
     private final UserProvider userProvider;
     private final JobMapper jobMapper;
     private final NamedParameterJdbcTemplate jdbcTemplate;
@@ -305,6 +315,38 @@ public class ReportServiceImpl implements ReportService {
                 });
     }
 
+    @Override
+    public ReportDownload downloadReport(UUID jobId) {
+        return auditService.processAudit(
+                ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT,
+                unused -> {
+                    JobStatusResponse jobStatusResponse = jobService.getJobStatusById(jobId);
+                    if (jobStatusResponse.getStatus() != JobStatus1.COMPLETED) {
+                        throw new AppRegistryException(
+                                JobError.JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD,
+                                "Download stream not available");
+                    }
+
+                    try {
+                        InputStreamResource resource = jobStatusResponse.read();
+                        if (resource == null) {
+                            throw noDownloadStream(null);
+                        }
+
+                        var reportDownload = new ReportDownload(REPORT_DOWNLOAD_FILENAME, resource);
+                        return Optional.of(
+                                new AuditableResult<>(
+                                        reportDownload,
+                                        ReportJobAudit.downloaded(
+                                                jobStatusResponse,
+                                                userProvider.getUserId(),
+                                                reportDownload.filename())));
+                    } catch (IOException e) {
+                        throw noDownloadStream(e);
+                    }
+                });
+    }
+
     private <T> AuditedReportLifecycle<T> audited(ReportCsvLifecycle<T> lifecycle) {
         return new AuditedReportLifecycle<>(lifecycle, reportJobAuditService);
     }
@@ -323,6 +365,18 @@ public class ReportServiceImpl implements ReportService {
                                             userProvider.getUserId(),
                                             reportJobCreation.reportParameters())));
                 });
+    }
+
+    private AppRegistryException noDownloadStream(Exception cause) {
+        if (cause == null) {
+            return new AppRegistryException(
+                    JobError.JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                    "Download stream not available");
+        }
+        return new AppRegistryException(
+                JobError.JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                "Download stream not available",
+                cause);
     }
 
     @FunctionalInterface

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -38,15 +37,6 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      * @return true if the ApplicationList exists, false otherwise
      */
     boolean existsByIdAndCreatedUser(Long primaryKey, String userId);
-
-    /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<ApplicationList> findByIdGreaterThanEqual(Integer value);
 
     /**
      * Finds a non-soft deleted application list by its UUID.

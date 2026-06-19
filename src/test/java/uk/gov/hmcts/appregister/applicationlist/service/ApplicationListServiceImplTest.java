@@ -82,6 +82,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -91,7 +92,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
-import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -111,6 +111,8 @@ class ApplicationListServiceImplTest {
 
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(10, 30);
+    private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
+            List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
     @Mock private ApplicationListRepository repository;
     @Mock private ApplicationListEntryRepository aleRepository;
@@ -992,8 +994,7 @@ class ApplicationListServiceImplTest {
                 mock(ApplicationListEntryOfficialPrintProjection.class);
         when(officialProj.getEntryId()).thenReturn(1L);
 
-        when(aleoRepository.findByApplicationListUuidForPrinting(
-                        id, OfficialTypeUtil.PRINTABLE_CODES))
+        when(aleoRepository.findByApplicationListUuidForPrinting(id, PRINTABLE_OFFICIAL_TYPES))
                 .thenReturn(List.of(officialProj));
 
         // Mapper stubs
@@ -1023,8 +1024,7 @@ class ApplicationListServiceImplTest {
 
         verify(aleRepository).findByIdForPrinting(id);
         verify(alerRepository).findByApplicationListUuidForPrinting(id);
-        verify(aleoRepository)
-                .findByApplicationListUuidForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
+        verify(aleoRepository).findByApplicationListUuidForPrinting(id, PRINTABLE_OFFICIAL_TYPES);
 
         // And the per-entry mapper was invoked
         verify(entryMapper).toPrintDto(entryProjection);

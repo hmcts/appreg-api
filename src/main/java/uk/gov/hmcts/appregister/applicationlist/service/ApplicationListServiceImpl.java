@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
@@ -46,7 +47,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
-import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -75,6 +75,8 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
     private static final long ZERO_ENTITIES = 0L;
+    private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
+            List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
     // Repositories
     private final ApplicationListRepository repository;
@@ -497,7 +499,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     List<ApplicationListEntryOfficialPrintProjection>
                             applicationListEntryOfficialPrintProjection =
                                     aleoRepository.findByApplicationListUuidForPrinting(
-                                            id, OfficialTypeUtil.PRINTABLE_CODES);
+                                            id, PRINTABLE_OFFICIAL_TYPES);
 
                     // map directly to DTOs while grouping
                     Map<Long, List<Official>> officialsByEntryId =
