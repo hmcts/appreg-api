@@ -1,5 +1,5 @@
 type: object
-description: Update fee details for multiple Application List Entries in one atomic operation.
+description: Append fee-status rows for multiple Application List Entries in one atomic operation.
 additionalProperties: false
 required:
   - entryIds
@@ -10,7 +10,8 @@ properties:
   entryIds:
     type: array
     description: >
-      Array of entry IDs whose fee details should be updated. All must belong to the list in the path.
+      Array of entry IDs whose fee-status history should be appended to. All must belong to the list
+      in the path.
       Requests with more than 500 entry IDs are rejected with 400 Bad Request.
     minItems: 1
     maxItems: 500
@@ -23,8 +24,8 @@ properties:
   feeDetails:
     type: array
     description: >
-      Array of fee detail rows to apply to every selected Application List Entry.
-      At least one fee detail row must be provided.
+      Array of fee-status rows to append to every selected Application List Entry.
+      At least one fee-status row must be provided.
     minItems: 1
     items:
       $ref: "./bulk-fee-details-dto.yaml"

@@ -453,12 +453,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                     "Created application entry with id: {}",
                                                                     listEntryEntity.getId());
 
-                                                            // add the new fee statuses
-                                                            List<AppListEntryFeeStatus>
-                                                                    updatedFeeStatusLst =
-                                                                            updateFeeStatus(
-                                                                                    updateEntry,
-                                                                                    success);
+                                                            // add any new fee statuses while
+                                                            // preserving existing history
+                                                            updateFeeStatus(updateEntry, success);
 
                                                             // update the officials
                                                             List<AppListEntryOfficial>
@@ -469,6 +466,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                                                             // update the fees for the entry
                                                             updateFees(success, updateEntry);
+
+                                                            List<AppListEntryFeeStatus>
+                                                                    updatedFeeStatusLst =
+                                                                            appListEntryFeeStatusRepository
+                                                                                    .findByAppListEntryId(
+                                                                                            listEntryEntity
+                                                                                                    .getId());
 
                                                             // create the fee entry mappings
                                                             EntryGetDetailDto entryGetDetailDto =
@@ -618,7 +622,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         offsiteFeeSupplier(hasOffsiteFee);
 
                                 for (ApplicationListEntry entry : entries) {
-                                    replaceFeeDetailsForEntry(
+                                    appendFeeDetailsForEntry(
                                             entry, feeDetails, hasOffsiteFee, offsiteFeeSupplier);
                                 }
 
@@ -679,16 +683,18 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
     }
 
-    private void replaceFeeDetailsForEntry(
+    private void appendFeeDetailsForEntry(
             ApplicationListEntry entry,
             List<BulkFeeDetailsDto> feeDetails,
             boolean hasOffsiteFee,
             Supplier<Fee> offsiteFeeSupplier) {
-        deleteFeeStatusesForEntry(entry.getUuid());
         for (BulkFeeDetailsDto feeDetail : feeDetails) {
             saveFeeStatus(createBulkFeeStatus(entry, feeDetail), new ArrayList<>());
         }
-        updateOffsiteFeeMapping(entry, hasOffsiteFee, offsiteFeeSupplier);
+
+        if (hasOffsiteFee) {
+            ensureOffsiteFeeMapping(entry, offsiteFeeSupplier);
+        }
     }
 
     private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
@@ -916,15 +922,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         "Offsite fee does not exist"));
     }
 
-    private void updateOffsiteFeeMapping(
-            ApplicationListEntry entry, boolean hasOffsiteFee, Supplier<Fee> offsiteFeeSupplier) {
+    private void ensureOffsiteFeeMapping(
+            ApplicationListEntry entry, Supplier<Fee> offsiteFeeSupplier) {
         List<AppListEntryFeeId> existingOffsiteMappings =
                 appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId());
-
-        if (!hasOffsiteFee) {
-            deleteOffsiteFeeMappings(existingOffsiteMappings);
-            return;
-        }
 
         if (!existingOffsiteMappings.isEmpty()) {
             return;
@@ -950,22 +951,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                     return Optional.of(new AuditableResult<>(null, savedOffsiteEntryFee));
                 });
-    }
-
-    private void deleteOffsiteFeeMappings(List<AppListEntryFeeId> existingOffsiteMappings) {
-        for (AppListEntryFeeId existingOffsiteMapping : existingOffsiteMappings) {
-            auditService.processAudit(
-                    existingOffsiteMapping,
-                    AppListEntryAuditOperation.DELETE_FEE_ENTRY,
-                    req -> {
-                        appListEntryFeeRepository.delete(existingOffsiteMapping);
-                        return Optional.empty();
-                    });
-        }
-
-        if (!existingOffsiteMappings.isEmpty()) {
-            appListEntryFeeRepository.flush();
-        }
     }
 
     /**
@@ -1153,7 +1138,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     /**
-     * Replace the existing fee status.
+     * Replaces the entry fee statuses when a new list is supplied. A null fee-status payload is
+     * treated as no change so existing history is preserved.
      *
      * @param updateEntry The update payload
      * @param success The successful validation result
@@ -1162,11 +1148,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             PayloadForUpdateEntry updateEntry, UpdateApplicationEntryValidationSuccess success) {
         log.debug("Updating fee status");
 
-        deleteFeeStatusesForEntry(updateEntry.getEntryId());
-
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         if (updateEntry.getData().getFeeStatuses() != null) {
+            deleteFeeStatusesForEntry(success.getApplicationEntryId().getUuid());
+
             // create the fee statuses and map to entry
             for (FeeStatus feeStatus : updateEntry.getData().getFeeStatuses()) {
                 auditService.processAudit(
