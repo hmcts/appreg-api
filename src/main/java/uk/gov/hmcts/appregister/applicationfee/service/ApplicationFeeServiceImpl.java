@@ -133,7 +133,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
         } else {
             var currentFee = feeDB.get();
             var updatedFee = BeanUtil.copyBean(currentFee);
-            mapper.updateFee(updatedFee, currentFee);
+            mapper.updateFee(updatedFee, fee);
 
             // this code is to allow the end date to be updated if it has changed, as the mapper
             // will ignore null values
@@ -146,7 +146,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
                     FeeOperation.UPDATE_FEE,
                     req -> {
                         updatedFee.setChangedBy(1L);
-                        fee.setChangedDate(businessDateProvider.currentUkDateTime());
+                        updatedFee.setChangedDate(businessDateProvider.currentUkDateTime());
 
                         AuditableResult<Void, Fee> auditableResult =
                                 new AuditableResult<>(null, updatedFee);

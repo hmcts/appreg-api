@@ -286,8 +286,13 @@ class ApplicationFeeServiceImplTest {
 
         Assertions.assertNotNull(listener.getCompleteEvent());
 
+        Assertions.assertNotNull(listener.getCompleteEvent());
         val audited = (Fee) listener.getCompleteEvent().getNewValue();
-        Assertions.assertEquals(67, audited.getId());
+        Assertions.assertEquals(fee.getReference(), audited.getReference());
+        Assertions.assertEquals(fee.getAmount(), audited.getAmount());
+        Assertions.assertEquals(fee.getChangedDate(), audited.getChangedDate());
+        Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
