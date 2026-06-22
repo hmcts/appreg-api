@@ -3,17 +3,24 @@ package uk.gov.hmcts.appregister.report.controller;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -157,7 +164,111 @@ class ReportControllerTest {
         Assertions.assertEquals(
                 "attachment; filename=\"report.csv\"",
                 response.getHeaders().getFirst("Content-Disposition"));
+        Assertions.assertEquals("no-cache", response.getHeaders().getCacheControl());
+        Assertions.assertEquals(
+                MediaType.parseMediaType("text/csv"), response.getHeaders().getContentType());
+        Assertions.assertEquals("Accept", response.getHeaders().getVary().getFirst());
         verify(reportService).downloadReport(jobId);
+    }
+
+    @ParameterizedTest
+    @MethodSource("downloadFilenames")
+    void downloadReport_usesRequestedFilenameInContentDisposition(String filename) {
+        var jobId = UUID.randomUUID();
+        var resource =
+                new InputStreamResource(
+                        new ByteArrayInputStream("report".getBytes(StandardCharsets.UTF_8)));
+        when(reportService.downloadReport(jobId))
+                .thenReturn(new ReportDownload(filename, resource));
+
+        var response = controller.downloadReport(jobId);
+
+        Assertions.assertEquals(
+                "attachment; filename=\"" + filename + "\"",
+                response.getHeaders().getFirst("Content-Disposition"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("reportCreationRoutes")
+    void createReportEndpoints_returnVersionedAcceptedHeaders(
+            BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>> route,
+            Object filter,
+            JobType jobType) {
+        var acknowledgement = acknowledgement(jobType);
+        when(reportService.createActivityAuditReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+        when(reportService.createFeesReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+        when(reportService.createWorkloadReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+        when(reportService.createSearchWarrantsReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+        when(reportService.createDurationReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+        when(reportService.createListMaintenanceReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+        when(reportService.createPrivateProsecutorsIndexReport(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ReportJobCreation(acknowledgement, null));
+
+        var response = route.apply(controller, filter);
+
+        assertAccepted(response, acknowledgement);
+        Assertions.assertEquals(VND_JSON_V1, response.getHeaders().getContentType());
+        Assertions.assertEquals("Accept", response.getHeaders().getVary().getFirst());
+    }
+
+    private static Stream<Arguments> reportCreationRoutes() {
+        return Stream.of(
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createActivityAuditReport(
+                                                (ActivityAuditFilterDto) filter),
+                        new ActivityAuditFilterDto(),
+                        JobType.ACTIVITY_AUDIT_REPORT),
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createFeesReport((FeesReportFilterDto) filter),
+                        new FeesReportFilterDto(),
+                        JobType.FEES_REPORT),
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createWorkloadReport((WorkloadFilterDto) filter),
+                        new WorkloadFilterDto(),
+                        JobType.WORKLOAD_REPORT),
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createSearchWarrantsReport(
+                                                (SearchWarrantsReportFilterDto) filter),
+                        new SearchWarrantsReportFilterDto(),
+                        JobType.SEARCH_WARRANTS_REPORT),
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createDurationReport((DurationFilterDto) filter),
+                        new DurationFilterDto(),
+                        JobType.DURATION_REPORT),
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createListMaintenanceReport(
+                                                (ListMaintenanceFilterDto) filter),
+                        new ListMaintenanceFilterDto(),
+                        JobType.LIST_MAINTENANCE_REPORT),
+                Arguments.of(
+                        (BiFunction<ReportController, Object, ResponseEntity<JobAcknowledgement>>)
+                                (controller, filter) ->
+                                        controller.createPrivateProsecutorsIndexReport(
+                                                (PrivateProsecutorsIndexFilterDto) filter),
+                        new PrivateProsecutorsIndexFilterDto(),
+                        JobType.PRIVATE_PROSECUTORS_INDEX_REPORT));
+    }
+
+    private static Stream<String> downloadFilenames() {
+        return Stream.of("report.csv", "fees-report.csv", "activity-audit.csv");
     }
 
     private void assertAccepted(

@@ -33,6 +33,7 @@ class JobApiControllerTest {
         verify(jobService).getJobAckById(jobId);
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(actual.getBody()).isSameAs(body);
+        assertThat(actual.getHeaders().getVary()).containsExactly("Accept");
         assertThat(actual.getHeaders().getContentType())
                 .hasToString("application/vnd.hmcts.appreg.v1+json");
     }

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.job.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -87,6 +88,24 @@ class JobServiceImplTest {
         val audited = (AsyncJob) listener.getCompleteEvent().getNewValue();
         Assertions.assertSame(auditEntity, audited);
         Assertions.assertEquals(jobId, audited.getUuid());
+    }
+
+    @Test
+    void testGetJobStatusById_delegatesToValidator() {
+        val jobId = UUID.randomUUID();
+        val expected = JobStatusResponse.builder().uuid(jobId).status(JobStatus1.RECEIVED).build();
+
+        when(jobExistanceValidator.validate(eq(jobId), any())).thenReturn(expected);
+
+        val actual =
+                new JobServiceImpl(
+                                jobMapper,
+                                jobExistanceValidator,
+                                new AuditOperationServiceImpl(List.of()))
+                        .getJobStatusById(jobId);
+
+        Assertions.assertSame(expected, actual);
+        verify(jobExistanceValidator).validate(eq(jobId), any());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
