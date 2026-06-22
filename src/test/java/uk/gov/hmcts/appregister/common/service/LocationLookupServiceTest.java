@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -52,5 +54,42 @@ class LocationLookupServiceTest {
                 assertThrows(AppRegistryException.class, () -> service.getCjaOrThrow("Y2"));
         assertThat(ex.getMessage()).contains("Multiple Criminal Justice Areas found for code 'Y2'");
         verify(cjaRepository).findByCode("Y2");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"52 ", " 52", " 52 "})
+    void getCjaOrThrow_preservesLookupCodeVerbatim(String code) {
+        var cja = new CriminalJusticeArea();
+        when(cjaRepository.findByCode(code)).thenReturn(List.of(cja));
+
+        var result = service.getCjaOrThrow(code);
+
+        assertSame(cja, result);
+        verify(cjaRepository).findByCode(code);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"X1 ", " X1"})
+    void getCjaOrThrow_noMatchIncludesOriginalCodeInMessage(String code) {
+        when(cjaRepository.findByCode(code)).thenReturn(List.of());
+
+        var ex = assertThrows(AppRegistryException.class, () -> service.getCjaOrThrow(code));
+
+        assertThat(ex.getMessage())
+                .contains("No Criminal Justice Areas found for code '%s'".formatted(code));
+        verify(cjaRepository).findByCode(code);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Y2 ", " Y2"})
+    void getCjaOrThrow_multipleMatchesIncludeOriginalCodeInMessage(String code) {
+        when(cjaRepository.findByCode(code))
+                .thenReturn(List.of(new CriminalJusticeArea(), new CriminalJusticeArea()));
+
+        var ex = assertThrows(AppRegistryException.class, () -> service.getCjaOrThrow(code));
+
+        assertThat(ex.getMessage())
+                .contains("Multiple Criminal Justice Areas found for code '%s'".formatted(code));
+        verify(cjaRepository).findByCode(code);
     }
 }

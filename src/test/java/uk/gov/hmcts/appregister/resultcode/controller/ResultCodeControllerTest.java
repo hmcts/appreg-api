@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
@@ -27,7 +28,7 @@ class ResultCodeControllerTest {
 
     @Test
     void getResultCodeByCodeAndDate_delegatesAndReturnsOk() {
-        var date = LocalDate.of(2026, 6, 19);
+        var date = LocalDate.of(2026, Month.JUNE, 19);
         var body = mock(ResultCodeGetDetailDto.class);
         when(service.findByCode("RC1", date)).thenReturn(body);
 

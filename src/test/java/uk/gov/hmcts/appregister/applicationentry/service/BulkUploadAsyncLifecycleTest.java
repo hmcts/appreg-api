@@ -176,11 +176,10 @@ class BulkUploadAsyncLifecycleTest {
                 .when(bulkCreateApplicationEntryValidator)
                 .validate(any(), any());
         JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> lifecycle.validating(event(row, context)));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -193,20 +192,15 @@ class BulkUploadAsyncLifecycleTest {
         BulkUploadRow firstRow = validOrganisationRow();
         BulkUploadRow secondRow = validOrganisationRow();
         JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event =
+                new AsyncJobLifecycleEvent<>(
+                        null, List.of(firstRow, secondRow), context, JobStatus1.PROCESSING);
         when(applicationEntryService.createBulkEntry(any()))
                 .thenReturn(null)
                 .thenThrow(new IllegalStateException("boom"));
 
         AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                lifecycle.processing(
-                                        new AsyncJobLifecycleEvent<>(
-                                                null,
-                                                List.of(firstRow, secondRow),
-                                                context,
-                                                JobStatus1.PROCESSING)));
+                assertThrows(AppRegistryException.class, () -> lifecycle.processing(event));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED);
         assertThat(context.getValidationFailureMessages())

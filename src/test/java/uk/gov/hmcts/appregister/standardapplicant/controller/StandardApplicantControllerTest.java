@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
@@ -29,8 +30,8 @@ class StandardApplicantControllerTest {
     void getStandardApplicants_delegatesAndReturnsOk() {
         var paging = mock(PagingWrapper.class);
         var body = new StandardApplicantPage();
-        var from = LocalDate.of(2026, 1, 1);
-        var to = LocalDate.of(2026, 12, 31);
+        var from = LocalDate.of(2026, Month.JANUARY, 1);
+        var to = LocalDate.of(2026, Month.DECEMBER, 31);
         when(pageableMapper.from(
                         eq(0), eq(20), eq(List.of()), any(), eq(Sort.Direction.ASC), any()))
                 .thenReturn(paging);
