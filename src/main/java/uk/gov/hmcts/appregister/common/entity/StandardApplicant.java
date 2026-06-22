@@ -55,11 +55,11 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String applicantCode;
 
     @Column(name = "standard_applicant_start_date", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE, CrudEnum.CREATE})
     private LocalDate applicantStartDate;
 
     @Column(name = "standard_applicant_end_date")
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE, CrudEnum.CREATE})
     private LocalDate applicantEndDate;
 
     @Column(name = "version", nullable = false)
@@ -70,7 +70,7 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String createdUser;
 
     @Column(name = "name", length = 100)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE, CrudEnum.CREATE})
     private String name;
 
     @Column(name = "title", length = 100)

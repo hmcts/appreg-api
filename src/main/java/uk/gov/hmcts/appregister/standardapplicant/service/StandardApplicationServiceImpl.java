@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantReposi
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
@@ -108,12 +110,75 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     }
 
     @Override
+    @Transactional
     public StandardApplicantGetDetailDto findByCode(String code) {
         return auditService.processAudit(
                 null,
                 StandardApplicantOperation.GET_STANDARD_APPLICANT_BY_CODE,
                 req -> findByCodeAuditResult(code),
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
+
+    @Override
+    @Transactional
+    public void upsertStandardApplicant(StandardApplicant standardApplicant) {
+        var standardApplicantDB =
+                repository
+                        .findStandardApplicantByCode(
+                                standardApplicant.getApplicantCode(),
+                                LocalDate.now(clock.withZone(ukZone)))
+                        .stream()
+                        .findFirst();
+
+        if (standardApplicantDB.isEmpty()) {
+            auditService.processAudit(
+                    StandardApplicantOperation.CREATE_STANDARD_APPLICANT,
+                    req -> {
+                        standardApplicant.setChangedBy(1L);
+                        standardApplicant.setChangedDate(
+                                OffsetDateTime.now(clock.withZone(ukZone)));
+                        repository.saveAndFlush(standardApplicant);
+                        AuditableResult<StandardApplicantGetDetailDto, StandardApplicant>
+                                auditableResult =
+                                        new AuditableResult<>(
+                                                mapper.toReadGetDto(standardApplicant),
+                                                standardApplicant);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        } else {
+            var currentStandardApplicant = standardApplicantDB.get();
+            var updatedStandardApplicant = BeanUtil.copyBean(currentStandardApplicant);
+            mapper.updateEntity(updatedStandardApplicant, standardApplicant);
+
+            // this code is to allow the end date to be updated if it has changed, as the mapper
+            // will ignore null values
+            if (!updatedStandardApplicant
+                    .getApplicantEndDate()
+                    .equals(standardApplicant.getApplicantEndDate())) {
+                updatedStandardApplicant.setApplicantEndDate(
+                        standardApplicant.getApplicantEndDate());
+            }
+
+            auditService.processAudit(
+                    currentStandardApplicant,
+                    StandardApplicantOperation.UPDATE_STANDARD_APPLICANT,
+                    req -> {
+                        updatedStandardApplicant.setChangedBy(1L);
+                        updatedStandardApplicant.setChangedDate(
+                                OffsetDateTime.now(clock.withZone(ukZone)));
+
+                        AuditableResult<StandardApplicantGetDetailDto, StandardApplicant>
+                                auditableResult =
+                                        new AuditableResult<>(
+                                                mapper.toReadGetDto(updatedStandardApplicant),
+                                                updatedStandardApplicant);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+            repository.saveAndFlush(updatedStandardApplicant);
+        }
     }
 
     private Optional<AuditableResult<StandardApplicantGetDetailDto, StandardApplicant>>

@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -342,6 +344,102 @@ class StandardApplicantServiceTest {
         val audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(requestedTo, audited.getApplicantStartDate());
         Assertions.assertEquals(requestedFrom, audited.getApplicantEndDate());
+    }
+
+    @Test
+    void testUpsertStandardApplicant_insert() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(ukZone)).thenReturn(clock);
+        when(repository.findStandardApplicantByCode("APP001", CURRENT_UK_DATE))
+                .thenReturn(List.of());
+
+        val standardApplicant = new StandardApplicant();
+        standardApplicant.setApplicantCode("APP001");
+        standardApplicant.setName("John Doe");
+        standardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
+        standardApplicant.setApplicantEndDate(CURRENT_UK_DATE.plusDays(1));
+
+        val listener = new CapturingAuditListener();
+        val serviceImpl =
+                new StandardApplicationServiceImpl(
+                        repository,
+                        standardApplicantMapper,
+                        clock,
+                        ukZone,
+                        pageMapper,
+                        validator,
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        new ApplicantMapperImpl());
+
+        serviceImpl.upsertStandardApplicant(standardApplicant);
+
+        verify(repository, times(1)).findStandardApplicantByCode("APP001", CURRENT_UK_DATE);
+        verify(repository, times(1)).saveAndFlush(any(StandardApplicant.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        val audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(standardApplicant.getApplicantCode(), audited.getApplicantCode());
+        Assertions.assertEquals(standardApplicant.getName(), audited.getName());
+        Assertions.assertEquals(standardApplicant.getAddressLine1(), audited.getAddressLine1());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantStartDate(), audited.getApplicantStartDate());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantEndDate(), audited.getApplicantEndDate());
+    }
+
+    @Test
+    void testUpsertStandardApplicant_update() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(ukZone)).thenReturn(clock);
+
+        val existingStandardApplicant = new StandardApplicant();
+        existingStandardApplicant.setId(67L);
+        existingStandardApplicant.setApplicantCode("APP001");
+        existingStandardApplicant.setName("John Doe");
+        existingStandardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
+        existingStandardApplicant.setApplicantEndDate(CURRENT_UK_DATE.plusDays(1));
+        when(repository.findStandardApplicantByCode("APP001", CURRENT_UK_DATE))
+                .thenReturn(List.of(existingStandardApplicant));
+
+        val standardApplicant = new StandardApplicant();
+        standardApplicant.setApplicantCode("APP001");
+        standardApplicant.setName("John Deer");
+        standardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
+        standardApplicant.setApplicantEndDate(null);
+
+        val listener = new CapturingAuditListener();
+        val serviceImpl =
+                new StandardApplicationServiceImpl(
+                        repository,
+                        standardApplicantMapper,
+                        clock,
+                        ukZone,
+                        pageMapper,
+                        validator,
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        new ApplicantMapperImpl());
+
+        serviceImpl.upsertStandardApplicant(standardApplicant);
+
+        verify(repository, times(1))
+                .findStandardApplicantByCode(
+                        existingStandardApplicant.getApplicantCode(), CURRENT_UK_DATE);
+        verify(repository, times(1)).saveAndFlush(any(StandardApplicant.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        val audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(67, audited.getId());
+        Assertions.assertEquals(standardApplicant.getApplicantCode(), audited.getApplicantCode());
+        Assertions.assertEquals(standardApplicant.getName(), audited.getName());
+        Assertions.assertEquals(standardApplicant.getAddressLine1(), audited.getAddressLine1());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantStartDate(), audited.getApplicantStartDate());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantEndDate(), audited.getApplicantEndDate());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

@@ -125,4 +125,6 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
 
         """)
     List<Fee> findOffsite(LocalDate dateTime);
+
+    void upsetFee(Fee fee);
 }

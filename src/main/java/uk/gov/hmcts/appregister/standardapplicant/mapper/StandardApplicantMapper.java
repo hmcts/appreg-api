@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -107,6 +109,10 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "telephoneNumber", ignore = true)
     @Mapping(target = "mobileNumber", ignore = true)
     public abstract StandardApplicant toEntity(String code);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    public abstract void updateEntity(
+            @MappingTarget StandardApplicant existing, StandardApplicant sa);
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {

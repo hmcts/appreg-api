@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
 import java.time.LocalDate;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
@@ -37,4 +38,6 @@ public interface StandardApplicantService {
      *     that the code can't be found
      */
     StandardApplicantGetDetailDto findByCode(String code);
+
+    void upsertStandardApplicant(StandardApplicant standardApplicant);
 }
