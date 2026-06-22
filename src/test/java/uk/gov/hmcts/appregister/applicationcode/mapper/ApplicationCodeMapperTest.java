@@ -226,6 +226,55 @@ class ApplicationCodeMapperTest {
     }
 
     @Test
+    void emptyStringsAreMappedToNullInOutboundDtos() {
+        Fee fee = new Fee();
+        fee.setAmount(BigDecimal.valueOf(10.00));
+        fee.setDescription("");
+        fee.setReference("");
+
+        Fee offsiteFee = new Fee();
+        offsiteFee.setAmount(BigDecimal.valueOf(12.00));
+        offsiteFee.setDescription("");
+        offsiteFee.setReference("");
+
+        ApplicationCode code = new ApplicationCode();
+        code.setCode("");
+        code.setTitle("");
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+        code.setBulkRespondentAllowed(YesOrNo.NO);
+        code.setRequiresRespondent(YesOrNo.NO);
+        code.setFeeDue(YesOrNo.NO);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
+
+        var summaryDto =
+                applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsiteFee);
+        var detailDto = applicationCodeMapper.toApplicationCodeGetDetailDto(code, fee, offsiteFee);
+
+        Assertions.assertNull(summaryDto.getApplicationCode());
+        Assertions.assertNull(summaryDto.getTitle());
+        Assertions.assertTrue(summaryDto.getFeeReference().isPresent());
+        Assertions.assertNull(summaryDto.getFeeReference().orElse("value"));
+        Assertions.assertTrue(summaryDto.getFeeDescription().isPresent());
+        Assertions.assertNull(summaryDto.getFeeDescription().orElse("value"));
+        Assertions.assertTrue(summaryDto.getOffsiteFeeReference().isPresent());
+        Assertions.assertNull(summaryDto.getOffsiteFeeReference().orElse("value"));
+        Assertions.assertTrue(summaryDto.getOffsiteFeeDescription().isPresent());
+        Assertions.assertNull(summaryDto.getOffsiteFeeDescription().orElse("value"));
+
+        Assertions.assertNull(detailDto.getApplicationCode());
+        Assertions.assertNull(detailDto.getTitle());
+        Assertions.assertTrue(detailDto.getFeeReference().isPresent());
+        Assertions.assertNull(detailDto.getFeeReference().orElse("value"));
+        Assertions.assertTrue(detailDto.getFeeDescription().isPresent());
+        Assertions.assertNull(detailDto.getFeeDescription().orElse("value"));
+        Assertions.assertTrue(detailDto.getOffsiteFeeReference().isPresent());
+        Assertions.assertNull(detailDto.getOffsiteFeeReference().orElse("value"));
+        Assertions.assertTrue(detailDto.getOffsiteFeeDescription().isPresent());
+        Assertions.assertNull(detailDto.getOffsiteFeeDescription().orElse("value"));
+    }
+
+    @Test
     void minAndMaxWithinNumeric92() {
         Fee min = new Fee();
         min.setAmount(new BigDecimal("0.00"));

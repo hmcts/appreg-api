@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationlist.mapper;
 
 import java.util.List;
 import java.util.UUID;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -10,6 +11,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -93,6 +95,21 @@ public abstract class ApplicationListMapper {
     @Mapping(target = "cja", source = "appList.cja", qualifiedByName = "formatCja")
     @Mapping(target = "entries", ignore = true)
     public abstract ApplicationListGetPrintDto toGetPrintDto(ApplicationList appList);
+
+    @AfterMapping
+    protected void sanitizeDetailDto(@MappingTarget ApplicationListGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
+    @AfterMapping
+    protected void sanitizeSummaryDto(@MappingTarget ApplicationListGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
+    @AfterMapping
+    protected void sanitizePrintDto(@MappingTarget ApplicationListGetPrintDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)

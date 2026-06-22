@@ -302,6 +302,41 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void testToSummaryModel_convertsEmptyStringsToNull() {
+        var applicant = new NameAddress();
+        applicant.setName("");
+
+        var respondent = new NameAddress();
+        respondent.setFirstName("");
+        respondent.setLastName("");
+
+        var projection =
+                ApplicationListEntrySummaryProjectionBuilder.builder()
+                        .uuid(UUID.randomUUID())
+                        .sequenceNumber((short) 1)
+                        .accountNumber("")
+                        .applicant(applicant)
+                        .respondent(respondent)
+                        .postCode("")
+                        .applicationTitle("")
+                        .feeRequired(true)
+                        .result("")
+                        .build();
+
+        var localMapper = new ApplicationListEntryMapperImpl();
+        localMapper.setApplicantMapper(new ApplicantMapperImpl());
+
+        var model = localMapper.toSummaryDto(projection);
+
+        Assertions.assertNull(model.getAccountNumber().orElse("value"));
+        Assertions.assertNull(model.getApplicant().orElse("value"));
+        Assertions.assertNull(model.getRespondent().orElse("value"));
+        Assertions.assertNull(model.getPostCode().orElse("value"));
+        Assertions.assertNull(model.getApplicationTitle());
+        Assertions.assertNull(model.getResult().orElse("value"));
+    }
+
+    @Test
     void testToApplicationListEntryForListReadAudit_mapsDbBackedFilters() {
         // Build the same path parameter + filter pair that the list-entry read endpoint receives.
         val listId = UUID.randomUUID();
