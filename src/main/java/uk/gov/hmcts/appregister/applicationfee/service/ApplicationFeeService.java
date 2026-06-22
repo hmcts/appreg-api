@@ -20,4 +20,6 @@ public interface ApplicationFeeService {
     Optional<Fee> resolveOffsiteFee(LocalDate date);
 
     Map<String, FeePair> resolveFeePairs(Collection<String> feeReferences, LocalDate date);
+
+    void upsertFee(Fee fee);
 }

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,5 +19,9 @@ public class BusinessDateProvider {
 
     public LocalDate currentUkDate() {
         return LocalDate.now(clock.withZone(ukZone));
+    }
+
+    public OffsetDateTime currentUkDateTime() {
+        return OffsetDateTime.now(clock.withZone(ukZone));
     }
 }

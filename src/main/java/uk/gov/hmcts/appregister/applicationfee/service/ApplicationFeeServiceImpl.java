@@ -11,11 +11,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationfee.audit.FeeOperation;
 import uk.gov.hmcts.appregister.applicationfee.service.exception.ApplicationFeeCode;
+import uk.gov.hmcts.appregister.applicationfee.service.mapper.FeeMapper;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 
 /**
  * Service to handle application fee operations.
@@ -27,6 +33,9 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final FeeRepository feeRepository;
     private final BusinessDateProvider businessDateProvider;
+    private final AuditOperationService auditService;
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
+    private final FeeMapper mapper;
 
     @Override
     public FeePair resolveFeePair(String feeReference) {
@@ -97,5 +106,54 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
 
     private Optional<Fee> getOffsiteFee(LocalDate date) {
         return feeRepository.findOffsite(date).stream().findFirst();
+    }
+
+    @Override
+    @Transactional
+    public void upsertFee(Fee fee) {
+        var feeDB =
+                feeRepository
+                        .findByReferenceBetweenDate(fee.getReference(), fee.getEndDate())
+                        .stream()
+                        .findFirst();
+
+        if (feeDB.isEmpty()) {
+            auditService.processAudit(
+                    FeeOperation.CREATE_FEE,
+                    req -> {
+                        fee.setChangedBy(1L);
+                        fee.setChangedDate(businessDateProvider.currentUkDateTime());
+                        feeRepository.saveAndFlush(fee);
+                        AuditableResult<Void, Fee> auditableResult =
+                                new AuditableResult<>(null, fee);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        } else {
+            var currentFee = feeDB.get();
+            var updatedFee = BeanUtil.copyBean(currentFee);
+            mapper.updateFee(updatedFee, currentFee);
+
+            // this code is to allow the end date to be updated if it has changed, as the mapper
+            // will ignore null values
+            if (!updatedFee.getEndDate().equals(fee.getEndDate())) {
+                updatedFee.setEndDate(fee.getEndDate());
+            }
+
+            auditService.processAudit(
+                    currentFee,
+                    FeeOperation.UPDATE_FEE,
+                    req -> {
+                        updatedFee.setChangedBy(1L);
+                        fee.setChangedDate(businessDateProvider.currentUkDateTime());
+
+                        AuditableResult<Void, Fee> auditableResult =
+                                new AuditableResult<>(null, updatedFee);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+            feeRepository.saveAndFlush(updatedFee);
+        }
     }
 }

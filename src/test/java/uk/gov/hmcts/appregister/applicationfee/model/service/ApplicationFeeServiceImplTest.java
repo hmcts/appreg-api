@@ -2,21 +2,35 @@ package uk.gov.hmcts.appregister.applicationfee.model.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.val;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeServiceImpl;
+import uk.gov.hmcts.appregister.applicationfee.service.mapper.FeeMapperImpl;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
@@ -24,7 +38,7 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationFeeServiceImplTest {
-
+    private static final Instant FIXED_INSTANT = Instant.parse("2025-10-07T10:00:00Z");
     private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private FeeRepository repository;
@@ -182,5 +196,112 @@ class ApplicationFeeServiceImplTest {
         expected.put("REF-ONE", new FeePair(feeMain, feeOffsite));
         expected.put("REF-TWO", new FeePair(secondFee, feeOffsite));
         assertEquals(expected, feePairs);
+    }
+
+    @Test
+    void testUpsertFee_insert() {
+        when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK)).thenReturn(List.of());
+
+        val fee = new Fee();
+        fee.setId(67L);
+        fee.setReference("CO6.7");
+        fee.setVersion(1L);
+        fee.setOffsite(false);
+        fee.setStartDate(LocalDate.now());
+        fee.setDescription("Unit Test Fee");
+        fee.setChangedBy(67L);
+        fee.setChangedDate(OffsetDateTime.now());
+        fee.setAmount(BigDecimal.valueOf(10.00));
+        fee.setCreatedUser("Unit Test");
+        fee.setEndDate(TODAY_UK);
+
+        val listener = new CapturingAuditListener();
+        val serviceImpl =
+                new ApplicationFeeServiceImpl(
+                        repository,
+                        businessDateProvider,
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        new FeeMapperImpl());
+
+        serviceImpl.upsertFee(fee);
+
+        verify(repository, times(1)).findByReferenceBetweenDate("CO6.7", TODAY_UK);
+        verify(repository, times(1)).saveAndFlush(any(Fee.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        val audited = (Fee) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(fee.getReference(), audited.getReference());
+        Assertions.assertEquals(fee.getAmount(), audited.getAmount());
+        Assertions.assertEquals(fee.getChangedDate(), audited.getChangedDate());
+        Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
+    }
+
+    @Test
+    void testUpsertFee_update() {
+
+        val existingFee = new Fee();
+        existingFee.setId(67L);
+        existingFee.setReference("CO6.0");
+        existingFee.setVersion(1L);
+        existingFee.setOffsite(false);
+        existingFee.setStartDate(LocalDate.now());
+        existingFee.setDescription("Unit Test Fee 2");
+        existingFee.setChangedBy(66L);
+        existingFee.setChangedDate(OffsetDateTime.now());
+        existingFee.setAmount(BigDecimal.valueOf(10.00));
+        existingFee.setCreatedUser("Unit Test 2");
+        existingFee.setEndDate(TODAY_UK);
+
+        when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK))
+                .thenReturn(List.of(existingFee));
+
+        val fee = new Fee();
+        fee.setId(67L);
+        fee.setReference("CO6.7");
+        fee.setVersion(1L);
+        fee.setOffsite(false);
+        fee.setStartDate(LocalDate.now());
+        fee.setDescription("Unit Test Fee");
+        fee.setChangedBy(67L);
+        fee.setChangedDate(OffsetDateTime.now());
+        fee.setAmount(BigDecimal.valueOf(10.00));
+        fee.setCreatedUser("Unit Test");
+        fee.setEndDate(TODAY_UK);
+
+        val listener = new CapturingAuditListener();
+        val serviceImpl =
+                new ApplicationFeeServiceImpl(
+                        repository,
+                        businessDateProvider,
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        new FeeMapperImpl());
+
+        serviceImpl.upsertFee(fee);
+
+        verify(repository, times(1)).findByReferenceBetweenDate(fee.getReference(), TODAY_UK);
+        verify(repository, times(1)).saveAndFlush(any(Fee.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (Fee) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(67, audited.getId());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 }
