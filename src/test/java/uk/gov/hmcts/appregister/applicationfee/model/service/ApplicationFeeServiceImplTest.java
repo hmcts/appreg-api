@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Month;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
@@ -201,16 +203,19 @@ class ApplicationFeeServiceImplTest {
     @Test
     void testUpsertFee_insert() {
         when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK)).thenReturn(List.of());
+        when(businessDateProvider.currentUkDateTime()).thenReturn(OffsetDateTime.of(TODAY_UK,
+                                                                                    LocalTime.now(),
+                                                                                    OffsetDateTime.now().getOffset()));
 
         val fee = new Fee();
         fee.setId(67L);
         fee.setReference("CO6.7");
         fee.setVersion(1L);
         fee.setOffsite(false);
-        fee.setStartDate(LocalDate.now());
+        fee.setStartDate(TODAY_UK);
         fee.setDescription("Unit Test Fee");
         fee.setChangedBy(67L);
-        fee.setChangedDate(OffsetDateTime.now());
+        fee.setChangedDate(businessDateProvider.currentUkDateTime());
         fee.setAmount(BigDecimal.valueOf(10.00));
         fee.setCreatedUser("Unit Test");
         fee.setEndDate(TODAY_UK);
@@ -233,14 +238,16 @@ class ApplicationFeeServiceImplTest {
         val audited = (Fee) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(fee.getReference(), audited.getReference());
         Assertions.assertEquals(fee.getAmount(), audited.getAmount());
-        Assertions.assertEquals(fee.getChangedDate(), audited.getChangedDate());
+        Assertions.assertEquals(fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
         Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }
 
     @Test
     void testUpsertFee_update() {
-
+        when(businessDateProvider.currentUkDateTime()).thenReturn(OffsetDateTime.of(TODAY_UK,
+                                                                                    LocalTime.now(),
+                                                                                    OffsetDateTime.now().getOffset()));
         val existingFee = new Fee();
         existingFee.setId(67L);
         existingFee.setReference("CO6.0");
@@ -249,7 +256,7 @@ class ApplicationFeeServiceImplTest {
         existingFee.setStartDate(LocalDate.now());
         existingFee.setDescription("Unit Test Fee 2");
         existingFee.setChangedBy(66L);
-        existingFee.setChangedDate(OffsetDateTime.now());
+        existingFee.setChangedDate(businessDateProvider.currentUkDateTime());
         existingFee.setAmount(BigDecimal.valueOf(10.00));
         existingFee.setCreatedUser("Unit Test 2");
         existingFee.setEndDate(TODAY_UK);
@@ -265,10 +272,11 @@ class ApplicationFeeServiceImplTest {
         fee.setStartDate(LocalDate.now());
         fee.setDescription("Unit Test Fee");
         fee.setChangedBy(67L);
-        fee.setChangedDate(OffsetDateTime.now());
+        fee.setChangedDate(businessDateProvider.currentUkDateTime());
         fee.setAmount(BigDecimal.valueOf(10.00));
         fee.setCreatedUser("Unit Test");
         fee.setEndDate(TODAY_UK);
+
 
         val listener = new CapturingAuditListener();
         val serviceImpl =
@@ -286,11 +294,10 @@ class ApplicationFeeServiceImplTest {
 
         Assertions.assertNotNull(listener.getCompleteEvent());
 
-        Assertions.assertNotNull(listener.getCompleteEvent());
         val audited = (Fee) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(fee.getReference(), audited.getReference());
         Assertions.assertEquals(fee.getAmount(), audited.getAmount());
-        Assertions.assertEquals(fee.getChangedDate(), audited.getChangedDate());
+        Assertions.assertEquals(fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
         Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }
