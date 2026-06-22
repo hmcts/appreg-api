@@ -18,11 +18,14 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.base.UnmanagedChangeable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Represents a Fee entity mapped to the "fee" table in the database.
@@ -36,6 +39,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE})
 public class Fee implements Accountable, UnmanagedChangeable, Versionable, Keyable {
 
     @Id
@@ -46,18 +50,23 @@ public class Fee implements Accountable, UnmanagedChangeable, Versionable, Keyab
     private Long id;
 
     @Column(name = "fee_reference", nullable = false, length = 12)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String reference;
 
     @Column(name = "fee_description", nullable = false, length = 250)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String description;
 
     @Column(name = "fee_value", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private BigDecimal amount;
 
     @Column(name = "fee_start_date", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private LocalDate startDate;
 
     @Column(name = "fee_end_date")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private LocalDate endDate;
 
     @Column(name = "fee_version", nullable = false)
@@ -74,5 +83,6 @@ public class Fee implements Accountable, UnmanagedChangeable, Versionable, Keyab
     private String createdUser;
 
     @Column(name = "is_offsite")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private boolean isOffsite;
 }
