@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
@@ -27,7 +28,7 @@ class CourtLocationControllerTest {
 
     @Test
     void getCourtLocationByCodeAndDate_delegatesAndReturnsOk() {
-        var date = LocalDate.of(2026, 6, 19);
+        var date = LocalDate.of(2026, Month.JUNE, 19);
         var body = mock(CourtLocationGetDetailDto.class);
         when(service.findByCodeAndDate("CCC001", date)).thenReturn(body);
 
