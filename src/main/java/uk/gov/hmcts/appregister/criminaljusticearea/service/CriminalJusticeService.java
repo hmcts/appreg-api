@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
@@ -25,4 +26,6 @@ public interface CriminalJusticeService {
      * @return The pageable data that is returned
      */
     CriminalJusticeAreaPage findAll(String code, String description, PagingWrapper pageable);
+
+    void upsertCJA(CriminalJusticeArea cja);
 }

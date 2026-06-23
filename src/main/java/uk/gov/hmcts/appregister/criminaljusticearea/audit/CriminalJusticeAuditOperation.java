@@ -9,7 +9,9 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 public enum CriminalJusticeAuditOperation implements AuditOperation {
     GET_CRIMINAL_JUSTICE_AUDIT_EVENT("Get Court Justice Area", CrudEnum.READ),
-    GET_CRIMINAL_JUSTICE_AUDITS_EVENT("Get Court Justice Areaa", CrudEnum.READ);
+    GET_CRIMINAL_JUSTICE_AUDITS_EVENT("Get Court Justice Areaa", CrudEnum.READ),
+    CREATE_CRIMINAL_JUSTICE_AUDIT_EVENT("Create Court Justice Area", CrudEnum.CREATE),
+    UPDATE_CRIMINAL_JUSTICE_AUDIT_EVENT("Update Court Justice Area", CrudEnum.UPDATE);
 
     private final String eventName;
 

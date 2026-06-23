@@ -1,14 +1,16 @@
 package uk.gov.hmcts.appregister.service;
 
-import lombok.val;
+import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
@@ -16,11 +18,6 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.resultcode.service.ResultCodeService;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-
-import static org.mockito.Mockito.when;
 
 public class ResolutionCodeServiceImplTest extends BaseIntegration {
     @Autowired private DataAuditRepository dataAuditRepository;
@@ -33,7 +30,7 @@ public class ResolutionCodeServiceImplTest extends BaseIntegration {
     void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
-            .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
+                .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
@@ -51,18 +48,17 @@ public class ResolutionCodeServiceImplTest extends BaseIntegration {
         resultCodeService.upsertResultCode(resolutionCode);
 
         dataAuditRepository
-            .findDataAuditForTableAndColumnAndNewValue("resolution_codes",
-                                                       "resolution_code",
-                                                       "TESTRC1")
-            .ifPresentOrElse(
-                dataAudit -> {
-                    // Assert that the audit record has the expected values
-                    assert dataAudit.getUpdateType().equals(CrudEnum.CREATE);
-                },
-                () -> {
-                    throw new AssertionError(
-                        "Data audit record not found for TESTRC1 - resolution_code");
-                });
+                .findDataAuditForTableAndColumnAndNewValue(
+                        "resolution_codes", "resolution_code", "TESTRC1")
+                .ifPresentOrElse(
+                        dataAudit -> {
+                            // Assert that the audit record has the expected values
+                            assert dataAudit.getUpdateType().equals(CrudEnum.CREATE);
+                        },
+                        () -> {
+                            throw new AssertionError(
+                                    "Data audit record not found for TESTRC1 - resolution_code");
+                        });
     }
 
     @Test
@@ -74,33 +70,35 @@ public class ResolutionCodeServiceImplTest extends BaseIntegration {
         resolutionCode.setTitle("Test resolutionCode 2");
         resolutionCode.setEndDate(LocalDate.now());
 
-
         resultCodeService.upsertResultCode(resolutionCode);
 
         dataAuditRepository
-            .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                "resolution_codes", "resolution_code_title", "Test Resolution Code", resolutionCode.getTitle())
-            .ifPresentOrElse(
-                dataAudit -> {
-                    // Assert that the audit record has the expected values
-                    assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
-                },
-                () -> {
-                    throw new AssertionError(
-                        "Data audit record not found for Resolution Code - title");
-                });
+                .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                        "resolution_codes",
+                        "resolution_code_title",
+                        "Test Resolution Code",
+                        resolutionCode.getTitle())
+                .ifPresentOrElse(
+                        dataAudit -> {
+                            // Assert that the audit record has the expected values
+                            assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
+                        },
+                        () -> {
+                            throw new AssertionError(
+                                    "Data audit record not found for Resolution Code - title");
+                        });
     }
 
     private void createResolutionCode() {
         val resolutionCode = new ResolutionCode();
-            resolutionCode.setResultCode("TESTRC1");
-            resolutionCode.setTitle("Test Resolution Code");
-            resolutionCode.setStartDate(LocalDate.now());
-            resolutionCode.setEndDate(null);
-            resolutionCode.setVersion(1L);
-            resolutionCode.setWording("");
-            resolutionCode.setChangedBy(1L);
-            resolutionCode.setChangedDate(OffsetDateTime.now());
+        resolutionCode.setResultCode("TESTRC1");
+        resolutionCode.setTitle("Test Resolution Code");
+        resolutionCode.setStartDate(LocalDate.now());
+        resolutionCode.setEndDate(null);
+        resolutionCode.setVersion(1L);
+        resolutionCode.setWording("");
+        resolutionCode.setChangedBy(1L);
+        resolutionCode.setChangedDate(OffsetDateTime.now());
 
         resolutionCodeRepository.saveAndFlush(resolutionCode);
     }

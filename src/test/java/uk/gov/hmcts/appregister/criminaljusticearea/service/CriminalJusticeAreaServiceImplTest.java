@@ -1,13 +1,16 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,9 +59,10 @@ class CriminalJusticeAreaServiceImplTest {
         // Given
         String code = "X123";
         String description = "Test Area";
-        var cja = CriminalJusticeArea.builder().code(code).description(description).build();
+        var criminalJusticeArea =
+                CriminalJusticeArea.builder().code(code).description(description).build();
 
-        when(locationLookupService.getCjaOrThrow(code)).thenReturn(cja);
+        when(locationLookupService.getCjaOrThrow(code)).thenReturn(criminalJusticeArea);
 
         // When
         CriminalJusticeAreaGetDto dto = service.findByCode(code);
@@ -125,8 +129,9 @@ class CriminalJusticeAreaServiceImplTest {
     @Test
     void testSuccess_auditsRequestedLookupCriteria() {
         String code = "X123";
-        var cja = CriminalJusticeArea.builder().code(code).description("Test Area").build();
-        when(locationLookupService.getCjaOrThrow(code)).thenReturn(cja);
+        var criminalJusticeArea =
+                CriminalJusticeArea.builder().code(code).description("Test Area").build();
+        when(locationLookupService.getCjaOrThrow(code)).thenReturn(criminalJusticeArea);
 
         CapturingAuditListener listener = new CapturingAuditListener();
         CriminalJusticeServiceImpl localService =
@@ -144,9 +149,79 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertNotNull(listener.getCompleteEvent());
         CriminalJusticeArea audited =
                 (CriminalJusticeArea) listener.getCompleteEvent().getNewValue();
-        Assertions.assertNotSame(cja, audited);
+        Assertions.assertNotSame(criminalJusticeArea, audited);
         Assertions.assertEquals(code, audited.getCode());
         Assertions.assertNull(audited.getDescription());
+    }
+
+    @Test
+    void testUpsert_insert() {
+        when(repository.findByCode("UTEST")).thenReturn(List.of());
+
+        val criminalJusticeArea = new CriminalJusticeArea();
+        criminalJusticeArea.setCode("UTEST");
+        criminalJusticeArea.setDescription("Unit Test");
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl =
+                new CriminalJusticeServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        criminalJusticeMapper,
+                        pageMapper,
+                        locationLookupService);
+
+        serviceImpl.upsertCJA(criminalJusticeArea);
+
+        verify(repository, times(1)).findByCode("UTEST");
+        verify(repository, times(1)).saveAndFlush(any(CriminalJusticeArea.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (CriminalJusticeArea) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(criminalJusticeArea.getCode(), audited.getCode());
+        Assertions.assertEquals(criminalJusticeArea.getTitle(), audited.getTitle());
+        Assertions.assertEquals(criminalJusticeArea.getDescription(), audited.getDescription());
+    }
+
+    @Test
+    void testUpsert_update() {
+        val existingCja = new CriminalJusticeArea();
+        existingCja.setDescription("Unit Test");
+        existingCja.setCode("UTEST");
+
+        when(repository.findByCode("UTEST")).thenReturn(List.of(existingCja));
+
+        val criminalJusticeArea = new CriminalJusticeArea();
+
+        criminalJusticeArea.setId(67L);
+        criminalJusticeArea.setDescription("Unit Test 2");
+        criminalJusticeArea.setCode("UTEST 2");
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl =
+                new CriminalJusticeServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        criminalJusticeMapper,
+                        pageMapper,
+                        locationLookupService);
+
+        serviceImpl.upsertCJA(criminalJusticeArea);
+
+        verify(repository, times(1)).findByCode(criminalJusticeArea.getCode());
+        verify(repository, times(1)).saveAndFlush(any(CriminalJusticeArea.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (CriminalJusticeArea) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(criminalJusticeArea.getCode(), audited.getCode());
+        Assertions.assertEquals(criminalJusticeArea.getTitle(), audited.getTitle());
+        Assertions.assertEquals(criminalJusticeArea.getDescription(), audited.getDescription());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

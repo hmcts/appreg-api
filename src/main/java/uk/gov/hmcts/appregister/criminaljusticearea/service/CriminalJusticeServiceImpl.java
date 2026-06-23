@@ -13,12 +13,14 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CodeAndDescription;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 
 @Component
 @RequiredArgsConstructor
@@ -78,5 +80,39 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
+
+    @Override
+    @Transactional
+    public void upsertCJA(CriminalJusticeArea cja) {
+        var cjaDB = criminalJusticeAreaRepository.findByCode(cja.getCode()).stream().findFirst();
+
+        if (cjaDB.isEmpty()) {
+            auditService.processAudit(
+                    ResultCodeOperation.CREATE_RESULT_CODE_AUDIT_EVENT,
+                    req -> {
+                        criminalJusticeAreaRepository.saveAndFlush(cja);
+                        AuditableResult<Void, CriminalJusticeArea> auditableResult =
+                                new AuditableResult<>(null, cja);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        } else {
+            var currentCja = cjaDB.get();
+            var updatedCja = BeanUtil.copyBean(currentCja);
+            criminalJusticeMapper.updateCJA(updatedCja, cja);
+
+            auditService.processAudit(
+                    currentCja,
+                    ResultCodeOperation.UPDATE_RESULT_CODE_AUDIT_EVENT,
+                    req -> {
+                        AuditableResult<Void, CriminalJusticeArea> auditableResult =
+                                new AuditableResult<>(null, updatedCja);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+            criminalJusticeAreaRepository.saveAndFlush(updatedCja);
+        }
     }
 }

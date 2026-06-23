@@ -30,7 +30,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.READ})
+@AuditEnabled(types = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.READ})
 public class CriminalJusticeArea implements Identifiable, Keyable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
@@ -41,10 +41,10 @@ public class CriminalJusticeArea implements Identifiable, Keyable {
     private Long id;
 
     @Column(name = "cja_code", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String code;
 
     @Column(name = "cja_description", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String description;
 }

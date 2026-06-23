@@ -311,7 +311,7 @@ class ResultCodeServiceImplTest {
     @Test
     void testUpsertResolutionCode_update() {
         ZoneId ukZone = ZoneId.of("Europe/London");
-        Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
+        Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ukZone);
 
         val existingResolutionCode = new ResolutionCode();
         existingResolutionCode.setResultCode("UTEST");

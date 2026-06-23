@@ -1,8 +1,11 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.mapper;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 
@@ -26,4 +29,7 @@ public interface CriminalJusticeMapper {
     @Mapping(target = "code", source = "code")
     @Mapping(target = "description", ignore = true)
     CriminalJusticeArea toEntity(String code);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateCJA(@MappingTarget CriminalJusticeArea existingCJA, CriminalJusticeArea newCJA);
 }
