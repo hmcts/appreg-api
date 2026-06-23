@@ -131,18 +131,6 @@ class ObfuscationUtilTest {
 
     @Test
     void testObfuscationApplicationListGetDetailDto() {
-        ApplicationListEntrySummary summary =
-                new ApplicationListEntrySummary()
-                        .uuid(UUID.randomUUID())
-                        .sequenceNumber(7)
-                        .accountNumber("ACC-67890")
-                        .applicant("Jane Applicant")
-                        .respondent("John Respondent")
-                        .postCode("EC1A 1BB")
-                        .applicationTitle("Detailed title")
-                        .feeRequired(false)
-                        .result("Refused");
-
         ApplicationListGetDetailDto dto =
                 new ApplicationListGetDetailDto()
                         .id(UUID.randomUUID())
@@ -157,8 +145,7 @@ class ObfuscationUtilTest {
                         .durationHours(2)
                         .durationMinutes(15)
                         .version(3L)
-                        .entriesCount(1)
-                        .entriesSummary(List.of(summary));
+                        .entriesCount(1);
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
 
@@ -168,11 +155,7 @@ class ObfuscationUtilTest {
                 .doesNotContain("John Respondent")
                 .doesNotContain("EC1A 1BB")
                 .contains("\"description\":\"Morning list\"")
-                .contains("\"entriesSummary\"")
-                .contains("\"accountNumber\":\"[REDACTED]\"")
-                .contains("\"applicant\":\"[REDACTED]\"")
-                .contains("\"respondent\":\"[REDACTED]\"")
-                .contains("\"postCode\":\"[REDACTED]\"");
+                .doesNotContain("\"entriesSummary\"");
     }
 
     @Test

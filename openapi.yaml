@@ -963,7 +963,7 @@ paths:
           content:
             application/vnd.hmcts.appreg.v1+json:
               schema:
-                $ref: "#/components/schemas/application-list-get-by-id-dto"
+                $ref: "#/components/schemas/application-list-get-detail-dto"
           description: Application List detail
           headers:
             Vary:
@@ -5641,86 +5641,6 @@ components:
           format: int32
           minimum: 0
           type: integer
-        entriesSummary:
-          description: A list of lightweight summaries of entries.
-          items:
-            $ref: "#/components/schemas/application-list-entry-summary"
-          type: array
-      required:
-      - date
-      - description
-      - id
-      - status
-      - time
-      - version
-      type: object
-    application-list-get-by-id-dto:
-      description: Immutable DTO representing an Application List retrieved by id.
-      properties:
-        id:
-          description: Unique identifier of the Application List.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          format: uuid
-          type: string
-        date:
-          description: The calendar date on which the Application List is scheduled.
-          example: 2025-09-17
-          format: date
-          type: string
-        time:
-          description: "The time of day at which the Application List is scheduled,\
-            \ seconds are optional."
-          example: 10:30:00
-          format: time
-          type: string
-        description:
-          description: Human-readable description of the Application List (e.g. session
-            title or purpose).
-          example: Morning session for traffic-related applications
-          type: string
-        status:
-          $ref: "#/components/schemas/application-list-status"
-        courtCode:
-          description: Code that identifies the Court Location.
-          example: LOC123
-          type: string
-        courtName:
-          description: Name that identifies the Court Location.
-          example: Bath Magistrates Court
-          type: string
-        cjaCode:
-          description: Criminal Justice Area code.
-          example: CJA001
-          type: string
-        otherLocationDescription:
-          description: Free-text location if not using a standard court.
-          example: Temporary Courtroom at Town Hall
-          type: string
-        durationHours:
-          description: Duration hours component.
-          example: 2
-          format: int32
-          minimum: 0
-          type: integer
-        durationMinutes:
-          description: Duration minutes component.
-          example: 30
-          format: int32
-          maximum: 59
-          minimum: 0
-          type: integer
-        version:
-          description: Current resource version for optimistic concurrency.
-          example: 3
-          format: int64
-          type: integer
-        entriesCount:
-          description: Total number of Application List Entries associated with this
-            Application List.
-          example: 12
-          format: int32
-          minimum: 0
-          type: integer
       required:
       - date
       - description
@@ -7013,53 +6933,6 @@ components:
       - numberOfEntries
       - status
       - time
-      type: object
-    application-list-entry-summary:
-      description: Lightweight summary of an entry.
-      properties:
-        uuid:
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          format: uuid
-          type: string
-        sequenceNumber:
-          example: 2
-          format: int32
-          type: integer
-        accountNumber:
-          example: ACC-001
-          maxLength: 20
-          nullable: true
-          type: string
-        applicant:
-          example: Applicant name
-          nullable: true
-          type: string
-        respondent:
-          example: Respondent name
-          nullable: true
-          type: string
-        postCode:
-          example: SW1A 2AA
-          nullable: true
-          type: string
-        applicationTitle:
-          example: Application to Crown Court
-          type: string
-        feeRequired:
-          type: boolean
-        result:
-          nullable: true
-          type: string
-      required:
-      - accountNumber
-      - applicant
-      - applicationTitle
-      - feeRequired
-      - postCode
-      - respondent
-      - resulted
-      - sequenceNumber
-      - uuid
       type: object
     entry-get-print-dto:
       description: "An application view, used specifically for printing."

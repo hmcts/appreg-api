@@ -83,8 +83,3 @@ properties:
     minimum: 0
     description: Total number of Application List Entries associated with this Application List.
     example: 12
-
-  entriesSummary:
-    type: array
-    items: { $ref: 'application-list-entry-summary.yaml' }
-    description: A list of lightweight summaries of entries.

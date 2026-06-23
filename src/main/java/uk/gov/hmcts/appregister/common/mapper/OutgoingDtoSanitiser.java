@@ -6,7 +6,6 @@ import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
@@ -263,22 +262,6 @@ public final class OutgoingDtoSanitiser {
         dto.setCjaCode(emptyToNull(dto.getCjaCode()));
         dto.setCourtCode(emptyToNull(dto.getCourtCode()));
         dto.setCourtName(emptyToNull(dto.getCourtName()));
-        dto.setOtherLocationDescription(emptyToNull(dto.getOtherLocationDescription()));
-        if (dto.getEntriesSummary() != null) {
-            dto.getEntriesSummary().forEach(OutgoingDtoSanitiser::sanitize);
-        }
-        return dto;
-    }
-
-    public static ApplicationListGetByIdDto sanitize(ApplicationListGetByIdDto dto) {
-        if (dto == null) {
-            return null;
-        }
-
-        dto.setDescription(emptyToNull(dto.getDescription()));
-        dto.setCourtCode(emptyToNull(dto.getCourtCode()));
-        dto.setCourtName(emptyToNull(dto.getCourtName()));
-        dto.setCjaCode(emptyToNull(dto.getCjaCode()));
         dto.setOtherLocationDescription(emptyToNull(dto.getOtherLocationDescription()));
         return dto;
     }

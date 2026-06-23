@@ -24,7 +24,6 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -87,7 +86,7 @@ class ApplicationListControllerTest {
     void getApplicationList_delegatesAndReturnsOk() {
         UUID id = UUID.randomUUID();
         var paging = mock(PagingWrapper.class);
-        var body = new ApplicationListGetByIdDto().id(id);
+        var body = new ApplicationListGetDetailDto().id(id);
         when(pageableMapper.from(
                         eq(0),
                         eq(10),
@@ -98,7 +97,7 @@ class ApplicationListControllerTest {
                 .thenReturn(paging);
         when(service.get(id, paging)).thenReturn(body);
 
-        ResponseEntity<ApplicationListGetByIdDto> actual =
+        ResponseEntity<ApplicationListGetDetailDto> actual =
                 controller.getApplicationList(id, 0, 10, List.of("sequenceNumber"));
 
         verify(service).get(id, paging);

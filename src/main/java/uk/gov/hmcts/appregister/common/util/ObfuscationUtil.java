@@ -210,7 +210,6 @@ public class ObfuscationUtil {
             gen.writeObjectField("durationMinutes", value.getDurationMinutes());
             gen.writeObjectField("version", value.getVersion());
             gen.writeObjectField("entriesCount", value.getEntriesCount());
-            gen.writeObjectField("entriesSummary", value.getEntriesSummary());
             gen.writeEndObject();
         }
     }

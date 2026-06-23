@@ -41,7 +41,7 @@ get:
             example: Accept
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-get-by-id-dto.yaml" }
+          schema: { $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

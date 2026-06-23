@@ -35,7 +35,6 @@ import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -917,10 +916,10 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         // assert success
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
 
-        ApplicationListGetByIdDto getByIdDto = resp.as(ApplicationListGetByIdDto.class);
-        assertThat(getByIdDto.getDescription()).isEqualToIgnoringCase(description);
-        assertThat(getByIdDto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
-        assertThat(getByIdDto.getEntriesCount()).isEqualTo(0);
+        dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getDescription()).isEqualToIgnoringCase(description);
+        assertThat(dto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
+        assertThat(dto.getEntriesCount()).isEqualTo(0);
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1125,7 +1124,7 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         // make the assertions on the response
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-        ApplicationListGetByIdDto page = resp.as(ApplicationListGetByIdDto.class);
+        ApplicationListGetDetailDto page = resp.as(ApplicationListGetDetailDto.class);
 
         assertThat(page.getDescription()).startsWith("soft-deleted ::");
         Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
@@ -1180,8 +1179,7 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
     }
 
     @Test
-    @DisplayName(
-            "GET Application List: entriesSummary and entriesCount exclude soft-deleted entries")
+    @DisplayName("GET Application List: entriesCount excludes soft-deleted entries")
     void givenEntrySoftDeleted_whenGetApplicationList_thenDeletedEntryExcludedFromSummaryAndCount()
             throws Exception {
 
@@ -1195,14 +1193,14 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         final EntryGetDetailDto entry2 = createEntry(listId);
 
         // sanity-check that initial GET shows two entries
-        ApplicationListGetByIdDto initial = getApplicationListDetail(listId, token);
+        ApplicationListGetDetailDto initial = getApplicationListDetail(listId, token);
         assertThat(initial.getEntriesCount()).isEqualTo(2L);
 
         // soft-delete 2nd entry
         softDeleteEntry(entry2.getId());
 
         // GET again and assert
-        ApplicationListGetByIdDto after = getApplicationListDetail(listId, token);
+        ApplicationListGetDetailDto after = getApplicationListDetail(listId, token);
         assertThat(after.getEntriesCount())
                 .withFailMessage("entriesCount should exclude the soft-deleted entry")
                 .isEqualTo(1L);

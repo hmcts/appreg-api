@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -94,8 +93,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjecti
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -228,9 +225,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
@@ -238,7 +233,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     @Test
@@ -269,11 +264,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
-                .thenReturn(expectedDto);
-
-        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
+        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L))).thenReturn(expectedDto);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
@@ -287,7 +278,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, null, 1L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     // -------- CJA PATH --------
@@ -314,9 +305,7 @@ class ApplicationListServiceImplTest {
         when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L))).thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
@@ -328,7 +317,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, cja, 0L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
     }
 
     @Test
@@ -358,15 +347,11 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(1L), summaryCaptor.capture()))
-                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L))).thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
                 new PayloadForUpdate<>(dto, saved.getUuid());
-
-        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
@@ -375,7 +360,7 @@ class ApplicationListServiceImplTest {
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
 
-        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(1L), notNull());
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
 
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
@@ -900,10 +885,10 @@ class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        ApplicationListGetByIdDto expected = new ApplicationListGetByIdDto();
-        when(mapper.toGetByIdDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
 
-        ApplicationListGetByIdDto actual = service.get(id, wrapper);
+        ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
     }
@@ -918,14 +903,14 @@ class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        ApplicationListGetByIdDto expected = new ApplicationListGetByIdDto();
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
         ApplicationList auditEntity = new ApplicationList();
         auditEntity.setUuid(id);
-        when(mapper.toGetByIdDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
         when(mapper.toEntity(id)).thenReturn(auditEntity);
 
         auditOperationService.clearCapturedAudit();
-        ApplicationListGetByIdDto actual = service.get(id, wrapper);
+        ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
         Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());
@@ -1236,11 +1221,5 @@ class ApplicationListServiceImplTest {
 
             return deleteSupplier.apply(deletionId, success);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor() {
-        return (ArgumentCaptor<List<ApplicationListEntrySummary>>)
-                (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
     }
 }
