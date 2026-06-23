@@ -63,7 +63,7 @@ class ReflectiveAuditorTest {
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.CREATE, test2);
 
-        Assertions.assertEquals(4, differenceList.size());
+        Assertions.assertEquals(6, differenceList.size());
         Assertions.assertEquals(
                 new AuditableData("test_entity", "adr_id", test2.id.toString()),
                 differenceList.get(0));
@@ -71,10 +71,22 @@ class ReflectiveAuditorTest {
                 new AuditableData(TableNames.CRIMINAL_JUSTICE_AREA, "cja_id", ""),
                 differenceList.get(1));
         Assertions.assertEquals(
-                new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
+                new AuditableData(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        test2.criminalJusticeArea.getCode()),
                 differenceList.get(2));
         Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", "My Name"), differenceList.get(3));
+                new AuditableData(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        test2.criminalJusticeArea.getDescription()),
+                differenceList.get(3));
+        Assertions.assertEquals(
+                new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
+                differenceList.get(4));
+        Assertions.assertEquals(
+                new AuditableData("test_entity", "myname", "My Name"), differenceList.get(5));
     }
 
     @Test

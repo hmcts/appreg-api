@@ -20,7 +20,6 @@ import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CodeAndDescription;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
-import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 
 @Component
 @RequiredArgsConstructor
@@ -89,7 +88,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
 
         if (cjaDB.isEmpty()) {
             auditService.processAudit(
-                    ResultCodeOperation.CREATE_RESULT_CODE_AUDIT_EVENT,
+                    CriminalJusticeAuditOperation.CREATE_CRIMINAL_JUSTICE_AUDIT_EVENT,
                     req -> {
                         criminalJusticeAreaRepository.saveAndFlush(cja);
                         AuditableResult<Void, CriminalJusticeArea> auditableResult =
@@ -105,7 +104,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
 
             auditService.processAudit(
                     currentCja,
-                    ResultCodeOperation.UPDATE_RESULT_CODE_AUDIT_EVENT,
+                    CriminalJusticeAuditOperation.UPDATE_CRIMINAL_JUSTICE_AUDIT_EVENT,
                     req -> {
                         AuditableResult<Void, CriminalJusticeArea> auditableResult =
                                 new AuditableResult<>(null, updatedCja);

@@ -198,7 +198,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         criminalJusticeArea.setId(67L);
         criminalJusticeArea.setDescription("Unit Test 2");
-        criminalJusticeArea.setCode("UTEST 2");
+        criminalJusticeArea.setCode("UTEST");
 
         val listener = new CapturingAuditListener();
 

@@ -30,7 +30,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.READ})
+@AuditEnabled(types = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
 public class CriminalJusticeArea implements Identifiable, Keyable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
