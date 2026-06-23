@@ -6,6 +6,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -73,7 +74,7 @@ public interface ApplicationListService {
      * @param pageable Spring Data paging and sorting configuration for entry summaries
      * @return a detailed DTO representing the retrieved application list
      */
-    ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable);
+    ApplicationListGetByIdDto get(UUID id, PagingWrapper pageable);
 
     /**
      * Deletes an Application List.

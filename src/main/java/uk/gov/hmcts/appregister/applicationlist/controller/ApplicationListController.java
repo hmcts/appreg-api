@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -131,7 +132,7 @@ public class ApplicationListController implements ApplicationListsApi {
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<ApplicationListGetDetailDto> getApplicationList(
+    public ResponseEntity<ApplicationListGetByIdDto> getApplicationList(
             UUID id, Integer page, Integer size, List<String> sort) {
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number
@@ -145,7 +146,7 @@ public class ApplicationListController implements ApplicationListsApi {
                         Sort.Direction.ASC,
                         ApplicationListEntriesSummarySortFieldEnum::getEntityValue);
 
-        ApplicationListGetDetailDto retrieved = service.get(id, pageable);
+        ApplicationListGetByIdDto retrieved = service.get(id, pageable);
 
         return ResponseEntity.status(OK)
                 .varyBy(ACCEPT_HEADER)

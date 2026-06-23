@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -80,6 +81,22 @@ public abstract class ApplicationListMapper {
     @Mapping(target = "id", source = "appList.uuid")
     @Mapping(target = "date", source = "appList.date")
     @Mapping(target = "time", source = "appList.time")
+    @Mapping(target = "description", source = "appList.description")
+    @Mapping(target = "status", source = "appList.status")
+    @Mapping(target = "cjaCode", expression = "java(cja != null ? cja.getCode() : null)")
+    @Mapping(target = "courtCode", source = "appList.courtCode")
+    @Mapping(target = "courtName", source = "appList.courtName")
+    @Mapping(target = "otherLocationDescription", source = "appList.otherLocation")
+    @Mapping(target = "durationHours", source = "appList.durationHours")
+    @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
+    @Mapping(target = "version", source = "appList.version")
+    @Mapping(target = "entriesCount", source = "entryCount")
+    public abstract ApplicationListGetByIdDto toGetByIdDto(
+            ApplicationList appList, CriminalJusticeArea cja, long entryCount);
+
+    @Mapping(target = "id", source = "appList.uuid")
+    @Mapping(target = "date", source = "appList.date")
+    @Mapping(target = "time", source = "appList.time")
     @Mapping(target = "location", source = "location")
     @Mapping(target = "description", source = "appList.description")
     @Mapping(target = "entriesCount", source = "entryCount")
@@ -98,6 +115,11 @@ public abstract class ApplicationListMapper {
 
     @AfterMapping
     protected void sanitizeDetailDto(@MappingTarget ApplicationListGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
+    @AfterMapping
+    protected void sanitizeGetByIdDto(@MappingTarget ApplicationListGetByIdDto target) {
         OutgoingDtoSanitiser.sanitize(target);
     }
 

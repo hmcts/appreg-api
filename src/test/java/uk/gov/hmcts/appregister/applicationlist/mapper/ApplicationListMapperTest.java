@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
@@ -216,6 +217,43 @@ class ApplicationListMapperTest {
             assertEquals(30, dto.getDurationMinutes());
             assertEquals(3L, dto.getVersion());
             assertEquals(entrySummary, dto.getEntriesSummary().get(0));
+        }
+    }
+
+    @Nested
+    class ToGetByIdDtoTests {
+
+        @Test
+        void toGetByIdDto_validEntityAndArgs_returnsValidDto() {
+            UUID id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+
+            ApplicationList appList = new ApplicationList();
+            appList.setUuid(id);
+            appList.setDate(LocalDate.of(2025, Month.SEPTEMBER, 17));
+            appList.setTime(LocalTime.parse("10:30"));
+            appList.setDescription("Morning session for traffic-related applications");
+            appList.setStatus(Status.OPEN);
+            appList.setCourtCode("LOC123");
+            appList.setCourtName("Bath Magistrates Court");
+            appList.setDurationHours((short) 2);
+            appList.setDurationMinutes((short) 30);
+            appList.setVersion(3L);
+
+            ApplicationListGetByIdDto dto = mapper.toGetByIdDto(appList, null, 0L);
+
+            assertNull(dto.getCjaCode());
+            assertNull(dto.getOtherLocationDescription());
+            assertEquals(id, dto.getId());
+            assertEquals(LocalDate.of(2025, Month.SEPTEMBER, 17), dto.getDate());
+            assertEquals(LocalTime.parse("10:30"), dto.getTime());
+            assertEquals("Morning session for traffic-related applications", dto.getDescription());
+            assertEquals(ApplicationListStatus.OPEN, dto.getStatus());
+            assertEquals("LOC123", dto.getCourtCode());
+            assertEquals("Bath Magistrates Court", dto.getCourtName());
+            assertEquals(2, dto.getDurationHours());
+            assertEquals(30, dto.getDurationMinutes());
+            assertEquals(3L, dto.getVersion());
+            assertEquals(0, dto.getEntriesCount());
         }
     }
 

@@ -95,6 +95,7 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -269,8 +270,6 @@ class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
 
         ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expectedDto);
         when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
                 .thenReturn(expectedDto);
 
@@ -288,7 +287,6 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
         verify(mapper).toGetDetailDto(saved, null, 1L, summaryCaptor.getValue());
     }
 
@@ -361,8 +359,6 @@ class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
         ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
         when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(1L), summaryCaptor.capture()))
                 .thenReturn(expected);
 
@@ -379,7 +375,6 @@ class ApplicationListServiceImplTest {
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
 
-        verify(mapper).toGetDetailDto(eq(saved), isNull(), eq(0L), notNull());
         verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(1L), notNull());
 
         assertThat(result.getPayload()).isSameAs(expected);
@@ -905,12 +900,10 @@ class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        mockFindSummariesById(id, pageable);
+        ApplicationListGetByIdDto expected = new ApplicationListGetByIdDto();
+        when(mapper.toGetByIdDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
 
-        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
-
-        ApplicationListGetDetailDto actual = service.get(id, wrapper);
+        ApplicationListGetByIdDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
     }
@@ -925,16 +918,14 @@ class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        mockFindSummariesById(id, pageable);
-
-        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        ApplicationListGetByIdDto expected = new ApplicationListGetByIdDto();
         ApplicationList auditEntity = new ApplicationList();
         auditEntity.setUuid(id);
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
+        when(mapper.toGetByIdDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
         when(mapper.toEntity(id)).thenReturn(auditEntity);
 
         auditOperationService.clearCapturedAudit();
-        ApplicationListGetDetailDto actual = service.get(id, wrapper);
+        ApplicationListGetByIdDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
         Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());

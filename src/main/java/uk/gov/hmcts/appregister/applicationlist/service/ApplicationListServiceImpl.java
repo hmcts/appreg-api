@@ -50,6 +50,7 @@ import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -178,17 +179,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable) {
+    public ApplicationListGetByIdDto get(UUID id, PagingWrapper pageable) {
 
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.GET_APP_LIST,
                 req -> {
                     ApplicationList list = findApplicationListOrThrow(id);
-                    AuditableResult<ApplicationListGetDetailDto, ApplicationList> result =
-                            new AuditableResult<>(
-                                    getListDetailDto(list, pageable.getPageable()),
-                                    mapper.toEntity(id));
+                    AuditableResult<ApplicationListGetByIdDto, ApplicationList> result =
+                            new AuditableResult<>(getListDetailDto(list), mapper.toEntity(id));
                     return Optional.of(result);
                 });
     }
@@ -198,24 +197,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * already established a transaction
      *
      * @param list The application list entity
-     * @param pageable The paging for the entries summary
      */
-    private ApplicationListGetDetailDto getListDetailDto(ApplicationList list, Pageable pageable) {
+    private ApplicationListGetByIdDto getListDetailDto(ApplicationList list) {
         UUID id = list.getUuid();
-
-        // Fetch results from the repository using pagination
-        Page<ApplicationListEntrySummaryProjection> dbPage =
-                aleRepository.findSummariesById(id, pageable);
-        List<ApplicationListEntrySummary> summaries = new ArrayList<>();
-
-        // Map each projection to a summary model
-        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryDto(projection)));
-
-        // Fetch the number of entries linked to this list.
-        // Avoids running a separate count query later when mapping to a DTO.
         Long entryCount = fetchEntryCounts(List.of(id)).getOrDefault(id, ZERO_ENTITIES);
-
-        return buildGetDetailDto(list, entryCount, summaries);
+        return mapper.toGetByIdDto(list, list.getCja(), entryCount);
     }
 
     private ApplicationList findApplicationListOrThrow(UUID id) {
@@ -299,15 +285,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         () -> {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
-                            ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    getListDetailDto(hydrated, ENTRY_SUMMARY_SORT);
+                            List<ApplicationListEntrySummary> entriesSummary =
+                                    getEntrySummaries(hydrated, ENTRY_SUMMARY_SORT);
 
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             null,
-                                            applicationListGetDetailDto.getEntriesSummary().size(),
-                                            applicationListGetDetailDto.getEntriesSummary()),
+                                            (long) entriesSummary.size(),
+                                            entriesSummary),
                                     List.of(hydrated));
                         },
                         List.of(success.getApplicationList())),
@@ -338,16 +324,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             var savedEntity = repository.save(applicationList);
                             var hydrated = refreshEntity(savedEntity);
 
-                            // gets the summaries for the unpaged summaries.
-                            ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    getListDetailDto(hydrated, ENTRY_SUMMARY_SORT);
+                            List<ApplicationListEntrySummary> entriesSummary =
+                                    getEntrySummaries(hydrated, ENTRY_SUMMARY_SORT);
 
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             cja,
-                                            applicationListGetDetailDto.getEntriesSummary().size(),
-                                            applicationListGetDetailDto.getEntriesSummary()),
+                                            (long) entriesSummary.size(),
+                                            entriesSummary),
                                     List.of(hydrated));
                         },
                         List.of(success.getApplicationList())),
@@ -394,6 +379,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         dto.setEntriesSummary(entriesSummary);
 
         return dto;
+    }
+
+    private List<ApplicationListEntrySummary> getEntrySummaries(
+            ApplicationList list, Pageable pageable) {
+        Page<ApplicationListEntrySummaryProjection> dbPage =
+                aleRepository.findSummariesById(list.getUuid(), pageable);
+        List<ApplicationListEntrySummary> summaries = new ArrayList<>();
+        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryDto(projection)));
+        return summaries;
     }
 
     private ApplicationListGetPrintDto buildGetPrintDto(

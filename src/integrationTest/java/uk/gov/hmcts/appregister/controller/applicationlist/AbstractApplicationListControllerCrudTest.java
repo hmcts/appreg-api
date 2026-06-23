@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetByIdDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -245,15 +246,15 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
         aleRepository.flush();
     }
 
-    protected ApplicationListGetDetailDto getApplicationListDetail(
-            UUID listId, TokenAndJwksKey token) throws Exception {
+    protected ApplicationListGetByIdDto getApplicationListDetail(UUID listId, TokenAndJwksKey token)
+            throws Exception {
         Response resp =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + listId),
                         token,
                         rs -> rs.header("Accept", VND_JSON_V1));
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-        return resp.as(ApplicationListGetDetailDto.class);
+        return resp.as(ApplicationListGetByIdDto.class);
     }
 
     protected ApplicationListGetPrintDto getApplicationListPrint(UUID listId, TokenAndJwksKey token)
