@@ -12,9 +12,9 @@ class ApiConstantsTest {
     @Test
     void mediaTypes_exposesExpectedValues() {
         assertEquals(
-                ApiConstants.MediaTypes.VND_JSON_V1,
-                MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json"));
-        assertEquals(ApiConstants.MediaTypes.TEXT_CSV, MediaType.parseMediaType("text/csv"));
+                MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json"),
+                ApiConstants.MediaTypes.VND_JSON_V1);
+        assertEquals(MediaType.parseMediaType("text/csv"), ApiConstants.MediaTypes.TEXT_CSV);
     }
 
     @Test
