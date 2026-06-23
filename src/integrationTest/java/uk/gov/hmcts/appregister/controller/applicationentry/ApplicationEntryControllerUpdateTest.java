@@ -876,8 +876,6 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void
             givenAnInvalidUpdateEntryRequest_whenFeeStatusProvidedForApplicationCodeWithoutFee_then400IsReturned()
                     throws Exception {
-        val responseSpecCreate = createListEntryWithAllData();
-
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         var feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
@@ -888,7 +886,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
 
         var tokenGenerator = createAdminToken();
-
+        val responseSpecCreate = createListEntryWithAllData();
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),

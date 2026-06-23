@@ -604,8 +604,6 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     void
             givenAnInvalidCreateEntryRequest_whenFeeStatusProvidedForApplicationCodeWithoutFee_then400IsReturned()
                     throws Exception {
-        val tokenGenerator = createAdminToken();
-
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         var feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
@@ -614,6 +612,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setApplicationCode("CT99002");
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
 
+        val tokenGenerator = createAdminToken();
         Response responseSpecCreate =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(
