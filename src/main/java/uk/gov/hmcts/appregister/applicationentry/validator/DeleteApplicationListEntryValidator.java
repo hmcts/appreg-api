@@ -37,12 +37,20 @@ public class DeleteApplicationListEntryValidator
             BiFunction<PayloadForDeleteEntry, DeleteEntryValidationSuccess, R> createSupplier) {
 
         Optional<ApplicationList> applicationList =
-                applicationListRepository.findByUuid(deletionId.getId());
+                applicationListRepository.findByUuidIncludingDelete(deletionId.getId());
 
         if (applicationList.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
                     "Application list id %s not found".formatted(deletionId));
+        }
+
+        ApplicationList parentList = applicationList.get();
+        if (parentList.isDeleted() || !parentList.isOpen()) {
+            throw new AppRegistryException(
+                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                    "The application list id %s is not in the correct state or the application list is deleted %s"
+                            .formatted(deletionId.getId(), parentList.getStatus()));
         }
 
         Optional<ApplicationListEntry> entry =
