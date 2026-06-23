@@ -57,7 +57,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.READ})
+@AuditEnabled(types = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
 public class ResolutionCode extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -71,12 +71,12 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
 
     // Short alphanumeric resolution code value (max length 10, e.g. "RC123").
     @Column(name = "resolution_code", nullable = false, length = 10)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String resultCode;
 
     // Human-readable title for the resolution code (max length 500).
     @Column(name = "resolution_code_title", nullable = false, length = 500)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String title;
 
     // Full descriptive wording of the resolution code, displayed in UIs and reports.
@@ -97,12 +97,13 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
 
     // Start date (inclusive) from which this resolution code is valid.
     @Column(name = "resolution_code_start_date", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private LocalDate startDate;
 
     // End date (inclusive) until which this resolution code remains valid, or {@code null} if
     // ongoing.
     @Column(name = "resolution_code_end_date")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private LocalDate endDate;
 
     @Column(name = "version")

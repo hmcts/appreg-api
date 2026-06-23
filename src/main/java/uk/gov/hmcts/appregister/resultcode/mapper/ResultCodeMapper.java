@@ -5,6 +5,7 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -71,6 +72,9 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "title", source = "title")
     @BeanMapping(ignoreByDefault = true)
     public abstract ResolutionCode toEntity(CodeAndTitle codeAndTitle);
+
+    public abstract void updateEntity(
+            @MappingTarget ResolutionCode existingEntity, ResolutionCode newEntity);
 
     static JsonNullable<LocalDate> toEndDate(LocalDate value) {
         return value != null ? JsonNullable.of(value) : JsonNullable.of(null);

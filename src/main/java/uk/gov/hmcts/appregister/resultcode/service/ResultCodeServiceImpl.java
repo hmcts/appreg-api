@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.resultcode.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationfee.audit.FeeOperation;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -19,6 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
@@ -149,5 +152,55 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
+
+    @Override
+    @Transactional
+    public void upsertResultCode(ResolutionCode resolutionCode) {
+        var resolutionCodeDB =
+                repository
+                        .findActiveByResultCodeIgnoreCaseOrdered(
+                                resolutionCode.getResultCode(), LocalDate.now(clock))
+                        .stream()
+                        .findFirst();
+
+        if (resolutionCodeDB.isEmpty()) {
+            auditService.processAudit(
+                    ResultCodeOperation.CREATE_RESULT_CODE_AUDIT_EVENT,
+                    req -> {
+                        resolutionCode.setChangedBy(1L);
+                        resolutionCode.setChangedDate(OffsetDateTime.now());
+                        repository.saveAndFlush(resolutionCode);
+                        AuditableResult<Void, ResolutionCode> auditableResult =
+                                new AuditableResult<>(null, resolutionCode);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        } else {
+            var currentResolutionCode = resolutionCodeDB.get();
+            var updatedResolutionCode = BeanUtil.copyBean(currentResolutionCode);
+            mapper.updateEntity(updatedResolutionCode, resolutionCode);
+
+            // this code is to allow the end date to be updated if it has changed, as the mapper
+            // will ignore null values
+            if (!updatedResolutionCode.getEndDate().equals(resolutionCode.getEndDate())) {
+                updatedResolutionCode.setEndDate(resolutionCode.getEndDate());
+            }
+
+            auditService.processAudit(
+                    currentResolutionCode,
+                    ResultCodeOperation.UPDATE_RESULT_CODE_AUDIT_EVENT,
+                    req -> {
+                        updatedResolutionCode.setChangedBy(1L);
+                        updatedResolutionCode.setChangedDate(OffsetDateTime.now());
+
+                        AuditableResult<Void, ResolutionCode> auditableResult =
+                                new AuditableResult<>(null, updatedResolutionCode);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+            repository.saveAndFlush(updatedResolutionCode);
+        }
     }
 }

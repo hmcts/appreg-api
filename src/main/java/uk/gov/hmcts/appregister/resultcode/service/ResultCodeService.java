@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.resultcode.service;
 
 import java.time.LocalDate;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
@@ -46,4 +47,6 @@ public interface ResultCodeService {
      * @return a page of summarised Result Codes with metadata
      */
     ResultCodePage findAll(String codeFilter, String titleFilter, PagingWrapper pageable);
+
+    void upsertResultCode(ResolutionCode resolutionCode);
 }

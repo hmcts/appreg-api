@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.OffsetDateTime;
@@ -203,9 +202,10 @@ class ApplicationFeeServiceImplTest {
     @Test
     void testUpsertFee_insert() {
         when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK)).thenReturn(List.of());
-        when(businessDateProvider.currentUkDateTime()).thenReturn(OffsetDateTime.of(TODAY_UK,
-                                                                                    LocalTime.now(),
-                                                                                    OffsetDateTime.now().getOffset()));
+        when(businessDateProvider.currentUkDateTime())
+                .thenReturn(
+                        OffsetDateTime.of(
+                                TODAY_UK, LocalTime.now(), OffsetDateTime.now().getOffset()));
 
         val fee = new Fee();
         fee.setId(67L);
@@ -238,16 +238,18 @@ class ApplicationFeeServiceImplTest {
         val audited = (Fee) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(fee.getReference(), audited.getReference());
         Assertions.assertEquals(fee.getAmount(), audited.getAmount());
-        Assertions.assertEquals(fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
+        Assertions.assertEquals(
+                fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
         Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }
 
     @Test
     void testUpsertFee_update() {
-        when(businessDateProvider.currentUkDateTime()).thenReturn(OffsetDateTime.of(TODAY_UK,
-                                                                                    LocalTime.now(),
-                                                                                    OffsetDateTime.now().getOffset()));
+        when(businessDateProvider.currentUkDateTime())
+                .thenReturn(
+                        OffsetDateTime.of(
+                                TODAY_UK, LocalTime.now(), OffsetDateTime.now().getOffset()));
         val existingFee = new Fee();
         existingFee.setId(67L);
         existingFee.setReference("CO6.0");
@@ -277,7 +279,6 @@ class ApplicationFeeServiceImplTest {
         fee.setCreatedUser("Unit Test");
         fee.setEndDate(TODAY_UK);
 
-
         val listener = new CapturingAuditListener();
         val serviceImpl =
                 new ApplicationFeeServiceImpl(
@@ -297,7 +298,8 @@ class ApplicationFeeServiceImplTest {
         val audited = (Fee) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(fee.getReference(), audited.getReference());
         Assertions.assertEquals(fee.getAmount(), audited.getAmount());
-        Assertions.assertEquals(fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
+        Assertions.assertEquals(
+                fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
         Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }
