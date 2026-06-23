@@ -46,7 +46,8 @@ properties:
     items: { $ref: '../fee-status/fee-status.yaml' }
     description: >
       Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status
-      rows. `null` means the existing fee-status rows are left unchanged.
+      rows. `null` means the existing fee-status rows are left unchanged. Fee-status rows must only
+      be supplied when the selected application code requires a fee.
 
   hasOffsiteFee:
     type: boolean

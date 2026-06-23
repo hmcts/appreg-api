@@ -5960,6 +5960,8 @@ components:
             $ref: "#/components/schemas/template-substitution"
           type: array
         feeStatuses:
+          description: Fee-status rows for the entry. Must only be supplied when the
+            selected application code requires a fee.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array
@@ -6268,7 +6270,7 @@ components:
           type: array
         feeStatuses:
           description: |
-            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged.
+            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. Fee-status rows must only be supplied when the selected application code requires a fee.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array

@@ -3,8 +3,10 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
@@ -263,7 +265,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned() throws Exception {
+    void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned()
+            throws MalformedURLException, JOSEException {
         var tokenGenerator = createAdminToken();
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
@@ -867,6 +870,37 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         responseSpecCreate.then().statusCode(201);
         responseSpecUpdate.then().statusCode(200);
+    }
+
+    @Test
+    void
+            givenAnInvalidUpdateEntryRequest_whenFeeStatusProvidedForApplicationCodeWithoutFee_then400IsReturned()
+                    throws Exception {
+        val responseSpecCreate = createListEntryWithAllData();
+
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PaymentStatus.PAID);
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
@@ -1620,7 +1654,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_404Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_404Returned()
+            throws JOSEException, MalformedURLException {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))

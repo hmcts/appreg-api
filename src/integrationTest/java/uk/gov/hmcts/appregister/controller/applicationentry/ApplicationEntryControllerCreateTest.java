@@ -601,6 +601,38 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
+    void
+            givenAnInvalidCreateEntryRequest_whenFeeStatusProvidedForApplicationCodeWithoutFee_then400IsReturned()
+                    throws Exception {
+        val tokenGenerator = createAdminToken();
+
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PaymentStatus.PAID);
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        entryCreateDto.setFeeStatuses(List.of(feeStatus));
+        entryCreateDto.setApplicationCode("CT99002");
+        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
     void givenAnInvalidCreateEntryRequest_whenRespondentNotExist_404IsReturned() throws Exception {
 
         var tokenGenerator = createAdminToken();
