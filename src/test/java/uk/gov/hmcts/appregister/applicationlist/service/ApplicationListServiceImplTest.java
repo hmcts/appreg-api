@@ -70,7 +70,6 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
@@ -88,7 +87,6 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -101,7 +99,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
-import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -264,7 +261,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
 
-        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L))).thenReturn(expectedDto);
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expectedDto);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
@@ -305,7 +302,7 @@ class ApplicationListServiceImplTest {
         when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L))).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
@@ -347,7 +344,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L))).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
@@ -1038,40 +1035,6 @@ class ApplicationListServiceImplTest {
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    private void mockFindSummariesById(UUID id, Pageable pageable) {
-        final var uuid = UUID.randomUUID();
-        final short sequenceNumber = 1;
-        final var accountNumber = "1234567890";
-
-        NameAddress applicant = new NameAddress();
-        applicant.setName("Mustafa's Org");
-
-        NameAddress respondent = new NameAddress();
-        respondent.setLastName("Ahmed");
-        respondent.setFirstName("Mustafa");
-        respondent.setTitle("His Majesty");
-
-        var postCode = "SW1A 1AA";
-        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired = true;
-        var result = "APPC";
-        var projection =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid)
-                        .sequenceNumber(sequenceNumber)
-                        .accountNumber(accountNumber)
-                        .applicant(applicant)
-                        .respondent(respondent)
-                        .postCode(postCode)
-                        .applicationTitle(applicationTitle)
-                        .feeRequired(feeRequired)
-                        .result(result)
-                        .build();
-
-        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
-        when(aleRepository.findSummariesById(id, pageable)).thenReturn(dbPage);
     }
 
     class DummyAuditOperationService implements AuditOperationService {

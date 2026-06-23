@@ -1,6 +1,9 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -260,9 +263,8 @@ public final class OutgoingDtoSanitiser {
         dto.setOtherLocationDescription(emptyToNull(dto.getOtherLocationDescription()));
         dto.setDuration(emptyToNull(dto.getDuration()));
         dto.setCja(emptyToNull(dto.getCja()));
-        if (dto.getEntries() != null) {
-            dto.getEntries().forEach(OutgoingDtoSanitiser::sanitize);
-        }
+        Optional.ofNullable(dto.getEntries())
+                .ifPresent(entries -> entries.forEach(OutgoingDtoSanitiser::sanitize));
         return dto;
     }
 
@@ -270,28 +272,42 @@ public final class OutgoingDtoSanitiser {
         if (dto == null) {
             return null;
         }
-        dto.setApplicationCode(emptyToNull(dto.getApplicationCode()));
-        dto.setTitle(emptyToNull(dto.getTitle()));
-        dto.setFeeReference(emptyToNull(dto.getFeeReference()));
-        dto.setFeeDescription(emptyToNull(dto.getFeeDescription()));
-        dto.setOffsiteFeeReference(emptyToNull(dto.getOffsiteFeeReference()));
-        dto.setOffsiteFeeDescription(emptyToNull(dto.getOffsiteFeeDescription()));
-        sanitize(dto.getWording());
-        return dto;
+        return sanitizeApplicationCode(
+                dto,
+                ApplicationCodeGetSummaryDto::getApplicationCode,
+                ApplicationCodeGetSummaryDto::setApplicationCode,
+                ApplicationCodeGetSummaryDto::getTitle,
+                ApplicationCodeGetSummaryDto::setTitle,
+                ApplicationCodeGetSummaryDto::getFeeReference,
+                ApplicationCodeGetSummaryDto::setFeeReference,
+                ApplicationCodeGetSummaryDto::getFeeDescription,
+                ApplicationCodeGetSummaryDto::setFeeDescription,
+                ApplicationCodeGetSummaryDto::getOffsiteFeeReference,
+                ApplicationCodeGetSummaryDto::setOffsiteFeeReference,
+                ApplicationCodeGetSummaryDto::getOffsiteFeeDescription,
+                ApplicationCodeGetSummaryDto::setOffsiteFeeDescription,
+                ApplicationCodeGetSummaryDto::getWording);
     }
 
     public static ApplicationCodeGetDetailDto sanitize(ApplicationCodeGetDetailDto dto) {
         if (dto == null) {
             return null;
         }
-        dto.setApplicationCode(emptyToNull(dto.getApplicationCode()));
-        dto.setTitle(emptyToNull(dto.getTitle()));
-        dto.setFeeReference(emptyToNull(dto.getFeeReference()));
-        dto.setFeeDescription(emptyToNull(dto.getFeeDescription()));
-        dto.setOffsiteFeeReference(emptyToNull(dto.getOffsiteFeeReference()));
-        dto.setOffsiteFeeDescription(emptyToNull(dto.getOffsiteFeeDescription()));
-        sanitize(dto.getWording());
-        return dto;
+        return sanitizeApplicationCode(
+                dto,
+                ApplicationCodeGetDetailDto::getApplicationCode,
+                ApplicationCodeGetDetailDto::setApplicationCode,
+                ApplicationCodeGetDetailDto::getTitle,
+                ApplicationCodeGetDetailDto::setTitle,
+                ApplicationCodeGetDetailDto::getFeeReference,
+                ApplicationCodeGetDetailDto::setFeeReference,
+                ApplicationCodeGetDetailDto::getFeeDescription,
+                ApplicationCodeGetDetailDto::setFeeDescription,
+                ApplicationCodeGetDetailDto::getOffsiteFeeReference,
+                ApplicationCodeGetDetailDto::setOffsiteFeeReference,
+                ApplicationCodeGetDetailDto::getOffsiteFeeDescription,
+                ApplicationCodeGetDetailDto::setOffsiteFeeDescription,
+                ApplicationCodeGetDetailDto::getWording);
     }
 
     public static ResultCodeGetSummaryDto sanitize(ResultCodeGetSummaryDto dto) {
@@ -364,6 +380,43 @@ public final class OutgoingDtoSanitiser {
         }
         dto.setErrorDescription(emptyToNull(dto.getErrorDescription()));
         return dto;
+    }
+
+    private static <T> T sanitizeApplicationCode(
+            T dto,
+            Function<T, String> applicationCodeGetter,
+            BiConsumer<T, String> applicationCodeSetter,
+            Function<T, String> titleGetter,
+            BiConsumer<T, String> titleSetter,
+            Function<T, JsonNullable<String>> feeReferenceGetter,
+            BiConsumer<T, JsonNullable<String>> feeReferenceSetter,
+            Function<T, JsonNullable<String>> feeDescriptionGetter,
+            BiConsumer<T, JsonNullable<String>> feeDescriptionSetter,
+            Function<T, JsonNullable<String>> offsiteFeeReferenceGetter,
+            BiConsumer<T, JsonNullable<String>> offsiteFeeReferenceSetter,
+            Function<T, JsonNullable<String>> offsiteFeeDescriptionGetter,
+            BiConsumer<T, JsonNullable<String>> offsiteFeeDescriptionSetter,
+            Function<T, TemplateDetail> wordingGetter) {
+        sanitizeStringField(dto, applicationCodeGetter, applicationCodeSetter);
+        sanitizeStringField(dto, titleGetter, titleSetter);
+        sanitizeNullableStringField(dto, feeReferenceGetter, feeReferenceSetter);
+        sanitizeNullableStringField(dto, feeDescriptionGetter, feeDescriptionSetter);
+        sanitizeNullableStringField(dto, offsiteFeeReferenceGetter, offsiteFeeReferenceSetter);
+        sanitizeNullableStringField(dto, offsiteFeeDescriptionGetter, offsiteFeeDescriptionSetter);
+        sanitize(wordingGetter.apply(dto));
+        return dto;
+    }
+
+    private static <T> void sanitizeStringField(
+            T dto, Function<T, String> getter, BiConsumer<T, String> setter) {
+        setter.accept(dto, emptyToNull(getter.apply(dto)));
+    }
+
+    private static <T> void sanitizeNullableStringField(
+            T dto,
+            Function<T, JsonNullable<String>> getter,
+            BiConsumer<T, JsonNullable<String>> setter) {
+        setter.accept(dto, emptyToNull(getter.apply(dto)));
     }
 
     private static void sanitizeStringList(List<String> values) {
