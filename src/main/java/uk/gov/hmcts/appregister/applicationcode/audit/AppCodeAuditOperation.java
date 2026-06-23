@@ -9,7 +9,9 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 public enum AppCodeAuditOperation implements AuditOperation {
     GET_APPLICATION_CODE_AUDIT_EVENT("Get Application Code", CrudEnum.READ),
-    GET_APPLICATION_CODES_AUDIT_EVENT("Get Application Codes", CrudEnum.READ);
+    GET_APPLICATION_CODES_AUDIT_EVENT("Get Application Codes", CrudEnum.READ),
+    CREATE_APPLICATION_CODE_AUDIT_EVENT("Create Application Code", CrudEnum.CREATE),
+    UPDATE_APPLICATION_CODE_AUDIT_EVENT("Update Application Code", CrudEnum.UPDATE);
 
     private final String eventName;
 

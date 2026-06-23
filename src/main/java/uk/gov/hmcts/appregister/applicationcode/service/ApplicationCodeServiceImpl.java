@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationcode.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
@@ -143,5 +145,47 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                             payload.getDate());
                                     return Optional.of(result);
                                 }));
+    }
+
+    @Override
+    @Transactional
+    public void upsertApplicationCode(ApplicationCode applicationCode) {
+        var applicationCodeDB =
+                repository.findByCodeAndDate(applicationCode.getCode(), LocalDate.now(clock)).stream()
+                        .findFirst();
+
+        if (applicationCodeDB.isEmpty()) {
+            auditService.processAudit(
+                    AppCodeAuditOperation.CREATE_APPLICATION_CODE_AUDIT_EVENT,
+                    req -> {
+                        applicationCode.setChangedBy(1L);
+                        applicationCode.setChangedDate(OffsetDateTime.now(clock));
+
+                        repository.saveAndFlush(applicationCode);
+                        AuditableResult<Void, ApplicationCode> auditableResult =
+                                new AuditableResult<>(null, applicationCode);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        } else {
+            var currentApplicationCode = applicationCodeDB.get();
+            var updatedApplicationCode = BeanUtil.copyBean(currentApplicationCode);
+            applicationCodeMapper.updateApplicationCode(updatedApplicationCode, applicationCode);
+
+            auditService.processAudit(
+                    currentApplicationCode,
+                    AppCodeAuditOperation.UPDATE_APPLICATION_CODE_AUDIT_EVENT,
+                    req -> {
+                        updatedApplicationCode.setChangedBy(1L);
+                        updatedApplicationCode.setChangedDate(OffsetDateTime.now(clock));
+
+                        AuditableResult<Void, ApplicationCode> auditableResult =
+                                new AuditableResult<>(null, updatedApplicationCode);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+            repository.saveAndFlush(updatedApplicationCode);
+        }
     }
 }

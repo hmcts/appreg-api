@@ -181,7 +181,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                         updatedCourtHouse.setChangedBy(1L);
                         updatedCourtHouse.setChangedDate(businessDateProvider.currentUkDateTime());
 
-
                         AuditableResult<Void, NationalCourtHouse> auditableResult =
                                 new AuditableResult<>(null, updatedCourtHouse);
                         return Optional.of(auditableResult);

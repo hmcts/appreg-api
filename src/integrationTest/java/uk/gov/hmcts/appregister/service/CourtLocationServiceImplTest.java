@@ -1,17 +1,16 @@
 package uk.gov.hmcts.appregister.service;
 
+import static org.mockito.Mockito.when;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-
 import lombok.val;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
@@ -19,7 +18,6 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.courtlocation.service.CourtLocationService;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import static org.mockito.Mockito.when;
 
 public class CourtLocationServiceImplTest extends BaseIntegration {
 
@@ -33,7 +31,7 @@ public class CourtLocationServiceImplTest extends BaseIntegration {
     void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
-            .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
+                .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
@@ -65,10 +63,8 @@ public class CourtLocationServiceImplTest extends BaseIntegration {
                         });
 
         dataAuditRepository
-            .findDataAuditForTableAndColumnAndNewValue(
-                        "national_court_houses",
-                        "courthouse_name",
-                        nationalCourtHouse.getName())
+                .findDataAuditForTableAndColumnAndNewValue(
+                        "national_court_houses", "courthouse_name", nationalCourtHouse.getName())
                 .ifPresentOrElse(
                         dataAudit -> {
                             // Assert that the audit record has the expected values

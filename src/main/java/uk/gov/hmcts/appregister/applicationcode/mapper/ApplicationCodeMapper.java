@@ -5,6 +5,7 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -174,4 +175,9 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "startDate", source = "payloadForGet.date")
     @BeanMapping(ignoreByDefault = true)
     public abstract ApplicationCode toEntity(PayloadForGet payloadForGet);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    public abstract void updateApplicationCode(
+            @MappingTarget ApplicationCode existingApplicationCode,
+            ApplicationCode newApplicationCode);
 }

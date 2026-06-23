@@ -1,35 +1,16 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import lombok.Setter;
+import lombok.val;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.ZoneId;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import lombok.Setter;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.openapitools.jackson.nullable.JsonNullable;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapperImpl;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidationSuccess;
@@ -53,6 +34,32 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import utils.CurrencyUtil;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationCodeServiceImplTest {
@@ -483,6 +490,107 @@ class ApplicationCodeServiceImplTest {
         assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
         assertEquals(JsonNullable.undefined(), applicationCodeDto.getFeeAmount());
         assertEquals(JsonNullable.undefined(), applicationCodeDto.getOffsiteFeeAmount());
+    }
+
+    @Test
+    void testUpsertApplicationCode_insert() {
+        when(repository.findByCodeAndDate("UTEST", LocalDate.now(fixedClock)))
+            .thenReturn(List.of());
+
+        val applicationCode = new ApplicationCode();
+        applicationCode.setCode("UTEST");
+        applicationCode.setTitle("Unit Test");
+        applicationCode.setId(67L);
+        applicationCode.setVersion(1L);
+        applicationCode.setStartDate(LocalDate.now(fixedClock));
+        applicationCode.setChangedBy(67L);
+        applicationCode.setChangedDate(OffsetDateTime.now(fixedClock));
+        applicationCode.setCreatedUser("Unit Test");
+        applicationCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl = new ApplicationCodeServiceImpl(
+                    repository,
+                    new ApplicationCodeMapperImpl(),
+                    feeService,
+                    auditService,
+                    List.of(listener),
+                    pageMapper,
+                    fixedClock,
+                    ukZone,
+                    dummyGetApplicationCodeValidator);
+
+        serviceImpl.upsertApplicationCode(applicationCode);
+
+        verify(repository, times(1))
+            .findByCodeAndDate("UTEST", LocalDate.now(fixedClock));
+        verify(repository, times(1)).saveAndFlush(any(ApplicationCode.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (ApplicationCode) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(applicationCode.getCode(), audited.getCode());
+        Assertions.assertEquals(applicationCode.getTitle(), audited.getTitle());
+        Assertions.assertEquals(applicationCode.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(applicationCode.getEndDate(), audited.getEndDate());
+    }
+
+    @Test
+    void testUpsertApplicationCode_update() {
+
+        val existingApplicationCode = new ApplicationCode();
+        existingApplicationCode.setCode("UTEST");
+        existingApplicationCode.setTitle("Unit Test");
+        existingApplicationCode.setId(67L);
+        existingApplicationCode.setVersion(1L);
+        existingApplicationCode.setStartDate(LocalDate.now(fixedClock).minusDays(1));
+        existingApplicationCode.setChangedBy(66L);
+        existingApplicationCode.setChangedDate(OffsetDateTime.now());
+        existingApplicationCode.setCreatedUser("Unit Test");
+        existingApplicationCode.setEndDate(null);
+
+        when(repository.findByCodeAndDate("UTEST", LocalDate.now(fixedClock)))
+            .thenReturn(List.of(existingApplicationCode));
+
+        val applicationCode = new ApplicationCode();
+        applicationCode.setCode("UTEST");
+        applicationCode.setId(67L);
+        applicationCode.setVersion(1L);
+        applicationCode.setStartDate(LocalDate.now(fixedClock));
+        applicationCode.setChangedBy(67L);
+        applicationCode.setChangedDate(OffsetDateTime.now(fixedClock));
+        applicationCode.setTitle("Unit Test 2");
+
+        applicationCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl = new ApplicationCodeServiceImpl(
+            repository,
+            new ApplicationCodeMapperImpl(),
+            feeService,
+            auditService,
+            List.of(listener),
+            pageMapper,
+            fixedClock,
+            ukZone,
+            dummyGetApplicationCodeValidator);
+
+        serviceImpl.upsertApplicationCode(applicationCode);
+
+        verify(repository, times(1))
+            .findByCodeAndDate(
+                applicationCode.getCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).saveAndFlush(any(ApplicationCode.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (ApplicationCode) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(applicationCode.getCode(), audited.getCode());
+        Assertions.assertEquals(applicationCode.getTitle(), audited.getTitle());
+        Assertions.assertEquals(applicationCode.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(applicationCode.getEndDate(), audited.getEndDate());
     }
 
     private ApplicationCodeServiceImpl buildServiceWithListeners(

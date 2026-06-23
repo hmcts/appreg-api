@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
 import java.time.LocalDate;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -20,4 +21,6 @@ public interface ApplicationCodeService {
      * @return The dto containing application code details
      */
     ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet);
+
+    void upsertApplicationCode(ApplicationCode applicationCode);
 }
