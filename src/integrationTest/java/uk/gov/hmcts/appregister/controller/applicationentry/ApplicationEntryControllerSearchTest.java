@@ -226,14 +226,14 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
             throws Exception {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 5);
         String applicantLastName = "DoeClosed" + suffix;
-        ApplicationListEntry matchingEntry =
-                createClosedStandardPersonApplicantEntry(
-                        "Jane", applicantLastName, "AC" + suffix.toUpperCase());
 
         EntryGetFilterDto filter = new EntryGetFilterDto();
         filter.setStatus(ApplicationListStatus.CLOSED);
         filter.setApplicantSurname("doeclosed" + suffix);
 
+        ApplicationListEntry matchingEntry =
+                createClosedStandardPersonApplicantEntry(
+                        "Jane", applicantLastName, "AC" + suffix.toUpperCase());
         EntryPage page = executeSearch(createAdminToken(), filter, maxPageSize);
 
         assertThat(page.getContent()).isNotNull();
@@ -1487,8 +1487,6 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
     private ApplicationListEntry createClosedStandardPersonApplicantEntry(
             String applicantFirstName, String applicantLastName, String accountReference) {
-        ApplicationList list = createAndSaveList(Status.CLOSED);
-
         StandardApplicant applicant = new StandardApplicant();
         applicant.setApplicantCode("SA" + accountReference);
         applicant.setApplicantStartDate(TEST_DATE);
@@ -1507,6 +1505,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         applicationCode.setApplicationListEntryList(null);
         applicationCode = persistance.save(applicationCode);
 
+        ApplicationList list = createAndSaveList(Status.CLOSED);
         ApplicationListEntry entry = createEntry(list);
         entry.setAnamedaddress(null);
         entry.setStandardApplicant(applicant);
