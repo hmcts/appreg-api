@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -38,7 +39,7 @@ class OutgoingDtoSanitiserTest {
     void sanitizeApplicationListGetPrintDto_convertsBlankStringsAndHandlesNullEntries() {
         var dto =
                 new ApplicationListGetPrintDto()
-                        .date(LocalDate.of(2026, 6, 23))
+                        .date(LocalDate.of(2026, Month.JUNE, 23))
                         .time(LocalTime.NOON)
                         .courtName("")
                         .cja("")
@@ -60,7 +61,7 @@ class OutgoingDtoSanitiserTest {
         var entry = new EntryGetPrintDto().applicationTitle("").accountReference("").notes("");
         var dto =
                 new ApplicationListGetPrintDto()
-                        .date(LocalDate.of(2026, 6, 23))
+                        .date(LocalDate.of(2026, Month.JUNE, 23))
                         .time(LocalTime.NOON)
                         .entries(List.of(entry));
 

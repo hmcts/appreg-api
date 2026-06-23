@@ -382,6 +382,7 @@ public final class OutgoingDtoSanitiser {
         return dto;
     }
 
+    @SuppressWarnings("java:S107")
     private static <T> T sanitizeApplicationCode(
             T dto,
             Function<T, String> applicationCodeGetter,
