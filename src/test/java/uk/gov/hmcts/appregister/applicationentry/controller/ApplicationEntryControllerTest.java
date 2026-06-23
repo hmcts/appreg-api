@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
 import jakarta.validation.Validator;
 import java.io.ByteArrayInputStream;
@@ -104,8 +105,7 @@ class ApplicationEntryControllerTest {
         verify(applicationEntryService).search(filter, paging);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(page);
-        assertThat(response.getHeaders().getContentType())
-                .isEqualTo(ApplicationEntryController.VND_JSON_V1);
+        assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
     }
 
     @Test
@@ -130,13 +130,14 @@ class ApplicationEntryControllerTest {
 
     @Test
     void bulkUploadApplicationListEntries_whenFileMissing_thenThrowsBadRequestError() {
+        var listId = UUID.randomUUID();
         var file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(true);
 
         var exception =
                 assertThrows(
                         AppRegistryException.class,
-                        () -> controller.bulkUploadApplicationListEntries(UUID.randomUUID(), file));
+                        () -> controller.bulkUploadApplicationListEntries(listId, file));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_FILE_MISSING);
     }
@@ -187,7 +188,6 @@ class ApplicationEntryControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(response.getBody()).isSameAs(acknowledgement);
         assertThat(response.getHeaders().getFirst("Location")).isEqualTo("/jobs/" + jobId);
-        assertThat(response.getHeaders().getContentType())
-                .isEqualTo(ApplicationEntryController.VND_JSON_V1);
+        assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
     }
 }

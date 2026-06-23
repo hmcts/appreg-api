@@ -1,11 +1,13 @@
 package uk.gov.hmcts.appregister.report.controller;
 
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.TEXT_CSV;
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
+
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -28,9 +30,6 @@ import uk.gov.hmcts.appregister.report.service.ReportService;
 @RequiredArgsConstructor
 @Slf4j
 public class ReportController implements ReportsApi {
-    private static final MediaType VND_JSON_V1 =
-            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
-    private static final MediaType TEXT_CSV = MediaType.parseMediaType("text/csv");
 
     private final ReportService reportService;
 
