@@ -38,9 +38,7 @@ import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -92,27 +90,6 @@ public abstract class ApplicationListEntryMapper {
     protected WordingTemplateMapper getWordingTemplateMapper() {
         return wordingTemplateMapper;
     }
-
-    @Mapping(
-            target = "applicant",
-            expression =
-                    "java(org.openapitools.jackson.nullable."
-                            + "JsonNullable.of("
-                            + "getApplicantMapper()"
-                            + ".getNameForApplicant("
-                            + "summaryProjection.getStandardApplicant(), summaryProjection.getApplicant())))")
-    @Mapping(
-            target = "respondent",
-            expression =
-                    "java(org.openapitools.jackson.nullable."
-                            + "JsonNullable.of("
-                            + "getApplicantMapper().getNameForNameAddress("
-                            + "summaryProjection.getRespondent())))")
-    public abstract ApplicationListEntrySummary toSummaryDto(
-            ApplicationListEntrySummaryProjection summaryProjection);
-
-    public abstract List<ApplicationListEntrySummary> toSummaryDtoList(
-            List<ApplicationListEntrySummaryProjection> summaryProjections);
 
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
@@ -392,12 +369,6 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "accountNumber", ignore = true)
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
-
-    @AfterMapping
-    protected void sanitizeApplicationListEntrySummary(
-            @MappingTarget ApplicationListEntrySummary target) {
-        OutgoingDtoSanitiser.sanitize(target);
-    }
 
     @AfterMapping
     protected void sanitizeEntrySummary(@MappingTarget EntryGetSummaryDto target) {

@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -99,34 +98,6 @@ class ObfuscationUtilTest {
                 1,
                 StringUtils.countMatches(
                         ObfuscationUtil.getObfuscatedString(entryGetPrintDto), "[REDACTED]"));
-    }
-
-    @Test
-    void testObfuscationApplicationListEntrySummary() {
-        ApplicationListEntrySummary summary =
-                new ApplicationListEntrySummary()
-                        .uuid(UUID.randomUUID())
-                        .sequenceNumber(42)
-                        .accountNumber("ACC-12345")
-                        .applicant("Applicant Name")
-                        .respondent("Respondent Name")
-                        .postCode("SW1A 2AA")
-                        .applicationTitle("Application title")
-                        .feeRequired(true)
-                        .result("Granted");
-
-        String obfuscated = ObfuscationUtil.getObfuscatedString(summary);
-
-        assertThat(obfuscated)
-                .doesNotContain("ACC-12345")
-                .doesNotContain("Applicant Name")
-                .doesNotContain("Respondent Name")
-                .doesNotContain("SW1A 2AA")
-                .contains("\"accountNumber\":\"[REDACTED]\"")
-                .contains("\"applicant\":\"[REDACTED]\"")
-                .contains("\"respondent\":\"[REDACTED]\"")
-                .contains("\"postCode\":\"[REDACTED]\"")
-                .contains("\"applicationTitle\":\"Application title\"");
     }
 
     @Test

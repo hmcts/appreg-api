@@ -5,7 +5,6 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
@@ -166,19 +165,6 @@ public final class OutgoingDtoSanitiser {
         substitution.setKey(emptyToNull(substitution.getKey()));
         substitution.setValue(emptyToNull(substitution.getValue()));
         return substitution;
-    }
-
-    public static ApplicationListEntrySummary sanitize(ApplicationListEntrySummary summary) {
-        if (summary == null) {
-            return null;
-        }
-        summary.setAccountNumber(emptyToNull(summary.getAccountNumber()));
-        summary.setApplicant(emptyToNull(summary.getApplicant()));
-        summary.setRespondent(emptyToNull(summary.getRespondent()));
-        summary.setPostCode(emptyToNull(summary.getPostCode()));
-        summary.setApplicationTitle(emptyToNull(summary.getApplicationTitle()));
-        summary.setResult(emptyToNull(summary.getResult()));
-        return summary;
     }
 
     public static EntryGetSummaryDto sanitize(EntryGetSummaryDto dto) {
