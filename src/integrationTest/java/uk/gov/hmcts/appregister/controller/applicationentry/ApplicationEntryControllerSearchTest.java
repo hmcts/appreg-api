@@ -818,7 +818,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(
                 page, pageSize, pageNumber, TOTAL_APP_ENTRY_COUNT, TOTAL_APP_ENTRY_COUNT);
-        Assertions.assertNull(page.getContent());
+        Assertions.assertNotNull(page.getContent());
+        Assertions.assertEquals(0, page.getContent().size());
 
         dataAuditAssertionsForNoFilter();
     }
@@ -1148,7 +1149,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         responseSpec.then().statusCode(200);
         EntryPage page = responseSpec.as(EntryPage.class);
 
-        Assertions.assertNull(page.getContent());
+        Assertions.assertNotNull(page.getContent());
+        Assertions.assertEquals(0, page.getContent().size());
     }
 
     @Test

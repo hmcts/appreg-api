@@ -558,6 +558,52 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void testSearch_emptyEntries_returnsEmptyContentList() {
+        EntryGetFilterDto filterDto = new EntryGetFilterDto();
+        filterDto.setStatus(ApplicationListStatus.OPEN);
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(0);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
+        Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                new PageImpl<>(List.of(), mockPage, 0);
+
+        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
+                .thenReturn(Status.OPEN);
+
+        when(applicationListEntryRepository.searchForGetSummary(
+                        isNull(),
+                        anyBoolean(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        any(Pageable.class)))
+                .thenReturn(resultPage);
+
+        EntryPage response = service.search(filterDto, wrapper);
+
+        Assertions.assertNotNull(response);
+        Assertions.assertNotNull(response.getContent());
+        Assertions.assertEquals(0, response.getContent().size());
+    }
+
+    @Test
     void testCreateApplicationEntry() {
 
         AppListTestData appListTestData = new AppListTestData();
