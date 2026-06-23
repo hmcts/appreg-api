@@ -54,7 +54,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.READ})
+@AuditEnabled(types = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
 public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
         implements Versionable, Keyable {
 
@@ -68,7 +68,7 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
 
     // Name of the courthouse (e.g. "Cardiff Crown Court").
     @Column(name = "courthouse_name", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String name;
 
     @Column(name = "version_number", nullable = false)
@@ -76,15 +76,17 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
     private Long version;
 
     @Column(name = "court_type", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String courtType;
 
     // Date when this record became effective. Always required.
     @Column(name = "start_date", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private LocalDate startDate;
 
     // Date when this record ended, or {@code null} if still active.
     @Column(name = "end_date")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private LocalDate endDate;
 
     // Foreign key reference to a linked location record.
@@ -93,7 +95,7 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
 
     // Business reference code for this court location, used in integrations.
     @Column(name = "court_location_code")
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String courtLocationCode;
 
     // Welsh-language name for the courthouse, if available.

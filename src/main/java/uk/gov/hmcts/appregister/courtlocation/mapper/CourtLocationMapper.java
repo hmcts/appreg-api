@@ -5,6 +5,7 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
@@ -68,6 +69,11 @@ public interface CourtLocationMapper {
     @Mapping(target = "name", source = "name", defaultValue = "")
     @BeanMapping(ignoreByDefault = true)
     NationalCourtHouse toEntity(CodeAndName code);
+
+    @BeanMapping(
+            nullValuePropertyMappingStrategy =
+                    org.mapstruct.NullValuePropertyMappingStrategy.IGNORE)
+    void updateCourtHouse(@MappingTarget NationalCourtHouse target, NationalCourtHouse source);
 
     /**
      * Utility mapping method to wrap a {@link LocalDate} in a {@link JsonNullable}.

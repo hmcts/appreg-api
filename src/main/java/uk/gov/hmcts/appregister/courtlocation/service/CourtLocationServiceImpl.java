@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepos
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
@@ -142,5 +143,51 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
+
+    @Override
+    @Transactional
+    public void upsertCourtHouse(NationalCourtHouse nationalCourtHouse) {
+        var courthouseDB =
+                repository
+                        .findActiveCourts(
+                                nationalCourtHouse.getCourtLocationCode(), LocalDate.now())
+                        .stream()
+                        .findFirst();
+
+        if (courthouseDB.isEmpty()) {
+            auditService.processAudit(
+                    CourtLocationAuditOperation.CREATE_COURT_LOCATION_AUDIT_EVENT,
+                    req -> {
+                        nationalCourtHouse.setChangedBy(1L);
+                        nationalCourtHouse.setChangedDate(businessDateProvider.currentUkDateTime());
+
+                        repository.saveAndFlush(nationalCourtHouse);
+                        AuditableResult<Void, NationalCourtHouse> auditableResult =
+                                new AuditableResult<>(null, nationalCourtHouse);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        } else {
+            var currentCourtHouse = courthouseDB.get();
+            var updatedCourtHouse = BeanUtil.copyBean(currentCourtHouse);
+            mapper.updateCourtHouse(updatedCourtHouse, nationalCourtHouse);
+
+            auditService.processAudit(
+                    currentCourtHouse,
+                    CourtLocationAuditOperation.UPDATE_COURT_LOCATION_AUDIT_EVENT,
+                    req -> {
+                        updatedCourtHouse.setChangedBy(1L);
+                        updatedCourtHouse.setChangedDate(businessDateProvider.currentUkDateTime());
+
+
+                        AuditableResult<Void, NationalCourtHouse> auditableResult =
+                                new AuditableResult<>(null, updatedCourtHouse);
+                        return Optional.of(auditableResult);
+                    },
+                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+            repository.saveAndFlush(updatedCourtHouse);
+        }
     }
 }

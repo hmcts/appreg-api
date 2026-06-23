@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.courtlocation.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -12,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import lombok.val;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -292,6 +295,91 @@ class CourtLocationServiceImplTest {
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
                         notNull(),
                         notNull());
+    }
+
+    @Test
+    void testUpsert_insert() {
+        when(repository.findActiveCourts("TEST001", LocalDate.now())).thenReturn(List.of());
+
+        val nationalCourtHouse = new NationalCourtHouse();
+        nationalCourtHouse.setCourtLocationCode("TEST001");
+        nationalCourtHouse.setCourtType("CROWN");
+        nationalCourtHouse.setName("Unit Test Court");
+        nationalCourtHouse.setStartDate(LocalDate.now());
+        nationalCourtHouse.setEndDate(null);
+        nationalCourtHouse.setVersion(1L);
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl =
+                new CourtLocationServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        new CourtLocationMapperImpl(),
+                        pageMapper,
+                        businessDateProvider);
+
+        serviceImpl.upsertCourtHouse(nationalCourtHouse);
+
+        verify(repository, times(1)).findActiveCourts("TEST001", LocalDate.now());
+        verify(repository, times(1)).saveAndFlush(any(NationalCourtHouse.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (NationalCourtHouse) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(nationalCourtHouse.getCourtType(), audited.getCourtType());
+        Assertions.assertEquals(
+                nationalCourtHouse.getCourtLocationCode(), audited.getCourtLocationCode());
+        Assertions.assertEquals(nationalCourtHouse.getName(), audited.getName());
+        Assertions.assertEquals(nationalCourtHouse.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(nationalCourtHouse.getEndDate(), audited.getEndDate());
+    }
+
+    @Test
+    void testUpsert_update() {
+        val existingCourtHouse = new NationalCourtHouse();
+        existingCourtHouse.setCourtLocationCode("TEST001");
+        existingCourtHouse.setStartDate(LocalDate.now());
+
+        when(repository.findActiveCourts(
+                        existingCourtHouse.getCourtLocationCode(), LocalDate.now()))
+                .thenReturn(List.of(existingCourtHouse));
+
+        val nationalCourtHouse = new NationalCourtHouse();
+        nationalCourtHouse.setCourtLocationCode("TEST001");
+        nationalCourtHouse.setCourtType("TEST");
+        nationalCourtHouse.setName("Unit Test Court 2");
+        nationalCourtHouse.setStartDate(LocalDate.now());
+        nationalCourtHouse.setEndDate(null);
+        nationalCourtHouse.setVersion(1L);
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl =
+                new CourtLocationServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        new CourtLocationMapperImpl(),
+                        pageMapper,
+                        businessDateProvider);
+
+        serviceImpl.upsertCourtHouse(nationalCourtHouse);
+
+        verify(repository, times(1))
+                .findActiveCourts(nationalCourtHouse.getCourtLocationCode(), LocalDate.now());
+        verify(repository, times(1)).saveAndFlush(any(NationalCourtHouse.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (NationalCourtHouse) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(nationalCourtHouse.getCourtType(), audited.getCourtType());
+        Assertions.assertEquals(
+                nationalCourtHouse.getCourtLocationCode(), audited.getCourtLocationCode());
+        Assertions.assertEquals(nationalCourtHouse.getName(), audited.getName());
+        Assertions.assertEquals(nationalCourtHouse.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(nationalCourtHouse.getEndDate(), audited.getEndDate());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
