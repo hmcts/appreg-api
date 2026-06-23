@@ -10,18 +10,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class DeleteApplicationListEntryValidatorTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
@@ -33,6 +31,7 @@ class DeleteApplicationListEntryValidatorTest {
     @Test
     void testSuccessfulValidation() {
         ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.OPEN);
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
 
         // The app list should not be deleted
@@ -40,7 +39,7 @@ class DeleteApplicationListEntryValidatorTest {
 
         PayloadForDeleteEntry payloadForDeleteEntry =
                 new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
-        when(applicationListRepository.findByUuid(payloadForDeleteEntry.getId()))
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidIncludingDelete(
                         payloadForDeleteEntry.getEntryId()))
@@ -55,23 +54,11 @@ class DeleteApplicationListEntryValidatorTest {
 
     @Test
     void testFailureValidationNoListId() {
-        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
-
-        // The app list should not be deleted
-        applicationListEntry.setDeleted(false);
-
         PayloadForDeleteEntry payloadForDeleteEntry =
                 new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
-        when(applicationListRepository.findByUuid(payloadForDeleteEntry.getId()))
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
                 .thenReturn(Optional.empty());
-        when(applicationListEntryRepository.findByUuidIncludingDelete(
-                        payloadForDeleteEntry.getEntryId()))
-                .thenReturn(Optional.of(applicationListEntry));
-        when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        payloadForDeleteEntry.getId(), payloadForDeleteEntry.getEntryId()))
-                .thenReturn(Optional.of(applicationListEntry));
 
-        // validate. No errors means success
         AppRegistryException throwable =
                 Assertions.assertThrows(
                         AppRegistryException.class,
@@ -83,24 +70,17 @@ class DeleteApplicationListEntryValidatorTest {
 
     @Test
     void testFailureValidationNoListEntryId() {
-        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
         ApplicationList applicationList = new ApplicationList();
-
-        // The app list should not be deleted
-        applicationListEntry.setDeleted(false);
+        applicationList.setStatus(Status.OPEN);
 
         PayloadForDeleteEntry payloadForDeleteEntry =
                 new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
-        when(applicationListRepository.findByUuid(payloadForDeleteEntry.getId()))
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidIncludingDelete(
                         payloadForDeleteEntry.getEntryId()))
                 .thenReturn(Optional.empty());
-        when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        payloadForDeleteEntry.getId(), payloadForDeleteEntry.getEntryId()))
-                .thenReturn(Optional.of(applicationListEntry));
 
-        // validate. No errors means success
         AppRegistryException throwable =
                 Assertions.assertThrows(
                         AppRegistryException.class,
@@ -114,13 +94,14 @@ class DeleteApplicationListEntryValidatorTest {
     void testFailureValidationNoAppListContainedEntryId() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
         ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.OPEN);
 
         // The app list should not be deleted
         applicationListEntry.setDeleted(false);
 
         PayloadForDeleteEntry payloadForDeleteEntry =
                 new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
-        when(applicationListRepository.findByUuid(payloadForDeleteEntry.getId()))
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidIncludingDelete(
                         payloadForDeleteEntry.getEntryId()))
@@ -129,7 +110,6 @@ class DeleteApplicationListEntryValidatorTest {
                         payloadForDeleteEntry.getId(), payloadForDeleteEntry.getEntryId()))
                 .thenReturn(Optional.empty());
 
-        // validate. No errors means success
         AppRegistryException throwable =
                 Assertions.assertThrows(
                         AppRegistryException.class,
@@ -143,28 +123,64 @@ class DeleteApplicationListEntryValidatorTest {
     void testFailureValidationEntryIdAlreadyDeleted() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
         ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.OPEN);
 
         // The app list should not be deleted
         applicationListEntry.setDeleted(true);
 
         PayloadForDeleteEntry payloadForDeleteEntry =
                 new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
-        when(applicationListRepository.findByUuid(payloadForDeleteEntry.getId()))
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidIncludingDelete(
                         payloadForDeleteEntry.getEntryId()))
                 .thenReturn(Optional.of(applicationListEntry));
-        when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        payloadForDeleteEntry.getId(), payloadForDeleteEntry.getEntryId()))
-                .thenReturn(Optional.of(applicationListEntry));
 
-        // validate. No errors means success
         AppRegistryException throwable =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () -> deleteApplicationListEntryValidator.validate(payloadForDeleteEntry));
         Assertions.assertEquals(
                 AppListEntryError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getType(),
+                throwable.getCode().getCode().getType());
+    }
+
+    @Test
+    void testFailureValidationClosedApplicationList() {
+        ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.CLOSED);
+
+        PayloadForDeleteEntry payloadForDeleteEntry =
+                new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
+                .thenReturn(Optional.of(applicationList));
+
+        AppRegistryException throwable =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> deleteApplicationListEntryValidator.validate(payloadForDeleteEntry));
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType(),
+                throwable.getCode().getCode().getType());
+    }
+
+    @Test
+    void testFailureValidationDeletedApplicationList() {
+        ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.OPEN);
+        applicationList.setDeleted(true);
+
+        PayloadForDeleteEntry payloadForDeleteEntry =
+                new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
+        when(applicationListRepository.findByUuidIncludingDelete(payloadForDeleteEntry.getId()))
+                .thenReturn(Optional.of(applicationList));
+
+        AppRegistryException throwable =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> deleteApplicationListEntryValidator.validate(payloadForDeleteEntry));
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType(),
                 throwable.getCode().getCode().getType());
     }
 }

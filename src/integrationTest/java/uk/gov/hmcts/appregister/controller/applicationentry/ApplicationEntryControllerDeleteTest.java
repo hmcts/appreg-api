@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -134,6 +135,34 @@ class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudT
         responseSpecDelete.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecDelete);
+    }
+
+    @Test
+    void givenClosedApplicationList_whenDeleteEntry_then409AndEntryIsNotDeleted() throws Exception {
+        ApplicationList applicationList = createAndSaveList(Status.CLOSED);
+        ApplicationListEntry applicationListEntry = persistance.save(createEntry(applicationList));
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpecDelete =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(
+                                DELETE_ENTRY_CONTEXT.formatted(
+                                        applicationList.getUuid(), applicationListEntry.getUuid())),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpecDelete.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                responseSpecDelete);
+
+        boolean entryDeleted =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository
+                                        .findByUuidIncludingDelete(applicationListEntry.getUuid())
+                                        .orElseThrow()
+                                        .isDeleted());
+        Assertions.assertFalse(entryDeleted);
     }
 
     @Test
