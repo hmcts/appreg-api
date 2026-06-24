@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,7 +114,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     public void upsertFee(Fee fee) {
         var feeDB =
                 feeRepository
-                        .findByReferenceBetweenDate(fee.getReference(), fee.getEndDate())
+                        .findByReferenceBetweenDate(fee.getReference(), businessDateProvider.currentUkDate())
                         .stream()
                         .findFirst();
 
@@ -137,7 +138,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
 
             // this code is to allow the end date to be updated if it has changed, as the mapper
             // will ignore null values
-            if (!updatedFee.getEndDate().equals(fee.getEndDate())) {
+            if (!Objects.equals(updatedFee.getEndDate(), fee.getEndDate())) {
                 updatedFee.setEndDate(fee.getEndDate());
             }
 

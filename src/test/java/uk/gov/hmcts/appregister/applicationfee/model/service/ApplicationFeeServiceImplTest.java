@@ -261,7 +261,7 @@ class ApplicationFeeServiceImplTest {
         existingFee.setChangedDate(businessDateProvider.currentUkDateTime());
         existingFee.setAmount(BigDecimal.valueOf(10.00));
         existingFee.setCreatedUser("Unit Test 2");
-        existingFee.setEndDate(TODAY_UK);
+        existingFee.setEndDate(null);
 
         when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK))
                 .thenReturn(List.of(existingFee));
@@ -300,6 +300,68 @@ class ApplicationFeeServiceImplTest {
         Assertions.assertEquals(fee.getAmount(), audited.getAmount());
         Assertions.assertEquals(
                 fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
+        Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
+    }
+
+    @Test
+    void testUpsertFee_updateEndDate_toNull() {
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(businessDateProvider.currentUkDateTime())
+            .thenReturn(
+                OffsetDateTime.of(
+                    TODAY_UK, LocalTime.now(), OffsetDateTime.now().getOffset()));
+
+        val existingFee = new Fee();
+        existingFee.setId(67L);
+        existingFee.setReference("CO6.0");
+        existingFee.setVersion(1L);
+        existingFee.setOffsite(false);
+        existingFee.setStartDate(LocalDate.now());
+        existingFee.setDescription("Unit Test Fee 2");
+        existingFee.setChangedBy(66L);
+        existingFee.setChangedDate(businessDateProvider.currentUkDateTime());
+        existingFee.setAmount(BigDecimal.valueOf(10.00));
+        existingFee.setCreatedUser("Unit Test 2");
+        existingFee.setEndDate(TODAY_UK);
+
+        when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK))
+            .thenReturn(List.of(existingFee));
+
+        val fee = new Fee();
+        fee.setId(67L);
+        fee.setReference("CO6.7");
+        fee.setVersion(1L);
+        fee.setOffsite(false);
+        fee.setStartDate(LocalDate.now());
+        fee.setDescription("Unit Test Fee");
+        fee.setChangedBy(67L);
+        fee.setChangedDate(businessDateProvider.currentUkDateTime());
+        fee.setAmount(BigDecimal.valueOf(10.00));
+        fee.setCreatedUser("Unit Test");
+        fee.setEndDate(null);
+
+        val listener = new CapturingAuditListener();
+        val serviceImpl =
+            new ApplicationFeeServiceImpl(
+                repository,
+                businessDateProvider,
+                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                List.of(listener),
+                new FeeMapperImpl()
+            );
+
+        serviceImpl.upsertFee(fee);
+
+        verify(repository, times(1)).findByReferenceBetweenDate(fee.getReference(), TODAY_UK);
+        verify(repository, times(1)).saveAndFlush(any(Fee.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        val audited = (Fee) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(fee.getReference(), audited.getReference());
+        Assertions.assertEquals(fee.getAmount(), audited.getAmount());
+        Assertions.assertEquals(
+            fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
         Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }

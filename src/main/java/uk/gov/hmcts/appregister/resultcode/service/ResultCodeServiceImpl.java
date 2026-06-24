@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -183,7 +184,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
 
             // this code is to allow the end date to be updated if it has changed, as the mapper
             // will ignore null values
-            if (!updatedResolutionCode.getEndDate().equals(resolutionCode.getEndDate())) {
+            if (!Objects.equals(updatedResolutionCode.getEndDate(), resolutionCode.getEndDate())) {
                 updatedResolutionCode.setEndDate(resolutionCode.getEndDate());
             }
 

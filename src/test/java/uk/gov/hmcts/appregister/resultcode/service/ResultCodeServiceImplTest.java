@@ -366,6 +366,64 @@ class ResultCodeServiceImplTest {
         Assertions.assertEquals(resolutionCode.getEndDate(), audited.getEndDate());
     }
 
+    @Test
+    void testUpsertResolutionCode_update_endDateToNull() {
+        ZoneId ukZone = ZoneId.of("Europe/London");
+        Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ukZone);
+
+        val existingResolutionCode = new ResolutionCode();
+        existingResolutionCode.setResultCode("UTEST");
+        existingResolutionCode.setTitle("Unit Test");
+        existingResolutionCode.setId(67L);
+        existingResolutionCode.setVersion(1L);
+        existingResolutionCode.setStartDate(LocalDate.now(fixedClock).minusDays(1));
+        existingResolutionCode.setChangedBy(66L);
+        existingResolutionCode.setChangedDate(OffsetDateTime.now(fixedClock));
+        existingResolutionCode.setCreatedUser("Unit Test");
+        existingResolutionCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
+
+        when(repository.findActiveByResultCodeIgnoreCaseOrdered("UTEST", LocalDate.now(fixedClock)))
+            .thenReturn(List.of(existingResolutionCode));
+
+        val resolutionCode = new ResolutionCode();
+        resolutionCode.setResultCode("UTEST");
+        resolutionCode.setId(67L);
+        resolutionCode.setVersion(1L);
+        resolutionCode.setStartDate(LocalDate.now(fixedClock));
+        resolutionCode.setChangedBy(67L);
+        resolutionCode.setChangedDate(OffsetDateTime.now(fixedClock));
+        resolutionCode.setTitle("Unit Test 2");
+
+        resolutionCode.setEndDate(null);
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl =
+            new ResultCodeServiceImpl(
+                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                List.of(listener),
+                repository,
+                new ResultCodeMapperImpl(),
+                pageMapper,
+                fixedClock,
+                ukZone);
+
+        serviceImpl.upsertResultCode(resolutionCode);
+
+        verify(repository, times(1))
+            .findActiveByResultCodeIgnoreCaseOrdered(
+                resolutionCode.getResultCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).saveAndFlush(any(ResolutionCode.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (ResolutionCode) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(resolutionCode.getResultCode(), audited.getResultCode());
+        Assertions.assertEquals(resolutionCode.getTitle(), audited.getTitle());
+        Assertions.assertEquals(resolutionCode.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(resolutionCode.getEndDate(), audited.getEndDate());
+    }
+
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
         private CompleteEvent completeEvent;
 

@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.courtlocation.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -173,6 +174,12 @@ public class CourtLocationServiceImpl implements CourtLocationService {
             var currentCourtHouse = courthouseDB.get();
             var updatedCourtHouse = BeanUtil.copyBean(currentCourtHouse);
             mapper.updateCourtHouse(updatedCourtHouse, nationalCourtHouse);
+
+            if (!Objects.equals(updatedCourtHouse.getEndDate(),
+                                nationalCourtHouse.getEndDate())) {
+                updatedCourtHouse.setEndDate(
+                    nationalCourtHouse.getEndDate());
+            }
 
             auditService.processAudit(
                     currentCourtHouse,

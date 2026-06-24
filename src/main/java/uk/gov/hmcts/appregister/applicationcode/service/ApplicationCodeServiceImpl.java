@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -172,6 +173,12 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
             var currentApplicationCode = applicationCodeDB.get();
             var updatedApplicationCode = BeanUtil.copyBean(currentApplicationCode);
             applicationCodeMapper.updateApplicationCode(updatedApplicationCode, applicationCode);
+
+            if (!Objects.equals(updatedApplicationCode.getEndDate(),
+                                applicationCode.getEndDate())) {
+                updatedApplicationCode.setEndDate(
+                    applicationCode.getEndDate());
+            }
 
             auditService.processAudit(
                     currentApplicationCode,

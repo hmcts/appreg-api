@@ -593,6 +593,64 @@ class ApplicationCodeServiceImplTest {
         Assertions.assertEquals(applicationCode.getEndDate(), audited.getEndDate());
     }
 
+    @Test
+    void testUpsertApplicationCode_update_endDateToNull() {
+
+        val existingApplicationCode = new ApplicationCode();
+        existingApplicationCode.setCode("UTEST");
+        existingApplicationCode.setTitle("Unit Test");
+        existingApplicationCode.setId(67L);
+        existingApplicationCode.setVersion(1L);
+        existingApplicationCode.setStartDate(LocalDate.now(fixedClock).minusDays(1));
+        existingApplicationCode.setChangedBy(66L);
+        existingApplicationCode.setChangedDate(OffsetDateTime.now());
+        existingApplicationCode.setCreatedUser("Unit Test");
+        existingApplicationCode.setEndDate(LocalDate.now(fixedClock));
+
+        when(repository.findByCodeAndDate("UTEST", LocalDate.now(fixedClock)))
+            .thenReturn(List.of(existingApplicationCode));
+
+        val applicationCode = new ApplicationCode();
+        applicationCode.setCode("UTEST");
+        applicationCode.setId(67L);
+        applicationCode.setVersion(1L);
+        applicationCode.setStartDate(LocalDate.now(fixedClock));
+        applicationCode.setChangedBy(67L);
+        applicationCode.setChangedDate(OffsetDateTime.now(fixedClock));
+        applicationCode.setTitle("Unit Test 2");
+        applicationCode.setEndDate(null);
+
+        applicationCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
+
+        val listener = new CapturingAuditListener();
+
+        val serviceImpl = new ApplicationCodeServiceImpl(
+            repository,
+            new ApplicationCodeMapperImpl(),
+            feeService,
+            auditService,
+            List.of(listener),
+            pageMapper,
+            fixedClock,
+            ukZone,
+            dummyGetApplicationCodeValidator);
+
+        serviceImpl.upsertApplicationCode(applicationCode);
+
+        verify(repository, times(1))
+            .findByCodeAndDate(
+                applicationCode.getCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).saveAndFlush(any(ApplicationCode.class));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+
+        val audited = (ApplicationCode) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(applicationCode.getCode(), audited.getCode());
+        Assertions.assertEquals(applicationCode.getTitle(), audited.getTitle());
+        Assertions.assertEquals(applicationCode.getStartDate(), audited.getStartDate());
+        Assertions.assertEquals(applicationCode.getEndDate(), audited.getEndDate());
+    }
+
     private ApplicationCodeServiceImpl buildServiceWithListeners(
             List<AuditOperationLifecycleListener> listeners) {
         return new ApplicationCodeServiceImpl(

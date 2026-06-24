@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -154,9 +155,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
             // this code is to allow the end date to be updated if it has changed, as the mapper
             // will ignore null values
-            if (!updatedStandardApplicant
-                    .getApplicantEndDate()
-                    .equals(standardApplicant.getApplicantEndDate())) {
+            if (!Objects.equals(updatedStandardApplicant.getApplicantEndDate(),
+                                standardApplicant.getApplicantEndDate())) {
                 updatedStandardApplicant.setApplicantEndDate(
                         standardApplicant.getApplicantEndDate());
             }
