@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
@@ -66,6 +67,8 @@ class UpdateApplicationEntryValidatorTest {
     @Mock private StandardApplicantRepository standardApplicantRepository;
 
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @InjectMocks private UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -126,6 +129,8 @@ class UpdateApplicationEntryValidatorTest {
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
                         appListUuid, appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(List.of());
     }
 
     private static void sanitiseFeeStatusDates(List<FeeStatus> feeStatuses) {
@@ -339,6 +344,62 @@ class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.getApplicant().setOrganisation(null);
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantFeeNotDueButPersistedFeeStatusPreservedFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        entryUpdateDto.setFeeStatuses(null);
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(
+                        List.of(
+                                Mockito.mock(
+                                        uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus
+                                                .class)));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantFeeNotDueButEmptyFeeStatusListWouldClearPersistedStatusesFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        entryUpdateDto.setFeeStatuses(List.of());
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(
+                        List.of(
+                                Mockito.mock(
+                                        uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus
+                                                .class)));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);

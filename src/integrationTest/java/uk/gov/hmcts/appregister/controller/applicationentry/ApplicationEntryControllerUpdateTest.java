@@ -882,6 +882,60 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryUpdateDto.setFeeStatuses(List.of(feeStatus));
         entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        var tokenGenerator = createAdminToken();
+        val responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    void givenAnInvalidUpdate_whenFeeStatusWouldBePreservedForNonFeeCode_then400IsReturned()
+            throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        var tokenGenerator = createAdminToken();
+        val responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    void
+            givenAnInvalidUpdateEntryRequest_whenFeeStatusesAreClearedForApplicationCodeWithoutFee_then400IsReturned()
+                    throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(List.of());
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
 

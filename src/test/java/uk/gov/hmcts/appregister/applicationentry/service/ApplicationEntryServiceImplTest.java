@@ -274,7 +274,8 @@ class ApplicationEntryServiceImplTest {
                     feeService,
                     businessDateProvider,
                     standardApplicantRepository,
-                    applicationListEntryRepository);
+                    applicationListEntryRepository,
+                    appListEntryFeeStatusRepository);
 
     @Spy
     private DummyUpdateClosedEntriesValidator updateClosedEntriesValidator =
@@ -2567,14 +2568,16 @@ class ApplicationEntryServiceImplTest {
                 ApplicationFeeService feeService,
                 BusinessDateProvider businessDateProvider,
                 StandardApplicantRepository standardApplicantRepository,
-                ApplicationListEntryRepository applicationListEntryRepository) {
+                ApplicationListEntryRepository applicationListEntryRepository,
+                AppListEntryFeeStatusRepository appListEntryFeeStatusRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeService,
                     businessDateProvider,
                     standardApplicantRepository,
-                    applicationListEntryRepository);
+                    applicationListEntryRepository,
+                    appListEntryFeeStatusRepository);
         }
 
         @Override
