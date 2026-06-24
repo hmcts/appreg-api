@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +83,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
                     StandardApplicantPage newPage = new StandardApplicantPage();
                     pageMapper.toPage(standardApplicantsList, newPage, pageable.getSortStrings());
+                    newPage.setContent(new ArrayList<>());
 
                     // Map each projection to a summary DTO and add to the page content
                     standardApplicantsList.forEach(
