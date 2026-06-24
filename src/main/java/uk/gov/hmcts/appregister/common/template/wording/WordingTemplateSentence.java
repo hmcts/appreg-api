@@ -348,7 +348,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
         /** The delimiter used within a wording template. */
         private static final String DELIMITER = "|";
 
-        private boolean substitutionComplete = false;
+        private boolean substitutionComplete;
 
         private String value;
 

@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -17,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -32,7 +30,7 @@ class ReportJobAuditServiceTest {
 
     @Test
     void givenReportJobCompletesFromProcessing_whenAuditingTransition_thenWritesUpdateAudit() {
-        ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
+        ReportJobAuditService service = new ReportJobAuditService(auditService);
         JobStatusResponse job = reportJob(JobType.FEES_REPORT);
         ArgumentCaptor<ReportJobAudit> oldAuditCaptor =
                 ArgumentCaptor.forClass(ReportJobAudit.class);
@@ -44,8 +42,7 @@ class ReportJobAuditServiceTest {
                 .processAudit(
                         oldAuditCaptor.capture(),
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
-                        executionCaptor.capture(),
-                        any(AuditOperationLifecycleListener[].class));
+                        executionCaptor.capture());
 
         service.auditStatusTransition(job, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
 
@@ -69,7 +66,7 @@ class ReportJobAuditServiceTest {
 
     @Test
     void givenReportJobCompletesFromReceived_whenAuditingTransition_thenWritesUpdateAudit() {
-        ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
+        ReportJobAuditService service = new ReportJobAuditService(auditService);
         JobStatusResponse job = reportJob(JobType.FEES_REPORT);
         ArgumentCaptor<ReportJobAudit> oldAuditCaptor =
                 ArgumentCaptor.forClass(ReportJobAudit.class);
@@ -81,8 +78,7 @@ class ReportJobAuditServiceTest {
                 .processAudit(
                         oldAuditCaptor.capture(),
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
-                        executionCaptor.capture(),
-                        any(AuditOperationLifecycleListener[].class));
+                        executionCaptor.capture());
 
         service.auditStatusTransition(job, JobStatus1.RECEIVED, JobStatus1.COMPLETED, null);
 
@@ -98,7 +94,7 @@ class ReportJobAuditServiceTest {
 
     @Test
     void givenReportJobFailsFromProcessing_whenAuditingTransition_thenIncludesErrorReason() {
-        ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
+        ReportJobAuditService service = new ReportJobAuditService(auditService);
         JobStatusResponse job = reportJob(JobType.DURATION_REPORT);
         ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
                 executionCaptor = executionCaptor();
@@ -108,8 +104,7 @@ class ReportJobAuditServiceTest {
                 .processAudit(
                         any(ReportJobAudit.class),
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
-                        executionCaptor.capture(),
-                        any(AuditOperationLifecycleListener[].class));
+                        executionCaptor.capture());
 
         service.auditStatusTransition(
                 job, JobStatus1.PROCESSING, JobStatus1.FAILED, "report failed");
@@ -128,7 +123,7 @@ class ReportJobAuditServiceTest {
 
     @Test
     void givenReportJobFailsWithoutReason_whenAuditingTransition_thenIncludesFallbackReason() {
-        ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
+        ReportJobAuditService service = new ReportJobAuditService(auditService);
         JobStatusResponse job = reportJob(JobType.DURATION_REPORT);
         ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
                 executionCaptor = executionCaptor();
@@ -138,8 +133,7 @@ class ReportJobAuditServiceTest {
                 .processAudit(
                         any(ReportJobAudit.class),
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
-                        executionCaptor.capture(),
-                        any(AuditOperationLifecycleListener[].class));
+                        executionCaptor.capture());
 
         service.auditStatusTransition(job, JobStatus1.PROCESSING, JobStatus1.FAILED, null);
 
@@ -157,7 +151,7 @@ class ReportJobAuditServiceTest {
 
     @Test
     void givenNonReportJobOrIntermediateTransition_whenAuditingTransition_thenSkipsAudit() {
-        var service = new ReportJobAuditService(auditService, List.of());
+        var service = new ReportJobAuditService(auditService);
 
         service.auditStatusTransition(
                 reportJob(JobType.BULK_UPLOAD_ENTRIES),
@@ -169,17 +163,12 @@ class ReportJobAuditServiceTest {
         service.auditStatusTransition(
                 reportJob(JobType.FEES_REPORT), JobStatus1.COMPLETED, JobStatus1.FAILED, null);
 
-        verify(auditService, never())
-                .processAudit(
-                        any(ReportJobAudit.class),
-                        any(),
-                        any(),
-                        any(AuditOperationLifecycleListener[].class));
+        verify(auditService, never()).processAudit(any(ReportJobAudit.class), any(), any());
     }
 
     @Test
     void givenMissingJobMetadata_whenAuditingTransition_thenSkipsAudit() {
-        var service = new ReportJobAuditService(auditService, List.of());
+        var service = new ReportJobAuditService(auditService);
         var missingType = JobStatusResponse.builder().uuid(UUID.randomUUID()).build();
         var missingUuid = JobStatusResponse.builder().type(JobType.FEES_REPORT).build();
 
@@ -189,12 +178,7 @@ class ReportJobAuditServiceTest {
         service.auditStatusTransition(
                 missingUuid, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
 
-        verify(auditService, never())
-                .processAudit(
-                        any(ReportJobAudit.class),
-                        any(),
-                        any(),
-                        any(AuditOperationLifecycleListener[].class));
+        verify(auditService, never()).processAudit(any(ReportJobAudit.class), any(), any());
     }
 
     private JobStatusResponse reportJob(JobType jobType) {

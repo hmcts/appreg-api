@@ -12,7 +12,7 @@ properties:
     type: string
     format: time
     description: Single time of the Application List.
-    example: "10:30"
+    example: "10:30:00"
 
   courtLocationCode:
     type: string

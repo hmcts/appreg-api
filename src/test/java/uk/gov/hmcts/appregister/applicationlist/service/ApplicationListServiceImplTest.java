@@ -82,6 +82,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -91,7 +92,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
-import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -111,6 +111,8 @@ class ApplicationListServiceImplTest {
 
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(10, 30);
+    private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
+            List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
     @Mock private ApplicationListRepository repository;
     @Mock private ApplicationListEntryRepository aleRepository;
@@ -195,8 +197,7 @@ class ApplicationListServiceImplTest {
                         deletionValidator,
                         matchService,
                         entityManager,
-                        auditOperationService,
-                        List.of(auditOperationLifecycleListener));
+                        auditOperationService);
     }
 
     @Test
@@ -523,7 +524,7 @@ class ApplicationListServiceImplTest {
         when(entryMapper.toStatus(ApplicationListStatus.CLOSED)).thenReturn(Status.CLOSED);
 
         // When
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         // Then
         assertThat(result).isNotNull();
@@ -577,7 +578,7 @@ class ApplicationListServiceImplTest {
                         .cjaCode("52")
                         .otherLocationDescription("town");
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -618,7 +619,7 @@ class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -733,7 +734,7 @@ class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(row, 0L, "CJA Name");
@@ -774,7 +775,7 @@ class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(row, 0L, "Some Court");
@@ -813,7 +814,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        var result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(row, 0L, "Location not set");
@@ -877,7 +878,7 @@ class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, wrapper);
+        service.getPage(filter, wrapper);
 
         // Then
         verify(repository)
@@ -993,8 +994,7 @@ class ApplicationListServiceImplTest {
                 mock(ApplicationListEntryOfficialPrintProjection.class);
         when(officialProj.getEntryId()).thenReturn(1L);
 
-        when(aleoRepository.findByApplicationListUuidForPrinting(
-                        id, OfficialTypeUtil.PRINTABLE_CODES))
+        when(aleoRepository.findByApplicationListUuidForPrinting(id, PRINTABLE_OFFICIAL_TYPES))
                 .thenReturn(List.of(officialProj));
 
         // Mapper stubs
@@ -1024,8 +1024,7 @@ class ApplicationListServiceImplTest {
 
         verify(aleRepository).findByIdForPrinting(id);
         verify(alerRepository).findByApplicationListUuidForPrinting(id);
-        verify(aleoRepository)
-                .findByApplicationListUuidForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
+        verify(aleoRepository).findByApplicationListUuidForPrinting(id, PRINTABLE_OFFICIAL_TYPES);
 
         // And the per-entry mapper was invoked
         verify(entryMapper).toPrintDto(entryProjection);
@@ -1121,32 +1120,6 @@ class ApplicationListServiceImplTest {
                 E oldValue,
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(
-                    oldValue, auditType, execution, (AuditOperationLifecycleListener) null);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(null, auditType, execution);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-            return processAudit(null, auditType, execution, listener);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                E oldValue,
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-
             lastAuditType = auditType;
             Optional<AuditableResult<T, E>> optional =
                     execution.apply(
@@ -1159,6 +1132,13 @@ class ApplicationListServiceImplTest {
                                     null));
             lastNewEntity = optional.map(AuditableResult::getNewEntity).orElse(null);
             return optional.map(AuditableResult::getResultingValue).orElse(null);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+            return processAudit(null, auditType, execution);
         }
     }
 

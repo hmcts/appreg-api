@@ -2,15 +2,16 @@ package uk.gov.hmcts.appregister.admin.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,17 +45,19 @@ class DatabaseJobsServiceImplTest {
     @Mock private RetentionPolicyRepository retentionPolicyRepository;
 
     @Spy private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
+    private LogCaptor logCaptor;
 
     @BeforeEach
     void setUp() {
+        logCaptor = LogCaptor.forClass(AdminAPIServiceImpl.class);
+        logCaptor.clearLogs();
 
         service =
                 new AdminAPIServiceImpl(
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
-                        List.of());
+                        new AuditOperationServiceImpl(List.of()));
     }
 
     @Test
@@ -73,8 +76,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of()),
-                        List.of());
+                        new AuditOperationServiceImpl(List.of()));
 
         val status =
                 service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
@@ -96,6 +98,8 @@ class DatabaseJobsServiceImplTest {
         when(databaseJobRepository.findByName(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
                 .thenReturn(testJob);
+        when(databaseJobRepository.save(any(DatabaseJob.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, true);
 
@@ -117,6 +121,8 @@ class DatabaseJobsServiceImplTest {
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
                         "RETENTION_PERIOD_DAYS"))
                 .thenReturn(List.of(retentionPolicyEntity));
+        when(retentionPolicyRepository.save(any(RetentionPolicy.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.updateDatabaseJobRetentionPeriodByName(
                 AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365);
@@ -208,8 +214,7 @@ class DatabaseJobsServiceImplTest {
                         databaseJobRepository,
                         retentionPolicyRepository,
                         mapper,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener));
+                        new AuditOperationServiceImpl(List.of(listener)));
 
         // Execute the same service method used by the controller and capture the completed audit
         // event so we can inspect the surrogate entity sent to data audit.
@@ -225,6 +230,145 @@ class DatabaseJobsServiceImplTest {
         assertNotNull(listener.getCompleteEvent());
         val audited = (DatabaseJob) listener.getCompleteEvent().getNewValue();
         assertEquals(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(), audited.getName());
+    }
+
+    @Test
+    void testEnableDatabaseJobByName_auditsOldAndNewPersistedState() {
+        val testJob = new DatabaseJob();
+        testJob.setId(2L);
+        testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
+        testJob.setEnabled(YesOrNo.NO);
+
+        when(databaseJobRepository.findByName(any())).thenReturn(testJob);
+        when(databaseJobRepository.save(any(DatabaseJob.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        val listener = new CapturingAuditListener();
+        service =
+                new AdminAPIServiceImpl(
+                        databaseJobRepository,
+                        retentionPolicyRepository,
+                        mapper,
+                        new AuditOperationServiceImpl(List.of(listener)));
+
+        service.enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, true);
+
+        assertNotNull(listener.getCompleteEvent());
+        val oldValue = (DatabaseJob) listener.getCompleteEvent().getOldValue();
+        val newValue = (DatabaseJob) listener.getCompleteEvent().getNewValue();
+        assertNotSame(testJob, oldValue);
+        assertEquals(YesOrNo.NO, oldValue.getEnabled());
+        assertEquals(YesOrNo.YES, newValue.getEnabled());
+        assertEquals(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(), newValue.getName());
+    }
+
+    @Test
+    void testGetDatabaseJobRetentionPeriodByName_auditsRequestedPersistedValue() {
+        val retentionPolicy = new RetentionPolicy();
+        retentionPolicy.setId(7L);
+        retentionPolicy.setDatabaseJobId(11L);
+        retentionPolicy.setConfigKey("RETENTION_PERIOD_DAYS");
+        retentionPolicy.setConfigValue("1825");
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(1L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of(retentionPolicy));
+
+        val listener = new CapturingAuditListener();
+        service =
+                new AdminAPIServiceImpl(
+                        databaseJobRepository,
+                        retentionPolicyRepository,
+                        mapper,
+                        new AuditOperationServiceImpl(List.of(listener)));
+
+        val response =
+                service.getDatabaseJobRetentionPeriodByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
+
+        assertEquals(Integer.valueOf(1825), response.getRetentionPeriodDays());
+        assertNotNull(listener.getCompleteEvent());
+        val audited = (RetentionPolicy) listener.getCompleteEvent().getNewValue();
+        assertEquals("RETENTION_PERIOD_DAYS", audited.getConfigKey());
+        assertEquals("1825", audited.getConfigValue());
+    }
+
+    @Test
+    void testUpdateDatabaseJobRetentionPeriodByName_auditsOldAndNewPersistedState() {
+        val retentionPolicyEntity = new RetentionPolicy();
+        retentionPolicyEntity.setId(7L);
+        retentionPolicyEntity.setDatabaseJobId(11L);
+        retentionPolicyEntity.setConfigKey("RETENTION_PERIOD_DAYS");
+        retentionPolicyEntity.setConfigValue("1825");
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(1L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of(retentionPolicyEntity));
+        when(retentionPolicyRepository.save(any(RetentionPolicy.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        val listener = new CapturingAuditListener();
+        service =
+                new AdminAPIServiceImpl(
+                        databaseJobRepository,
+                        retentionPolicyRepository,
+                        mapper,
+                        new AuditOperationServiceImpl(List.of(listener)));
+
+        service.updateDatabaseJobRetentionPeriodByName(
+                AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365);
+
+        assertNotNull(listener.getCompleteEvent());
+        val oldValue = (RetentionPolicy) listener.getCompleteEvent().getOldValue();
+        val newValue = (RetentionPolicy) listener.getCompleteEvent().getNewValue();
+        assertNotSame(retentionPolicyEntity, oldValue);
+        assertEquals("1825", oldValue.getConfigValue());
+        assertEquals("365", newValue.getConfigValue());
+        assertEquals("RETENTION_PERIOD_DAYS", newValue.getConfigKey());
+    }
+
+    @Test
+    void testUpdateDatabaseJobRetentionPeriodByName_whenDuplicatePolicies_usesFirstAndWarns() {
+        val firstPolicy = new RetentionPolicy();
+        firstPolicy.setId(7L);
+        firstPolicy.setDatabaseJobId(11L);
+        firstPolicy.setConfigKey("RETENTION_PERIOD_DAYS");
+        firstPolicy.setConfigValue("1825");
+        val secondPolicy = new RetentionPolicy();
+        secondPolicy.setId(8L);
+        secondPolicy.setDatabaseJobId(11L);
+        secondPolicy.setConfigKey("RETENTION_PERIOD_DAYS");
+        secondPolicy.setConfigValue("999");
+
+        when(retentionPolicyRepository.countByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(2L);
+        when(retentionPolicyRepository.findByJobNameAndConfigKeyOrderByIdAsc(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(List.of(firstPolicy, secondPolicy));
+        when(retentionPolicyRepository.save(any(RetentionPolicy.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.updateDatabaseJobRetentionPeriodByName(
+                AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365);
+
+        assertEquals("365", firstPolicy.getConfigValue());
+        assertEquals("999", secondPolicy.getConfigValue());
+        assertEquals(
+                List.of(
+                        "Multiple retention policy rows found for job APPLICATION_LISTS_DATABASE_JOB"
+                                + " and key RETENTION_PERIOD_DAYS; using first by rp_id"),
+                logCaptor.getWarnLogs());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

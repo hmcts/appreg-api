@@ -1,13 +1,13 @@
 package uk.gov.hmcts.appregister.standardapplicant.controller;
 
 import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,8 +27,6 @@ import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantServi
 @RequiredArgsConstructor
 @Slf4j
 public class StandardApplicantController implements StandardApplicantsApi {
-    private static final MediaType VND_JSON_V1 =
-            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
 
     private final StandardApplicantService service;
 

@@ -41,7 +41,7 @@ public class EtagUtil {
         for (Keyable keyable : ids) {
             stringBuilder
                     .append(keyable.getId().toString())
-                    .append(":")
+                    .append(':')
                     .append(
                             (keyable instanceof Versionable versionable)
                                     ? versionable.getVersion().toString()

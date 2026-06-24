@@ -51,7 +51,7 @@ public class NoSecurityConfig {
 
     static void verifyLocalDebugRuntime(ClassLoader classLoader) {
         ClassLoader resourceLoader =
-                classLoader == null ? NoSecurityConfig.class.getClassLoader() : classLoader;
+                classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader;
         if (resourceLoader.getResource(LOCAL_DEBUG_MARKER) == null) {
             throw new NoSecurityConfigurationException(LOCAL_DEBUG_ONLY_MESSAGE);
         }

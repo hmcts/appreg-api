@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,11 +38,4 @@ public interface AsyncJobRepository extends JpaRepository<AsyncJob, Long> {
             AND aj.userName = :userId
         """)
     AsyncJob findByJobId(UUID jobId, String userId);
-
-    /**
-     * finds an asynchronous job by the id.
-     *
-     * @return The asynchronous job greater than the id.
-     */
-    List<AsyncJob> findByIdGreaterThanEqual(Integer value);
 }

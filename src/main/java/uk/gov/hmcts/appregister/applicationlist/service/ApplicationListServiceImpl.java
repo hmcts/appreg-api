@@ -26,7 +26,6 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetVali
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -38,6 +37,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
@@ -47,7 +47,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
-import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -76,6 +75,8 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
     private static final long ZERO_ENTITIES = 0L;
+    private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
+            List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
     // Repositories
     private final ApplicationListRepository repository;
@@ -104,7 +105,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     // Audit
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
 
@@ -140,8 +140,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                 ? Optional.of(
                                                         createWithCourt(listCreateDto, success))
                                                 : Optional.of(
-                                                        createWithCja(listCreateDto, success))),
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                                                        createWithCja(listCreateDto, success))));
     }
 
     /**
@@ -170,9 +169,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                         ? Optional.of(
                                                                 updateWithCourt(updateDto, success))
                                                         : Optional.of(
-                                                                updateWithCja(updateDto, success)),
-                                        auditLifecycleListeners.toArray(
-                                                new AuditOperationLifecycleListener[0])));
+                                                                updateWithCja(
+                                                                        updateDto, success))));
 
         log.debug("Finished update application list {}", dto.getId());
         return response;
@@ -192,8 +190,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     getListDetailDto(list, pageable.getPageable()),
                                     mapper.toEntity(id));
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     /**
@@ -371,9 +368,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                 req -> {
                                     performDelete(success.getApplicationList());
                                     return Optional.empty();
-                                },
-                                auditLifecycleListeners.toArray(
-                                        new AuditOperationLifecycleListener[0])));
+                                }));
 
         log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
@@ -452,8 +447,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                     mapper.toEntity(dto));
                                     return Optional.of(result);
                                 },
-                                true),
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                                true));
     }
 
     @Override
@@ -505,7 +499,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     List<ApplicationListEntryOfficialPrintProjection>
                             applicationListEntryOfficialPrintProjection =
                                     aleoRepository.findByApplicationListUuidForPrinting(
-                                            id, OfficialTypeUtil.PRINTABLE_CODES);
+                                            id, PRINTABLE_OFFICIAL_TYPES);
 
                     // map directly to DTOs while grouping
                     Map<Long, List<Official>> officialsByEntryId =
@@ -534,8 +528,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             new AuditableResult<>(printDto, mapper.toEntity(id));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {

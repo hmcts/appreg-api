@@ -51,6 +51,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -1707,7 +1708,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_replacesExistingStatusesForValidatedEntries() {
+    void bulkUpdateFees_appendsStatusesForValidatedEntries() {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
 
@@ -1741,8 +1742,8 @@ class ApplicationEntryServiceImplTest {
 
         ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository).delete(existingStatus1);
-        verify(appListEntryFeeStatusRepository).delete(existingStatus2);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
         verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
 
         List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
@@ -1798,7 +1799,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_replacesExistingStatusesWithAllProvidedFeeDetails() {
+    void bulkUpdateFees_appendsAllProvidedFeeDetails() {
         val entryId = UUID.randomUUID();
         val existingStatus = new AppListEntryFeeStatus();
         existingStatus.setId(201L);
@@ -1826,7 +1827,7 @@ class ApplicationEntryServiceImplTest {
 
         ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository).delete(existingStatus);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus);
         verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
 
         List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
@@ -1991,7 +1992,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void bulkUpdateFees_deletesOffsiteFeeMappingWhenNotRequested() {
+    void bulkUpdateFees_preservesExistingOffsiteFeeMappingWhenNotRequested() {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
@@ -2013,8 +2014,9 @@ class ApplicationEntryServiceImplTest {
 
         service.bulkUpdateFees(listId, dto);
 
-        verify(appListEntryFeeRepository).delete(existingOffsiteMapping);
-        verify(appListEntryFeeRepository).flush();
+        verify(appListEntryFeeRepository, never()).delete(existingOffsiteMapping);
+        verify(appListEntryFeeRepository, never()).flush();
+        verify(appListEntryFeeRepository, never()).save(any(AppListEntryFeeId.class));
     }
 
     private ApplicationList openApplicationList(UUID listId) {
@@ -2378,6 +2380,41 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void givenUpdateClosedListWhenCombinedNotesExceedLimitThenThrowsBadRequestAndDoesNotSave() {
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+        String existingNotes = "a".repeat(3990);
+        applicationListEntry.setNotes(existingNotes);
+        applicationListEntry.setId(1000L);
+        applicationListEntry.setVersion(232L);
+
+        updateClosedEntriesValidator.setSuccess(
+                new UpdateApplicationEntryClosedValidationSuccess(
+                        new ApplicationList(), applicationListEntry));
+
+        PayloadForUpdateClosedEntry payload =
+                new PayloadForUpdateClosedEntry(
+                        entryUpdateClosedDto, UUID.randomUUID(), UUID.randomUUID());
+
+        assertThatThrownBy(() -> service.updateClosedEntry(payload))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        ex -> {
+                            AppRegistryException appEx = (AppRegistryException) ex;
+                            Assertions.assertEquals(
+                                    AppListEntryError.NOTES_TOO_LONG, appEx.getCode());
+                            Assertions.assertEquals(
+                                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                                    appEx.getCode().getCode().getHttpCode());
+                        });
+
+        verify(applicationListEntryRepository, never()).save(any(ApplicationListEntry.class));
+        Assertions.assertEquals(existingNotes, applicationListEntry.getNotes());
+    }
+
+    @Test
     void deleteEntrySuccess() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
 
@@ -2457,31 +2494,6 @@ class ApplicationEntryServiceImplTest {
                 E oldValue,
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(
-                    oldValue, auditType, execution, (AuditOperationLifecycleListener) null);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(null, auditType, execution);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-            return processAudit(null, auditType, execution, listener);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                E oldValue,
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
             Optional<AuditableResult<T, E>> optional =
                     execution.apply(
                             new CompleteEvent(
@@ -2492,6 +2504,13 @@ class ApplicationEntryServiceImplTest {
                                     "result",
                                     null));
             return optional.map(AuditableResult::getResultingValue).orElse(null);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+            return processAudit(null, auditType, execution);
         }
     }
 

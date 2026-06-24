@@ -8,12 +8,15 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * A central place for cache to exist to avoid reflection based performance problems. This cache is
  * simple and lazy (if not called, then no memory usage). There is no associated eviction policy
  * like other, more sophisticated third party solutions. The cache is based on ClassValue.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ReflectionCaches {
     public record MethodData(String tableName, String columnName, Method method, Field field) {}
 

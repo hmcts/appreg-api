@@ -3,9 +3,12 @@ package uk.gov.hmcts.appregister.applicationfee.model.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,13 +19,19 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -197,6 +206,62 @@ class ApplicationFeeServiceImplTest {
         expected.put("REF-ONE", new FeePair(feeMain, feeOffsite));
         expected.put("REF-TWO", new FeePair(secondFee, feeOffsite));
         assertEquals(expected, feePairs);
+    }
+
+    @Test
+    void testResolveFeePairUsesBusinessDateWhenDateIsNull() {
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findByReferenceBetweenDate("ref", TODAY_UK)).thenReturn(List.of());
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of());
+
+        applicationFeeService.resolveFeePair("ref", null);
+
+        verify(businessDateProvider).currentUkDate();
+        verify(repository).findByReferenceBetweenDate("ref", TODAY_UK);
+        verify(repository).findOffsite(TODAY_UK);
+    }
+
+    @ParameterizedTest
+    @MethodSource("emptyReferenceCollections")
+    void testResolveFeePairsReturnsEmptyMapForNoUsefulReferences(Collection<String> feeReferences) {
+        var feePairs = applicationFeeService.resolveFeePairs(feeReferences, TODAY_UK);
+
+        assertTrue(feePairs.isEmpty());
+        verify(repository, never()).findByReferenceInBetweenDate(notNull(), notNull());
+    }
+
+    @Test
+    void testResolveFeePairsUsesBusinessDateWhenDateMissing() {
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findByReferenceInBetweenDate(List.of("ref"), TODAY_UK))
+                .thenReturn(List.of());
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of());
+
+        applicationFeeService.resolveFeePairs(List.of("REF"), null);
+
+        verify(businessDateProvider).currentUkDate();
+        verify(repository).findByReferenceInBetweenDate(List.of("ref"), TODAY_UK);
+        verify(repository).findOffsite(TODAY_UK);
+    }
+
+    @Test
+    void testResolveFeePairsKeepsNullAndBlankKeysWithoutRepositoryLookups() {
+        when(repository.findByReferenceInBetweenDate(List.of("ref"), TODAY_UK))
+                .thenReturn(List.of());
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of());
+
+        var feePairs =
+                applicationFeeService.resolveFeePairs(Arrays.asList(null, " ", "REF"), TODAY_UK);
+
+        assertEquals(3, feePairs.size());
+        assertEquals(new FeePair(null, null), feePairs.get(null));
+        assertEquals(new FeePair(null, null), feePairs.get(" "));
+        assertEquals(new FeePair(null, null), feePairs.get("REF"));
+        verify(repository).findByReferenceInBetweenDate(List.of("ref"), TODAY_UK);
+    }
+
+    private static Stream<Arguments> emptyReferenceCollections() {
+        return Stream.of(Arguments.of((Collection<String>) null), Arguments.of(List.<String>of()));
     }
 
     @Test

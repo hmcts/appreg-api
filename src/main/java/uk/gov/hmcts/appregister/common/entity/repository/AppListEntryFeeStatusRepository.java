@@ -9,15 +9,6 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 public interface AppListEntryFeeStatusRepository
         extends JpaRepository<AppListEntryFeeStatus, Long> {
     /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<AppListEntryFeeStatus> findByIdGreaterThanEqual(Integer value);
-
-    /**
      * Finds a single application list entries by list ID, ensuring it belongs to the specified
      * application list and that the list is owned by the given user.
      *
@@ -39,4 +30,12 @@ public interface AppListEntryFeeStatusRepository
         WHERE appStatus.appListEntry.uuid = :entryId
         """)
     List<AppListEntryFeeStatus> getFeeStatusByEntryUuid(UUID entryId);
+
+    /**
+     * Finds all fee statuses for the supplied application list entry UUIDs.
+     *
+     * @param entryUuids the application list entry UUIDs
+     * @return the matching fee statuses
+     */
+    List<AppListEntryFeeStatus> findByAppListEntry_UuidIn(List<UUID> entryUuids);
 }

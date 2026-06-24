@@ -1,10 +1,8 @@
 package uk.gov.hmcts.appregister.report.audit;
 
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -22,7 +20,6 @@ public class ReportJobAuditService {
     private static final String UNKNOWN_ERROR = "Failed with unknown error";
 
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     /**
      * Audits report job completion or failure from the last observed non-terminal status.
@@ -57,8 +54,7 @@ public class ReportJobAuditService {
         auditService.processAudit(
                 oldAudit,
                 ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT,
-                unused -> Optional.of(new AuditableResult<>(null, newAudit)),
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                unused -> Optional.of(new AuditableResult<>(null, newAudit)));
     }
 
     /** Applies the ticket scope: report jobs only, and only transitions into terminal status. */

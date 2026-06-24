@@ -88,6 +88,10 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
         this.schema = schema;
     }
 
+    ListMaintenanceFilterDto filter() {
+        return filter;
+    }
+
     @Override
     public void readData(
             ReadPagePosition position,

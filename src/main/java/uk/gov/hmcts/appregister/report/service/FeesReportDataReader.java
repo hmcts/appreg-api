@@ -200,6 +200,10 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
     private final FeesReportFilterDto filter;
     private final String schema;
 
+    FeesReportFilterDto filter() {
+        return filter;
+    }
+
     FeesReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate, FeesReportFilterDto filter, String schema) {
         this.jdbcTemplate = jdbcTemplate;

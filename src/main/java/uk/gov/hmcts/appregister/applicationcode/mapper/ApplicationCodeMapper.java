@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
@@ -17,7 +19,6 @@ import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
-import uk.gov.hmcts.appregister.common.util.CurrencyUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
@@ -53,7 +54,7 @@ public abstract class ApplicationCodeMapper {
      */
     @Named("mapFee")
     public JsonNullable<ApplicationCodeGetSummaryDtoFeeAmount> map(Fee fee) {
-        long pence = CurrencyUtil.getPennies(fee);
+        long pence = getPence(fee);
 
         ApplicationCodeGetSummaryDtoFeeAmount dto = new ApplicationCodeGetSummaryDtoFeeAmount();
         dto.setValue(pence);
@@ -78,7 +79,7 @@ public abstract class ApplicationCodeMapper {
 
     @Named("mapOffsite")
     public JsonNullable<ApplicationCodeGetSummaryDtoOffsiteFeeAmount> mapOffsite(Fee fee) {
-        long pence = CurrencyUtil.getPennies(fee);
+        long pence = getPence(fee);
 
         ApplicationCodeGetSummaryDtoOffsiteFeeAmount dto =
                 new ApplicationCodeGetSummaryDtoOffsiteFeeAmount();
@@ -96,6 +97,11 @@ public abstract class ApplicationCodeMapper {
     @Named("mapNullableLocalDate")
     public JsonNullable<LocalDate> mapNullableLocalDate(LocalDate localDate) {
         return (localDate == null) ? JsonNullable.undefined() : JsonNullable.of(localDate);
+    }
+
+    private long getPence(Fee fee) {
+        BigDecimal scaled = fee.getAmount().setScale(2, RoundingMode.UNNECESSARY);
+        return scaled.movePointRight(2).longValueExact();
     }
 
     @Mapping(target = "offsiteFeeAmount", source = "offsiteFee", qualifiedByName = "mapOffsite")
@@ -117,15 +123,6 @@ public abstract class ApplicationCodeMapper {
             source = "offsiteFee.reference",
             qualifiedByName = "mapFeeReference")
     @Mapping(target = "offsiteFeeDescription", source = "offsiteFee.description")
-
-    /**
-     * maps the application code entity to summary dto.
-     *
-     * @param entity the application code entity
-     * @param fee the fee (main fee)*
-     * @param offsiteFee the offsite fee
-     * @return The application code detail dto
-     */
     public abstract ApplicationCodeGetSummaryDto toApplicationCodeGetSummaryDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
 

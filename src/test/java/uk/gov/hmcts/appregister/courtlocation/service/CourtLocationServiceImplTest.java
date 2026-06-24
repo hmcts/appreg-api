@@ -10,7 +10,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -61,7 +60,7 @@ class CourtLocationServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper(), auditListeners);
+            new AuditOperationServiceImpl(auditListeners);
 
     @Spy private CourtLocationMapper mapper = new CourtLocationMapperImpl();
 
@@ -94,10 +93,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -118,10 +114,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -151,10 +144,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull());
     }
 
     @Test
@@ -171,8 +161,7 @@ class CourtLocationServiceImplTest {
         CapturingAuditListener listener = new CapturingAuditListener();
         CourtLocationServiceImpl localService =
                 new CourtLocationServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         mapper,
                         pageMapper,
@@ -245,10 +234,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -291,10 +277,7 @@ class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        isNull(),
-                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull());
     }
 
     @Test

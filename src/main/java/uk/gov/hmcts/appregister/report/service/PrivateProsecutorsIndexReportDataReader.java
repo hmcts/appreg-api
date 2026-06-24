@@ -246,6 +246,10 @@ class PrivateProsecutorsIndexReportDataReader
     private final PrivateProsecutorsIndexFilterDto filter;
     private final String schema;
 
+    PrivateProsecutorsIndexFilterDto filter() {
+        return filter;
+    }
+
     PrivateProsecutorsIndexReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             PrivateProsecutorsIndexFilterDto filter,

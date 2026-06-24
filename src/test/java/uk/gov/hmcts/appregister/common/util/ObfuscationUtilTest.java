@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
@@ -12,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -27,6 +30,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.report.service.ReportDownload;
 
 class ObfuscationUtilTest {
 
@@ -113,12 +117,11 @@ class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(summary);
 
-        assertThat(obfuscated).doesNotContain("ACC-12345");
-        assertThat(obfuscated).doesNotContain("Applicant Name");
-        assertThat(obfuscated).doesNotContain("Respondent Name");
-        assertThat(obfuscated).doesNotContain("SW1A 2AA");
-
         assertThat(obfuscated)
+                .doesNotContain("ACC-12345")
+                .doesNotContain("Applicant Name")
+                .doesNotContain("Respondent Name")
+                .doesNotContain("SW1A 2AA")
                 .contains("\"accountNumber\":\"[REDACTED]\"")
                 .contains("\"applicant\":\"[REDACTED]\"")
                 .contains("\"respondent\":\"[REDACTED]\"")
@@ -240,13 +243,13 @@ class ObfuscationUtilTest {
 
     @Test
     void testObfuscationFeesReportFilterDtoRequiredOnly() {
-        FeesReportFilterDto filterDto =
-                new FeesReportFilterDto().dateTo(LocalDate.now()).dateFrom(LocalDate.now());
+        var today = LocalDate.of(2026, Month.JUNE, 17);
+        FeesReportFilterDto filterDto = new FeesReportFilterDto().dateTo(today).dateFrom(today);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
         String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
         assertThat(obfuscated)
-                .contains("\"dateTo\":" + formatter.format(LocalDate.now()))
-                .contains("\"dateFrom\":" + formatter.format(LocalDate.now()))
+                .contains("\"dateTo\":" + formatter.format(today))
+                .contains("\"dateFrom\":" + formatter.format(today))
                 .doesNotContain("\"standardApplicantCode\":\"[REDACTED]\"")
                 .doesNotContain("\"applicantName\":\"[REDACTED]\"")
                 .doesNotContain("\"location\"");
@@ -296,15 +299,14 @@ class ObfuscationUtilTest {
 
     @Test
     void testObfuscationPrivateProsecutorIndexFilterDtoRequiredOnly() {
+        var today = LocalDate.of(2026, Month.JUNE, 17);
         PrivateProsecutorsIndexFilterDto filterDto =
-                new PrivateProsecutorsIndexFilterDto()
-                        .dateTo(LocalDate.now())
-                        .dateFrom(LocalDate.now());
+                new PrivateProsecutorsIndexFilterDto().dateTo(today).dateFrom(today);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
         String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
         assertThat(obfuscated)
-                .contains("\"dateTo\":" + formatter.format(LocalDate.now()))
-                .contains("\"dateFrom\":" + formatter.format(LocalDate.now()))
+                .contains("\"dateTo\":" + formatter.format(today))
+                .contains("\"dateFrom\":" + formatter.format(today))
                 .doesNotContain("\"standardApplicantName\":\"[REDACTED]\"")
                 .doesNotContain("\"applicantFirstName\":\"[REDACTED]\"")
                 .doesNotContain("\"applicantSurname\":\"[REDACTED]\"")
@@ -313,5 +315,22 @@ class ObfuscationUtilTest {
                 .doesNotContain("\"respondentSurname\":\"[REDACTED]\"")
                 .doesNotContain("\"respondentOrganisationName\":\"[REDACTED]\"")
                 .doesNotContain("\"location\"");
+    }
+
+    @Test
+    void testObfuscationReportDownloadDoesNotConsumeStream() throws Exception {
+        var resource =
+                new InputStreamResource(
+                        new ByteArrayInputStream("report".getBytes(StandardCharsets.UTF_8)));
+        var reportDownload = new ReportDownload("report.csv", resource);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(reportDownload);
+
+        assertThat(obfuscated)
+                .contains("\"filename\":\"report.csv\"")
+                .contains("\"resource\":\"[REDACTED]\"");
+        Assertions.assertArrayEquals(
+                "report".getBytes(StandardCharsets.UTF_8),
+                resource.getInputStream().readAllBytes());
     }
 }

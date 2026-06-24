@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperatio
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
@@ -218,6 +219,36 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
         Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
         assertThat(response.getIds()).doesNotContain(nonMatchingEntry.getUuid());
+    }
+
+    @Test
+    void givenClosedStandardPersonApplicant_whenSearchByApplicantSurname_thenReturnMatchingEntry()
+            throws Exception {
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 5);
+        String applicantLastName = "DoeClosed" + suffix;
+
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setStatus(ApplicationListStatus.CLOSED);
+        filter.setApplicantSurname("doeclosed" + suffix);
+
+        ApplicationListEntry matchingEntry =
+                createClosedStandardPersonApplicantEntry(
+                        "Jane", applicantLastName, "AC" + suffix.toUpperCase());
+        EntryPage page = executeSearch(createAdminToken(), filter, maxPageSize);
+
+        assertThat(page.getContent()).isNotNull();
+        assertThat(page.getContent())
+                .extracting(EntryGetSummaryDto::getId)
+                .contains(matchingEntry.getUuid());
+
+        EntryGetSummaryDto entry = findEntry(page, matchingEntry.getUuid());
+        assertThat(entry.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(entry.getApplicant().getPerson().getName().getFirstName()).isEqualTo("Jane");
+        assertThat(entry.getApplicant().getPerson().getName().getLastName())
+                .isEqualTo(applicantLastName);
+
+        EntryIdsDto idsResponse = executeGlobalEntryIdsSearch(createAdminToken(), filter);
+        assertThat(idsResponse.getIds()).contains(matchingEntry.getUuid());
     }
 
     @Test
@@ -1452,6 +1483,36 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
         response.then().statusCode(200);
         return response.as(EntryIdsDto.class);
+    }
+
+    private ApplicationListEntry createClosedStandardPersonApplicantEntry(
+            String applicantFirstName, String applicantLastName, String accountReference) {
+        StandardApplicant applicant = new StandardApplicant();
+        applicant.setApplicantCode("SA" + accountReference);
+        applicant.setApplicantStartDate(TEST_DATE);
+        applicant.setName(null);
+        applicant.setApplicantTitle("Ms");
+        applicant.setApplicantForename1(applicantFirstName);
+        applicant.setApplicantSurname(applicantLastName);
+        applicant.setAddressLine1("1 Closed Road");
+        applicant.setChangedBy(1L);
+        applicant.setChangedDate(TEST_OFFSET_DATE_TIME);
+        applicant.setCreatedUser("email");
+        applicant = persistance.save(applicant);
+
+        ApplicationCode applicationCode = buildApplicationCode("CD" + accountReference);
+        applicationCode.setTitle("Condemnation of Unfit Food");
+        applicationCode.setApplicationListEntryList(null);
+        applicationCode = persistance.save(applicationCode);
+
+        ApplicationList list = createAndSaveList(Status.CLOSED);
+        ApplicationListEntry entry = createEntry(list);
+        entry.setAnamedaddress(null);
+        entry.setStandardApplicant(applicant);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber(accountReference);
+        entry.setSequenceNumber((short) 1);
+        return persistance.save(entry);
     }
 
     private EntryIdsDto executeListEntryIdsSearch(

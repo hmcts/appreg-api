@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateFeesPayload;
@@ -120,7 +121,8 @@ public class BulkUpdateFeesValidator
 
         validateRequiredFeeDetailFields(feeDetails);
 
-        if (feeDetails.getPaymentStatus() == DUE && isPaymentReferenceProvided(feeDetails)) {
+        if (feeDetails.getPaymentStatus() == DUE
+                && StringUtils.isNotBlank(feeDetails.getPaymentReference())) {
             throw new AppRegistryException(
                     AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE,
                     "Payment reference must not be provided when fee status is DUE");
@@ -164,11 +166,6 @@ public class BulkUpdateFeesValidator
             throw new AppRegistryException(
                     AppListEntryError.OFFSITE_FEE_REQUIRED, "hasOffsiteFee must be provided");
         }
-    }
-
-    private boolean isPaymentReferenceProvided(BulkFeeDetailsDto feeDetails) {
-        return feeDetails.getPaymentReference() != null
-                && !feeDetails.getPaymentReference().trim().isEmpty();
     }
 
     private void validateAllEntriesBelongToList(

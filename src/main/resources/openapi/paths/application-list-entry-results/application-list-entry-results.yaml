@@ -47,6 +47,7 @@ post:
   operationId: createApplicationListEntryResult
   tags: [ application-list-entry-results ]
   summary: Create an Application List Entry Result
+  description: Creates a new Result for the Application List Entry identified by `entryId` within `listId`.
   requestBody:
     required: true
     content:

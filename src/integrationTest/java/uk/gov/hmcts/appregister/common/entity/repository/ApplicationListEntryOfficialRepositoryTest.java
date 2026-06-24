@@ -19,7 +19,6 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
-import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
@@ -27,6 +26,9 @@ import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 @Transactional
 @Rollback
 class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTest {
+
+    private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
+            List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
     @Autowired
     private ApplicationListEntryOfficialRepository applicationListEntryOfficialRepository;
@@ -51,16 +53,14 @@ class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTest {
         // Act: bulk fetch by list UUID
         List<ApplicationListEntryOfficialPrintProjection> officials =
                 applicationListEntryOfficialRepository.findByApplicationListUuidForPrinting(
-                        list.getUuid(), OfficialTypeUtil.PRINTABLE_CODES);
+                        list.getUuid(), PRINTABLE_OFFICIAL_TYPES);
 
         // Assert: non-null and only printable types returned
         assertNotNull(officials);
         assertTrue(
                 officials.stream()
                         .allMatch(
-                                official ->
-                                        OfficialTypeUtil.PRINTABLE_CODES.contains(
-                                                official.getType())),
+                                official -> PRINTABLE_OFFICIAL_TYPES.contains(official.getType())),
                 "Non-printable official type returned");
 
         // Build expected map: entryId -> set of officials (title, forename, surname, type)

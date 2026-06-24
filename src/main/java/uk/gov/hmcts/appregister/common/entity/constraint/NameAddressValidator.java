@@ -12,14 +12,11 @@ public class NameAddressValidator implements ConstraintValidator<ValidNameAddres
 
     @Override
     public boolean isValid(NameAddress nameAddress, ConstraintValidatorContext context) {
-        if (nameAddress.getName() != null
-                && nameAddress.getTitle() == null
-                && nameAddress.getFirstName() == null
-                && nameAddress.getMiddleName() == null
-                && nameAddress.getLastName() == null) {
-            return true;
-        } else {
-            return nameAddress.getName() == null;
-        }
+        return nameAddress == null
+                || nameAddress.getName() == null
+                || (nameAddress.getTitle() == null
+                        && nameAddress.getFirstName() == null
+                        && nameAddress.getMiddleName() == null
+                        && nameAddress.getLastName() == null);
     }
 }

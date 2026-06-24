@@ -17,7 +17,6 @@ properties:
           description: Sort direction.
           enum: [asc, desc]
           example: "asc"
-required: []
 example:
   orders:
     - property: "title"

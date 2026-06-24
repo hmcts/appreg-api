@@ -46,11 +46,10 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     @Override
     public FeePair resolveFeePair(String feeReference, LocalDate date) {
         var targetDate = date != null ? date : businessDateProvider.currentUkDate();
-        return resolveFeePair(feeReference, targetDate, resolveOffsiteFee(targetDate));
+        return resolveFeePair(feeReference, targetDate, findOffsiteFee(targetDate));
     }
 
-    @Override
-    public FeePair resolveFeePair(String feeReference, LocalDate date, Optional<Fee> offsiteFee) {
+    private FeePair resolveFeePair(String feeReference, LocalDate date, Optional<Fee> offsiteFee) {
         List<Fee> fee = feeRepository.findByReferenceBetweenDate(feeReference, date);
         return resolveFeePair(fee.stream().findFirst(), offsiteFee);
     }
@@ -65,14 +64,9 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     }
 
     @Override
-    public Optional<Fee> resolveOffsiteFee(LocalDate date) {
-        return getOffsiteFee(date != null ? date : businessDateProvider.currentUkDate());
-    }
-
-    @Override
     public Map<String, FeePair> resolveFeePairs(Collection<String> feeReferences, LocalDate date) {
         var targetDate = date != null ? date : businessDateProvider.currentUkDate();
-        var offsiteFee = resolveOffsiteFee(targetDate);
+        var offsiteFee = findOffsiteFee(targetDate);
         var feesByReference = new LinkedHashMap<String, FeePair>();
         var firstFeeByNormalisedReference = new LinkedHashMap<String, Fee>();
 
@@ -105,7 +99,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
         return feesByReference;
     }
 
-    private Optional<Fee> getOffsiteFee(LocalDate date) {
+    private Optional<Fee> findOffsiteFee(LocalDate date) {
         return feeRepository.findOffsite(date).stream().findFirst();
     }
 

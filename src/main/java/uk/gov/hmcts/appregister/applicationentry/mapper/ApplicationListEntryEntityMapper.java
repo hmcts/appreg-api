@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.time.LocalDate;
+import lombok.val;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -90,6 +91,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "entryRescheduled", constant = "N")
     @Mapping(target = "sequenceNumber", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @SuppressWarnings("java:S107")
     public abstract ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,
             String substituteWording,
@@ -155,17 +157,16 @@ public abstract class ApplicationListEntryEntityMapper {
      * @return The fee status type
      */
     public static FeeStatusType toStatus(PaymentStatus paymentStatus) {
-        if (paymentStatus == PaymentStatus.DUE) {
-            return FeeStatusType.DUE;
-        } else if (paymentStatus == PaymentStatus.PAID) {
-            return FeeStatusType.PAID;
-        } else if (paymentStatus == PaymentStatus.REMITTED) {
-            return FeeStatusType.REMITTED;
-        } else if (paymentStatus == PaymentStatus.UNDERTAKEN) {
-            return FeeStatusType.UNDERTAKING;
+        if (paymentStatus == null) {
+            return null;
         }
 
-        return null;
+        return switch (paymentStatus) {
+            case DUE -> FeeStatusType.DUE;
+            case PAID -> FeeStatusType.PAID;
+            case REMITTED -> FeeStatusType.REMITTED;
+            case UNDERTAKEN -> FeeStatusType.UNDERTAKING;
+        };
     }
 
     @Mapping(target = "appListEntry", source = "listEntryEntity")
@@ -187,9 +188,7 @@ public abstract class ApplicationListEntryEntityMapper {
      * @return The lodgement date
      */
     LocalDate getLodgementDate(EntryCreateDto entryCreateDto) {
-        if (entryCreateDto.getLodgementDate() != null) {
-            return entryCreateDto.getLodgementDate();
-        }
-        return businessDateProvider.currentUkDate();
+        val lodgementDate = entryCreateDto.getLodgementDate();
+        return lodgementDate != null ? lodgementDate : businessDateProvider.currentUkDate();
     }
 }

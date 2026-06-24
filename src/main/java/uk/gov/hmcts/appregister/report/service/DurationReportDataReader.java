@@ -76,6 +76,10 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
         this.schema = schema;
     }
 
+    DurationFilterDto filter() {
+        return filter;
+    }
+
     @Override
     public void readData(
             ReadPagePosition position,

@@ -13,7 +13,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
@@ -74,15 +73,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @return A list of matching applications that the user is authorized to access
      */
     List<ApplicationListEntry> findByApplicationListIdAndCreatedUser(Long ids, String userId);
-
-    /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
 
     /**
      * Retrieves paginated list of entry summaries for a given application list.
@@ -251,9 +241,23 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
-                    AND (:applicantSurname IS NULL OR LOWER(ana.lastName)
-                             LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)) , '%')  ESCAPE '\\'
-                            AND ana.code='NA')
+                    AND (
+                            :applicantSurname IS NULL
+                            OR (
+                                    ana.id IS NOT NULL
+                                    AND ana.code='NA'
+                                    AND LOWER(ana.lastName)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR (
+                                    ana.id IS NULL
+                                    AND sa.name IS NULL
+                                    AND LOWER(sa.applicantSurname)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                    )
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
@@ -291,6 +295,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
+    @SuppressWarnings("java:S107")
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             @Param("applicationListId") UUID applicationListId,
             Boolean hasHearingDate,
@@ -353,9 +358,23 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
-                    AND (:applicantLastName IS NULL OR LOWER(ana.lastName)
-                             LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)) , '%')  ESCAPE '\\'
-                            AND ana.code='NA')
+                    AND (
+                            :applicantLastName IS NULL
+                            OR (
+                                    ana.id IS NOT NULL
+                                    AND ana.code='NA'
+                                    AND LOWER(ana.lastName)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR (
+                                    ana.id IS NULL
+                                    AND sa.name IS NULL
+                                    AND LOWER(sa.applicantSurname)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                    )
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
@@ -394,6 +413,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             ORDER BY ale.id ASC
             """)
+    @SuppressWarnings("java:S107")
     List<UUID> searchForGetSummaryIds(
             @Param("applicationListId") UUID applicationListId,
             Boolean hasHearingDate,
@@ -555,35 +575,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     List<ApplicationListEntry> findByUuidsInSourceList(UUID sourceListUuid, Set<UUID> requestedIds);
-
-    /**
-     * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
-     * rows updated.
-     *
-     * @param entryUuids the set of entry UUIDs to move; only entries matching these UUIDs and
-     *     belonging to the sourceListUuid will be updated
-     * @param targetList the ApplicationList entity representing the new target list to which the
-     *     entries will be reassigned; this value is written to the applicationList field of all
-     *     matching entries
-     * @param sourceListUuid the UUID of the source ApplicationList; only entries currently
-     *     associated with this list will be updated
-     * @return the number of rows updated; may be less than the number of provided UUIDs if some
-     *     entries are not found in the source list
-     * @deprecated use the audited move flow in {@code ApplicationEntryServiceImpl#move(UUID,
-     *     MoveEntriesDto)} instead
-     */
-    @Deprecated(since = "2026-04-21", forRemoval = false)
-    @Modifying
-    @Query(
-            """
-        UPDATE ApplicationListEntry ale
-        SET ale.applicationList = :targetList
-        WHERE ale.uuid IN :entryUuids
-        AND ale.applicationList.uuid = :sourceListUuid
-        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
-        """)
-    int bulkMoveByUuidAndSourceList(
-            Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
 
     /**
      * Retrieves an application list entry by its UUID and the UUID of the application list it

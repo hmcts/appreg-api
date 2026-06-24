@@ -1,12 +1,10 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -27,7 +25,6 @@ import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 @Transactional(readOnly = true)
 public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
     private final CriminalJusticeMapper criminalJusticeMapper;
     private final PageMapper pageMapper;
@@ -47,8 +44,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                     criminalJusticeMapper.toEntity(code));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override
@@ -77,8 +73,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                     craPage, criminalJusticeMapper.toEntity(codeAndDescription));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override

@@ -17,11 +17,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -238,19 +242,10 @@ class ApplicationListUpdateValidatorTest {
         when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
                 .thenReturn(List.of(listEntry));
 
-        when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryResolution()));
-
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryOfficial()));
-
-        AppListEntryFeeStatus appListEntryFeeStatus = new AppListEntryFeeStatus();
-
-        // The fee is not paid so should fail.
-        appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.PAID);
-
-        when(appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId()))
-                .thenReturn(List.of(appListEntryFeeStatus));
+        stubBatchClosureData(
+                List.of(listEntry),
+                List.of(listEntry),
+                List.of(createFeeStatus(listEntry, FeeStatusType.PAID)));
 
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
@@ -282,6 +277,54 @@ class ApplicationListUpdateValidatorTest {
                 ApplicationListError.INVALID_FOR_CLOSE_DURATION, exception.getCode());
     }
 
+    @ParameterizedTest
+    @MethodSource("invalidLocationCombinations")
+    void update_invalidLocationCombinations_throwInvalidLocationCombination(Field... fields) {
+        var dto = buildDto(fields);
+        var uuid = UUID.randomUUID();
+        var payload = new PayloadForUpdate<>(dto, uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(new ApplicationList()));
+
+        var ex = assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+
+        assertEquals(ApplicationListError.INVALID_LOCATION_COMBINATION, ex.getCode());
+    }
+
+    @Test
+    void update_trimsCourtCodeBeforeLookup() {
+        var dto = buildDto(Field.COURT);
+        dto.setCourtLocationCode(" COURT-123 ");
+        var uuid = UUID.randomUUID();
+        var payload = new PayloadForUpdate<>(dto, uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(new ApplicationList()));
+        when(courtHouseRepository.findActiveCourts("COURT-123", TODAY_UK))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        assertDoesNotThrow(() -> validator.validate(payload));
+    }
+
+    @Test
+    void update_trimsCjaCodeBeforeLookup() {
+        var dto = buildDto(Field.CJA, Field.OTHER);
+        dto.setCjaCode(" CJA-123 ");
+        var uuid = UUID.randomUUID();
+        var payload = new PayloadForUpdate<>(dto, uuid);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(new ApplicationList()));
+        when(cjaRepository.findByCode("CJA-123")).thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(payload));
+    }
+
+    private static Stream<Arguments> invalidLocationCombinations() {
+        return Stream.of(
+                Arguments.of((Object) new Field[] {}),
+                Arguments.of((Object) new Field[] {Field.CJA}),
+                Arguments.of((Object) new Field[] {Field.OTHER}),
+                Arguments.of((Object) new Field[] {Field.COURT, Field.CJA}),
+                Arguments.of((Object) new Field[] {Field.COURT, Field.OTHER}),
+                Arguments.of((Object) new Field[] {Field.COURT, Field.CJA, Field.OTHER}));
+    }
+
     @Test
     void updateClosedListThrowsNotResulted() {
         ApplicationListUpdateDto dto = new ApplicationListUpdateDto();
@@ -306,10 +349,7 @@ class ApplicationListUpdateValidatorTest {
         when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
                 .thenReturn(List.of(listEntry));
 
-        // no resolution or official records for the entry, which should trigger the duration
-        // validation failure
-        when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
-                .thenReturn(List.of());
+        stubBatchClosureData(List.of(), List.of(), List.of());
 
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
@@ -343,11 +383,7 @@ class ApplicationListUpdateValidatorTest {
         when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
                 .thenReturn(List.of(listEntry));
 
-        when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryResolution()));
-
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid()))
-                .thenReturn(List.of());
+        stubBatchClosureData(List.of(listEntry), List.of(), List.of());
 
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
@@ -387,19 +423,10 @@ class ApplicationListUpdateValidatorTest {
         when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
                 .thenReturn(List.of(listEntry));
 
-        when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryResolution()));
-
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryOfficial()));
-
-        AppListEntryFeeStatus appListEntryFeeStatus = new AppListEntryFeeStatus();
-
-        // The fee is not paid so should fail.
-        appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.DUE);
-
-        when(appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId()))
-                .thenReturn(List.of(appListEntryFeeStatus));
+        stubBatchClosureData(
+                List.of(listEntry),
+                List.of(listEntry),
+                List.of(createFeeStatus(listEntry, FeeStatusType.DUE)));
 
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
@@ -442,23 +469,199 @@ class ApplicationListUpdateValidatorTest {
         when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
                 .thenReturn(List.of(listEntry));
 
-        // resolution and official exist for the entry
-        when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryResolution()));
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid()))
-                .thenReturn(List.of(new AppListEntryOfficial()));
-
-        AppListEntryFeeStatus appListEntryFeeStatus = new AppListEntryFeeStatus();
-
-        // Set the fee status to REMITTED which should be accepted for closing
-        appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.REMITTED);
-
-        when(appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId()))
-                .thenReturn(List.of(appListEntryFeeStatus));
+        stubBatchClosureData(
+                List.of(listEntry),
+                List.of(listEntry),
+                List.of(createFeeStatus(listEntry, FeeStatusType.REMITTED)));
 
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
         assertDoesNotThrow(() -> validator.validate(payload));
+    }
+
+    @Test
+    void updateClosedListWithMultipleEntries_succeeds() {
+        var dto = buildClosedListDto();
+        var courtCode = dto.getCourtLocationCode();
+
+        UUID uuid = UUID.randomUUID();
+        var appList = new ApplicationList();
+        appList.setStatus(Status.OPEN);
+
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
+
+        NationalCourtHouse court = mock(NationalCourtHouse.class);
+        when(courtHouseRepository.findActiveCourts(courtCode, TODAY_UK)).thenReturn(List.of(court));
+
+        var firstEntry = createFeeDueEntry(YesOrNo.YES);
+        var secondEntry = createFeeDueEntry(YesOrNo.YES);
+
+        when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
+                .thenReturn(List.of(firstEntry, secondEntry));
+
+        stubBatchClosureData(
+                List.of(firstEntry, secondEntry),
+                List.of(firstEntry, secondEntry),
+                List.of(
+                        createFeeStatus(firstEntry, FeeStatusType.PAID),
+                        createFeeStatus(secondEntry, FeeStatusType.REMITTED)));
+
+        var payload = new PayloadForUpdate<>(dto, uuid);
+
+        assertDoesNotThrow(() -> validator.validate(payload));
+    }
+
+    @Test
+    void updateClosedListWithMixedFeeDueEntries_succeeds() {
+        var dto = buildClosedListDto();
+        var courtCode = dto.getCourtLocationCode();
+
+        UUID uuid = UUID.randomUUID();
+        var appList = new ApplicationList();
+        appList.setStatus(Status.OPEN);
+
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
+
+        NationalCourtHouse court = mock(NationalCourtHouse.class);
+        when(courtHouseRepository.findActiveCourts(courtCode, TODAY_UK)).thenReturn(List.of(court));
+
+        var feeDueEntry = createFeeDueEntry(YesOrNo.YES);
+        var noFeeEntry = createFeeDueEntry(YesOrNo.NO);
+
+        when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
+                .thenReturn(List.of(feeDueEntry, noFeeEntry));
+
+        stubBatchClosureData(
+                List.of(feeDueEntry, noFeeEntry),
+                List.of(feeDueEntry, noFeeEntry),
+                List.of(createFeeStatus(feeDueEntry, FeeStatusType.PAID)));
+
+        var payload = new PayloadForUpdate<>(dto, uuid);
+
+        assertDoesNotThrow(() -> validator.validate(payload));
+    }
+
+    @Test
+    void updateClosedListBatchDataIsMappedPerEntry() {
+        UUID uuid = UUID.randomUUID();
+        var appList = new ApplicationList();
+        appList.setStatus(Status.OPEN);
+
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
+
+        var missingResultEntry = createFeeDueEntry(YesOrNo.YES);
+        var completeEntry = createFeeDueEntry(YesOrNo.YES);
+
+        when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
+                .thenReturn(List.of(missingResultEntry, completeEntry));
+
+        stubBatchClosureData(
+                List.of(completeEntry),
+                List.of(missingResultEntry, completeEntry),
+                List.of(
+                        createFeeStatus(missingResultEntry, FeeStatusType.PAID),
+                        createFeeStatus(completeEntry, FeeStatusType.PAID)));
+
+        var dto = buildClosedListDto();
+        var payload = new PayloadForUpdate<>(dto, uuid);
+
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+
+        assertEquals(ApplicationListError.INVALID_FOR_CLOSE_NOT_RESULTED, exception.getCode());
+    }
+
+    @Test
+    void updateClosedListUsesBatchClosureQueries() {
+        var dto = buildClosedListDto();
+        var courtCode = dto.getCourtLocationCode();
+
+        UUID uuid = UUID.randomUUID();
+        var appList = new ApplicationList();
+        appList.setStatus(Status.OPEN);
+
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
+
+        NationalCourtHouse court = mock(NationalCourtHouse.class);
+        when(courtHouseRepository.findActiveCourts(courtCode, TODAY_UK)).thenReturn(List.of(court));
+
+        var firstEntry = createFeeDueEntry(YesOrNo.YES);
+        var secondEntry = createFeeDueEntry(YesOrNo.YES);
+
+        when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
+                .thenReturn(List.of(firstEntry, secondEntry));
+
+        stubBatchClosureData(
+                List.of(firstEntry, secondEntry),
+                List.of(firstEntry, secondEntry),
+                List.of(
+                        createFeeStatus(firstEntry, FeeStatusType.PAID),
+                        createFeeStatus(secondEntry, FeeStatusType.PAID)));
+
+        var payload = new PayloadForUpdate<>(dto, uuid);
+
+        assertDoesNotThrow(() -> validator.validate(payload));
+
+        verify(appListEntryResolutionRepository)
+                .findByApplicationList_UuidIn(List.of(firstEntry.getUuid(), secondEntry.getUuid()));
+        verify(appListEntryOfficialRepository)
+                .findByAppListEntry_UuidIn(List.of(firstEntry.getUuid(), secondEntry.getUuid()));
+        verify(appListEntryFeeStatusRepository)
+                .findByAppListEntry_UuidIn(List.of(firstEntry.getUuid(), secondEntry.getUuid()));
+        verify(appListEntryResolutionRepository, never()).findByApplicationListUuid(any());
+        verify(appListEntryOfficialRepository, never()).getOfficialByEntryUuid(any());
+        verify(appListEntryFeeStatusRepository, never()).findByAppListEntryId(any());
+    }
+
+    private ApplicationListUpdateDto buildClosedListDto() {
+        var dto = new ApplicationListUpdateDto();
+        dto.setDurationHours(0);
+        dto.setDurationMinutes(21);
+        dto.setStatus(ApplicationListStatus.CLOSED);
+        dto.setCourtLocationCode("court-code");
+        return dto;
+    }
+
+    private ApplicationListEntry createFeeDueEntry(YesOrNo feeDue) {
+        var applicationCode = new ApplicationCode();
+        applicationCode.setFeeDue(feeDue);
+
+        var listEntry = new ApplicationListEntry();
+        listEntry.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
+        listEntry.setUuid(UUID.randomUUID());
+        listEntry.setApplicationCode(applicationCode);
+        return listEntry;
+    }
+
+    private AppListEntryResolution createResolution(ApplicationListEntry listEntry) {
+        var resolution = new AppListEntryResolution();
+        resolution.setApplicationList(listEntry);
+        return resolution;
+    }
+
+    private AppListEntryOfficial createOfficial(ApplicationListEntry listEntry) {
+        var official = new AppListEntryOfficial();
+        official.setAppListEntry(listEntry);
+        return official;
+    }
+
+    private AppListEntryFeeStatus createFeeStatus(
+            ApplicationListEntry listEntry, FeeStatusType feeStatusType) {
+        var feeStatus = new AppListEntryFeeStatus();
+        feeStatus.setAppListEntry(listEntry);
+        feeStatus.setAlefsFeeStatus(feeStatusType);
+        return feeStatus;
+    }
+
+    private void stubBatchClosureData(
+            List<ApplicationListEntry> resolutionEntries,
+            List<ApplicationListEntry> officialEntries,
+            List<AppListEntryFeeStatus> feeStatuses) {
+        when(appListEntryResolutionRepository.findByApplicationList_UuidIn(any()))
+                .thenReturn(resolutionEntries.stream().map(this::createResolution).toList());
+        when(appListEntryOfficialRepository.findByAppListEntry_UuidIn(any()))
+                .thenReturn(officialEntries.stream().map(this::createOfficial).toList());
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(any()))
+                .thenReturn(feeStatuses);
     }
 
     // ---- TESTS ----

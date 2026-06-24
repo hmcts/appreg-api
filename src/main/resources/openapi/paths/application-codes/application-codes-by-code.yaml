@@ -18,6 +18,7 @@ get:
   operationId: getApplicationCodeByCodeAndDate
   tags: [application-codes]
   summary: Get a specific Application Code by code
+  description: Returns the Application Code matching the supplied code and valid on the supplied date.
   responses:
     "200":
       description: Application Code found

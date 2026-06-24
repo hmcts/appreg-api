@@ -71,13 +71,12 @@ class ApplicationCodeServiceImplTest {
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 
     @Mock private ApplicationFeeService feeService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Spy private final List<AuditOperationLifecycleListener> auditLifecycleListeners = List.of();
 
     @Spy
     private final AuditOperationService auditService =
-            new AuditOperationServiceImpl(objectMapper, auditLifecycleListeners);
+            new AuditOperationServiceImpl(auditLifecycleListeners);
 
     @Spy private final PageMapper pageMapper = new PageMapper();
 
@@ -90,7 +89,6 @@ class ApplicationCodeServiceImplTest {
 
     @BeforeEach
     void setup() {
-        objectMapper.registerModule(new JavaTimeModule());
         ukZone = ZoneId.of("Europe/London");
         fixedClock = Clock.fixed(FIXED_INSTANT, ZoneId.of("UTC"));
 
@@ -100,7 +98,6 @@ class ApplicationCodeServiceImplTest {
                         applicationCodeMapper,
                         feeService,
                         auditService,
-                        auditLifecycleListeners,
                         pageMapper,
                         fixedClock,
                         ukZone,
@@ -655,8 +652,7 @@ class ApplicationCodeServiceImplTest {
                 repository,
                 applicationCodeMapper,
                 feeService,
-                new AuditOperationServiceImpl(objectMapper, listeners),
-                listeners,
+                new AuditOperationServiceImpl(listeners),
                 pageMapper,
                 fixedClock,
                 ukZone,

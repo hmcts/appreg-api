@@ -34,7 +34,7 @@ plugins {
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
   id 'com.diffplug.spotless' version '8.7.0'
-  id 'org.openrewrite.rewrite' version '7.34.0'
+  id 'org.openrewrite.rewrite' version '7.35.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
 }
@@ -55,7 +55,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.1'
+    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.29.0'
   }
 }
 
@@ -402,7 +402,6 @@ dependencies {
   // Core Spring Boot Starters
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'org.springframework.boot:spring-boot-starter-actuator'
-  implementation 'org.springframework.boot:spring-boot-starter-json'
   implementation 'org.springframework.boot:spring-boot-jackson2'
   implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
   implementation 'io.micrometer:micrometer-tracing-bridge-brave'
@@ -423,14 +422,13 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
-  compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
   implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
 
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.51'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.8.1'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.9.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
@@ -445,9 +443,6 @@ dependencies {
 
   // Source: https://mvnrepository.com/artifact/com.opencsv/opencsv
   implementation 'com.opencsv:opencsv:5.12.0'
-
-  // Source: https://mvnrepository.com/artifact/commons-io/commons-io
-  implementation 'commons-io:commons-io:2.22.0'
 
   // A hibernate library that generates column constants
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.1.Final'
@@ -479,13 +474,10 @@ dependencies {
   testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
-  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.36.0'
+  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.37.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.22'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.22'
-
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.6.3'
   annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'

@@ -104,8 +104,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
-    private static final String CREATED_OFFSITE_FEE_LOG =
-            "Created Offsite Fee: {} to Entry: {} mapping: {}";
+    private static final String CREATED_OFFSITE_FEE_LOG = "Created Offsite Fee: {} to Entry: {}";
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
             "appregister.application_entry.bulk_fee_update.requests";
@@ -116,6 +115,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final String METRIC_STATUS_TAG = "status";
     private static final String METRIC_SUCCEEDED = "succeeded";
     private static final String METRIC_FAILED = "failed";
+    private static final int NOTES_MAX_LENGTH = 4000;
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -452,12 +452,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                     "Created application entry with id: {}",
                                                                     listEntryEntity.getId());
 
-                                                            // add the new fee statuses
-                                                            List<AppListEntryFeeStatus>
-                                                                    updatedFeeStatusLst =
-                                                                            updateFeeStatus(
-                                                                                    updateEntry,
-                                                                                    success);
+                                                            // add any new fee statuses while
+                                                            // preserving existing history
+                                                            updateFeeStatus(updateEntry, success);
 
                                                             // update the officials
                                                             List<AppListEntryOfficial>
@@ -468,6 +465,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                                                             // update the fees for the entry
                                                             updateFees(success, updateEntry);
+
+                                                            List<AppListEntryFeeStatus>
+                                                                    updatedFeeStatusLst =
+                                                                            appListEntryFeeStatusRepository
+                                                                                    .findByAppListEntryId(
+                                                                                            listEntryEntity
+                                                                                                    .getId());
 
                                                             // create the fee entry mappings
                                                             EntryGetDetailDto entryGetDetailDto =
@@ -523,14 +527,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 AppListEntryAuditOperation
                                                         .UPDATE_CLOSED_APP_ENTRY_LIST,
                                                 req -> {
+                                                    String updatedNotes =
+                                                            appendNotes(
+                                                                    success.getApplicationEntryId()
+                                                                            .getNotes(),
+                                                                    updateEntry
+                                                                            .getData()
+                                                                            .getAdditionalNotes());
+                                                    validateNotesLength(updatedNotes);
                                                     success.getApplicationEntryId()
-                                                            .setNotes(
-                                                                    appendNotes(
-                                                                            success.getApplicationEntryId()
-                                                                                    .getNotes(),
-                                                                            updateEntry
-                                                                                    .getData()
-                                                                                    .getAdditionalNotes()));
+                                                            .setNotes(updatedNotes);
 
                                                     // update the notes by appending with the
                                                     // alternative
@@ -550,6 +556,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 }),
                                 // return the latest entities for the entry read on the update
                                 getKeyablesForCreateUpdateEtag(success.getApplicationEntryId())));
+    }
+
+    private static void validateNotesLength(String notes) {
+        if (notes != null && notes.length() > NOTES_MAX_LENGTH) {
+            throw new AppRegistryException(
+                    AppListEntryError.NOTES_TOO_LONG,
+                    "notes must not be longer than %s characters".formatted(NOTES_MAX_LENGTH));
+        }
     }
 
     private static String appendNotes(String existingNotes, String additionalNotes) {
@@ -607,7 +621,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         offsiteFeeSupplier(hasOffsiteFee);
 
                                 for (ApplicationListEntry entry : entries) {
-                                    replaceFeeDetailsForEntry(
+                                    appendFeeDetailsForEntry(
                                             entry, feeDetails, hasOffsiteFee, offsiteFeeSupplier);
                                 }
 
@@ -668,16 +682,18 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
     }
 
-    private void replaceFeeDetailsForEntry(
+    private void appendFeeDetailsForEntry(
             ApplicationListEntry entry,
             List<BulkFeeDetailsDto> feeDetails,
             boolean hasOffsiteFee,
             Supplier<Fee> offsiteFeeSupplier) {
-        deleteFeeStatusesForEntry(entry.getUuid());
         for (BulkFeeDetailsDto feeDetail : feeDetails) {
             saveFeeStatus(createBulkFeeStatus(entry, feeDetail), new ArrayList<>());
         }
-        updateOffsiteFeeMapping(entry, hasOffsiteFee, offsiteFeeSupplier);
+
+        if (hasOffsiteFee) {
+            ensureOffsiteFeeMapping(entry, offsiteFeeSupplier);
+        }
     }
 
     private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
@@ -710,7 +726,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 appListEntryFeeRepository.save(appListEntryFeeId);
 
                         log.debug(
-                                "Created Fee: {} to Entry: {} mapping: {}",
+                                "Created Fee: {} to Entry: {}",
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
@@ -905,15 +921,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         "Offsite fee does not exist"));
     }
 
-    private void updateOffsiteFeeMapping(
-            ApplicationListEntry entry, boolean hasOffsiteFee, Supplier<Fee> offsiteFeeSupplier) {
+    private void ensureOffsiteFeeMapping(
+            ApplicationListEntry entry, Supplier<Fee> offsiteFeeSupplier) {
         List<AppListEntryFeeId> existingOffsiteMappings =
                 appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId());
-
-        if (!hasOffsiteFee) {
-            deleteOffsiteFeeMappings(existingOffsiteMappings);
-            return;
-        }
 
         if (!existingOffsiteMappings.isEmpty()) {
             return;
@@ -939,22 +950,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                     return Optional.of(new AuditableResult<>(null, savedOffsiteEntryFee));
                 });
-    }
-
-    private void deleteOffsiteFeeMappings(List<AppListEntryFeeId> existingOffsiteMappings) {
-        for (AppListEntryFeeId existingOffsiteMapping : existingOffsiteMappings) {
-            auditService.processAudit(
-                    existingOffsiteMapping,
-                    AppListEntryAuditOperation.DELETE_FEE_ENTRY,
-                    req -> {
-                        appListEntryFeeRepository.delete(existingOffsiteMapping);
-                        return Optional.empty();
-                    });
-        }
-
-        if (!existingOffsiteMappings.isEmpty()) {
-            appListEntryFeeRepository.flush();
-        }
     }
 
     /**
@@ -1142,7 +1137,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     /**
-     * Replace the existing fee status.
+     * Replaces the entry fee statuses when a new list is supplied. A null fee-status payload is
+     * treated as no change so existing history is preserved.
      *
      * @param updateEntry The update payload
      * @param success The successful validation result
@@ -1151,11 +1147,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             PayloadForUpdateEntry updateEntry, UpdateApplicationEntryValidationSuccess success) {
         log.debug("Updating fee status");
 
-        deleteFeeStatusesForEntry(updateEntry.getEntryId());
-
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         if (updateEntry.getData().getFeeStatuses() != null) {
+            deleteFeeStatusesForEntry(success.getApplicationEntryId().getUuid());
+
             // create the fee statuses and map to entry
             for (FeeStatus feeStatus : updateEntry.getData().getFeeStatuses()) {
                 auditService.processAudit(
@@ -1216,7 +1212,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             // if we have no fees associated then create a new one
             if (appListEntryFeeId.isEmpty()) {
                 log.debug(
-                        "Adding new fee {} to entry %s {}",
+                        "Adding new fee {} to entry {}",
                         success.getFee().mainFee().getId(),
                         success.getApplicationEntryId().getId());
 
@@ -1235,7 +1231,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     appListEntryFeeRepository.save(newAppListEntryFeeId);
 
                             log.debug(
-                                    "Created Fee: {} to Entry: {} mapping: {}",
+                                    "Created Fee: {} to Entry: {}",
                                     newAppListEntryFeeId.getFeeId(),
                                     newAppListEntryFeeId.getAppListEntryId());
 
@@ -1257,7 +1253,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             // add the offsite fee
             if (appListEntryOffsiteFeeId.isEmpty() && success.getFee().offsiteFee() != null) {
                 log.debug(
-                        "Adding new offsite fee {} to entry %s {}",
+                        "Adding new offsite fee {} to entry {}",
                         success.getFee().offsiteFee().getId(),
                         success.getApplicationEntryId().getId());
                 auditService.processAudit(

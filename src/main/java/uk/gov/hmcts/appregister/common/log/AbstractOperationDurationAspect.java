@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.log;
 import jakarta.validation.ConstraintViolationException;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.MDC;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -36,12 +37,10 @@ public class AbstractOperationDurationAspect {
             TriConsumer<String, Long, Object> afterCallback,
             ProceedingJoinPoint pjp)
             throws Throwable {
-        String operation =
-                pjp.getSignature().getDeclaringType().getSimpleName()
-                        + "."
-                        + pjp.getSignature().getName();
 
-        String previousOperation = MDC.get(OPERATION);
+        val signature = pjp.getSignature();
+        val operation = signature.getDeclaringType().getSimpleName() + "." + signature.getName();
+        val previousOperation = MDC.get(OPERATION);
 
         // add the operation to the MDC
         MDC.put(OPERATION, operation);
@@ -52,7 +51,7 @@ public class AbstractOperationDurationAspect {
         Object result = null;
         try {
             result = pjp.proceed();
-            long durationMs = (System.nanoTime() - start) / 1_000_000;
+            long durationMs = (System.nanoTime() - start) / 1_000_000L;
 
             // call the custom function to perform some specific functionality
             afterCallback.accept(operation, durationMs, result);

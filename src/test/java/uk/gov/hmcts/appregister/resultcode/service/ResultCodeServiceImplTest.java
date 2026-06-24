@@ -9,7 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -58,7 +57,7 @@ class ResultCodeServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper(), auditListeners);
+            new AuditOperationServiceImpl(auditListeners);
 
     private ResultCodeServiceImpl service;
 
@@ -69,13 +68,7 @@ class ResultCodeServiceImplTest {
 
         service =
                 new ResultCodeServiceImpl(
-                        auditOperationService,
-                        auditListeners,
-                        repository,
-                        mapper,
-                        pageMapper,
-                        fixedClock,
-                        ukZone);
+                        auditOperationService, repository, mapper, pageMapper, fixedClock, ukZone);
     }
 
     /**
@@ -101,8 +94,7 @@ class ResultCodeServiceImplTest {
         Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -122,8 +114,7 @@ class ResultCodeServiceImplTest {
         Assertions.assertEquals(ResultCodeError.RESULT_CODE_NOT_FOUND, ex.getCode());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull());
     }
 
     @Test
@@ -142,8 +133,7 @@ class ResultCodeServiceImplTest {
         Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull());
     }
 
     @Test
@@ -166,8 +156,7 @@ class ResultCodeServiceImplTest {
         CapturingAuditListener listener = new CapturingAuditListener();
         ResultCodeServiceImpl localService =
                 new ResultCodeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         mapper,
                         pageMapper,
@@ -222,8 +211,7 @@ class ResultCodeServiceImplTest {
         Assertions.assertEquals(2, pageDto.getContent().size());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -259,8 +247,7 @@ class ResultCodeServiceImplTest {
         assertThat(pageDto.getContent()).isEmpty();
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull());
     }
 
     @Test

@@ -136,6 +136,10 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
         this.schema = schema;
     }
 
+    SearchWarrantsReportFilterDto filter() {
+        return filter;
+    }
+
     @Override
     public void readData(
             ReadPagePosition position,

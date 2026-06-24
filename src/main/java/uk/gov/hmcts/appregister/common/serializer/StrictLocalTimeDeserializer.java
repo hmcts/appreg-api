@@ -70,7 +70,7 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
 
         while (p.nextToken() != JsonToken.END_ARRAY) {
             if (!first) {
-                sb.append(",");
+                sb.append(',');
             }
             first = false;
 
@@ -78,7 +78,7 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
             sb.append(p.getValueAsString(p.getText()));
         }
 
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 }
