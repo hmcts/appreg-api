@@ -31,6 +31,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
@@ -857,9 +858,26 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
         var tokenGenerator = createAdminToken();
 
-        Response responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+        responseSpecCreate.then().statusCode(201);
 
         // Act
         Response responseSpecUpdate =
@@ -868,7 +886,6 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        responseSpecCreate.then().statusCode(201);
         responseSpecUpdate.then().statusCode(200);
     }
 
@@ -959,8 +976,6 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void
             givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenNumberOfRespondentsProvided_thenReturn200()
                     throws Exception {
-        Response responseSpecCreate = createListEntryWithAllData();
-
         // Arrange
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setRespondent(null);
@@ -974,6 +989,23 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
         var tokenGenerator = createAdminToken();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(5);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // Act
         Response responseSpecUpdate =
@@ -1003,9 +1035,25 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
 
         val tokenGenerator = createAdminToken();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(5);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setNotes("Original audit notes");
+        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
+
         val responseSpecCreate =
-                createListEntryWithAllData(
-                        entryCreateDto -> entryCreateDto.setNotes("Original audit notes"));
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+        responseSpecCreate.then().statusCode(201);
 
         // Ignore the audit rows produced by the setup create request so we only inspect the update.
         dataAuditRepository.deleteAll();
