@@ -362,8 +362,7 @@ class StandardApplicantServiceTest {
                         ukZone,
                         pageMapper,
                         validator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new ApplicantMapperImpl());
 
         serviceImpl.upsertStandardApplicant(standardApplicant);
@@ -412,8 +411,7 @@ class StandardApplicantServiceTest {
                         ukZone,
                         pageMapper,
                         validator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new ApplicantMapperImpl());
 
         serviceImpl.upsertStandardApplicant(standardApplicant);
@@ -448,7 +446,7 @@ class StandardApplicantServiceTest {
         existingStandardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
         existingStandardApplicant.setApplicantEndDate(CURRENT_UK_DATE.plusDays(1));
         when(repository.findStandardApplicantByCode("APP001", CURRENT_UK_DATE))
-            .thenReturn(List.of(existingStandardApplicant));
+                .thenReturn(List.of(existingStandardApplicant));
 
         val standardApplicant = new StandardApplicant();
         standardApplicant.setApplicantCode("APP001");
@@ -458,22 +456,21 @@ class StandardApplicantServiceTest {
 
         val listener = new CapturingAuditListener();
         val serviceImpl =
-            new StandardApplicationServiceImpl(
-                repository,
-                standardApplicantMapper,
-                clock,
-                ukZone,
-                pageMapper,
-                validator,
-                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                List.of(listener),
-                new ApplicantMapperImpl());
+                new StandardApplicationServiceImpl(
+                        repository,
+                        standardApplicantMapper,
+                        clock,
+                        ukZone,
+                        pageMapper,
+                        validator,
+                        new AuditOperationServiceImpl(List.of(listener)),
+                        new ApplicantMapperImpl());
 
         serviceImpl.upsertStandardApplicant(standardApplicant);
 
         verify(repository, times(1))
-            .findStandardApplicantByCode(
-                existingStandardApplicant.getApplicantCode(), CURRENT_UK_DATE);
+                .findStandardApplicantByCode(
+                        existingStandardApplicant.getApplicantCode(), CURRENT_UK_DATE);
         verify(repository, times(1)).saveAndFlush(any(StandardApplicant.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -483,9 +480,9 @@ class StandardApplicantServiceTest {
         Assertions.assertEquals(standardApplicant.getName(), audited.getName());
         Assertions.assertEquals(standardApplicant.getAddressLine1(), audited.getAddressLine1());
         Assertions.assertEquals(
-            standardApplicant.getApplicantStartDate(), audited.getApplicantStartDate());
+                standardApplicant.getApplicantStartDate(), audited.getApplicantStartDate());
         Assertions.assertEquals(
-            standardApplicant.getApplicantEndDate(), audited.getApplicantEndDate());
+                standardApplicant.getApplicantEndDate(), audited.getApplicantEndDate());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

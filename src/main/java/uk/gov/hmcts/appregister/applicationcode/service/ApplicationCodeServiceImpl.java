@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -149,7 +148,9 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     @Transactional
     public void upsertApplicationCode(ApplicationCode applicationCode) {
         var applicationCodeDB =
-                repository.findByCodeAndDate(applicationCode.getCode(), LocalDate.now(clock)).stream()
+                repository
+                        .findByCodeAndDate(applicationCode.getCode(), LocalDate.now(clock))
+                        .stream()
                         .findFirst();
 
         if (applicationCodeDB.isEmpty()) {
@@ -163,18 +164,16 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                         AuditableResult<Void, ApplicationCode> auditableResult =
                                 new AuditableResult<>(null, applicationCode);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
 
         } else {
             var currentApplicationCode = applicationCodeDB.get();
             var updatedApplicationCode = BeanUtil.copyBean(currentApplicationCode);
             applicationCodeMapper.updateApplicationCode(updatedApplicationCode, applicationCode);
 
-            if (!Objects.equals(updatedApplicationCode.getEndDate(),
-                                applicationCode.getEndDate())) {
-                updatedApplicationCode.setEndDate(
-                    applicationCode.getEndDate());
+            if (!Objects.equals(
+                    updatedApplicationCode.getEndDate(), applicationCode.getEndDate())) {
+                updatedApplicationCode.setEndDate(applicationCode.getEndDate());
             }
 
             auditService.processAudit(
@@ -187,8 +186,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                         AuditableResult<Void, ApplicationCode> auditableResult =
                                 new AuditableResult<>(null, updatedApplicationCode);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
             repository.saveAndFlush(updatedApplicationCode);
         }
     }

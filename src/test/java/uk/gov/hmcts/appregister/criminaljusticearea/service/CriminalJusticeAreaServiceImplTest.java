@@ -160,8 +160,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         val serviceImpl =
                 new CriminalJusticeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         criminalJusticeMapper,
                         pageMapper,
@@ -198,8 +197,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         val serviceImpl =
                 new CriminalJusticeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         criminalJusticeMapper,
                         pageMapper,

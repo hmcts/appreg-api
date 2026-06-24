@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -141,8 +140,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                                 mapper.toReadGetDto(standardApplicant),
                                                 standardApplicant);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
 
         } else {
             var currentStandardApplicant = standardApplicantDB.get();
@@ -151,8 +149,9 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
             // this code is to allow the end date to be updated if it has changed, as the mapper
             // will ignore null values
-            if (!Objects.equals(updatedStandardApplicant.getApplicantEndDate(),
-                                standardApplicant.getApplicantEndDate())) {
+            if (!Objects.equals(
+                    updatedStandardApplicant.getApplicantEndDate(),
+                    standardApplicant.getApplicantEndDate())) {
                 updatedStandardApplicant.setApplicantEndDate(
                         standardApplicant.getApplicantEndDate());
             }
@@ -171,8 +170,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                                 mapper.toReadGetDto(updatedStandardApplicant),
                                                 updatedStandardApplicant);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
             repository.saveAndFlush(updatedStandardApplicant);
         }
     }

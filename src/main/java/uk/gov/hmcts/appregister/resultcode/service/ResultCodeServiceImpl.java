@@ -168,8 +168,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                         AuditableResult<Void, ResolutionCode> auditableResult =
                                 new AuditableResult<>(null, resolutionCode);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
 
         } else {
             var currentResolutionCode = resolutionCodeDB.get();
@@ -192,8 +191,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                         AuditableResult<Void, ResolutionCode> auditableResult =
                                 new AuditableResult<>(null, updatedResolutionCode);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
             repository.saveAndFlush(updatedResolutionCode);
         }
     }

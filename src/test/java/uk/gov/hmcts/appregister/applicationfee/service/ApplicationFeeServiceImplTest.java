@@ -1,20 +1,17 @@
-package uk.gov.hmcts.appregister.applicationfee.model.service;
+package uk.gov.hmcts.appregister.applicationfee.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
@@ -24,9 +21,9 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,7 +32,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeServiceImpl;
 import uk.gov.hmcts.appregister.applicationfee.service.mapper.FeeMapperImpl;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
@@ -48,7 +44,6 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationFeeServiceImplTest {
-    private static final Instant FIXED_INSTANT = Instant.parse("2025-10-07T10:00:00Z");
     private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private FeeRepository repository;
@@ -291,8 +286,7 @@ class ApplicationFeeServiceImplTest {
                 new ApplicationFeeServiceImpl(
                         repository,
                         businessDateProvider,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new FeeMapperImpl());
 
         serviceImpl.upsertFee(fee);
@@ -351,8 +345,7 @@ class ApplicationFeeServiceImplTest {
                 new ApplicationFeeServiceImpl(
                         repository,
                         businessDateProvider,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         new FeeMapperImpl());
 
         serviceImpl.upsertFee(fee);
@@ -375,9 +368,9 @@ class ApplicationFeeServiceImplTest {
     void testUpsertFee_updateEndDate_toNull() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(businessDateProvider.currentUkDateTime())
-            .thenReturn(
-                OffsetDateTime.of(
-                    TODAY_UK, LocalTime.now(), OffsetDateTime.now().getOffset()));
+                .thenReturn(
+                        OffsetDateTime.of(
+                                TODAY_UK, LocalTime.now(), OffsetDateTime.now().getOffset()));
 
         val existingFee = new Fee();
         existingFee.setId(67L);
@@ -393,7 +386,7 @@ class ApplicationFeeServiceImplTest {
         existingFee.setEndDate(TODAY_UK);
 
         when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK))
-            .thenReturn(List.of(existingFee));
+                .thenReturn(List.of(existingFee));
 
         val fee = new Fee();
         fee.setId(67L);
@@ -410,13 +403,11 @@ class ApplicationFeeServiceImplTest {
 
         val listener = new CapturingAuditListener();
         val serviceImpl =
-            new ApplicationFeeServiceImpl(
-                repository,
-                businessDateProvider,
-                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                List.of(listener),
-                new FeeMapperImpl()
-            );
+                new ApplicationFeeServiceImpl(
+                        repository,
+                        businessDateProvider,
+                        new AuditOperationServiceImpl(List.of(listener)),
+                        new FeeMapperImpl());
 
         serviceImpl.upsertFee(fee);
 
@@ -428,7 +419,7 @@ class ApplicationFeeServiceImplTest {
         Assertions.assertEquals(fee.getReference(), audited.getReference());
         Assertions.assertEquals(fee.getAmount(), audited.getAmount());
         Assertions.assertEquals(
-            fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
+                fee.getChangedDate().toLocalDate(), audited.getChangedDate().toLocalDate());
         Assertions.assertEquals(fee.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(fee.getEndDate(), audited.getEndDate());
     }

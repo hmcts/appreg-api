@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationfee.service;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Map;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 
 /**

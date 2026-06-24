@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationfee.audit.FeeOperation;
 import uk.gov.hmcts.appregister.applicationfee.service.exception.ApplicationFeeCode;
 import uk.gov.hmcts.appregister.applicationfee.service.mapper.FeeMapper;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.Fee;
@@ -35,7 +34,6 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final FeeRepository feeRepository;
     private final BusinessDateProvider businessDateProvider;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final FeeMapper mapper;
 
     @Override
@@ -108,7 +106,8 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     public void upsertFee(Fee fee) {
         var feeDB =
                 feeRepository
-                        .findByReferenceBetweenDate(fee.getReference(), businessDateProvider.currentUkDate())
+                        .findByReferenceBetweenDate(
+                                fee.getReference(), businessDateProvider.currentUkDate())
                         .stream()
                         .findFirst();
 
@@ -122,8 +121,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
                         AuditableResult<Void, Fee> auditableResult =
                                 new AuditableResult<>(null, fee);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
 
         } else {
             var currentFee = feeDB.get();
@@ -146,8 +144,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
                         AuditableResult<Void, Fee> auditableResult =
                                 new AuditableResult<>(null, updatedFee);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
             feeRepository.saveAndFlush(updatedFee);
         }
     }

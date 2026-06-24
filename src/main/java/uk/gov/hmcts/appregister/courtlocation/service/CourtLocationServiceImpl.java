@@ -161,18 +161,15 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                         AuditableResult<Void, NationalCourtHouse> auditableResult =
                                 new AuditableResult<>(null, nationalCourtHouse);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
 
         } else {
             var currentCourtHouse = courthouseDB.get();
             var updatedCourtHouse = BeanUtil.copyBean(currentCourtHouse);
             mapper.updateCourtHouse(updatedCourtHouse, nationalCourtHouse);
 
-            if (!Objects.equals(updatedCourtHouse.getEndDate(),
-                                nationalCourtHouse.getEndDate())) {
-                updatedCourtHouse.setEndDate(
-                    nationalCourtHouse.getEndDate());
+            if (!Objects.equals(updatedCourtHouse.getEndDate(), nationalCourtHouse.getEndDate())) {
+                updatedCourtHouse.setEndDate(nationalCourtHouse.getEndDate());
             }
 
             auditService.processAudit(
@@ -185,8 +182,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                         AuditableResult<Void, NationalCourtHouse> auditableResult =
                                 new AuditableResult<>(null, updatedCourtHouse);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
             repository.saveAndFlush(updatedCourtHouse);
         }
     }

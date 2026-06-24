@@ -273,8 +273,7 @@ class ResultCodeServiceImplTest {
 
         val serviceImpl =
                 new ResultCodeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         new ResultCodeMapperImpl(),
                         pageMapper,
@@ -329,8 +328,7 @@ class ResultCodeServiceImplTest {
 
         val serviceImpl =
                 new ResultCodeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         new ResultCodeMapperImpl(),
                         pageMapper,
@@ -370,7 +368,7 @@ class ResultCodeServiceImplTest {
         existingResolutionCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
 
         when(repository.findActiveByResultCodeIgnoreCaseOrdered("UTEST", LocalDate.now(fixedClock)))
-            .thenReturn(List.of(existingResolutionCode));
+                .thenReturn(List.of(existingResolutionCode));
 
         val resolutionCode = new ResolutionCode();
         resolutionCode.setResultCode("UTEST");
@@ -386,20 +384,19 @@ class ResultCodeServiceImplTest {
         val listener = new CapturingAuditListener();
 
         val serviceImpl =
-            new ResultCodeServiceImpl(
-                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                List.of(listener),
-                repository,
-                new ResultCodeMapperImpl(),
-                pageMapper,
-                fixedClock,
-                ukZone);
+                new ResultCodeServiceImpl(
+                        new AuditOperationServiceImpl(List.of(listener)),
+                        repository,
+                        new ResultCodeMapperImpl(),
+                        pageMapper,
+                        fixedClock,
+                        ukZone);
 
         serviceImpl.upsertResultCode(resolutionCode);
 
         verify(repository, times(1))
-            .findActiveByResultCodeIgnoreCaseOrdered(
-                resolutionCode.getResultCode(), LocalDate.now(fixedClock));
+                .findActiveByResultCodeIgnoreCaseOrdered(
+                        resolutionCode.getResultCode(), LocalDate.now(fixedClock));
         verify(repository, times(1)).saveAndFlush(any(ResolutionCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

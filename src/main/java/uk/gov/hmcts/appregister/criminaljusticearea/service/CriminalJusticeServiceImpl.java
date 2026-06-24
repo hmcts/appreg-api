@@ -89,8 +89,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                         AuditableResult<Void, CriminalJusticeArea> auditableResult =
                                 new AuditableResult<>(null, cja);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
 
         } else {
             var currentCja = cjaDB.get();
@@ -104,8 +103,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                         AuditableResult<Void, CriminalJusticeArea> auditableResult =
                                 new AuditableResult<>(null, updatedCja);
                         return Optional.of(auditableResult);
-                    },
-                    auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    });
             criminalJusticeAreaRepository.saveAndFlush(updatedCja);
         }
     }

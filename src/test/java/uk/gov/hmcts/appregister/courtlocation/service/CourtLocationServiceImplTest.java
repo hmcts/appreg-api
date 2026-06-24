@@ -296,8 +296,7 @@ class CourtLocationServiceImplTest {
 
         val serviceImpl =
                 new CourtLocationServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         new CourtLocationMapperImpl(),
                         pageMapper,
@@ -342,8 +341,7 @@ class CourtLocationServiceImplTest {
 
         val serviceImpl =
                 new CourtLocationServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         new CourtLocationMapperImpl(),
                         pageMapper,
@@ -374,8 +372,8 @@ class CourtLocationServiceImplTest {
         existingCourtHouse.setEndDate(LocalDate.now());
 
         when(repository.findActiveCourts(
-            existingCourtHouse.getCourtLocationCode(), LocalDate.now()))
-            .thenReturn(List.of(existingCourtHouse));
+                        existingCourtHouse.getCourtLocationCode(), LocalDate.now()))
+                .thenReturn(List.of(existingCourtHouse));
 
         val nationalCourtHouse = new NationalCourtHouse();
         nationalCourtHouse.setCourtLocationCode("TEST001");
@@ -388,18 +386,17 @@ class CourtLocationServiceImplTest {
         val listener = new CapturingAuditListener();
 
         val serviceImpl =
-            new CourtLocationServiceImpl(
-                new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                List.of(listener),
-                repository,
-                new CourtLocationMapperImpl(),
-                pageMapper,
-                businessDateProvider);
+                new CourtLocationServiceImpl(
+                        new AuditOperationServiceImpl(List.of(listener)),
+                        repository,
+                        new CourtLocationMapperImpl(),
+                        pageMapper,
+                        businessDateProvider);
 
         serviceImpl.upsertCourtHouse(nationalCourtHouse);
 
         verify(repository, times(1))
-            .findActiveCourts(nationalCourtHouse.getCourtLocationCode(), LocalDate.now());
+                .findActiveCourts(nationalCourtHouse.getCourtLocationCode(), LocalDate.now());
         verify(repository, times(1)).saveAndFlush(any(NationalCourtHouse.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -407,7 +404,7 @@ class CourtLocationServiceImplTest {
         val audited = (NationalCourtHouse) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(nationalCourtHouse.getCourtType(), audited.getCourtType());
         Assertions.assertEquals(
-            nationalCourtHouse.getCourtLocationCode(), audited.getCourtLocationCode());
+                nationalCourtHouse.getCourtLocationCode(), audited.getCourtLocationCode());
         Assertions.assertEquals(nationalCourtHouse.getName(), audited.getName());
         Assertions.assertEquals(nationalCourtHouse.getStartDate(), audited.getStartDate());
         Assertions.assertEquals(nationalCourtHouse.getEndDate(), audited.getEndDate());
