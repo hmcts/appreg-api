@@ -247,6 +247,25 @@ tasks.register('bootRunLocalDev', BootRun) {
   systemProperty 'spring.profiles.active', activeProfiles.get()
 }
 
+tasks.register('bootRunLocalDevAppLogging', BootRun) {
+  description = 'Runs the application locally with no security and the normal application.yaml logging'
+  group = 'Application'
+  mainClass = application.mainClass
+
+  dependsOn tasks.named('copySpecIntoLocalDebugResources')
+
+  classpath = sourceSets.main.runtimeClasspath +
+    configurations.localDebugRuntimeOnly +
+    files('src/localDebug/resources') +
+    files(layout.buildDirectory.dir('localDebug/resources'))
+
+  def activeProfiles = providers.gradleProperty('springProfiles')
+    .orElse(providers.systemProperty('spring.profiles.active'))
+    .orElse('nosecurity')
+
+  systemProperty 'spring.profiles.active', activeProfiles.get()
+}
+
 def commonCoverageExclusions = [
   '**/uk/gov/hmcts/appregister/generated/**/*.class'
 ]

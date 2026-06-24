@@ -107,6 +107,17 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
   ```
 
+- **Run local dev with normal application logging**
+  Run the local-only no-security task without the `p6spy` profile so logging matches the normal
+  `application.yaml` behaviour more closely.
+  ```bash
+  ./gradlew bootRunLocalDevAppLogging
+  ```
+  To override the active profiles, pass `springProfiles`. For example:
+  ```bash
+  ./gradlew bootRunLocalDevAppLogging -PspringProfiles=nosecurity,functional
+  ```
+
 ## Authentication and Authorisation Failure Logging
 
 Protected endpoint responses returning `401` or `403` are logged at `WARN` using the existing App

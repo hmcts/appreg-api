@@ -44,6 +44,7 @@ properties:
   feeStatuses:
     type: array
     items: { $ref: '../fee-status/fee-status.yaml' }
+    description: Fee-status rows for the entry. Must only be supplied when the selected application code requires a fee.
 
   hasOffsiteFee:
     type: boolean

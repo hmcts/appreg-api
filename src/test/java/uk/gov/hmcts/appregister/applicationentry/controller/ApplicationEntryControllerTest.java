@@ -28,10 +28,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadCsvFormatValidator;
+import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.DataReader;
@@ -171,7 +173,7 @@ class ApplicationEntryControllerTest {
                             }
                         })
                 .when(asyncJobService)
-                .startJob(any(), any(DataReader.class), any());
+                .startJob(any(), anyBulkUploadRowDataReader(), anyBulkUploadRowAsyncJobLifecycle());
         var acknowledgement =
                 new JobAcknowledgement()
                         .id(jobId)
@@ -183,11 +185,22 @@ class ApplicationEntryControllerTest {
                 controller.bulkUploadApplicationListEntries(listId, file);
 
         verify(bulkUploadCsvFormatValidator).validate(file);
-        verify(asyncJobService).startJob(any(), any(DataReader.class), any());
+        verify(asyncJobService)
+                .startJob(any(), anyBulkUploadRowDataReader(), anyBulkUploadRowAsyncJobLifecycle());
         verify(jobService).getJobAckById(any());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(response.getBody()).isSameAs(acknowledgement);
         assertThat(response.getHeaders().getFirst("Location")).isEqualTo("/jobs/" + jobId);
         assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private DataReader<BulkUploadRow> anyBulkUploadRowDataReader() {
+        return any(DataReader.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private AsyncJobLifecycle<BulkUploadRow> anyBulkUploadRowAsyncJobLifecycle() {
+        return any(AsyncJobLifecycle.class);
     }
 }
