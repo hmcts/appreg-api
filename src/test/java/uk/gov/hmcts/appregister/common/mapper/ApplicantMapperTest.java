@@ -52,7 +52,7 @@ class ApplicantMapperTest {
 
         assertEquals("Doe", mapper.getNameForNameAddress(lastNameOnly));
         assertEquals("Jane", mapper.getNameForNameAddress(firstNameOnly));
-        assertEquals("", mapper.getNameForNameAddress(noPersonName));
+        assertNull(mapper.getNameForNameAddress(noPersonName));
     }
 
     @Test
@@ -252,7 +252,27 @@ class ApplicantMapperTest {
         organisation.setName("Org Ltd");
 
         assertEquals("Org Ltd", mapper.getNameForNameAddress(organisation));
-        assertEquals("", mapper.getNameForNameAddress(null));
+        assertNull(mapper.getNameForNameAddress(null));
+    }
+
+    @Test
+    void toContactDetails_convertsEmptyStringsToNull() {
+        var entity = new NameAddress();
+        entity.setAddress1("");
+        entity.setAddress2("");
+        entity.setPostcode("");
+        entity.setTelephoneNumber("");
+        entity.setMobileNumber("");
+        entity.setEmailAddress("");
+
+        var details = mapper.toContactDetails(entity);
+
+        assertNull(details.getAddressLine1());
+        assertNull(details.getAddressLine2().orElse("value"));
+        assertNull(details.getPostcode());
+        assertNull(details.getPhone().orElse("value"));
+        assertNull(details.getMobile().orElse("value"));
+        assertNull(details.getEmail().orElse("value"));
     }
 
     @Test

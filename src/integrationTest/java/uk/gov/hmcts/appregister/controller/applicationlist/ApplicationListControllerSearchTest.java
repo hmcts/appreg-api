@@ -35,7 +35,6 @@ import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -44,6 +43,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -920,7 +920,6 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         assertThat(dto.getDescription()).isEqualToIgnoringCase(description);
         assertThat(dto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
         assertThat(dto.getEntriesCount()).isEqualTo(0);
-        assertThat(dto.getEntriesSummary()).isNotNull();
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1127,33 +1126,11 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         ApplicationListGetDetailDto page = resp.as(ApplicationListGetDetailDto.class);
 
-        assertThat(page.getEntriesSummary().size()).isEqualTo(1);
         assertThat(page.getDescription()).startsWith("soft-deleted ::");
         Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
         Assertions.assertEquals(1, page.getEntriesCount());
         Assertions.assertEquals("CCC003", page.getCourtCode());
         Assertions.assertEquals("Cardiff Crown Court", page.getCourtName());
-        Assertions.assertEquals(1, page.getEntriesSummary().size());
-        Assertions.assertEquals(
-                "Copy documents", page.getEntriesSummary().get(0).getApplicationTitle());
-        Assertions.assertEquals(
-                entryGetDetailDto.getAccountNumber(),
-                page.getEntriesSummary().get(0).getAccountNumber().get());
-        Assertions.assertEquals(1, page.getEntriesSummary().get(0).getSequenceNumber());
-        Assertions.assertEquals(
-                entryGetDetailDto.getRespondent().getPerson().getContactDetails().getPostcode(),
-                page.getEntriesSummary().get(0).getPostCode().get());
-        Assertions.assertEquals(
-                page.getEntriesSummary().get(0).getApplicant().get(),
-                entryGetDetailDto.getApplicant().getPerson().getName().getFirstName()
-                        + " "
-                        + entryGetDetailDto.getApplicant().getPerson().getName().getLastName());
-
-        Assertions.assertEquals(
-                page.getEntriesSummary().get(0).getRespondent().get(),
-                entryGetDetailDto.getRespondent().getPerson().getName().getFirstName()
-                        + " "
-                        + entryGetDetailDto.getRespondent().getPerson().getName().getLastName());
     }
 
     @Test
@@ -1202,8 +1179,7 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
     }
 
     @Test
-    @DisplayName(
-            "GET Application List: entriesSummary and entriesCount exclude soft-deleted entries")
+    @DisplayName("GET Application List: entriesCount excludes soft-deleted entries")
     void givenEntrySoftDeleted_whenGetApplicationList_thenDeletedEntryExcludedFromSummaryAndCount()
             throws Exception {
 
@@ -1219,8 +1195,6 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         // sanity-check that initial GET shows two entries
         ApplicationListGetDetailDto initial = getApplicationListDetail(listId, token);
         assertThat(initial.getEntriesCount()).isEqualTo(2L);
-        assertThat(initial.getEntriesSummary()).isNotNull();
-        assertThat(initial.getEntriesSummary().size()).isGreaterThanOrEqualTo(2);
 
         // soft-delete 2nd entry
         softDeleteEntry(entry2.getId());
@@ -1231,17 +1205,23 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
                 .withFailMessage("entriesCount should exclude the soft-deleted entry")
                 .isEqualTo(1L);
 
-        assertThat(after.getEntriesSummary())
-                .withFailMessage("entriesSummary must be present")
-                .isNotNull();
+        EntryPage entriesPage =
+                restAssuredClient
+                        .executeGetRequest(
+                                getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
+                                token,
+                                rs ->
+                                        rs.header("Accept", VND_JSON_V1)
+                                                .queryParam("pageNumber", 0)
+                                                .queryParam("pageSize", 10)
+                                                .queryParam("sort", "sequenceNumber,asc"))
+                        .as(EntryPage.class);
 
         List<UUID> returnedEntryIds =
-                after.getEntriesSummary().stream()
-                        .map(ApplicationListEntrySummary::getUuid)
-                        .toList();
+                entriesPage.getContent().stream().map(entry -> entry.getId()).toList();
 
         assertThat(returnedEntryIds)
-                .withFailMessage("Soft-deleted entry must not appear in entriesSummary")
+                .withFailMessage("Soft-deleted entry must not appear in entry results")
                 .doesNotContain(entry2.getId());
 
         // sanity: remaining entry should be the first created one

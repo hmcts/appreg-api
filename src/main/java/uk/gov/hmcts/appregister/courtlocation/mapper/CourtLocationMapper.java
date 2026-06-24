@@ -1,12 +1,15 @@
 package uk.gov.hmcts.appregister.courtlocation.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetSummaryDto;
 
@@ -47,6 +50,11 @@ public interface CourtLocationMapper {
     @Mapping(target = "endDate", source = "endDate")
     CourtLocationGetDetailDto toDetailDto(NationalCourtHouse entity);
 
+    @AfterMapping
+    default void sanitizeDetailDto(@MappingTarget CourtLocationGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
     /**
      * Map a {@link NationalCourtHouse} entity to a summary DTO.
      *
@@ -56,6 +64,11 @@ public interface CourtLocationMapper {
     @Mapping(target = "name", source = "name")
     @Mapping(target = "locationCode", source = "courtLocationCode")
     CourtLocationGetSummaryDto toSummaryDto(NationalCourtHouse entity);
+
+    @AfterMapping
+    default void sanitizeSummaryDto(@MappingTarget CourtLocationGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "courtLocationCode", source = "code")

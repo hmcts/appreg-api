@@ -44,12 +44,10 @@ import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -186,9 +184,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 req -> {
                     ApplicationList list = findApplicationListOrThrow(id);
                     AuditableResult<ApplicationListGetDetailDto, ApplicationList> result =
-                            new AuditableResult<>(
-                                    getListDetailDto(list, pageable.getPageable()),
-                                    mapper.toEntity(id));
+                            new AuditableResult<>(getListDetailDto(list), mapper.toEntity(id));
                     return Optional.of(result);
                 });
     }
@@ -198,24 +194,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * already established a transaction
      *
      * @param list The application list entity
-     * @param pageable The paging for the entries summary
      */
-    private ApplicationListGetDetailDto getListDetailDto(ApplicationList list, Pageable pageable) {
+    private ApplicationListGetDetailDto getListDetailDto(ApplicationList list) {
         UUID id = list.getUuid();
-
-        // Fetch results from the repository using pagination
-        Page<ApplicationListEntrySummaryProjection> dbPage =
-                aleRepository.findSummariesById(id, pageable);
-        List<ApplicationListEntrySummary> summaries = new ArrayList<>();
-
-        // Map each projection to a summary model
-        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryDto(projection)));
-
-        // Fetch the number of entries linked to this list.
-        // Avoids running a separate count query later when mapping to a DTO.
         Long entryCount = fetchEntryCounts(List.of(id)).getOrDefault(id, ZERO_ENTITIES);
-
-        return buildGetDetailDto(list, entryCount, summaries);
+        return mapper.toGetDetailDto(list, list.getCja(), entryCount);
     }
 
     private ApplicationList findApplicationListOrThrow(UUID id) {
@@ -247,8 +230,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<>(
                 MatchResponse.of(
-                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES, List.of()),
-                        List.of(hydrated)),
+                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES), List.of(hydrated)),
                 hydrated);
     }
 
@@ -273,8 +255,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         // gets the summaries for the unpaged summaries.
         return new AuditableResult<>(
                 MatchResponse.of(
-                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES, List.of()),
-                        List.of(hydrated)),
+                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES), List.of(hydrated)),
                 hydrated);
     }
 
@@ -299,15 +280,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         () -> {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
-                            ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    getListDetailDto(hydrated, ENTRY_SUMMARY_SORT);
-
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             null,
-                                            applicationListGetDetailDto.getEntriesSummary().size(),
-                                            applicationListGetDetailDto.getEntriesSummary()),
+                                            fetchEntryCounts(List.of(hydrated.getUuid()))
+                                                    .getOrDefault(
+                                                            hydrated.getUuid(), ZERO_ENTITIES)),
                                     List.of(hydrated));
                         },
                         List.of(success.getApplicationList())),
@@ -338,16 +317,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             var savedEntity = repository.save(applicationList);
                             var hydrated = refreshEntity(savedEntity);
 
-                            // gets the summaries for the unpaged summaries.
-                            ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    getListDetailDto(hydrated, ENTRY_SUMMARY_SORT);
-
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             cja,
-                                            applicationListGetDetailDto.getEntriesSummary().size(),
-                                            applicationListGetDetailDto.getEntriesSummary()),
+                                            fetchEntryCounts(List.of(hydrated.getUuid()))
+                                                    .getOrDefault(
+                                                            hydrated.getUuid(), ZERO_ENTITIES)),
                                     List.of(hydrated));
                         },
                         List.of(success.getApplicationList())),
@@ -382,18 +358,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         entityManager.flush();
         entityManager.refresh(entity);
         return entity;
-    }
-
-    private ApplicationListGetDetailDto buildGetDetailDto(
-            ApplicationList list,
-            Long entriesCount,
-            List<ApplicationListEntrySummary> entriesSummary) {
-
-        ApplicationListGetDetailDto dto =
-                mapper.toGetDetailDto(list, list.getCja(), entriesCount, entriesSummary);
-        dto.setEntriesSummary(entriesSummary);
-
-        return dto;
     }
 
     private ApplicationListGetPrintDto buildGetPrintDto(

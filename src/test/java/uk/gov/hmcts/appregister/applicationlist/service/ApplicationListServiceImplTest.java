@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -71,7 +70,6 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
@@ -89,12 +87,10 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -103,7 +99,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
-import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -227,9 +222,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
@@ -237,7 +230,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     @Test
@@ -268,13 +261,7 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expectedDto);
-        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
-                .thenReturn(expectedDto);
-
-        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expectedDto);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
@@ -288,8 +275,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
-        verify(mapper).toGetDetailDto(saved, null, 1L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     // -------- CJA PATH --------
@@ -316,9 +302,7 @@ class ApplicationListServiceImplTest {
         when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
@@ -330,7 +314,7 @@ class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, cja, 0L, summaryCaptor.getValue());
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
     }
 
     @Test
@@ -360,17 +344,11 @@ class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(1L), summaryCaptor.capture()))
-                .thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
                 new PayloadForUpdate<>(dto, saved.getUuid());
-
-        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
@@ -379,8 +357,7 @@ class ApplicationListServiceImplTest {
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
 
-        verify(mapper).toGetDetailDto(eq(saved), isNull(), eq(0L), notNull());
-        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(1L), notNull());
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
 
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
@@ -905,10 +882,8 @@ class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        mockFindSummariesById(id, pageable);
-
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
 
         ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
@@ -925,12 +900,10 @@ class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        mockFindSummariesById(id, pageable);
-
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
         ApplicationList auditEntity = new ApplicationList();
         auditEntity.setUuid(id);
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L))).thenReturn(expected);
         when(mapper.toEntity(id)).thenReturn(auditEntity);
 
         auditOperationService.clearCapturedAudit();
@@ -1062,40 +1035,6 @@ class ApplicationListServiceImplTest {
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    private void mockFindSummariesById(UUID id, Pageable pageable) {
-        final var uuid = UUID.randomUUID();
-        final short sequenceNumber = 1;
-        final var accountNumber = "1234567890";
-
-        NameAddress applicant = new NameAddress();
-        applicant.setName("Mustafa's Org");
-
-        NameAddress respondent = new NameAddress();
-        respondent.setLastName("Ahmed");
-        respondent.setFirstName("Mustafa");
-        respondent.setTitle("His Majesty");
-
-        var postCode = "SW1A 1AA";
-        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired = true;
-        var result = "APPC";
-        var projection =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid)
-                        .sequenceNumber(sequenceNumber)
-                        .accountNumber(accountNumber)
-                        .applicant(applicant)
-                        .respondent(respondent)
-                        .postCode(postCode)
-                        .applicationTitle(applicationTitle)
-                        .feeRequired(feeRequired)
-                        .result(result)
-                        .build();
-
-        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
-        when(aleRepository.findSummariesById(id, pageable)).thenReturn(dbPage);
     }
 
     class DummyAuditOperationService implements AuditOperationService {
@@ -1245,11 +1184,5 @@ class ApplicationListServiceImplTest {
 
             return deleteSupplier.apply(deletionId, success);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor() {
-        return (ArgumentCaptor<List<ApplicationListEntrySummary>>)
-                (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
     }
 }
