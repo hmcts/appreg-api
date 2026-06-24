@@ -202,6 +202,7 @@ class ApplicationFeeServiceImplTest {
     @Test
     void testUpsertFee_insert() {
         when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK)).thenReturn(List.of());
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(businessDateProvider.currentUkDateTime())
                 .thenReturn(
                         OffsetDateTime.of(
@@ -246,6 +247,7 @@ class ApplicationFeeServiceImplTest {
 
     @Test
     void testUpsertFee_update() {
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(businessDateProvider.currentUkDateTime())
                 .thenReturn(
                         OffsetDateTime.of(

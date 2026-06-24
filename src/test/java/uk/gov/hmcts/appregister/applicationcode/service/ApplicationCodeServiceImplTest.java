@@ -620,8 +620,6 @@ class ApplicationCodeServiceImplTest {
         applicationCode.setTitle("Unit Test 2");
         applicationCode.setEndDate(null);
 
-        applicationCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
-
         val listener = new CapturingAuditListener();
 
         val serviceImpl = new ApplicationCodeServiceImpl(
