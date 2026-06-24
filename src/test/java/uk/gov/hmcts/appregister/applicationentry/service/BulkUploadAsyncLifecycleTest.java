@@ -152,12 +152,37 @@ class BulkUploadAsyncLifecycleTest {
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+                .isEqualTo(AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST);
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
                         "[APPLICATION_LIST]: The application list does not exist %s"
                                 .formatted(listId));
         assertThat(context.getValidationFailureMessages().getFirst()).doesNotContain("Row ");
+        verify(bulkCreateApplicationEntryValidator, never()).validate(any(), any());
+    }
+
+    @Test
+    void givenApplicationListStateIsIncorrect_whenValidating_thenThrowsListStateError() {
+        String invalidStateMessage =
+                "The application list id %s is not in the correct state or the application list is deleted CLOSED"
+                        .formatted(listId);
+        doThrow(
+                        new AppRegistryException(
+                                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                                invalidStateMessage))
+                .when(bulkCreateApplicationEntryValidator)
+                .validateApplicationList(listId);
+        JobContext context = new JobContext();
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(validOrganisationRow(), context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly("[APPLICATION_LIST]: " + invalidStateMessage);
         verify(bulkCreateApplicationEntryValidator, never()).validate(any(), any());
     }
 

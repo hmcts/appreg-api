@@ -171,10 +171,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     "Bulk upload application list validation failure for list {}: {}",
                     listId,
                     failureMessage);
-
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                    "Application list failed validation during bulk upload");
+            throw exception;
         }
     }
 
