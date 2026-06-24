@@ -51,7 +51,7 @@ public abstract class ApplicantMapper {
             if (applicant.getName() != null) {
                 // if the name is set then this is an organisation otherwise a person
                 Organisation organisation = new Organisation();
-                organisation.setName(applicant.getName());
+                organisation.setName(OutgoingDtoSanitiser.emptyToNull(applicant.getName()));
                 organisation.setContactDetails(contactDetails);
                 applicantDto.setOrganisation(organisation);
             } else {
@@ -74,10 +74,10 @@ public abstract class ApplicantMapper {
      */
     public FullName toFullName(NameAddress applicant) {
         FullName fullName = new FullName();
-        fullName.setTitle(applicant.getTitle());
-        fullName.setFirstName(applicant.getFirstName());
-        fullName.setMiddleName(JsonNullable.of(applicant.getMiddleName()));
-        fullName.setLastName(applicant.getLastName());
+        fullName.setTitle(OutgoingDtoSanitiser.emptyToNull(applicant.getTitle()));
+        fullName.setFirstName(OutgoingDtoSanitiser.emptyToNull(applicant.getFirstName()));
+        fullName.setMiddleName(map(applicant.getMiddleName()));
+        fullName.setLastName(OutgoingDtoSanitiser.emptyToNull(applicant.getLastName()));
         return fullName;
     }
 
@@ -90,7 +90,8 @@ public abstract class ApplicantMapper {
     public ContactDetails toContactDetails(NameAddress applicant) {
         ContactDetails contactDetails = new ContactDetails();
         if (applicant != null) {
-            contactDetails.setAddressLine1(applicant.getAddress1());
+            contactDetails.setAddressLine1(
+                    OutgoingDtoSanitiser.emptyToNull(applicant.getAddress1()));
             contactDetails.setAddressLine2(map(applicant.getAddress2()));
             contactDetails.setAddressLine3(map(applicant.getAddress3()));
             contactDetails.setAddressLine4(map(applicant.getAddress4()));
@@ -98,7 +99,7 @@ public abstract class ApplicantMapper {
             contactDetails.setEmail(map(applicant.getEmailAddress()));
             contactDetails.setMobile(map(applicant.getMobileNumber()));
             contactDetails.setPhone(map(applicant.getTelephoneNumber()));
-            contactDetails.setPostcode(applicant.getPostcode());
+            contactDetails.setPostcode(OutgoingDtoSanitiser.emptyToNull(applicant.getPostcode()));
         }
         return contactDetails;
     }
@@ -246,8 +247,7 @@ public abstract class ApplicantMapper {
             return getNameForNameAddress(applicant);
         }
 
-        // return an empty string
-        return "";
+        return null;
     }
 
     /**
@@ -259,24 +259,26 @@ public abstract class ApplicantMapper {
      *     name if an organisation. If all else fails then an empty string is returned.
      */
     public String getNameForNameAddress(NameAddress nameAddress) {
-        String name = "";
+        String name = null;
         if (nameAddress != null && nameAddress.getName() == null) {
             name = formatPersonName(nameAddress.getFirstName(), nameAddress.getLastName());
         } else if (nameAddress != null) {
-            name = nameAddress.getName();
+            name = OutgoingDtoSanitiser.emptyToNull(nameAddress.getName());
         }
         return name;
     }
 
     private String formatPersonName(String forename, String surname) {
+        forename = OutgoingDtoSanitiser.emptyToNull(forename);
+        surname = OutgoingDtoSanitiser.emptyToNull(surname);
         if (forename == null && surname == null) {
-            return "";
+            return null;
         }
         if (forename == null) {
-            return surname;
+            return OutgoingDtoSanitiser.emptyToNull(surname);
         }
         if (surname == null) {
-            return forename;
+            return OutgoingDtoSanitiser.emptyToNull(forename);
         }
         return forename + " " + surname;
     }
@@ -286,7 +288,7 @@ public abstract class ApplicantMapper {
     }
 
     public JsonNullable<String> map(String string) {
-        return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
+        return JsonNullable.of(OutgoingDtoSanitiser.emptyToNull(string));
     }
 
     public String firstName(FullName name) {

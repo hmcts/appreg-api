@@ -5641,11 +5641,6 @@ components:
           format: int32
           minimum: 0
           type: integer
-        entriesSummary:
-          description: A list of lightweight summaries of entries.
-          items:
-            $ref: "#/components/schemas/application-list-entry-summary"
-          type: array
       required:
       - date
       - description
@@ -6938,53 +6933,6 @@ components:
       - numberOfEntries
       - status
       - time
-      type: object
-    application-list-entry-summary:
-      description: Lightweight summary of an entry.
-      properties:
-        uuid:
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          format: uuid
-          type: string
-        sequenceNumber:
-          example: 2
-          format: int32
-          type: integer
-        accountNumber:
-          example: ACC-001
-          maxLength: 20
-          nullable: true
-          type: string
-        applicant:
-          example: Applicant name
-          nullable: true
-          type: string
-        respondent:
-          example: Respondent name
-          nullable: true
-          type: string
-        postCode:
-          example: SW1A 2AA
-          nullable: true
-          type: string
-        applicationTitle:
-          example: Application to Crown Court
-          type: string
-        feeRequired:
-          type: boolean
-        result:
-          nullable: true
-          type: string
-      required:
-      - accountNumber
-      - applicant
-      - applicationTitle
-      - feeRequired
-      - postCode
-      - respondent
-      - resulted
-      - sequenceNumber
-      - uuid
       type: object
     entry-get-print-dto:
       description: "An application view, used specifically for printing."
