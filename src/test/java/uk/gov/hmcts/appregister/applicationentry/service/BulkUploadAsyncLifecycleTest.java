@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +40,7 @@ class BulkUploadAsyncLifecycleTest {
     private BulkUploadAsyncLifecycle lifecycle;
     private ApplicationEntryService applicationEntryService;
     private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+    private UUID listId;
 
     @BeforeEach
     void setUp() {
@@ -48,10 +50,11 @@ class BulkUploadAsyncLifecycleTest {
 
         applicationEntryService = mock(ApplicationEntryService.class);
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
+        listId = UUID.randomUUID();
 
         lifecycle =
                 new BulkUploadAsyncLifecycle(
-                        UUID.randomUUID(),
+                        listId,
                         applicationEntryService,
                         new BulkUploadApplicationEntryValidator(),
                         bulkCreateApplicationEntryValidator,
@@ -109,6 +112,7 @@ class BulkUploadAsyncLifecycleTest {
         lifecycle.validating(event(row, context));
 
         assertThat(context.hasFailure()).isFalse();
+        verify(bulkCreateApplicationEntryValidator).validateApplicationList(listId);
         verify(bulkCreateApplicationEntryValidator).validate(any(), any());
     }
 
@@ -126,6 +130,35 @@ class BulkUploadAsyncLifecycleTest {
         lifecycle.validating(event(row, context));
 
         assertThat(context.hasFailure()).isFalse();
+    }
+
+    @Test
+    void givenApplicationListDoesNotExist_whenValidatingMultipleRows_thenLogsListFailureOnce() {
+        doThrow(
+                        new AppRegistryException(
+                                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
+                                "The application list does not exist %s".formatted(listId)))
+                .when(bulkCreateApplicationEntryValidator)
+                .validateApplicationList(listId);
+        JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event =
+                new AsyncJobLifecycleEvent<>(
+                        null,
+                        List.of(validOrganisationRow(), validOrganisationRow()),
+                        context,
+                        JobStatus1.VALIDATING);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        "[APPLICATION_LIST]: The application list does not exist %s"
+                                .formatted(listId));
+        assertThat(context.getValidationFailureMessages().getFirst()).doesNotContain("Row ");
+        verify(bulkCreateApplicationEntryValidator, never()).validate(any(), any());
     }
 
     @Test

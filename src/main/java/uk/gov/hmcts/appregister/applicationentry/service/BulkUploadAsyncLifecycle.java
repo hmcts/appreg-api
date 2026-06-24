@@ -98,6 +98,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     "Uploaded file contains no data rows");
         }
 
+        validateApplicationList(context);
+
         List<BulkUploadError> allErrors = new ArrayList<>();
 
         int rowNumber = FIRST_DATA_ROW_NUMBER;
@@ -156,6 +158,23 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                             locationForBusinessRule(exception),
                             null,
                             exception.getMessage()));
+        }
+    }
+
+    private void validateApplicationList(JobContext context) {
+        try {
+            bulkCreateApplicationEntryValidator.validateApplicationList(listId);
+        } catch (AppRegistryException exception) {
+            String failureMessage = "[APPLICATION_LIST]: %s".formatted(exception.getMessage());
+            context.logFailure(failureMessage);
+            log.warn(
+                    "Bulk upload application list validation failure for list {}: {}",
+                    listId,
+                    failureMessage);
+
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                    "Application list failed validation during bulk upload");
         }
     }
 
