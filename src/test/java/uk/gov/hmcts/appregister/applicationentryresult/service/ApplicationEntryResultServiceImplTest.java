@@ -316,6 +316,38 @@ class ApplicationEntryResultServiceImplTest {
     }
 
     @Test
+    void search_emptyPage_returnsEmptyContentList() {
+        PayloadGetEntryResultInList payloadGetEntryResultInList =
+                PayloadGetEntryResultInList.builder().build();
+
+        org.springframework.data.domain.Pageable pageable =
+                Mockito.mock(org.springframework.data.domain.Pageable.class);
+
+        Page<ApplicationListEntryResultWithResultCodeProjection> page =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(appListEntryResolutionRepository.getResolutionDetailsForApplicationListAndEntry(
+                        payloadGetEntryResultInList.getListId(),
+                        payloadGetEntryResultInList.getEntryId(),
+                        pageable))
+                .thenReturn(page);
+
+        getValidator.setSuccess(
+                ListEntryResultGetValidationSuccess.builder()
+                        .applicationList(new ApplicationList())
+                        .applicationListEntry(new ApplicationListEntry())
+                        .build());
+
+        String testSort = "testSort";
+        PagingWrapper pagingWrapper = new PagingWrapper(SortableField.of(testSort), pageable);
+
+        ResultPage resultPage = service.search(payloadGetEntryResultInList, pagingWrapper);
+
+        Assertions.assertNotNull(resultPage.getContent());
+        Assertions.assertTrue(resultPage.getContent().isEmpty());
+    }
+
+    @Test
     void bulkProcessEntries() {
         // setup the user that all tests will represent
         when(userProvider.getEmail()).thenReturn("myemail@domain.com");

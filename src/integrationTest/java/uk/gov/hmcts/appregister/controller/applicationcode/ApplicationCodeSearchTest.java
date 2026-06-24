@@ -4,7 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -982,7 +981,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
-        assertNull(page.getContent());
+        assertThat(page.getContent()).isEmpty();
     }
 
     @StabilityTest
