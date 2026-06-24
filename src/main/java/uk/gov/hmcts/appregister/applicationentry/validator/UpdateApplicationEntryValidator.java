@@ -15,10 +15,12 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
@@ -36,6 +38,7 @@ public class UpdateApplicationEntryValidator
         extends AbstractApplicationEntryValidator<
                 PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess> {
     private final ApplicationListEntryRepository applicationListEntryRepository;
+    private final AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     public UpdateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
@@ -43,7 +46,8 @@ public class UpdateApplicationEntryValidator
             ApplicationFeeService feeService,
             BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository,
-            ApplicationListEntryRepository applicationListEntryRepository) {
+            ApplicationListEntryRepository applicationListEntryRepository,
+            AppListEntryFeeStatusRepository appListEntryFeeStatusRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
@@ -51,6 +55,7 @@ public class UpdateApplicationEntryValidator
                 businessDateProvider,
                 standardApplicantRepository);
         this.applicationListEntryRepository = applicationListEntryRepository;
+        this.appListEntryFeeStatusRepository = appListEntryFeeStatusRepository;
     }
 
     @Override
@@ -90,7 +95,35 @@ public class UpdateApplicationEntryValidator
                 validatable.getEntryId(),
                 validatable.getId());
 
-        return super.validate(validatable, validateSuccess);
+        return super.validate(
+                validatable,
+                (payload, success) -> {
+                    validateFeeStatusTransition(success.getApplicationCode(), payload);
+                    return validateSuccess == null ? null : validateSuccess.apply(payload, success);
+                });
+    }
+
+    private void validateFeeStatusTransition(
+            ApplicationCode applicationCode, PayloadForUpdateEntry validatable) {
+        if (applicationCode.getFeeDue() == YesOrNo.YES) {
+            return;
+        }
+
+        List<FeeStatus> requestedFeeStatuses = validatable.getData().getFeeStatuses();
+        if (requestedFeeStatuses != null && !requestedFeeStatuses.isEmpty()) {
+            return;
+        }
+
+        boolean hasPersistedFeeStatuses =
+                !appListEntryFeeStatusRepository
+                        .getFeeStatusByEntryUuid(validatable.getEntryId())
+                        .isEmpty();
+
+        if (hasPersistedFeeStatuses) {
+            throw new AppRegistryException(
+                    AppListEntryError.FEE_NOT_REQUIRED,
+                    "Fee not required for code %s".formatted(getApplicationCode(validatable)));
+        }
     }
 
     @Override

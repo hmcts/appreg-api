@@ -446,6 +446,11 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
         }
+        if (!isFeeStatusRequired(applicationCode) && !feeStatuses.isEmpty()) {
+            throw new AppRegistryException(
+                    AppListEntryError.FEE_NOT_REQUIRED,
+                    "Fee not required for code %s".formatted(getApplicationCode(validatable)));
+        }
 
         // if the fee is required but it cant be found then error
         FeePair feeToReturn = null;

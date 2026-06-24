@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -44,6 +45,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -1095,7 +1097,6 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         entityManager.clear();
 
-        // assert that the update was successful
         Assertions.assertNotNull(update.getEtag());
 
         final List<AppListEntryFeeStatus> feeStatusesUpdated =
@@ -1326,13 +1327,16 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         updateDto,
                         applicationListEntry.get().getApplicationList().getUuid(),
                         applicationListEntry.get().getUuid());
-        MatchResponse<EntryGetDetailDto> update =
-                applicationEntryService.updateEntry(payloadForCreate);
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> applicationEntryService.updateEntry(payloadForCreate));
 
         entityManager.clear();
 
-        // assert that the update was successful
-        Assertions.assertNotNull(update.getEtag());
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
 
         final List<AppListEntryFeeStatus> feeStatusesUpdated =
                 appListEntryFeeStatusRepository.findByAppListEntryId(
@@ -1347,42 +1351,24 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertNotNull(applicantBeforeUpdate);
 
         Assertions.assertTrue(
-                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isEmpty());
+                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isPresent());
 
-        // make sure we do not recognise the officials that existing before
-        Assertions.assertEquals(
-                update.getPayload().getOfficials().size(), feeOfficialUpdated.size());
+        // make sure the rejected update leaves officials unchanged
+        Assertions.assertEquals(feeOfficialBeforeUpdate.size(), feeOfficialUpdated.size());
         for (Long id : feeOfficialBeforeUpdate) {
-            Assertions.assertFalse(
+            Assertions.assertTrue(
                     feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
-                    "Found official with id " + id + " that should have been deleted");
+                    "Expected official with id " + id + " to be preserved");
         }
 
-        // make sure a null feeStatuses payload makes no fee-status change and preserves history
+        // make sure a rejected update leaves fee-status history unchanged
         Assertions.assertEquals(feeStatusBeforeUpdate.size(), feeStatusesUpdated.size());
-        Assertions.assertEquals(
-                feeStatusBeforeUpdate.size(), update.getPayload().getFeeStatuses().size());
 
         for (Long id : feeStatusBeforeUpdate) {
             Assertions.assertTrue(
                     feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
                     "Expected fee status with id " + id + " to be preserved");
         }
-
-        applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
-        applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
-                new ApplicationListEntryWrapperDto(updateDto),
-                applicationListEntry.get(),
-                update.getPayload(),
-                "Attends to swear a complaint for the issue of a summons for the "
-                        + "debtor to answer an application for a liability order in relation "
-                        + "to unpaid council tax (reference {test wording})",
-                "Attends to swear a complaint for the issue of a summons for the debtor"
-                        + " to answer an application for a liability order in relation to unpaid council tax "
-                        + "(reference {{Reference}})",
-                updateDto.getWordingFields(),
-                feeStatusBeforeUpdate,
-                1);
     }
 
     @Test
