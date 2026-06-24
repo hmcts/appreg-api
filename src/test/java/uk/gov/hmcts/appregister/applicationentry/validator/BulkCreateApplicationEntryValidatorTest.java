@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -136,6 +137,23 @@ class BulkCreateApplicationEntryValidatorTest {
         Assertions.assertSame(applicationList, success.getApplicationList());
         Assertions.assertSame(standardApplicant, success.getSa());
         Assertions.assertSame(fee, success.getFee().offsiteFee());
+    }
+
+    @Test
+    void testValidateApplicationListThrowsWhenApplicationListDoesNotExist() {
+        UUID missingListUuid = UUID.randomUUID();
+        when(applicationListRepository.findByUuidIncludingDelete(missingListUuid))
+                .thenReturn(Optional.empty());
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validateApplicationList(missingListUuid));
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, appRegistryException.getCode());
+        assertThat(appRegistryException.getMessage())
+                .isEqualTo("The application list does not exist %s".formatted(missingListUuid));
     }
 
     @Test
