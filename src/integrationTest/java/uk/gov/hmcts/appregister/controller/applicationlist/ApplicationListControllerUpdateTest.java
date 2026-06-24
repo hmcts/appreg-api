@@ -82,8 +82,6 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         assertThat(dto.getCourtName()).isEqualTo(VALID_COURT_NAME);
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-        assertThat(dto.getEntriesSummary()).isNotNull();
-
         String eventName = "Create Application List";
         String operation = "CREATE";
 
@@ -195,8 +193,6 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         assertThat(dto.getOtherLocationDescription()).isEqualTo(VALID_OTHER_LOCATION);
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
-        assertThat(dto.getEntriesSummary()).isNotNull();
-
         String eventName = "Create Application List";
         String operation = "CREATE";
 
@@ -860,16 +856,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-        assertThat(dto.getEntriesSummary()).hasSize(4);
-        assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
-                .isEqualTo("Copy documents");
-        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("AUTH");
-        assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
-                .isEqualTo("Copy documents (electronic)");
-        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
-                .isEqualTo("Extract from the Court Register");
-        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
-                .isEqualTo("Certificate of Satisfaction");
+        assertThat(dto.getEntriesCount()).isEqualTo(4);
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------

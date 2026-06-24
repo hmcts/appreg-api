@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -102,47 +101,7 @@ class ObfuscationUtilTest {
     }
 
     @Test
-    void testObfuscationApplicationListEntrySummary() {
-        ApplicationListEntrySummary summary =
-                new ApplicationListEntrySummary()
-                        .uuid(UUID.randomUUID())
-                        .sequenceNumber(42)
-                        .accountNumber("ACC-12345")
-                        .applicant("Applicant Name")
-                        .respondent("Respondent Name")
-                        .postCode("SW1A 2AA")
-                        .applicationTitle("Application title")
-                        .feeRequired(true)
-                        .result("Granted");
-
-        String obfuscated = ObfuscationUtil.getObfuscatedString(summary);
-
-        assertThat(obfuscated)
-                .doesNotContain("ACC-12345")
-                .doesNotContain("Applicant Name")
-                .doesNotContain("Respondent Name")
-                .doesNotContain("SW1A 2AA")
-                .contains("\"accountNumber\":\"[REDACTED]\"")
-                .contains("\"applicant\":\"[REDACTED]\"")
-                .contains("\"respondent\":\"[REDACTED]\"")
-                .contains("\"postCode\":\"[REDACTED]\"")
-                .contains("\"applicationTitle\":\"Application title\"");
-    }
-
-    @Test
     void testObfuscationApplicationListGetDetailDto() {
-        ApplicationListEntrySummary summary =
-                new ApplicationListEntrySummary()
-                        .uuid(UUID.randomUUID())
-                        .sequenceNumber(7)
-                        .accountNumber("ACC-67890")
-                        .applicant("Jane Applicant")
-                        .respondent("John Respondent")
-                        .postCode("EC1A 1BB")
-                        .applicationTitle("Detailed title")
-                        .feeRequired(false)
-                        .result("Refused");
-
         ApplicationListGetDetailDto dto =
                 new ApplicationListGetDetailDto()
                         .id(UUID.randomUUID())
@@ -157,8 +116,7 @@ class ObfuscationUtilTest {
                         .durationHours(2)
                         .durationMinutes(15)
                         .version(3L)
-                        .entriesCount(1)
-                        .entriesSummary(List.of(summary));
+                        .entriesCount(1);
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
 
@@ -168,11 +126,7 @@ class ObfuscationUtilTest {
                 .doesNotContain("John Respondent")
                 .doesNotContain("EC1A 1BB")
                 .contains("\"description\":\"Morning list\"")
-                .contains("\"entriesSummary\"")
-                .contains("\"accountNumber\":\"[REDACTED]\"")
-                .contains("\"applicant\":\"[REDACTED]\"")
-                .contains("\"respondent\":\"[REDACTED]\"")
-                .contains("\"postCode\":\"[REDACTED]\"");
+                .doesNotContain("\"entriesSummary\"");
     }
 
     @Test
