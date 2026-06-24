@@ -1280,7 +1280,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         responseSpec.then().statusCode(200);
         StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
-        Assertions.assertNull(page.getContent());
+        assertThat(page.getContent()).isEmpty();
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
