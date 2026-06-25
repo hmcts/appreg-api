@@ -5240,6 +5240,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/problem"
           description: The requested resource was not found.
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Invalid request parameters.
         "500":
           content:
             application/problem+json:

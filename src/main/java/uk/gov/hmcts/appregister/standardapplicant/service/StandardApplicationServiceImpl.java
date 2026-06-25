@@ -120,13 +120,20 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     @Override
     public String generateCsv(String code, String name) {
 
-        if (code == null && name == null) {
+        if ((code != null && name != null) || (code == null && name == null)) {
             throw new AppRegistryException(
-                    StandardApplicantCodeError.CANNOT_GENERATE_CSV,
+                    StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION,
                     "Unable to generate CSV for Standard Applicants. At least one of code or name must be provided.");
         }
 
         List<StandardApplicant> filteredList = repository.findByCodeAndName(code, name);
+
+        if(filteredList.isEmpty()) {
+            throw new AppRegistryException(
+                    StandardApplicantCodeError.NO_RESULTS_FOUND_FOR_CSV_GENERATION,
+                    "Unable to generate CSV for Standard Applicants. No records found for the provided code or name.");
+        }
+
         try {
             try (CsvWriter<StandardApplicantCsvRow> writer =
                     new CsvWriter<>(StandardApplicantCsvRow.class)) {
