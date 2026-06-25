@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
+import uk.gov.hmcts.appregister.standardapplicant.model.StandardApplicantCsvRow;
 
 /**
  * Mapper for StandardApplicant entity to StandardApplicantDto.
@@ -107,6 +109,27 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "telephoneNumber", ignore = true)
     @Mapping(target = "mobileNumber", ignore = true)
     public abstract StandardApplicant toEntity(String code);
+
+    @Mapping(target = "applicantCode", source = "applicantCode")
+    @Mapping(target = "applicantTitle", source = "applicantTitle")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "applicantForename1", source = "applicantForename1")
+    @Mapping(target = "applicantForename2", source = "applicantForename2")
+    @Mapping(target = "applicantForename3", source = "applicantForename3")
+    @Mapping(target = "applicantSurname", source = "applicantSurname")
+    @Mapping(target = "addressLine1", source = "addressLine1")
+    @Mapping(target = "addressLine2", source = "addressLine2")
+    @Mapping(target = "addressLine3", source = "addressLine3")
+    @Mapping(target = "addressLine4", source = "addressLine4")
+    @Mapping(target = "addressLine5", source = "addressLine5")
+    @Mapping(target = "postcode", source = "postcode")
+    @Mapping(target = "emailAddress", source = "emailAddress")
+    @Mapping(target = "telephoneNumber", source = "telephoneNumber")
+    @Mapping(target = "mobileNumber", source = "mobileNumber")
+    @Mapping(target = "applicantStartDate", source = "applicantStartDate")
+    @Mapping(target = "applicantEndDate", source = "applicantEndDate")
+    public abstract List<StandardApplicantCsvRow> toEntity(
+            List<StandardApplicant> standardApplicants);
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {

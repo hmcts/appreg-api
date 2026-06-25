@@ -34,7 +34,13 @@ public enum StandardApplicantCodeError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Standard Applicant Codes found when only one was expected",
-                    "SA-2"));
+                    "SA-2")),
+
+    CANNOT_GENERATE_CSV(
+            DefaultErrorDetail.create(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to generate CSV for Standard Applicants",
+                    "SA-3"));
 
     /** Backing detail for the error code. */
     private final DefaultErrorDetail defaultErrorCode;

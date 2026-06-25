@@ -166,4 +166,18 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             @Param("to") LocalDate to,
             @Param("active") LocalDate active,
             Pageable pageable);
+
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE (LOWER(sa.applicantCode) LIKE '%' || LOWER(CAST(:code AS string)) || '%'
+                 OR (:code IS NULL AND :name IS NOT NULL ))
+        AND (LOWER(sa.name) LIKE '%' || LOWER(CAST(:name AS string)) || '%'
+                OR (:name IS NULL AND :code IS NOT NULL))
+        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+        sa.applicantEndDate DESC
+        """)
+    List<StandardApplicant> findByCodeAndName(
+            @LikeParam @Param("code") String code, @LikeParam @Param("name") String name);
 }

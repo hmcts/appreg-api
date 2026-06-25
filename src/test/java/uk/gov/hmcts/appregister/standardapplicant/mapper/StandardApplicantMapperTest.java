@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.List;
+
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -269,5 +271,34 @@ class StandardApplicantMapperTest {
         Assertions.assertEquals(
                 "Byron King", dto.getApplicant().getPerson().getName().getMiddleName().get());
         Assertions.assertEquals("Lovelace", dto.getApplicant().getPerson().getName().getLastName());
+    }
+
+    @Test
+    void testStandardApplicantMapToCsvRow() {
+        val standardApplicant = new StandardApplicantTestData().someComplete();
+
+        val standardApplicantMapper = new StandardApplicantMapperImpl();
+        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
+
+        val csvRow = standardApplicantMapper.toEntity(List.of(standardApplicant)).getFirst();
+
+        Assertions.assertEquals(standardApplicant.getApplicantCode(), csvRow.getApplicantCode());
+        Assertions.assertEquals(standardApplicant.getName(), csvRow.getName());
+        Assertions.assertEquals(standardApplicant.getAddressLine1(), csvRow.getAddressLine1());
+        Assertions.assertEquals(
+                standardApplicant.getAddressLine2(), csvRow.getAddressLine2());
+        Assertions.assertEquals(
+                standardApplicant.getAddressLine3(), csvRow.getAddressLine3());
+        Assertions.assertEquals(
+                standardApplicant.getAddressLine4(), csvRow.getAddressLine4());
+        Assertions.assertEquals(
+                standardApplicant.getAddressLine5(), csvRow.getAddressLine5());
+        Assertions.assertEquals(standardApplicant.getPostcode(), csvRow.getPostcode());
+        Assertions.assertEquals(
+                standardApplicant.getEmailAddress(), csvRow.getEmailAddress());
+        Assertions.assertEquals(
+                standardApplicant.getTelephoneNumber(), csvRow.getTelephoneNumber());
+        Assertions.assertEquals(
+                standardApplicant.getMobileNumber(), csvRow.getMobileNumber());
     }
 }

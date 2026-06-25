@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -72,4 +73,13 @@ public class StandardApplicantController implements StandardApplicantsApi {
                 .contentType(VND_JSON_V1)
                 .body(standardApplicantGetDetailDto);
     }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<String> standardApplicantsExport(
+            @Nullable String code, @Nullable String name) {
+        return ResponseEntity.ok(service.generateCsv(code, name));
+    }
+
+
 }

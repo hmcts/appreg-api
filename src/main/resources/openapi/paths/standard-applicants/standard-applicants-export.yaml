@@ -1,0 +1,40 @@
+get:
+  operationId: standardApplicantsExport
+  description: |
+    Export a filtered list of Standard Applicants to a CSV file.
+    - Filters:
+        - `code` – case-insensitive partial match
+        - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3
+  tags: ['standard-applicants']
+  parameters:
+    - in: query
+      name: code
+      description: Filter by code (contains, case-insensitive).
+      schema:
+        type: string
+        maxLength: 10
+      example: "SA"
+    - in: query
+      name: name
+      description: Filter by name (contains, case-insensitive). Searches organisation/name, surname, forename 1, forename 2 and forename 3.
+      schema:
+        type: string
+        maxLength: 100
+        example: "Innovative Solutions Inc"
+  responses:
+    "200":
+      description: Standard Applicants CSV export job created
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
+      content:
+        text/csv:
+          schema:
+            type: string
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
