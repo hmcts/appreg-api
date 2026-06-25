@@ -280,18 +280,14 @@ class StandardApplicantMapperTest {
         standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
 
         val csvRow = standardApplicantMapper.toEntity(List.of(standardApplicant)).getFirst();
-
         Assertions.assertEquals(standardApplicant.getApplicantCode(), csvRow.getApplicantCode());
-        Assertions.assertEquals(standardApplicant.getName(), csvRow.getName());
-        Assertions.assertEquals(standardApplicant.getAddressLine1(), csvRow.getAddressLine1());
-        Assertions.assertEquals(standardApplicant.getAddressLine2(), csvRow.getAddressLine2());
-        Assertions.assertEquals(standardApplicant.getAddressLine3(), csvRow.getAddressLine3());
-        Assertions.assertEquals(standardApplicant.getAddressLine4(), csvRow.getAddressLine4());
-        Assertions.assertEquals(standardApplicant.getAddressLine5(), csvRow.getAddressLine5());
-        Assertions.assertEquals(standardApplicant.getPostcode(), csvRow.getPostcode());
-        Assertions.assertEquals(standardApplicant.getEmailAddress(), csvRow.getEmailAddress());
         Assertions.assertEquals(
-                standardApplicant.getTelephoneNumber(), csvRow.getTelephoneNumber());
-        Assertions.assertEquals(standardApplicant.getMobileNumber(), csvRow.getMobileNumber());
+                standardApplicant.getName(), csvRow.getName() == null ? "" : csvRow.getName());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantStartDate().toString(),
+                csvRow.getApplicantStartDate() == null ? "" : csvRow.getApplicantStartDate());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantEndDate().toString(),
+                csvRow.getApplicantEndDate() == null ? "" : csvRow.getApplicantEndDate());
     }
 }

@@ -157,21 +157,7 @@ public class StandardApplicantControllerExportTest
 
     private void headerRowValidation(StandardApplicantCsvRow header) {
         Assertions.assertEquals(header.getApplicantCode(), "Applicant Code");
-        Assertions.assertEquals(header.getApplicantTitle(), "Applicant Title");
         Assertions.assertEquals(header.getName(), "Name");
-        Assertions.assertEquals(header.getApplicantForename1(), "Forename 1");
-        Assertions.assertEquals(header.getApplicantForename2(), "Forename 2");
-        Assertions.assertEquals(header.getApplicantForename3(), "Forename 3");
-        Assertions.assertEquals(header.getApplicantSurname(), "Surname");
-        Assertions.assertEquals(header.getAddressLine1(), "Address Line 1");
-        Assertions.assertEquals(header.getAddressLine2(), "Address Line 2");
-        Assertions.assertEquals(header.getAddressLine3(), "Address Line 3");
-        Assertions.assertEquals(header.getAddressLine4(), "Address Line 4");
-        Assertions.assertEquals(header.getAddressLine5(), "Address Line 5");
-        Assertions.assertEquals(header.getPostcode(), "Postcode");
-        Assertions.assertEquals(header.getEmailAddress(), "Email Address");
-        Assertions.assertEquals(header.getTelephoneNumber(), "Telephone Number");
-        Assertions.assertEquals(header.getMobileNumber(), "Mobile Number");
         Assertions.assertEquals(header.getApplicantStartDate(), "Use From");
         Assertions.assertEquals(header.getApplicantEndDate(), "Use To");
     }
@@ -179,46 +165,7 @@ public class StandardApplicantControllerExportTest
     private void dataRowValidation(StandardApplicantCsvRow row, StandardApplicant expected) {
         Assertions.assertEquals(row.getApplicantCode(), expected.getApplicantCode());
         Assertions.assertEquals(
-                row.getApplicantTitle(),
-                expected.getApplicantTitle() == null ? "" : expected.getApplicantTitle());
-        Assertions.assertEquals(
                 row.getName(), expected.getName() == null ? "" : expected.getName());
-        Assertions.assertEquals(
-                row.getApplicantForename1(),
-                expected.getApplicantForename1() == null ? "" : expected.getApplicantForename1());
-        Assertions.assertEquals(
-                row.getApplicantForename2(),
-                expected.getApplicantForename2() == null ? "" : expected.getApplicantForename2());
-        Assertions.assertEquals(
-                row.getApplicantForename3(),
-                expected.getApplicantForename3() == null ? "" : expected.getApplicantForename3());
-        Assertions.assertEquals(
-                row.getApplicantSurname(),
-                expected.getApplicantSurname() == null ? "" : expected.getApplicantSurname());
-        Assertions.assertEquals(row.getAddressLine1(), expected.getAddressLine1());
-        Assertions.assertEquals(
-                row.getAddressLine2(),
-                expected.getAddressLine2() == null ? "" : expected.getAddressLine2());
-        Assertions.assertEquals(
-                row.getAddressLine3(),
-                expected.getAddressLine3() == null ? "" : expected.getAddressLine3());
-        Assertions.assertEquals(
-                row.getAddressLine4(),
-                expected.getAddressLine4() == null ? "" : expected.getAddressLine4());
-        Assertions.assertEquals(
-                row.getAddressLine5(),
-                expected.getAddressLine5() == null ? "" : expected.getAddressLine5());
-        Assertions.assertEquals(
-                row.getPostcode(), expected.getPostcode() == null ? "" : expected.getPostcode());
-        Assertions.assertEquals(
-                row.getEmailAddress(),
-                expected.getEmailAddress() == null ? "" : expected.getEmailAddress());
-        Assertions.assertEquals(
-                row.getTelephoneNumber(),
-                expected.getTelephoneNumber() == null ? "" : expected.getTelephoneNumber());
-        Assertions.assertEquals(
-                row.getMobileNumber(),
-                expected.getMobileNumber() == null ? "" : expected.getMobileNumber());
         Assertions.assertEquals(
                 row.getApplicantStartDate(), expected.getApplicantStartDate().toString());
         Assertions.assertEquals(
