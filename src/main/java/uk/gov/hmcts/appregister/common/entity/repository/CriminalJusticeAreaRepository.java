@@ -23,6 +23,8 @@ public interface CriminalJusticeAreaRepository extends JpaRepository<CriminalJus
      */
     List<CriminalJusticeArea> findByCode(String code);
 
+    List<CriminalJusticeArea> findByCodeIgnoreCase(String code);
+
     /**
      * Searches for criminal justice area based on filter criteria.
      *

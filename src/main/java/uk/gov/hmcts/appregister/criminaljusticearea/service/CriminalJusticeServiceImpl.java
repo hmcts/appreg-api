@@ -79,7 +79,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Override
     @Transactional
     public void upsertCJA(CriminalJusticeArea cja) {
-        var cjaDB = criminalJusticeAreaRepository.findByCode(cja.getCode()).stream().findFirst();
+        var cjaDB = criminalJusticeAreaRepository.findByCodeIgnoreCase(cja.getCode()).stream().findFirst();
 
         if (cjaDB.isEmpty()) {
             auditService.processAudit(

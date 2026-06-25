@@ -69,7 +69,7 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
 
     @Test
     void testUpsertCja_update() {
-        createCja();
+        createCja("67", "Test CJA");
 
         val cja = new CriminalJusticeArea();
         cja.setCode("67");
@@ -107,10 +107,50 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
                         });
     }
 
-    private void createCja() {
+    @Test
+    void testUpsertCja_updateCaseInsensitive() {
+        createCja("AA", "Test CJA");
+
+        val cja = new CriminalJusticeArea();
+        cja.setCode("aa");
+        cja.setDescription("Test cja 2");
+
+        service.upsertCJA(cja);
+
+        dataAuditRepository
+            .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                "criminal_justice_area", "cja_code", "AA", cja.getCode())
+            .ifPresentOrElse(
+                dataAudit -> {
+                    // Assert that the audit record has the expected values
+                    assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
+                },
+                () -> {
+                    throw new AssertionError(
+                        "Data audit record not found for cja code - AA");
+                });
+
+        dataAuditRepository
+            .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                "criminal_justice_area",
+                "cja_description",
+                "Test CJA",
+                cja.getDescription())
+            .ifPresentOrElse(
+                dataAudit -> {
+                    // Assert that the audit record has the expected values
+                    assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
+                },
+                () -> {
+                    throw new AssertionError(
+                        "Data audit record not found for cja - description");
+                });
+    }
+
+    private void createCja(String code, String description) {
         val criminalJusticeArea = new CriminalJusticeArea();
-        criminalJusticeArea.setDescription("Test CJA");
-        criminalJusticeArea.setCode("67");
+        criminalJusticeArea.setDescription(description);
+        criminalJusticeArea.setCode(code);
 
         cjaRepository.saveAndFlush(criminalJusticeArea);
     }
