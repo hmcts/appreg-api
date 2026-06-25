@@ -14,12 +14,12 @@ public class StandardApplicantCsvRow implements CsvPojo {
     @CsvBindByPosition(position = 0)
     private String applicantCode;
 
-    @CsvBindByPosition(position = 2)
+    @CsvBindByPosition(position = 1)
     private String name;
 
-    @CsvBindByPosition(position = 16)
+    @CsvBindByPosition(position = 2)
     private String applicantStartDate;
 
-    @CsvBindByPosition(position = 17)
+    @CsvBindByPosition(position = 3)
     private String applicantEndDate;
 }
