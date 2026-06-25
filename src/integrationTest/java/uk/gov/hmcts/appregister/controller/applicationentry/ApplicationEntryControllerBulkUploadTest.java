@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -149,6 +150,56 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                     .contains("ZZ99999");
             Assertions.assertEquals(0, countEntriesForList(listId));
         }
+    }
+
+    @Test
+    void givenMissingApplicationList_whenBulkUploadApplicationListEntries_thenReturns404()
+            throws Exception {
+        TokenAndJwksKey token = createAdminToken().fetchTokenForRole();
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.fromString("00000000-0000-0000-0000-000000000001")
+                                        + "/entries/bulk-import"),
+                        token,
+                        "file",
+                        csvFile(),
+                        "text/csv");
+
+        response.then().statusCode(404);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    void givenClosedApplicationList_whenBulkUploadApplicationListEntries_thenReturns409()
+            throws Exception {
+        TokenAndJwksKey token = createAdminToken().fetchTokenForRole();
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getClosedApplicationListId()
+                                        + "/entries/bulk-import"),
+                        token,
+                        "file",
+                        csvFile(),
+                        "text/csv");
+
+        response.then().statusCode(409);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
