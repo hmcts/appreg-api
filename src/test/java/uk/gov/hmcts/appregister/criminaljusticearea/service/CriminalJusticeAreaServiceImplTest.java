@@ -175,7 +175,7 @@ class CriminalJusticeAreaServiceImplTest {
 
     @Test
     void testUpsert_insert() {
-        when(repository.findByCode("UTEST")).thenReturn(List.of());
+        when(repository.findByCodeIgnoreCase("UTEST")).thenReturn(List.of());
 
         val criminalJusticeArea = new CriminalJusticeArea();
         criminalJusticeArea.setCode("UTEST");
@@ -193,7 +193,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         serviceImpl.upsertCJA(criminalJusticeArea);
 
-        verify(repository, times(1)).findByCode("UTEST");
+        verify(repository, times(1)).findByCodeIgnoreCase("UTEST");
         verify(repository, times(1)).saveAndFlush(any(CriminalJusticeArea.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -210,7 +210,7 @@ class CriminalJusticeAreaServiceImplTest {
         existingCja.setDescription("Unit Test");
         existingCja.setCode("UTEST");
 
-        when(repository.findByCode("UTEST")).thenReturn(List.of(existingCja));
+        when(repository.findByCodeIgnoreCase("UTEST")).thenReturn(List.of(existingCja));
 
         val criminalJusticeArea = new CriminalJusticeArea();
 
@@ -230,7 +230,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         serviceImpl.upsertCJA(criminalJusticeArea);
 
-        verify(repository, times(1)).findByCode(criminalJusticeArea.getCode());
+        verify(repository, times(1)).findByCodeIgnoreCase(criminalJusticeArea.getCode());
         verify(repository, times(1)).saveAndFlush(any(CriminalJusticeArea.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

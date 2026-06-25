@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.mapper;
 
-import org.mapstruct.BeanMapping;
 import org.mapstruct.AfterMapping;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

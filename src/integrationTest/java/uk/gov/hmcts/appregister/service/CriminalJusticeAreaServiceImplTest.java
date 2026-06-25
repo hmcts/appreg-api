@@ -118,33 +118,33 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
         service.upsertCJA(cja);
 
         dataAuditRepository
-            .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                "criminal_justice_area", "cja_code", "AA", cja.getCode())
-            .ifPresentOrElse(
-                dataAudit -> {
-                    // Assert that the audit record has the expected values
-                    assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
-                },
-                () -> {
-                    throw new AssertionError(
-                        "Data audit record not found for cja code - AA");
-                });
+                .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                        "criminal_justice_area", "cja_code", "AA", cja.getCode())
+                .ifPresentOrElse(
+                        dataAudit -> {
+                            // Assert that the audit record has the expected values
+                            assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
+                        },
+                        () -> {
+                            throw new AssertionError(
+                                    "Data audit record not found for cja code - AA");
+                        });
 
         dataAuditRepository
-            .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                "criminal_justice_area",
-                "cja_description",
-                "Test CJA",
-                cja.getDescription())
-            .ifPresentOrElse(
-                dataAudit -> {
-                    // Assert that the audit record has the expected values
-                    assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
-                },
-                () -> {
-                    throw new AssertionError(
-                        "Data audit record not found for cja - description");
-                });
+                .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                        "criminal_justice_area",
+                        "cja_description",
+                        "Test CJA",
+                        cja.getDescription())
+                .ifPresentOrElse(
+                        dataAudit -> {
+                            // Assert that the audit record has the expected values
+                            assert dataAudit.getUpdateType().equals(CrudEnum.UPDATE);
+                        },
+                        () -> {
+                            throw new AssertionError(
+                                    "Data audit record not found for cja - description");
+                        });
     }
 
     private void createCja(String code, String description) {
