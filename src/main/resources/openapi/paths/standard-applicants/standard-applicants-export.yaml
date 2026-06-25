@@ -9,21 +9,21 @@ get:
   parameters:
     - in: query
       name: code
-      description: Filter by code (contains, case-insensitive).
+      description: Filter by code (contains, case-insensitive). Name parameter cannot be included when providing the code parameter.
       schema:
         type: string
         maxLength: 10
       example: "SA"
     - in: query
       name: name
-      description: Filter by name (contains, case-insensitive). Searches organisation/name, surname, forename 1, forename 2 and forename 3.
+      description: Filter by organisation name (contains, case-insensitive). Code parameter cannot be included when providing the name parameter.
       schema:
         type: string
         maxLength: 100
         example: "Innovative Solutions Inc"
   responses:
     "200":
-      description: Standard Applicants CSV export job created
+      description: A CSV file containing the filtered list of Standard Applicants.
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
