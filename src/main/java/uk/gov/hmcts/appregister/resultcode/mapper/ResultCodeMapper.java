@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.resultcode.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -11,6 +12,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
@@ -56,10 +58,20 @@ public abstract class ResultCodeMapper {
                             + "() -> entity.getWording(), null))")
     public abstract ResultCodeGetDetailDto toDetailDto(ResolutionCode entity);
 
+    @AfterMapping
+    protected void sanitizeDetailDto(@MappingTarget ResultCodeGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
     // Map a {@link ResolutionCode} entity to a summary DTO.
     @Mapping(target = "resultCode", source = "resultCode")
     @Mapping(target = "title", source = "title")
     public abstract ResultCodeGetSummaryDto toSummaryDto(ResolutionCode entity);
+
+    @AfterMapping
+    protected void sanitizeSummaryDto(@MappingTarget ResultCodeGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "resultCode", source = "code")

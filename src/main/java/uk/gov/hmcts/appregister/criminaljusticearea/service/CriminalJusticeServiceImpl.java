@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +61,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
 
                     CriminalJusticeAreaPage craPage = new CriminalJusticeAreaPage();
                     pageMapper.toPage(criminalJusticeList, craPage, pageable.getSortStrings());
+                    craPage.setContent(new ArrayList<>());
                     criminalJusticeList.stream()
                             .forEach(
                                     entry ->

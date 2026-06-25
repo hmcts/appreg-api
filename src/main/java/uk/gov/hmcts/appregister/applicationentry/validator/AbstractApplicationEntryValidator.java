@@ -131,21 +131,30 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             T dto);
 
     /**
-     * validate the application list for the app list entry creation. Validates that the
-     * aapplication list exists
+     * validate the application list for the app list entry creation. Validates that the application
+     * list exists.
      *
      * @param validatable The validatable payload
      * @return The application list if found
      */
     private ApplicationList validateParentApplicationList(T validatable) {
+        return validateParentApplicationList(getApplicationListUuid(validatable));
+    }
+
+    /**
+     * validate the application list for the app list entry creation. Validates that the application
+     * list exists.
+     *
+     * @param applicationListUuid The application list id
+     * @return The application list if found
+     */
+    protected ApplicationList validateParentApplicationList(UUID applicationListUuid) {
         Optional<ApplicationList> applicationList =
-                applicationListRepository.findByUuidIncludingDelete(
-                        getApplicationListUuid(validatable));
+                applicationListRepository.findByUuidIncludingDelete(applicationListUuid);
         if (applicationList.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
-                    "The application list does not exist %s"
-                            .formatted(getApplicationListUuid(validatable)));
+                    "The application list does not exist %s".formatted(applicationListUuid));
         }
 
         // if the state of the application is not open then we cant add an entry
@@ -153,12 +162,10 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
                     "The application list id %s is not in the correct state or the application list is deleted %s"
-                            .formatted(
-                                    getApplicationListUuid(validatable),
-                                    applicationList.get().getStatus()));
+                            .formatted(applicationListUuid, applicationList.get().getStatus()));
         }
 
-        log.debug("Validated application list {}", getApplicationListUuid(validatable));
+        log.debug("Validated application list {}", applicationListUuid);
 
         return applicationList.get();
     }
@@ -438,6 +445,11 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             throw new AppRegistryException(
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
+        }
+        if (!isFeeStatusRequired(applicationCode) && !feeStatuses.isEmpty()) {
+            throw new AppRegistryException(
+                    AppListEntryError.FEE_NOT_REQUIRED,
+                    "Fee not required for code %s".formatted(getApplicationCode(validatable)));
         }
 
         // if the fee is required but it cant be found then error

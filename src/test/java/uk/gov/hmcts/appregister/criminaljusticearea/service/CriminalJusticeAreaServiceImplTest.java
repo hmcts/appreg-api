@@ -17,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -28,11 +30,13 @@ import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepo
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
+import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 
 @ExtendWith(MockitoExtension.class)
 class CriminalJusticeAreaServiceImplTest {
@@ -146,6 +150,27 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertNotSame(criminalJusticeArea, audited);
         Assertions.assertEquals(code, audited.getCode());
         Assertions.assertNull(audited.getDescription());
+    }
+
+    @Test
+    void findAll_emptyPage_returnsEmptyContentList() {
+        var pageable = PageRequest.of(0, 10);
+        when(repository.search(null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        var localService =
+                new CriminalJusticeServiceImpl(
+                        auditOperationService,
+                        repository,
+                        criminalJusticeMapper,
+                        new PageMapper(),
+                        locationLookupService);
+
+        CriminalJusticeAreaPage result =
+                localService.findAll(null, null, PagingWrapper.of(List.of(), pageable));
+
+        Assertions.assertNotNull(result.getContent());
+        Assertions.assertTrue(result.getContent().isEmpty());
     }
 
     @Test

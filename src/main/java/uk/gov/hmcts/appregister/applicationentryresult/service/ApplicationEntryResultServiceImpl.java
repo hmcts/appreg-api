@@ -288,6 +288,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                                     applicationListEntry.getUuid(),
                                                                     pageWrapper.getPageable());
 
+                                    resultPage.setContent(new ArrayList<>());
+
                                     // convert data to response
                                     pageData.forEach(
                                             result ->

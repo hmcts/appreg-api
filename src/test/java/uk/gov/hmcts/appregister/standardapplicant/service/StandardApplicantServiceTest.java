@@ -170,6 +170,32 @@ class StandardApplicantServiceTest {
     }
 
     @Test
+    void testGetAll_emptyPage_returnsEmptyContentList() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(ukZone)).thenReturn(clock);
+
+        val pageable = PageRequest.of(0, 2);
+        val wrapper = PagingWrapper.of(List.of(), pageable);
+
+        when(repository.search(
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        isNotNull(),
+                        eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        val standardApplicantPage =
+                standardApplicantService.findAll(null, null, null, null, null, wrapper);
+
+        Assertions.assertNotNull(standardApplicantPage.getContent());
+        Assertions.assertTrue(standardApplicantPage.getContent().isEmpty());
+    }
+
+    @Test
     void testGetByCode() {
         val code = "APP001";
 

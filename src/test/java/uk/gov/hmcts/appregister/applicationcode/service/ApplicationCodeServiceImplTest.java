@@ -261,6 +261,22 @@ class ApplicationCodeServiceImplTest {
     }
 
     @Test
+    void findAll_emptyPage_returnsEmptyContentList() {
+        Pageable criteria = Pageable.ofSize(10);
+        PageImpl<ApplicationCode> results =
+                new PageImpl<>(List.of(), Pageable.ofSize(10).withPage(0), 0);
+
+        when(repository.search(null, null, FIXED_BUSINESS_DATE, criteria)).thenReturn(results);
+
+        ApplicationCodePage applicationCodeDtoPage =
+                applicationCodeService.findAll(
+                        null, null, FIXED_BUSINESS_DATE, PagingWrapper.of(List.of(), criteria));
+
+        assertNotNull(applicationCodeDtoPage.getContent());
+        assertEquals(0, applicationCodeDtoPage.getContent().size());
+    }
+
+    @Test
     void findAllByTitle() {
         var applicationCode = createApplicationCodeWithFeeReference("REF-1");
         var applicationCode2 = createApplicationCodeWithFeeReference("REF-2");

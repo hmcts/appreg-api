@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
@@ -63,6 +65,16 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "startDate", source = "applicantStartDate")
     @Mapping(target = "endDate", expression = "java(toEndDate(entity.getApplicantEndDate()))")
     public abstract StandardApplicantGetDetailDto toReadGetDto(StandardApplicant entity);
+
+    @AfterMapping
+    protected void sanitizeSummaryDto(@MappingTarget StandardApplicantGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
+    @AfterMapping
+    protected void sanitizeDetailDto(@MappingTarget StandardApplicantGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "applicantCode", source = "code")
@@ -134,9 +146,10 @@ public abstract class StandardApplicantMapper {
         if (StandardApplicant.isOrganisation(standardApplicant)) {
             Organisation organisation = new Organisation();
             organisation.setName(
-                    projection.getEffectiveName() != null
-                            ? projection.getEffectiveName()
-                            : standardApplicant.getName());
+                    OutgoingDtoSanitiser.emptyToNull(
+                            projection.getEffectiveName() != null
+                                    ? projection.getEffectiveName()
+                                    : standardApplicant.getName()));
             organisation.setContactDetails(
                     mapContactDetailsFromStandardApplicant(standardApplicant));
             applicant.setOrganisation(organisation);
@@ -161,11 +174,12 @@ public abstract class StandardApplicantMapper {
                         standardApplicant.getApplicantForename3());
 
         FullName name = new FullName();
-        name.setTitle(standardApplicant.getApplicantTitle());
-        name.setFirstName(standardApplicant.getApplicantForename1());
+        name.setTitle(OutgoingDtoSanitiser.emptyToNull(standardApplicant.getApplicantTitle()));
+        name.setFirstName(
+                OutgoingDtoSanitiser.emptyToNull(standardApplicant.getApplicantForename1()));
         name.setMiddleName(
                 middleName == null ? JsonNullable.of(null) : JsonNullable.of(middleName));
-        name.setLastName(standardApplicant.getApplicantSurname());
+        name.setLastName(OutgoingDtoSanitiser.emptyToNull(standardApplicant.getApplicantSurname()));
         return name;
     }
 
@@ -173,23 +187,39 @@ public abstract class StandardApplicantMapper {
             StandardApplicant standardApplicant) {
         ContactDetails contactDetails = new ContactDetails();
 
-        contactDetails.setAddressLine1(standardApplicant.getAddressLine1());
+        contactDetails.setAddressLine1(
+                OutgoingDtoSanitiser.emptyToNull(standardApplicant.getAddressLine1()));
 
-        contactDetails.setAddressLine2(JsonNullable.of(standardApplicant.getAddressLine2()));
+        contactDetails.setAddressLine2(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getAddressLine2())));
 
-        contactDetails.setAddressLine3(JsonNullable.of(standardApplicant.getAddressLine3()));
+        contactDetails.setAddressLine3(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getAddressLine3())));
 
-        contactDetails.setAddressLine4(JsonNullable.of(standardApplicant.getAddressLine4()));
+        contactDetails.setAddressLine4(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getAddressLine4())));
 
-        contactDetails.setAddressLine5(JsonNullable.of(standardApplicant.getAddressLine5()));
+        contactDetails.setAddressLine5(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getAddressLine5())));
 
-        contactDetails.setPostcode(standardApplicant.getPostcode());
+        contactDetails.setPostcode(
+                OutgoingDtoSanitiser.emptyToNull(standardApplicant.getPostcode()));
 
-        contactDetails.setPhone(JsonNullable.of(standardApplicant.getTelephoneNumber()));
+        contactDetails.setPhone(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getTelephoneNumber())));
 
-        contactDetails.setMobile(JsonNullable.of(standardApplicant.getMobileNumber()));
+        contactDetails.setMobile(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getMobileNumber())));
 
-        contactDetails.setEmail(JsonNullable.of(standardApplicant.getEmailAddress()));
+        contactDetails.setEmail(
+                JsonNullable.of(
+                        OutgoingDtoSanitiser.emptyToNull(standardApplicant.getEmailAddress())));
 
         return contactDetails;
     }
