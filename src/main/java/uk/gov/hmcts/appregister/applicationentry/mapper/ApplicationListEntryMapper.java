@@ -34,12 +34,11 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -92,27 +91,6 @@ public abstract class ApplicationListEntryMapper {
         return wordingTemplateMapper;
     }
 
-    @Mapping(
-            target = "applicant",
-            expression =
-                    "java(org.openapitools.jackson.nullable."
-                            + "JsonNullable.of("
-                            + "getApplicantMapper()"
-                            + ".getNameForApplicant("
-                            + "summaryProjection.getStandardApplicant(), summaryProjection.getApplicant())))")
-    @Mapping(
-            target = "respondent",
-            expression =
-                    "java(org.openapitools.jackson.nullable."
-                            + "JsonNullable.of("
-                            + "getApplicantMapper().getNameForNameAddress("
-                            + "summaryProjection.getRespondent())))")
-    public abstract ApplicationListEntrySummary toSummaryDto(
-            ApplicationListEntrySummaryProjection summaryProjection);
-
-    public abstract List<ApplicationListEntrySummary> toSummaryDtoList(
-            List<ApplicationListEntrySummaryProjection> summaryProjections);
-
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
     @Mapping(target = "applicant.person.name.firstName", source = "applicantFirstName")
@@ -140,7 +118,7 @@ public abstract class ApplicationListEntryMapper {
      * @return a JsonNullable wrapper containing the value or null
      */
     public JsonNullable<String> map(String string) {
-        return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
+        return JsonNullable.of(OutgoingDtoSanitiser.emptyToNull(string));
     }
 
     /**
@@ -221,12 +199,12 @@ public abstract class ApplicationListEntryMapper {
             email = applicationListEntryPrintProjection.getRespondentEmail();
         }
 
-        details.setAddressLine1(address1);
+        details.setAddressLine1(OutgoingDtoSanitiser.emptyToNull(address1));
         details.setAddressLine2(map(address2));
         details.setAddressLine3(map(address3));
         details.setAddressLine4(map(address4));
         details.setAddressLine5(map(address5));
-        details.setPostcode(postcode);
+        details.setPostcode(OutgoingDtoSanitiser.emptyToNull(postcode));
         details.setPhone(map(phone));
         details.setMobile(map(mobile));
         details.setEmail(map(email));
@@ -392,6 +370,11 @@ public abstract class ApplicationListEntryMapper {
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
 
+    @AfterMapping
+    protected void sanitizeEntrySummary(@MappingTarget EntryGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
     public abstract ResultCodeGetSummaryDto toResultCodeGetSummaryDto(
             ResolutionCode resolutionCode);
 
@@ -400,6 +383,7 @@ public abstract class ApplicationListEntryMapper {
             ApplicationListEntryGetSummaryProjection projection,
             @MappingTarget EntryGetSummaryDto target) {
         target.accountNumber(projection.getAccountReference());
+        OutgoingDtoSanitiser.sanitize(target);
     }
 
     /**
@@ -525,6 +509,11 @@ public abstract class ApplicationListEntryMapper {
     public abstract EntryGetDetailDto toEntryGetDetailDto(
             ApplicationListEntry applicationListEntry, boolean hasOffsiteFee);
 
+    @AfterMapping
+    protected void sanitizeEntryDetail(@MappingTarget EntryGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
     /**
      * converts the official entities to dto officials.
      *
@@ -535,9 +524,9 @@ public abstract class ApplicationListEntryMapper {
         List<Official> retOfficials = new ArrayList<>();
         for (AppListEntryOfficial official : officials) {
             Official off = new Official();
-            off.setSurname(official.getSurname());
-            off.setTitle(official.getTitle());
-            off.setForename(official.getForename());
+            off.setSurname(OutgoingDtoSanitiser.emptyToNull(official.getSurname()));
+            off.setTitle(OutgoingDtoSanitiser.emptyToNull(official.getTitle()));
+            off.setForename(OutgoingDtoSanitiser.emptyToNull(official.getForename()));
             off.setType(officialMapper.toOfficial(official.getOfficialType()));
             retOfficials.add(off);
         }
@@ -560,7 +549,9 @@ public abstract class ApplicationListEntryMapper {
                         feeStatus -> {
                             FeeStatus status = new FeeStatus();
                             status.setPaymentStatus(getStatus(feeStatus.getAlefsFeeStatus()));
-                            status.setPaymentReference(feeStatus.getAlefsPaymentReference());
+                            status.setPaymentReference(
+                                    OutgoingDtoSanitiser.emptyToNull(
+                                            feeStatus.getAlefsPaymentReference()));
                             status.setStatusDate(feeStatus.getAlefsFeeStatusDate());
                             return status;
                         })
@@ -603,7 +594,7 @@ public abstract class ApplicationListEntryMapper {
             if (applicant.getName() != null) {
                 // if the name is set then this is an organisation otherwise a person
                 Organisation organisation = new Organisation();
-                organisation.setName(applicant.getName());
+                organisation.setName(OutgoingDtoSanitiser.emptyToNull(applicant.getName()));
                 organisation.setContactDetails(contactDetails);
                 respondentDto.setOrganisation(organisation);
 
@@ -618,6 +609,16 @@ public abstract class ApplicationListEntryMapper {
         }
 
         return respondentDto;
+    }
+
+    @AfterMapping
+    protected void sanitizePrintDto(@MappingTarget EntryGetPrintDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
+    @AfterMapping
+    protected void sanitizeResultCodeSummary(@MappingTarget ResultCodeGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
     }
 
     /**

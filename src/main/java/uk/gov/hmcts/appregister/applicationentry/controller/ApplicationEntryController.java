@@ -240,6 +240,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         try {
             bulkUploadCsvFormatValidator.validate(file);
+            bulkCreateApplicationEntryValidator.validateApplicationList(listId);
 
             JobTypeRequest jobTypeRequest =
                     JobTypeRequest.builder()
