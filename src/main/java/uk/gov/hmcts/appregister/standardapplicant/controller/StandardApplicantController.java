@@ -80,6 +80,4 @@ public class StandardApplicantController implements StandardApplicantsApi {
             @Nullable String code, @Nullable String name) {
         return ResponseEntity.ok(service.generateCsv(code, name));
     }
-
-
 }

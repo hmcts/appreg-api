@@ -82,5 +82,5 @@ public class StandardApplicantCsvRow implements CsvPojo {
     private String applicantStartDate;
 
     @CsvBindByPosition(position = 17)
-    private String ApplicantEndDate;
+    private String applicantEndDate;
 }

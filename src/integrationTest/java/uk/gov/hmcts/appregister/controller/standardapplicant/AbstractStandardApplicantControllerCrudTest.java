@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.controller.standardapplicant;
 
 import java.time.Clock;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 

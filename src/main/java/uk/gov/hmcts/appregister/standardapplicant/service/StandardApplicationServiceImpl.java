@@ -128,7 +128,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
         List<StandardApplicant> filteredList = repository.findByCodeAndName(code, name);
 
-        if(filteredList.isEmpty()) {
+        if (filteredList.isEmpty()) {
             throw new AppRegistryException(
                     StandardApplicantCodeError.NO_RESULTS_FOUND_FOR_CSV_GENERATION,
                     "Unable to generate CSV for Standard Applicants. No records found for the provided code or name.");

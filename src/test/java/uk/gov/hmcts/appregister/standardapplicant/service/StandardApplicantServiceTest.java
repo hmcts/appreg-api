@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -37,7 +36,6 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
-import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -79,7 +77,7 @@ class StandardApplicantServiceTest {
 
     @Spy private PageMapper pageMapper = new PageMapper();
 
-//    @Spy private CsvWriter<StandardApplicantCsvRow> csvWriter;
+    //    @Spy private CsvWriter<StandardApplicantCsvRow> csvWriter;
 
     @InjectMocks private StandardApplicationServiceImpl standardApplicantService;
 
@@ -369,10 +367,12 @@ class StandardApplicantServiceTest {
         sa.setApplicantSurname("Smith");
         sa.setApplicantForename1("John");
 
-        when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any())).thenReturn(List.of(sa));
+        when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any()))
+                .thenReturn(List.of(sa));
         String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null);
         Assertions.assertNotNull(csv);
-        Assertions.assertArrayEquals(StandardApplicantCsvRow.Header, csv.split("\n")[0].split("\\|"));
+        Assertions.assertArrayEquals(
+                StandardApplicantCsvRow.Header, csv.split("\n")[0].split("\\|"));
         List<StandardApplicantCsvRow> rows = parseCsv(csv);
         for (int i = 1; i < rows.size(); i++) {
             dataComparison(rows.get(i), sa);
@@ -401,7 +401,8 @@ class StandardApplicantServiceTest {
         when(repository.findByCodeAndName(any(), eq(sa.getName()))).thenReturn(List.of(sa));
         String csv = standardApplicantService.generateCsv(null, sa.getName());
         Assertions.assertNotNull(csv);
-        Assertions.assertArrayEquals(StandardApplicantCsvRow.Header, csv.split("\n")[0].split("\\|"));
+        Assertions.assertArrayEquals(
+                StandardApplicantCsvRow.Header, csv.split("\n")[0].split("\\|"));
         List<StandardApplicantCsvRow> rows = parseCsv(csv);
         for (int i = 1; i < rows.size(); i++) {
             dataComparison(rows.get(i), sa);
@@ -410,54 +411,76 @@ class StandardApplicantServiceTest {
 
     @Test
     void testExportToCsv_codeAndNameFilterFailure() {
-         val exception = Assertions.assertThrows(
-                AppRegistryException.class,
-                () -> standardApplicantService.generateCsv("APP001", "Test Org"));
-        Assertions.assertEquals(StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION, exception.getCode());
+        val exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> standardApplicantService.generateCsv("APP001", "Test Org"));
+        Assertions.assertEquals(
+                StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION, exception.getCode());
     }
 
     @Test
     void testExportToCsv_noResultsFoundFailure() {
         when(repository.findByCodeAndName(any(), any())).thenReturn(Collections.emptyList());
-        val exception = Assertions.assertThrows(
-                AppRegistryException.class,
-                () -> standardApplicantService.generateCsv("APP001", null));
-        Assertions.assertEquals(StandardApplicantCodeError.NO_RESULTS_FOUND_FOR_CSV_GENERATION, exception.getCode());
+        val exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> standardApplicantService.generateCsv("APP001", null));
+        Assertions.assertEquals(
+                StandardApplicantCodeError.NO_RESULTS_FOUND_FOR_CSV_GENERATION,
+                exception.getCode());
     }
 
     private void dataComparison(StandardApplicantCsvRow row, StandardApplicant expected) {
         Assertions.assertEquals(row.getApplicantCode(), expected.getApplicantCode());
-        Assertions.assertEquals(row.getApplicantTitle(),
-                                expected.getApplicantTitle() == null ? "" : expected.getApplicantTitle());
-        Assertions.assertEquals(row.getName(), expected.getName() == null ? "" : expected.getName());
-        Assertions.assertEquals(row.getApplicantForename1(),
-                                expected.getApplicantForename1() == null ? "" : expected.getApplicantForename1());
-        Assertions.assertEquals(row.getApplicantForename2(),
-                                expected.getApplicantForename2() == null ? "" : expected.getApplicantForename2());
-        Assertions.assertEquals(row.getApplicantForename3(),
-                                expected.getApplicantForename3() == null ? "" : expected.getApplicantForename3());
-        Assertions.assertEquals(row.getApplicantSurname(),
-                                expected.getApplicantSurname() == null ? "" : expected.getApplicantSurname());
+        Assertions.assertEquals(
+                row.getApplicantTitle(),
+                expected.getApplicantTitle() == null ? "" : expected.getApplicantTitle());
+        Assertions.assertEquals(
+                row.getName(), expected.getName() == null ? "" : expected.getName());
+        Assertions.assertEquals(
+                row.getApplicantForename1(),
+                expected.getApplicantForename1() == null ? "" : expected.getApplicantForename1());
+        Assertions.assertEquals(
+                row.getApplicantForename2(),
+                expected.getApplicantForename2() == null ? "" : expected.getApplicantForename2());
+        Assertions.assertEquals(
+                row.getApplicantForename3(),
+                expected.getApplicantForename3() == null ? "" : expected.getApplicantForename3());
+        Assertions.assertEquals(
+                row.getApplicantSurname(),
+                expected.getApplicantSurname() == null ? "" : expected.getApplicantSurname());
         Assertions.assertEquals(row.getAddressLine1(), expected.getAddressLine1());
-        Assertions.assertEquals(row.getAddressLine2(),
-                                expected.getAddressLine2() == null ? "" : expected.getAddressLine2());
-        Assertions.assertEquals(row.getAddressLine3(),
-                                expected.getAddressLine3() == null ? "" : expected.getAddressLine3());
-        Assertions.assertEquals(row.getAddressLine4(),
-                                expected.getAddressLine4() == null ? "" : expected.getAddressLine4());
-        Assertions.assertEquals(row.getAddressLine5(),
-                                expected.getAddressLine5() == null ? "" : expected.getAddressLine5());
-        Assertions.assertEquals(row.getPostcode(),
-                                expected.getPostcode() == null ? "" : expected.getPostcode());
-        Assertions.assertEquals(row.getEmailAddress(),
-                                expected.getEmailAddress() == null ? "" : expected.getEmailAddress());
-        Assertions.assertEquals(row.getTelephoneNumber(),
-                                expected.getTelephoneNumber() == null ? "" : expected.getTelephoneNumber());
-        Assertions.assertEquals(row.getMobileNumber(),
-                                expected.getMobileNumber() == null ? "" : expected.getMobileNumber());
-        Assertions.assertEquals(row.getApplicantStartDate() , expected.getApplicantStartDate().toString());
-        Assertions.assertEquals(row.getApplicantEndDate(), expected.getApplicantEndDate() == null ? "" :
-            expected.getApplicantEndDate().toString());
+        Assertions.assertEquals(
+                row.getAddressLine2(),
+                expected.getAddressLine2() == null ? "" : expected.getAddressLine2());
+        Assertions.assertEquals(
+                row.getAddressLine3(),
+                expected.getAddressLine3() == null ? "" : expected.getAddressLine3());
+        Assertions.assertEquals(
+                row.getAddressLine4(),
+                expected.getAddressLine4() == null ? "" : expected.getAddressLine4());
+        Assertions.assertEquals(
+                row.getAddressLine5(),
+                expected.getAddressLine5() == null ? "" : expected.getAddressLine5());
+        Assertions.assertEquals(
+                row.getPostcode(), expected.getPostcode() == null ? "" : expected.getPostcode());
+        Assertions.assertEquals(
+                row.getEmailAddress(),
+                expected.getEmailAddress() == null ? "" : expected.getEmailAddress());
+        Assertions.assertEquals(
+                row.getTelephoneNumber(),
+                expected.getTelephoneNumber() == null ? "" : expected.getTelephoneNumber());
+        Assertions.assertEquals(
+                row.getMobileNumber(),
+                expected.getMobileNumber() == null ? "" : expected.getMobileNumber());
+        Assertions.assertEquals(
+                row.getApplicantStartDate(), expected.getApplicantStartDate().toString());
+        Assertions.assertEquals(
+                row.getApplicantEndDate(),
+                expected.getApplicantEndDate() == null
+                        ? ""
+                        : expected.getApplicantEndDate().toString());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
