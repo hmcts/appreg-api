@@ -21,6 +21,10 @@
 #						Remove unused sequences
 # 6.0		10/06/2026	Matthew Harman	ARCPOC-1432 - change
 #						name_address field names
+# 7.0		24/06/2026	Matthew Harman	ARCPOC-1431 - add code to 
+#						create mappings for non-mapped
+#						users in APPREG_USER_MAPPING
+#						table
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -29,7 +33,7 @@
 #						FULL for big bang
 #				NOTE: CRIMINAL_JUSTICE_AREA will always be big 
 #				bang as this does not have a CHANGED_DATE field
-operation_mode='FULL';
+operation_mode='INCREMENTAL';
 
 # retention_mode		Retention mode, YES to implement retention policy
 #					i.e. we won't migrate data out of retention
@@ -98,6 +102,11 @@ postgres_insert_file="${spool_location}/insert_data.sql";
 postgres_delete_file="${spool_location}/delete_data.sql";
 # Blank the file
 >${postgres_delete_file}
+
+# Mapping file for the user mapping
+mapping_sql="mapping.sql";
+# Blank the file
+>${mapping_sql}
 
 # Clear the deletes file
 >deletes.sql
@@ -208,7 +217,7 @@ pop_postgres5() {
 #			schema name that we need to migrate
 # Removed APPREGISTER.DATA_AUDIT
 # Keep the correct apply order so that there are no constraint violations
-TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES,APPREGISTER.CRIMINAL_JUSTICE_AREA,APPREGISTER.APPLICATION_LISTS,APPREGISTER.STANDARD_APPLICANTS,APPREGISTER.NAME_ADDRESS,APPREGISTER.APPLICATION_LIST_ENTRIES,APPREGISTER.APPLICATION_REGISTER,APPREGISTER.FEE,APPREGISTER.APP_LIST_ENTRY_FEE_ID,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS,APPREGISTER.APP_LIST_ENTRY_OFFICIAL,APPREGISTER.RESOLUTION_CODES,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS,LIBRA.NATIONAL_COURT_HOUSES';
+TABLES_TO_EXTRACT='APPREGISTER.APPREG_USER_MAPPING,APPREGISTER.APPLICATION_CODES,APPREGISTER.CRIMINAL_JUSTICE_AREA,APPREGISTER.APPLICATION_LISTS,APPREGISTER.STANDARD_APPLICANTS,APPREGISTER.NAME_ADDRESS,APPREGISTER.APPLICATION_LIST_ENTRIES,APPREGISTER.APPLICATION_REGISTER,APPREGISTER.FEE,APPREGISTER.APP_LIST_ENTRY_FEE_ID,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS,APPREGISTER.APP_LIST_ENTRY_OFFICIAL,APPREGISTER.RESOLUTION_CODES,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS,LIBRA.NATIONAL_COURT_HOUSES';
 SEQUENCES_TO_EXTRACT='APPREGISTER.AC_SEQ,APPREGISTER.ALEFS_SEQ,APPREGISTER.ALEO_SEQ,APPREGISTER.ALER_SEQ,APPREGISTER.AL_SEQ,APPREGISTER.AR_SEQ,APPREGISTER.CJA_SEQ,APPREGISTER.FEE_SEQ,APPREGISTER.NA_SEQ,APPREGISTER.RC_SEQ,APPREGISTER.SA_SEQ';
 
 # Table Fields		Each table has specific fields, detail them here
@@ -225,6 +234,8 @@ APPLICATION_LISTS_FIELDS='AL_ID:NUMBER:NUMERIC:N:N,APPLICATION_LIST_STATUS:VARCH
 APPLICATION_LIST_ENTRIES_FIELDS='ALE_ID:NUMBER:NUMERIC:N:N,AL_AL_ID:NUMBER:NUMERIC:N:N,SA_SA_ID:NUMBER:NUMERIC:Y:N,AC_AC_ID:NUMBER:NUMERIC:N:N,A_NA_ID:NUMBER:NUMERIC:Y:N,R_NA_ID:NUMBER:NUMERIC:Y:N,NUMBER_OF_BULK_RESPONDENTS:NUMBER:SMALLINT:Y:N,APPLICATION_LIST_ENTRY_WORDING:CLOB:TEXT:N:N,CASE_REFERENCE:VARCHAR:VARCHAR(15):Y:N,ACCOUNT_NUMBER:VARCHAR:VARCHAR(20):Y:N,ENTRY_RESCHEDULED:CHAR:CHAR(1):N:N,NOTES:VARCHAR:VARCHAR(4000):Y:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMSTAMP:N:N,BULK_UPLOAD:VARCHAR:VARCHAR(1):Y:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N,SEQUENCE_NUMBER:NUMBER:SMALLINT:N:N,TCEP_STATUS:VARCHAR:VARCHAR(2):Y:N,MESSAGE_UUID:VARCHAR:VARCHAR(36):Y:N,RETRY_COUNT:VARCHAR:VARCHAR(36):Y:N,LODGEMENT_DATE:DATE:TIMESTAMP:N:N';
 
 APPLICATION_REGISTER_FIELDS='AR_ID:NUMBER:NUMERIC:N:N,AL_AL_ID:NUMBER:NUMERIC:N:N,TEXT:CLOB:TEXT:Y:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:TIMESTAMP:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):Y:N';
+
+APPREG_USER_MAPPING_FIELDS='LEGACY_CHANGED_BY:NUMBER:NUMERIC:N:N,MODERN_CHANGED_BY:VARCHAR:VARCHAR(73):N:N';
 
 APP_LIST_ENTRY_FEE_ID_FIELDS='ALE_ALE_ID:NUMBER:NUMERIC:N:N,FEE_FEE_ID:NUMBER:NUMERIC:N:N,VERSION:NUMBER:NUMERIC:N:N,CHANGED_BY:NUMBER:NUMERIC:N:N,CHANGED_DATE:DATE:TIMESTAMP:N:N,USER_NAME:VARCHAR:VARCHAR(250):N:N';
 
@@ -326,6 +337,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 		APPREGISTER.APPLICATION_LISTS)
 			echo "in APPLICATION_LISTS"
@@ -357,6 +370,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.APPLICATION_LIST_ENTRIES)
 			echo "in APPLICATION_LIST_ENTRIES"
@@ -385,6 +400,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.APPLICATION_REGISTER)
 			echo "in APPLICATION_REGISTER"
@@ -413,6 +430,38 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
+			;;
+		APPREGISTER.APPREG_USER_MAPPING)
+			echo "in APPREG_USER_MAPPING"
+			table_fields=$APPREG_USER_MAPPING_FIELDS;
+			split_lob_into_chunks="NO";
+			order_by_field="";
+			conflict_field="LEGACY_CHANGED_BY";
+			conflict_constraint="NO";
+			conflict_constraint_name='';
+			incremental_allowed="NO";
+			lower_table_name='appreg_user_mapping';
+			lower_with_schema='appregister.appreg_user_mapping';
+			changed_date='';
+			field_count=2;
+			use_hash="NO";
+			hash_index='';
+			hash_index_constraint='';
+			hash_index_drop='';
+			shard_field="LEGACY_CHANGED_BY";
+			changed_by='';
+			retention_clause='';
+			additional_postgres_fields='';
+			additional_oracle_select="";
+			additional_insert="";
+			backslashes="";
+			additional_fields="";
+			additional_fields_nullif="";
+			excluded_fields="";
+			user_mapping="NO";
+			use_scn="NO";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
@@ -441,6 +490,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
 			echo "in APP_LIST_ENTRY_FEE_STATUS"
@@ -469,6 +520,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
 			echo "in APP_LIST_ENTRY_OFFICIAL"
@@ -497,6 +550,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
 			echo "in APP_LIST_ENTRY_RESOLUTIONS"
@@ -525,6 +580,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.CRIMINAL_JUSTICE_AREA)
 			echo "in CRIMINAL_JUSTICE_AREA"
@@ -554,6 +611,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 		APPREGISTER.DATA_AUDIT)
 			echo "in DATA_AUDIT"
@@ -583,6 +642,8 @@ w
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 		APPREGISTER.FEE)
 			echo "in FEE"
@@ -611,6 +672,8 @@ w
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 		APPREGISTER.NAME_ADDRESS)
 			echo "in NAME_ADDRESS"
@@ -647,6 +710,8 @@ additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REP
 			additional_fields=", FIRST_NAME, MIDDLE_NAME, LAST_NAME";
 			additional_fields_nullif=",NULLIF(left(FIRST_NAME, 100),''),NULLIF(left(MIDDLE_NAME, 100),''),NULLIF(left(LAST_NAME, 100),'')";
 			excluded_fields=", FIRST_NAME = EXCLUDED.FIRST_NAME, MIDDLE_NAME = EXCLUDED.MIDDLE_NAME, LAST_NAME = EXCLUDED.LAST_NAME";
+			user_mapping="YES";
+			use_scn="YES";
 			;;
 		APPREGISTER.RESOLUTION_CODES)
 			echo "in RESOLUTION_CODES"
@@ -675,6 +740,8 @@ additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REP
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 		APPREGISTER.STANDARD_APPLICANTS)
 			echo "in STANDARD_APPLICANTS"
@@ -703,6 +770,8 @@ additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REP
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 		LIBRA.NATIONAL_COURT_HOUSES)
 			echo "in NATIONAL_COURT_HOUSES"
@@ -731,8 +800,34 @@ additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REP
 			additional_fields="";
 			additional_fields_nullif="";
 			excluded_fields="";
+			user_mapping="NO";
+			use_scn="YES";
 			;;
 	esac
+
+	# Generate the mapping sql query
+	if [[ ${user_mapping} == "YES" ]]
+	then
+		echo "INSERT INTO APPREGISTER.APPREG_USER_MAPPING (">>${mapping_sql}
+		echo "legacy_changed_by,">>${mapping_sql}
+		echo "modern_changed_by">>${mapping_sql}
+		echo ")">>${mapping_sql}
+		echo "SELECT s.legacy_changed_by,">>${mapping_sql}
+		echo "'MISSINGM-MISS-MISS-MISS-'||">>${mapping_sql}
+		echo "LPAD(appregister.appreg_user_mapping_seq.NEXTVAL, 12, '0') ||">>${mapping_sql}
+		echo "':72f988bf-86f1-41af-91ab-2d7cd011db47'">>${mapping_sql}
+		echo "FROM (">>${mapping_sql}
+		echo "SELECT DISTINCT ${changed_by} AS legacy_changed_by">>${mapping_sql}
+		echo "FROM ${tables_to_extract}">>${mapping_sql}
+		echo "WHERE ${changed_by} IS NOT NULL">>${mapping_sql}
+		echo ") s">>${mapping_sql}
+		echo "WHERE NOT EXISTS (">>${mapping_sql}
+		echo "SELECT 1">>${mapping_sql}
+		echo "FROM appregister.appreg_user_mapping m">>${mapping_sql}
+		echo "WHERE m.legacy_changed_by = s.legacy_changed_by">>${mapping_sql}
+		echo ");">>${mapping_sql}
+		echo "">>${mapping_sql}
+	fi
 
 	# Need to loop through the fields
 	if [[ ${split_lob_into_chunks} == "NO" ]]
@@ -1081,7 +1176,12 @@ echo "sqlaa: $sql_script";
 		echo ");${NEWLINE}">>${postgres_schema_file};
 
 echo "sql3: $sql_script"
-		sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
+		if [[ ${use_scn} == "YES" ]]
+		then
+			sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
+		else
+			sql_script="${sql_script}FROM ${tables_to_extract}${NEWLINE}";
+		fi
 echo "AA: ${l_have_where}";
 		if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
 		then
@@ -1551,7 +1651,12 @@ echo $field_name
 			sql_script="${sql_script}${sql1_script}";
 #			sql_script="${sql_script}${l_clob_field},${NEWLINE}";
 			sql_script="${sql_script}${sql3_script}${NEWLINE}";
-			sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
+			if [[ ${use_scn} == "YES" ]]
+			then
+				sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
+			else
+				sql_script="${sql_script}FROM ${tables_to_extract}${NEWLINE}";
+			fi
 
 			# Shard the data
 			sql_script_base="${sql_script}";
@@ -1756,6 +1861,7 @@ for run in "${runs_array[@]}"; do
 	# echo "DEBUG: processing run='$run' max_idx='${max_idx[$run]}'"
 
 	outfile="extract_data_${run}.sql"
+
 	: > "$outfile" 		# truncate/create
 
 	max=${max_idx[$run]:-0}
