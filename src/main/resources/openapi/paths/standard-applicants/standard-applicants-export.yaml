@@ -3,8 +3,8 @@ get:
   description: |
     Export a filtered list of Standard Applicants to a CSV file.
     - Filters:
-        - `code` – case-insensitive partial match
-        - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3
+        - `code` – case-insensitive partial match. Name parameter cannot be included when providing the code parameter.
+        - `name` – case-insensitive partial match against organisation/name. Code parameter cannot be included when providing the name parameter.
   tags: ['standard-applicants']
   parameters:
     - in: query

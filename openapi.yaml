@@ -5163,19 +5163,20 @@ paths:
       description: |
         Export a filtered list of Standard Applicants to a CSV file.
         - Filters:
-            - `code` – case-insensitive partial match
-            - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3
+            - `code` – case-insensitive partial match. Name parameter cannot be included when providing the code parameter.
+            - `name` – case-insensitive partial match against organisation/name. Code parameter cannot be included when providing the name parameter.
       operationId: standardApplicantsExport
       parameters:
-      - description: "Filter by code (contains, case-insensitive)."
+      - description: "Filter by code (contains, case-insensitive). Name parameter\
+          \ cannot be included when providing the code parameter."
         example: SA
         in: query
         name: code
         schema:
           maxLength: 10
           type: string
-      - description: "Filter by name (contains, case-insensitive). Searches organisation/name,\
-          \ surname, forename 1, forename 2 and forename 3."
+      - description: "Filter by organisation name (contains, case-insensitive). Code\
+          \ parameter cannot be included when providing the name parameter."
         in: query
         name: name
         schema:
@@ -5188,7 +5189,7 @@ paths:
             text/csv:
               schema:
                 type: string
-          description: Standard Applicants CSV export job created
+          description: A CSV file containing the filtered list of Standard Applicants.
           headers:
             Vary:
               description: Response varies by Accept for media-type versioning.
