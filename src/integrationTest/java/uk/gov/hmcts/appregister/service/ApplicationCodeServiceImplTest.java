@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -21,6 +22,9 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ApplicationCodeServiceImplTest extends BaseIntegration {
+    private static final long INSERT_TEST_APPLICATION_CODE_ID = SEQUENCE_START_VALUE + 67L;
+    private static final long UPDATE_TEST_APPLICATION_CODE_ID = SEQUENCE_START_VALUE + 68L;
+
     @Autowired private ApplicationCodeService service;
 
     @Autowired private ApplicationCodeRepository repository;
@@ -39,11 +43,11 @@ public class ApplicationCodeServiceImplTest extends BaseIntegration {
     void testUpsertResolutionCode_insert() {
 
         val applicationCode = new ApplicationCode();
+        applicationCode.setId(INSERT_TEST_APPLICATION_CODE_ID);
         applicationCode.setCode("TESTAC1");
         applicationCode.setTitle("Test Application code 2");
         applicationCode.setStartDate(LocalDate.now());
         applicationCode.setEndDate(null);
-        applicationCode.setVersion(1L);
         applicationCode.setWording("");
         applicationCode.setFeeDue(YesOrNo.NO);
         applicationCode.setRequiresRespondent(YesOrNo.NO);
@@ -70,6 +74,7 @@ public class ApplicationCodeServiceImplTest extends BaseIntegration {
         createApplicationCode();
 
         val applicationCode = new ApplicationCode();
+        applicationCode.setId(UPDATE_TEST_APPLICATION_CODE_ID);
         applicationCode.setCode("TESTAC1");
         applicationCode.setTitle("Test applicationCode 2");
         applicationCode.setEndDate(LocalDate.now());
@@ -95,11 +100,11 @@ public class ApplicationCodeServiceImplTest extends BaseIntegration {
 
     private void createApplicationCode() {
         val applicationCode = new ApplicationCode();
+        applicationCode.setId(UPDATE_TEST_APPLICATION_CODE_ID);
         applicationCode.setCode("TESTAC1");
         applicationCode.setTitle("Test Application Code");
         applicationCode.setStartDate(LocalDate.now());
         applicationCode.setEndDate(null);
-        applicationCode.setVersion(1L);
         applicationCode.setWording("");
         applicationCode.setChangedBy(1L);
         applicationCode.setChangedDate(OffsetDateTime.now());

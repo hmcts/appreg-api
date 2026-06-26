@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -20,6 +21,9 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ResolutionCodeServiceImplTest extends BaseIntegration {
+    private static final long INSERT_TEST_RESOLUTION_CODE_ID = SEQUENCE_START_VALUE + 67L;
+    private static final long UPDATE_TEST_RESOLUTION_CODE_ID = SEQUENCE_START_VALUE + 68L;
+
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Autowired private ResultCodeService resultCodeService;
@@ -38,11 +42,11 @@ public class ResolutionCodeServiceImplTest extends BaseIntegration {
     void testUpsertResolutionCode_insert() {
 
         val resolutionCode = new ResolutionCode();
+        resolutionCode.setId(INSERT_TEST_RESOLUTION_CODE_ID);
         resolutionCode.setResultCode("TESTRC1");
         resolutionCode.setTitle("Test resolutionCode");
         resolutionCode.setStartDate(LocalDate.now());
         resolutionCode.setEndDate(null);
-        resolutionCode.setVersion(1L);
         resolutionCode.setWording("");
 
         resultCodeService.upsertResultCode(resolutionCode);
@@ -66,6 +70,7 @@ public class ResolutionCodeServiceImplTest extends BaseIntegration {
         createResolutionCode();
 
         val resolutionCode = new ResolutionCode();
+        resolutionCode.setId(UPDATE_TEST_RESOLUTION_CODE_ID);
         resolutionCode.setResultCode("TESTRC1");
         resolutionCode.setTitle("Test resolutionCode 2");
         resolutionCode.setEndDate(LocalDate.now());
@@ -91,11 +96,11 @@ public class ResolutionCodeServiceImplTest extends BaseIntegration {
 
     private void createResolutionCode() {
         val resolutionCode = new ResolutionCode();
+        resolutionCode.setId(UPDATE_TEST_RESOLUTION_CODE_ID);
         resolutionCode.setResultCode("TESTRC1");
         resolutionCode.setTitle("Test Resolution Code");
         resolutionCode.setStartDate(LocalDate.now());
         resolutionCode.setEndDate(null);
-        resolutionCode.setVersion(1L);
         resolutionCode.setWording("");
         resolutionCode.setChangedBy(1L);
         resolutionCode.setChangedDate(OffsetDateTime.now());

@@ -2,10 +2,7 @@ package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Pattern;
@@ -40,8 +37,6 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
     @Id
     @Column(name = "sa_id", nullable = false, updatable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sa_gen")
-    @SequenceGenerator(name = "sa_gen", sequenceName = "sa_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
     private Long id;
 

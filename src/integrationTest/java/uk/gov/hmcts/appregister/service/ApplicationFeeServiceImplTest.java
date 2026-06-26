@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,6 +23,8 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ApplicationFeeServiceImplTest extends BaseIntegration {
+    private static final long INSERT_TEST_FEE_ID = SEQUENCE_START_VALUE + 67L;
+    private static final long UPDATE_TEST_FEE_ID = SEQUENCE_START_VALUE + 68L;
 
     @Autowired DataAuditRepository dataAuditRepository;
 
@@ -43,13 +46,13 @@ public class ApplicationFeeServiceImplTest extends BaseIntegration {
     void testUpsertFee_insert() {
 
         val fee = new Fee();
+        fee.setId(INSERT_TEST_FEE_ID);
         fee.setReference("CO6.7");
         fee.setDescription("Test Fee");
         fee.setStartDate(now);
         fee.setEndDate(null);
         fee.setOffsite(false);
         fee.setAmount(BigDecimal.valueOf(10.00));
-        fee.setVersion(1L);
 
         applicationFeeService.upsertFee(fee);
 
@@ -71,6 +74,7 @@ public class ApplicationFeeServiceImplTest extends BaseIntegration {
         createFee();
 
         val fee = new Fee();
+        fee.setId(UPDATE_TEST_FEE_ID);
         fee.setReference("CO6.7");
         fee.setDescription("Test Fee 2");
         fee.setEndDate(now);
@@ -112,9 +116,9 @@ public class ApplicationFeeServiceImplTest extends BaseIntegration {
         fee.setEndDate(null);
         fee.setOffsite(false);
         fee.setAmount(BigDecimal.valueOf(10.00));
-        fee.setVersion(1L);
         fee.setChangedDate(LocalDateTime.now().minusDays(2).atOffset(ZoneOffset.UTC));
         fee.setChangedBy(1L);
+        fee.setId(UPDATE_TEST_FEE_ID);
 
         feeRepository.saveAndFlush(fee);
     }

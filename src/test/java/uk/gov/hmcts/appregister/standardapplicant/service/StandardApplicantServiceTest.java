@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import lombok.Setter;
 import lombok.val;
@@ -370,10 +371,10 @@ class StandardApplicantServiceTest {
         when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(ukZone)).thenReturn(clock);
-        when(repository.findStandardApplicantByCode("APP001", CURRENT_UK_DATE))
-                .thenReturn(List.of());
+        when(repository.findById(67L)).thenReturn(Optional.empty());
 
         val standardApplicant = new StandardApplicant();
+        standardApplicant.setId(67L);
         standardApplicant.setApplicantCode("APP001");
         standardApplicant.setName("John Doe");
         standardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
@@ -393,7 +394,7 @@ class StandardApplicantServiceTest {
 
         serviceImpl.upsertStandardApplicant(standardApplicant);
 
-        verify(repository, times(1)).findStandardApplicantByCode("APP001", CURRENT_UK_DATE);
+        verify(repository, times(1)).findById(standardApplicant.getId());
         verify(repository, times(1)).saveAndFlush(any(StandardApplicant.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -419,10 +420,11 @@ class StandardApplicantServiceTest {
         existingStandardApplicant.setName("John Doe");
         existingStandardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
         existingStandardApplicant.setApplicantEndDate(null);
-        when(repository.findStandardApplicantByCode("APP001", CURRENT_UK_DATE))
-                .thenReturn(List.of(existingStandardApplicant));
+        when(repository.findById(existingStandardApplicant.getId()))
+                .thenReturn(Optional.of(existingStandardApplicant));
 
         val standardApplicant = new StandardApplicant();
+        standardApplicant.setId(67L);
         standardApplicant.setApplicantCode("APP001");
         standardApplicant.setName("John Deer");
         standardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
@@ -442,9 +444,7 @@ class StandardApplicantServiceTest {
 
         serviceImpl.upsertStandardApplicant(standardApplicant);
 
-        verify(repository, times(1))
-                .findStandardApplicantByCode(
-                        existingStandardApplicant.getApplicantCode(), CURRENT_UK_DATE);
+        verify(repository, times(1)).findById(standardApplicant.getId());
         verify(repository, times(1)).saveAndFlush(any(StandardApplicant.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -471,10 +471,11 @@ class StandardApplicantServiceTest {
         existingStandardApplicant.setName("John Doe");
         existingStandardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
         existingStandardApplicant.setApplicantEndDate(CURRENT_UK_DATE.plusDays(1));
-        when(repository.findStandardApplicantByCode("APP001", CURRENT_UK_DATE))
-                .thenReturn(List.of(existingStandardApplicant));
+        when(repository.findById(existingStandardApplicant.getId()))
+                .thenReturn(Optional.of(existingStandardApplicant));
 
         val standardApplicant = new StandardApplicant();
+        standardApplicant.setId(67L);
         standardApplicant.setApplicantCode("APP001");
         standardApplicant.setName("John Deer");
         standardApplicant.setApplicantStartDate(CURRENT_UK_DATE);
@@ -494,9 +495,7 @@ class StandardApplicantServiceTest {
 
         serviceImpl.upsertStandardApplicant(standardApplicant);
 
-        verify(repository, times(1))
-                .findStandardApplicantByCode(
-                        existingStandardApplicant.getApplicantCode(), CURRENT_UK_DATE);
+        verify(repository, times(1)).findById(standardApplicant.getId());
         verify(repository, times(1)).saveAndFlush(any(StandardApplicant.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

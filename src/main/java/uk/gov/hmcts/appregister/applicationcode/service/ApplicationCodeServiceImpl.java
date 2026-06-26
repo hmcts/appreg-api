@@ -149,11 +149,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     @Override
     @Transactional
     public void upsertApplicationCode(ApplicationCode applicationCode) {
-        var applicationCodeDB =
-                repository
-                        .findById(applicationCode.getId())
-                        .stream()
-                        .findFirst();
+        var applicationCodeDB = repository.findById(applicationCode.getId()).stream().findFirst();
 
         if (applicationCodeDB.isEmpty()) {
             auditService.processAudit(

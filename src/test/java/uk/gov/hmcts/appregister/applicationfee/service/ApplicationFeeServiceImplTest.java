@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
@@ -261,8 +262,7 @@ class ApplicationFeeServiceImplTest {
 
     @Test
     void testUpsertFee_insert() {
-        when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK)).thenReturn(List.of());
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findById(67L)).thenReturn(Optional.empty());
         when(businessDateProvider.currentUkDateTime())
                 .thenReturn(
                         OffsetDateTime.of(
@@ -291,7 +291,7 @@ class ApplicationFeeServiceImplTest {
 
         serviceImpl.upsertFee(fee);
 
-        verify(repository, times(1)).findByReferenceBetweenDate("CO6.7", TODAY_UK);
+        verify(repository, times(1)).findById(67L);
         verify(repository, times(1)).saveAndFlush(any(Fee.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -306,7 +306,6 @@ class ApplicationFeeServiceImplTest {
 
     @Test
     void testUpsertFee_update() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(businessDateProvider.currentUkDateTime())
                 .thenReturn(
                         OffsetDateTime.of(
@@ -324,8 +323,7 @@ class ApplicationFeeServiceImplTest {
         existingFee.setCreatedUser("Unit Test 2");
         existingFee.setEndDate(null);
 
-        when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK))
-                .thenReturn(List.of(existingFee));
+        when(repository.findById(existingFee.getId())).thenReturn(Optional.of(existingFee));
 
         val fee = new Fee();
         fee.setId(67L);
@@ -350,7 +348,7 @@ class ApplicationFeeServiceImplTest {
 
         serviceImpl.upsertFee(fee);
 
-        verify(repository, times(1)).findByReferenceBetweenDate(fee.getReference(), TODAY_UK);
+        verify(repository, times(1)).findById(fee.getId());
         verify(repository, times(1)).saveAndFlush(any(Fee.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -366,7 +364,6 @@ class ApplicationFeeServiceImplTest {
 
     @Test
     void testUpsertFee_updateEndDate_toNull() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(businessDateProvider.currentUkDateTime())
                 .thenReturn(
                         OffsetDateTime.of(
@@ -385,8 +382,7 @@ class ApplicationFeeServiceImplTest {
         existingFee.setCreatedUser("Unit Test 2");
         existingFee.setEndDate(TODAY_UK);
 
-        when(repository.findByReferenceBetweenDate("CO6.7", TODAY_UK))
-                .thenReturn(List.of(existingFee));
+        when(repository.findById(existingFee.getId())).thenReturn(Optional.of(existingFee));
 
         val fee = new Fee();
         fee.setId(67L);
@@ -411,7 +407,7 @@ class ApplicationFeeServiceImplTest {
 
         serviceImpl.upsertFee(fee);
 
-        verify(repository, times(1)).findByReferenceBetweenDate(fee.getReference(), TODAY_UK);
+        verify(repository, times(1)).findById(fee.getId());
         verify(repository, times(1)).saveAndFlush(any(Fee.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

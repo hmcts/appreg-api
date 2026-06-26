@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -175,9 +176,10 @@ class CriminalJusticeAreaServiceImplTest {
 
     @Test
     void testUpsert_insert() {
-        when(repository.findByCodeIgnoreCase("UTEST")).thenReturn(List.of());
+        when(repository.findById(67L)).thenReturn(Optional.empty());
 
         val criminalJusticeArea = new CriminalJusticeArea();
+        criminalJusticeArea.setId(67L);
         criminalJusticeArea.setCode("UTEST");
         criminalJusticeArea.setDescription("Unit Test");
 
@@ -193,7 +195,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         serviceImpl.upsertCJA(criminalJusticeArea);
 
-        verify(repository, times(1)).findByCodeIgnoreCase("UTEST");
+        verify(repository, times(1)).findById(criminalJusticeArea.getId());
         verify(repository, times(1)).saveAndFlush(any(CriminalJusticeArea.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -209,8 +211,9 @@ class CriminalJusticeAreaServiceImplTest {
         val existingCja = new CriminalJusticeArea();
         existingCja.setDescription("Unit Test");
         existingCja.setCode("UTEST");
+        existingCja.setId(67L);
 
-        when(repository.findByCodeIgnoreCase("UTEST")).thenReturn(List.of(existingCja));
+        when(repository.findById(existingCja.getId())).thenReturn(Optional.of(existingCja));
 
         val criminalJusticeArea = new CriminalJusticeArea();
 
@@ -230,7 +233,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         serviceImpl.upsertCJA(criminalJusticeArea);
 
-        verify(repository, times(1)).findByCodeIgnoreCase(criminalJusticeArea.getCode());
+        verify(repository, times(1)).findById(criminalJusticeArea.getId());
         verify(repository, times(1)).saveAndFlush(any(CriminalJusticeArea.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

@@ -2,12 +2,14 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 class ApplicationListRepositoryTest extends BaseRepositoryTest {
+    private static final AtomicLong NEXT_CJA_ID = new AtomicLong(SEQUENCE_START_VALUE + 67L);
 
     @Autowired private ApplicationListRepository repository;
     @Autowired private CriminalJusticeAreaRepository cjaRepository;
@@ -59,7 +62,11 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     private CriminalJusticeArea saveCja(String code, String desc) {
         CriminalJusticeArea cja =
-                CriminalJusticeArea.builder().code(code).description(desc).build();
+                CriminalJusticeArea.builder()
+                        .id(NEXT_CJA_ID.getAndIncrement())
+                        .code(code)
+                        .description(desc)
+                        .build();
         return cjaRepository.saveAndFlush(cja);
     }
 

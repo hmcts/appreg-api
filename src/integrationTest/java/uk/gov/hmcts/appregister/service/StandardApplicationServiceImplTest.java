@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +21,8 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class StandardApplicationServiceImplTest extends BaseIntegration {
+    private static final long INSERT_TEST_STANDARD_APPLICANT_ID = SEQUENCE_START_VALUE + 67L;
+    private static final long UPDATE_TEST_STANDARD_APPLICANT_ID = 7L;
 
     @Autowired private StandardApplicantService standardApplicantService;
 
@@ -41,6 +44,7 @@ public class StandardApplicationServiceImplTest extends BaseIntegration {
     void testUpsertStandardApplicant_insert() {
 
         val standardApplicant = new StandardApplicant();
+        standardApplicant.setId(INSERT_TEST_STANDARD_APPLICANT_ID);
         standardApplicant.setApplicantCode("SW99001");
         standardApplicant.setName("Craig Smith");
         standardApplicant.setApplicantStartDate(now);
@@ -69,6 +73,7 @@ public class StandardApplicationServiceImplTest extends BaseIntegration {
     void testUpsertStandardApplicant_update() {
 
         val standardApplicant = new StandardApplicant();
+        standardApplicant.setId(UPDATE_TEST_STANDARD_APPLICANT_ID);
         standardApplicant.setApplicantCode("APP006");
         standardApplicant.setName("John Deer");
         standardApplicant.setApplicantStartDate(now);

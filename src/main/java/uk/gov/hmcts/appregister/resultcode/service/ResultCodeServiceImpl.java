@@ -151,12 +151,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     @Override
     @Transactional
     public void upsertResultCode(ResolutionCode resolutionCode) {
-        var resolutionCodeDB =
-                repository
-                        .findById(
-                                resolutionCode.getId())
-                        .stream()
-                        .findFirst();
+        var resolutionCodeDB = repository.findById(resolutionCode.getId()).stream().findFirst();
 
         if (resolutionCodeDB.isEmpty()) {
             auditService.processAudit(

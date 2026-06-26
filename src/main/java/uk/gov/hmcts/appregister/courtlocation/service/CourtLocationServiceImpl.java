@@ -143,11 +143,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
     @Override
     @Transactional
     public void upsertCourtHouse(NationalCourtHouse nationalCourtHouse) {
-        var courthouseDB =
-                repository
-                        .findById(nationalCourtHouse.getId())
-                        .stream()
-                        .findFirst();
+        var courthouseDB = repository.findById(nationalCourtHouse.getId()).stream().findFirst();
 
         if (courthouseDB.isEmpty()) {
             auditService.processAudit(

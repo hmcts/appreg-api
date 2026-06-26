@@ -104,11 +104,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     @Override
     @Transactional
     public void upsertFee(Fee fee) {
-        var feeDB =
-                feeRepository
-                        .findById(fee.getId())
-                        .stream()
-                        .findFirst();
+        var feeDB = feeRepository.findById(fee.getId()).stream().findFirst();
 
         if (feeDB.isEmpty()) {
             auditService.processAudit(

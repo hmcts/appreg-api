@@ -1,12 +1,14 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,8 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
 class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
+    private static final AtomicLong NEXT_RESOLUTION_CODE_ID =
+            new AtomicLong(SEQUENCE_START_VALUE + 67L);
 
     @Autowired private ResolutionCodeRepository repository;
     @Autowired private Clock clock; // from AppConfig (UTC) – keeps tests stable
@@ -23,6 +27,10 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
     // Convenience helper: today as a LocalDate based on the injected Clock
     private LocalDate today() {
         return LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
+    }
+
+    private long nextResolutionCodeId() {
+        return NEXT_RESOLUTION_CODE_ID.getAndIncrement();
     }
 
     @Nested
@@ -96,6 +104,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         void includesRowStartingOnActiveDate() {
             LocalDate activeDate = today();
             ResolutionCode startsToday = new ResolutionCode();
+            startsToday.setId(nextResolutionCodeId());
             startsToday.setResultCode("BOUNDARY1");
             startsToday.setTitle("Boundary Start");
             startsToday.setWording("Boundary wording");
@@ -138,6 +147,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             LocalDate t = today();
 
             ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
+            additionalActiveWithEndDate.setId(nextResolutionCodeId());
             additionalActiveWithEndDate.setResultCode("APPC");
             additionalActiveWithEndDate.setTitle("Some other APPC title (should not win)");
             additionalActiveWithEndDate.setWording("Dummy wording");

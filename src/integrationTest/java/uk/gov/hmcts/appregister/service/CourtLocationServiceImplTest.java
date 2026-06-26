@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -20,6 +21,8 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class CourtLocationServiceImplTest extends BaseIntegration {
+    private static final long INSERT_TEST_COURTHOUSE_ID = SEQUENCE_START_VALUE + 67L;
+    private static final long UPDATE_TEST_COURTHOUSE_ID = SEQUENCE_START_VALUE + 68L;
 
     @Autowired private CourtLocationService service;
 
@@ -38,12 +41,12 @@ public class CourtLocationServiceImplTest extends BaseIntegration {
     @Test
     void testUpsert_insert() {
         val nationalCourtHouse = new NationalCourtHouse();
+        nationalCourtHouse.setId(INSERT_TEST_COURTHOUSE_ID);
         nationalCourtHouse.setCourtLocationCode("TEST001");
         nationalCourtHouse.setCourtType("CHOA");
         nationalCourtHouse.setName("Unit Test Court");
         nationalCourtHouse.setStartDate(LocalDate.now());
         nationalCourtHouse.setEndDate(null);
-        nationalCourtHouse.setVersion(1L);
 
         service.upsertCourtHouse(nationalCourtHouse);
 
@@ -84,7 +87,7 @@ public class CourtLocationServiceImplTest extends BaseIntegration {
         courtHouse.setCourtLocationCode("TEST001");
         courtHouse.setCourtType("CHOA");
         courtHouse.setName("Test court 2");
-        courtHouse.setVersion(1L);
+        courtHouse.setId(UPDATE_TEST_COURTHOUSE_ID);
 
         service.upsertCourtHouse(courtHouse);
 
@@ -128,9 +131,9 @@ public class CourtLocationServiceImplTest extends BaseIntegration {
         nationalCourtHouse.setName("Test Court");
         nationalCourtHouse.setStartDate(LocalDate.now());
         nationalCourtHouse.setEndDate(null);
-        nationalCourtHouse.setVersion(1L);
         nationalCourtHouse.setChangedDate(OffsetDateTime.now());
         nationalCourtHouse.setChangedBy(1L);
+        nationalCourtHouse.setId(UPDATE_TEST_COURTHOUSE_ID);
 
         repository.saveAndFlush(nationalCourtHouse);
     }

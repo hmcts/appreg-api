@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import lombok.Setter;
 import lombok.val;
@@ -503,14 +504,12 @@ class ApplicationCodeServiceImplTest {
 
     @Test
     void testUpsertApplicationCode_insert() {
-        when(repository.findByCodeAndDate("UTEST", LocalDate.now(fixedClock)))
-                .thenReturn(List.of());
+        when(repository.findById(67L)).thenReturn(Optional.empty());
 
         val applicationCode = new ApplicationCode();
         applicationCode.setCode("UTEST");
         applicationCode.setTitle("Unit Test");
         applicationCode.setId(67L);
-        applicationCode.setVersion(1L);
         applicationCode.setStartDate(LocalDate.now(fixedClock));
         applicationCode.setChangedBy(67L);
         applicationCode.setChangedDate(OffsetDateTime.now(fixedClock));
@@ -532,7 +531,7 @@ class ApplicationCodeServiceImplTest {
 
         serviceImpl.upsertApplicationCode(applicationCode);
 
-        verify(repository, times(1)).findByCodeAndDate("UTEST", LocalDate.now(fixedClock));
+        verify(repository, times(1)).findById(applicationCode.getId());
         verify(repository, times(1)).saveAndFlush(any(ApplicationCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -558,13 +557,12 @@ class ApplicationCodeServiceImplTest {
         existingApplicationCode.setCreatedUser("Unit Test");
         existingApplicationCode.setEndDate(null);
 
-        when(repository.findByCodeAndDate("UTEST", LocalDate.now(fixedClock)))
-                .thenReturn(List.of(existingApplicationCode));
+        when(repository.findById(existingApplicationCode.getId()))
+                .thenReturn(Optional.of(existingApplicationCode));
 
         val applicationCode = new ApplicationCode();
         applicationCode.setCode("UTEST");
         applicationCode.setId(67L);
-        applicationCode.setVersion(1L);
         applicationCode.setStartDate(LocalDate.now(fixedClock));
         applicationCode.setChangedBy(67L);
         applicationCode.setChangedDate(OffsetDateTime.now(fixedClock));
@@ -587,8 +585,7 @@ class ApplicationCodeServiceImplTest {
 
         serviceImpl.upsertApplicationCode(applicationCode);
 
-        verify(repository, times(1))
-                .findByCodeAndDate(applicationCode.getCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).findById(applicationCode.getId());
         verify(repository, times(1)).saveAndFlush(any(ApplicationCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -614,13 +611,12 @@ class ApplicationCodeServiceImplTest {
         existingApplicationCode.setCreatedUser("Unit Test");
         existingApplicationCode.setEndDate(LocalDate.now(fixedClock));
 
-        when(repository.findByCodeAndDate("UTEST", LocalDate.now(fixedClock)))
-                .thenReturn(List.of(existingApplicationCode));
+        when(repository.findById(existingApplicationCode.getId()))
+                .thenReturn(Optional.of(existingApplicationCode));
 
         val applicationCode = new ApplicationCode();
         applicationCode.setCode("UTEST");
         applicationCode.setId(67L);
-        applicationCode.setVersion(1L);
         applicationCode.setStartDate(LocalDate.now(fixedClock));
         applicationCode.setChangedBy(67L);
         applicationCode.setChangedDate(OffsetDateTime.now(fixedClock));
@@ -642,8 +638,7 @@ class ApplicationCodeServiceImplTest {
 
         serviceImpl.upsertApplicationCode(applicationCode);
 
-        verify(repository, times(1))
-                .findByCodeAndDate(applicationCode.getCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).findById(applicationCode.getId());
         verify(repository, times(1)).saveAndFlush(any(ApplicationCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

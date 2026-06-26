@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.NO;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -126,6 +128,12 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     protected static final OffsetDateTime TEST_OFFSET_DATE_TIME =
             OffsetDateTime.of(TEST_DATE, TEST_TIME, ZoneOffset.UTC);
     protected static final String VALID_COURT_CODE = "CCC003";
+    private static final AtomicLong NEXT_APPLICATION_CODE_ID =
+            new AtomicLong(SEQUENCE_START_VALUE + 167L);
+    private static final AtomicLong NEXT_RESOLUTION_CODE_ID =
+            new AtomicLong(SEQUENCE_START_VALUE + 267L);
+    private static final AtomicLong NEXT_STANDARD_APPLICANT_ID =
+            new AtomicLong(SEQUENCE_START_VALUE + 367L);
 
     @BeforeEach
     void setupUser() {
@@ -137,6 +145,18 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     /** Build a token generator with ADMIN role. */
     protected TokenGenerator createAdminToken() {
         return getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+    }
+
+    protected long nextApplicationCodeId() {
+        return NEXT_APPLICATION_CODE_ID.getAndIncrement();
+    }
+
+    protected long nextResolutionCodeId() {
+        return NEXT_RESOLUTION_CODE_ID.getAndIncrement();
+    }
+
+    protected long nextStandardApplicantId() {
+        return NEXT_STANDARD_APPLICANT_ID.getAndIncrement();
     }
 
     protected UUID getOpenApplicationListId() {
@@ -791,6 +811,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
         ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setId(nextResolutionCodeId());
         resolutionCode.setResultCode(resultCode);
         resolutionCode.setTitle(resultCode + " title");
         resolutionCode.setWording(resultCode + " wording");
@@ -873,6 +894,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     public ApplicationCode buildApplicationCode(String code) {
         ApplicationCode applicationCode = new ApplicationCode();
+        applicationCode.setId(nextApplicationCodeId());
         applicationCode.setCode(code);
         applicationCode.setTitle("Test title");
         applicationCode.setWording("Test wording");
@@ -906,6 +928,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     public void addResolution(ApplicationListEntry entry, String resultCode) {
         ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setId(nextResolutionCodeId());
         resolutionCode.setResultCode(resultCode);
         resolutionCode.setTitle(resultCode + " title");
         resolutionCode.setWording(resultCode + " wording");

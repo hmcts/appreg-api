@@ -1490,6 +1490,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     private ApplicationListEntry createClosedStandardPersonApplicantEntry(
             String applicantFirstName, String applicantLastName, String accountReference) {
         StandardApplicant applicant = new StandardApplicant();
+        applicant.setId(nextStandardApplicantId());
         applicant.setApplicantCode("SA" + accountReference);
         applicant.setApplicantStartDate(TEST_DATE);
         applicant.setName(null);

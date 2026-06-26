@@ -2,10 +2,7 @@ package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,8 +31,6 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 public class CriminalJusticeArea implements Identifiable, Keyable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cja_gen")
-    @SequenceGenerator(name = "cja_gen", sequenceName = "cja_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
     @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private Long id;

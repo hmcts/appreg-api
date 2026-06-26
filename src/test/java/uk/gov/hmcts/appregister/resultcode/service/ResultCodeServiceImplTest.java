@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -252,17 +253,16 @@ class ResultCodeServiceImplTest {
 
     @Test
     void testUpsertResolutionCode_insert() {
-        ZoneId ukZone = ZoneId.of("Europe/London");
-        Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ukZone);
-
-        when(repository.findActiveByResultCodeIgnoreCaseOrdered("UTEST", LocalDate.now(fixedClock)))
-                .thenReturn(List.of());
+        when(repository.findById(67L)).thenReturn(Optional.empty());
 
         val resolutionCode = new ResolutionCode();
         resolutionCode.setResultCode("UTEST");
         resolutionCode.setTitle("Unit Test");
         resolutionCode.setId(67L);
-        resolutionCode.setVersion(1L);
+
+        ZoneId ukZone = ZoneId.of("Europe/London");
+        Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ukZone);
+
         resolutionCode.setStartDate(LocalDate.now(fixedClock));
         resolutionCode.setChangedBy(67L);
         resolutionCode.setChangedDate(OffsetDateTime.now(fixedClock));
@@ -282,8 +282,7 @@ class ResultCodeServiceImplTest {
 
         serviceImpl.upsertResultCode(resolutionCode);
 
-        verify(repository, times(1))
-                .findActiveByResultCodeIgnoreCaseOrdered("UTEST", LocalDate.now(fixedClock));
+        verify(repository, times(1)).findById(resolutionCode.getId());
         verify(repository, times(1)).saveAndFlush(any(ResolutionCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -310,13 +309,12 @@ class ResultCodeServiceImplTest {
         existingResolutionCode.setCreatedUser("Unit Test");
         existingResolutionCode.setEndDate(null);
 
-        when(repository.findActiveByResultCodeIgnoreCaseOrdered("UTEST", LocalDate.now(fixedClock)))
-                .thenReturn(List.of(existingResolutionCode));
+        when(repository.findById(existingResolutionCode.getId()))
+                .thenReturn(Optional.of(existingResolutionCode));
 
         val resolutionCode = new ResolutionCode();
         resolutionCode.setResultCode("UTEST");
         resolutionCode.setId(67L);
-        resolutionCode.setVersion(1L);
         resolutionCode.setStartDate(LocalDate.now(fixedClock));
         resolutionCode.setChangedBy(67L);
         resolutionCode.setChangedDate(OffsetDateTime.now(fixedClock));
@@ -337,9 +335,7 @@ class ResultCodeServiceImplTest {
 
         serviceImpl.upsertResultCode(resolutionCode);
 
-        verify(repository, times(1))
-                .findActiveByResultCodeIgnoreCaseOrdered(
-                        resolutionCode.getResultCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).findById(resolutionCode.getId());
         verify(repository, times(1)).saveAndFlush(any(ResolutionCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -367,13 +363,12 @@ class ResultCodeServiceImplTest {
         existingResolutionCode.setCreatedUser("Unit Test");
         existingResolutionCode.setEndDate(LocalDate.now(fixedClock).plusDays(1));
 
-        when(repository.findActiveByResultCodeIgnoreCaseOrdered("UTEST", LocalDate.now(fixedClock)))
-                .thenReturn(List.of(existingResolutionCode));
+        when(repository.findById(existingResolutionCode.getId()))
+                .thenReturn(Optional.of(existingResolutionCode));
 
         val resolutionCode = new ResolutionCode();
         resolutionCode.setResultCode("UTEST");
         resolutionCode.setId(67L);
-        resolutionCode.setVersion(1L);
         resolutionCode.setStartDate(LocalDate.now(fixedClock));
         resolutionCode.setChangedBy(67L);
         resolutionCode.setChangedDate(OffsetDateTime.now(fixedClock));
@@ -394,9 +389,7 @@ class ResultCodeServiceImplTest {
 
         serviceImpl.upsertResultCode(resolutionCode);
 
-        verify(repository, times(1))
-                .findActiveByResultCodeIgnoreCaseOrdered(
-                        resolutionCode.getResultCode(), LocalDate.now(fixedClock));
+        verify(repository, times(1)).findById(resolutionCode.getId());
         verify(repository, times(1)).saveAndFlush(any(ResolutionCode.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

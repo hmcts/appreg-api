@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.saveApplicationListEntry;
 
 import jakarta.persistence.EntityManager;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -47,6 +49,8 @@ import uk.gov.hmcts.appregister.util.DateUtil;
 @Transactional
 @Rollback
 class AppListEntryRepositoryTest extends BaseRepositoryTest {
+    private static final AtomicLong NEXT_RESOLUTION_CODE_ID =
+            new AtomicLong(SEQUENCE_START_VALUE + 67L);
 
     @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -880,6 +884,7 @@ class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     private void saveResolution(ApplicationListEntry entry, String resultCode) {
         ResolutionCode code = new ResolutionCode();
+        code.setId(NEXT_RESOLUTION_CODE_ID.getAndIncrement());
         code.setResultCode(resultCode);
         code.setTitle(resultCode + " title");
         code.setWording(resultCode + " wording");

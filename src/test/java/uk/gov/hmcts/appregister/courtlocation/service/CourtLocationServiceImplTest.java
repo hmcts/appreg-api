@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Optional;
 import lombok.val;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
@@ -282,15 +283,15 @@ class CourtLocationServiceImplTest {
 
     @Test
     void testUpsert_insert() {
-        when(repository.findActiveCourts("TEST001", LocalDate.now())).thenReturn(List.of());
+        when(repository.findById(67L)).thenReturn(Optional.empty());
 
         val nationalCourtHouse = new NationalCourtHouse();
+        nationalCourtHouse.setId(67L);
         nationalCourtHouse.setCourtLocationCode("TEST001");
         nationalCourtHouse.setCourtType("CROWN");
         nationalCourtHouse.setName("Unit Test Court");
         nationalCourtHouse.setStartDate(LocalDate.now());
         nationalCourtHouse.setEndDate(null);
-        nationalCourtHouse.setVersion(1L);
 
         val listener = new CapturingAuditListener();
 
@@ -304,7 +305,7 @@ class CourtLocationServiceImplTest {
 
         serviceImpl.upsertCourtHouse(nationalCourtHouse);
 
-        verify(repository, times(1)).findActiveCourts("TEST001", LocalDate.now());
+        verify(repository, times(1)).findById(nationalCourtHouse.getId());
         verify(repository, times(1)).saveAndFlush(any(NationalCourtHouse.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -321,21 +322,21 @@ class CourtLocationServiceImplTest {
     @Test
     void testUpsert_update() {
         val existingCourtHouse = new NationalCourtHouse();
+        existingCourtHouse.setId(67L);
         existingCourtHouse.setCourtLocationCode("TEST001");
         existingCourtHouse.setStartDate(LocalDate.now());
         existingCourtHouse.setEndDate(null);
 
-        when(repository.findActiveCourts(
-                        existingCourtHouse.getCourtLocationCode(), LocalDate.now()))
-                .thenReturn(List.of(existingCourtHouse));
+        when(repository.findById(existingCourtHouse.getId()))
+                .thenReturn(Optional.of(existingCourtHouse));
 
         val nationalCourtHouse = new NationalCourtHouse();
+        nationalCourtHouse.setId(67L);
         nationalCourtHouse.setCourtLocationCode("TEST001");
         nationalCourtHouse.setCourtType("TEST");
         nationalCourtHouse.setName("Unit Test Court 2");
         nationalCourtHouse.setStartDate(LocalDate.now());
         nationalCourtHouse.setEndDate(LocalDate.now().plusDays(1));
-        nationalCourtHouse.setVersion(1L);
 
         val listener = new CapturingAuditListener();
 
@@ -349,8 +350,7 @@ class CourtLocationServiceImplTest {
 
         serviceImpl.upsertCourtHouse(nationalCourtHouse);
 
-        verify(repository, times(1))
-                .findActiveCourts(nationalCourtHouse.getCourtLocationCode(), LocalDate.now());
+        verify(repository, times(1)).findById(nationalCourtHouse.getId());
         verify(repository, times(1)).saveAndFlush(any(NationalCourtHouse.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());
@@ -367,21 +367,21 @@ class CourtLocationServiceImplTest {
     @Test
     void testUpsert_update_endDateToNull() {
         val existingCourtHouse = new NationalCourtHouse();
+        existingCourtHouse.setId(67L);
         existingCourtHouse.setCourtLocationCode("TEST001");
         existingCourtHouse.setStartDate(LocalDate.now());
         existingCourtHouse.setEndDate(LocalDate.now());
 
-        when(repository.findActiveCourts(
-                        existingCourtHouse.getCourtLocationCode(), LocalDate.now()))
-                .thenReturn(List.of(existingCourtHouse));
+        when(repository.findById(existingCourtHouse.getId()))
+                .thenReturn(Optional.of(existingCourtHouse));
 
         val nationalCourtHouse = new NationalCourtHouse();
+        nationalCourtHouse.setId(67L);
         nationalCourtHouse.setCourtLocationCode("TEST001");
         nationalCourtHouse.setCourtType("TEST");
         nationalCourtHouse.setName("Unit Test Court 2");
         nationalCourtHouse.setStartDate(LocalDate.now());
         nationalCourtHouse.setEndDate(null);
-        nationalCourtHouse.setVersion(1L);
 
         val listener = new CapturingAuditListener();
 
@@ -395,8 +395,7 @@ class CourtLocationServiceImplTest {
 
         serviceImpl.upsertCourtHouse(nationalCourtHouse);
 
-        verify(repository, times(1))
-                .findActiveCourts(nationalCourtHouse.getCourtLocationCode(), LocalDate.now());
+        verify(repository, times(1)).findById(nationalCourtHouse.getId());
         verify(repository, times(1)).saveAndFlush(any(NationalCourtHouse.class));
 
         Assertions.assertNotNull(listener.getCompleteEvent());

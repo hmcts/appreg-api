@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,10 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
+    private static final long INSERT_TEST_CJA_ID = SEQUENCE_START_VALUE + 67L;
+    private static final long UPDATE_TEST_CJA_ID = SEQUENCE_START_VALUE + 68L;
+    private static final long CASE_INSENSITIVE_TEST_CJA_ID = SEQUENCE_START_VALUE + 69L;
+
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Autowired private CriminalJusticeService service;
@@ -35,6 +40,7 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
     @Test
     void testUpsertCja_insert() {
         val cja = new CriminalJusticeArea();
+        cja.setId(INSERT_TEST_CJA_ID);
         cja.setCode("67");
         cja.setDescription("Test cja");
 
@@ -72,6 +78,7 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
         createCja("67", "Test CJA");
 
         val cja = new CriminalJusticeArea();
+        cja.setId(UPDATE_TEST_CJA_ID);
         cja.setCode("67");
         cja.setDescription("Test cja 2");
 
@@ -112,6 +119,7 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
         createCja("AA", "Test CJA");
 
         val cja = new CriminalJusticeArea();
+        cja.setId(CASE_INSENSITIVE_TEST_CJA_ID);
         cja.setCode("aa");
         cja.setDescription("Test cja 2");
 
@@ -149,6 +157,8 @@ public class CriminalJusticeAreaServiceImplTest extends BaseIntegration {
 
     private void createCja(String code, String description) {
         val criminalJusticeArea = new CriminalJusticeArea();
+        criminalJusticeArea.setId(
+                "AA".equalsIgnoreCase(code) ? CASE_INSENSITIVE_TEST_CJA_ID : UPDATE_TEST_CJA_ID);
         criminalJusticeArea.setDescription(description);
         criminalJusticeArea.setCode(code);
 

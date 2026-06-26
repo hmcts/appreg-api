@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.resultcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.appregister.testutils.DatabaseReset.SEQUENCE_START_VALUE;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
@@ -10,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
@@ -60,6 +62,8 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
     private static final LocalDate SEED_START = LocalDate.of(2016, Month.JANUARY, 1);
     private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, Month.JANUARY, 1);
+    private static final AtomicLong NEXT_RESOLUTION_CODE_ID =
+            new AtomicLong(SEQUENCE_START_VALUE + 67L);
 
     // Audit event names
     private static final String AUDIT_GET_ONE =
@@ -811,6 +815,7 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
     private ResolutionCode createResolutionCode(
             String code, String title, LocalDate startDate, LocalDate endDate) {
         ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setId(NEXT_RESOLUTION_CODE_ID.getAndIncrement());
         resolutionCode.setResultCode(code);
         resolutionCode.setTitle(title);
         resolutionCode.setWording("Seeded duplicate wording");

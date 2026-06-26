@@ -68,7 +68,10 @@ class ReflectiveAuditorTest {
                 new AuditableData("test_entity", "adr_id", test2.id.toString()),
                 differenceList.get(0));
         Assertions.assertEquals(
-                new AuditableData(TableNames.CRIMINAL_JUSTICE_AREA, "cja_id", ""),
+                new AuditableData(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        test2.criminalJusticeArea.getId().toString()),
                 differenceList.get(1));
         Assertions.assertEquals(
                 new AuditableData(

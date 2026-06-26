@@ -121,10 +121,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     @Transactional
     public void upsertStandardApplicant(StandardApplicant standardApplicant) {
         var standardApplicantDB =
-                repository
-                    .findById(standardApplicant.getId())
-                        .stream()
-                        .findFirst();
+                repository.findById(standardApplicant.getId()).stream().findFirst();
 
         if (standardApplicantDB.isEmpty()) {
             auditService.processAudit(
