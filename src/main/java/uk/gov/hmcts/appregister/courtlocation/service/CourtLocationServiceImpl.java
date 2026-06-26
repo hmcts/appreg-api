@@ -145,8 +145,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
     public void upsertCourtHouse(NationalCourtHouse nationalCourtHouse) {
         var courthouseDB =
                 repository
-                        .findActiveCourts(
-                                nationalCourtHouse.getCourtLocationCode(), LocalDate.now())
+                        .findById(nationalCourtHouse.getId())
                         .stream()
                         .findFirst();
 

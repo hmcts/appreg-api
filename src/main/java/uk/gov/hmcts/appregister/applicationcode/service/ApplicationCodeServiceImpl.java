@@ -151,7 +151,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     public void upsertApplicationCode(ApplicationCode applicationCode) {
         var applicationCodeDB =
                 repository
-                        .findByCodeAndDate(applicationCode.getCode(), LocalDate.now(clock))
+                        .findById(applicationCode.getId())
                         .stream()
                         .findFirst();
 

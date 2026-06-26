@@ -82,7 +82,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Transactional
     public void upsertCJA(CriminalJusticeArea cja) {
         var cjaDB =
-                criminalJusticeAreaRepository.findByCodeIgnoreCase(cja.getCode()).stream()
+                criminalJusticeAreaRepository.findById(cja.getId()).stream()
                         .findFirst();
 
         if (cjaDB.isEmpty()) {

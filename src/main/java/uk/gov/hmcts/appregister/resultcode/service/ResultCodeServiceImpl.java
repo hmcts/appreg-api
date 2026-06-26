@@ -153,8 +153,8 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     public void upsertResultCode(ResolutionCode resolutionCode) {
         var resolutionCodeDB =
                 repository
-                        .findActiveByResultCodeIgnoreCaseOrdered(
-                                resolutionCode.getResultCode(), LocalDate.now(clock))
+                        .findById(
+                                resolutionCode.getId())
                         .stream()
                         .findFirst();
 

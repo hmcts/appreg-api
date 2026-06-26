@@ -106,8 +106,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     public void upsertFee(Fee fee) {
         var feeDB =
                 feeRepository
-                        .findByReferenceBetweenDate(
-                                fee.getReference(), businessDateProvider.currentUkDate())
+                        .findById(fee.getId())
                         .stream()
                         .findFirst();
 
