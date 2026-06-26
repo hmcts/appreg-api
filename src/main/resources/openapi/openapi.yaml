@@ -103,6 +103,7 @@ paths:
   # STANDARD APPLICANTS
   /standard-applicants:                                             { $ref: './paths/standard-applicants/standard-applicants.yaml' }
   /standard-applicants/{code}:                                      { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
+  /standard-applicants/export:                                      { $ref: './paths/standard-applicants/standard-applicants-export.yaml' }
 
 components:
   schemas:
