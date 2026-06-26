@@ -44,10 +44,9 @@ import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.controller.applicationcode.AbstractApplicationCodeEntryCrudTest;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -95,17 +94,17 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
         targetResp.then().statusCode(HttpStatus.OK.value());
 
-        ApplicationListGetDetailDto targetDetail = targetResp.as(ApplicationListGetDetailDto.class);
+        EntryPage targetDetail = getEntryPage(targetList.getUuid(), getToken());
 
         Assertions.assertTrue(
-                targetDetail.getEntriesSummary().stream()
-                        .anyMatch(e -> e.getUuid().equals(sourceEntry.getUuid())));
+                targetDetail.getContent().stream()
+                        .anyMatch(e -> e.getId().equals(sourceEntry.getUuid())));
 
-        Assertions.assertEquals(2, targetDetail.getEntriesSummary().size());
+        Assertions.assertEquals(2, targetDetail.getContent().size());
 
         var sequences =
-                targetDetail.getEntriesSummary().stream()
-                        .map(ApplicationListEntrySummary::getSequenceNumber)
+                targetDetail.getContent().stream()
+                        .map(entry -> entry.getSequenceNumber())
                         .sorted()
                         .toList();
 
@@ -421,18 +420,15 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         UUID targetListId = page.getContent().get(1).getId();
         UUID otherListId = page.getContent().get(2).getId();
 
-        Response resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + otherListId), token);
-        ApplicationListGetDetailDto applicationListGetDetailDto =
-                resp.as(ApplicationListGetDetailDto.class);
+        EntryPage applicationListGetDetailDto = getEntryPage(otherListId, token);
 
         Set<UUID> entryIds = new HashSet<>();
-        UUID entry1Id = applicationListGetDetailDto.getEntriesSummary().getFirst().getUuid();
+        UUID entry1Id = applicationListGetDetailDto.getContent().getFirst().getId();
         entryIds.add(entry1Id);
 
         // fire test
-        resp = getMoveApplicationListEntriesResponse(sourceListId, targetListId, entryIds, token);
+        Response resp =
+                getMoveApplicationListEntriesResponse(sourceListId, targetListId, entryIds, token);
 
         // assert success
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
@@ -476,21 +472,13 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         UUID targetListId = page.getContent().get(1).getId();
         UUID otherListId = page.getContent().get(2).getId();
 
-        Response sourceResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + sourceListId), token);
+        EntryPage sourceDetail = getEntryPage(sourceListId, token);
 
-        ApplicationListGetDetailDto sourceDetail = sourceResp.as(ApplicationListGetDetailDto.class);
+        UUID validEntryId = sourceDetail.getContent().getFirst().getId();
 
-        UUID validEntryId = sourceDetail.getEntriesSummary().getFirst().getUuid();
+        EntryPage otherDetail = getEntryPage(otherListId, token);
 
-        Response otherResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + otherListId), token);
-
-        ApplicationListGetDetailDto otherDetail = otherResp.as(ApplicationListGetDetailDto.class);
-
-        UUID invalidEntryId = otherDetail.getEntriesSummary().getFirst().getUuid();
+        UUID invalidEntryId = otherDetail.getContent().getFirst().getId();
 
         Set<UUID> entryIds = new HashSet<>();
         entryIds.add(validEntryId);
@@ -524,6 +512,22 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         return resp.as(ApplicationListPage.class);
+    }
+
+    private EntryPage getEntryPage(UUID listId, TokenAndJwksKey token)
+            throws MalformedURLException, URISyntaxException {
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
+                        token,
+                        rs ->
+                                rs.header("Accept", VND_JSON_V1)
+                                        .queryParam("pageNumber", 0)
+                                        .queryParam("pageSize", 100)
+                                        .queryParam("sort", "sequenceNumber,asc"));
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        return resp.as(EntryPage.class);
     }
 
     private Response getMoveApplicationListEntriesResponse(
