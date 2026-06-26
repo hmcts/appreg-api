@@ -122,9 +122,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     public void upsertStandardApplicant(StandardApplicant standardApplicant) {
         var standardApplicantDB =
                 repository
-                        .findStandardApplicantByCode(
-                                standardApplicant.getApplicantCode(),
-                                LocalDate.now(clock.withZone(ukZone)))
+                    .findById(standardApplicant.getId())
                         .stream()
                         .findFirst();
 
