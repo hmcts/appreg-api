@@ -101,7 +101,6 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -115,7 +114,6 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
-import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 
 @SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryMapperTest {
@@ -250,55 +248,6 @@ class ApplicationListEntryMapperTest {
         assertThat(name.getFirstName()).isEqualTo("F".repeat(100));
         assertThat(name.getMiddleName()).isEqualTo(JsonNullable.of("S".repeat(100)));
         assertThat(name.getLastName()).isEqualTo("L".repeat(100));
-    }
-
-    @Test
-    void testToSummaryModel_provideValidData_validModelGenerated() {
-        NameAddress applicant = new NameAddress();
-        applicant.setName("Mustafa's Org");
-
-        NameAddress respondent = new NameAddress();
-        respondent.setTitle("His Majesty");
-        respondent.setFirstName("Ahmed");
-        respondent.setLastName("Mustafa");
-
-        var postCode = "SW1A 1AA";
-        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired = true;
-        var result = "APPC";
-
-        var uuid = UUID.randomUUID();
-        short sequenceNumber = 1;
-        var accountNumber = "1234567890";
-
-        var projection =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid)
-                        .sequenceNumber(sequenceNumber)
-                        .accountNumber(accountNumber)
-                        .applicant(applicant)
-                        .respondent(respondent)
-                        .postCode(postCode)
-                        .applicationTitle(applicationTitle)
-                        .feeRequired(feeRequired)
-                        .result(result)
-                        .build();
-
-        var localMapper = new ApplicationListEntryMapperImpl();
-        localMapper.setApplicantMapper(new ApplicantMapperImpl());
-        var model = localMapper.toSummaryDto(projection);
-
-        assertApplicationListEntrySummary(
-                uuid,
-                sequenceNumber,
-                model,
-                accountNumber,
-                "Mustafa's Org",
-                "Ahmed Mustafa",
-                postCode,
-                applicationTitle,
-                feeRequired,
-                result);
     }
 
     @Test
@@ -440,100 +389,6 @@ class ApplicationListEntryMapperTest {
 
         assertThat(mapper.getTemplateKeys(applicationCode))
                 .containsExactly("First label", "Second label");
-    }
-
-    @Test
-    void testToSummaryModelList_provideValidData_validModelListGenerated() {
-        NameAddress applicant1 = new NameAddress();
-        applicant1.setName("Mustafa's Org");
-
-        NameAddress respondent1 = new NameAddress();
-        respondent1.setTitle("His Majesty");
-        respondent1.setLastName("Mustafa");
-        respondent1.setFirstName("Ahmed");
-
-        NameAddress applicant2 = new NameAddress();
-        applicant2.setName("Mustafa's Org");
-
-        NameAddress respondent2 = new NameAddress();
-        respondent2.setFirstName("Sarah");
-        respondent2.setLastName("Johnson");
-
-        var accountNumber2 = "1234567891";
-        var postCode2 = "EH1 3QR";
-        var applicationTitle2 = "Copy documents";
-        var feeRequired2 = false;
-        var result2 = "RESP";
-
-        var uuid2 = UUID.randomUUID();
-        short sequenceNumber2 = 2;
-
-        var projection2 =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid2)
-                        .sequenceNumber(sequenceNumber2)
-                        .accountNumber(accountNumber2)
-                        .applicant(applicant2)
-                        .respondent(respondent2)
-                        .postCode(postCode2)
-                        .applicationTitle(applicationTitle2)
-                        .feeRequired(feeRequired2)
-                        .result(result2)
-                        .build();
-
-        var localMapper = new ApplicationListEntryMapperImpl();
-        localMapper.setApplicantMapper(new ApplicantMapperImpl());
-
-        var uuid1 = UUID.randomUUID();
-        short sequenceNumber1 = 1;
-        var accountNumber1 = "1234567890";
-
-        var postCode1 = "SW1A 1AA";
-        var applicationTitle1 = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired1 = true;
-        var result1 = "APPC";
-
-        var projection1 =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid1)
-                        .sequenceNumber(sequenceNumber1)
-                        .accountNumber(accountNumber1)
-                        .applicant(applicant1)
-                        .respondent(respondent1)
-                        .postCode(postCode1)
-                        .applicationTitle(applicationTitle1)
-                        .feeRequired(feeRequired1)
-                        .result(result1)
-                        .build();
-
-        List<ApplicationListEntrySummary> list =
-                localMapper.toSummaryDtoList(List.of(projection1, projection2));
-
-        assertThat(list).hasSize(2);
-
-        assertApplicationListEntrySummary(
-                uuid1,
-                sequenceNumber1,
-                list.getFirst(),
-                accountNumber1,
-                "Mustafa's Org",
-                "Ahmed Mustafa",
-                postCode1,
-                applicationTitle1,
-                feeRequired1,
-                result1);
-
-        assertApplicationListEntrySummary(
-                uuid2,
-                sequenceNumber2,
-                list.getLast(),
-                accountNumber2,
-                "Mustafa's Org",
-                "Sarah Johnson",
-                postCode2,
-                applicationTitle2,
-                feeRequired2,
-                result2);
     }
 
     @Test
@@ -1169,28 +1024,6 @@ class ApplicationListEntryMapperTest {
                 List.of(10, 10, 10));
         assertOfficials(entryGetDetailDto.getOfficials(), appListEntry.getOfficials());
         assertFeeStatuses(entryGetDetailDto.getFeeStatuses(), appListEntry.getEntryFeeStatuses());
-    }
-
-    private static void assertApplicationListEntrySummary(
-            UUID uuid,
-            int sequenceNumber,
-            ApplicationListEntrySummary dto,
-            String accountNumber,
-            String applicant,
-            String respondent,
-            String postCode,
-            String applicationTitle,
-            boolean feeRequired,
-            String result) {
-        Assertions.assertEquals(uuid, dto.getUuid());
-        Assertions.assertEquals(sequenceNumber, dto.getSequenceNumber());
-        Assertions.assertEquals(accountNumber, dto.getAccountNumber().orElse(null));
-        Assertions.assertEquals(applicant, dto.getApplicant().orElse(null));
-        Assertions.assertEquals(respondent, dto.getRespondent().orElse(null));
-        Assertions.assertEquals(postCode, dto.getPostCode().orElse(null));
-        Assertions.assertEquals(applicationTitle, dto.getApplicationTitle());
-        Assertions.assertEquals(feeRequired, dto.getFeeRequired());
-        Assertions.assertEquals(result, dto.getResult().orElse(null));
     }
 
     private void assertEntrySummaryDetails(

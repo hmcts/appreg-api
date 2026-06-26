@@ -687,7 +687,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         assertThat(entryGetSummaryDto.getApplicationTitle())
                 .isEqualTo("Certified genuine copy document");
-        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
+        assertThat(entryGetSummaryDto.getLegislation()).isNull();
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
@@ -889,7 +889,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 .isEqualTo("XY9 8ZZ");
 
         assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Copy documents");
-        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
+        assertThat(entryGetSummaryDto.getLegislation()).isNull();
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
@@ -1006,7 +1006,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 .isEqualTo("XY9 8ZZ");
 
         assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Copy documents");
-        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
+        assertThat(entryGetSummaryDto.getLegislation()).isNull();
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
@@ -1171,7 +1171,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 .isEqualTo("XY9 8ZZ");
 
         assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Copy documents");
-        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
+        assertThat(entryGetSummaryDto.getLegislation()).isNull();
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
@@ -1237,7 +1237,8 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(
                 page, pageSize, pageNumber, TOTAL_APP_ENTRY_COUNT, TOTAL_APP_ENTRY_COUNT);
-        Assertions.assertNull(page.getContent());
+        Assertions.assertNotNull(page.getContent());
+        Assertions.assertEquals(0, page.getContent().size());
     }
 
     @StabilityTest

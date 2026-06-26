@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationcode.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +77,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
                     ApplicationCodePage newPage = new ApplicationCodePage();
                     pageMapper.toPage(applicationCodeList, newPage, pageable.getSortStrings());
+                    newPage.setContent(new ArrayList<>());
 
                     // Map each entity to a summary DTO and add to the page content
                     applicationCodeList.map(

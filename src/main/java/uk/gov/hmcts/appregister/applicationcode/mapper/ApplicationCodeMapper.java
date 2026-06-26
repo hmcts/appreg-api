@@ -3,10 +3,12 @@ package uk.gov.hmcts.appregister.applicationcode.mapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -73,7 +76,7 @@ public abstract class ApplicationCodeMapper {
     }
 
     public JsonNullable<String> map(String str) {
-        return JsonNullable.of(str);
+        return JsonNullable.of(OutgoingDtoSanitiser.emptyToNull(str));
     }
 
     @Named("mapOffsite")
@@ -90,7 +93,7 @@ public abstract class ApplicationCodeMapper {
 
     @Named("mapFeeReference")
     public JsonNullable<String> mapFeeReference(String feeReference) {
-        return JsonNullable.of(feeReference);
+        return JsonNullable.of(OutgoingDtoSanitiser.emptyToNull(feeReference));
     }
 
     @Named("mapNullableLocalDate")
@@ -124,6 +127,11 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "offsiteFeeDescription", source = "offsiteFee.description")
     public abstract ApplicationCodeGetSummaryDto toApplicationCodeGetSummaryDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
+
+    @AfterMapping
+    protected void sanitizeSummaryDto(@MappingTarget ApplicationCodeGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     /**
      * maps the application code entity to detail dto.
@@ -159,6 +167,11 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "offsiteFeeDescription", source = "offsiteFee.description")
     public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
+
+    @AfterMapping
+    protected void sanitizeDetailDto(@MappingTarget ApplicationCodeGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "code")

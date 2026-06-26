@@ -3,8 +3,10 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
@@ -29,6 +31,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
@@ -263,7 +266,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned() throws Exception {
+    void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned()
+            throws MalformedURLException, JOSEException {
         var tokenGenerator = createAdminToken();
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
@@ -854,9 +858,26 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
         var tokenGenerator = createAdminToken();
 
-        Response responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+        responseSpecCreate.then().statusCode(201);
 
         // Act
         Response responseSpecUpdate =
@@ -865,16 +886,96 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        responseSpecCreate.then().statusCode(201);
         responseSpecUpdate.then().statusCode(200);
+    }
+
+    @Test
+    void
+            givenAnInvalidUpdateEntryRequest_whenFeeStatusProvidedForApplicationCodeWithoutFee_then400IsReturned()
+                    throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PaymentStatus.PAID);
+        feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        var tokenGenerator = createAdminToken();
+        val responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    void givenAnInvalidUpdate_whenFeeStatusWouldBePreservedForNonFeeCode_then400IsReturned()
+            throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        var tokenGenerator = createAdminToken();
+        val responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    void
+            givenAnInvalidUpdateEntryRequest_whenFeeStatusesAreClearedForApplicationCodeWithoutFee_then400IsReturned()
+                    throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(List.of());
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        var tokenGenerator = createAdminToken();
+        val responseSpecCreate = createListEntryWithAllData();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
     void
             givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenNumberOfRespondentsProvided_thenReturn200()
                     throws Exception {
-        Response responseSpecCreate = createListEntryWithAllData();
-
         // Arrange
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setRespondent(null);
@@ -888,6 +989,23 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
         var tokenGenerator = createAdminToken();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(5);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // Act
         Response responseSpecUpdate =
@@ -917,9 +1035,25 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
 
         val tokenGenerator = createAdminToken();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(5);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setNotes("Original audit notes");
+        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
+
         val responseSpecCreate =
-                createListEntryWithAllData(
-                        entryCreateDto -> entryCreateDto.setNotes("Original audit notes"));
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+        responseSpecCreate.then().statusCode(201);
 
         // Ignore the audit rows produced by the setup create request so we only inspect the update.
         dataAuditRepository.deleteAll();
@@ -1620,7 +1754,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_404Returned() throws Exception {
+    void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_404Returned()
+            throws JOSEException, MalformedURLException {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))

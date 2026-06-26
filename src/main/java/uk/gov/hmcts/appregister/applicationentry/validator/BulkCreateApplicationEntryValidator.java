@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,10 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
     @Override
     protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
         return false;
+    }
+
+    public void validateApplicationList(UUID applicationListUuid) {
+        validateParentApplicationList(applicationListUuid);
     }
 
     @Override

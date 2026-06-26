@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -55,9 +54,6 @@ public class ObfuscationUtil {
         maskingModule.addSerializer(
                 EntryGetSummaryDto.class, new EntryGetSummaryDtoSensitiveSerializer());
         maskingModule.addSerializer(EntryPage.class, new EntryPageSensitiveSerializer());
-        maskingModule.addSerializer(
-                ApplicationListEntrySummary.class,
-                new ApplicationListEntrySummarySensitiveSerializer());
         maskingModule.addSerializer(
                 ApplicationListGetDetailDto.class,
                 new ApplicationListGetDetailDtoSensitiveSerializer());
@@ -162,31 +158,6 @@ public class ObfuscationUtil {
         }
     }
 
-    static class ApplicationListEntrySummarySensitiveSerializer
-            extends JsonSerializer<ApplicationListEntrySummary> {
-
-        @Override
-        public void serialize(
-                ApplicationListEntrySummary value,
-                JsonGenerator gen,
-                SerializerProvider serializers)
-                throws IOException {
-            gen.writeStartObject();
-            gen.writeObjectField("uuid", value.getUuid());
-            gen.writeObjectField("sequenceNumber", value.getSequenceNumber());
-
-            gen.writeStringField(ACCOUNT_NUMBER_FIELD, REDACTED);
-            gen.writeStringField("applicant", REDACTED);
-            gen.writeStringField("respondent", REDACTED);
-            gen.writeStringField("postCode", REDACTED);
-
-            gen.writeObjectField("applicationTitle", value.getApplicationTitle());
-            gen.writeObjectField("feeRequired", value.getFeeRequired());
-            gen.writeObjectField("result", value.getResult());
-            gen.writeEndObject();
-        }
-    }
-
     static class ApplicationListGetDetailDtoSensitiveSerializer
             extends JsonSerializer<ApplicationListGetDetailDto> {
 
@@ -210,7 +181,6 @@ public class ObfuscationUtil {
             gen.writeObjectField("durationMinutes", value.getDurationMinutes());
             gen.writeObjectField("version", value.getVersion());
             gen.writeObjectField("entriesCount", value.getEntriesCount());
-            gen.writeObjectField("entriesSummary", value.getEntriesSummary());
             gen.writeEndObject();
         }
     }

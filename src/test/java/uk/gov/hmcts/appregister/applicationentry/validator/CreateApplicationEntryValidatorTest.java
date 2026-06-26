@@ -285,6 +285,36 @@ class CreateApplicationEntryValidatorTest {
     }
 
     @Test
+    void testApplicantFeeNotDueButFeeStatusProvidedFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        entryCreateDto.setNumberOfRespondents(null);
+
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PAID);
+        feeStatus.setStatusDate(TODAY_UK);
+        entryCreateDto.setFeeStatuses(List.of(feeStatus));
+
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
     void testApplicantListNotExisting() {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);

@@ -1759,6 +1759,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         EntryPage entryPage = new EntryPage();
         pageMapper.toPage(resultPage, entryPage, pageable.getSortStrings());
+        entryPage.setContent(new ArrayList<>());
 
         resultPage
                 .getContent()
