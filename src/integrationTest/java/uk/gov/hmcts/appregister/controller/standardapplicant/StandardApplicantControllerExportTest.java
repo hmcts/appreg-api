@@ -155,6 +155,35 @@ public class StandardApplicantControllerExportTest
                 problemDetail.getDetail());
     }
 
+    @Test
+    void testExportCsvSearchByNameWithResults() throws Exception {
+        final StandardApplicant sa = insertStandardApplicant();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/export"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("name", "John PlayDough"));
+
+        responseSpec.then().statusCode(200);
+
+        String csv = responseSpec.asString();
+        List<StandardApplicantCsvRow> rows = parseCsv(csv);
+
+        Assertions.assertEquals(2, rows.size());
+
+        // Header row validation
+        headerRowValidation(rows.get(0));
+
+        // Data row validation
+        dataRowValidation(rows.get(1), sa);
+    }
+
     private void headerRowValidation(StandardApplicantCsvRow header) {
         Assertions.assertEquals(header.getApplicantCode(), "Applicant Code");
         Assertions.assertEquals(header.getName(), "Name");
@@ -183,7 +212,7 @@ public class StandardApplicantControllerExportTest
         sa.setApplicantForename1("John");
         sa.setApplicantForename2("A");
         sa.setApplicantForename3("B");
-        sa.setApplicantSurname("Doe");
+        sa.setApplicantSurname("PlayDough");
         sa.setAddressLine1("123 Test Street");
         sa.setAddressLine2("Test Town");
         sa.setAddressLine3("Test City");

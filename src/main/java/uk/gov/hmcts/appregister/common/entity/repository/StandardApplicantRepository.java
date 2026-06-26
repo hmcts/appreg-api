@@ -173,7 +173,23 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         FROM StandardApplicant sa
         WHERE (LOWER(sa.applicantCode) LIKE '%' || LOWER(CAST(:code AS string)) || '%'
                  OR (:code IS NULL AND :name IS NOT NULL ))
-        AND (LOWER(sa.name) LIKE '%' || LOWER(CAST(:name AS string)) || '%'
+        AND (:name IS NULL
+              OR (
+                  sa.name IS NOT NULL
+                  AND LOWER(sa.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR (
+                  sa.applicantForename2 IS NOT NULL
+                  AND LOWER(sa.applicantForename2)
+                      LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR (
+                  sa.applicantForename3 IS NOT NULL
+                  AND LOWER(sa.applicantForename3)
+                      LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR LOWER(FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname))
+                  LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
                 OR (:name IS NULL AND :code IS NOT NULL))
         ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
         sa.applicantEndDate DESC
