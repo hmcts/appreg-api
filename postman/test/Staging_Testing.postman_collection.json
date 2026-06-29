@@ -27526,6 +27526,499 @@
           ]
         }
       ]
+    },
+    {
+      "name": "ARCPOC-306 Standard Applicants - PRINT as CSV",
+      "description": "Manual/API evidence collection for ARCPOC-306. Validates the implemented GET /standard-applicants/export endpoint returns text/csv for exactly one supported filter, code or name. Successful CSV checks use APP031/Global so the exported Name column is populated. Current pipe-delimited export columns: Applicant Code, Name, Use From, Use To. Also covers implemented validation, no-result, unauthenticated and unauthorised response paths.",
+      "item": [
+        {
+          "name": "01 200 OK - export filtered by code APP031",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const expectedHeader = 'Applicant Code|Name|Use From|Use To';",
+                  "const csv = (pm.response.text() || '').replace(/^\\uFEFF/, '');",
+                  "const rows = csv.split(/\\r?\\n/).filter((line) => line.length > 0);",
+                  "const header = rows[0] || '';",
+                  "const dataRows = rows.slice(1);",
+                  "",
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is text/csv', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.include('text/csv');",
+                  "});",
+                  "pm.test('CSV header row matches implemented export columns', () => pm.expect(header).to.eql(expectedHeader));",
+                  "pm.test('CSV contains at least one Standard Applicant row', () => pm.expect(dataRows.length).to.be.above(0));",
+                  "pm.test('CSV has four pipe-delimited columns per row', () => {",
+                  "  rows.forEach((row) => pm.expect(row.split('|')).to.have.length(4));",
+                  "});",
+                  "pm.test('Every exported row has code containing APP031', () => {",
+                  "  dataRows.forEach((row) => pm.expect(row.split('|')[0]).to.include('APP031'));",
+                  "});",
+                  "pm.test('CSV includes populated organisation name evidence', () => {",
+                  "  pm.expect(csv).to.include('Global Tech Solutions Ltd');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/csv",
+                "type": "text"
+              }
+            ],
+            "description": "Authorised CSV export using the implemented code filter. Evidence should show HTTP 200, text/csv and the pipe-delimited header Applicant Code|Name|Use From|Use To. APP031 is used because it exports a populated organisation Name column.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?code=APP031",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "APP031"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 200 OK - export filtered by name Global",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const expectedHeader = 'Applicant Code|Name|Use From|Use To';",
+                  "const csv = (pm.response.text() || '').replace(/^\\uFEFF/, '');",
+                  "const rows = csv.split(/\\r?\\n/).filter((line) => line.length > 0);",
+                  "const header = rows[0] || '';",
+                  "const dataRows = rows.slice(1);",
+                  "",
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is text/csv', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.include('text/csv');",
+                  "});",
+                  "pm.test('CSV header row matches implemented export columns', () => pm.expect(header).to.eql(expectedHeader));",
+                  "pm.test('CSV contains at least one Standard Applicant row', () => pm.expect(dataRows.length).to.be.above(0));",
+                  "pm.test('CSV has four pipe-delimited columns per row', () => {",
+                  "  rows.forEach((row) => pm.expect(row.split('|')).to.have.length(4));",
+                  "});",
+                  "pm.test('CSV includes matching organisation name evidence', () => {",
+                  "  pm.expect(csv).to.include('Global Tech Solutions Ltd');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/csv",
+                "type": "text"
+              }
+            ],
+            "description": "Authorised CSV export using the implemented name filter. Code must not be supplied with name.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?name=Global",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "Global"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 409 Conflict - code and name supplied together",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Status code is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error response is problem JSON', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.include('application/problem+json');",
+                  "});",
+                  "pm.test('Error detail matches expected behaviour', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.detail || '').to.include('Either code or name must be provided, but not both');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/problem+json",
+                "type": "text"
+              }
+            ],
+            "description": "The implementation requires exactly one of code or name, not both.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?code=APP031&name=Global",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "APP031"
+                },
+                {
+                  "key": "name",
+                  "value": "Global"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 409 Conflict - no code or name supplied",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Status code is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error response is problem JSON', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.include('application/problem+json');",
+                  "});",
+                  "pm.test('Error detail matches expected behaviour', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.detail || '').to.include('Either code or name must be provided, but not both');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/problem+json",
+                "type": "text"
+              }
+            ],
+            "description": "The implementation requires one supported filter. A request with no code/name should follow the implemented conflict response.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 404 Not Found - no matching Standard Applicants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Status code is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error response is problem JSON', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.include('application/problem+json');",
+                  "});",
+                  "pm.test('Error detail matches expected behaviour', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.detail || '').to.include('No records found for the provided code or name');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/problem+json",
+                "type": "text"
+              }
+            ],
+            "description": "No records found for the provided code or name should return the implemented not-found response.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?code=NORESULT",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "NORESULT"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 400 Bad Request - code exceeds max length",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Status code is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error response is problem JSON', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.include('application/problem+json');",
+                  "});",
+                  "pm.test('Error detail matches expected behaviour', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.detail || '').to.include('standardApplicantsExport.code=size must be between 0 and 10');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/problem+json",
+                "type": "text"
+              }
+            ],
+            "description": "Code length greater than 10 should fail generated OpenAPI validation.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?code=asdfghjklqwertyui",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "asdfghjklqwertyui"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 401 Unauthorised - no bearer token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Status code is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Error response is JSON or problem JSON', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.match(/json|problem/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/csv",
+                "type": "text"
+              }
+            ],
+            "description": "Send a valid export-shaped request without credentials. Expected to follow the existing unauthenticated response pattern.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?code=APP031",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "APP031"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 401 Unauthorised - user lacks user/admin role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Status code is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error response is JSON or problem JSON', () => {",
+                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.match(/json|problem/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_no_export}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/csv",
+                "type": "text"
+              }
+            ],
+            "description": "Set access_token_no_export to a valid token that authenticates but lacks the required AppReg user/admin role.",
+            "url": {
+              "raw": "{{baseURL}}/standard-applicants/export?code=APP031",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "standard-applicants",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "APP031"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
