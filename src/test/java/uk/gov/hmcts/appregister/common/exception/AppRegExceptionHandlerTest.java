@@ -329,6 +329,20 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void givenEmptyActivityTypes_whenMethodArgumentExceptionHandled_thenClearMessageIsReturned() {
+        assertActivityTypesValidationMessage(
+                List.of(),
+                "Size.activityAuditFilterDto.activityTypes",
+                "size must be between 1 and 2147483647");
+    }
+
+    @Test
+    void givenNullActivityTypes_whenMethodArgumentExceptionHandled_thenClearMessageIsReturned() {
+        assertActivityTypesValidationMessage(
+                null, "NotNull.activityAuditFilterDto.activityTypes", "must not be null");
+    }
+
+    @Test
     void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder() {
 
         BindingResult result = Mockito.mock(BindingResult.class);
@@ -916,6 +930,36 @@ class AppRegExceptionHandlerTest {
                 return value;
             }
         };
+    }
+
+    private void assertActivityTypesValidationMessage(
+            Object rejectedValue, String code, String defaultMessage) {
+        BindingResult result = Mockito.mock(BindingResult.class);
+        List<FieldError> fieldErrors =
+                List.of(
+                        new FieldError(
+                                "activityAuditFilterDto",
+                                "activityTypes",
+                                rejectedValue,
+                                false,
+                                new String[] {code},
+                                null,
+                                defaultMessage));
+        Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
+
+        MethodArgumentNotValidException exception =
+                new MethodArgumentNotValidException(null, result);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMethodArgumentNotValid(
+                        exception, HEADERS, BAD_REQUEST, webRequest);
+
+        Assertions.assertNotNull(problemDetail.getBody());
+        ProblemDetail body = (ProblemDetail) problemDetail.getBody();
+        Map<?, ?> errors = (Map<?, ?>) body.getProperties().get("errors");
+
+        Assertions.assertEquals(
+                "At least 1 activity must be provided", errors.get("activityTypes"));
     }
 
     @SuppressWarnings("unused")
