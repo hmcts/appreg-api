@@ -147,7 +147,8 @@ class PayloadLoggingAdviceTest {
 
     private static MethodParameter interfaceRequestParameter() throws Exception {
         Method method =
-                TestControllerApi.class.getDeclaredMethod("createReport", FeesReportFilterDto.class);
+                TestControllerApi.class.getDeclaredMethod(
+                        "createReport", FeesReportFilterDto.class);
         return new MethodParameter(method, 0).withContainingClass(TestController.class);
     }
 
