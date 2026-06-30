@@ -464,9 +464,9 @@ dependencies {
   implementation 'com.opencsv:opencsv:5.12.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.1.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.1.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.1.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.3.Final'
 
   // Lombok
   compileOnly 'org.projectlombok:lombok:1.18.46'
@@ -474,7 +474,7 @@ dependencies {
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
 
   // Database
-  runtimeOnly 'org.postgresql:postgresql:42.7.11'
+  runtimeOnly 'org.postgresql:postgresql:42.7.12'
   localDebugRuntimeOnly 'p6spy:p6spy:3.9.1'
 
   // Testing
