@@ -9,7 +9,8 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 public enum StandardApplicantOperation implements AuditOperation {
     GET_STANDARD_APPLICANTS("Get Standard Applicants", CrudEnum.READ),
-    GET_STANDARD_APPLICANT_BY_CODE("Get Standard Applicant by code", CrudEnum.READ);
+    GET_STANDARD_APPLICANT_BY_CODE("Get Standard Applicant by code", CrudEnum.READ),
+    PRINT_STANDARD_APPLICANTS("Print Standard Applicants", CrudEnum.READ);
 
     private final String eventName;
 

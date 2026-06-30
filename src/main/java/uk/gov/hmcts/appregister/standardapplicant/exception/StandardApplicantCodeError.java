@@ -34,7 +34,11 @@ public enum StandardApplicantCodeError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Standard Applicant Codes found when only one was expected",
-                    "SA-2"));
+                    "SA-2")),
+
+    UNSUPPORTED_PRINT_FILTER(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Unsupported Standard Applicant print filter", "SA-3"));
 
     /** Backing detail for the error code. */
     private final DefaultErrorDetail defaultErrorCode;

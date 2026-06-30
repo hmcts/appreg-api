@@ -1,8 +1,22 @@
 type: object
+desciription: Search criteria used for the Standard Applicants print report.
+required: 
+  - code
+  - name
+  - from
+  - to
 properties:
   code:
     type: string
     nullable: true
   name:
     type: string
+    nullable: true
+  from:
+    type: string
+    format: date
+    nullable: true
+  to:
+    type: string
+    format: date
     nullable: true

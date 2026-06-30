@@ -3,8 +3,9 @@ get:
   tags: [ standard-applicants ]
   summary: Get a print-ready JSON payload for a Standard Applicants
   description: >
-    Returns all data required for printing the filtered Standard Applicants result set as a 
-    print-ready JSON document.  Dates are returned in ISO format; frontend PDF rendering should
+    Returns all data required for printing Standard Applicants filtered by the supported
+    print criteria; code, name, from and to.  The addressLine1 filter is not supported
+    by this print endpoint.  Dates are returned in ISO format; frontend PDF rendering should
     display dates as dd/MM/yyyy for legacy parity.
   parameters:
     - in: query

@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.standardapplicant.controller;
 import static org.springframework.http.HttpStatus.OK;
 import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -11,13 +12,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.StandardApplicantsApi;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
+import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantService;
 
 /**
@@ -27,6 +31,8 @@ import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantServi
 @RequiredArgsConstructor
 @Slf4j
 public class StandardApplicantController implements StandardApplicantsApi {
+    private static final String ADDRESS_LINE_1_PARAM = "addressLine1";
+    private final HttpServletRequest request;
 
     private final StandardApplicantService service;
 
@@ -71,5 +77,32 @@ public class StandardApplicantController implements StandardApplicantsApi {
                 .varyBy("Accept")
                 .contentType(VND_JSON_V1)
                 .body(standardApplicantGetDetailDto);
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<StandardApplicantPrintDto> printStandardApplicants(
+            String code, String name, LocalDate from, LocalDate to, List<String> sort) {
+        if (request.getParameterMap().containsKey(ADDRESS_LINE_1_PARAM)) {
+            throw new AppRegistryException(
+                    StandardApplicantCodeError.UNSUPPORTED_PRINT_FILTER,
+                    "addressLine1 is not supported by Standard Applicant print");
+        }
+
+        sort = sort == null || sort.isEmpty() ? List.of() : sort;
+
+        PagingWrapper pageable =
+                pageableMapper.from(
+                        0,
+                        1,
+                        sort,
+                        StandardApplicantSortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        StandardApplicantSortFieldEnum::getEntityValue);
+
+        return ResponseEntity.status(OK)
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .body(service.print(code, name, from, to, pageable));
     }
 }

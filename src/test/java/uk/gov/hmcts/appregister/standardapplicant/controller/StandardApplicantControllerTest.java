@@ -1,19 +1,24 @@
 package uk.gov.hmcts.appregister.standardapplicant.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
@@ -21,10 +26,11 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantService;
 
 class StandardApplicantControllerTest {
+    private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final StandardApplicantService service = mock(StandardApplicantService.class);
     private final PageableMapper pageableMapper = mock(PageableMapper.class);
     private final StandardApplicantController controller =
-            new StandardApplicantController(service, pageableMapper);
+            new StandardApplicantController(request, service, pageableMapper);
 
     @Test
     void getStandardApplicants_delegatesAndReturnsOk() {
@@ -58,5 +64,20 @@ class StandardApplicantControllerTest {
         assertThat(actual.getBody()).isSameAs(body);
         assertThat(actual.getHeaders().getContentType())
                 .hasToString("application/vnd.hmcts.appreg.v1+json");
+    }
+
+    @Test
+    void printStandardApplicants_rejectsAddressLine1Filter() {
+        when(request.getParameterMap())
+                .thenReturn(Map.of("addressLine1", new String[] {"High Street"}));
+
+        assertThatThrownBy(
+                        () ->
+                                controller.printStandardApplicants(
+                                        "CODE", "Name", null, null, List.of()))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("addressLine1 is not supported");
+
+        verifyNoInteractions(service, pageableMapper);
     }
 }

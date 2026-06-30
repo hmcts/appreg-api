@@ -5,7 +5,10 @@ import java.time.Month;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
+import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 
 class StandardApplicantMapperTest {
@@ -252,6 +255,46 @@ class StandardApplicantMapperTest {
     }
 
     @Test
+    void testPrintRowMapsNullSourceValuesToExplicitJsonNulls() {
+        val standardApplicant = new StandardApplicant();
+        val mapper = new StandardApplicantMapperImpl();
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+
+        val dto =
+                mapper.toPrintRowDto(
+                        new StandardApplicantEnrichedProjection() {
+                            @Override
+                            public StandardApplicant getStandardApplicant() {
+                                return standardApplicant;
+                            }
+
+                            @Override
+                            public String getEffectiveName() {
+                                return null;
+                            }
+                        });
+
+        assertPresentNull(dto.getCode());
+        assertPresentNull(dto.getUseFrom());
+        assertPresentNull(dto.getName());
+        assertPresentNull(dto.getUseTo());
+        assertPresentNull(dto.getTitle());
+        assertPresentNull(dto.getAddressLine1());
+        assertPresentNull(dto.getForename1());
+        assertPresentNull(dto.getAddressLine2());
+        assertPresentNull(dto.getForename2());
+        assertPresentNull(dto.getAddressLine3());
+        assertPresentNull(dto.getForename3());
+        assertPresentNull(dto.getAddressLine4());
+        assertPresentNull(dto.getSurname());
+        assertPresentNull(dto.getAddressLine5());
+        assertPresentNull(dto.getEmailAddress());
+        assertPresentNull(dto.getPostcode());
+        assertPresentNull(dto.getTelephoneNumber());
+        assertPresentNull(dto.getMobileNumber());
+    }
+
+    @Test
     void testStandardApplicantHydratesCanonicalMiddleNameFromLegacyForenames() {
         val standardApplicant = new StandardApplicantTestData().someComplete();
         standardApplicant.setName(null);
@@ -269,5 +312,10 @@ class StandardApplicantMapperTest {
         Assertions.assertEquals(
                 "Byron King", dto.getApplicant().getPerson().getName().getMiddleName().get());
         Assertions.assertEquals("Lovelace", dto.getApplicant().getPerson().getName().getLastName());
+    }
+
+    private static void assertPresentNull(JsonNullable<?> value) {
+        Assertions.assertTrue(value.isPresent());
+        Assertions.assertNull(value.get());
     }
 }

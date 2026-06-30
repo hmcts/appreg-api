@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 
 /**
  * Service interface for managing Standard Applicants.
@@ -37,4 +38,7 @@ public interface StandardApplicantService {
      *     that the code can't be found
      */
     StandardApplicantGetDetailDto findByCode(String code);
+
+    StandardApplicantPrintDto print(
+            String code, String name, LocalDate from, LocalDate to, PagingWrapper pageable);
 }

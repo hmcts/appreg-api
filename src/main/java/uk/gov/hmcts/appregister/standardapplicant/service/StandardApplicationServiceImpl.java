@@ -2,17 +2,21 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -20,6 +24,8 @@ import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProje
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintSearchCriteriaDto;
 import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.CodeAndName;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
@@ -113,6 +119,75 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                 req -> findByCodeAuditResult(code));
     }
 
+    @Override
+    public StandardApplicantPrintDto print(
+            String code, String name, LocalDate from, LocalDate to, PagingWrapper pageable) {
+
+        return auditService.processAudit(
+                null,
+                StandardApplicantOperation.PRINT_STANDARD_APPLICANTS,
+                req -> {
+                    var todayUk = LocalDate.now(clock.withZone(ukZone));
+                    var normalisedFrom = from;
+                    var normalisedTo = to;
+
+                    if (normalisedFrom != null
+                            && normalisedTo != null
+                            && normalisedFrom.isAfter(normalisedTo)) {
+                        normalisedFrom = to;
+                        normalisedTo = from;
+                    }
+
+                    var applicants = new ArrayList<StandardApplicantEnrichedProjection>();
+                    var printPageable =
+                            PageRequest.of(
+                                    0,
+                                    1000,
+                                    withStableTieBreaker(pageable.getPageable().getSort()));
+
+                    Page<StandardApplicantEnrichedProjection> results;
+                    do {
+                        results =
+                                repository.search(
+                                        code,
+                                        name,
+                                        null,
+                                        normalisedFrom,
+                                        normalisedTo,
+                                        todayUk,
+                                        printPageable);
+
+                        applicants.addAll(results.getContent());
+                        printPageable = printPageable.next();
+                    } while (results.hasNext());
+
+                    var criteria =
+                            new StandardApplicantPrintSearchCriteriaDto()
+                                    .code(code)
+                                    .name(name)
+                                    .from(normalisedFrom)
+                                    .to(normalisedTo);
+
+                    var dto =
+                            new StandardApplicantPrintDto()
+                                    .reportTitle("Standard Applicants Report")
+                                    .generatedAt(OffsetDateTime.now(clock.withZone(ukZone)))
+                                    .recordCount(applicants.size())
+                                    .searchCriteria(criteria)
+                                    .applicants(
+                                            applicants.stream()
+                                                    .map(mapper::toPrintRowDto)
+                                                    .toList());
+
+                    CodeAndName codeAndName =
+                            new CodeAndName(code, name, null, normalisedFrom, normalisedTo);
+                    AuditableResult<StandardApplicantPrintDto, StandardApplicant> result =
+                            new AuditableResult<>(dto, mapper.toEntity(codeAndName));
+
+                    return Optional.of(result);
+                });
+    }
+
     private Optional<AuditableResult<StandardApplicantGetDetailDto, StandardApplicant>>
             findByCodeAuditResult(String code) {
         log.debug("Start: Find Standard Applicant By Code for: app code: {}", code);
@@ -127,5 +202,19 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
         log.debug("Finish: Find Standard Applicant By Code for: app code: {}", code);
         return Optional.of(result);
+    }
+
+    private static Sort withStableTieBreaker(Sort sort) {
+        var existingSort = sort == null ? Sort.unsorted() : sort;
+
+        if (hasSortProperty(existingSort, StandardApplicant_.ID)) {
+            return existingSort;
+        }
+
+        return existingSort.and(Sort.by(Sort.Direction.ASC, StandardApplicant_.ID));
+    }
+
+    private static boolean hasSortProperty(Sort sort, String property) {
+        return sort.stream().anyMatch(order -> property.equals(order.getProperty()));
     }
 }

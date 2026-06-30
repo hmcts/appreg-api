@@ -102,6 +102,7 @@ paths:
   /result-codes/{code}:                                             { $ref: './paths/result-codes/result-codes-by-code.yaml' }
   # STANDARD APPLICANTS
   /standard-applicants:                                             { $ref: './paths/standard-applicants/standard-applicants.yaml' }
+  /standard-applicants/reports/print:                               { $ref: './paths/standard-applicants/standard-applicants-print.yaml' }
   /standard-applicants/{code}:                                      { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
 
 components:
