@@ -37,4 +37,6 @@ public interface StandardApplicantService {
      *     that the code can't be found
      */
     StandardApplicantGetDetailDto findByCode(String code);
+
+    String generateCsv(String code, String name);
 }

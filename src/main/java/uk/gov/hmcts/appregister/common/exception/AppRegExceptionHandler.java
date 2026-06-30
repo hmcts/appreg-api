@@ -47,6 +47,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
     private static final String UNKNOWN_FIELD = "unknown field";
+    private static final String ACTIVITY_TYPES_FIELD = "activityTypes";
+    private static final String ACTIVITY_TYPES_REQUIRED_MESSAGE =
+            "At least 1 activity must be provided";
+    private static final Set<String> ACTIVITY_TYPES_REQUIRED_ERROR_CODES =
+            Set.of("NotNull", "NotEmpty", "Size");
 
     private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
@@ -167,33 +172,56 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getBindingResult().getFieldErrors().stream()
                 .sorted(Comparator.comparing(FieldError::getField))
                 .forEach(
-                        fieldError -> {
-                            if (fieldError.getCode() == null
-                                    || !fieldError.getCode().contains("typeMismatch")) {
-                                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-                            } else if (WHOLE_NUMBER_FIELDS.contains(fieldError.getField())) {
+                        fieldError ->
                                 errors.put(
-                                        fieldError.getField(),
-                                        "Please ensure %s is a whole number"
-                                                .formatted(fieldError.getField()));
-                            } else if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
-                                errors.put(
-                                        fieldError.getField(),
-                                        "Please ensure %s is a valid boolean value"
-                                                .formatted(fieldError.getField()));
-                            } else {
-                                errors.put(
-                                        fieldError.getField(),
-                                        "Please ensure that any times are in the format HH:mm and dates are in the"
-                                                + " format yyyy-MM-dd");
-                            }
-                        });
+                                        fieldError.getField(), getFieldErrorMessage(fieldError)));
 
         problemDetail.setProperty("errors", errors);
         logExpectedClientError(
                 resolveStatusCode(status, problemDetail), summariseBindingErrors(errors));
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    private String getFieldErrorMessage(FieldError fieldError) {
+        if (isActivityTypesRequiredError(fieldError)) {
+            return ACTIVITY_TYPES_REQUIRED_MESSAGE;
+        }
+
+        if (!isTypeMismatch(fieldError)) {
+            return fieldError.getDefaultMessage();
+        }
+
+        if (WHOLE_NUMBER_FIELDS.contains(fieldError.getField())) {
+            return "Please ensure %s is a whole number".formatted(fieldError.getField());
+        }
+
+        if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
+            return "Please ensure %s is a valid boolean value".formatted(fieldError.getField());
+        }
+
+        return "Please ensure that any times are in the format HH:mm and dates are in the"
+                + " format yyyy-MM-dd";
+    }
+
+    private boolean isActivityTypesRequiredError(FieldError fieldError) {
+        return ACTIVITY_TYPES_FIELD.equals(fieldError.getField())
+                && ACTIVITY_TYPES_REQUIRED_ERROR_CODES.contains(getPrimaryErrorCode(fieldError));
+    }
+
+    private boolean isTypeMismatch(FieldError fieldError) {
+        String code = fieldError.getCode();
+        return code != null && code.contains("typeMismatch");
+    }
+
+    private String getPrimaryErrorCode(FieldError fieldError) {
+        String code = fieldError.getCode();
+        if (code == null) {
+            return "";
+        }
+
+        int delimiterIndex = code.indexOf('.');
+        return delimiterIndex < 0 ? code : code.substring(0, delimiterIndex);
     }
 
     @Override

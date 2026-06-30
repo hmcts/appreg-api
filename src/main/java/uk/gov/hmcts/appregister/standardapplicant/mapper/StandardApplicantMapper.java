@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -23,6 +24,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
+import uk.gov.hmcts.appregister.standardapplicant.model.StandardApplicantCsvRow;
 
 /**
  * Mapper for StandardApplicant entity to StandardApplicantDto.
@@ -120,6 +122,27 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "telephoneNumber", ignore = true)
     @Mapping(target = "mobileNumber", ignore = true)
     public abstract StandardApplicant toEntity(String code);
+
+    @Mapping(target = "applicantCode", source = "applicantCode")
+    @Mapping(target = "applicantTitle", ignore = true)
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "applicantForename1", ignore = true)
+    @Mapping(target = "applicantForename2", ignore = true)
+    @Mapping(target = "applicantForename3", ignore = true)
+    @Mapping(target = "applicantSurname", ignore = true)
+    @Mapping(target = "addressLine1", ignore = true)
+    @Mapping(target = "addressLine2", ignore = true)
+    @Mapping(target = "addressLine3", ignore = true)
+    @Mapping(target = "addressLine4", ignore = true)
+    @Mapping(target = "addressLine5", ignore = true)
+    @Mapping(target = "postcode", ignore = true)
+    @Mapping(target = "emailAddress", ignore = true)
+    @Mapping(target = "telephoneNumber", ignore = true)
+    @Mapping(target = "mobileNumber", ignore = true)
+    @Mapping(target = "applicantStartDate", source = "applicantStartDate")
+    @Mapping(target = "applicantEndDate", source = "applicantEndDate")
+    public abstract List<StandardApplicantCsvRow> toEntity(
+            List<StandardApplicant> standardApplicants);
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {

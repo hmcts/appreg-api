@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.List;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -269,5 +270,24 @@ class StandardApplicantMapperTest {
         Assertions.assertEquals(
                 "Byron King", dto.getApplicant().getPerson().getName().getMiddleName().get());
         Assertions.assertEquals("Lovelace", dto.getApplicant().getPerson().getName().getLastName());
+    }
+
+    @Test
+    void testStandardApplicantMapToCsvRow() {
+        val standardApplicant = new StandardApplicantTestData().someComplete();
+
+        val standardApplicantMapper = new StandardApplicantMapperImpl();
+        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
+
+        val csvRow = standardApplicantMapper.toEntity(List.of(standardApplicant)).getFirst();
+        Assertions.assertEquals(standardApplicant.getApplicantCode(), csvRow.getApplicantCode());
+        Assertions.assertEquals(
+                standardApplicant.getName(), csvRow.getName() == null ? "" : csvRow.getName());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantStartDate().toString(),
+                csvRow.getApplicantStartDate() == null ? "" : csvRow.getApplicantStartDate());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantEndDate().toString(),
+                csvRow.getApplicantEndDate() == null ? "" : csvRow.getApplicantEndDate());
     }
 }
