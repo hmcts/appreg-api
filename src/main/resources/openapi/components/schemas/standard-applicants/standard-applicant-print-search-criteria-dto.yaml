@@ -1,0 +1,8 @@
+type: object
+properties:
+  code:
+    type: string
+    nullable: true
+  name:
+    type: string
+    nullable: true
