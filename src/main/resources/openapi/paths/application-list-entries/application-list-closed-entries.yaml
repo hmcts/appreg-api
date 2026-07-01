@@ -48,7 +48,8 @@ put:
   summary: Update notes for an Application List Entry whose Application List is closed
   description: >
     Appends additional notes to an Application List Entry after its parent Application List has
-    been closed. This is a command-style update and does not return an entry representation.
+    been closed. Empty additional notes are accepted and leave existing notes unchanged. This is a
+    command-style update and does not return an entry representation.
   requestBody:
     required: true
     content:
