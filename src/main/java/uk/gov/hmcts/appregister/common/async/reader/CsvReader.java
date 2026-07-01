@@ -11,6 +11,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -71,7 +73,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
             throws IOException {
         CsvToBean<T> csvToBean;
         // close the reader if it is open
-        try (FileReader reader = new FileReader(source)) {
+        try (FileReader reader = new FileReader(source, guessCharset(source))) {
             csvToBean =
                     new CsvToBeanBuilder<T>(reader)
                             .withType(cls)
@@ -136,6 +138,15 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
             } else {
                 return e;
             }
+        }
+    }
+
+    private Charset guessCharset(File file) throws IOException {
+        String content = new String(Files.readAllBytes(file.toPath()));
+        if (content.contains("�")) {
+            return Charset.forName("Windows-1252");
+        } else {
+            return StandardCharsets.UTF_8;
         }
     }
 }
