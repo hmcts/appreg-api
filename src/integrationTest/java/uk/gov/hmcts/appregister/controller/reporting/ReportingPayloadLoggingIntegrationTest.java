@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.controller.reporting;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
@@ -13,7 +14,9 @@ import uk.gov.hmcts.appregister.common.log.PayloadLogSupport;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
+import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
@@ -52,6 +55,7 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
         JobAcknowledgement acknowledgement = createResponse.as(JobAcknowledgement.class);
 
         assertThat(acknowledgement.getType()).isEqualTo(JobType.FEES_REPORT);
+        assertThat(acknowledgement.getStatus()).isEqualTo(JobStatus1.RECEIVED);
         assertThat(payloadLogCaptor.getInfoLogs())
                 .anySatisfy(
                         log ->
@@ -65,5 +69,14 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
                                         .contains("Job acknowledgement:")
                                         .contains("\"type\":\"FEES_REPORT\"")
                                         .contains("\"status\":\"RECEIVED\""));
+
+        JobAcknowledgement terminalStatus =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient,
+                        getLocalUrl("jobs/" + acknowledgement.getId()),
+                        tokenGenerator.fetchTokenForRole(),
+                        Duration.ofSeconds(30));
+
+        assertThat(terminalStatus.getStatus()).isEqualTo(JobStatus1.COMPLETED);
     }
 }
