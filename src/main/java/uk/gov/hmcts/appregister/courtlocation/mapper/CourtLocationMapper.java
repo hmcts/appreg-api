@@ -48,7 +48,6 @@ public interface CourtLocationMapper {
     @Mapping(target = "locationCode", source = "courtLocationCode")
     @Mapping(target = "startDate", source = "startDate")
     @Mapping(target = "endDate", source = "endDate")
-
     CourtLocationGetDetailDto toDetailDto(NationalCourtHouse entity);
 
     @AfterMapping
