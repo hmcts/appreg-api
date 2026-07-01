@@ -37,7 +37,8 @@ The steps work on Windows, macOS, and Linux.
   - `POSTGRES_HOST` - Only required if the database was not setup using the ./docker-compose.yml file, otherwise it defaults to `localhost`
   - `POSTGRES_PASS` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `password`
  -  `POSTGRES_DATABASE` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `appreg`
-Ask an existing developer for values.
+
+ - Ask an existing developer for the appropriate values.
 
 If the file is missing, create a new Run/Debug configuration in IntelliJ:
   - Type: **Gradle**
