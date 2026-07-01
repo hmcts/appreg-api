@@ -46,7 +46,7 @@ ext {
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.6.0'
+  toolVersion = '13.7.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
@@ -446,6 +446,12 @@ dependencies {
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.52'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
+
+  // Future Jackson 2 overrides for CVE-2026-54515.
+  // Leave commented until the FasterXML 2.x fixes are actually published to Maven Central.
+  // implementation 'com.fasterxml.jackson.core:jackson-core:2.21.5'
+  // implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.5'
+  // implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21.5'
 
   implementation 'org.flywaydb:flyway-database-postgresql:12.9.0'
 
