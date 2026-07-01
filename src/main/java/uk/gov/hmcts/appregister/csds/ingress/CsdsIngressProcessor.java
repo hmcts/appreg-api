@@ -7,6 +7,7 @@ import lombok.val;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
+import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 
 @Slf4j
 @Component
@@ -45,7 +46,7 @@ public class CsdsIngressProcessor {
 
         val rawJson = processor.retrieve(ingressClient);
         val processedData = processor.preProcess(rawJson);
-        processor.handle(processedData);
+        processor.apply(processedData);
 
         log.info(
                 "Completed CSDS ingress processor {} for target {}.{}",

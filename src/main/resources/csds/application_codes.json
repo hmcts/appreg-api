@@ -1,0 +1,29 @@
+{
+  "records" : [ {
+    "ApplicationCodeID" : 643,
+    "Code" : "AD99001",
+    "ApplicationTitle" : "Copy documents",
+    "ApplicationWording" : "Request to copy documents",
+    "Legislation" : null,
+    "FeeDue" : "Y",
+    "FeeReference" : "CO5.1a",
+    "Respondent" : "N",
+    "VersionNumber" : 1,
+    "StartDate" : "2016-01-01",
+    "EndDate" : null,
+    "Notes" : null,
+    "BulkRespondentAllowed" : "N",
+    "CurrentRecordIndicator" : true,
+    "AuthoringStatus" : "Published",
+    "VersionType" : "Initial",
+    "RevisionDateFrom" : null,
+    "RevisionDateTo" : null,
+    "PublishingStatus" : "Active",
+    "PSSACID" : 1,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
+    "FID_ApplicationRegisterHeader" : 10227,
+    "FID_ReleasePackage" : null,
+    "Updator" : "migration"
+  } ]
+}

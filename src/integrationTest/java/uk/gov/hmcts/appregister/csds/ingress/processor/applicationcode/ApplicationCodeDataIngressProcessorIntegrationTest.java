@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.csds.ingress;
+package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -13,8 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProcessor;
+import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
 @TestPropertySource(
@@ -32,6 +36,9 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
             "appreg.csds.ingress.enabled=true",
             "appreg.csds.ingress.page-size=2",
             "appreg.csds.ingress.processors.application-codes.enabled=true",
+            "appreg.csds.ingress.processors.application-codes.reporting-dir=${java.io.tmpdir}",
+            "appreg.csds.ingress.processors.application-codes.mock=",
+            "appreg.csds.ingress.processors.application-codes.parameters=",
             "appreg.csds.ingress.base-url=${wiremock.server.baseUrl}",
             "appreg.csds.ingress.access-keys[0]=primary-test-key",
             "appreg.csds.ingress.access-keys[1]=secondary-test-key"
@@ -78,18 +85,20 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 applicationCodeRepository.findAll().stream()
                         .sorted(Comparator.comparing(ApplicationCode::getId))
                         .toList();
-        var unchanged = existingApplicationCodes.get(0);
+        var ignored = existingApplicationCodes.get(0);
         var updated = existingApplicationCodes.get(1);
-        var deleted = existingApplicationCodes.get(2);
+        var unmatched = existingApplicationCodes.get(2);
+
+        ignored.setEndDate(LocalDate.now().minusDays(1));
+        updated.setEndDate(null);
+        unmatched.setEndDate(null);
+        applicationCodeRepository.saveAll(List.of(ignored, updated, unmatched));
 
         var incomingRecords =
                 new ArrayList<>(
-                        existingApplicationCodes.stream()
-                                .filter(
-                                        applicationCode ->
-                                                !applicationCode.getId().equals(deleted.getId()))
-                                .map(this::toSourceRecord)
-                                .toList());
+                        existingApplicationCodes.stream().map(this::toSourceRecord).toList());
+        incomingRecords.removeIf(
+                record -> record.get("ApplicationCodeID").longValue() == unmatched.getId());
         incomingRecords.get(1).put("ApplicationTitle", updated.getTitle() + " (Updated)");
         incomingRecords.get(1).put("VersionNumber", updated.getVersion() + 1);
 
@@ -129,6 +138,10 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         var executed = csdsIngressProcessor.runIngress();
         var databaseJob = databaseJobRepository.findByName(CsdsIngressProcessor.DATABASE_JOB_NAME);
         var expectedPageCount = (totalCount + 1) / 2;
+        var expectedUpdates = totalCount - 2;
+        var expectedInsertedId = insertedId + 100000;
+        var expectedUpdatedId = updated.getId() + 100000;
+        var expectedIgnoredId = ignored.getId() + 100000;
 
         assertThat(executed).isTrue();
         assertThat(databaseJob.getMetadata()).isNull();
@@ -139,25 +152,23 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "incoming=%d, existing=%d, inserts=1, updates=1, deletes=1, unchanged=%d"
+                                        "incoming=%d, existing=%d, inserts=1, updates=%d, ignores=1"
                                                 .formatted(
                                                         totalCount,
                                                         existingApplicationCodes.size(),
-                                                        existingApplicationCodes.size() - 2)))
+                                                        expectedUpdates)))
                 .anyMatch(
                         log ->
                                 log.contains("CSDS insert preview")
-                                        && log.contains(String.valueOf(insertedId)))
-                .anyMatch(
-                        log ->
-                                log.contains("CSDS delete preview")
-                                        && log.contains(String.valueOf(deleted.getId())))
+                                        && log.contains(String.valueOf(expectedInsertedId)))
                 .anyMatch(
                         log ->
                                 log.contains("CSDS update preview")
-                                        && log.contains(
-                                                updated.getId()
-                                                        + " changed fields [title, version]"));
+                                        && log.contains(String.valueOf(expectedUpdatedId)))
+                .anyMatch(
+                        log ->
+                                log.contains("CSDS ignore preview")
+                                        && log.contains(String.valueOf(expectedIgnoredId)));
 
         verify(
                 getRequestedFor(urlPathEqualTo("/count/CSDS/ApplicationCode/GD"))

@@ -1,10 +1,12 @@
-package uk.gov.hmcts.appregister.csds.ingress;
+package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
+import org.jspecify.annotations.Nullable;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
-record ApplicationCodeIngressRecord(
+public record ApplicationCodeIngressRecord(
         Long id,
         String code,
         String title,
@@ -17,6 +19,9 @@ record ApplicationCodeIngressRecord(
         YesOrNo bulkRespondentAllowed,
         Long version,
         String feeReference) {
+
+    private static final long APPLICATION_CODE_ID_OFFSET = 100000L;
+
     static ApplicationCodeIngressRecord fromEntity(ApplicationCode applicationCode) {
         return new ApplicationCodeIngressRecord(
                 applicationCode.getId(),
@@ -31,6 +36,21 @@ record ApplicationCodeIngressRecord(
                 applicationCode.getBulkRespondentAllowed(),
                 applicationCode.getVersion(),
                 applicationCode.getFeeReference());
+    }
+
+    public static @Nullable Long resolveId(JsonNode node) {
+        var pssacid = nullableLong(node, "PSSACID");
+        if (pssacid != null) {
+            return pssacid;
+        }
+
+        var applicationCodeId = nullableLong(node, "ApplicationCodeID");
+        return applicationCodeId == null ? null : applicationCodeId + APPLICATION_CODE_ID_OFFSET;
+    }
+
+    private static @Nullable Long nullableLong(JsonNode node, String fieldName) {
+        var field = node.get(fieldName);
+        return (field == null || !field.canConvertToLong()) ? null : field.longValue();
     }
 
     String toCsvRow() {

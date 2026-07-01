@@ -108,8 +108,10 @@ appreg:
       processors:
         application-codes:
           enabled: false
+          parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator
           source-entity-name: ApplicationCode
-          comparison-output-dir: ${CSDS_APPLICATION_CODES_COMPARISON_OUTPUT_DIR:}
+          mock: csds/application_codes.json
+          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
   job:
     page-size: 10
   report:

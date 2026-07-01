@@ -22,11 +22,11 @@ public class CsdsIngressProperties {
 
     private String accessKeyHeader = "Api-Key";
 
-    private Duration leaseDuration = Duration.ofMinutes(5);
+    private Duration leaseDuration = Duration.ofMinutes(5L);
 
-    private Duration connectTimeout = Duration.ofSeconds(10);
+    private Duration connectTimeout = Duration.ofSeconds(10L);
 
-    private Duration readTimeout = Duration.ofSeconds(30);
+    private Duration readTimeout = Duration.ofSeconds(30L);
 
     private int pageSize = 100;
 
@@ -79,9 +79,13 @@ public class CsdsIngressProperties {
     public static class ApplicationCodes {
         private boolean enabled;
 
+        private String mock;
+
+        private String parameters;
+
         private String sourceEntityName = "ApplicationCode";
 
-        private String comparisonOutputDir;
+        private String reportingDir;
 
         private boolean isConfigurationValid() {
             return !enabled || StringUtils.hasText(sourceEntityName);

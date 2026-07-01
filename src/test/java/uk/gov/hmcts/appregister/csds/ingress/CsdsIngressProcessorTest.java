@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
+import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 
 @ExtendWith(MockitoExtension.class)
 class CsdsIngressProcessorTest {
@@ -55,7 +56,7 @@ class CsdsIngressProcessorTest {
         var executed = processor.runIngress();
 
         assertThat(executed).isTrue();
-        verify(dataIngressProcessor).handle("processed");
+        verify(dataIngressProcessor).apply("processed");
     }
 
     @Test

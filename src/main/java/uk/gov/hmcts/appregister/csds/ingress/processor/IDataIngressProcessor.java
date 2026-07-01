@@ -1,7 +1,8 @@
-package uk.gov.hmcts.appregister.csds.ingress;
+package uk.gov.hmcts.appregister.csds.ingress.processor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 
 public interface IDataIngressProcessor<T> {
     String targetTable();
@@ -22,5 +23,5 @@ public interface IDataIngressProcessor<T> {
 
     T preProcess(List<JsonNode> rawJson);
 
-    void handle(T processedData);
+    void apply(T processedData);
 }
