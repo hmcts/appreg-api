@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
@@ -27,6 +28,7 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintSearchCriteriaDto;
 import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
+import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.CodeAndName;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExistsValidator;
@@ -39,6 +41,9 @@ import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExi
 @Slf4j
 @Transactional(readOnly = true)
 public class StandardApplicationServiceImpl implements StandardApplicantService {
+    private static final int PRINT_PAGE_SIZE = 1000;
+    private static final int MAX_PRINT_ROWS = 1000;
+
     private final StandardApplicantRepository repository;
     private final StandardApplicantMapper mapper;
     private final Clock clock;
@@ -121,7 +126,12 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
     @Override
     public StandardApplicantPrintDto print(
-            String code, String name, LocalDate from, LocalDate to, PagingWrapper pageable) {
+            String code,
+            String name,
+            String addressLine1,
+            LocalDate from,
+            LocalDate to,
+            PagingWrapper pageable) {
 
         return auditService.processAudit(
                 null,
@@ -151,11 +161,18 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                 repository.search(
                                         code,
                                         name,
-                                        null,
+                                        addressLine1,
                                         normalisedFrom,
                                         normalisedTo,
                                         todayUk,
                                         printPageable);
+
+                        if (results.getTotalElements() > MAX_PRINT_ROWS) {
+                            throw new AppRegistryException(
+                                    StandardApplicantCodeError.PRINT_RESULT_LIMIT_EXCEEDED,
+                                    "Standard Applicant print result exceeds %d rows; narrow the search criteria"
+                                            .formatted(MAX_PRINT_ROWS));
+                        }
 
                         applicants.addAll(results.getContent());
                         printPageable = printPageable.next();
@@ -165,6 +182,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             new StandardApplicantPrintSearchCriteriaDto()
                                     .code(code)
                                     .name(name)
+                                    .addressLine1(addressLine1)
                                     .from(normalisedFrom)
                                     .to(normalisedTo);
 
@@ -180,7 +198,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                                     .toList());
 
                     CodeAndName codeAndName =
-                            new CodeAndName(code, name, null, normalisedFrom, normalisedTo);
+                            new CodeAndName(code, name, addressLine1, normalisedFrom, normalisedTo);
                     AuditableResult<StandardApplicantPrintDto, StandardApplicant> result =
                             new AuditableResult<>(dto, mapper.toEntity(codeAndName));
 

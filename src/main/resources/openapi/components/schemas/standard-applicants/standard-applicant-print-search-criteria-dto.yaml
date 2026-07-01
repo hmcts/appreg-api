@@ -3,6 +3,7 @@ desciription: Search criteria used for the Standard Applicants print report.
 required: 
   - code
   - name
+  - addressLine1
   - from
   - to
 properties:
@@ -10,6 +11,9 @@ properties:
     type: string
     nullable: true
   name:
+    type: string
+    nullable: true
+  addressLine1:
     type: string
     nullable: true
   from:

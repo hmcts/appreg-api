@@ -5085,7 +5085,7 @@ paths:
   /standard-applicants/reports/print:
     get:
       description: |
-        Returns all data required for printing Standard Applicants filtered by the supported print criteria; code, name, from and to.  The addressLine1 filter is not supported by this print endpoint.  Dates are returned in ISO format; frontend PDF rendering should display dates as dd/MM/yyyy for legacy parity.
+        Returns all data required for printing Standard Applicants filtered by the supported print criteria; code, name, addressLine1, from and to.  Dates are returned in ISO format; frontend PDF rendering should display dates as dd/MM/yyyy for legacy parity.
       operationId: printStandardApplicants
       parameters:
       - description: Filter by code.
@@ -5111,6 +5111,12 @@ paths:
         name: to
         schema:
           format: date
+          type: string
+      - description: Filter by address line 1.
+        in: query
+        name: addressLine1
+        schema:
+          maxLength: 100
           type: string
       - description: "Sort parameter. Format `property,(asc|desc)`."
         in: query
@@ -7483,6 +7489,9 @@ components:
         name:
           nullable: true
           type: string
+        addressLine1:
+          nullable: true
+          type: string
         from:
           format: date
           nullable: true
@@ -7492,6 +7501,7 @@ components:
           nullable: true
           type: string
       required:
+      - addressLine1
       - code
       - from
       - name

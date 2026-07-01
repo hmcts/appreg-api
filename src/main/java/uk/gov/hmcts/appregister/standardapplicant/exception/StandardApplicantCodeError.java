@@ -36,9 +36,11 @@ public enum StandardApplicantCodeError implements ErrorCodeEnum {
                     "Standard Applicant Codes found when only one was expected",
                     "SA-2")),
 
-    UNSUPPORTED_PRINT_FILTER(
+    PRINT_RESULT_LIMIT_EXCEEDED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Unsupported Standard Applicant print filter", "SA-3"));
+                    HttpStatus.BAD_REQUEST,
+                    "Standard Applicant print result limit exceeded",
+                    "SA-3"));
 
     /** Backing detail for the error code. */
     private final DefaultErrorDetail defaultErrorCode;

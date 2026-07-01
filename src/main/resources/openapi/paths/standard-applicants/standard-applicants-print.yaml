@@ -4,9 +4,8 @@ get:
   summary: Get a print-ready JSON payload for a Standard Applicants
   description: >
     Returns all data required for printing Standard Applicants filtered by the supported
-    print criteria; code, name, from and to.  The addressLine1 filter is not supported
-    by this print endpoint.  Dates are returned in ISO format; frontend PDF rendering should
-    display dates as dd/MM/yyyy for legacy parity.
+    print criteria; code, name, addressLine1, from and to.  Dates are returned in ISO format;
+    frontend PDF rendering should display dates as dd/MM/yyyy for legacy parity.
   parameters:
     - in: query
       name: code
@@ -24,6 +23,10 @@ get:
       name: to
       schema: { type: string, format: date }
       description: Filter by to date.
+    - in: query
+      name: addressLine1
+      schema: { type: string, maxLength: 100 }
+      description: Filter by address line 1.
     - in: query
       name: sort
       schema:

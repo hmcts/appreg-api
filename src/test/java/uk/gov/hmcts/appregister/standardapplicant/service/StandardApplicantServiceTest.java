@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +40,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
@@ -367,7 +370,50 @@ class StandardApplicantServiceTest {
     }
 
     @Test
-    void print_includesRowsFromEveryMatchingPage() {
+    void print_whenNoApplicantsMatch_returnsEmptyPrintPayload() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(ukZone)).thenReturn(clock);
+
+        val code = "NOPE";
+        val name = "Missing";
+        val addressLine1 = "High Street";
+        val from = LocalDate.of(2026, Month.APRIL, 1);
+        val to = LocalDate.of(2026, Month.DECEMBER, 31);
+        val requestPageable = PageRequest.of(0, 20);
+
+        val stableSort =
+                requestPageable.getSort().and(Sort.by(Sort.Direction.ASC, StandardApplicant_.ID));
+        val printPageable = PageRequest.of(0, 1000, stableSort);
+
+        when(repository.search(
+                        eq(code),
+                        eq(name),
+                        eq(addressLine1),
+                        eq(from),
+                        eq(to),
+                        isNotNull(),
+                        eq(printPageable)))
+                .thenReturn(new PageImpl<>(List.of(), printPageable, 0));
+
+        val result =
+                standardApplicantService.print(
+                        code,
+                        name,
+                        addressLine1,
+                        from,
+                        to,
+                        PagingWrapper.of(List.of(), requestPageable));
+
+        Assertions.assertEquals(0, result.getRecordCount());
+        Assertions.assertTrue(result.getApplicants().isEmpty());
+        Assertions.assertEquals(addressLine1, result.getSearchCriteria().getAddressLine1().get());
+        Assertions.assertEquals(from, result.getSearchCriteria().getFrom().get());
+        Assertions.assertEquals(to, result.getSearchCriteria().getTo().get());
+    }
+
+    @Test
+    void print_whenResultLimitExceeded_throwsBeforeFetchingNextPage() {
         when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(ukZone)).thenReturn(clock);
@@ -387,7 +433,6 @@ class StandardApplicantServiceTest {
                 IntStream.range(0, 1000)
                         .mapToObj(index -> projection("APP%04d".formatted(index), name, from, to))
                         .toList();
-        val secondPageRows = List.of(projection("APP1000", name, from, to));
 
         when(repository.search(
                         eq(code),
@@ -399,37 +444,19 @@ class StandardApplicantServiceTest {
                         eq(firstPrintPageable)))
                 .thenReturn(new PageImpl<>(firstPageRows, firstPrintPageable, 1001));
 
-        when(repository.search(
-                        eq(code),
-                        eq(name),
-                        isNull(),
-                        eq(from),
-                        eq(to),
-                        isNotNull(),
-                        eq(secondPrintPageable)))
-                .thenReturn(new PageImpl<>(secondPageRows, secondPrintPageable, 1001));
+        assertThatThrownBy(
+                        () ->
+                                standardApplicantService.print(
+                                        code,
+                                        name,
+                                        null,
+                                        from,
+                                        to,
+                                        PagingWrapper.of(List.of(), requestPageable)))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("exceeds 1000 rows");
 
-        val result =
-                standardApplicantService.print(
-                        code, name, from, to, PagingWrapper.of(List.of(), requestPageable));
-
-        Assertions.assertEquals(from, result.getSearchCriteria().getFrom().get());
-        Assertions.assertEquals(to, result.getSearchCriteria().getTo().get());
-        Assertions.assertEquals(1001, result.getRecordCount());
-        Assertions.assertEquals(1001, result.getApplicants().size());
-        Assertions.assertEquals("APP0000", result.getApplicants().getFirst().getCode().get());
-        Assertions.assertEquals("APP1000", result.getApplicants().getLast().getCode().get());
-
-        verify(repository)
-                .search(
-                        eq(code),
-                        eq(name),
-                        isNull(),
-                        eq(from),
-                        eq(to),
-                        isNotNull(),
-                        eq(firstPrintPageable));
-        verify(repository)
+        verify(repository, never())
                 .search(
                         eq(code),
                         eq(name),

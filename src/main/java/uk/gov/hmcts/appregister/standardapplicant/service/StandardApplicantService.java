@@ -40,5 +40,10 @@ public interface StandardApplicantService {
     StandardApplicantGetDetailDto findByCode(String code);
 
     StandardApplicantPrintDto print(
-            String code, String name, LocalDate from, LocalDate to, PagingWrapper pageable);
+            String code,
+            String name,
+            String addressLine1,
+            LocalDate from,
+            LocalDate to,
+            PagingWrapper pageable);
 }
