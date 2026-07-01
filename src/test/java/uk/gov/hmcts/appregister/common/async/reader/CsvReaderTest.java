@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.common.async.JobContext;
@@ -72,31 +71,34 @@ class CsvReaderTest extends AbstractAsyncTest {
         URL resource = classLoader.getResource("windows-1252.csv");
         File csv = new File(resource.getFile());
 
-        ReadPagePosition readPagePosition = new ReadPagePosition(1,0);
+        ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
         JobContext context = new JobContext();
         List<BulkUploadRow> bulkUploadRowList = new ArrayList<>();
         try (CsvReader<BulkUploadRow> csvReader = new CsvReader<>(csv, BulkUploadRow.class)) {
-            csvReader.readData(readPagePosition,
-                               (e, jobContext) -> bulkUploadRowList.addAll(e), context);
+            csvReader.readData(
+                    readPagePosition, (e, jobContext) -> bulkUploadRowList.addAll(e), context);
         }
 
-        Assertions.assertEquals("£500.00", bulkUploadRowList.getFirst().getApplicationTextValues().getFirst());
+        Assertions.assertEquals(
+                "£500.00", bulkUploadRowList.getFirst().getApplicationTextValues().getFirst());
     }
 
     @Test
-    void testReadUTF8Format() throws IOException {ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    void testReadUTF8Format() throws IOException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         URL resource = classLoader.getResource("utf-8.csv");
         File csv = new File(resource.getFile());
 
-        ReadPagePosition readPagePosition = new ReadPagePosition(1,0);
+        ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
         JobContext context = new JobContext();
         List<BulkUploadRow> bulkUploadRowList = new ArrayList<>();
         try (CsvReader<BulkUploadRow> csvReader = new CsvReader<>(csv, BulkUploadRow.class)) {
-            csvReader.readData(readPagePosition,
-                               (e, jobContext) -> bulkUploadRowList.addAll(e), context);
+            csvReader.readData(
+                    readPagePosition, (e, jobContext) -> bulkUploadRowList.addAll(e), context);
         }
 
-        Assertions.assertEquals("£500.00", bulkUploadRowList.getFirst().getApplicationTextValues().getFirst());
+        Assertions.assertEquals(
+                "£500.00", bulkUploadRowList.getFirst().getApplicationTextValues().getFirst());
     }
 
     @Test
