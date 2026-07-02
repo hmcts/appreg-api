@@ -108,6 +108,16 @@ class ApplicationEntryDtoTest {
     }
 
     @Test
+    void testEntryUpdateClosedDtoAllowsEmptyAdditionalNotes() {
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("");
+
+        Set<ConstraintViolation<Object>> constraintValidator = validate(entryUpdateClosedDto);
+
+        Assertions.assertEquals(0, constraintValidator.size());
+    }
+
+    @Test
     void testEntryUpdateClosedDtoRejectsAdditionalNotesAboveLimit() {
         EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
         entryUpdateClosedDto.setAdditionalNotes("a".repeat(4001));
@@ -117,7 +127,7 @@ class ApplicationEntryDtoTest {
 
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "additionalNotes", "size must be between 1 and 4000");
+                listConstraint, "additionalNotes", "size must be between 0 and 4000");
     }
 
     @Test
