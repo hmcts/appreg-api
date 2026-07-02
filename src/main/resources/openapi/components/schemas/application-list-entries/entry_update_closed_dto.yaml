@@ -9,7 +9,8 @@ properties:
   additionalNotes:
     type: string
     description: >
-      The additional notes to append to the Application List Entry (maximum 4000 characters).
+      The additional notes to append to the Application List Entry. Empty values are accepted and
+      leave existing notes unchanged.
     example: "Additional notes"
     maxLength: 4000
-    minLength: 1
+    minLength: 0

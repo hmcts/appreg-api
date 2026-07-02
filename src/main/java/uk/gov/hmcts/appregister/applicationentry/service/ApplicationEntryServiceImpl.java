@@ -567,6 +567,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private static String appendNotes(String existingNotes, String additionalNotes) {
+        if (additionalNotes == null || additionalNotes.isBlank()) {
+            return existingNotes;
+        }
+
         if (existingNotes == null || existingNotes.isBlank()) {
             return additionalNotes;
         }
