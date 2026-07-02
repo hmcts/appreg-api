@@ -12,9 +12,9 @@ post:
   summary: Start an asynchronous bulk upload of entries via CSV.
   description: >
     Validates the target application list and CSV structure up front, then enqueues a
-    background job that validates the uploaded rows and, if valid, atomically inserts
+    background job that validates the uploaded rows and, if valid, automatically inserts
     all rows in a single transaction. If row validation or commit fails, the entire
-    transaction is rolled back and the job ends in `FAILED`.
+    transaction is rolled back and the job ends in `FAILED`. There is a file size limitation of 5MB.
   requestBody:
     required: true
     content:
