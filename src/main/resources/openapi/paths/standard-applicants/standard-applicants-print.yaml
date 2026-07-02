@@ -25,7 +25,7 @@ get:
       description: Filter by to date.
     - in: query
       name: addressLine1
-      schema: { type: string, maxLength: 100 }
+      schema: { type: string, maxLength: 255 }
       description: Filter by address line 1.
     - in: query
       name: sort
