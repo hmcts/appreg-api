@@ -1,0 +1,41 @@
+type: object
+description: Legacy Standard Applicants print row.
+required:
+  - code
+  - useFrom
+  - name
+  - useTo
+  - title
+  - addressLine1
+  - forename1
+  - addressLine2
+  - forename2
+  - addressLine3
+  - forename3
+  - addressLine4
+  - surname
+  - addressLine5
+  - emailAddress
+  - postcode
+  - telephoneNumber
+  - mobileNumber
+properties:
+  code: { type: string, nullable: true }
+  useFrom: { type: string, format: date, nullable: true }
+  name: { type: string, nullable: true }
+  useTo: { type: string, format: date, nullable: true }
+  title: { type: string, nullable: true }
+  addressLine1: { type: string, nullable: true }
+  forename1: { type: string, nullable: true }
+  addressLine2: { type: string, nullable: true }
+  forename2: { type: string, nullable: true }
+  addressLine3: { type: string, nullable: true }
+  forename3: { type: string, nullable: true }
+  addressLine4: { type: string, nullable: true }
+  surname: { type: string, nullable: true }
+  addressLine5: { type: string, nullable: true }
+  emailAddress: { type: string, nullable: true }
+  postcode: { type: string, nullable: true }
+  telephoneNumber: { type: string, nullable: true }
+  mobileNumber: { type: string, nullable: true }
+  

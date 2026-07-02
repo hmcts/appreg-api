@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantService;
 
 class StandardApplicantControllerTest {
@@ -58,5 +59,24 @@ class StandardApplicantControllerTest {
         assertThat(actual.getBody()).isSameAs(body);
         assertThat(actual.getHeaders().getContentType())
                 .hasToString("application/vnd.hmcts.appreg.v1+json");
+    }
+
+    @Test
+    void printStandardApplicants_passesAddressLine1FilterToService() {
+        var paging = mock(PagingWrapper.class);
+        var body = mock(StandardApplicantPrintDto.class);
+        var from = LocalDate.of(2026, Month.JANUARY, 1);
+        var to = LocalDate.of(2026, Month.DECEMBER, 31);
+
+        when(pageableMapper.from(eq(0), eq(1), eq(List.of()), any(), eq(Sort.Direction.ASC), any()))
+                .thenReturn(paging);
+        when(service.print("CODE", "Name", "High Street", from, to, paging)).thenReturn(body);
+
+        ResponseEntity<StandardApplicantPrintDto> actual =
+                controller.printStandardApplicants("CODE", "Name", from, to, "High Street", null);
+
+        verify(service).print("CODE", "Name", "High Street", from, to, paging);
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(actual.getBody()).isSameAs(body);
     }
 }
