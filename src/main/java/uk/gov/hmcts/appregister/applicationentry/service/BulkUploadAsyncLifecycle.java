@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
@@ -24,6 +27,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+
+
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -115,12 +120,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             }
 
             if (!rowErrors.isEmpty()) {
-
-                for (BulkUploadError err : rowErrors) {
-                    logValidationFailure(context, err);
-                }
-
-                allErrors.addAll(rowErrors);
+               logValidationFailure(context, rowErrors);
+               allErrors.addAll(rowErrors);
             }
 
             rowNumber++;
@@ -198,10 +199,15 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         return BUSINESS_RULE_LOCATIONS.getOrDefault(exception.getCode(), BULK_UPLOAD_ROW);
     }
 
-    private void logValidationFailure(JobContext context, BulkUploadError error) {
-        String failureMessage = error.toString();
-        context.logFailure(failureMessage);
-        log.warn("Bulk upload validation failure for list {}: {}", listId, failureMessage);
+    private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String json = mapper.writeValueAsString(error);
+            context.logFailure(json);
+            log.warn("Bulk upload validation failure for list {}: {}", listId, json);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

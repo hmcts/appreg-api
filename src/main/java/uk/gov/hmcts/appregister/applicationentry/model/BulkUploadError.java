@@ -17,6 +17,7 @@ public class BulkUploadError {
 
     @Override
     public String toString() {
+
         StringBuilder error =
                 new StringBuilder(30)
                         .append("Row ")
@@ -30,5 +31,11 @@ public class BulkUploadError {
         }
 
         return error.append(": ").append(message).toString();
+    }
+
+    public String toJson() {
+        return String.format(
+                "{\"rowNumber\": %d, \"location\": \"%s\", \"rejectedValue\": \"%s\", \"message\": \"%s\"}",
+                rowNumber, location, rejectedValue, message);
     }
 }
