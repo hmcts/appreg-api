@@ -109,22 +109,19 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         int rowNumber = FIRST_DATA_ROW_NUMBER;
 
+        List<BulkUploadError> rowErrors = new ArrayList<>();
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
-            List<BulkUploadError> rowErrors = new ArrayList<>();
+
             rowErrors.addAll(validator.validateRow(rowNumber, row));
             rowErrors.addAll(validateMappedDto(rowNumber, dto));
-
-            if (rowErrors.isEmpty()) {
-                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
-            }
-
-            if (!rowErrors.isEmpty()) {
-               logValidationFailure(context, rowErrors);
-               allErrors.addAll(rowErrors);
-            }
-
+            rowErrors.addAll(validateBusinessRules(rowNumber, dto));
             rowNumber++;
+        }
+
+        if (!rowErrors.isEmpty()) {
+            logValidationFailure(context, rowErrors);
+            allErrors.addAll(rowErrors);
         }
 
         if (!allErrors.isEmpty()) {
@@ -200,13 +197,25 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
-        ObjectMapper mapper = new ObjectMapper();
+        List<String> errorMessages = context.getValidationFailureMessages();
+
+        // we're going to convert the existing message into a BulkUploadError object and log it to the job context as JSON for easier parsing later
+        for (String e : errorMessages) {
+            BulkUploadError bulkUploadError = new BulkUploadError(0, BULK_UPLOAD_ROW, null, e);
+            error.addFirst(bulkUploadError);
+        }
+
+        // We will clear the existing errors in the context as the original errors have been added above
+        context.getValidationFailureMessages().clear();
+
         try {
-            String json = mapper.writeValueAsString(error);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(error);
             context.logFailure(json);
             log.warn("Bulk upload validation failure for list {}: {}", listId, json);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.error("Failed to serialize bulk upload errors to JSON for list {}: {}", listId, e.getMessage(), e);
+            context.logFailure("Bulk upload validation failure for list " + listId + ": " + e.getMessage());
         }
     }
 
