@@ -208,7 +208,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
                     return Optional.of(result);
                 });
-
+    }
+    
     public String generateCsv(String code, String name) {
 
         if ((code != null && name != null) || (code == null && name == null)) {
