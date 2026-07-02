@@ -12,8 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import uk.gov.hmcts.appregister.common.log.LogPayloads;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
-import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.generated.api.ReportsApi;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
@@ -34,39 +34,35 @@ public class ReportController implements ReportsApi {
     private final ReportService reportService;
 
     @Override
+    @LogPayloads(
+            requestPrefix = "Activity Audit Report payload",
+            responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createActivityAuditReport(
             ActivityAuditFilterDto activityAuditFilterDto) {
-        log.info(
-                "Activity Audit Report payload: {}",
-                ObfuscationUtil.getObfuscatedString(activityAuditFilterDto));
         return accepted(
                 reportService.createActivityAuditReport(activityAuditFilterDto).acknowledgement());
     }
 
     @Override
+    @LogPayloads(requestPrefix = "Fees report payload", responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createFeesReport(
             FeesReportFilterDto feesReportFilterDto) {
-        log.info(
-                "Fees report payload: {}",
-                ObfuscationUtil.getObfuscatedString(feesReportFilterDto));
         return accepted(reportService.createFeesReport(feesReportFilterDto).acknowledgement());
     }
 
     @Override
+    @LogPayloads(requestPrefix = "Workload report payload", responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createWorkloadReport(
             WorkloadFilterDto workloadFilterDto) {
-        log.info(
-                "Workload report payload: {}",
-                ObfuscationUtil.getObfuscatedString(workloadFilterDto));
         return accepted(reportService.createWorkloadReport(workloadFilterDto).acknowledgement());
     }
 
     @Override
+    @LogPayloads(
+            requestPrefix = "Search warrants report payload",
+            responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createSearchWarrantsReport(
             SearchWarrantsReportFilterDto searchWarrantsReportFilterDto) {
-        log.info(
-                "Search warrants report payload: {}",
-                ObfuscationUtil.getObfuscatedString(searchWarrantsReportFilterDto));
         return accepted(
                 reportService
                         .createSearchWarrantsReport(searchWarrantsReportFilterDto)
@@ -74,20 +70,18 @@ public class ReportController implements ReportsApi {
     }
 
     @Override
+    @LogPayloads(requestPrefix = "Duration report payload", responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createDurationReport(
             DurationFilterDto durationFilterDto) {
-        log.info(
-                "Duration report payload: {}",
-                ObfuscationUtil.getObfuscatedString(durationFilterDto));
         return accepted(reportService.createDurationReport(durationFilterDto).acknowledgement());
     }
 
     @Override
+    @LogPayloads(
+            requestPrefix = "List maintenance report payload",
+            responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createListMaintenanceReport(
             ListMaintenanceFilterDto listMaintenanceFilterDto) {
-        log.info(
-                "List maintenance report payload: {}",
-                ObfuscationUtil.getObfuscatedString(listMaintenanceFilterDto));
         return accepted(
                 reportService
                         .createListMaintenanceReport(listMaintenanceFilterDto)
@@ -95,11 +89,11 @@ public class ReportController implements ReportsApi {
     }
 
     @Override
+    @LogPayloads(
+            requestPrefix = "Private Prosecutors Index report payload",
+            responsePrefix = "Job acknowledgement")
     public ResponseEntity<JobAcknowledgement> createPrivateProsecutorsIndexReport(
             PrivateProsecutorsIndexFilterDto privateProsecutorsIndexFilterDto) {
-        log.info(
-                "Private Prosecutors Index report payload: {}",
-                ObfuscationUtil.getObfuscatedString(privateProsecutorsIndexFilterDto));
         return accepted(
                 reportService
                         .createPrivateProsecutorsIndexReport(privateProsecutorsIndexFilterDto)
@@ -122,7 +116,6 @@ public class ReportController implements ReportsApi {
     }
 
     private ResponseEntity<JobAcknowledgement> accepted(JobAcknowledgement acknowledgement) {
-        log.info("Job acknowledgement: {}", acknowledgement);
         return ResponseEntity.accepted()
                 .location(
                         ServletUriComponentsBuilder.fromCurrentContextPath()

@@ -104,6 +104,7 @@ paths:
   /standard-applicants:                                             { $ref: './paths/standard-applicants/standard-applicants.yaml' }
   /standard-applicants/reports/print:                               { $ref: './paths/standard-applicants/standard-applicants-print.yaml' }
   /standard-applicants/{code}:                                      { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
+  /standard-applicants/export:                                      { $ref: './paths/standard-applicants/standard-applicants-export.yaml' }
 
 components:
   schemas:

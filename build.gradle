@@ -33,8 +33,8 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.7.0'
-  id 'org.openrewrite.rewrite' version '7.35.0'
+  id 'com.diffplug.spotless' version '8.8.0'
+  id 'org.openrewrite.rewrite' version '7.36.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
 }
@@ -46,7 +46,7 @@ ext {
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.6.0'
+  toolVersion = '13.7.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
@@ -447,6 +447,14 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 
+  implementation 'org.flywaydb:flyway-database-postgresql:12.10.0'
+  
+  // Future Jackson 2 overrides for CVE-2026-54515.
+  // Leave commented until the FasterXML 2.x fixes are actually published to Maven Central.
+  // implementation 'com.fasterxml.jackson.core:jackson-core:2.21.5'
+  // implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.5'
+  // implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21.5'
+
   implementation 'org.flywaydb:flyway-database-postgresql:12.9.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -474,7 +482,7 @@ dependencies {
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
 
   // Database
-  runtimeOnly 'org.postgresql:postgresql:42.7.11'
+  runtimeOnly 'org.postgresql:postgresql:42.7.12'
   localDebugRuntimeOnly 'p6spy:p6spy:3.9.1'
 
   // Testing
@@ -493,7 +501,7 @@ dependencies {
   testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
-  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.37.0'
+  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.38.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'
