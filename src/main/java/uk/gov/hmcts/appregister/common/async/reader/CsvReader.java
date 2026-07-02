@@ -148,7 +148,9 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
         while ((line = reader.readLine()) != null) {
             // Read through the file to check for encoding issues
             if (line.contains("�")) {
-                log.info("Detected encoding issue in file: {}, using Windows-1252 encoding", file.getName());
+                log.info(
+                        "Detected encoding issue in file: {}, using Windows-1252 encoding",
+                        file.getName());
                 return Charset.forName("Windows-1252");
             }
         }
