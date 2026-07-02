@@ -99,7 +99,8 @@ public class StandardApplicantController implements StandardApplicantsApi {
                 .varyBy("Accept")
                 .contentType(VND_JSON_V1)
                 .body(service.print(code, name, addressLine1, from, to, pageable));
-
+    }
+    
     public ResponseEntity<String> standardApplicantsExport(
             @Nullable String code, @Nullable String name) {
         return ResponseEntity.ok(service.generateCsv(code, name));
