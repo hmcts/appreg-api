@@ -5,12 +5,15 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.exceptionhandler.CsvExceptionHandler;
 import com.opencsv.exceptions.CsvException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -71,7 +74,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
             throws IOException {
         CsvToBean<T> csvToBean;
         // close the reader if it is open
-        try (FileReader reader = new FileReader(source)) {
+        try (FileReader reader = new FileReader(source, guessCharset(source))) {
             csvToBean =
                     new CsvToBeanBuilder<T>(reader)
                             .withType(cls)
@@ -137,5 +140,25 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
                 return e;
             }
         }
+    }
+
+    private Charset guessCharset(File file) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            // Read through the file to check for encoding issues
+            if (line.contains("�")) {
+                log.info(
+                        "Detected encoding issue in file: {}, using Windows-1252 encoding",
+                        file.getName());
+                return Charset.forName("Windows-1252");
+            }
+        }
+
+        // EOF reached without detecting encoding issues, return UTF-8
+        log.info(
+                "Unable to determine encoding using fallback UTF-8 encoding for file: {}",
+                file.getName());
+        return StandardCharsets.UTF_8;
     }
 }
