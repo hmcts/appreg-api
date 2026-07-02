@@ -5116,7 +5116,7 @@ paths:
         in: query
         name: addressLine1
         schema:
-          maxLength: 100
+          maxLength: 255
           type: string
       - description: "Sort parameter. Format `property,(asc|desc)`."
         in: query

@@ -318,6 +318,7 @@ class StandardApplicantMapperTest {
     private static void assertPresentNull(JsonNullable<?> value) {
         Assertions.assertTrue(value.isPresent());
         Assertions.assertNull(value.get());
+    }
 
     @Test
     void testStandardApplicantMapToCsvRow() {

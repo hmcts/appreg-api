@@ -41,7 +41,7 @@ public enum StandardApplicantCodeError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "Standard Applicant print result limit exceeded",
                     "SA-3")),
-  
+
     CODE_AND_NAME_EXCLUSION_VIOLATION(
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,

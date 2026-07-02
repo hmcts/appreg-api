@@ -124,6 +124,27 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "mobileNumber", ignore = true)
     public abstract StandardApplicant toEntity(String code);
 
+    @Mapping(target = "applicantCode", source = "applicantCode")
+    @Mapping(target = "applicantTitle", ignore = true)
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "applicantForename1", ignore = true)
+    @Mapping(target = "applicantForename2", ignore = true)
+    @Mapping(target = "applicantForename3", ignore = true)
+    @Mapping(target = "applicantSurname", ignore = true)
+    @Mapping(target = "addressLine1", ignore = true)
+    @Mapping(target = "addressLine2", ignore = true)
+    @Mapping(target = "addressLine3", ignore = true)
+    @Mapping(target = "addressLine4", ignore = true)
+    @Mapping(target = "addressLine5", ignore = true)
+    @Mapping(target = "postcode", ignore = true)
+    @Mapping(target = "emailAddress", ignore = true)
+    @Mapping(target = "telephoneNumber", ignore = true)
+    @Mapping(target = "mobileNumber", ignore = true)
+    @Mapping(target = "applicantStartDate", source = "applicantStartDate")
+    @Mapping(target = "applicantEndDate", source = "applicantEndDate")
+    public abstract List<StandardApplicantCsvRow> toEntity(
+            List<StandardApplicant> standardApplicants);
+
     @Mapping(target = "code", source = "standardApplicant.applicantCode")
     @Mapping(target = "useFrom", source = "standardApplicant.applicantStartDate")
     @Mapping(target = "name", source = "standardApplicant.name")
@@ -179,26 +200,6 @@ public abstract class StandardApplicantMapper {
     protected JsonNullable<LocalDate> map(LocalDate value) {
         return JsonNullable.of(value);
     }
-    @Mapping(target = "applicantCode", source = "applicantCode")
-    @Mapping(target = "applicantTitle", ignore = true)
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "applicantForename1", ignore = true)
-    @Mapping(target = "applicantForename2", ignore = true)
-    @Mapping(target = "applicantForename3", ignore = true)
-    @Mapping(target = "applicantSurname", ignore = true)
-    @Mapping(target = "addressLine1", ignore = true)
-    @Mapping(target = "addressLine2", ignore = true)
-    @Mapping(target = "addressLine3", ignore = true)
-    @Mapping(target = "addressLine4", ignore = true)
-    @Mapping(target = "addressLine5", ignore = true)
-    @Mapping(target = "postcode", ignore = true)
-    @Mapping(target = "emailAddress", ignore = true)
-    @Mapping(target = "telephoneNumber", ignore = true)
-    @Mapping(target = "mobileNumber", ignore = true)
-    @Mapping(target = "applicantStartDate", source = "applicantStartDate")
-    @Mapping(target = "applicantEndDate", source = "applicantEndDate")
-    public abstract List<StandardApplicantCsvRow> toEntity(
-            List<StandardApplicant> standardApplicants);
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {

@@ -493,6 +493,7 @@ class StandardApplicantServiceTest {
                 return name;
             }
         };
+    }
 
     @Test
     void testExportToCsv_codeFilterSuccess() {

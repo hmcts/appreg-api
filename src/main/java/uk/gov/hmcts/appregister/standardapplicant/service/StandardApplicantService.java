@@ -46,5 +46,6 @@ public interface StandardApplicantService {
             LocalDate from,
             LocalDate to,
             PagingWrapper pageable);
+
     String generateCsv(String code, String name);
 }
