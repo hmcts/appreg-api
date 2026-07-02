@@ -14,6 +14,17 @@
     <cve>CVE-2025-7962</cve>
   </suppress>
 
+  <suppress>
+    <notes>
+      Temporary suppression: CVE-2026-54515 affects Jackson 2.21.4, but the advisory's fixed
+      FasterXML 2.x versions were not published to Maven Central when investigated on 2026-07-01.
+      Review when a published Jackson 2.x fix is available to replace this suppression with a real
+      upgrade.
+    </notes>
+    <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@2\.21\.4$</packageUrl>
+    <cve>CVE-2026-54515</cve>
+  </suppress>
+
   <!-- We do not use the nu html checker library -->
   <suppress>
     <notes>
