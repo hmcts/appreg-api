@@ -455,7 +455,7 @@ dependencies {
   // implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.5'
   // implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21.5'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.9.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.10.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
