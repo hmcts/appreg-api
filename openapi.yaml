@@ -2690,7 +2690,7 @@ paths:
       - application-list-entries
     put:
       description: |
-        Appends additional notes to an Application List Entry after its parent Application List has been closed. This is a command-style update and does not return an entry representation.
+        Appends additional notes to an Application List Entry after its parent Application List has been closed. Empty additional notes are accepted and leave existing notes unchanged. This is a command-style update and does not return an entry representation.
       operationId: updateClosedApplicationListEntry
       parameters:
       - description: Public identifier of the Application List.
@@ -6488,10 +6488,10 @@ components:
       properties:
         additionalNotes:
           description: |
-            The additional notes to append to the Application List Entry (maximum 4000 characters).
+            The additional notes to append to the Application List Entry. Empty values are accepted and leave existing notes unchanged.
           example: Additional notes
           maxLength: 4000
-          minLength: 1
+          minLength: 0
           type: string
       required:
       - additionalNotes
