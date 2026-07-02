@@ -226,7 +226,12 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Notes must not be longer than 4000 characters",
-                    "ALE-46"));
+                    "ALE-46")),
+    BULK_UPLOAD_FILE_TOO_LARGE(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONTENT_TOO_LARGE,
+                    "Uploaded file must not be larger than 5MB",
+                    "ALE-47"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

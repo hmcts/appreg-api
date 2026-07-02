@@ -17,6 +17,9 @@ springdoc:
   writer-with-order-by-keys: true
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
   http:
     converters:
       preferred-json-mapper: true
