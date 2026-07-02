@@ -144,8 +144,10 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
     private Charset guessCharset(File file) throws IOException {
         String content = new String(Files.readAllBytes(file.toPath()));
         if (content.contains("�")) {
+            log.info("Detected Windows-1252 encoding for file: {}", file.getName());
             return Charset.forName("Windows-1252");
         } else {
+            log.info("Unable to determine encoding using fallback UTF-8 encoding for file: {}", file.getName());
             return StandardCharsets.UTF_8;
         }
     }
