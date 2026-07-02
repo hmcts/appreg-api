@@ -7586,6 +7586,7 @@ components:
       - startDate
       type: object
     standard-applicant-print-search-criteria-dto:
+      description: Search criteria used for the Standard Applicants print report.
       properties:
         code:
           nullable: true
