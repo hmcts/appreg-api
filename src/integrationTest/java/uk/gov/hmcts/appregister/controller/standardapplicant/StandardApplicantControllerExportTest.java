@@ -151,7 +151,8 @@ public class StandardApplicantControllerExportTest
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
         Assertions.assertEquals(
                 "Constraints failed for fields:"
-                        + "\nstandardApplicantsExport.code=size must be between 0 and 10",
+                        + System.lineSeparator()
+                        + "standardApplicantsExport.code=size must be between 0 and 10",
                 problemDetail.getDetail());
     }
 
