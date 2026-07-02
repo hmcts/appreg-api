@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,9 @@ import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintSearchCriteriaDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 import uk.gov.hmcts.appregister.report.service.ReportDownload;
 
@@ -286,5 +290,43 @@ class ObfuscationUtilTest {
         Assertions.assertArrayEquals(
                 "report".getBytes(StandardCharsets.UTF_8),
                 resource.getInputStream().readAllBytes());
+    }
+
+    @Test
+    void testObfuscationStandardApplicantPrintDto() {
+        var dto =
+                new StandardApplicantPrintDto()
+                        .reportTitle("Standard Applicants Report")
+                        .generatedAt(OffsetDateTime.parse("2026-06-29T10:00:00Z"))
+                        .recordCount(1)
+                        .searchCriteria(
+                                new StandardApplicantPrintSearchCriteriaDto()
+                                        .code("STD001")
+                                        .name("Jane Applicant")
+                                        .from(LocalDate.of(2026, Month.JANUARY, 1))
+                                        .to(LocalDate.of(2026, Month.DECEMBER, 31)))
+                        .applicants(
+                                List.of(
+                                        new StandardApplicantPrintRowDto()
+                                                .code("STD001")
+                                                .name("Jane Applicant")
+                                                .addressLine1("1 Secret Street")
+                                                .emailAddress("jane@example.com")
+                                                .telephoneNumber("01234567890")
+                                                .mobileNumber("07700900123")));
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
+
+        assertThat(obfuscated)
+                .contains("\"reportTitle\":\"Standard Applicants Report\"")
+                .contains("\"recordCount\":1")
+                .contains("\"searchCriteria\":\"[REDACTED]\"")
+                .contains("\"applicants\":\"[REDACTED]\"")
+                .doesNotContain("STD001")
+                .doesNotContain("Jane Applicant")
+                .doesNotContain("1 Secret Street")
+                .doesNotContain("jane@example.com")
+                .doesNotContain("01234567890")
+                .doesNotContain("07700900123");
     }
 }

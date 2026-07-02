@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.StandardApplicantsApi;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
 import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantService;
 
@@ -28,7 +29,6 @@ import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantServi
 @RequiredArgsConstructor
 @Slf4j
 public class StandardApplicantController implements StandardApplicantsApi {
-
     private final StandardApplicantService service;
 
     // Maps and validates API sort parameters to entity field names.
@@ -76,6 +76,31 @@ public class StandardApplicantController implements StandardApplicantsApi {
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<StandardApplicantPrintDto> printStandardApplicants(
+            String code,
+            String name,
+            LocalDate from,
+            LocalDate to,
+            String addressLine1,
+            List<String> sort) {
+
+        sort = sort == null || sort.isEmpty() ? List.of() : sort;
+
+        PagingWrapper pageable =
+                pageableMapper.from(
+                        0,
+                        1,
+                        sort,
+                        StandardApplicantSortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        StandardApplicantSortFieldEnum::getEntityValue);
+
+        return ResponseEntity.status(OK)
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .body(service.print(code, name, addressLine1, from, to, pageable));
+    }
+
     public ResponseEntity<String> standardApplicantsExport(
             @Nullable String code, @Nullable String name) {
         return ResponseEntity.ok(service.generateCsv(code, name));
