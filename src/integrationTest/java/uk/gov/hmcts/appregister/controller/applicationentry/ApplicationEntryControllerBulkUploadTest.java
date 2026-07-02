@@ -228,7 +228,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
-    void givenLargeCsv5MB_invalidCsv_whenBulkUploadApplicationListEntries_thenJobFails() throws Exception {
+    void givenLargeCsv5MB_invalidCsv_whenBulkUploadApplicationListEntries_thenJobFails()
+            throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
         UUID listId = createNewApplicationList(token);
