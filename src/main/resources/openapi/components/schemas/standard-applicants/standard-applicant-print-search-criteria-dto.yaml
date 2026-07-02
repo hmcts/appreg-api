@@ -1,6 +1,6 @@
 type: object
-desciription: Search criteria used for the Standard Applicants print report.
-required: 
+description: Search criteria used for the Standard Applicants print report.
+required:
   - code
   - name
   - addressLine1
