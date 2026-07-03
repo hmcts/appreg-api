@@ -1431,6 +1431,104 @@ paths:
       summary: "Get Application List Entry IDs (unpaged, filterable)"
       tags:
       - application-list-entries
+  /application-list-entries/bulk-action-preview:
+    post:
+      description: |
+        Resolves the current global Application List Entry selection into entry IDs and row context for the next bulk action page, enforcing the configured global bulk action limit.
+      operationId: bulkActionPreview
+      requestBody:
+        content:
+          application/vnd.hmcts.appreg.v1+json:
+            schema:
+              $ref: "#/components/schemas/bulk-action-preview-request-dto"
+        required: true
+      responses:
+        "200":
+          content:
+            application/vnd.hmcts.appreg.v1+json:
+              schema:
+                $ref: "#/components/schemas/bulk-action-preview-response-dto"
+          description: Bulk action preview for the resolved selection.
+          headers:
+            Vary:
+              description: Response varies by Accept for media-type versioning.
+              schema:
+                example: Accept
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Invalid request parameters.
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "406":
+          content:
+            application/problem+json:
+              examples:
+                notAcceptable:
+                  value:
+                    type: https://errors.hmcts.net/common/not-acceptable
+                    title: Not Acceptable
+                    status: 406
+                    detail: Requested media type/version not acceptable
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Requested media type/version not acceptable.
+        "413":
+          content:
+            application/problem+json:
+              examples:
+                payload-too-large:
+                  value:
+                    type: https://errors.hmcts.net/common/payload-too-large
+                    title: Payload Too Large
+                    status: 413
+                    detail: The uploaded file exceeds the maximum permitted size.
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Request entity is too large to be processed.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+      summary: Resolve global bulk action selection preview
+      tags:
+      - application-list-entries
   /application-lists/{listId}/entries:
     get:
       description: Returns a paginated list of Application List Entries linked to
@@ -5991,6 +6089,59 @@ components:
       required:
       - ids
       type: object
+    bulk-action-preview-request-dto:
+      additionalProperties: false
+      description: Request to resolve a global bulk action selection into IDs and
+        row context.
+      properties:
+        action:
+          $ref: "#/components/schemas/bulk-action-type"
+        selection:
+          $ref: "#/components/schemas/bulk-action-selection-dto"
+      required:
+      - action
+      - selection
+      type: object
+    bulk-action-preview-response-dto:
+      additionalProperties: false
+      description: Resolved preview for a global bulk action selection.
+      properties:
+        action:
+          $ref: "#/components/schemas/bulk-action-type"
+        limit:
+          example: 2000
+          format: int32
+          type: integer
+        selectedCount:
+          example: 25
+          format: int32
+          type: integer
+        eligibleCount:
+          example: 22
+          format: int32
+          type: integer
+        ineligibleCount:
+          example: 3
+          format: int32
+          type: integer
+        entryIds:
+          items:
+            format: uuid
+            type: string
+          type: array
+        entries:
+          items:
+            $ref: "#/components/schemas/entry-get-summary-dto"
+          type: array
+      required:
+      - action
+      - eligibleCount
+      - entries
+      - entryIds
+      - ineligibleCount
+      - limit
+      - selectedCount
+      type: object
     entry-application-list-get-filter-dto:
       description: Filter criteria for retrieving Application List Entries for an
         Application List.
@@ -7188,6 +7339,45 @@ components:
       - isResulted
       - status
       type: object
+    bulk-action-type:
+      description: Supported global bulk action types.
+      enum:
+      - RESULT_SELECTED
+      - UPDATE_NOTES
+      - PRINT_CONTINUOUS
+      - PRINT_PAGE
+      type: string
+    bulk-action-selection-dto:
+      additionalProperties: false
+      description: Selection criteria for a global bulk action preview.
+      properties:
+        selectionType:
+          $ref: "#/components/schemas/bulk-action-selection-type"
+        filter:
+          $ref: "#/components/schemas/entry-get-filter-dto"
+        sort:
+          description: |
+            Sort order for the resolved selection. A single value is currently supported. Format: `property,(asc|desc)`.
+          example:
+          - "date,desc"
+          items:
+            type: string
+          type: array
+        entryIds:
+          description: Explicitly selected Application List Entry IDs.
+          items:
+            format: uuid
+            type: string
+          type: array
+        excludedEntryIds:
+          description: Entry IDs excluded from a select-all-matching filter selection.
+          items:
+            format: uuid
+            type: string
+          type: array
+      required:
+      - selectionType
+      type: object
     applicant:
       additionalProperties: false
       description: The applicant making the application.
@@ -7477,6 +7667,12 @@ components:
       - constraint
       - field
       type: object
+    bulk-action-selection-type:
+      description: How the global bulk action selection should be resolved.
+      enum:
+      - FILTER
+      - IDS
+      type: string
     person:
       additionalProperties: false
       description: "The person making, or responding to, the application."

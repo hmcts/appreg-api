@@ -1,0 +1,47 @@
+type: object
+description: Resolved preview for a global bulk action selection.
+additionalProperties: false
+required:
+  - action
+  - limit
+  - selectedCount
+  - eligibleCount
+  - ineligibleCount
+  - entryIds
+  - entries
+
+properties:
+
+  action:
+    $ref: "./bulk-action-type.yaml"
+
+  limit:
+    type: integer
+    format: int32
+    example: 2000
+
+  selectedCount:
+    type: integer
+    format: int32
+    example: 25
+
+  eligibleCount:
+    type: integer
+    format: int32
+    example: 22
+
+  ineligibleCount:
+    type: integer
+    format: int32
+    example: 3
+
+  entryIds:
+    type: array
+    items:
+      type: string
+      format: uuid
+
+  entries:
+    type: array
+    items:
+      $ref: "./entry-get-summary-dto.yaml"

@@ -1,0 +1,7 @@
+type: string
+description: Supported global bulk action types.
+enum:
+  - RESULT_SELECTED
+  - UPDATE_NOTES
+  - PRINT_CONTINUOUS
+  - PRINT_PAGE

@@ -1,0 +1,36 @@
+type: object
+description: Selection criteria for a global bulk action preview.
+additionalProperties: false
+required:
+  - selectionType
+
+properties:
+
+  selectionType:
+    $ref: "./bulk-action-selection-type.yaml"
+
+  filter:
+    $ref: "./entry-get-filter-dto.yaml"
+
+  sort:
+    type: array
+    description: >
+      Sort order for the resolved selection. A single value is currently supported.
+      Format: `property,(asc|desc)`.
+    items:
+      type: string
+    example: [ "date,desc" ]
+
+  entryIds:
+    type: array
+    description: Explicitly selected Application List Entry IDs.
+    items:
+      type: string
+      format: uuid
+
+  excludedEntryIds:
+    type: array
+    description: Entry IDs excluded from a select-all-matching filter selection.
+    items:
+      type: string
+      format: uuid
