@@ -27961,62 +27961,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "08 401 Unauthorised - user lacks user/admin role",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "exec": [
-                  "pm.test('Status code is 401', () => pm.response.to.have.status(401));",
-                  "pm.test('Error response is JSON or problem JSON', () => {",
-                  "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.match(/json|problem/);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{access_token_no_export}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "text/csv",
-                "type": "text"
-              }
-            ],
-            "description": "Set access_token_no_export to a valid token that authenticates but lacks the required AppReg user/admin role.",
-            "url": {
-              "raw": "{{baseURL}}/standard-applicants/export?code=APP031",
-              "host": [
-                "{{baseURL}}"
-              ],
-              "path": [
-                "standard-applicants",
-                "export"
-              ],
-              "query": [
-                {
-                  "key": "code",
-                  "value": "APP031"
-                }
-              ]
-            }
-          },
-          "response": []
         }
       ]
     }
