@@ -226,7 +226,33 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Notes must not be longer than 4000 characters",
-                    "ALE-46"));
+                    "ALE-46")),
+
+    BULK_ACTION_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Bulk action must be provided", "ALE-47")),
+
+    BULK_ACTION_SELECTION_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Bulk action selection must be provided", "ALE-48")),
+
+    BULK_ACTION_SELECTION_TYPE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Bulk action selectionType must be provided",
+                    "ALE-49")),
+
+    BULK_ACTION_ENTRY_IDS_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "entryIds must be provided for IDS selection",
+                    "ALE-50")),
+
+    BULK_ACTION_SELECTION_EXCEEDS_LIMIT(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONTENT_TOO_LARGE,
+                    "Bulk action selection exceeds the configured limit",
+                    "ALE-51"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

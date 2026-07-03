@@ -51,6 +51,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
@@ -60,6 +61,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
@@ -138,6 +140,11 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
+import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
@@ -258,6 +265,7 @@ class ApplicationEntryServiceImplTest {
     private BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
     private BulkUpdateFeesValidator bulkUpdateFeesValidator;
+    private BulkActionPreviewValidator bulkActionPreviewValidator;
     private SimpleMeterRegistry meterRegistry;
 
     @Spy
@@ -315,6 +323,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         businessDateProvider,
                         Validation.buildDefaultValidatorFactory().getValidator());
+        bulkActionPreviewValidator = new BulkActionPreviewValidator();
         meterRegistry = new SimpleMeterRegistry();
 
         Fee fee = new FeeTestData().someComplete();
@@ -328,6 +337,7 @@ class ApplicationEntryServiceImplTest {
                         pageMapper,
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
+                        bulkActionPreviewValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
@@ -365,6 +375,7 @@ class ApplicationEntryServiceImplTest {
                         pageMapper,
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
+                        bulkActionPreviewValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
@@ -2843,6 +2854,40 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void given_idsSelection_when_bulkActionPreview_then_return_submitted_ids_and_counts() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID firstEntryId = UUID.randomUUID();
+        UUID secondEntryId = UUID.randomUUID();
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(firstEntryId, secondEntryId));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(2, response.getLimit());
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(2, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(), response.getEntries());
+    }
+
+    @Test
+    void given_idsSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.bulkActionPreview(
+                                        bulkActionPreviewRequest(
+                                                UUID.randomUUID(), UUID.randomUUID())));
+
+        Assertions.assertEquals(
+                AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
+    }
+
+    @Test
     void given_validPayload_when_updateEntry_then_save_and_return_response() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
@@ -2886,5 +2931,14 @@ class ApplicationEntryServiceImplTest {
 
         Assertions.assertNotNull(response);
         verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewRequest(UUID... entryIds) {
+        return new BulkActionPreviewRequestDto()
+                .action(BulkActionType.UPDATE_NOTES)
+                .selection(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(List.of(entryIds)));
     }
 }

@@ -90,6 +90,8 @@ azure:
 
 
 appreg:
+  bulk-action-preview:
+    global-limit: 2000
   audit:
     diff:
       enable-complex-diff: true

@@ -17,6 +17,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
@@ -84,6 +86,9 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
@@ -117,6 +122,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final String METRIC_FAILED = "failed";
     private static final int NOTES_MAX_LENGTH = 4000;
 
+    @Value("${appreg.bulk-action-preview.global-limit:2000}")
+    private int bulkActionPreviewGlobalLimit;
+
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
     private final FeeRepository feeRepository;
@@ -126,6 +134,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
 
     private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+
+    private final BulkActionPreviewValidator bulkActionPreviewValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -278,6 +288,33 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                     return Optional.of(result);
                 });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request) {
+        bulkActionPreviewValidator.validate(request);
+
+        List<UUID> selectedEntryIds = getSubmittedEntryIds(request);
+        bulkActionPreviewValidator.validateLimit(
+                selectedEntryIds.size(), bulkActionPreviewGlobalLimit);
+
+        return new BulkActionPreviewResponseDto()
+                .action(request.getAction())
+                .limit(bulkActionPreviewGlobalLimit)
+                .selectedCount(selectedEntryIds.size())
+                .eligibleCount(selectedEntryIds.size())
+                .ineligibleCount(0)
+                .entryIds(selectedEntryIds)
+                .entries(List.of());
+    }
+
+    private List<UUID> getSubmittedEntryIds(BulkActionPreviewRequestDto request) {
+        if (request.getSelection().getSelectionType() != BulkActionSelectionType.IDS) {
+            return List.of();
+        }
+
+        return List.copyOf(request.getSelection().getEntryIds());
     }
 
     @Override

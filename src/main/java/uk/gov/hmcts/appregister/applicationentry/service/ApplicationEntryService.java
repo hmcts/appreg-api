@@ -8,6 +8,8 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
@@ -30,6 +32,8 @@ public interface ApplicationEntryService {
     EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable);
 
     EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
+
+    BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request);
 
     /**
      * Creates an application entry. A fee status record(s) is created for the entry if provided,
