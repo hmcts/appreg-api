@@ -27971,7 +27971,7 @@
                 "type": "text/javascript",
                 "packages": {},
                 "exec": [
-                  "pm.test('Status code is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Status code is 401', () => pm.response.to.have.status(401));",
                   "pm.test('Error response is JSON or problem JSON', () => {",
                   "  pm.expect((pm.response.headers.get('Content-Type') || '').toLowerCase()).to.match(/json|problem/);",
                   "});"
