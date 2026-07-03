@@ -14,6 +14,9 @@ public class BulkUploadError {
     private String location;
     private String rejectedValue;
     private String message;
+    private String addressLine1;
+    private String name;
+    private String errorType;
 
     @Override
     public String toString() {
@@ -30,12 +33,9 @@ public class BulkUploadError {
             error.append(" rejected value [").append(rejectedValue).append("]");
         }
 
-        return error.append(": ").append(message).toString();
-    }
+        error.append(" for respondent [").append(name).append("]");
+        error.append(" at address [").append(addressLine1).append("]");
 
-    public String toJson() {
-        return String.format(
-                "{\"rowNumber\": %d, \"location\": \"%s\", \"rejectedValue\": \"%s\", \"message\": \"%s\"}",
-                rowNumber, location, rejectedValue, message);
+        return error.append(": ").append(message).toString();
     }
 }

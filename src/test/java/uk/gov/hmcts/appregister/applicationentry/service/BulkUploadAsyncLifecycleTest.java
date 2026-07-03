@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import java.io.IOException;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
@@ -87,19 +89,24 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
-                .anySatisfy(
-                        message -> {
-                            assertThat(message)
-                                    .contains(
-                                            "Row 2 [respondent.organisation.contactDetails.postcode]");
-                            assertThat(message).contains("rejected value [invalid]");
-                            assertThat(message).contains("must match");
-                        });
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.organisation.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
         assertThat(output)
                 .contains("Bulk upload validation failure for list")
-                .contains("Row 2 [respondent.organisation.contactDetails.postcode]")
-                .contains("rejected value [invalid]")
-                .contains("must match");
+                .contains("\"rowNumber\":2")
+                .contains("respondent.organisation.contactDetails.postcode")
+                .contains("\"rejectedValue\":\"invalid\"")
+                .contains("\"message\":\"must match");
     }
 
     @Test
@@ -221,7 +228,16 @@ class BulkUploadAsyncLifecycleTest {
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
-                        "Row 2 [APPLICATION_TEXT]: APPLICATION_TEXT1 is required for code AP99001");
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "APPLICATION_TEXT",
+                                                null,
+                                                "APPLICATION_TEXT1 is required for code AP99001",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
     }
 
     @Test
@@ -239,10 +255,25 @@ class BulkUploadAsyncLifecycleTest {
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
+        String name =
+                row.getRespondentOrganisationName() != null
+                        ? row.getRespondentOrganisationName()
+                        : row.getRespondentForename1() + " " + row.getRespondentSurname();
+
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
-                .containsExactly("Row 2 [BULK_UPLOAD_ROW]: Unexpected validation failure");
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "Unexpected validation failure",
+                                                row.getRespondentAddressLine1(),
+                                                name,
+                                                "DATA_ERROR"))));
     }
 
     @Test
@@ -282,5 +313,14 @@ class BulkUploadAsyncLifecycleTest {
         row.setRespondentTelephone("0207 1111111");
         row.setRespondentMobile("07771 111111");
         return row;
+    }
+
+    private static String createErrorDescription(List<BulkUploadError> errors) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.writeValueAsString(errors);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize errors", e);
+        }
     }
 }

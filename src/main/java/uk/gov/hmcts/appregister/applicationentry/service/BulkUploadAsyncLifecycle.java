@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
@@ -27,8 +26,6 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-
-
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -150,12 +147,32 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     (validatable, result) -> null);
             return List.of();
         } catch (AppRegistryException exception) {
+            String name = null;
+            if (dto.getRespondent() != null
+                    && (dto.getRespondent().getOrganisation() != null
+                            || dto.getRespondent().getPerson() != null)) {
+                name =
+                        dto.getRespondent().getOrganisation() != null
+                                ? dto.getRespondent().getOrganisation().getName()
+                                : dto.getRespondent().getPerson().getName().toString();
+            }
             return List.of(
                     new BulkUploadError(
                             rowNumber,
                             locationForBusinessRule(exception),
                             null,
-                            exception.getMessage()));
+                            exception.getMessage(),
+                            dto.getRespondent().getOrganisation() != null
+                                    ? dto.getRespondent()
+                                            .getOrganisation()
+                                            .getContactDetails()
+                                            .getAddressLine1()
+                                    : dto.getRespondent()
+                                            .getPerson()
+                                            .getContactDetails()
+                                            .getAddressLine1(),
+                            name,
+                            "DATA_ERROR"));
         }
     }
 
@@ -180,11 +197,30 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private static BulkUploadError toBulkUploadError(
             int rowNumber, ConstraintViolation<EntryCreateDto> violation) {
+        String name =
+                violation.getRootBean().getRespondent().getOrganisation() != null
+                        ? violation.getRootBean().getRespondent().getOrganisation().getName()
+                        : violation.getRootBean().getRespondent().getPerson().getName().toString();
         return new BulkUploadError(
                 rowNumber,
                 violation.getPropertyPath().toString(),
                 rejectedValue(violation),
-                violation.getMessage());
+                violation.getMessage(),
+                violation.getRootBean().getRespondent().getOrganisation() != null
+                        ? violation
+                                .getRootBean()
+                                .getRespondent()
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine1()
+                        : violation
+                                .getRootBean()
+                                .getRespondent()
+                                .getPerson()
+                                .getContactDetails()
+                                .getAddressLine1(),
+                name,
+                "DATA_ERROR");
     }
 
     private static String rejectedValue(ConstraintViolation<?> violation) {
@@ -199,13 +235,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
         List<String> errorMessages = context.getValidationFailureMessages();
 
-        // we're going to convert the existing message into a BulkUploadError object and log it to the job context as JSON for easier parsing later
+        // we're going to convert the existing message into a BulkUploadError object and log it to
+        // the job context as JSON for easier parsing later
         for (String e : errorMessages) {
-            BulkUploadError bulkUploadError = new BulkUploadError(0, BULK_UPLOAD_ROW, null, e);
+            BulkUploadError bulkUploadError =
+                    new BulkUploadError(-1, BULK_UPLOAD_ROW, null, e, null, null, "HEADER_ERROR");
             error.addFirst(bulkUploadError);
         }
 
-        // We will clear the existing errors in the context as the original errors have been added above
+        // We will clear the existing errors in the context as the original errors have been added
+        // above
         context.getValidationFailureMessages().clear();
 
         try {
@@ -214,8 +253,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             context.logFailure(json);
             log.warn("Bulk upload validation failure for list {}: {}", listId, json);
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize bulk upload errors to JSON for list {}: {}", listId, e.getMessage(), e);
-            context.logFailure("Bulk upload validation failure for list " + listId + ": " + e.getMessage());
+            log.error(
+                    "Failed to serialize bulk upload errors to JSON for list {}: {}",
+                    listId,
+                    e.getMessage(),
+                    e);
+            context.logFailure(
+                    "Bulk upload validation failure for list " + listId + ": " + e.getMessage());
         }
     }
 

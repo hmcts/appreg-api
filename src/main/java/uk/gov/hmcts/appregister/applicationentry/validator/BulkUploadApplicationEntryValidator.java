@@ -26,6 +26,16 @@ public class BulkUploadApplicationEntryValidator {
      */
     public List<BulkUploadError> validateRow(int rowNumber, BulkUploadRow row) {
         List<BulkUploadError> errors = new ArrayList<>();
+        boolean hasOrganisation = BulkUploadRow.hasRespondentOrganisation(row);
+        boolean hasPerson = BulkUploadRow.hasRespondentPerson(row);
+        String name = null;
+        if (hasOrganisation || hasPerson) {
+            name =
+                    row.getRespondentOrganisationName() == null
+                            ? row.getRespondentForename1() + " " + row.getRespondentSurname()
+                            : row.getRespondentOrganisationName();
+        }
+        final String errorType = "DATA_ERROR";
 
         // --- REQUIRED FIELDS ---
 
@@ -35,7 +45,10 @@ public class BulkUploadApplicationEntryValidator {
                             rowNumber,
                             columnName("applicantCode"),
                             null,
-                            "Applicant code is required"));
+                            "Applicant code is required",
+                            row.getRespondentAddressLine1(),
+                            name,
+                            errorType));
         }
 
         if (StringUtils.isBlank(row.getApplicationCode())) {
@@ -44,13 +57,13 @@ public class BulkUploadApplicationEntryValidator {
                             rowNumber,
                             columnName("applicationCode"),
                             null,
-                            "Application code is required"));
+                            "Application code is required",
+                            row.getRespondentAddressLine1(),
+                            name,
+                            errorType));
         }
 
         // --- RESPONDENT RULES ---
-
-        boolean hasOrganisation = BulkUploadRow.hasRespondentOrganisation(row);
-        boolean hasPerson = BulkUploadRow.hasRespondentPerson(row);
 
         // Must not have both
         if (hasOrganisation && hasPerson) {
@@ -59,14 +72,23 @@ public class BulkUploadApplicationEntryValidator {
                             rowNumber,
                             columnNames(),
                             null,
-                            "Respondent cannot be both organisation and person"));
+                            "Respondent cannot be both organisation and person",
+                            row.getRespondentAddressLine1(),
+                            name,
+                            errorType));
         }
 
         // Must have at least one
         if (!hasOrganisation && !hasPerson) {
             errors.add(
                     new BulkUploadError(
-                            rowNumber, columnNames(), null, "Respondent details must be provided"));
+                            rowNumber,
+                            columnNames(),
+                            null,
+                            "Respondent details must be provided",
+                            row.getRespondentAddressLine1(),
+                            name,
+                            errorType));
         }
 
         return errors;
