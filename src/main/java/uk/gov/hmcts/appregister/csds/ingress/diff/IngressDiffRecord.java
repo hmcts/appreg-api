@@ -1,4 +1,11 @@
 package uk.gov.hmcts.appregister.csds.ingress.diff;
 
-public record IngressDiffRecord<TIncoming, TExisting>(
-        IngressOperation operation, TIncoming incoming, TExisting existing, String reason) {}
+/**
+ * One diff decision for a single incoming record.
+ */
+public record IngressDiffRecord<TIncoming, TExisting, TIntended>(
+        IngressOperation operation,
+        TIncoming incoming,
+        TExisting existing,
+        TIntended intended,
+        String reason) {}

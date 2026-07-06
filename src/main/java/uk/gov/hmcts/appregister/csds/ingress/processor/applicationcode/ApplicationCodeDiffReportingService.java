@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,10 +11,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +29,9 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 @Slf4j
 @Component
 public class ApplicationCodeDiffReportingService {
-    private static final int CHANGE_LOG_LIMIT = 20;
     private static final DateTimeFormatter FILE_TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS");
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CHANGE_TYPE_IGNORE = "ignore";
     private static final String CHANGE_TYPE_INSERT = "insert";
     private static final String CHANGE_TYPE_UPDATE = "update";
@@ -60,13 +60,15 @@ public class ApplicationCodeDiffReportingService {
 
         val incomingById = diffResult.incomingById();
         val existingById = diffResult.existingById();
-        val diffReport = new ArrayList<>(buildDiffReport(diffResult.diffRecords()));
+        val diffReport =
+                new ArrayList<>(
+                        buildDiffReport(processedData, diffResult.diffRecords(), recordsExtractor));
         val insertedCount = countByOperation(diffResult.diffRecords(), IngressOperation.INSERT);
         val updatedCount = countByOperation(diffResult.diffRecords(), IngressOperation.UPDATE);
         val unchangedCount = countByOperation(diffResult.diffRecords(), IngressOperation.IGNORE);
 
         diffReport.sort(
-                Comparator.comparing(DiffReportRow::id).thenComparing(DiffReportRow::changeType));
+                Comparator.comparing(DiffReportRow::acId).thenComparing(DiffReportRow::changeType));
 
         writeComparisonCsvFiles(
                 datasetName,
@@ -86,85 +88,51 @@ public class ApplicationCodeDiffReportingService {
                 insertedCount,
                 updatedCount,
                 unchangedCount);
-
-        logChangedIds(
-                CHANGE_TYPE_INSERT,
-                datasetName,
-                targetTable,
-                targetKeyField,
-                filterIdsByOperation(diffResult.diffRecords(), IngressOperation.INSERT),
-                String::valueOf);
-        logChangedIds(
-                CHANGE_TYPE_UPDATE,
-                datasetName,
-                targetTable,
-                targetKeyField,
-                filterIdsByOperation(diffResult.diffRecords(), IngressOperation.UPDATE),
-                String::valueOf);
-        logChangedIds(
-                CHANGE_TYPE_IGNORE,
-                datasetName,
-                targetTable,
-                targetKeyField,
-                filterIdsByOperation(diffResult.diffRecords(), IngressOperation.IGNORE),
-                String::valueOf);
-    }
-
-    private <T> void logChangedIds(
-            String changeType,
-            String datasetName,
-            String targetTable,
-            String targetKeyField,
-            List<T> values,
-            Function<T, String> formatter) {
-        if (values.isEmpty()) {
-            return;
-        }
-
-        val preview =
-                values.stream()
-                        .limit(CHANGE_LOG_LIMIT)
-                        .map(formatter)
-                        .collect(Collectors.joining(", "));
-        val truncated = values.size() > CHANGE_LOG_LIMIT ? " (truncated)" : "";
-
-        log.info(
-                "CSDS {} preview for {} on {}.{}: {}{}",
-                changeType,
-                datasetName,
-                targetTable,
-                targetKeyField,
-                preview,
-                truncated);
     }
 
     private List<DiffReportRow> buildDiffReport(
-            List<IngressDiffRecord<ApplicationCodeIngressRecord, ApplicationCodeIngressRecord>>
-                    diffRecords) {
+            List<JsonNode> processedData,
+            List<
+                            IngressDiffRecord<
+                                    ApplicationCodeIngressRecord,
+                                    ApplicationCodeIngressRecord,
+                                    ApplicationCodeIngressRecord>>
+                    diffRecords,
+            Function<JsonNode, List<JsonNode>> recordsExtractor) {
+        val incomingRecordsByAcId =
+                processedData.stream()
+                        .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .filter(item -> nullableLong(item, "AC_ID") != null)
+                        .collect(
+                                Collectors.toMap(
+                                        item -> nullableLong(item, "AC_ID"),
+                                        Function.identity(),
+                                        (first, second) -> second));
         return diffRecords.stream()
                 .map(
-                        record ->
+                        item ->
                                 new DiffReportRow(
-                                        record.incoming().id(), changeType(record.operation())))
+                                        nullableLong(
+                                                incomingRecordsByAcId.get(item.intended().id()),
+                                                "PSSApplicationCodeID"),
+                                        nullableLong(
+                                                incomingRecordsByAcId.get(item.intended().id()),
+                                                "ApplicationCodeID"),
+                                        item.intended().id(),
+                                        changeType(item.operation())))
                 .toList();
     }
 
     private int countByOperation(
-            List<IngressDiffRecord<ApplicationCodeIngressRecord, ApplicationCodeIngressRecord>>
+            List<
+                            IngressDiffRecord<
+                                    ApplicationCodeIngressRecord,
+                                    ApplicationCodeIngressRecord,
+                                    ApplicationCodeIngressRecord>>
                     diffRecords,
             IngressOperation operation) {
         return Math.toIntExact(
-                diffRecords.stream().filter(record -> record.operation() == operation).count());
-    }
-
-    private List<Long> filterIdsByOperation(
-            List<IngressDiffRecord<ApplicationCodeIngressRecord, ApplicationCodeIngressRecord>>
-                    diffRecords,
-            IngressOperation operation) {
-        return diffRecords.stream()
-                .filter(record -> record.operation() == operation)
-                .map(record -> record.incoming().id())
-                .toList();
+                diffRecords.stream().filter(item -> item.operation() == operation).count());
     }
 
     private String changeType(IngressOperation operation) {
@@ -199,9 +167,9 @@ public class ApplicationCodeDiffReportingService {
         try {
             val outputDir = Files.createDirectories(Path.of(reportingDir));
             val timestamp = LocalDateTime.now().format(FILE_TIMESTAMP_FORMAT);
-            val rawIncomingPath =
-                    outputDir.resolve("application_codes_incoming_raw_" + timestamp + ".csv");
-            val incomingPath =
+            val incomingJsonPath =
+                    outputDir.resolve("application_codes_incoming_" + timestamp + ".json");
+            val incomingCsvPath =
                     outputDir.resolve("application_codes_incoming_" + timestamp + ".csv");
             val existingPath =
                     outputDir.resolve("application_codes_existing_" + timestamp + ".csv");
@@ -210,10 +178,13 @@ public class ApplicationCodeDiffReportingService {
                     loadProtectedDeletionCounts(new ArrayList<>(existingById.keySet()));
 
             Files.writeString(
-                    rawIncomingPath,
-                    buildRawIncomingCsv(processedData, recordsExtractor),
+                    incomingJsonPath,
+                    buildIncomingJson(processedData, recordsExtractor),
                     StandardCharsets.UTF_8);
-            Files.writeString(incomingPath, buildIncomingCsv(incomingById), StandardCharsets.UTF_8);
+            Files.writeString(
+                    incomingCsvPath,
+                    buildIncomingCsv(processedData, recordsExtractor),
+                    StandardCharsets.UTF_8);
             Files.writeString(
                     existingPath,
                     buildExistingCsv(existingById, protectedDeletionCounts),
@@ -222,10 +193,10 @@ public class ApplicationCodeDiffReportingService {
                     diffReportPath, buildDiffReportCsv(diffReport), StandardCharsets.UTF_8);
 
             log.info(
-                    "Wrote CSDS comparison CSV files for {} to {}, {}, {} and {}",
+                    "Wrote CSDS comparison artifacts for {} to {}, {}, {} and {}",
                     datasetName,
-                    rawIncomingPath,
-                    incomingPath,
+                    incomingJsonPath,
+                    incomingCsvPath,
                     existingPath,
                     diffReportPath);
         } catch (IOException ex) {
@@ -236,80 +207,30 @@ public class ApplicationCodeDiffReportingService {
         }
     }
 
-    private String buildRawIncomingCsv(
-            List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        val pageMetadataFields = new LinkedHashSet<String>();
-        val recordFields = new LinkedHashSet<String>();
-
-        for (val page : processedData) {
-            page.fieldNames()
-                    .forEachRemaining(
-                            fieldName -> {
-                                if (!"records".equals(fieldName)) {
-                                    pageMetadataFields.add(fieldName);
-                                }
-                            });
-            recordsExtractor
-                    .apply(page)
-                    .forEach(record -> record.fieldNames().forEachRemaining(recordFields::add));
+    private String buildIncomingJson(
+            List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor)
+            throws IOException {
+        if (processedData.isEmpty()) {
+            val emptyPayload = OBJECT_MAPPER.createObjectNode();
+            emptyPayload.putArray("records");
+            return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(emptyPayload);
         }
 
-        val csv = new StringBuilder("pageIndex,recordIndex");
-        pageMetadataFields.forEach(fieldName -> csv.append(",page_").append(fieldName));
-        recordFields.forEach(fieldName -> csv.append(",").append(fieldName));
-        csv.append("\n");
-
-        val rows = new ArrayList<RawIncomingCsvRow>();
-        for (var pageIndex = 0; pageIndex < processedData.size(); pageIndex++) {
-            val page = processedData.get(pageIndex);
-            val records = recordsExtractor.apply(page);
-
-            for (var recordIndex = 0; recordIndex < records.size(); recordIndex++) {
-                val record = records.get(recordIndex);
-                rows.add(
-                        new RawIncomingCsvRow(
-                                extractRecordId(record), pageIndex, recordIndex, page, record));
-            }
-        }
-
-        rows.stream()
-                .sorted(
-                        Comparator.comparing(
-                                        RawIncomingCsvRow::id,
-                                        Comparator.nullsLast(Long::compareTo))
-                                .thenComparing(RawIncomingCsvRow::pageIndex)
-                                .thenComparing(RawIncomingCsvRow::recordIndex))
-                .forEach(
-                        row -> {
-                            csv.append(csvValue(row.pageIndex()))
-                                    .append(",")
-                                    .append(csvValue(row.recordIndex()));
-                            appendPageMetadata(csv, row.page(), pageMetadataFields);
-                            appendRecordFields(csv, row.record(), recordFields);
-                            csv.append("\n");
-                        });
-
-        return csv.toString();
+        val mergedPayload = cloneWithoutRecords(processedData.getFirst());
+        val mergedRecords = mergedPayload.putArray("records");
+        processedData.stream()
+                .flatMap(page -> recordsExtractor.apply(page).stream())
+                .forEach(mergedRecords::add);
+        return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(mergedPayload);
     }
 
-    private void appendPageMetadata(
-            StringBuilder csv, JsonNode page, Set<String> pageMetadataFields) {
-        pageMetadataFields.forEach(
-                fieldName -> csv.append(",").append(csvValue(jsonValue(page.get(fieldName)))));
-    }
-
-    private void appendRecordFields(StringBuilder csv, JsonNode record, Set<String> recordFields) {
-        recordFields.forEach(
-                fieldName -> csv.append(",").append(csvValue(jsonValue(record.get(fieldName)))));
-    }
-
-    private String buildIncomingCsv(Map<Long, ApplicationCodeIngressRecord> incomingById) {
-        val csv = new StringBuilder(csvHeader(false));
-        incomingById.values().stream()
-                .sorted(Comparator.comparing(ApplicationCodeIngressRecord::id))
-                .map(ApplicationCodeIngressRecord::toCsvRow)
-                .forEach(csv::append);
-        return csv.toString();
+    private ObjectNode cloneWithoutRecords(JsonNode page) {
+        val clonedPage =
+                page instanceof ObjectNode objectNode
+                        ? objectNode.deepCopy()
+                        : OBJECT_MAPPER.createObjectNode();
+        clonedPage.remove("records");
+        return clonedPage;
     }
 
     private String buildExistingCsv(
@@ -318,34 +239,75 @@ public class ApplicationCodeDiffReportingService {
         val csv = new StringBuilder(csvHeader(true));
         existingById.values().stream()
                 .sorted(Comparator.comparing(ApplicationCodeIngressRecord::id))
-                .map(record -> record.toCsvRow(protectedDeletionCounts.get(record.id())))
+                .map(item -> item.toCsvRow(protectedDeletionCounts.get(item.id())))
+                .forEach(csv::append);
+        return csv.toString();
+    }
+
+    private String buildIncomingCsv(
+            List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor) {
+        val csv = new StringBuilder(csvHeader(false));
+        processedData.stream()
+                .flatMap(page -> recordsExtractor.apply(page).stream())
+                .map(this::toIncomingCsvRow)
                 .forEach(csv::append);
         return csv.toString();
     }
 
     private String csvHeader(boolean includeReferenceCount) {
         val baseHeader =
-                "id,code,title,wording,legislation,feeDue,requiresRespondent,startDate,endDate,"
+                "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation,"
+                        + "feeDue,requiresRespondent,startDate,endDate,"
                         + "bulkRespondentAllowed,version,feeReference";
         return includeReferenceCount ? baseHeader + ",referenceCount\n" : baseHeader + "\n";
     }
 
     private String buildDiffReportCsv(List<DiffReportRow> diffReport) {
-        val csv = new StringBuilder("id,changeType\n");
+        val csv = new StringBuilder("pssApplicationCodeId,applicationCodeId,acId,changeType\n");
         diffReport.stream().map(DiffReportRow::toCsvRow).forEach(csv::append);
         return csv.toString();
     }
 
-    private Long extractRecordId(JsonNode record) {
-        return ApplicationCodeIngressRecord.resolveId(record);
+    private String toIncomingCsvRow(JsonNode node) {
+        return String.join(
+                        ",",
+                        csvValue(nullableLong(node, "PSSApplicationCodeID")),
+                        csvValue(nullableLong(node, "ApplicationCodeID")),
+                        csvValue(nullableLong(node, "AC_ID")),
+                        csvValue(nullableText(node, "Code")),
+                        csvValue(nullableText(node, "ApplicationTitle")),
+                        csvValue(nullableText(node, "ApplicationWording")),
+                        csvValue(nullableText(node, "Legislation")),
+                        csvValue(nullableText(node, "FeeDue")),
+                        csvValue(nullableText(node, "Respondent")),
+                        csvValue(nullableText(node, "StartDate")),
+                        csvValue(nullableText(node, "EndDate")),
+                        csvValue(nullableText(node, "BulkRespondentAllowed")),
+                        csvValue(nullableLong(node, "RevisionNumber")),
+                        csvValue(nullableText(node, "FeeReference")))
+                + "\n";
     }
 
-    private static String jsonValue(JsonNode field) {
-        if (field == null || field.isNull()) {
+    private Long nullableLong(JsonNode node, String fieldName) {
+        if (node == null) {
             return null;
         }
 
-        return field.isValueNode() ? field.asText() : field.toString();
+        val field = node.get(fieldName);
+        if (field == null || !field.canConvertToLong()) {
+            return null;
+        }
+
+        return field.longValue();
+    }
+
+    private String nullableText(JsonNode node, String fieldName) {
+        if (node == null) {
+            return null;
+        }
+
+        val field = node.get(fieldName);
+        return field == null || field.isNull() ? null : field.asText();
     }
 
     static String csvValue(Object value) {
@@ -362,12 +324,16 @@ public class ApplicationCodeDiffReportingService {
                 + "\"";
     }
 
-    private record DiffReportRow(Long id, String changeType) {
+    private record DiffReportRow(
+            Long pssApplicationCodeId, Long applicationCodeId, Long acId, String changeType) {
         private String toCsvRow() {
-            return String.join(",", csvValue(id), csvValue(changeType)) + "\n";
+            return String.join(
+                            ",",
+                            csvValue(pssApplicationCodeId),
+                            csvValue(applicationCodeId),
+                            csvValue(acId),
+                            csvValue(changeType))
+                    + "\n";
         }
     }
-
-    private record RawIncomingCsvRow(
-            Long id, int pageIndex, int recordIndex, JsonNode page, JsonNode record) {}
 }

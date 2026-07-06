@@ -7,5 +7,9 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 public record ApplicationCodeDiffResult(
         Map<Long, ApplicationCodeIngressRecord> incomingById,
         Map<Long, ApplicationCodeIngressRecord> existingById,
-        List<IngressDiffRecord<ApplicationCodeIngressRecord, ApplicationCodeIngressRecord>>
+        List<
+                        IngressDiffRecord<
+                                ApplicationCodeIngressRecord,
+                                ApplicationCodeIngressRecord,
+                                ApplicationCodeIngressRecord>>
                 diffRecords) {}

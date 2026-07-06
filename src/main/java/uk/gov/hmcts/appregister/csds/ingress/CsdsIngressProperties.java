@@ -76,19 +76,45 @@ public class CsdsIngressProperties {
 
     @Getter
     @Setter
-    public static class ApplicationCodes {
+    public static class ProcessorProperties {
         private boolean enabled;
 
         private String mock;
 
         private String parameters;
 
-        private String sourceEntityName = "ApplicationCode";
+        private String sourceEntityName;
+
+        private String tableName;
+
+        private String primaryKey;
 
         private String reportingDir;
 
-        private boolean isConfigurationValid() {
-            return !enabled || StringUtils.hasText(sourceEntityName);
+        protected ProcessorProperties() {
+            // Default constructor for configuration binding.
+        }
+
+        protected ProcessorProperties(
+                String sourceEntityName, String tableName, String primaryKey) {
+            this.sourceEntityName = sourceEntityName;
+            this.tableName = tableName;
+            this.primaryKey = primaryKey;
+        }
+
+        protected boolean isConfigurationValid() {
+            return !enabled
+                    || (StringUtils.hasText(sourceEntityName)
+                            && StringUtils.hasText(tableName)
+                            && StringUtils.hasText(primaryKey));
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class ApplicationCodes extends ProcessorProperties {
+        public ApplicationCodes() {
+            super("ApplicationCode", "application_codes", "ac_id");
         }
     }
 }

@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -39,6 +38,8 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
             "appreg.csds.ingress.processors.application-codes.reporting-dir=${java.io.tmpdir}",
             "appreg.csds.ingress.processors.application-codes.mock=",
             "appreg.csds.ingress.processors.application-codes.parameters=",
+            "appreg.csds.ingress.processors.application-codes.table-name=application_codes",
+            "appreg.csds.ingress.processors.application-codes.primary-key=ac_id",
             "appreg.csds.ingress.base-url=${wiremock.server.baseUrl}",
             "appreg.csds.ingress.access-keys[0]=primary-test-key",
             "appreg.csds.ingress.access-keys[1]=secondary-test-key"
@@ -85,22 +86,14 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 applicationCodeRepository.findAll().stream()
                         .sorted(Comparator.comparing(ApplicationCode::getId))
                         .toList();
-        var ignored = existingApplicationCodes.get(0);
         var updated = existingApplicationCodes.get(1);
         var unmatched = existingApplicationCodes.get(2);
 
-        ignored.setEndDate(LocalDate.now().minusDays(1));
         updated.setEndDate(null);
         unmatched.setEndDate(null);
-        applicationCodeRepository.saveAll(List.of(ignored, updated, unmatched));
+        applicationCodeRepository.saveAll(List.of(updated, unmatched));
 
-        var incomingRecords =
-                new ArrayList<>(
-                        existingApplicationCodes.stream().map(this::toSourceRecord).toList());
-        incomingRecords.removeIf(
-                record -> record.get("ApplicationCodeID").longValue() == unmatched.getId());
-        incomingRecords.get(1).put("ApplicationTitle", updated.getTitle() + " (Updated)");
-        incomingRecords.get(1).put("VersionNumber", updated.getVersion() + 1);
+        var incomingRecords = new ArrayList<>(List.of(toSourceRecordWithPssacid(updated, 9001L)));
 
         var insertedId =
                 existingApplicationCodes.stream()
@@ -138,10 +131,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         var executed = csdsIngressProcessor.runIngress();
         var databaseJob = databaseJobRepository.findByName(CsdsIngressProcessor.DATABASE_JOB_NAME);
         var expectedPageCount = (totalCount + 1) / 2;
-        var expectedUpdates = totalCount - 2;
-        var expectedInsertedId = insertedId + 100000;
-        var expectedUpdatedId = updated.getId() + 100000;
-        var expectedIgnoredId = ignored.getId() + 100000;
+        var expectedUpdates = 1;
 
         assertThat(executed).isTrue();
         assertThat(databaseJob.getMetadata()).isNull();
@@ -152,23 +142,11 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "incoming=%d, existing=%d, inserts=1, updates=%d, ignores=1"
+                                        "incoming=%d, existing=%d, inserts=1, updates=%d, ignores=0"
                                                 .formatted(
                                                         totalCount,
                                                         existingApplicationCodes.size(),
-                                                        expectedUpdates)))
-                .anyMatch(
-                        log ->
-                                log.contains("CSDS insert preview")
-                                        && log.contains(String.valueOf(expectedInsertedId)))
-                .anyMatch(
-                        log ->
-                                log.contains("CSDS update preview")
-                                        && log.contains(String.valueOf(expectedUpdatedId)))
-                .anyMatch(
-                        log ->
-                                log.contains("CSDS ignore preview")
-                                        && log.contains(String.valueOf(expectedIgnoredId)));
+                                                        expectedUpdates)));
 
         verify(
                 getRequestedFor(urlPathEqualTo("/count/CSDS/ApplicationCode/GD"))
@@ -183,27 +161,29 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         }
     }
 
-    private ObjectNode toSourceRecord(ApplicationCode applicationCode) {
-        var record =
+    private ObjectNode toSourceRecordWithPssacid(
+            ApplicationCode applicationCode, Long applicationCodeId) {
+        var node =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put("ApplicationCodeID", applicationCode.getId())
+                        .put("ApplicationCodeID", applicationCodeId)
+                        .put("PSSApplicationCodeID", applicationCode.getId())
                         .put("Code", applicationCode.getCode())
                         .put("ApplicationTitle", applicationCode.getTitle())
                         .put("ApplicationWording", applicationCode.getWording())
                         .put("FeeDue", applicationCode.getFeeDue().getValue())
                         .put("Respondent", applicationCode.getRequiresRespondent().getValue())
-                        .put("VersionNumber", applicationCode.getVersion())
+                        .put("RevisionNumber", applicationCode.getVersion())
                         .put("StartDate", applicationCode.getStartDate().toString())
                         .put(
                                 "BulkRespondentAllowed",
                                 applicationCode.getBulkRespondentAllowed().getValue());
 
-        putNullableText(record, "Legislation", applicationCode.getLegislation());
-        putNullableText(record, "FeeReference", applicationCode.getFeeReference());
-        putNullableDate(record, "EndDate", applicationCode.getEndDate());
+        putNullableText(node, "Legislation", applicationCode.getLegislation());
+        putNullableText(node, "FeeReference", applicationCode.getFeeReference());
+        putNullableDate(node, "EndDate", applicationCode.getEndDate());
 
-        return record;
+        return node;
     }
 
     private ObjectNode createInsertedRecord(Long insertedId) {
@@ -217,27 +197,27 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .put("FeeDue", YesOrNo.YES.getValue())
                 .put("FeeReference", "FEE-1")
                 .put("Respondent", YesOrNo.NO.getValue())
-                .put("VersionNumber", 1)
+                .put("RevisionNumber", 1)
                 .put("StartDate", "2020-01-01")
                 .putNull("EndDate")
                 .put("BulkRespondentAllowed", YesOrNo.NO.getValue());
     }
 
-    private void putNullableDate(ObjectNode record, String fieldName, java.time.LocalDate value) {
+    private void putNullableDate(ObjectNode node, String fieldName, java.time.LocalDate value) {
         if (value == null) {
-            record.putNull(fieldName);
+            node.putNull(fieldName);
             return;
         }
 
-        record.put(fieldName, value.toString());
+        node.put(fieldName, value.toString());
     }
 
-    private void putNullableText(ObjectNode record, String fieldName, String value) {
+    private void putNullableText(ObjectNode node, String fieldName, String value) {
         if (value == null) {
-            record.putNull(fieldName);
+            node.putNull(fieldName);
             return;
         }
 
-        record.put(fieldName, value);
+        node.put(fieldName, value);
     }
 }

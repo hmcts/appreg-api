@@ -19,7 +19,9 @@ public record ApplicationCodeIngressRecord(
         YesOrNo bulkRespondentAllowed,
         Long version,
         String feeReference) {
-
+    private static final String AC_ID_FIELD = "AC_ID";
+    private static final String APPLICATION_CODE_ID_FIELD = "ApplicationCodeID";
+    private static final String PSS_APPLICATION_CODE_ID_FIELD = "PSSApplicationCodeID";
     private static final long APPLICATION_CODE_ID_OFFSET = 100000L;
 
     static ApplicationCodeIngressRecord fromEntity(ApplicationCode applicationCode) {
@@ -38,14 +40,24 @@ public record ApplicationCodeIngressRecord(
                 applicationCode.getFeeReference());
     }
 
-    public static @Nullable Long resolveId(JsonNode node) {
-        var pssacid = nullableLong(node, "PSSACID");
+    public static @Nullable Long calculateId(
+            @Nullable Long pssacid, @Nullable Long applicationCodeId) {
         if (pssacid != null) {
             return pssacid;
         }
 
-        var applicationCodeId = nullableLong(node, "ApplicationCodeID");
         return applicationCodeId == null ? null : applicationCodeId + APPLICATION_CODE_ID_OFFSET;
+    }
+
+    public static @Nullable Long resolveId(JsonNode node) {
+        var resolvedId = nullableLong(node, AC_ID_FIELD);
+        if (resolvedId != null) {
+            return resolvedId;
+        }
+
+        return calculateId(
+                nullableLong(node, PSS_APPLICATION_CODE_ID_FIELD),
+                nullableLong(node, APPLICATION_CODE_ID_FIELD));
     }
 
     private static @Nullable Long nullableLong(JsonNode node, String fieldName) {
@@ -56,6 +68,8 @@ public record ApplicationCodeIngressRecord(
     String toCsvRow() {
         return String.join(
                         ",",
+                        ApplicationCodeDiffReportingService.csvValue((Object) null),
+                        ApplicationCodeDiffReportingService.csvValue((Object) null),
                         ApplicationCodeDiffReportingService.csvValue(id),
                         ApplicationCodeDiffReportingService.csvValue(code),
                         ApplicationCodeDiffReportingService.csvValue(title),
@@ -74,6 +88,8 @@ public record ApplicationCodeIngressRecord(
     String toCsvRow(Long referenceCount) {
         return String.join(
                         ",",
+                        ApplicationCodeDiffReportingService.csvValue((Object) null),
+                        ApplicationCodeDiffReportingService.csvValue((Object) null),
                         ApplicationCodeDiffReportingService.csvValue(id),
                         ApplicationCodeDiffReportingService.csvValue(code),
                         ApplicationCodeDiffReportingService.csvValue(title),

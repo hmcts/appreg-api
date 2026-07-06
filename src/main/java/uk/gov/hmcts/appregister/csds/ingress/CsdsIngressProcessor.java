@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ public class CsdsIngressProcessor {
     }
 
     private <T> void runProcessor(IDataIngressProcessor<T> processor) {
+        val startedAt = Instant.now();
         log.info(
                 "Starting CSDS ingress processor {} for target {}.{}",
                 processor.datasetName(),
@@ -48,10 +51,12 @@ public class CsdsIngressProcessor {
         val processedData = processor.preProcess(rawJson);
         processor.apply(processedData);
 
+        val duration = Duration.between(startedAt, Instant.now());
         log.info(
-                "Completed CSDS ingress processor {} for target {}.{}",
+                "Completed CSDS ingress processor {} for target {}.{} in {} ms",
                 processor.datasetName(),
                 processor.targetTable(),
-                processor.targetKeyField());
+                processor.targetKeyField(),
+                duration.toMillis());
     }
 }

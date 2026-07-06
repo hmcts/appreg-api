@@ -29,16 +29,27 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     private static final String VIEW_TYPE = "GD";
 
     private final CsdsIngressProperties properties;
-    private final String sourceEntityName;
+    private final CsdsIngressProperties.ProcessorProperties processorProperties;
 
     @Override
     public final List<JsonNode> retrieve(CsdsIngressClient ingressClient) {
         val mockFilePath = mockFilePath();
         if (StringUtils.hasText(mockFilePath)) {
-            return List.of(loadMockResponse(mockFilePath));
+            val mockResponse = loadMockResponse(mockFilePath);
+            if (mockResponse != null) {
+                log.info(
+                        "Retrieved 1 mock CSDS page for {} using page size {} and reported count {}",
+                        datasetName(),
+                        properties.getPageSize(),
+                        extractRecords(mockResponse).size());
+                return List.of(mockResponse);
+            }
         }
 
-        val totalCount = extractCount(ingressClient.retrieveJson(countPath()));
+        val totalCount =
+                extractCount(
+                        ingressClient.retrieveJson(
+                                appendQueryParameters(countPath(), queryParameters())));
 
         if (totalCount == 0) {
             log.info(
@@ -60,15 +71,29 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                                             + "&%24offset="
                                             + offset)));
         }
+        val fetchedRecordCount =
+                responses.stream().mapToInt(response -> extractRecords(response).size()).sum();
 
         log.info(
-                "Retrieved {} CSDS pages for {} using page size {} and reported count {}",
+                "Retrieved {} CSDS pages for {} using page size {} and reported count {} "
+                        + "with actual fetched records {}",
                 responses.size(),
                 datasetName(),
                 properties.getPageSize(),
-                totalCount);
+                totalCount,
+                fetchedRecordCount);
 
         return List.copyOf(responses);
+    }
+
+    @Override
+    public final String targetTable() {
+        return processorProperties.getTableName();
+    }
+
+    @Override
+    public final String targetKeyField() {
+        return processorProperties.getPrimaryKey();
     }
 
     protected final List<JsonNode> extractRecords(JsonNode response) {
@@ -96,11 +121,21 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     private String countPath() {
-        return "/count/" + DATA_LOCATION_NAME + "/" + sourceEntityName + "/" + VIEW_TYPE;
+        return "/count/"
+                + DATA_LOCATION_NAME
+                + "/"
+                + processorProperties.getSourceEntityName()
+                + "/"
+                + VIEW_TYPE;
     }
 
     private String queryPath() {
-        return "/query/" + DATA_LOCATION_NAME + "/" + sourceEntityName + "/" + VIEW_TYPE;
+        return "/query/"
+                + DATA_LOCATION_NAME
+                + "/"
+                + processorProperties.getSourceEntityName()
+                + "/"
+                + VIEW_TYPE;
     }
 
     protected String queryParameters() {
@@ -208,11 +243,16 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     @Override
     public final void apply(T processedData) {
         val diff = diff(processedData);
+        logDiffSummary(diff);
         report(processedData, diff);
         applyDiff(diff);
     }
 
     protected abstract DiffT diff(T processedData);
+
+    protected void logDiffSummary(DiffT diff) {
+        // Diff summary logging is optional per processor.
+    }
 
     protected void report(T processedData, DiffT diff) {
         // Reporting is optional per processor and can be implemented when configured.
@@ -244,17 +284,25 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 }
             }
 
-            val response = OBJECT_MAPPER.readTree(Files.readString(Path.of(mockFilePath)));
-            log.info("Loaded CSDS mock response for {} from {}", datasetName(), mockFilePath);
-            return response;
+            val filePath = Path.of(mockFilePath);
+            if (Files.exists(filePath)) {
+                val response = OBJECT_MAPPER.readTree(Files.readString(filePath));
+                log.info("Loaded CSDS mock response for {} from {}", datasetName(), mockFilePath);
+                return response;
+            }
+
+            log.warn(
+                    "Configured CSDS mock response for {} was not found at {}. Falling back to endpoint.",
+                    datasetName(),
+                    mockFilePath);
+            return null;
         } catch (IOException ex) {
-            throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Failed to load CSDS mock response for "
-                            + datasetName()
-                            + " from "
-                            + mockFilePath,
+            log.error(
+                    "Failed to load CSDS mock response for {} from {}. Falling back to endpoint.",
+                    datasetName(),
+                    mockFilePath,
                     ex);
+            return null;
         }
     }
 }

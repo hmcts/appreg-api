@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.List;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -30,6 +31,8 @@ class CsdsIngressProcessorTest {
     void given_registeredProcessors_when_runIngress_then_executesAllProcessorsUnderLock() {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(3));
+        var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
+        logCaptor.clearLogs();
 
         var processor =
                 new CsdsIngressProcessor(
@@ -57,6 +60,13 @@ class CsdsIngressProcessorTest {
 
         assertThat(executed).isTrue();
         verify(dataIngressProcessor).apply("processed");
+        assertThat(logCaptor.getInfoLogs())
+                .anyMatch(log -> log.contains("Starting CSDS ingress processor test-dataset"))
+                .anyMatch(
+                        log ->
+                                log.contains("Completed CSDS ingress processor test-dataset")
+                                        && log.contains(" in ")
+                                        && log.contains(" ms"));
     }
 
     @Test
