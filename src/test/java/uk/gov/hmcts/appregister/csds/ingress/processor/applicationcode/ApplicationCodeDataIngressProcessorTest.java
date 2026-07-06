@@ -337,9 +337,12 @@ class ApplicationCodeDataIngressProcessorTest {
                                     .filter(
                                             path ->
                                                     path.getFileName()
-                                                            .toString()
-                                                            .startsWith(
-                                                                    "application_codes_incoming_"))
+                                                                    .toString()
+                                                                    .startsWith(
+                                                                            "application_codes_incoming_")
+                                                            && path.getFileName()
+                                                                    .toString()
+                                                                    .endsWith(".json"))
                                     .findFirst()
                                     .orElseThrow());
             var incomingCsv =

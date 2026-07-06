@@ -102,7 +102,8 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     private YesOrNo bulkRespondentAllowed;
 
     @Column(name = "version", nullable = false)
-    private Long version;
+    @Builder.Default
+    private Long version = 0L;
 
     @Column(name = "user_name")
     private String userName;

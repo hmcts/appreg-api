@@ -30,8 +30,8 @@ class CsdsIngressClientImplTest {
                 .thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.accept(MediaType.APPLICATION_JSON)).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(eq(com.fasterxml.jackson.databind.JsonNode.class)))
-                .thenReturn(OBJECT_MAPPER.createObjectNode().putArray("records"));
+        when(responseSpec.body(eq(String.class)))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().putArray("records").toString());
 
         var properties = new CsdsIngressProperties();
         properties.setBaseUrl("https://csds.dev.apps.hmcts.net/api/rest");

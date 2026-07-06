@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "appreg.csds.ingress", name = "enabled", havingValue = "true")
 class CsdsIngressClientImpl implements CsdsIngressClient {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final RestClient csdsIngressRestClient;
     private final CsdsIngressProperties properties;
 
@@ -37,7 +41,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                                 .header(properties.getAccessKeyHeader(), accessKey)
                                 .accept(MediaType.APPLICATION_JSON)
                                 .retrieve()
-                                .body(JsonNode.class);
+                                .body(String.class);
 
                 if (response == null) {
                     throw new AppRegistryException(
@@ -45,7 +49,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                             "CSDS response body was null for path " + path);
                 }
 
-                return response;
+                return readJson(response, path);
             } catch (RestClientException ex) {
                 lastException = ex;
                 log.warn(
@@ -63,6 +67,17 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
 
     private static String normalizePath(String path) {
         return path.startsWith("/") ? path : "/" + path;
+    }
+
+    private JsonNode readJson(String responseBody, String path) {
+        try {
+            return OBJECT_MAPPER.readTree(responseBody);
+        } catch (JsonProcessingException ex) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "Failed to parse CSDS JSON for path " + path,
+                    ex);
+        }
     }
 
     private URI buildUri(String path) {

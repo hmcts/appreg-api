@@ -25,6 +25,12 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
+    interface ApplicationCodeReferenceCount {
+        Long getApplicationCodeId();
+
+        long getReferenceCount();
+    }
+
     /**
      * Find an ApplicationList entity by its ID and associated user.
      *
@@ -75,14 +81,15 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      */
     List<ApplicationListEntry> findByApplicationListIdAndCreatedUser(Long ids, String userId);
 
-    /**
-     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value (inclusive)
-     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
-     *     value
-     */
-    List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
+    @Query(
+            """
+        SELECT ale.applicationCode.id AS applicationCodeId, COUNT(ale) AS referenceCount
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationCode.id IN :applicationCodeIds
+        GROUP BY ale.applicationCode.id
+        """)
+    List<ApplicationCodeReferenceCount> countByApplicationCodeIds(
+            @Param("applicationCodeIds") Collection<Long> applicationCodeIds);
 
     /**
      * Retrieves paginated list of entry summaries for a given application list.
@@ -251,9 +258,23 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
-                    AND (:applicantSurname IS NULL OR LOWER(ana.lastName)
-                             LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)) , '%')  ESCAPE '\\'
-                            AND ana.code='NA')
+                    AND (
+                            :applicantSurname IS NULL
+                            OR (
+                                    ana.id IS NOT NULL
+                                    AND ana.code='NA'
+                                    AND LOWER(ana.lastName)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR (
+                                    ana.id IS NULL
+                                    AND sa.name IS NULL
+                                    AND LOWER(sa.applicantSurname)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                    )
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
@@ -353,9 +374,23 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
-                    AND (:applicantLastName IS NULL OR LOWER(ana.lastName)
-                             LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)) , '%')  ESCAPE '\\'
-                            AND ana.code='NA')
+                    AND (
+                            :applicantLastName IS NULL
+                            OR (
+                                    ana.id IS NOT NULL
+                                    AND ana.code='NA'
+                                    AND LOWER(ana.lastName)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR (
+                                    ana.id IS NULL
+                                    AND sa.name IS NULL
+                                    AND LOWER(sa.applicantSurname)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                    )
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
