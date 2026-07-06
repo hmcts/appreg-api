@@ -41,7 +41,9 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
@@ -152,6 +154,37 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[500]: General unexpected failure"
                                                         + " (Report output file failed)")));
+    }
+
+    @Test
+    void givenMaxUploadSizeExceededException_whenHandled_thenAppRegistryProblemDetailIsReturned() {
+        MaxUploadSizeExceededException exception = new MaxUploadSizeExceededException(5L);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMaxUploadSizeExceededException(
+                        exception, HEADERS, HttpStatus.CONTENT_TOO_LARGE, webRequest);
+
+        Assertions.assertEquals(HttpStatus.CONTENT_TOO_LARGE, problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        ProblemDetail body = (ProblemDetail) problemDetail.getBody();
+        Assertions.assertEquals(
+                AppListEntryError.BULK_UPLOAD_FILE_TOO_LARGE.getCode().getHttpCode().value(),
+                body.getStatus());
+        Assertions.assertEquals(
+                AppListEntryError.BULK_UPLOAD_FILE_TOO_LARGE.getCode().getMessage(),
+                body.getDetail());
+        Assertions.assertEquals(
+                AppListEntryError.BULK_UPLOAD_FILE_TOO_LARGE.getCode().getType().get(),
+                body.getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[413]: Uploaded file must not be larger than 5MB")));
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test

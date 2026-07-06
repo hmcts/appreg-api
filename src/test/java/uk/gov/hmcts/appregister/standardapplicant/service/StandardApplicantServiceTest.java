@@ -1,11 +1,13 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static utils.CsvParser.parseCsv;
@@ -18,6 +20,7 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 import lombok.Setter;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
@@ -30,6 +33,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -37,6 +41,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
@@ -369,6 +374,125 @@ class StandardApplicantServiceTest {
         val audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
         Assertions.assertEquals(requestedTo, audited.getApplicantStartDate());
         Assertions.assertEquals(requestedFrom, audited.getApplicantEndDate());
+    }
+
+    @Test
+    void print_whenNoApplicantsMatch_returnsEmptyPrintPayload() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(ukZone)).thenReturn(clock);
+
+        val code = "NOPE";
+        val name = "Missing";
+        val addressLine1 = "High Street";
+        val from = LocalDate.of(2026, Month.APRIL, 1);
+        val to = LocalDate.of(2026, Month.DECEMBER, 31);
+        val requestPageable = PageRequest.of(0, 20);
+
+        val stableSort =
+                requestPageable.getSort().and(Sort.by(Sort.Direction.ASC, StandardApplicant_.ID));
+        val printPageable = PageRequest.of(0, 1000, stableSort);
+
+        when(repository.search(
+                        eq(code),
+                        eq(name),
+                        eq(addressLine1),
+                        eq(from),
+                        eq(to),
+                        isNotNull(),
+                        eq(printPageable)))
+                .thenReturn(new PageImpl<>(List.of(), printPageable, 0));
+
+        val result =
+                standardApplicantService.print(
+                        code,
+                        name,
+                        addressLine1,
+                        from,
+                        to,
+                        PagingWrapper.of(List.of(), requestPageable));
+
+        Assertions.assertEquals(0, result.getRecordCount());
+        Assertions.assertTrue(result.getApplicants().isEmpty());
+        Assertions.assertEquals(addressLine1, result.getSearchCriteria().getAddressLine1().get());
+        Assertions.assertEquals(from, result.getSearchCriteria().getFrom().get());
+        Assertions.assertEquals(to, result.getSearchCriteria().getTo().get());
+    }
+
+    @Test
+    void print_whenResultLimitExceeded_throwsBeforeFetchingNextPage() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(ukZone)).thenReturn(clock);
+
+        val code = "APP";
+        val name = "Applicant";
+        val from = LocalDate.of(2026, Month.APRIL, 1);
+        val to = LocalDate.of(2026, Month.DECEMBER, 31);
+        val requestPageable = PageRequest.of(0, 20);
+
+        val stableSort =
+                requestPageable.getSort().and(Sort.by(Sort.Direction.ASC, StandardApplicant_.ID));
+        val firstPrintPageable = PageRequest.of(0, 1000, stableSort);
+        val secondPrintPageable = PageRequest.of(1, 1000, stableSort);
+
+        val firstPageRows =
+                IntStream.range(0, 1000)
+                        .mapToObj(index -> projection("APP%04d".formatted(index), name, from, to))
+                        .toList();
+
+        when(repository.search(
+                        eq(code),
+                        eq(name),
+                        isNull(),
+                        eq(from),
+                        eq(to),
+                        isNotNull(),
+                        eq(firstPrintPageable)))
+                .thenReturn(new PageImpl<>(firstPageRows, firstPrintPageable, 1001));
+
+        assertThatThrownBy(
+                        () ->
+                                standardApplicantService.print(
+                                        code,
+                                        name,
+                                        null,
+                                        from,
+                                        to,
+                                        PagingWrapper.of(List.of(), requestPageable)))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("exceeds 1000 rows");
+
+        verify(repository, never())
+                .search(
+                        eq(code),
+                        eq(name),
+                        isNull(),
+                        eq(from),
+                        eq(to),
+                        isNotNull(),
+                        eq(secondPrintPageable));
+    }
+
+    private static StandardApplicantEnrichedProjection projection(
+            String code, String name, LocalDate from, LocalDate to) {
+        val applicant = new StandardApplicant();
+        applicant.setApplicantCode(code);
+        applicant.setName(name);
+        applicant.setApplicantStartDate(from);
+        applicant.setApplicantEndDate(to);
+
+        return new StandardApplicantEnrichedProjection() {
+            @Override
+            public StandardApplicant getStandardApplicant() {
+                return applicant;
+            }
+
+            @Override
+            public String getEffectiveName() {
+                return name;
+            }
+        };
     }
 
     @Test

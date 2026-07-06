@@ -5,7 +5,6 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.exceptionhandler.CsvExceptionHandler;
 import com.opencsv.exceptions.CsvException;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -143,22 +142,19 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
     }
 
     private Charset guessCharset(File file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            // Read through the file to check for encoding issues
-            if (line.contains("�")) {
-                log.info(
-                        "Detected encoding issue in file: {}, using Windows-1252 encoding",
-                        file.getName());
-                return Charset.forName("Windows-1252");
-            }
-        }
+        Charset utf8 = StandardCharsets.UTF_8;
 
-        // EOF reached without detecting encoding issues, return UTF-8
-        log.info(
-                "Unable to determine encoding using fallback UTF-8 encoding for file: {}",
-                file.getName());
-        return StandardCharsets.UTF_8;
+        try {
+            utf8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
+
+            log.info("Detected UTF-8 encoding for file: {}", file.getName());
+            return utf8;
+        } catch (java.nio.charset.CharacterCodingException e) {
+            log.info("Detected non-UTF-8 file: {}, using Windows-1252 encoding", file.getName());
+            return Charset.forName("Windows-1252");
+        }
     }
 }

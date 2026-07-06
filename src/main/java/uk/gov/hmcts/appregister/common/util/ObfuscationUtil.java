@@ -26,6 +26,8 @@ import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
 
 /**
  * Utility class for obfuscating sensitive data in logs. This is used to prevent sensitive data from
@@ -65,6 +67,10 @@ public class ObfuscationUtil {
                 PrivateProsecutorsIndexFilterDto.class,
                 new PrivateProsecutorIndexSensitiveSerializer());
         maskingModule.addSerializer(InputStreamResource.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(
+                StandardApplicantPrintDto.class,
+                new StandardApplicantPrintDtoSensitiveSerializer());
+        maskingModule.addSerializer(StandardApplicantPrintRowDto.class, new RedactedSerializer<>());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(
@@ -300,6 +306,23 @@ public class ObfuscationUtil {
                     value.getLast(),
                     value.getElementsOnPage(),
                     value.getContent());
+        }
+    }
+
+    static class StandardApplicantPrintDtoSensitiveSerializer
+            extends JsonSerializer<StandardApplicantPrintDto> {
+
+        @Override
+        public void serialize(
+                StandardApplicantPrintDto value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("reportTitle", value.getReportTitle());
+            gen.writeObjectField("generatedAt", value.getGeneratedAt());
+            gen.writeObjectField("recordCount", value.getRecordCount());
+            gen.writeStringField("searchCriteria", REDACTED);
+            gen.writeStringField("applicants", REDACTED);
+            gen.writeEndObject();
         }
     }
 

@@ -203,6 +203,57 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                 problemDetail.getType());
     }
 
+    @Test
+    void givenLargeCsv6MB_whenBulkUploadApplicationListEntries_thenJobFails() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        try (var file = tempCsv(6, "m")) {
+            File csv = file.file();
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            csv,
+                            "text/csv");
+
+            response.then().statusCode(413);
+            ProblemDetail problemDetail = response.as(ProblemDetail.class);
+            Assertions.assertEquals(
+                    AppListEntryError.BULK_UPLOAD_FILE_TOO_LARGE.getCode().getType().get(),
+                    problemDetail.getType());
+        }
+    }
+
+    @Test
+    void givenLargeCsv5MB_invalidCsv_whenBulkUploadApplicationListEntries_thenJobFails()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        try (var file = tempCsv(5, "m")) {
+            File csv = file.file();
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            csv,
+                            "text/csv");
+
+            response.then().statusCode(400);
+            ProblemDetail detail = response.as(ProblemDetail.class);
+            Assertions.assertEquals(
+                    AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT.getCode().getType().get(),
+                    detail.getType());
+        }
+    }
+
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
         var createListRequest =
                 new ApplicationListCreateDto()
@@ -225,6 +276,23 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
     private File csvFile() throws URISyntaxException {
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
+    }
+
+    private static AutoDeletingFile tempCsv(int size, String sizeSuffix) throws IOException {
+
+        StringBuilder builder = new StringBuilder();
+        long totalBytes = size;
+        if (sizeSuffix.equalsIgnoreCase("k")) {
+            totalBytes *= 1024;
+        } else if (sizeSuffix.equalsIgnoreCase("m")) {
+            totalBytes *= 1024 * 1024;
+        }
+
+        for (long i = 0; i < totalBytes; i++) {
+            builder.append("\0");
+        }
+
+        return tempCsv(builder.toString());
     }
 
     private static AutoDeletingFile tempCsv(String content) throws IOException {

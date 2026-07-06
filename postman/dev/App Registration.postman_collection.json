@@ -635,7 +635,25 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Standard Applicant Print",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{APP_REG_HOST}}/standard-applicants/reports/print",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "standard-applicants"
+              ]
+            }
+          },
+          "response": []
         }
+
       ]
     },
     {
