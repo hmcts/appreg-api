@@ -247,7 +247,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             rowNumber++;
         }
-
         log.info("Bulk upload completed successfully");
     }
 }

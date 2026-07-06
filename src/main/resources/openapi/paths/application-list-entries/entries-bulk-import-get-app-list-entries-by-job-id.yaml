@@ -5,7 +5,7 @@ get:
   description: >
     Fetches the application list entries that have been inserted via the bulk upload endpoint.
   parameters:
-    - in: query
+    - in: path
       name: jobId
       required: true
       schema: { type: string, format: uuid }

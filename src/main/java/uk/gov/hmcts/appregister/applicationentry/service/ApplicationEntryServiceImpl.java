@@ -681,7 +681,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     public List<UUID> getApplicationListEntriesByJobId(UUID jobId) {
-        List<UUID> entryIds = asyncJobAppListEntryRepository.findByAsyncJobId(jobId);
+        List<AsyncJobsAppListEntry> entryIds = asyncJobAppListEntryRepository.findByAsyncJobId(jobId);
 
         if (entryIds.isEmpty()) {
             throw new AppRegistryException(
@@ -689,7 +689,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     "No entries found for jobId: " + jobId);
         }
 
-        return asyncJobAppListEntryRepository.findByAsyncJobId(jobId);
+        return asyncJobAppListEntryRepository.findByAsyncJobId(jobId)
+            .stream()
+            .map(AsyncJobsAppListEntry::getAppListEntryId)
+            .toList();
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {

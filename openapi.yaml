@@ -2475,7 +2475,7 @@ paths:
       parameters:
       - description: ID of the bulk result job that created the entries.
         example: 9f7b2a35-57ac-4a1c-9c41-83b6c8157af4
-        in: query
+        in: path
         name: jobId
         required: true
         schema:
