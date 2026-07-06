@@ -1,0 +1,34 @@
+get:
+  operationId: getBulkResultApplicationListEntriesByJobId
+  tags: [ application-list-entries ]
+  summary: Fetches the application list entries that have been inserted via the bulk upload endpoint.
+  description: >
+    Fetches the application list entries that have been inserted via the bulk upload endpoint.
+  parameters:
+    - in: query
+      name: jobId
+      required: true
+      schema: { type: string, format: uuid }
+      description: ID of the bulk result job that created the entries.
+      example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
+  responses:
+    "200":
+      description: Application list entries created by the bulk upload job.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+              description: list of application list entry IDs created by the bulk upload job.
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
