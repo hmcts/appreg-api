@@ -2,9 +2,9 @@ package uk.gov.hmcts.appregister.job.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -71,8 +71,7 @@ class JobServiceImplTest {
                 new JobServiceImpl(
                         jobMapper,
                         jobExistanceValidator,
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener));
+                        new AuditOperationServiceImpl(List.of(listener)));
 
         // Execute the same service method used by the controller and capture the audit event that
         // is emitted when the request completes.
@@ -89,6 +88,24 @@ class JobServiceImplTest {
         val audited = (AsyncJob) listener.getCompleteEvent().getNewValue();
         Assertions.assertSame(auditEntity, audited);
         Assertions.assertEquals(jobId, audited.getUuid());
+    }
+
+    @Test
+    void testGetJobStatusById_delegatesToValidator() {
+        val jobId = UUID.randomUUID();
+        val expected = JobStatusResponse.builder().uuid(jobId).status(JobStatus1.RECEIVED).build();
+
+        when(jobExistanceValidator.validate(eq(jobId), any())).thenReturn(expected);
+
+        val actual =
+                new JobServiceImpl(
+                                jobMapper,
+                                jobExistanceValidator,
+                                new AuditOperationServiceImpl(List.of()))
+                        .getJobStatusById(jobId);
+
+        Assertions.assertSame(expected, actual);
+        verify(jobExistanceValidator).validate(eq(jobId), any());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

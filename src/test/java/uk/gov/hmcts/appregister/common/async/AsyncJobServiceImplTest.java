@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.async;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,7 +25,6 @@ import uk.gov.hmcts.appregister.common.async.exception.JobException;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobIdRequest;
-import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.generated.model.JobType;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
-public class AsyncJobServiceImplTest extends AbstractAsyncTest {
+class AsyncJobServiceImplTest extends AbstractAsyncTest {
     @Mock private AsyncJobPersistenceService persistence;
 
     @Spy private TransactionUnitOfWork service = new TransactionUnitOfWork();
@@ -45,7 +45,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
     @InjectMocks private AsyncJobServiceImpl asyncJobServiceImpl;
 
     @Test
-    public void testAsyncStart() throws Exception {
+    void testAsyncStart() throws Exception {
         // set the page size
         asyncJobServiceImpl.setPageSize(1);
 
@@ -96,7 +96,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     .lifeCycleEventPerformed(lifecycleEventArgumentCaptor.capture());
 
             // verify the events were fired approriately
-            verify(persistence, times(1))
+            verify(persistence)
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
                             JobStatus1.RECEIVED);
@@ -108,7 +108,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
                             JobStatus1.PROCESSING);
-            verify(persistence, times(1))
+            verify(persistence)
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
                             JobStatus1.COMPLETED);
@@ -159,11 +159,11 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     lifecycleEventArgumentCaptor.getAllValues().get(7).getJobStatus());
         }
 
-        Assertions.assertThrows(IOException.class, () -> csvReader.getInputStream());
+        Assertions.assertThrows(IOException.class, csvReader::getInputStream);
     }
 
     @Test
-    public void testAsyncCloseFailureDoesNotFailJob() throws Exception {
+    void testAsyncCloseFailureDoesNotFailJob() throws Exception {
         asyncJobServiceImpl.setPageSize(1);
 
         String userId = "userId";
@@ -185,14 +185,14 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         trackJobStatusResponse.getFuture().get();
 
-        verify(dataReader, times(1)).close();
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
-        verify(persistence, times(0)).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(dataReader).close();
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.FAILED);
     }
 
     @Test
-    public void testAsyncAbruptProcessingFailure() throws Exception {
+    void testAsyncAbruptProcessingFailure() throws Exception {
         BrokenLifecycleWithContext lifecycle = new BrokenLifecycleWithContext();
 
         String userId = "userId";
@@ -207,19 +207,19 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         Assertions.assertTrue(lifecycle.failed);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.RECEIVED);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.VALIDATING);
 
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setFailure(
                         jobIdRequest,
                         BrokenLifecycleWithContext.ERROR
@@ -228,7 +228,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
     }
 
     @Test
-    public void testAsyncAbruptProcessingStopFailure() throws Exception {
+    void testAsyncAbruptProcessingStopFailure() throws Exception {
         BrokenProcessingStoppableLifecycle lifecycle = new BrokenProcessingStoppableLifecycle();
         lifecycle.stop = true;
 
@@ -243,17 +243,17 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         // prove that we did not continue passing the data after the failure
         Assertions.assertEquals(1, reader.data.size());
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.RECEIVED);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.VALIDATING);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setFailure(
                         jobIdRequest,
                         BrokenLifecycleWithContext.ERROR
@@ -263,7 +263,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
     }
 
     @Test
-    public void testAsyncProcessingFailureNotStopping() throws Exception {
+    void testAsyncProcessingFailureNotStopping() throws Exception {
         BrokenProcessingStoppableLifecycle lifecycle = new BrokenProcessingStoppableLifecycle();
         lifecycle.stop = false;
 
@@ -279,7 +279,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         Assertions.assertTrue(lifecycle.failed);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.RECEIVED);
@@ -289,11 +289,11 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.VALIDATING);
 
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
 
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setFailure(
                         jobIdRequest,
                         BrokenProcessingStoppableLifecycle.ERROR
@@ -309,7 +309,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
     }
 
     @Test
-    public void testAsyncValidationFailureStop() throws Exception {
+    void testAsyncValidationFailureStop() throws Exception {
 
         BrokenValidationStoppableLifecycle lifecycle = new BrokenValidationStoppableLifecycle();
 
@@ -320,14 +320,14 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         executeWithLifecycleForFailure(jobIdRequest, lifecycle);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.RECEIVED);
 
         // fail was executed and we logged only one error
         Assertions.assertTrue(lifecycle.failed);
-        verify(persistence, times(1))
+        verify(persistence)
                 .setFailure(
                         jobIdRequest,
                         BrokenLifecycleWithContext.ERROR
@@ -335,11 +335,11 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + ", Job failed during VALIDATING for job "
                                 + jobIdRequest.getId()
                                 + ". Forced termination");
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
     }
 
     @Test
-    public void testAsyncValidationFailureDoNotStop() throws Exception {
+    void testAsyncValidationFailureDoNotStop() throws Exception {
         BrokenValidationStoppableLifecycle lifecycle = new BrokenValidationStoppableLifecycle();
         lifecycle.stop = false;
 
@@ -354,7 +354,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         Assertions.assertEquals(3, reader.data.size());
 
         Assertions.assertTrue(lifecycle.failed);
-        verify(persistence, times(1))
+        verify(persistence)
                 .setFailure(
                         jobIdRequest,
                         BrokenLifecycleWithContext.ERROR
@@ -368,20 +368,20 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + ", Failed to process job: "
                                 + jobIdRequest.getId().toString());
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.RECEIVED);
 
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
 
         verify(persistence, times(3)).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
 
-        verify(persistence, times(0)).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
     }
 
     @Test
-    public void testAsyncValidationFailureStopWithJobException() throws Exception {
+    void testAsyncValidationFailureStopWithJobException() throws Exception {
         BrokenValidationJobExceptionLifecycle lifecycle =
                 new BrokenValidationJobExceptionLifecycle();
 
@@ -395,14 +395,14 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         // fail was executed and we logged only one error
         Assertions.assertTrue(lifecycle.failed);
 
-        verify(persistence, times(1))
+        verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
                         JobStatus1.RECEIVED);
 
-        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
 
-        verify(persistence, times(1)).setFailure(jobIdRequest, BrokenLifecycleWithContext.ERROR);
+        verify(persistence).setFailure(jobIdRequest, BrokenLifecycleWithContext.ERROR);
     }
 
     @Test
@@ -430,14 +430,6 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
             // mock the persistence start job
             when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
 
-            JobStatusResponse statusResponse =
-                    JobStatusResponse.builder()
-                            .type(JobType.BULK_UPLOAD_ENTRIES)
-                            .uuid(jobId)
-                            .userName(userId)
-                            .status(JobStatus1.RECEIVED)
-                            .build();
-
             JobTypeRequest jobRequest =
                     JobTypeRequest.builder()
                             .jobType(JobType.DURATION_REPORT)
@@ -459,7 +451,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
             }
 
             Assertions.assertEquals(2, output.size());
-            verify(persistence, times(1))
+            verify(persistence)
                     .setFailure(
                             jobIdRequest,
                             "Number of data fields does not match number of headers., "

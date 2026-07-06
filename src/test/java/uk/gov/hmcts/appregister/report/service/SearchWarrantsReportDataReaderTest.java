@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +71,7 @@ class SearchWarrantsReportDataReaderTest {
         Assertions.assertEquals(1, pages.size());
         SearchWarrantsReportRow row = pages.getFirst().getFirst();
 
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Westminster", row.getCourthouseName());
         Assertions.assertEquals("Other court", row.getOtherCourthouse());
         Assertions.assertEquals("01", row.getCjaCode());
@@ -104,8 +106,8 @@ class SearchWarrantsReportDataReaderTest {
 
         SearchWarrantsReportFilterDto filter =
                 new SearchWarrantsReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         SearchWarrantsReportDataReader reader =
                 new SearchWarrantsReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<SearchWarrantsReportRow> pageReader =
@@ -151,8 +153,8 @@ class SearchWarrantsReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
@@ -160,7 +162,8 @@ class SearchWarrantsReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
             Assertions.assertEquals(123L, parameters.getValue("lastApplicationListEntryId"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
@@ -175,8 +178,8 @@ class SearchWarrantsReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new SearchWarrantsReportFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .location(location);
     }
 
@@ -189,15 +192,15 @@ class SearchWarrantsReportDataReaderTest {
         Assertions.assertTrue(cursorPredicateIndex > -1);
         Assertions.assertTrue(latestReplaceIndex > -1);
         Assertions.assertTrue(finalSelectIndex > -1);
-        Assertions.assertTrue(query.contains("FROM application_lists al"));
+        assertThat(query).contains("FROM application_lists al");
     }
 
     private void assertLegacySearchWarrantsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
 
-        Assertions.assertTrue(normalisedQuery.contains("WITH candidate_apps AS ("));
-        Assertions.assertTrue(normalisedQuery.contains("UPPER(ac.application_code) LIKE 'SW%'"));
-        Assertions.assertTrue(normalisedQuery.contains("application_list_entry_wording"));
+        assertThat(normalisedQuery).contains("WITH candidate_apps AS (");
+        assertThat(normalisedQuery).contains("UPPER(ac.application_code) LIKE 'SW%'");
+        assertThat(normalisedQuery).contains("application_list_entry_wording");
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(c.other_courthouse) LIKE '%' || UPPER(:otherCourthouse) || '%'"));
@@ -206,10 +209,10 @@ class SearchWarrantsReportDataReaderTest {
                         "UPPER(c.courthouse_code) LIKE '%' || UPPER(:courthouseCode) || '%'"));
         Assertions.assertTrue(
                 normalisedQuery.contains("UPPER(SUBSTRING(c.courthouse_code FROM 2 FOR 2))"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :otherCourthouse IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseCode IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("ORDER BY c.list_date DESC, c.ale_id DESC"));
-        Assertions.assertTrue(normalisedQuery.contains("LIMIT :limit"));
+        assertThat(normalisedQuery).contains("AND :otherCourthouse IS NULL");
+        assertThat(normalisedQuery).contains("AND :courthouseCode IS NULL");
+        assertThat(normalisedQuery).contains("ORDER BY c.list_date DESC, c.ale_id DESC");
+        assertThat(normalisedQuery).contains("LIMIT :limit");
 
         Assertions.assertEquals(-1, normalisedQuery.indexOf(":standardApplicantCode"));
         Assertions.assertEquals(-1, normalisedQuery.indexOf(":applicantOrganisation"));
@@ -221,7 +224,7 @@ class SearchWarrantsReportDataReaderTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.getLong("ale_id")).thenReturn(123L);
         when(resultSet.getObject("list_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2018, 5, 18));
+                .thenReturn(LocalDate.of(2018, Month.MAY, 18));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Westminster");
         when(resultSet.getString("other_courthouse")).thenReturn("Other court");
         when(resultSet.getString("cja_code")).thenReturn("01");

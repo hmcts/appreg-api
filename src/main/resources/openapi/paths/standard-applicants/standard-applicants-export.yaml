@@ -1,0 +1,41 @@
+get:
+  operationId: standardApplicantsExport
+  description: |
+    Export a filtered list of Standard Applicants to a CSV file.
+    - Filters:
+        - `code` – case-insensitive partial match. Name parameter cannot be included when providing the code parameter.
+        - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3. Code parameter cannot be included when providing the name parameter.
+  tags: ['standard-applicants']
+  parameters:
+    - in: query
+      name: code
+      description: Filter by code (contains, case-insensitive). Name parameter cannot be included when providing the code parameter.
+      schema:
+        type: string
+        maxLength: 10
+      example: "SA"
+    - in: query
+      name: name
+      description: Filter by organisation name (contains, case-insensitive). Code parameter cannot be included when providing the name parameter.
+      schema:
+        type: string
+        maxLength: 100
+        example: "Innovative Solutions Inc"
+  responses:
+    "200":
+      description: A CSV file containing the filtered list of Standard Applicants.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
+      content:
+        text/csv:
+          schema:
+            type: string
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+

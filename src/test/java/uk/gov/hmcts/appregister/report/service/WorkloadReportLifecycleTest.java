@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -8,18 +9,18 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
-public class WorkloadReportLifecycleTest {
+class WorkloadReportLifecycleTest {
     @Test
     void givenReportRows_whenCompleted_thenWritesCsvAndDeletesTempFile() throws Exception {
         AtomicReference<String> csv = new AtomicReference<>();
@@ -41,7 +42,7 @@ public class WorkloadReportLifecycleTest {
             lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
-            Assertions.assertTrue(csv.get().contains("Workload Report"));
+            assertThat(csv.get()).contains("Workload Report");
             Assertions.assertTrue(
                     csv.get()
                             .contains(
@@ -83,7 +84,7 @@ public class WorkloadReportLifecycleTest {
 
     private WorkloadReportRow populatedRow() {
         return WorkloadReportRow.builder()
-                .listDate(LocalDate.of(2018, 5, 18))
+                .listDate(LocalDate.of(2018, Month.MAY, 18))
                 .listCourtHouseName("B01IX00 - Westminster")
                 .listOtherLocation("Other court")
                 .cjaCode("01")
@@ -102,6 +103,6 @@ public class WorkloadReportLifecycleTest {
     }
 
     private File getOutputFile(WorkloadReportLifecycle lifecycle) {
-        return (File) ReflectionTestUtils.getField(lifecycle, "file");
+        return lifecycle.outputFile();
     }
 }

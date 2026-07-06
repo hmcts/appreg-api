@@ -17,12 +17,17 @@ springdoc:
   writer-with-order-by-keys: true
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
   http:
     converters:
       preferred-json-mapper: true
   # Continue to use Jackson 2 for now
   jackson:
     use-jackson2-defaults: true
+    deserialization:
+      fail-on-unknown-properties: true
   data:
     web:
       pageable:
@@ -49,16 +54,17 @@ spring:
       ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         default_schema: ${spring.sql.init.schema-locations}
+        default_batch_fetch_size: 25
         jdbc:
           time_zone: UTC
           batch_size: 25
         order_inserts: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+        order_updates: true
   flyway:
     enabled: ${ENABLE_DB_MIGRATE:false}
     locations: classpath:/migrations
@@ -77,8 +83,6 @@ spring:
           - ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
           - ${AZURE_AUDIENCE_ID_URI:api://${AZURE_AUDIENCE_ID}}
           tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
-  mvc:
-    static-path-pattern: /specs/**
 
 app:
   timezone: "Europe/London"

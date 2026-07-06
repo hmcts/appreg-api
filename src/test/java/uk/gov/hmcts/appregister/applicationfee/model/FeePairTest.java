@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
  * accordingly. - If FeePair is temporary (proof-of-concept), these tests can be removed along with
  * the record.
  */
-public class FeePairTest {
+class FeePairTest {
     @Test
     void constructorAndAccessors_workWithNulls() {
         FeePair pair = new FeePair(null, null);

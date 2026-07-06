@@ -11,6 +11,9 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 
 @RequiredArgsConstructor
 public class DatabaseJobRepositoryImpl implements DatabaseJobLockRepositoryCustom {
+    private static final String JOB_NAME_PARAMETER = "jobName";
+    private static final String TOKEN_PARAMETER = "token";
+
     private static final String ACQUIRE_LEASE_SQL =
             """
             UPDATE %s
@@ -57,9 +60,12 @@ public class DatabaseJobRepositoryImpl implements DatabaseJobLockRepositoryCusto
         return queryForFirstValue(
                 ACQUIRE_LEASE_SQL,
                 Map.of(
-                        "jobName", jobName,
-                        "token", token,
-                        "leaseMillis", leaseDuration.toMillis()));
+                        JOB_NAME_PARAMETER,
+                        jobName,
+                        TOKEN_PARAMETER,
+                        token,
+                        "leaseMillis",
+                        leaseDuration.toMillis()));
     }
 
     @Override
@@ -67,15 +73,20 @@ public class DatabaseJobRepositoryImpl implements DatabaseJobLockRepositoryCusto
         return queryForFirstValue(
                         RENEW_LEASE_SQL,
                         Map.of(
-                                "jobName", jobName,
-                                "token", token,
-                                "leaseMillis", leaseDuration.toMillis()))
+                                JOB_NAME_PARAMETER,
+                                jobName,
+                                TOKEN_PARAMETER,
+                                token,
+                                "leaseMillis",
+                                leaseDuration.toMillis()))
                 .isPresent();
     }
 
     @Override
     public boolean releaseLease(String jobName, String token) {
-        return queryForFirstValue(RELEASE_LEASE_SQL, Map.of("jobName", jobName, "token", token))
+        return queryForFirstValue(
+                        RELEASE_LEASE_SQL,
+                        Map.of(JOB_NAME_PARAMETER, jobName, TOKEN_PARAMETER, token))
                 .isPresent();
     }
 

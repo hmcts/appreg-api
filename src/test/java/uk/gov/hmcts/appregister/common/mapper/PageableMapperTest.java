@@ -1,8 +1,12 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryDefaultSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
@@ -15,6 +19,13 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 
 class PageableMapperTest {
+
+    private PageableMapper pageableMapper() {
+        var appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+        return appPageable;
+    }
 
     @Test
     void testPageableTest() {
@@ -172,17 +183,18 @@ class PageableMapperTest {
 
     @Test
     void testPageableSortDirectionFailure() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
-        AppRegistryException ex =
+        var sort = List.of("field, 1232");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         10,
                                         2,
-                                        List.of("field, 1232"),
+                                        sort,
                                         ApplicationListEntriesSummarySortFieldEnum.SEQUENCE_NUMBER,
                                         Sort.Direction.ASC,
                                         ApplicationListEntriesSummarySortFieldEnum
@@ -192,17 +204,18 @@ class PageableMapperTest {
 
     @Test
     void testPageableSortKeyFailure() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
-        AppRegistryException ex =
+        var sort = List.of("field, asc");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         10,
                                         2,
-                                        List.of("field, asc"),
+                                        sort,
                                         ApplicationListEntriesSummarySortFieldEnum.SEQUENCE_NUMBER,
                                         Sort.Direction.ASC,
                                         ApplicationListEntriesSummarySortFieldEnum
@@ -212,11 +225,11 @@ class PageableMapperTest {
 
     @Test
     void testPageableSupportsInternalDefaultSortOutsideExternalSortLookup() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
 
-        PagingWrapper pageable =
+        var pageable =
                 appPageable.from(
                         null,
                         null,
@@ -233,16 +246,15 @@ class PageableMapperTest {
                 InternalDefaultSortField.INTERNAL_ONLY.getTieBreaker(),
                 pageable.getPageable().getSort().get().toList().get(1).getProperty());
 
-        AppRegistryException ex =
+        var sort = List.of(InternalDefaultSortField.INTERNAL_ONLY.getApiValue() + ",asc");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         null,
                                         null,
-                                        List.of(
-                                                InternalDefaultSortField.INTERNAL_ONLY.getApiValue()
-                                                        + ",asc"),
+                                        sort,
                                         InternalDefaultSortField.INTERNAL_ONLY,
                                         Sort.Direction.ASC,
                                         TestSortableOperationEnum::getEntityValue));
@@ -251,11 +263,11 @@ class PageableMapperTest {
 
     @Test
     void testPageableUsingSortConfig() {
-        PageableMapper appPageable = new PageableMapper();
+        var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
         appPageable.setDefaultPageSize(23);
 
-        PagingWrapper pageable =
+        var pageable =
                 appPageable.from(
                         null,
                         null,
@@ -270,17 +282,15 @@ class PageableMapperTest {
                 ApplicationEntryDefaultSortFieldEnum.CODE.getTieBreaker(),
                 pageable.getPageable().getSort().get().toList().get(1).getProperty());
 
-        AppRegistryException ex =
+        var sort = List.of(ApplicationEntryDefaultSortFieldEnum.CODE.getApiValue() + ",asc");
+        var ex =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 appPageable.from(
                                         null,
                                         null,
-                                        List.of(
-                                                ApplicationEntryDefaultSortFieldEnum.CODE
-                                                                .getApiValue()
-                                                        + ",asc"),
+                                        sort,
                                         ApplicationEntrySortConfig.SEARCH,
                                         Sort.Direction.ASC));
         Assertions.assertEquals(CommonAppError.SORT_NOT_SUITABLE, ex.getCode());
@@ -396,6 +406,76 @@ class PageableMapperTest {
         Assertions.assertEquals(
                 Sort.Direction.DESC,
                 pageable.getPageable().getSort().get().toList().get(1).getDirection());
+    }
+
+    @ParameterizedTest
+    @MethodSource("ascendingSortTokens")
+    void parseSort_defaultsToAscendingForSingleTokenOrUnknownDirection(String token) {
+        var sort = pageableMapper().parseSort(List.of(token));
+
+        Assertions.assertEquals(1, sort.toList().size());
+        Assertions.assertEquals("field", sort.toList().getFirst().getProperty());
+        Assertions.assertEquals(Sort.Direction.ASC, sort.toList().getFirst().getDirection());
+    }
+
+    @ParameterizedTest
+    @MethodSource("blankSortTokens")
+    void parseSort_rejectsBlankProperties(String token) {
+        var appPageable = pageableMapper();
+        var sort = List.of(token);
+        var ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> appPageable.parseSort(sort));
+
+        Assertions.assertEquals(CommonAppError.SORT_NOT_SUITABLE, ex.getCode());
+    }
+
+    @ParameterizedTest
+    @MethodSource("descendingSortTokens")
+    void parseSort_keepsDescendingDirection(String token) {
+        var sort = pageableMapper().parseSort(List.of(token));
+
+        Assertions.assertEquals("field", sort.toList().getFirst().getProperty());
+        Assertions.assertEquals(Sort.Direction.DESC, sort.toList().getFirst().getDirection());
+    }
+
+    @ParameterizedTest
+    @MethodSource("multipleSortLists")
+    void from_rejectsMultipleSortValues(List<String> sort) {
+        var appPageable = pageableMapper();
+        var ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                appPageable.from(
+                                        0,
+                                        10,
+                                        sort,
+                                        ApplicationEntrySortFieldEnum.APPLICATION_TITLE,
+                                        Sort.Direction.ASC,
+                                        ApplicationEntrySortFieldEnum::getEntityValue));
+
+        Assertions.assertEquals(CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED, ex.getCode());
+    }
+
+    private static Stream<String> ascendingSortTokens() {
+        return Stream.of(
+                "field", "field,", "field,invalid", " field , ", " field , up ", "field,ASC");
+    }
+
+    private static Stream<String> blankSortTokens() {
+        return Stream.of("", " ", ",asc", " , desc");
+    }
+
+    private static Stream<String> descendingSortTokens() {
+        return Stream.of("field,desc", " field , DESC ");
+    }
+
+    private static Stream<Arguments> multipleSortLists() {
+        return Stream.of(
+                Arguments.of(List.of("field,asc", "other,desc")),
+                Arguments.of(List.of("field", "other")),
+                Arguments.of(List.of("field,asc", "other", "third,desc")));
     }
 
     private enum InternalDefaultSortField implements SortableOperationEnum {

@@ -6,10 +6,8 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
@@ -54,8 +53,8 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class UpdateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.now();
+class UpdateApplicationEntryValidatorTest {
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -63,12 +62,13 @@ public class UpdateApplicationEntryValidatorTest {
 
     @Mock private ApplicationFeeService feeService;
 
-    @Mock private Clock clock;
     @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
 
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @InjectMocks private UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -83,9 +83,6 @@ public class UpdateApplicationEntryValidatorTest {
 
     @BeforeEach
     void setUp() {
-        when(clock.instant()).thenReturn(Instant.now());
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         AppListTestData appListTestData = new AppListTestData();
@@ -127,11 +124,13 @@ public class UpdateApplicationEntryValidatorTest {
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
-        when(applicationListEntryRepository.findByUuid(eq(appListEntryUuid)))
+        when(applicationListEntryRepository.findByUuid(appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        eq(appListUuid), eq(appListEntryUuid)))
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(List.of());
     }
 
     private static void sanitiseFeeStatusDates(List<FeeStatus> feeStatuses) {
@@ -231,7 +230,7 @@ public class UpdateApplicationEntryValidatorTest {
         // set the respondent to null for the organisation so we use the person
         entryUpdateDto.getRespondent().setOrganisation(null);
 
-        when(applicationListEntryRepository.findByUuid(eq(appListEntryUuid)))
+        when(applicationListEntryRepository.findByUuid(appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
@@ -258,7 +257,7 @@ public class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getRespondent().setOrganisation(null);
 
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        eq(appListUuid), eq(appListEntryUuid)))
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
@@ -330,6 +329,87 @@ public class UpdateApplicationEntryValidatorTest {
                         () -> updateApplicationEntryValidator.validate(payload));
         Assertions.assertEquals(
                 AppListEntryError.FEE_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantFeeNotDueButFeeStatusProvidedFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PAID);
+        feeStatus.setStatusDate(TODAY_UK);
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantFeeNotDueButPersistedFeeStatusPreservedFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        entryUpdateDto.setFeeStatuses(null);
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(
+                        List.of(
+                                Mockito.mock(
+                                        uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus
+                                                .class)));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantFeeNotDueButEmptyFeeStatusListWouldClearPersistedStatusesFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        entryUpdateDto.setFeeStatuses(List.of());
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(
+                        List.of(
+                                Mockito.mock(
+                                        uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus
+                                                .class)));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
     }
 

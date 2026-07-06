@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.util.DateUtil;
  */
 public class BaseRepositoryTest extends BasePostgresIntegrationTest {
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Jwt jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(auth);

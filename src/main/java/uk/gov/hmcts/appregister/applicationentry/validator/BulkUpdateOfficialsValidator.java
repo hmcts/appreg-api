@@ -103,6 +103,12 @@ public class BulkUpdateOfficialsValidator
         }
 
         List<Official> officials = payload.data().getOfficials();
+        validateOfficialFields(officials);
+        validateOfficialCount(officials, OfficialType.MAGISTRATE, MAX_MAGISTRATES);
+        validateOfficialCount(officials, OfficialType.CLERK, MAX_COURT_OFFICIALS);
+    }
+
+    private void validateOfficialFields(List<Official> officials) {
         List<Integer> invalidTypeIndexes = new ArrayList<>();
         List<Integer> invalidTitleIndexes = new ArrayList<>();
         List<Integer> invalidForenameIndexes = new ArrayList<>();
@@ -152,23 +158,23 @@ public class BulkUpdateOfficialsValidator
                     "Officials must include a surname at indexes %s"
                             .formatted(invalidSurnameIndexes));
         }
+    }
 
-        long magistrateCount =
-                officials.stream()
-                        .filter(official -> official.getType() == OfficialType.MAGISTRATE)
-                        .count();
-        if (magistrateCount > MAX_MAGISTRATES) {
+    private void validateOfficialCount(
+            List<Official> officials, OfficialType type, int allowedMaximum) {
+        long count = officials.stream().filter(official -> official.getType() == type).count();
+        if (count <= allowedMaximum) {
+            return;
+        }
+
+        if (type == OfficialType.MAGISTRATE) {
             throw new AppRegistryException(
                     AppListEntryError.TOO_MANY_MAGISTRATES,
                     "An application entry can include no more than %s Magistrates"
                             .formatted(MAX_MAGISTRATES));
         }
 
-        long courtOfficialCount =
-                officials.stream()
-                        .filter(official -> official.getType() == OfficialType.CLERK)
-                        .count();
-        if (courtOfficialCount > MAX_COURT_OFFICIALS) {
+        if (type == OfficialType.CLERK) {
             throw new AppRegistryException(
                     AppListEntryError.TOO_MANY_COURT_OFFICIALS,
                     "An application entry can include no more than %s Court Official"

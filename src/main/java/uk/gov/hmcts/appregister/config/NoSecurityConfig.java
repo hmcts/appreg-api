@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.StringUtils;
 
@@ -42,7 +43,7 @@ public class NoSecurityConfig {
     SecurityFilterChain noSecurityFilterChain(HttpSecurity http) {
         // This profile is local-only, disables authentication entirely, and is restricted to
         // loopback binding by verifyLoopbackAddress.
-        http.csrf(csrf -> csrf.disable())
+        http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
         return http.build();
@@ -50,7 +51,7 @@ public class NoSecurityConfig {
 
     static void verifyLocalDebugRuntime(ClassLoader classLoader) {
         ClassLoader resourceLoader =
-                classLoader == null ? NoSecurityConfig.class.getClassLoader() : classLoader;
+                classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader;
         if (resourceLoader.getResource(LOCAL_DEBUG_MARKER) == null) {
             throw new NoSecurityConfigurationException(LOCAL_DEBUG_ONLY_MESSAGE);
         }

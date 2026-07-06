@@ -1,0 +1,50 @@
+get:
+  operationId: printStandardApplicants
+  tags: [ standard-applicants ]
+  summary: Get a print-ready JSON payload for a Standard Applicants
+  description: >
+    Returns all data required for printing Standard Applicants filtered by the supported
+    print criteria; code, name, addressLine1, from and to.  Dates are returned in ISO format;
+    frontend PDF rendering should display dates as dd/MM/yyyy for legacy parity.
+  parameters:
+    - in: query
+      name: code
+      schema: { type: string, maxLength: 10 }
+      description: Filter by code.
+    - in: query
+      name: name
+      schema: { type: string, maxLength: 100 }
+      description: Filter by applicant name.
+    - in: query
+      name: from
+      schema: { type: string, format: date }
+      description: Filter by from date.
+    - in: query
+      name: to
+      schema: { type: string, format: date }
+      description: Filter by to date.
+    - in: query
+      name: addressLine1
+      schema: { type: string, maxLength: 255 }
+      description: Filter by address line 1.
+    - in: query
+      name: sort
+      schema:
+        type: array
+        items: { type: string }
+      description: Sort parameter. Format `property,(asc|desc)`.
+  responses:
+    "200":
+      description: Print-ready Standard Applicants payload.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/standard-applicants/standard-applicant-print-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

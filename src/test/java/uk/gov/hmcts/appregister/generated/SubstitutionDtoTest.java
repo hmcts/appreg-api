@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import utils.ConstraintAssertion;
 
-public class SubstitutionDtoTest {
+class SubstitutionDtoTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -23,7 +23,7 @@ public class SubstitutionDtoTest {
     }
 
     @Test
-    void testSubstitutionEmptyString() throws Exception {
+    void testSubstitutionEmptyString() {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setValue("");
         substitution.setKey("");

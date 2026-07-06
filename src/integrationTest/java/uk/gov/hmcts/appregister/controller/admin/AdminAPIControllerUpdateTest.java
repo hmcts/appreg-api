@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.controller.admin;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
@@ -11,9 +11,9 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
-public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
+class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     @Test
-    public void whenEnableDisableJobByName_thenReturnOk() throws Exception {
+    void whenEnableDisableJobByName_thenReturnOk() throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
 
         Response responseSpec =
@@ -40,7 +40,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenUpdateRetentionPeriodByName_thenReturnOk() throws Exception {
+    void whenUpdateRetentionPeriodByName_thenReturnOk() throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
 
         Response responseSpec =
@@ -79,7 +79,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenEnableDisableJobByName_thenReturn404() throws Exception {
+    void whenEnableDisableJobByName_thenReturn404() throws Exception {
         var jobName = "SOME_JOB_THAT_DOES_NOT_EXIST";
 
         Response responseSpec =
@@ -98,7 +98,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenUpdateRetentionPeriodByNameWithInvalidRetentionPeriod_thenReturn400()
+    void whenUpdateRetentionPeriodByNameWithInvalidRetentionPeriod_thenReturn400()
             throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
 
@@ -115,8 +115,10 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
         assertEquals(400, responseSpec.getStatusCode());
         var responseBody = new ObjectMapper().readTree(responseSpec.asString());
         assertEquals(
-                "updateDatabaseJobRetentionPeriodByName.retentionPeriodDays: must be greater than"
-                        + " or equal to 1",
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "updateDatabaseJobRetentionPeriodByName.retentionPeriodDays="
+                        + "must be greater than or equal to 1",
                 responseBody.get("detail").asText());
     }
 }

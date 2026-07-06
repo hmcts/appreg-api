@@ -4,6 +4,10 @@ import org.hibernate.proxy.HibernateProxy;
 import org.springframework.beans.BeanUtils;
 
 public class BeanUtil {
+    private BeanUtil() {
+        // Utility class
+    }
+
     /**
      * copies the bean. This is useful when you want to maintain the original state of the bean
      * before any updates are made to it. This is useful when using the Audit API {@link

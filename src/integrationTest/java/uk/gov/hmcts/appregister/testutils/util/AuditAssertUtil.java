@@ -9,6 +9,9 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
  * A utility for making assertions around audit logs.
  */
 public class AuditAssertUtil {
+    private AuditAssertUtil() {
+        /* This utility class should not be instantiated */
+    }
 
     /**
      * assert that a start log entry matches the expected format.

@@ -117,7 +117,7 @@ public class CreateApplicationEntryValidator
     @Override
     protected LocalDate getLodgementDate(PayloadForCreate<EntryCreateDto> validatable) {
         return validatable.getData().getLodgementDate() == null
-                ? LocalDate.now()
+                ? currentBusinessDate()
                 : validatable.getData().getLodgementDate();
     }
 }

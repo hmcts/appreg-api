@@ -6,6 +6,7 @@ description: >
   courtLocationCode on its own, cjaCode on its own, otherLocationDescription
   on its own, or cjaCode and otherLocationDescription together.
   courtLocationCode is mutually exclusive with cjaCode and otherLocationDescription.
+additionalProperties: false
 
 properties:
 

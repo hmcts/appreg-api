@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.log;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import nl.altindag.log.LogCaptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
@@ -8,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class ServiceLogAspectTest {
+class ServiceLogAspectTest {
 
     private final LogCaptor serviceAspectLog = LogCaptor.forClass(ServiceLogAspect.class);
 
@@ -45,9 +47,9 @@ public class ServiceLogAspectTest {
                         .getDebugLogs()
                         .get(1)
                         .startsWith("Finish: Executed ServiceLogAspectTest.testMethod in "));
-        Assertions.assertTrue(serviceAspectLog.getDebugLogs().get(1).endsWith(" ms"));
+        assertThat(serviceAspectLog.getDebugLogs().get(1)).endsWith(" ms");
 
-        Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+        Mockito.verify(customProceedingJoinPoint).proceed();
     }
 
     @Test
@@ -77,9 +79,9 @@ public class ServiceLogAspectTest {
                         .getDebugLogs()
                         .get(1)
                         .startsWith("Finish: Executed ServiceLogAspectTest.testMethod in "));
-        Assertions.assertTrue(serviceAspectLog.getDebugLogs().get(1).endsWith(" ms"));
+        assertThat(serviceAspectLog.getDebugLogs().get(1)).endsWith(" ms");
 
-        Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+        Mockito.verify(customProceedingJoinPoint).proceed();
     }
 
     @Test
@@ -99,6 +101,6 @@ public class ServiceLogAspectTest {
         String result = (String) serviceLogAspect.logDuration(customProceedingJoinPoint);
 
         Assertions.assertEquals("Test Result", result);
-        Assertions.assertTrue(serviceAspectLog.getDebugLogs().isEmpty());
+        assertThat(serviceAspectLog.getDebugLogs()).isEmpty();
     }
 }

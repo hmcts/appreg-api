@@ -33,14 +33,14 @@ get:
     - in: query
       name: sort
       description: >
-        Repeatable sort parameter. Format per item: `property,(asc|desc)`.
-        Example: `?sort=title,asc&sort=code,desc`.
+        Sort parameter. Format: `property,(asc|desc)`.
+        Currently only a single sort value is supported. Example: `?sort=title,asc`.
       style: form
       explode: true
       schema:
         type: array
         items: { type: string }
-        example: [ "title,asc", "code,desc" ]
+        example: [ "title,asc" ]
   responses:
     "200":
       description: Page of Result Codes

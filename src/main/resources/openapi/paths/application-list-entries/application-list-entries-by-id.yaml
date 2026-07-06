@@ -15,6 +15,10 @@ get:
   operationId: getApplicationListEntry
   tags: [ application-list-entries ]
   summary: Get an Application List Entry by id
+  description: >
+    Returns a detailed Application List Entry while the parent Application List is in a state that
+    permits standard entry access. Closed lists must be updated via the dedicated closed-entry
+    endpoint and may reject this standard detail endpoint with 409 Conflict.
   responses:
     "200":
       description: Returns a detailed Application List Entry
@@ -31,6 +35,7 @@ get:
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
 put:
@@ -38,7 +43,9 @@ put:
   tags: [ application-list-entries ]
   summary: Update an Application List Entry
   description: >
-    Full replacement (PUT) of an existing Application List Entry.
+    Full replacement (PUT) of an existing Application List Entry. When `feeStatuses` is supplied,
+    the existing fee-status rows for the entry are replaced by the provided list. When
+    `feeStatuses` is `null`, fee-status rows are left unchanged.
   requestBody:
     required: true
     content:

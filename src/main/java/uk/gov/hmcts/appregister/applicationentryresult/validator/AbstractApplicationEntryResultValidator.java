@@ -41,6 +41,7 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
      * @param validatable The validatable payload
      * @param validateSuccess The success function to call if validation is successful
      */
+    @Override
     public <R> R validate(T validatable, BiFunction<T, O, R> validateSuccess) {
 
         ApplicationList applicationList = validateParentApplicationList(validatable);
@@ -154,21 +155,27 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
      * @return The application list entry if found
      */
     private ApplicationListEntry validateParentApplicationListEntry(T validatable) {
-        Optional<ApplicationListEntry> entry =
-                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        getApplicationListEntryUuid(validatable),
-                        getApplicationListUuid(validatable));
+        UUID entryUuid = getApplicationListEntryUuid(validatable);
+        UUID listUuid = getApplicationListUuid(validatable);
+        Optional<ApplicationListEntry> entry = applicationListEntryRepository.findByUuid(entryUuid);
 
         if (entry.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
-                    "No application list entry exists that belongs to the specified list %s"
-                            .formatted(getApplicationListEntryUuid(validatable)));
+                    "No application list entry exists %s".formatted(entryUuid));
         }
 
-        log.debug(
-                "Validated application list entry with id {}",
-                getApplicationListEntryUuid(validatable));
+        entry =
+                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                        entryUuid, listUuid);
+        if (entry.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST,
+                    "The application list entry %s does not belong to list %s"
+                            .formatted(entryUuid, listUuid));
+        }
+
+        log.debug("Validated application list entry with id {}", entryUuid);
 
         return entry.get();
     }

@@ -11,9 +11,10 @@ post:
   tags: [ application-list-entries ]
   summary: Start an asynchronous bulk upload of entries via CSV.
   description: >
-    Enqueues a background job that validates the CSV and, if valid, atomically inserts
-    all rows in a single transaction. If any row fails during commit, the entire
-    transaction is rolled back and the job ends in `FAILED`.
+    Validates the target application list and CSV structure up front, then enqueues a
+    background job that validates the uploaded rows and, if valid, automatically inserts
+    all rows in a single transaction. If row validation or commit fails, the entire
+    transaction is rolled back and the job ends in `FAILED`. There is a file size limitation of 5MB.
   requestBody:
     required: true
     content:
@@ -44,6 +45,8 @@ post:
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
     "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
     "415": { $ref: "../../components/responses/unsupported-media-type-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }

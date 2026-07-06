@@ -14,7 +14,7 @@ public class AppRegistryException extends RuntimeException {
 
     private final transient ErrorCodeEnum code;
 
-    private HashMap<String, String> details = new HashMap<>();
+    private final HashMap<String, String> details = new HashMap<>();
 
     /**
      * Construct exception.
@@ -50,6 +50,6 @@ public class AppRegistryException extends RuntimeException {
     public AppRegistryException(ErrorCodeEnum code, String detail, Map<String, String> details) {
         super(detail, null);
         this.code = code;
-        this.details = new HashMap<>(details);
+        this.details.putAll(details);
     }
 }

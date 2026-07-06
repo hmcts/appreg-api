@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
@@ -52,21 +51,18 @@ public class ApplicationEntryResultDeletionValidator
     }
 
     @Override
-    public <R> R validate(
-            ListEntryResultDeleteArgs args,
-            BiFunction<ListEntryResultDeleteArgs, ListEntryResultDeleteValidationSuccess, R>
-                    createSupplier) {
-
-        return super.validate(args, createSupplier);
-    }
-
-    @Override
     protected ListEntryResultDeleteValidationSuccess getResult(
             ResolutionCode code,
             WordingTemplateSentence wordingSentence,
             ApplicationList applicationList,
             ApplicationListEntry applicationListEntry,
             ListEntryResultDeleteArgs dto) {
+        if (appListEntryResultRepository.findByUuid(dto.resultId()).isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
+                    "No application list entry result was found for UUID '%s'"
+                            .formatted(dto.resultId()));
+        }
 
         AppListEntryResolution appListEntryResult =
                 appListEntryResultRepository
@@ -75,7 +71,7 @@ public class ApplicationEntryResultDeletionValidator
                                 () ->
                                         new AppRegistryException(
                                                 ApplicationListEntryResultError
-                                                        .LIST_ENTRY_RESULT_NOT_FOUND,
+                                                        .APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY,
                                                 ("No application list entry result was found for UUID '%s' that"
                                                                 + " belongs to the specified entry")
                                                         .formatted(dto.resultId())));

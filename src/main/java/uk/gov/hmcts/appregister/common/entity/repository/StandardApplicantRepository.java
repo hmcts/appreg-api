@@ -41,12 +41,34 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             @Param("code") String code, @Param("date") LocalDate date);
 
     /**
-     * Finds the ids that are greater than this value.
+     * Finds StandardApplicant rows by applicant code without filtering by lodgement date.
      *
-     * @param value the minimum ID value
-     * @return a list of ApplicationCode entities with IDs >= value
+     * <p>The supplied active date is only used to prefer the currently active row when duplicate
+     * codes exist. Historic rows remain eligible so saved ALE detail rendering is not blocked by
+     * date-effective lookup failures.
+     *
+     * @param code the applicant code to search for
+     * @param active the date used to prefer currently active rows
+     * @return ordered matching StandardApplicant rows
      */
-    List<StandardApplicant> findByIdGreaterThanEqual(Integer value);
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
+        ORDER BY CASE
+                    WHEN sa.applicantStartDate <= :active
+                     AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :active)
+                    THEN 0
+                    ELSE 1
+                 END,
+                 CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
+        """)
+    List<StandardApplicant> findStandardApplicantByCode(
+            @Param("code") String code, @Param("active") LocalDate active);
 
     /**
      * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).
@@ -144,4 +166,34 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             @Param("to") LocalDate to,
             @Param("active") LocalDate active,
             Pageable pageable);
+
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE (LOWER(sa.applicantCode) LIKE '%' || LOWER(CAST(:code AS string)) || '%'
+                 OR (:code IS NULL AND :name IS NOT NULL ))
+        AND (:name IS NULL
+              OR (
+                  sa.name IS NOT NULL
+                  AND LOWER(sa.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR (
+                  sa.applicantForename2 IS NOT NULL
+                  AND LOWER(sa.applicantForename2)
+                      LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR (
+                  sa.applicantForename3 IS NOT NULL
+                  AND LOWER(sa.applicantForename3)
+                      LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR LOWER(FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname))
+                  LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+                OR (:name IS NULL AND :code IS NOT NULL))
+        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+        sa.applicantEndDate DESC
+        """)
+    List<StandardApplicant> findByCodeAndName(
+            @LikeParam @Param("code") String code, @LikeParam @Param("name") String name);
 }

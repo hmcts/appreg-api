@@ -8,7 +8,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class ReportingControllerSecurityTest extends AbstractSecurityControllerTest {
+class ReportingControllerSecurityTest extends AbstractSecurityControllerTest {
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
@@ -18,7 +18,7 @@ public class ReportingControllerSecurityTest extends AbstractSecurityControllerT
                                 getLocalUrlWithDate(
                                         ReportingControllerGetTest.WEB_CONTEXT.formatted(
                                                 UUID.randomUUID()),
-                                        OffsetDateTime.now()))
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

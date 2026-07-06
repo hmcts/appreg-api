@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -35,7 +36,7 @@ import uk.gov.hmcts.appregister.testutils.csv.JobProcessCsvReadLifecycle;
 import uk.gov.hmcts.appregister.testutils.csv.JobProcessCsvWriteLifecycle;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
-public class AsyncJobServiceImplTest extends BaseIntegration {
+class AsyncJobServiceImplTest extends BaseIntegration {
     @Autowired private AsyncJobService asyncJobService;
 
     @Autowired private UserProvider userProvider;
@@ -43,7 +44,7 @@ public class AsyncJobServiceImplTest extends BaseIntegration {
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
@@ -94,7 +95,8 @@ public class AsyncJobServiceImplTest extends BaseIntegration {
                             for (int i = 0; i < data.size(); i++) {
                                 List<ApplicationCode> csvBaseAppCodeLst =
                                         applicationCodeRepository.findByCodeAndDate(
-                                                data.get(i).getCode(), LocalDate.now());
+                                                data.get(i).getCode(),
+                                                LocalDate.now(java.time.ZoneOffset.UTC));
                                 Assertions.assertEquals(1, csvBaseAppCodeLst.size());
                                 Assertions.assertEquals(
                                         data.get(i).getCode(), csvBaseAppCodeLst.get(0).getCode());
@@ -122,7 +124,8 @@ public class AsyncJobServiceImplTest extends BaseIntegration {
     /** Supplies generated application codes. */
     Function<Pageable, Page<ApplicationCode>> getApplicationCodesFunction =
             (pageable) -> {
-                return applicationCodeRepository.search("CODE", null, LocalDate.now(), pageable);
+                return applicationCodeRepository.search(
+                        "CODE", null, LocalDate.now(java.time.ZoneOffset.UTC), pageable);
             };
 
     @Test
@@ -242,6 +245,6 @@ public class AsyncJobServiceImplTest extends BaseIntegration {
                 context);
 
         // there should be no codes added as the validation failed on the second page
-        Assertions.assertTrue(codesAdded.isEmpty());
+        assertThat(codesAdded).isEmpty();
     }
 }

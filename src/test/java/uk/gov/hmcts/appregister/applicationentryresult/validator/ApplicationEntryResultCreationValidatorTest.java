@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +38,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultCreationValidatorTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
@@ -88,6 +88,7 @@ class ApplicationEntryResultCreationValidatorTest {
         // Happy-path stubs
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(list));
+        when(applicationListEntryRepository.findByUuid(entryId)).thenReturn(Optional.of(entry));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
@@ -152,10 +153,8 @@ class ApplicationEntryResultCreationValidatorTest {
     }
 
     @Test
-    void validate_entryDoesNotExistOrNotBelongToList() {
-        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        eq(entryId), eq(listId)))
-                .thenReturn(Optional.empty());
+    void validate_entryDoesNotExist() {
+        when(applicationListEntryRepository.findByUuid(entryId)).thenReturn(Optional.empty());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -163,6 +162,22 @@ class ApplicationEntryResultCreationValidatorTest {
 
         Assertions.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void validate_entryDoesNotBelongToList() {
+        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
+                .thenReturn(Optional.empty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST
                         .getCode()
                         .getAppCode(),
                 ex.getCode().getCode().getAppCode());

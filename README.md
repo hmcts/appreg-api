@@ -37,7 +37,8 @@ The steps work on Windows, macOS, and Linux.
   - `POSTGRES_HOST` - Only required if the database was not setup using the ./docker-compose.yml file, otherwise it defaults to `localhost`
   - `POSTGRES_PASS` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `password`
  -  `POSTGRES_DATABASE` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `appreg`
-Ask an existing developer for values.
+
+ - Ask an existing developer for the appropriate values.
 
 If the file is missing, create a new Run/Debug configuration in IntelliJ:
   - Type: **Gradle**
@@ -107,6 +108,17 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
   ```
 
+- **Run local dev with normal application logging**
+  Run the local-only no-security task without the `p6spy` profile so logging matches the normal
+  `application.yaml` behaviour more closely.
+  ```bash
+  ./gradlew bootRunLocalDevAppLogging
+  ```
+  To override the active profiles, pass `springProfiles`. For example:
+  ```bash
+  ./gradlew bootRunLocalDevAppLogging -PspringProfiles=nosecurity,functional
+  ```
+
 ## Authentication and Authorisation Failure Logging
 
 Protected endpoint responses returning `401` or `403` are logged at `WARN` using the existing App
@@ -143,6 +155,8 @@ The html reports reside under build/reports/jacoco/
 1. The specification is published by the application registration under $LOCALHOST/specs/openapi.json
 
 2. If you navigate to https://editor.swagger.io/. You can import the specification by selecting File -> Import URL and entering the URL to the openapi.json file
+
+3. A bundled YAML specification is also produced during the Gradle build at `openapi.yaml` in the project root
 
 ## Plugins
 

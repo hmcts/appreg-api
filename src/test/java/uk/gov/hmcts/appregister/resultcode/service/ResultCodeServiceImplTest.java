@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.resultcode.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -7,7 +8,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,7 +42,7 @@ import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
 @ExtendWith(MockitoExtension.class)
-public class ResultCodeServiceImplTest {
+class ResultCodeServiceImplTest {
 
     @Mock private ResolutionCodeRepository repository;
     @Mock private ResultCodeMapper mapper;
@@ -54,24 +54,18 @@ public class ResultCodeServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper(), auditListeners);
+            new AuditOperationServiceImpl(auditListeners);
 
     private ResultCodeServiceImpl service;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         ZoneId ukZone = ZoneId.of("Europe/London");
         Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
 
         service =
                 new ResultCodeServiceImpl(
-                        auditOperationService,
-                        auditListeners,
-                        repository,
-                        mapper,
-                        pageMapper,
-                        fixedClock,
-                        ukZone);
+                        auditOperationService, repository, mapper, pageMapper, fixedClock, ukZone);
     }
 
     /**
@@ -97,8 +91,7 @@ public class ResultCodeServiceImplTest {
         Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -118,8 +111,7 @@ public class ResultCodeServiceImplTest {
         Assertions.assertEquals(ResultCodeError.RESULT_CODE_NOT_FOUND, ex.getCode());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull());
     }
 
     @Test
@@ -138,8 +130,7 @@ public class ResultCodeServiceImplTest {
         Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull());
     }
 
     @Test
@@ -162,8 +153,7 @@ public class ResultCodeServiceImplTest {
         CapturingAuditListener listener = new CapturingAuditListener();
         ResultCodeServiceImpl localService =
                 new ResultCodeServiceImpl(
-                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
-                        List.of(listener),
+                        new AuditOperationServiceImpl(List.of(listener)),
                         repository,
                         mapper,
                         pageMapper,
@@ -187,7 +177,6 @@ public class ResultCodeServiceImplTest {
         final String codeFilter = "R";
         final String titleFilter = "X";
         final var pageable = PageRequest.of(0, 2);
-        ;
 
         var e1 = new ResolutionCode();
         var e2 = new ResolutionCode();
@@ -219,8 +208,7 @@ public class ResultCodeServiceImplTest {
         Assertions.assertEquals(2, pageDto.getContent().size());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull());
     }
 
     /**
@@ -253,11 +241,10 @@ public class ResultCodeServiceImplTest {
         Assertions.assertEquals(0, pageDto.getTotalPages());
         Assertions.assertEquals(1, pageDto.getPageNumber());
         Assertions.assertEquals(10, pageDto.getPageSize());
-        Assertions.assertTrue(pageDto.getContent().isEmpty());
+        assertThat(pageDto.getContent()).isEmpty();
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

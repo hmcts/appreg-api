@@ -12,18 +12,22 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullableModule;
+import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
 
 /**
  * Utility class for obfuscating sensitive data in logs. This is used to prevent sensitive data from
@@ -32,8 +36,13 @@ import uk.gov.hmcts.appregister.generated.model.ResultPage;
 @Slf4j
 public class ObfuscationUtil {
     private static final String REDACTED = "[REDACTED]";
+    private static final String ACCOUNT_NUMBER_FIELD = "accountNumber";
 
     static final ObjectMapper mapper = createObjectMapper();
+
+    private ObfuscationUtil() {
+        // Utility class
+    }
 
     private static ObjectMapper createObjectMapper() {
         SimpleModule maskingModule = new SimpleModule();
@@ -48,13 +57,20 @@ public class ObfuscationUtil {
                 EntryGetSummaryDto.class, new EntryGetSummaryDtoSensitiveSerializer());
         maskingModule.addSerializer(EntryPage.class, new EntryPageSensitiveSerializer());
         maskingModule.addSerializer(
-                ApplicationListEntrySummary.class,
-                new ApplicationListEntrySummarySensitiveSerializer());
-        maskingModule.addSerializer(
                 ApplicationListGetDetailDto.class,
                 new ApplicationListGetDetailDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultGetDto.class, new ResultGetDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultPage.class, new ResultPageSensitiveSerializer());
+        maskingModule.addSerializer(
+                FeesReportFilterDto.class, new FeesReportFilterDtoSensitiveSerializer());
+        maskingModule.addSerializer(
+                PrivateProsecutorsIndexFilterDto.class,
+                new PrivateProsecutorIndexSensitiveSerializer());
+        maskingModule.addSerializer(InputStreamResource.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(
+                StandardApplicantPrintDto.class,
+                new StandardApplicantPrintDtoSensitiveSerializer());
+        maskingModule.addSerializer(StandardApplicantPrintRowDto.class, new RedactedSerializer<>());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(
@@ -119,9 +135,9 @@ public class ObfuscationUtil {
             gen.writeObjectField("status", value.getStatus());
 
             if (value.getAccountNumber() != null && value.getAccountNumber().isPresent()) {
-                gen.writeStringField("accountNumber", REDACTED);
+                gen.writeStringField(ACCOUNT_NUMBER_FIELD, REDACTED);
             } else {
-                gen.writeNullField("accountNumber");
+                gen.writeNullField(ACCOUNT_NUMBER_FIELD);
             }
 
             gen.writeEndObject();
@@ -148,31 +164,6 @@ public class ObfuscationUtil {
         }
     }
 
-    static class ApplicationListEntrySummarySensitiveSerializer
-            extends JsonSerializer<ApplicationListEntrySummary> {
-
-        @Override
-        public void serialize(
-                ApplicationListEntrySummary value,
-                JsonGenerator gen,
-                SerializerProvider serializers)
-                throws IOException {
-            gen.writeStartObject();
-            gen.writeObjectField("uuid", value.getUuid());
-            gen.writeObjectField("sequenceNumber", value.getSequenceNumber());
-
-            gen.writeStringField("accountNumber", REDACTED);
-            gen.writeStringField("applicant", REDACTED);
-            gen.writeStringField("respondent", REDACTED);
-            gen.writeStringField("postCode", REDACTED);
-
-            gen.writeObjectField("applicationTitle", value.getApplicationTitle());
-            gen.writeObjectField("feeRequired", value.getFeeRequired());
-            gen.writeObjectField("result", value.getResult());
-            gen.writeEndObject();
-        }
-    }
-
     static class ApplicationListGetDetailDtoSensitiveSerializer
             extends JsonSerializer<ApplicationListGetDetailDto> {
 
@@ -196,7 +187,6 @@ public class ObfuscationUtil {
             gen.writeObjectField("durationMinutes", value.getDurationMinutes());
             gen.writeObjectField("version", value.getVersion());
             gen.writeObjectField("entriesCount", value.getEntriesCount());
-            gen.writeObjectField("entriesSummary", value.getEntriesSummary());
             gen.writeEndObject();
         }
     }
@@ -211,6 +201,91 @@ public class ObfuscationUtil {
             gen.writeObjectField("entryId", value.getEntryId());
             gen.writeObjectField("resultCode", value.getResultCode());
             gen.writeObjectField("wording", value.getWording());
+            gen.writeEndObject();
+        }
+    }
+
+    static class FeesReportFilterDtoSensitiveSerializer
+            extends JsonSerializer<FeesReportFilterDto> {
+
+        @Override
+        public void serialize(
+                FeesReportFilterDto value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("dateFrom", value.getDateFrom());
+            gen.writeObjectField("dateTo", value.getDateTo());
+
+            var applicantName = value.getApplicantName();
+            if (applicantName != null && !applicantName.isBlank()) {
+                gen.writeStringField("applicantName", REDACTED);
+            }
+
+            var standardApplicantCode = value.getStandardApplicantCode();
+            if (standardApplicantCode != null && !standardApplicantCode.isBlank()) {
+                gen.writeStringField("standardApplicantCode", REDACTED);
+            }
+
+            var location = value.getLocation();
+            if (location != null) {
+                gen.writeObjectField("location", value.getLocation());
+            }
+            gen.writeEndObject();
+        }
+    }
+
+    static class PrivateProsecutorIndexSensitiveSerializer
+            extends JsonSerializer<PrivateProsecutorsIndexFilterDto> {
+
+        @Override
+        public void serialize(
+                PrivateProsecutorsIndexFilterDto value,
+                JsonGenerator gen,
+                SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("dateFrom", value.getDateFrom());
+            gen.writeObjectField("dateTo", value.getDateTo());
+
+            var applicantFirstName = value.getApplicantFirstName();
+            if (applicantFirstName != null && !applicantFirstName.isBlank()) {
+                gen.writeStringField("applicantFirstName", REDACTED);
+            }
+
+            var applicantSurname = value.getApplicantSurname();
+            if (applicantSurname != null && !applicantSurname.isBlank()) {
+                gen.writeStringField("applicantSurname", REDACTED);
+            }
+
+            var applicantOrganisationName = value.getApplicantOrganisationName();
+            if (applicantOrganisationName != null && !applicantOrganisationName.isBlank()) {
+                gen.writeStringField("applicantOrganisationName", REDACTED);
+            }
+
+            var respondentSurname = value.getRespondentSurname();
+            if (respondentSurname != null && !respondentSurname.isBlank()) {
+                gen.writeStringField("respondentSurname", REDACTED);
+            }
+
+            var respondentFirstname = value.getRespondentFirstName();
+            if (respondentFirstname != null && !respondentFirstname.isBlank()) {
+                gen.writeStringField("respondentFirstname", REDACTED);
+            }
+
+            var respondentOrganisationName = value.getRespondentOrganisationName();
+            if (respondentOrganisationName != null && !respondentOrganisationName.isBlank()) {
+                gen.writeStringField("respondentOrganisationName", REDACTED);
+            }
+
+            var standardApplicantName = value.getStandardApplicantName();
+            if (standardApplicantName != null && !standardApplicantName.isBlank()) {
+                gen.writeStringField("standardApplicantName", REDACTED);
+            }
+
+            var location = value.getLocation();
+            if (location != null) {
+                gen.writeObjectField("location", location);
+            }
             gen.writeEndObject();
         }
     }
@@ -234,6 +309,24 @@ public class ObfuscationUtil {
         }
     }
 
+    static class StandardApplicantPrintDtoSensitiveSerializer
+            extends JsonSerializer<StandardApplicantPrintDto> {
+
+        @Override
+        public void serialize(
+                StandardApplicantPrintDto value, JsonGenerator gen, SerializerProvider serializers)
+                throws IOException {
+            gen.writeStartObject();
+            gen.writeObjectField("reportTitle", value.getReportTitle());
+            gen.writeObjectField("generatedAt", value.getGeneratedAt());
+            gen.writeObjectField("recordCount", value.getRecordCount());
+            gen.writeStringField("searchCriteria", REDACTED);
+            gen.writeStringField("applicants", REDACTED);
+            gen.writeEndObject();
+        }
+    }
+
+    @SuppressWarnings("java:S107")
     private static void writePage(
             JsonGenerator gen,
             Object pageNumber,

@@ -1,14 +1,27 @@
 package uk.gov.hmcts.appregister.applicationfee.model.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,9 +32,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationFeeServiceImplTest {
+class ApplicationFeeServiceImplTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private FeeRepository repository;
 
@@ -30,7 +43,7 @@ public class ApplicationFeeServiceImplTest {
     @InjectMocks private ApplicationFeeServiceImpl applicationFeeService;
 
     @Test
-    public void testMainAndOffsiteFee() {
+    void testMainAndOffsiteFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         Fee feeMain = new Fee();
@@ -51,12 +64,12 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
+        assertEquals(feeMain, feePair.mainFee());
+        assertEquals(feeOffsite, feePair.offsiteFee());
     }
 
     @Test
-    public void testMainAndNoOffsiteFee() {
+    void testMainAndNoOffsiteFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         Fee feeMain = new Fee();
@@ -71,12 +84,12 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertNull(feePair.offsiteFee());
+        assertEquals(feeMain, feePair.mainFee());
+        assertNull(feePair.offsiteFee());
     }
 
     @Test
-    public void testOffsiteFeeAndNoMainFee() {
+    void testOffsiteFeeAndNoMainFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         Fee feeOffsite = new Fee();
@@ -90,12 +103,12 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
-        Assertions.assertNull(feePair.mainFee());
+        assertEquals(feeOffsite, feePair.offsiteFee());
+        assertNull(feePair.mainFee());
     }
 
     @Test
-    public void testNoOffsiteFeeAndNoMainFee() {
+    void testNoOffsiteFeeAndNoMainFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         String ref = "ref";
@@ -105,12 +118,12 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertNull(feePair.offsiteFee());
-        Assertions.assertNull(feePair.mainFee());
+        assertNull(feePair.offsiteFee());
+        assertNull(feePair.mainFee());
     }
 
     @Test
-    public void testMultipleOffsiteFeeAndMainFee() {
+    void testMultipleOffsiteFeeAndMainFee() {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         // generate multiple main and offsite fees
@@ -141,7 +154,98 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
+        assertEquals(feeMain, feePair.mainFee());
+        assertEquals(feeOffsite, feePair.offsiteFee());
+    }
+
+    @Test
+    void testResolveFeePairsBatchesReferencesAndKeepsFirstOrderedMatch() {
+        var feeMain = new Fee();
+        feeMain.setId(5L);
+        feeMain.setReference("ref-one");
+        feeMain.setOffsite(false);
+
+        var feeMainOlder = new Fee();
+        feeMainOlder.setId(1L);
+        feeMainOlder.setReference("ref-one");
+        feeMainOlder.setOffsite(false);
+
+        var secondFee = new Fee();
+        secondFee.setId(6L);
+        secondFee.setReference("ref-two");
+        secondFee.setOffsite(false);
+
+        var feeOffsite = new Fee();
+        feeOffsite.setId(9L);
+        feeOffsite.setOffsite(true);
+
+        when(repository.findByReferenceInBetweenDate(List.of("ref-one", "ref-two"), TODAY_UK))
+                .thenReturn(List.of(feeMain, feeMainOlder, secondFee));
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of(feeOffsite));
+
+        Map<String, FeePair> feePairs =
+                applicationFeeService.resolveFeePairs(
+                        List.of("REF-ONE", "REF-TWO", "REF-ONE"), TODAY_UK);
+
+        var expected = new LinkedHashMap<String, FeePair>();
+        expected.put("REF-ONE", new FeePair(feeMain, feeOffsite));
+        expected.put("REF-TWO", new FeePair(secondFee, feeOffsite));
+        assertEquals(expected, feePairs);
+    }
+
+    @Test
+    void testResolveFeePairUsesBusinessDateWhenDateIsNull() {
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findByReferenceBetweenDate("ref", TODAY_UK)).thenReturn(List.of());
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of());
+
+        applicationFeeService.resolveFeePair("ref", null);
+
+        verify(businessDateProvider).currentUkDate();
+        verify(repository).findByReferenceBetweenDate("ref", TODAY_UK);
+        verify(repository).findOffsite(TODAY_UK);
+    }
+
+    @ParameterizedTest
+    @MethodSource("emptyReferenceCollections")
+    void testResolveFeePairsReturnsEmptyMapForNoUsefulReferences(Collection<String> feeReferences) {
+        var feePairs = applicationFeeService.resolveFeePairs(feeReferences, TODAY_UK);
+
+        assertTrue(feePairs.isEmpty());
+        verify(repository, never()).findByReferenceInBetweenDate(notNull(), notNull());
+    }
+
+    @Test
+    void testResolveFeePairsUsesBusinessDateWhenDateMissing() {
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findByReferenceInBetweenDate(List.of("ref"), TODAY_UK))
+                .thenReturn(List.of());
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of());
+
+        applicationFeeService.resolveFeePairs(List.of("REF"), null);
+
+        verify(businessDateProvider).currentUkDate();
+        verify(repository).findByReferenceInBetweenDate(List.of("ref"), TODAY_UK);
+        verify(repository).findOffsite(TODAY_UK);
+    }
+
+    @Test
+    void testResolveFeePairsKeepsNullAndBlankKeysWithoutRepositoryLookups() {
+        when(repository.findByReferenceInBetweenDate(List.of("ref"), TODAY_UK))
+                .thenReturn(List.of());
+        when(repository.findOffsite(TODAY_UK)).thenReturn(List.of());
+
+        var feePairs =
+                applicationFeeService.resolveFeePairs(Arrays.asList(null, " ", "REF"), TODAY_UK);
+
+        assertEquals(3, feePairs.size());
+        assertEquals(new FeePair(null, null), feePairs.get(null));
+        assertEquals(new FeePair(null, null), feePairs.get(" "));
+        assertEquals(new FeePair(null, null), feePairs.get("REF"));
+        verify(repository).findByReferenceInBetweenDate(List.of("ref"), TODAY_UK);
+    }
+
+    private static Stream<Arguments> emptyReferenceCollections() {
+        return Stream.of(Arguments.of((Collection<String>) null), Arguments.of(List.<String>of()));
     }
 }

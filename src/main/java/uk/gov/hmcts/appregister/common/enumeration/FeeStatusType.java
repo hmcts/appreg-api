@@ -29,7 +29,7 @@ public enum FeeStatusType {
 
     public static FeeStatusType fromValue(String value) {
         for (FeeStatusType status : FeeStatusType.values()) {
-            if (status.getDisplayName().equalsIgnoreCase(value)) {
+            if (status.displayName.equalsIgnoreCase(value)) {
                 return status;
             }
         }

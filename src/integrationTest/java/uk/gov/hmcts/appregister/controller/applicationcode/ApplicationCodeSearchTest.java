@@ -1,15 +1,24 @@
 package uk.gov.hmcts.appregister.controller.applicationcode;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import jakarta.persistence.EntityManagerFactory;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -19,9 +28,11 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.Assertions;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -53,13 +64,29 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
+class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
+    private static final String APPLICATION_CODE_FIELD = "application_code";
+    private static final String TITLE_QUERY_PARAM = "title";
+    private static final String MAIN_FEE_REFERENCE = "CO1.1";
+    private static final String COPY_DOCUMENTS_ELECTRONIC = "Copy documents (electronic)";
+    private static final String COPY_DOCUMENTS_ELECTRONIC_WORDING =
+            "Request for copy documents on computer disc or in electronic form";
+
+    private final EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    ApplicationCodeSearchTest(EntityManagerFactory entityManagerFactory) {
+        this.entityManagerFactory = entityManagerFactory;
+    }
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithWithMultipleFeesForMainAndOffsite_thenReturn200()
-                    throws Exception {
+                    throws URISyntaxException,
+                            MalformedURLException,
+                            JOSEException,
+                            JsonProcessingException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -76,7 +103,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        assertEquals(defaultPageSize, page.getContent().size());
+        assertEquals(defaultPageSize, page.getContent().size(), "");
 
         TemplateAssertion.assertTemplate(
                 "Request to copy documents", page.getContent().get(0).getWording());
@@ -86,7 +113,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
                         Optional.of(FEE_DESCRIPTION),
                         Optional.of(200.0),
-                        Optional.of("CO1.1"),
+                        Optional.of(MAIN_FEE_REFERENCE),
                         Optional.of(OFFSITE_FEE_DESCRIPTION),
                         Optional.of(155.0),
                         Optional.of("CO2.1"));
@@ -106,7 +133,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         "",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
@@ -115,15 +142,18 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         activityAuditLogAsserter.assertCompletedLogContains(
                 GET_APPCODES_AUDIT_ACTION,
                 "ecaf9ce5d2b348338cd6b7630c837186",
-                Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
+                Integer.toString(OperationStatus.COMPLETED.getStatus()),
                 mapper.writeValueAsString(page));
     }
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
-                    throws Exception {
+                    throws URISyntaxException,
+                            MalformedURLException,
+                            JOSEException,
+                            JsonProcessingException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
 
@@ -140,7 +170,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
                         Optional.of(FEE_DESCRIPTION),
                         Optional.of(200.0),
-                        Optional.of("CO1.1"),
+                        Optional.of(MAIN_FEE_REFERENCE),
                         Optional.of(OFFSITE_FEE_DESCRIPTION),
                         Optional.of(155.0),
                         Optional.of("CO2.1"));
@@ -160,7 +190,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         "",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
@@ -168,14 +198,14 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         activityAuditLogAsserter.assertCompletedLogContainsWithUnknownMessageId(
                 GET_APPCODES_AUDIT_ACTION,
-                Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
+                Integer.toString(OperationStatus.COMPLETED.getStatus()),
                 mapper.writeValueAsString(page));
     }
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -224,7 +254,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         "",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
@@ -233,9 +263,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesForCodeWithMultipleFeesForMainAndOffsite_thenReturn200()
-                    throws Exception {
+                    throws URISyntaxException, MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -256,10 +286,10 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
                         Optional.of(FEE_DESCRIPTION),
                         Optional.of(50.0),
-                        Optional.of("CO1.1"),
+                        Optional.of(MAIN_FEE_REFERENCE),
                         Optional.of(OFFSITE_FEE_DESCRIPTION3),
                         Optional.of(70.0),
-                        Optional.of("CO1.1"));
+                        Optional.of(MAIN_FEE_REFERENCE));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -282,7 +312,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         id,
                         AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getType().name(),
@@ -299,9 +329,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
+    void
             givenOverlappingActiveApplicationCodes_whenGetApplicationCodes_thenCallerSortControlsPageOrder()
-                    throws Exception {
+                    throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -319,18 +349,16 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        Assertions.assertEquals(
-                DUPLICATE_APPCODE_CODE, page.getContent().getFirst().getApplicationCode());
-        Assertions.assertEquals(
-                "Copy documents (electronic)", page.getContent().getFirst().getTitle());
-        Assertions.assertEquals("Condemnation of Unfit Food", page.getContent().get(1).getTitle());
+        assertEquals(DUPLICATE_APPCODE_CODE, page.getContent().getFirst().getApplicationCode());
+        assertEquals(COPY_DOCUMENTS_ELECTRONIC, page.getContent().getFirst().getTitle());
+        assertEquals("Condemnation of Unfit Food", page.getContent().get(1).getTitle());
     }
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesForCodeWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
-                    throws Exception {
+                    throws URISyntaxException, MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
 
@@ -349,10 +377,10 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
                         Optional.of(FEE_DESCRIPTION),
                         Optional.of(50.0),
-                        Optional.of("CO1.1"),
+                        Optional.of(MAIN_FEE_REFERENCE),
                         Optional.of(OFFSITE_FEE_DESCRIPTION3),
                         Optional.of(70.0),
-                        Optional.of("CO1.1"));
+                        Optional.of(MAIN_FEE_REFERENCE));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -374,9 +402,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         // The GET-by-code endpoint resolves fees using the request date, not the mocked clock.
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -403,7 +430,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         Optional.empty(),
                         Optional.of(OFFSITE_FEE_DESCRIPTION3),
                         Optional.of(40.0),
-                        Optional.of("CO1.1"));
+                        Optional.of(MAIN_FEE_REFERENCE));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -424,7 +451,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesDateIsNotCorrectlyFormatted_thenReturn400()
+    void givenValidRequest_whenGetApplicationCodesDateIsNotCorrectlyFormatted_thenReturn400()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -453,8 +480,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400() throws Exception {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -478,14 +504,15 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenHistoricDate_whenGetApplicationCodes_thenReturnEmptyPage() throws Exception {
+    void givenHistoricDate_whenGetApplicationCodes_thenReturnEmptyPage()
+            throws JOSEException, ParseException, MalformedURLException {
         String code = "ZZDATE01";
         saveApplicationCodeWithFees(
                 code,
                 "ZZFEE01",
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1));
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -506,19 +533,57 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 0, 0);
-        Assertions.assertTrue(page.getContent() == null || page.getContent().isEmpty());
+        assertThat(page.getContent()).isNullOrEmpty();
+    }
+
+    /**
+     * Demonstrates the optimised query shape: when every returned row shares the same fee
+     * reference, the application-code search should reuse the offsite fee and cached fee pair
+     * instead of adding extra lookup queries per row.
+     */
+    @Test
+    void
+            givenMultipleApplicationCodesSharingFeeReference_whenGetApplicationCodes_thenQueryCountStaysBounded()
+                    throws JOSEException, ParseException, MalformedURLException {
+        when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        var activeDate = LocalDate.of(2020, Month.JULY, 25);
+        var sharedFeeReference = "QFEE01";
+        var singleCode = "QFANSING";
+        var multiCodePrefix = "QFANM";
+
+        saveFeePair(sharedFeeReference, activeDate.minusDays(10L), activeDate.minusDays(10L));
+        saveApplicationCode(singleCode, sharedFeeReference, activeDate.minusDays(1));
+
+        for (int index = 1; index <= 4; index++) {
+            saveApplicationCode(
+                    multiCodePrefix + index, sharedFeeReference, activeDate.minusDays(1));
+        }
+
+        var tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // One matching row gives us the baseline query count for this endpoint.
+        var singleResultStatements =
+                executeSearchAndCountPreparedStatements(tokenGenerator, singleCode, 1);
+        // Four matching rows with the same fee reference should stay at the same query count
+        // because the offsite fee and fee pair are reused for the page.
+        var multipleResultStatements =
+                executeSearchAndCountPreparedStatements(tokenGenerator, multiCodePrefix, 4);
+
+        assertThat(multipleResultStatements).isEqualTo(singleResultStatements);
     }
 
     @Test
-    public void givenCodeTitleAndDate_whenGetApplicationCodes_thenReturnDateFilteredPage()
-            throws Exception {
+    void givenCodeTitleAndDate_whenGetApplicationCodes_thenReturnDateFilteredPage()
+            throws JOSEException, ParseException, MalformedURLException {
         String code = "ZZDATE02";
         saveApplicationCodeWithFees(
                 code,
                 "ZZFEE02",
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1),
-                LocalDate.of(2020, 1, 1));
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1),
+                LocalDate.of(2020, Month.JANUARY, 1));
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -529,7 +594,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        List.of("title"),
+                        List.of(TITLE_QUERY_PARAM),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -545,7 +610,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenInvalidDate_whenGetApplicationCodes_thenReturn400() throws Exception {
+    void givenInvalidDate_whenGetApplicationCodes_thenReturn400()
+            throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -575,9 +641,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithoutExplicitSort_thenReturn200()
-                    throws Exception {
+                    throws MalformedURLException, JOSEException {
 
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -609,9 +675,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals(
                 "Certified extract from the court register", firstEntry.getWording().getTemplate());
         assertTrue(firstEntry.getIsFeeDue());
-        Assertions.assertFalse(firstEntry.getRequiresRespondent());
-        Assertions.assertFalse(firstEntry.getBulkRespondentAllowed());
-        assertEquals("CO1.1", firstEntry.getFeeReference().get());
+        assertFalse(firstEntry.getRequiresRespondent());
+        assertFalse(firstEntry.getBulkRespondentAllowed());
+        assertEquals(MAIN_FEE_REFERENCE, firstEntry.getFeeReference().get());
         assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
         assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
         assertEquals(15500L, firstEntry.getOffsiteFeeAmount().get().getValue());
@@ -624,19 +690,18 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 "Request for a certificate of satisfaction of debt registered in the register "
                         + "of judgements, orders and fines",
                 secondEntry.getWording().getTemplate());
-        Assertions.assertFalse(secondEntry.getIsFeeDue());
-        Assertions.assertFalse(secondEntry.getRequiresRespondent());
-        Assertions.assertFalse(secondEntry.getBulkRespondentAllowed());
-        Assertions.assertFalse(secondEntry.getFeeReference().isPresent());
-        Assertions.assertFalse(secondEntry.getFeeDescription().isPresent());
-        Assertions.assertFalse(secondEntry.getFeeAmount().isPresent());
-        Assertions.assertTrue(secondEntry.getOffsiteFeeAmount().isPresent());
+        assertFalse(secondEntry.getIsFeeDue());
+        assertFalse(secondEntry.getRequiresRespondent());
+        assertFalse(secondEntry.getBulkRespondentAllowed());
+        assertFalse(secondEntry.getFeeReference().isPresent());
+        assertFalse(secondEntry.getFeeDescription().isPresent());
+        assertFalse(secondEntry.getFeeAmount().isPresent());
+        assertTrue(secondEntry.getOffsiteFeeAmount().isPresent());
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetApplicationCodes_ensureOffsiteFeeIsPresentForAll_returns200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodes_ensureOffsiteFeeIsPresentForAll_returns200()
+            throws MalformedURLException, JOSEException {
         // create the token to send
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -655,15 +720,14 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
-        Assertions.assertEquals(
-                15500, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
-        Assertions.assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
+        assertEquals(15500, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+        assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
     }
 
     @Test
-    public void
+    void
             givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsPresentWithNullOffsiteFeeRef_returns200()
-                    throws Exception {
+                    throws URISyntaxException, MalformedURLException, JOSEException {
         // create the token to send
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -676,7 +740,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                         + "/"
                                         + "AD99004"
                                         + "?date="
-                                        + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                                        + LocalDate.now(java.time.ZoneOffset.UTC)
+                                                .format(DateTimeFormatter.ISO_LOCAL_DATE)),
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
 
@@ -688,9 +753,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithExplicitSort_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithExplicitSort_thenReturn200()
+            throws MalformedURLException, JOSEException {
 
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -724,8 +788,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithPagingNoResult_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingNoResult_thenReturn200()
+            throws MalformedURLException, JOSEException {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -753,7 +817,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         null,
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
@@ -762,9 +826,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingApplicationCodeFilter_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingApplicationCodeFilter_thenReturn200()
+            throws MalformedURLException, JOSEException {
 
         // create a token
         TokenGenerator tokenGenerator =
@@ -793,7 +856,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         "CT99002",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
@@ -802,8 +865,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithPagingTitleFilter_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingTitleFilter_thenReturn200()
+            throws MalformedURLException, JOSEException {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -842,8 +905,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesWithPagingAllFilter_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingAllFilter_thenReturn200()
+            throws MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -874,7 +937,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
-                        "application_code",
+                        APPLICATION_CODE_FIELD,
                         null,
                         "AP99004",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
@@ -892,9 +955,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPageNumberBeyondResultBoundary_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPageNumberBeyondResultBoundary_thenReturn200()
+            throws MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -919,12 +981,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
-        Assertions.assertNull(page.getContent());
+        assertThat(page.getContent()).isEmpty();
     }
 
     @StabilityTest
-    public void givenApplicationCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-            throws Exception {
+    void givenApplicationCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws MalformedURLException, JOSEException {
         for (ApplicationCodeSortFieldEnum applicationCodeSortFieldEnum :
                 ApplicationCodeSortFieldEnum.values()) {
 
@@ -944,22 +1006,22 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
 
             // make sure the order response marries with the request data
-            Assertions.assertEquals(1, page.getSort().getOrders().size());
-            Assertions.assertEquals(
+            assertEquals(1, page.getSort().getOrders().size());
+            assertEquals(
                     SortOrdersInner.DirectionEnum.DESC,
                     page.getSort().getOrders().get(0).getDirection());
-            Assertions.assertEquals(
+            assertEquals(
                     applicationCodeSortFieldEnum.getApiValue(),
                     page.getSort().getOrders().get(0).getProperty());
             responseSpec.then().statusCode(200);
         }
 
-        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
+        assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidSortQuery_thenReturn400()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingInvalidSortQuery_thenReturn400()
+            throws MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -987,8 +1049,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     // 0 and returns a 200. Our implementation
     // returns a 500
     @Test
-    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn400()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn400()
+            throws MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1011,11 +1073,10 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
-        Assertions.assertTrue(
-                problemDetail.getDetail().endsWith("must be greater than or equal to 1"));
-        Assertions.assertEquals("Constraint Error", problemDetail.getTitle());
-        Assertions.assertEquals(400, problemDetail.getStatus());
-        Assertions.assertEquals(
+        assertTrue(problemDetail.getDetail().endsWith("must be greater than or equal to 1"));
+        assertEquals("Constraint Error", problemDetail.getTitle());
+        assertEquals(400, problemDetail.getStatus());
+        assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
@@ -1024,9 +1085,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     // does not behave
     // accordingly
     @Test
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
-                    throws Exception {
+                    throws MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1050,19 +1111,17 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
-        Assertions.assertTrue(
-                problemDetail.getDetail().endsWith("must be less than or equal to 100"));
-        Assertions.assertEquals("Constraint Error", problemDetail.getTitle());
-        Assertions.assertEquals(400, problemDetail.getStatus());
-        Assertions.assertEquals(
+        assertTrue(problemDetail.getDetail().endsWith("must be less than or equal to 100"));
+        assertEquals("Constraint Error", problemDetail.getTitle());
+        assertEquals(400, problemDetail.getStatus());
+        assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeType_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeType_thenReturn200()
+            throws JOSEException, MalformedURLException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1093,26 +1152,28 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
-        Assertions.assertEquals(
+        assertEquals(
                 "Problem with value invalid-type for parameter "
                         + openApiPageMetaData.getPageSizeQueryName(),
                 problemDetail.getDetail());
-        Assertions.assertEquals(400, problemDetail.getStatus());
-        Assertions.assertEquals(
+        assertEquals(400, problemDetail.getStatus());
+        assertEquals(
                 CommonAppError.TYPE_MISMATCH_ERROR.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
+            throws URISyntaxException, MalformedURLException, JOSEException {
 
         // execute the functionality
         String id = "notexist";
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + id, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + id,
+                                OffsetDateTime.now(java.time.ZoneOffset.UTC)),
                         getATokenWithValidCredentials()
                                 .roles(List.of(RoleEnum.ADMIN))
                                 .build()
@@ -1145,8 +1206,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesForDateNotValid_thenReturn404()
-            throws Exception {
+    void givenValidRequest_whenGetApplicationCodesForDateNotValid_thenReturn404()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         String id = APPCODE_CODE;
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
@@ -1183,9 +1244,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
+    void
             givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturnPreferredActiveRecord()
-                    throws Exception {
+                    throws URISyntaxException, MalformedURLException, JOSEException {
 
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -1205,14 +1266,14 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
 
         ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
-        Assertions.assertEquals("MS99006", response.getApplicationCode());
-        Assertions.assertEquals("Condemnation of Unfit Food", response.getTitle());
-        Assertions.assertFalse(response.getEndDate().isPresent());
+        assertEquals("MS99006", response.getApplicationCode());
+        assertEquals("Condemnation of Unfit Food", response.getTitle());
+        assertFalse(response.getEndDate().isPresent());
     }
 
     @Test
-    public void givenValidRequest_whenGetWithMultipleTemplateValues_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetWithMultipleTemplateValues_thenReturn200()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
 
@@ -1227,23 +1288,23 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
         // assert
-        Assertions.assertEquals(
+        assertEquals(
                 "Application for an order to allow the applicant "
                         + "to inspect or take copies of bankers books held by {{Name of Bank}} in respect "
                         + "of criminal proceedings at {{Name of Court}}.",
                 response.getWording().getTemplate());
-        Assertions.assertEquals(2, response.getWording().getSubstitutionKeyConstraints().size());
-        Assertions.assertEquals(
+        assertEquals(2, response.getWording().getSubstitutionKeyConstraints().size());
+        assertEquals(
                 "Name of Bank",
                 response.getWording().getSubstitutionKeyConstraints().get(0).getKey());
-        Assertions.assertEquals(
+        assertEquals(
                 TemplateConstraint.TypeEnum.TEXT,
                 response.getWording()
                         .getSubstitutionKeyConstraints()
                         .get(0)
                         .getConstraint()
                         .getType());
-        Assertions.assertEquals(
+        assertEquals(
                 100,
                 response.getWording()
                         .getSubstitutionKeyConstraints()
@@ -1251,17 +1312,17 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         .getConstraint()
                         .getLength());
 
-        Assertions.assertEquals(
+        assertEquals(
                 "Name of Court",
                 response.getWording().getSubstitutionKeyConstraints().get(1).getKey());
-        Assertions.assertEquals(
+        assertEquals(
                 TemplateConstraint.TypeEnum.TEXT,
                 response.getWording()
                         .getSubstitutionKeyConstraints()
                         .get(1)
                         .getConstraint()
                         .getType());
-        Assertions.assertEquals(
+        assertEquals(
                 100,
                 response.getWording()
                         .getSubstitutionKeyConstraints()
@@ -1287,8 +1348,8 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     @StabilityTest
-    public void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse()
-            throws Exception {
+    void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse()
+            throws MalformedURLException, JOSEException {
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
@@ -1309,17 +1370,18 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // assert
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        Assertions.assertEquals(6, page.getContent().size());
-        Assertions.assertEquals("AD99001", page.getContent().get(0).getApplicationCode());
-        Assertions.assertEquals("AP99001", page.getContent().get(1).getApplicationCode());
-        Assertions.assertEquals("CT99001", page.getContent().get(2).getApplicationCode());
-        Assertions.assertEquals("MS99001", page.getContent().get(3).getApplicationCode());
-        Assertions.assertEquals("RE99001", page.getContent().get(4).getApplicationCode());
-        Assertions.assertEquals("SW99001", page.getContent().get(5).getApplicationCode());
+        assertEquals(6, page.getContent().size());
+        assertEquals("AD99001", page.getContent().get(0).getApplicationCode());
+        assertEquals("AP99001", page.getContent().get(1).getApplicationCode());
+        assertEquals("CT99001", page.getContent().get(2).getApplicationCode());
+        assertEquals("MS99001", page.getContent().get(3).getApplicationCode());
+        assertEquals("RE99001", page.getContent().get(4).getApplicationCode());
+        assertEquals("SW99001", page.getContent().get(5).getApplicationCode());
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400()
+            throws MalformedURLException, JOSEException {
         var tokenGenerator = createAdminToken();
 
         Response responseSpec =
@@ -1335,7 +1397,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
-        Assertions.assertEquals(
+        assertEquals(
                 CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
                 problemDetail.getType());
     }
@@ -1351,10 +1413,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         ApplicationCodeGetSummaryDto applicationCodeGetSummaryDto =
                 new ApplicationCodeGetSummaryDto();
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
-        applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
+        applicationCodeGetSummaryDto.setTitle(COPY_DOCUMENTS_ELECTRONIC);
         TemplateDetail templateDetail = new TemplateDetail();
-        templateDetail.setTemplate(
-                "Request for copy documents on computer disc or in electronic form");
+        templateDetail.setTemplate(COPY_DOCUMENTS_ELECTRONIC_WORDING);
         templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
         applicationCodeGetSummaryDto.setWording(templateDetail);
         applicationCodeGetSummaryDto.setIsFeeDue(true);
@@ -1412,10 +1473,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                 new ApplicationCodeGetDetailDto();
 
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
-        applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
+        applicationCodeGetSummaryDto.setTitle(COPY_DOCUMENTS_ELECTRONIC);
         TemplateDetail templateDetail = new TemplateDetail();
-        templateDetail.setTemplate(
-                "Request for copy documents on computer disc or in electronic form");
+        templateDetail.setTemplate(COPY_DOCUMENTS_ELECTRONIC_WORDING);
         applicationCodeGetSummaryDto.setWording(templateDetail);
         templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
 
@@ -1590,7 +1650,14 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             LocalDate applicationCodeStartDate,
             LocalDate mainFeeStartDate,
             LocalDate offsiteFeeStartDate)
-            throws Exception {
+            throws JOSEException, ParseException {
+        saveFeePair(feeReference, mainFeeStartDate, offsiteFeeStartDate);
+        saveApplicationCode(code, feeReference, applicationCodeStartDate);
+    }
+
+    private void saveFeePair(
+            String feeReference, LocalDate mainFeeStartDate, LocalDate offsiteFeeStartDate)
+            throws JOSEException, ParseException {
         var jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -1613,12 +1680,23 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             offsiteFee.setStartDate(offsiteFeeStartDate);
             offsiteFee.setEndDate(null);
             persistance.save(offsiteFee);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 
+    private void saveApplicationCode(
+            String code, String feeReference, LocalDate applicationCodeStartDate)
+            throws JOSEException, java.text.ParseException {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
             ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
             applicationCode.setCode(code);
-            applicationCode.setTitle("Copy documents (electronic)");
-            applicationCode.setWording(
-                    "Request for copy documents on computer disc or in electronic form");
+            applicationCode.setTitle(COPY_DOCUMENTS_ELECTRONIC);
+            applicationCode.setWording(COPY_DOCUMENTS_ELECTRONIC_WORDING);
             applicationCode.setFeeReference(feeReference);
             applicationCode.setFeeDue(YesOrNo.YES);
             applicationCode.setRequiresRespondent(YesOrNo.NO);
@@ -1629,6 +1707,37 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private long executeSearchAndCountPreparedStatements(
+            TokenGenerator tokenGenerator, String codeFilter, int expectedContentSize)
+            throws MalformedURLException, JOSEException {
+        Statistics statistics = getHibernateStatistics();
+        statistics.clear();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationCodeRequestFilter(Optional.of(codeFilter), Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        assertThat(page.getContent()).hasSize(expectedContentSize);
+
+        return statistics.getPrepareStatementCount();
+    }
+
+    private Statistics getHibernateStatistics() {
+        SessionFactory sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
+        Statistics statistics = sessionFactory.getStatistics();
+        statistics.setStatisticsEnabled(true);
+        return statistics;
     }
 
     /**
@@ -1658,7 +1767,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             }
 
             if (appTitle.isPresent()) {
-                rs = rs.queryParam("title", appTitle.get());
+                rs = rs.queryParam(TITLE_QUERY_PARAM, appTitle.get());
             }
 
             if (dateValue.isPresent()) {

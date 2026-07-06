@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
+import jakarta.validation.Validation;
 import java.time.LocalDate;
+import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,7 +40,7 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BulkUpdateFeesValidatorTest {
 
-    private static final LocalDate TODAY = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
@@ -65,7 +68,8 @@ class BulkUpdateFeesValidatorTest {
                 new BulkUpdateFeesValidator(
                         applicationListRepository,
                         applicationListEntryRepository,
-                        businessDateProvider);
+                        businessDateProvider,
+                        Validation.buildDefaultValidatorFactory().getValidator());
 
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY);
         when(applicationListRepository.findByUuidIncludingDelete(listId))
@@ -127,7 +131,7 @@ class BulkUpdateFeesValidatorTest {
     void validate_whenEntryIdsAreMissing_thenThrowsEntryNotProvided() {
         BulkUpdateFeesPayload payload =
                 new BulkUpdateFeesPayload(
-                        listId, new BulkFeesUpdateDto().feeDetails(validFeeDetails()));
+                        listId, new BulkFeesUpdateDto().feeDetails(List.of(validFeeDetails())));
 
         AppRegistryException exception = validateAndCapture(payload);
 
@@ -139,6 +143,33 @@ class BulkUpdateFeesValidatorTest {
         BulkUpdateFeesPayload payload =
                 new BulkUpdateFeesPayload(
                         listId, new BulkFeesUpdateDto().entryIds(Set.of(entryId)));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenFeeDetailsAreEmpty_thenThrowsFeeDetailsNotProvided() {
+        BulkUpdateFeesPayload payload =
+                new BulkUpdateFeesPayload(
+                        listId,
+                        new BulkFeesUpdateDto().entryIds(Set.of(entryId)).feeDetails(List.of()));
+
+        AppRegistryException exception = validateAndCapture(payload);
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
+    }
+
+    @Test
+    void validate_whenFeeDetailsContainNullItem_thenThrowsFeeDetailsNotProvided() {
+        BulkUpdateFeesPayload payload =
+                new BulkUpdateFeesPayload(
+                        listId,
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .feeDetails(new ArrayList<>()));
+        payload.data().getFeeDetails().add(null);
 
         AppRegistryException exception = validateAndCapture(payload);
 
@@ -260,7 +291,7 @@ class BulkUpdateFeesValidatorTest {
     private BulkUpdateFeesPayload validPayload(
             UUID listId, Set<UUID> entryIds, BulkFeeDetailsDto feeDetails) {
         return new BulkUpdateFeesPayload(
-                listId, new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(feeDetails));
+                listId, new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(List.of(feeDetails)));
     }
 
     private BulkUpdateFeesPayload validPayloadForList(UUID listId, UUID entryId) {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,6 @@ class BusinessDateProviderTest {
         BusinessDateProvider provider =
                 new BusinessDateProvider(utcClock, ZoneId.of("Europe/London"));
 
-        assertEquals(LocalDate.of(2025, 6, 2), provider.currentUkDate());
+        assertEquals(LocalDate.of(2025, Month.JUNE, 2), provider.currentUkDate());
     }
 }

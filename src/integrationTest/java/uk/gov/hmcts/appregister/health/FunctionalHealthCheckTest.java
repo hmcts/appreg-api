@@ -17,24 +17,24 @@ import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
  * profile.
  */
 @ActiveProfiles({"functional", "int"})
-public class FunctionalHealthCheckTest extends BasePostgresIntegrationTest {
+class FunctionalHealthCheckTest extends BasePostgresIntegrationTest {
 
     @Autowired protected RestAssuredClient restAssuredClient;
 
     @BeforeAll
-    public static void before() {
+    static void before() {
         // stop so that when started functional data is inserted
         postgresCommand.stop();
     }
 
     @AfterAll
-    public static void after() {
+    static void after() {
         // stop so that other tests can start using default profile testing profile data.
         postgresCommand.stop();
     }
 
     @Test
-    public void healthCheck() throws Exception {
+    void healthCheck() throws Exception {
         Response response =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl("health"),

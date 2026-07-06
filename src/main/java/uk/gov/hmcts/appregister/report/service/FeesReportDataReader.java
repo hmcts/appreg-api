@@ -98,41 +98,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     )
                     -- Maintains legacy MIS Fees report AR5-7 location semantics.
                     AND (
-                        (
-                            :cjaCode IS NOT NULL
-                            AND UPPER(b.cja_code) = UPPER(:cjaCode)
-                            AND UPPER(b.other_courthouse)
-                                LIKE '%' || UPPER(:otherCourthouse) || '%'
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND (
-                                UPPER(b.other_courthouse)
-                                    LIKE '%' || UPPER(:otherCourthouse) || '%'
-                                OR :otherCourthouse IS NULL
-                            )
-                            AND (
-                                UPPER(b.courthouse_code)
-                                    LIKE '%' || UPPER(:courthouseCode) || '%'
-                                OR :courthouseCode IS NULL
-                            )
-                        )
-                        OR (
-                            :cjaCode IS NOT NULL
-                            AND (
-                                UPPER(SUBSTRING(b.courthouse_code FROM 2 FOR 2))
-                                    = UPPER(:cjaCode)
-                                OR UPPER(b.cja_code) = UPPER(:cjaCode)
-                            )
-                            AND :otherCourthouse IS NULL
-                            AND :courthouseCode IS NULL
-                        )
-                        OR (
-                            :cjaCode IS NULL
-                            AND :otherCourthouse IS NULL
-                            AND :courthouseCode IS NULL
-                        )
+                        {{LEGACY_LOCATION_PREDICATE}}
                     )
                     AND EXISTS (
                         SELECT 1
@@ -219,13 +185,24 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                 ON lfs.alefs_ale_id = fa.ale_id
                 AND lfs.rn = 1
             ORDER BY fa.application_list_date DESC, fa.ale_id DESC
-            """;
+            """
+                    .replace(
+                            "{{LEGACY_LOCATION_PREDICATE}}",
+                            LegacyMisReportLocationSql.predicate(
+                                    "b.courthouse_code",
+                                    "b.other_courthouse",
+                                    "b.cja_code",
+                                    "otherCourthouse"));
 
     private static final RowMapper<FeesReportRow> ROW_MAPPER = new FeesReportRowMapper();
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final FeesReportFilterDto filter;
     private final String schema;
+
+    FeesReportFilterDto filter() {
+        return filter;
+    }
 
     FeesReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate, FeesReportFilterDto filter, String schema) {

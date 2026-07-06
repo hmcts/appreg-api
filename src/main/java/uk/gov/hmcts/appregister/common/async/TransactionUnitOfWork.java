@@ -14,13 +14,12 @@ public class TransactionUnitOfWork {
         runnable.run();
     }
 
-    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     @Transactional
     public <T> T inTransaction(Supplier<T> supplier) {
         try {
             return supplier.get();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

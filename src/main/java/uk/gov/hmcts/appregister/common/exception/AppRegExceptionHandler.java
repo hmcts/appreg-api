@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
@@ -16,6 +17,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -34,7 +37,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 
 @Slf4j
@@ -44,6 +49,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
     private static final String UNKNOWN_FIELD = "unknown field";
+    private static final String ACTIVITY_TYPES_FIELD = "activityTypes";
+    private static final String ACTIVITY_TYPES_REQUIRED_MESSAGE =
+            "At least 1 activity must be provided";
+    private static final Set<String> ACTIVITY_TYPES_REQUIRED_ERROR_CODES =
+            Set.of("NotNull", "NotEmpty", "Size");
 
     private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
@@ -113,18 +123,23 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             ConstraintViolationException ex) {
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
 
-        problemDetail.setDetail("Constraints failed for fields:" + System.lineSeparator());
-
-        // add the failure specifics to the problem detail properties
-        for (ConstraintViolation<?> fieldError : ex.getConstraintViolations()) {
+        if (ex.getConstraintViolations().isEmpty()) {
+            problemDetail.setDetail(ex.getMessage() != null ? ex.getMessage() : "");
+        } else {
+            String constraintDetail =
+                    ex.getConstraintViolations().stream()
+                            .sorted(
+                                    Comparator.comparing(
+                                            fieldError -> fieldError.getPropertyPath().toString()))
+                            .map(
+                                    fieldError ->
+                                            fieldError.getPropertyPath()
+                                                    + "="
+                                                    + fieldError.getMessage())
+                            .collect(Collectors.joining(System.lineSeparator()));
             problemDetail.setDetail(
-                    problemDetail.getDetail()
-                            + fieldError.getPropertyPath()
-                            + "="
-                            + fieldError.getMessage());
+                    "Constraints failed for fields:" + System.lineSeparator() + constraintDetail);
         }
-
-        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
         logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
@@ -143,7 +158,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -159,27 +174,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getBindingResult().getFieldErrors().stream()
                 .sorted(Comparator.comparing(FieldError::getField))
                 .forEach(
-                        fieldError -> {
-                            if (fieldError.getCode() == null
-                                    || !fieldError.getCode().contains("typeMismatch")) {
-                                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-                            } else if (WHOLE_NUMBER_FIELDS.contains(fieldError.getField())) {
+                        fieldError ->
                                 errors.put(
-                                        fieldError.getField(),
-                                        "Please ensure %s is a whole number"
-                                                .formatted(fieldError.getField()));
-                            } else if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
-                                errors.put(
-                                        fieldError.getField(),
-                                        "Please ensure %s is a valid boolean value"
-                                                .formatted(fieldError.getField()));
-                            } else {
-                                errors.put(
-                                        fieldError.getField(),
-                                        "Please ensure that any times are in the format HH:mm and dates are in the"
-                                                + " format yyyy-MM-dd");
-                            }
-                        });
+                                        fieldError.getField(), getFieldErrorMessage(fieldError)));
 
         problemDetail.setProperty("errors", errors);
         logExpectedClientError(
@@ -188,8 +185,49 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
 
+    private String getFieldErrorMessage(FieldError fieldError) {
+        if (isActivityTypesRequiredError(fieldError)) {
+            return ACTIVITY_TYPES_REQUIRED_MESSAGE;
+        }
+
+        if (!isTypeMismatch(fieldError)) {
+            return fieldError.getDefaultMessage();
+        }
+
+        if (WHOLE_NUMBER_FIELDS.contains(fieldError.getField())) {
+            return "Please ensure %s is a whole number".formatted(fieldError.getField());
+        }
+
+        if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
+            return "Please ensure %s is a valid boolean value".formatted(fieldError.getField());
+        }
+
+        return "Please ensure that any times are in the format HH:mm and dates are in the"
+                + " format yyyy-MM-dd";
+    }
+
+    private boolean isActivityTypesRequiredError(FieldError fieldError) {
+        return ACTIVITY_TYPES_FIELD.equals(fieldError.getField())
+                && ACTIVITY_TYPES_REQUIRED_ERROR_CODES.contains(getPrimaryErrorCode(fieldError));
+    }
+
+    private boolean isTypeMismatch(FieldError fieldError) {
+        String code = fieldError.getCode();
+        return code != null && code.contains("typeMismatch");
+    }
+
+    private String getPrimaryErrorCode(FieldError fieldError) {
+        String code = fieldError.getCode();
+        if (code == null) {
+            return "";
+        }
+
+        int delimiterIndex = code.indexOf('.');
+        return delimiterIndex < 0 ? code : code.substring(0, delimiterIndex);
+    }
+
     @Override
-    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+    protected @Nullable ResponseEntity<@NonNull Object> handleHandlerMethodValidationException(
             HandlerMethodValidationException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -199,7 +237,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodValidationException(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMethodValidationException(
             MethodValidationException ex,
             HttpHeaders headers,
             HttpStatus status,
@@ -209,13 +247,15 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+    protected @Nullable ResponseEntity<@NonNull Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        UnrecognizedPropertyException unrecognizedPropertyException =
+                findCause(ex, UnrecognizedPropertyException.class);
         ValueInstantiationException valueInstantiationException =
                 findCause(ex, ValueInstantiationException.class);
 
@@ -226,16 +266,19 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(dateException.getMessage());
         } else if (isEnumInstantiationProblem(valueInstantiationException)) {
             problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
+        } else if (unrecognizedPropertyException != null) {
+            problemDetail.setDetail(
+                    "Unsupported request field: " + getJsonPath(unrecognizedPropertyException));
         } else if (invalidFormatException != null) {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
                             .formatted(
-                                    !invalidFormatException.getPath().isEmpty()
-                                            ? invalidFormatException
+                                    invalidFormatException.getPath().isEmpty()
+                                            ? UNKNOWN_FIELD
+                                            : invalidFormatException
                                                     .getPath()
                                                     .getFirst()
-                                                    .getFieldName()
-                                            : UNKNOWN_FIELD));
+                                                    .getFieldName()));
         } else {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
@@ -263,6 +306,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private String getJsonPath(ValueInstantiationException exception) {
+        return getJsonPath((JsonMappingException) exception);
+    }
+
+    private String getJsonPath(JsonMappingException exception) {
         if (exception.getPath().isEmpty()) {
             return UNKNOWN_FIELD;
         }
@@ -271,11 +318,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         for (var reference : exception.getPath()) {
             if (reference.getFieldName() != null) {
                 if (!path.isEmpty()) {
-                    path.append(".");
+                    path.append('.');
                 }
                 path.append(reference.getFieldName());
             } else if (reference.getIndex() >= 0) {
-                path.append("[").append(reference.getIndex()).append("]");
+                path.append('[').append(reference.getIndex()).append(']');
             }
         }
 
@@ -283,7 +330,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleMissingServletRequestParameter(
+    protected @Nullable ResponseEntity<@NonNull Object> handleMissingServletRequestParameter(
             MissingServletRequestParameterException ex,
             HttpHeaders headers,
             HttpStatusCode status,
@@ -294,6 +341,23 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         logExpectedClientError(resolveStatusCode(status, problemDetail), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<@NonNull Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        ResponseEntity<ProblemDetail> response =
+                handleAppRegisterApiException(
+                        new AppRegistryException(
+                                AppListEntryError.BULK_UPLOAD_FILE_TOO_LARGE,
+                                "Uploaded file exceeded the configured maximum size",
+                                ex));
+
+        return new ResponseEntity<>(
+                response.getBody(), response.getHeaders(), response.getStatusCode());
     }
 
     /**

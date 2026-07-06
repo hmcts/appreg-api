@@ -4,6 +4,10 @@ package uk.gov.hmcts.appregister.common.security;
  * The representation of all accepted role names for authorisation purposes.
  */
 public class RoleNames {
+    private RoleNames() {
+        // Utility class
+    }
+
     public static final String ADMIN_ROLE = "admin";
     public static final String ADMIN_ROLE_RESTRICTION = "hasRole('admin')";
 

@@ -25,8 +25,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationEntryResultControllerUpdateTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Update Application List Entry Result: 200 when valid request + If-Match matches")
@@ -182,7 +181,7 @@ public class ApplicationEntryResultControllerUpdateTest
         Response resp =
                 updateResult(listId, entryId, resultId, getToken(), payload, "\"any-etag\"");
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -231,7 +230,51 @@ public class ApplicationEntryResultControllerUpdateTest
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 404 when result does not exist")
+    void givenMissingResult_whenUpdate_then404() throws Exception {
+        var existingResult = givenExistingEntryResult();
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+                updateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        UUID.randomUUID(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST.getCode(),
+                resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 409 when result belongs to different entry")
+    void givenResultBelongsToDifferentEntry_whenUpdate_then409() throws Exception {
+        var existingResult = givenExistingEntryResult();
+        var otherEntry = createEntry(existingResult.list());
+        persistance.save(otherEntry);
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+                updateResult(
+                        existingResult.list().getUuid(),
+                        otherEntry.getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY.getCode(),
+                resp);
     }
 
     @Test
@@ -263,7 +306,7 @@ public class ApplicationEntryResultControllerUpdateTest
     void givenMultipleActiveResolutionCodes_whenUpdate_thenPrefersNullEndDate() throws Exception {
         var existingResult = givenExistingEntryResult();
         String currentEtag = EtagUtil.generateEtag(List.of(existingResult.entryResult()));
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
         saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));

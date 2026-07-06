@@ -18,11 +18,12 @@ public class BulkUploadError {
     @Override
     public String toString() {
         StringBuilder error =
-                new StringBuilder("Row ")
+                new StringBuilder(30)
+                        .append("Row ")
                         .append(rowNumber)
                         .append(" [")
                         .append(location)
-                        .append("]");
+                        .append(']');
 
         if (rejectedValue != null) {
             error.append(" rejected value [").append(rejectedValue).append("]");

@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -15,13 +15,18 @@ import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPE
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,9 +41,9 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationListCreateValidatorTest {
+class ApplicationListCreateValidatorTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
@@ -214,6 +219,35 @@ public class ApplicationListCreateValidatorTest {
         assertDoesNotThrow(() -> validator.validate(appList));
     }
 
+    @ParameterizedTest
+    @MethodSource("invalidLocationCombinations")
+    void create_invalidLocationCombinations_throwInvalidLocationCombination(Field... fields) {
+        var appList = buildDto(fields);
+
+        var ex = assertThrows(AppRegistryException.class, () -> validator.validate(appList));
+
+        assertEquals(ApplicationListError.INVALID_LOCATION_COMBINATION, ex.getCode());
+    }
+
+    @Test
+    void create_trimsCourtCodeBeforeLookup() {
+        var appList = buildDto(Field.COURT);
+        appList.setCourtLocationCode(" COURT-123 ");
+        when(courtHouseRepository.findActiveCourts("COURT-123", TODAY_UK))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        assertDoesNotThrow(() -> validator.validate(appList));
+    }
+
+    @Test
+    void create_trimsCjaCodeBeforeLookup() {
+        var appList = buildDto(Field.CJA, Field.OTHER);
+        appList.setCjaCode(" CJA-123 ");
+        when(cjaRepository.findByCode("CJA-123")).thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(appList));
+    }
+
     // ---- TESTS ----
     @Nested
     class ValidCombinations {
@@ -286,5 +320,15 @@ public class ApplicationListCreateValidatorTest {
             var dto = buildDto(Field.COURT, Field.CJA, Field.OTHER);
             assertThrows(AppRegistryException.class, () -> validator.validate(dto));
         }
+    }
+
+    private static Stream<Arguments> invalidLocationCombinations() {
+        return Stream.of(
+                Arguments.of((Object) new Field[] {}),
+                Arguments.of((Object) new Field[] {Field.CJA}),
+                Arguments.of((Object) new Field[] {Field.OTHER}),
+                Arguments.of((Object) new Field[] {Field.COURT, Field.CJA}),
+                Arguments.of((Object) new Field[] {Field.COURT, Field.OTHER}),
+                Arguments.of((Object) new Field[] {Field.COURT, Field.CJA, Field.OTHER}));
     }
 }

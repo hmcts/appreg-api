@@ -38,7 +38,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     FEE_NOT_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "The code does not require a fee", "ALE-7")),
+                    HttpStatus.BAD_REQUEST, "The code does not allow a fee", "ALE-7")),
 
     BULK_RESPONDENT_NOT_EXPECTED(
             DefaultErrorDetail.create(
@@ -56,7 +56,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     APPLICATION_LIST_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT, "The application list does not exist", "ALE-11")),
+                    HttpStatus.NOT_FOUND, "The application list does not exist", "ALE-11")),
 
     APPLICATION_LIST_STATE_IS_INCORRECT(
             DefaultErrorDetail.create(
@@ -76,7 +76,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     ENTRY_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT, "Application entry does not exist", "ALE-15")),
+                    HttpStatus.NOT_FOUND, "Application entry does not exist", "ALE-15")),
 
     ENTRY_IS_NOT_WITHIN_LIST(
             DefaultErrorDetail.create(
@@ -216,7 +216,22 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     OFFICIAL_SURNAME_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44"));
+                    HttpStatus.BAD_REQUEST, "Official surname must be provided", "ALE-44")),
+
+    APPLICATION_LIST_MUST_BE_CLOSED(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT, "The application list must be closed", "ALE-45")),
+
+    NOTES_TOO_LONG(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Notes must not be longer than 4000 characters",
+                    "ALE-46")),
+    BULK_UPLOAD_FILE_TOO_LARGE(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONTENT_TOO_LARGE,
+                    "Uploaded file must not be larger than 5MB",
+                    "ALE-47"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.common.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum YesOrNo {
     YES("Y"),
     NO("N");
@@ -8,10 +11,6 @@ public enum YesOrNo {
 
     YesOrNo(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     public static YesOrNo fromValue(String value) {

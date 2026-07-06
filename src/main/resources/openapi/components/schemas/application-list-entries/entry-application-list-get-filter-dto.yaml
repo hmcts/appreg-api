@@ -48,7 +48,7 @@ properties:
   feeRequired:
     type: boolean
     description: Whether a fee is required for the application. This has to be Exact.
-    example: "Y"
+    example: true
 
   resulted:
     type: string

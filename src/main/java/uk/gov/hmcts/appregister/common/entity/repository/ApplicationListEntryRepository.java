@@ -25,12 +25,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
-    interface ApplicationCodeReferenceCount {
-        Long getApplicationCodeId();
-
-        long getReferenceCount();
-    }
-
     /**
      * Find an ApplicationList entity by its ID and associated user.
      *
@@ -89,16 +83,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *     value
      */
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
-
-    @Query(
-            """
-        SELECT ale.applicationCode.id AS applicationCodeId, COUNT(ale) AS referenceCount
-        FROM ApplicationListEntry ale
-        WHERE ale.applicationCode.id IN :applicationCodeIds
-        GROUP BY ale.applicationCode.id
-        """)
-    List<ApplicationCodeReferenceCount> countByApplicationCodeIds(
-            @Param("applicationCodeIds") Collection<Long> applicationCodeIds);
 
     /**
      * Retrieves paginated list of entry summaries for a given application list.

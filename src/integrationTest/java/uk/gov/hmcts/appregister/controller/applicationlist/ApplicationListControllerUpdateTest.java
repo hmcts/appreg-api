@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
+class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
 
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
@@ -82,8 +82,6 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
         assertThat(dto.getCourtName()).isEqualTo(VALID_COURT_NAME);
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-        assertThat(dto.getEntriesSummary()).isNotNull();
-
         String eventName = "Create Application List";
         String operation = "CREATE";
 
@@ -195,8 +193,6 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
         assertThat(dto.getOtherLocationDescription()).isEqualTo(VALID_OTHER_LOCATION);
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
-        assertThat(dto.getEntriesSummary()).isNotNull();
-
         String eventName = "Create Application List";
         String operation = "CREATE";
 
@@ -563,8 +559,9 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
-        courtLocationGetDetailDto.setStartDate(LocalDate.now());
-        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        courtLocationGetDetailDto.setEndDate(
+                JsonNullable.of(LocalDate.now(java.time.ZoneOffset.UTC)));
         courtLocationGetDetailDto.setName("Manchester Crown Court");
 
         String[] createdLocation = createAppListUsingRestApi();
@@ -814,8 +811,9 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
 
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
-        courtLocationGetDetailDto.setStartDate(LocalDate.now());
-        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setStartDate(LocalDate.now(java.time.ZoneOffset.UTC));
+        courtLocationGetDetailDto.setEndDate(
+                JsonNullable.of(LocalDate.now(java.time.ZoneOffset.UTC)));
         courtLocationGetDetailDto.setName("Manchester Crown Court");
         var req =
                 new ApplicationListUpdateDto()
@@ -858,16 +856,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
         assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-        assertThat(dto.getEntriesSummary()).hasSize(4);
-        assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
-                .isEqualTo("Copy documents");
-        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("AUTH");
-        assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
-                .isEqualTo("Copy documents (electronic)");
-        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
-                .isEqualTo("Extract from the Court Register");
-        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
-                .isEqualTo("Certificate of Satisfaction");
+        assertThat(dto.getEntriesCount()).isEqualTo(4);
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -997,7 +986,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenValidRequest_whenUpdateForClose_then200() throws Exception {
+    void givenValidRequest_whenUpdateForClose_then200() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1035,7 +1024,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation =
                 createAppListUsingRestApi((dto) -> dto.durationHours(0).durationMinutes(0));
 
@@ -1070,7 +1059,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNoResultEntries_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNoResultEntries_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1100,7 +1089,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNoOfficials_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNoOfficials_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1136,7 +1125,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenInvalidRequestNotPaid_whenUpdateForClose_then400() throws Exception {
+    void givenInvalidRequestNotPaid_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1145,7 +1134,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
                         (dto) -> {
                             FeeStatus feeStatus = new FeeStatus();
-                            feeStatus.setStatusDate(LocalDate.now());
+                            feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
 
                             // not paid so should fail
                             feeStatus.setPaymentStatus(PaymentStatus.UNDERTAKEN);
@@ -1179,7 +1168,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenRemittedFee_whenUpdateForClose_then200() throws Exception {
+    void givenRemittedFee_whenUpdateForClose_then200() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry with a REMITTED fee status
@@ -1188,7 +1177,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
                         (dto) -> {
                             FeeStatus feeStatus = new FeeStatus();
-                            feeStatus.setStatusDate(LocalDate.now());
+                            feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
                             // set to REMITTED so the list can be closed
                             feeStatus.setPaymentStatus(PaymentStatus.REMITTED);
                             dto.setFeeStatuses(List.of(feeStatus));
@@ -1459,7 +1448,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     }
 
     @Test
-    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
+    void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
         var token = getToken();
 
         // create list

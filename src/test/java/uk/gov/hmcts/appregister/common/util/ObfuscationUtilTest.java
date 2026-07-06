@@ -1,31 +1,44 @@
 package uk.gov.hmcts.appregister.common.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintSearchCriteriaDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.report.service.ReportDownload;
 
-public class ObfuscationUtilTest {
+class ObfuscationUtilTest {
 
     @Test
-    public void testObfuscationAppListEntity() {
+    void testObfuscationAppListEntity() {
         AppListEntryTestData appListEntryTestData = new AppListEntryTestData();
         Assertions.assertEquals(
                 2,
@@ -35,7 +48,7 @@ public class ObfuscationUtilTest {
     }
 
     @Test
-    public void testObfuscationNameAddress() {
+    void testObfuscationNameAddress() {
         NameAddress nameAddress = new NameAddress();
         Assertions.assertEquals(
                 1,
@@ -44,7 +57,7 @@ public class ObfuscationUtilTest {
     }
 
     @Test
-    public void testObfuscationEntryGetDetailDto() {
+    void testObfuscationEntryGetDetailDto() {
         EntryGetDetailDto entryGetDetailDto = Instancio.of(EntryGetDetailDto.class).create();
         Assertions.assertEquals(
                 1,
@@ -53,7 +66,7 @@ public class ObfuscationUtilTest {
     }
 
     @Test
-    public void testObfuscationEntryPage() {
+    void testObfuscationEntryPage() {
         EntryPage entryPage = Instancio.of(EntryPage.class).create();
 
         EntryGetSummaryDto entryGetSummaryDto = entryPage.getContent().get(0);
@@ -63,14 +76,15 @@ public class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(entryPage);
 
-        Assertions.assertFalse(obfuscated.contains("ACC-12345"));
-        Assertions.assertTrue(obfuscated.contains("\"applicant\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"respondent\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"accountNumber\":\"[REDACTED]\""));
+        assertThat(obfuscated)
+                .doesNotContain("ACC-12345")
+                .contains("\"applicant\":\"[REDACTED]\"")
+                .contains("\"respondent\":\"[REDACTED]\"")
+                .contains("\"accountNumber\":\"[REDACTED]\"");
     }
 
     @Test
-    public void testObfuscationStandardApplicantGetSummaryDto() {
+    void testObfuscationStandardApplicantGetSummaryDto() {
         StandardApplicantGetSummaryDto standardApplicantGetSummaryDto =
                 Instancio.of(StandardApplicantGetSummaryDto.class).create();
         Assertions.assertEquals(
@@ -81,7 +95,7 @@ public class ObfuscationUtilTest {
     }
 
     @Test
-    public void testObfuscationEntryGetPrintDto() {
+    void testObfuscationEntryGetPrintDto() {
         EntryGetPrintDto entryGetPrintDto = Instancio.of(EntryGetPrintDto.class).create();
 
         Assertions.assertEquals(
@@ -91,51 +105,11 @@ public class ObfuscationUtilTest {
     }
 
     @Test
-    public void testObfuscationApplicationListEntrySummary() {
-        ApplicationListEntrySummary summary =
-                new ApplicationListEntrySummary()
-                        .uuid(UUID.randomUUID())
-                        .sequenceNumber(42)
-                        .accountNumber("ACC-12345")
-                        .applicant("Applicant Name")
-                        .respondent("Respondent Name")
-                        .postCode("SW1A 2AA")
-                        .applicationTitle("Application title")
-                        .feeRequired(true)
-                        .result("Granted");
-
-        String obfuscated = ObfuscationUtil.getObfuscatedString(summary);
-
-        Assertions.assertFalse(obfuscated.contains("ACC-12345"));
-        Assertions.assertFalse(obfuscated.contains("Applicant Name"));
-        Assertions.assertFalse(obfuscated.contains("Respondent Name"));
-        Assertions.assertFalse(obfuscated.contains("SW1A 2AA"));
-
-        Assertions.assertTrue(obfuscated.contains("\"accountNumber\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"applicant\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"respondent\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"postCode\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"applicationTitle\":\"Application title\""));
-    }
-
-    @Test
-    public void testObfuscationApplicationListGetDetailDto() {
-        ApplicationListEntrySummary summary =
-                new ApplicationListEntrySummary()
-                        .uuid(UUID.randomUUID())
-                        .sequenceNumber(7)
-                        .accountNumber("ACC-67890")
-                        .applicant("Jane Applicant")
-                        .respondent("John Respondent")
-                        .postCode("EC1A 1BB")
-                        .applicationTitle("Detailed title")
-                        .feeRequired(false)
-                        .result("Refused");
-
+    void testObfuscationApplicationListGetDetailDto() {
         ApplicationListGetDetailDto dto =
                 new ApplicationListGetDetailDto()
                         .id(UUID.randomUUID())
-                        .date(LocalDate.of(2026, 5, 26))
+                        .date(LocalDate.of(2026, Month.MAY, 26))
                         .time(LocalTime.of(10, 30))
                         .description("Morning list")
                         .status(ApplicationListStatus.OPEN)
@@ -146,26 +120,21 @@ public class ObfuscationUtilTest {
                         .durationHours(2)
                         .durationMinutes(15)
                         .version(3L)
-                        .entriesCount(1)
-                        .entriesSummary(List.of(summary));
+                        .entriesCount(1);
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
 
-        Assertions.assertFalse(obfuscated.contains("ACC-67890"));
-        Assertions.assertFalse(obfuscated.contains("Jane Applicant"));
-        Assertions.assertFalse(obfuscated.contains("John Respondent"));
-        Assertions.assertFalse(obfuscated.contains("EC1A 1BB"));
-
-        Assertions.assertTrue(obfuscated.contains("\"description\":\"Morning list\""));
-        Assertions.assertTrue(obfuscated.contains("\"entriesSummary\""));
-        Assertions.assertTrue(obfuscated.contains("\"accountNumber\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"applicant\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"respondent\":\"[REDACTED]\""));
-        Assertions.assertTrue(obfuscated.contains("\"postCode\":\"[REDACTED]\""));
+        assertThat(obfuscated)
+                .doesNotContain("ACC-67890")
+                .doesNotContain("Jane Applicant")
+                .doesNotContain("John Respondent")
+                .doesNotContain("EC1A 1BB")
+                .contains("\"description\":\"Morning list\"")
+                .doesNotContain("\"entriesSummary\"");
     }
 
     @Test
-    public void testObfuscationResultGetDto() {
+    void testObfuscationResultGetDto() {
         ResultGetDto resultGetDto =
                 new ResultGetDto()
                         .id(UUID.randomUUID())
@@ -175,13 +144,14 @@ public class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(resultGetDto);
 
-        Assertions.assertTrue(obfuscated.contains("\"resultCode\":\"RC-001\""));
-        Assertions.assertTrue(obfuscated.contains("\"entryId\""));
-        Assertions.assertTrue(obfuscated.contains("\"wording\""));
+        assertThat(obfuscated)
+                .contains("\"resultCode\":\"RC-001\"")
+                .contains("\"entryId\"")
+                .contains("\"wording\"");
     }
 
     @Test
-    public void testObfuscationResultPage() {
+    void testObfuscationResultPage() {
         ResultGetDto resultGetDto =
                 new ResultGetDto()
                         .id(UUID.randomUUID())
@@ -202,9 +172,161 @@ public class ObfuscationUtilTest {
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(resultPage);
 
-        Assertions.assertTrue(obfuscated.contains("\"content\""));
-        Assertions.assertTrue(obfuscated.contains("\"resultCode\":\"RC-002\""));
-        Assertions.assertTrue(obfuscated.contains("\"pageNumber\":0"));
-        Assertions.assertTrue(obfuscated.contains("\"totalElements\":1"));
+        assertThat(obfuscated)
+                .contains("\"content\"")
+                .contains("\"resultCode\":\"RC-002\"")
+                .contains("\"pageNumber\":0")
+                .contains("\"totalElements\":1");
+    }
+
+    @Test
+    void testObfuscationFeesReportFilterDto() {
+        String standardApplicantCode = "STD-00123";
+        String applicantName = "john smith";
+
+        FeesReportFilterDto filterDto =
+                new FeesReportFilterDto()
+                        .standardApplicantCode(standardApplicantCode)
+                        .applicantName(applicantName)
+                        .location(null);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+
+        assertThat(obfuscated)
+                .doesNotContain(standardApplicantCode)
+                .doesNotContain(applicantName)
+                .contains("\"standardApplicantCode\":\"[REDACTED]\"")
+                .contains("\"applicantName\":\"[REDACTED]\"");
+    }
+
+    @Test
+    void testObfuscationFeesReportFilterDtoRequiredOnly() {
+        var today = LocalDate.of(2026, Month.JUNE, 17);
+        FeesReportFilterDto filterDto = new FeesReportFilterDto().dateTo(today).dateFrom(today);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+        assertThat(obfuscated)
+                .contains("\"dateTo\":" + formatter.format(today))
+                .contains("\"dateFrom\":" + formatter.format(today))
+                .doesNotContain("\"standardApplicantCode\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantName\":\"[REDACTED]\"")
+                .doesNotContain("\"location\"");
+    }
+
+    @Test
+    void testObfuscationPrivateProsecutorIndexFilterDto() {
+        String standardApplicantName = "Test Standard Applicant";
+        String applicantFirstName = "john";
+        String applicantSurname = "smith";
+        String applicantOrganisationName = "Acme Corp";
+        String respondentFirstName = "jane";
+        String respondentSurname = "doe";
+        String respondentOrganisationName = "Beta Ltd";
+
+        PrivateProsecutorsIndexFilterDto filterDto =
+                new PrivateProsecutorsIndexFilterDto()
+                        .standardApplicantName(standardApplicantName)
+                        .applicantSurname(applicantSurname)
+                        .applicantFirstName(applicantFirstName)
+                        .applicantOrganisationName(applicantOrganisationName)
+                        .respondentSurname(respondentSurname)
+                        .respondentFirstName(respondentFirstName)
+                        .respondentOrganisationName(respondentOrganisationName)
+                        .location(null);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+
+        assertThat(obfuscated)
+                .doesNotContain(standardApplicantName)
+                .doesNotContain(applicantFirstName)
+                .doesNotContain(applicantSurname)
+                .doesNotContain(applicantOrganisationName)
+                .doesNotContain(respondentSurname)
+                .doesNotContain(respondentFirstName)
+                .doesNotContain(respondentOrganisationName)
+                .doesNotContain("location")
+                .contains("\"standardApplicantName\":\"[REDACTED]\"")
+                .contains("\"applicantFirstName\":\"[REDACTED]\"")
+                .contains("\"applicantSurname\":\"[REDACTED]\"")
+                .contains("\"applicantOrganisationName\":\"[REDACTED]\"")
+                .contains("\"respondentFirstname\":\"[REDACTED]\"")
+                .contains("\"respondentSurname\":\"[REDACTED]\"")
+                .contains("\"respondentOrganisationName\":\"[REDACTED]\"")
+                .doesNotContain("\"location\"");
+    }
+
+    @Test
+    void testObfuscationPrivateProsecutorIndexFilterDtoRequiredOnly() {
+        var today = LocalDate.of(2026, Month.JUNE, 17);
+        PrivateProsecutorsIndexFilterDto filterDto =
+                new PrivateProsecutorsIndexFilterDto().dateTo(today).dateFrom(today);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'['yyyy,M,dd']'");
+        String obfuscated = ObfuscationUtil.getObfuscatedString(filterDto);
+        assertThat(obfuscated)
+                .contains("\"dateTo\":" + formatter.format(today))
+                .contains("\"dateFrom\":" + formatter.format(today))
+                .doesNotContain("\"standardApplicantName\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantFirstName\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantSurname\":\"[REDACTED]\"")
+                .doesNotContain("\"applicantOrganisationName\":\"[REDACTED]\"")
+                .doesNotContain("\"respondentFirstname\":\"[REDACTED]\"")
+                .doesNotContain("\"respondentSurname\":\"[REDACTED]\"")
+                .doesNotContain("\"respondentOrganisationName\":\"[REDACTED]\"")
+                .doesNotContain("\"location\"");
+    }
+
+    @Test
+    void testObfuscationReportDownloadDoesNotConsumeStream() throws Exception {
+        var resource =
+                new InputStreamResource(
+                        new ByteArrayInputStream("report".getBytes(StandardCharsets.UTF_8)));
+        var reportDownload = new ReportDownload("report.csv", resource);
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(reportDownload);
+
+        assertThat(obfuscated)
+                .contains("\"filename\":\"report.csv\"")
+                .contains("\"resource\":\"[REDACTED]\"");
+        Assertions.assertArrayEquals(
+                "report".getBytes(StandardCharsets.UTF_8),
+                resource.getInputStream().readAllBytes());
+    }
+
+    @Test
+    void testObfuscationStandardApplicantPrintDto() {
+        var dto =
+                new StandardApplicantPrintDto()
+                        .reportTitle("Standard Applicants Report")
+                        .generatedAt(OffsetDateTime.parse("2026-06-29T10:00:00Z"))
+                        .recordCount(1)
+                        .searchCriteria(
+                                new StandardApplicantPrintSearchCriteriaDto()
+                                        .code("STD001")
+                                        .name("Jane Applicant")
+                                        .from(LocalDate.of(2026, Month.JANUARY, 1))
+                                        .to(LocalDate.of(2026, Month.DECEMBER, 31)))
+                        .applicants(
+                                List.of(
+                                        new StandardApplicantPrintRowDto()
+                                                .code("STD001")
+                                                .name("Jane Applicant")
+                                                .addressLine1("1 Secret Street")
+                                                .emailAddress("jane@example.com")
+                                                .telephoneNumber("01234567890")
+                                                .mobileNumber("07700900123")));
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
+
+        assertThat(obfuscated)
+                .contains("\"reportTitle\":\"Standard Applicants Report\"")
+                .contains("\"recordCount\":1")
+                .contains("\"searchCriteria\":\"[REDACTED]\"")
+                .contains("\"applicants\":\"[REDACTED]\"")
+                .doesNotContain("STD001")
+                .doesNotContain("Jane Applicant")
+                .doesNotContain("1 Secret Street")
+                .doesNotContain("jane@example.com")
+                .doesNotContain("01234567890")
+                .doesNotContain("07700900123");
     }
 }

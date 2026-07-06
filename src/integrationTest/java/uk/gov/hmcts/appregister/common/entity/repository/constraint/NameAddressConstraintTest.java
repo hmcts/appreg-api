@@ -14,11 +14,11 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
  * Tests the database constraints for {@link uk.gov.hmcts.appregister.common.entity.NameAddress}.
  * See {@link uk.gov.hmcts.appregister.common.entity.constraint.NameAddressValidator}
  */
-public class NameAddressConstraintTest extends BaseRepositoryTest {
+class NameAddressConstraintTest extends BaseRepositoryTest {
     @Autowired private NameAddressRepository nameAddressRepository;
 
     @Test
-    public void testOrganisationWithForenameFailure() {
+    void testOrganisationWithForenameFailure() {
         NameAddress nameAddress = new NameAddressTestData().someComplete();
         nameAddress.setName("Test Name");
         nameAddress.setFirstName("Test Forename");

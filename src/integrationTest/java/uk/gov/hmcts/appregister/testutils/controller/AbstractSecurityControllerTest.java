@@ -26,7 +26,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
-    public void givenValidRequest_whenCalledWithAnExpiredToken_thenReturn401(
+    void givenValidRequest_whenCalledWithAnExpiredToken_thenReturn401(
             RestEndpointDescription restEndpointDescription) throws Exception {
         restEndpointDescription
                 .process(
@@ -44,7 +44,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
-    public void givenValidRequest_whenCalledWithAnInvalidSignature_thenReturn401(
+    void givenValidRequest_whenCalledWithAnInvalidSignature_thenReturn401(
             RestEndpointDescription restEndpointDescription) throws Exception {
         restEndpointDescription
                 .process(
@@ -59,7 +59,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
-    public void givenValidRequest_whenCalledWithAnInvalidIssuer_thenReturn401(
+    void givenValidRequest_whenCalledWithAnInvalidIssuer_thenReturn401(
             RestEndpointDescription restEndpointDescription) throws Exception {
         restEndpointDescription
                 .process(
@@ -74,7 +74,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
-    public void givenValidRequest_whenCalledWithAnInvalidAudience_thenReturn401(
+    void givenValidRequest_whenCalledWithAnInvalidAudience_thenReturn401(
             RestEndpointDescription restEndpointDescription) throws Exception {
         restEndpointDescription
                 .process(
@@ -89,7 +89,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
-    public void givenValidRequest_whenGetIncorrectRole_thenReturn403(
+    void givenValidRequest_whenGetIncorrectRole_thenReturn403(
             RestEndpointDescription restEndpointDescription) throws Exception {
         restEndpointDescription
                 .process(
@@ -104,7 +104,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
-    public void givenValidRequest_whenCalledWithAnValidSignature_thenReturn200(
+    void givenValidRequest_whenCalledWithAnValidSignature_thenReturn200(
             RestEndpointDescription restEndpointDescription) throws Exception {
         restEndpointDescription
                 .process(

@@ -1,15 +1,18 @@
 package uk.gov.hmcts.appregister.resultcode.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
@@ -32,7 +35,16 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class ResultCodeMapper {
 
-    @Autowired WordingTemplateMapper wordingTemplateMapper;
+    private WordingTemplateMapper wordingTemplateMapper;
+
+    @Autowired
+    public void setWordingTemplateMapper(WordingTemplateMapper wordingTemplateMapper) {
+        this.wordingTemplateMapper = wordingTemplateMapper;
+    }
+
+    protected WordingTemplateMapper getWordingTemplateMapper() {
+        return wordingTemplateMapper;
+    }
 
     // Map a {@link ResolutionCode} entity to a full detail DTO.
     @Mapping(target = "resultCode", source = "resultCode")
@@ -42,13 +54,24 @@ public abstract class ResultCodeMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
+                    "java(getWordingTemplateMapper().getTemplateDetail("
+                            + "() -> entity.getWording(), null))")
     public abstract ResultCodeGetDetailDto toDetailDto(ResolutionCode entity);
+
+    @AfterMapping
+    protected void sanitizeDetailDto(@MappingTarget ResultCodeGetDetailDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     // Map a {@link ResolutionCode} entity to a summary DTO.
     @Mapping(target = "resultCode", source = "resultCode")
     @Mapping(target = "title", source = "title")
     public abstract ResultCodeGetSummaryDto toSummaryDto(ResolutionCode entity);
+
+    @AfterMapping
+    protected void sanitizeSummaryDto(@MappingTarget ResultCodeGetSummaryDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "resultCode", source = "code")
@@ -60,7 +83,7 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "resultCode", source = "code")
     @Mapping(target = "title", source = "title")
     @BeanMapping(ignoreByDefault = true)
-    public abstract ResolutionCode toEntity(CodeAndTitle record);
+    public abstract ResolutionCode toEntity(CodeAndTitle codeAndTitle);
 
     static JsonNullable<LocalDate> toEndDate(LocalDate value) {
         return value != null ? JsonNullable.of(value) : JsonNullable.of(null);

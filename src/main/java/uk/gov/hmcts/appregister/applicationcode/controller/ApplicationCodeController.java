@@ -61,8 +61,6 @@ public class ApplicationCodeController implements ApplicationCodesApi {
     public ResponseEntity<ApplicationCodeGetDetailDto> getApplicationCodeByCodeAndDate(
             String code, LocalDate date) {
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(date).build();
-        ResponseEntity<ApplicationCodeGetDetailDto> response =
-                ResponseEntity.ok(service.findByCode(payloadForGet));
-        return response;
+        return ResponseEntity.ok(service.findByCode(payloadForGet));
     }
 }

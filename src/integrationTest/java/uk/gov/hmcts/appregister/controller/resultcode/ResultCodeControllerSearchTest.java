@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -38,7 +39,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
+class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "result-codes";
 
@@ -51,14 +52,14 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     private static final String DUPLICATE_CODE = "DUPTST01";
     private static final String DUPLICATE_TITLE_1 = "Duplicate Entry 1";
     private static final String DUPLICATE_TITLE_2 = "Duplicate Entry 2";
-    private static final LocalDate DUPLICATE_END_DATE = LocalDate.of(2099, 1, 1);
+    private static final LocalDate DUPLICATE_END_DATE = LocalDate.of(2099, Month.JANUARY, 1);
     private static final String NULL_END_DATE_CODE = "NULEND01";
     private static final String NULL_END_DATE_TITLE = "Null End Date Result";
     private static final String SUMMARY_CODE = "PAGETST01";
     private static final String SUMMARY_TITLE = "Paged Summary Result";
 
-    private static final LocalDate SEED_START = LocalDate.of(2016, 1, 1);
-    private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, 1, 1);
+    private static final LocalDate SEED_START = LocalDate.of(2016, Month.JANUARY, 1);
+    private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, Month.JANUARY, 1);
 
     // Audit event names
     private static final String AUDIT_GET_ONE =
@@ -576,7 +577,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @StabilityTest
-    public void givenResultCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+    void givenResultCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
         for (ResultCodeSortFieldEnum resultCodeSortFieldEnum : ResultCodeSortFieldEnum.values()) {
 
@@ -737,7 +738,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))

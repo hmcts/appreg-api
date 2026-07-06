@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
@@ -47,32 +46,7 @@ public class ApplicationEntryResultUpdateValidator
     @Override
     public void validate(PayloadForUpdateEntryResult validatable) {
         super.validate(validatable, null);
-
-        Optional<AppListEntryResolution> entryResult =
-                appListEntryResultRepository.findByUuidAndApplicationList_Uuid(
-                        validatable.getResultId(), validatable.getEntryId());
-
-        if (entryResult.isEmpty()) {
-            throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
-                    ("The application entry result %s does not exist in application list %s and in application list "
-                                    + "entry %s")
-                            .formatted(
-                                    validatable.getResultId(),
-                                    getApplicationListUuid(validatable),
-                                    validatable.getEntryId()));
-        }
-
-        log.debug("application list entry result is found {}", validatable.getResultId());
-    }
-
-    @Override
-    public <R> R validate(
-            PayloadForUpdateEntryResult validatable,
-            BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
-                    validateSuccess) {
-        // Delegate to base validate which will call getResult(...) to build the success object.
-        return super.validate(validatable, validateSuccess);
+        validateEntryResult(validatable);
     }
 
     @Override
@@ -82,19 +56,7 @@ public class ApplicationEntryResultUpdateValidator
             ApplicationList applicationList,
             ApplicationListEntry applicationListEntry,
             PayloadForUpdateEntryResult payload) {
-
-        AppListEntryResolution appListEntryResult =
-                appListEntryResultRepository
-                        .findByUuidAndApplicationList_Uuid(
-                                payload.getResultId(), payload.getEntryId())
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                ApplicationListEntryResultError
-                                                        .LIST_ENTRY_RESULT_NOT_FOUND,
-                                                ("No application list entry result was found for UUID '%s' that"
-                                                                + " belongs to the specified entry")
-                                                        .formatted(payload.getResultId())));
+        AppListEntryResolution appListEntryResult = validateEntryResult(payload);
         return new ListEntryResultUpdateValidationSuccess(
                 wordingTemplateCollection,
                 code,
@@ -116,5 +78,34 @@ public class ApplicationEntryResultUpdateValidator
     @Override
     protected UUID getApplicationListEntryUuid(PayloadForUpdateEntryResult validatable) {
         return validatable.getEntryId();
+    }
+
+    private AppListEntryResolution validateEntryResult(PayloadForUpdateEntryResult validatable) {
+        Optional<AppListEntryResolution> entryResult =
+                appListEntryResultRepository.findByUuid(validatable.getResultId());
+
+        if (entryResult.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
+                    "The application entry result %s does not exist"
+                            .formatted(validatable.getResultId()));
+        }
+
+        entryResult =
+                appListEntryResultRepository.findByUuidAndApplicationList_Uuid(
+                        validatable.getResultId(), validatable.getEntryId());
+        if (entryResult.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY,
+                    ("The application entry result %s does not belong to application list %s and"
+                                    + " application list entry %s")
+                            .formatted(
+                                    validatable.getResultId(),
+                                    getApplicationListUuid(validatable),
+                                    validatable.getEntryId()));
+        }
+
+        log.debug("application list entry result is found {}", validatable.getResultId());
+        return entryResult.get();
     }
 }

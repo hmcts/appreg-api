@@ -30,5 +30,6 @@ applicationinsights-agent-*.jar
 
 /.run/
 /.gradle-home/
+/.dockerignore
 
 /*.hprof

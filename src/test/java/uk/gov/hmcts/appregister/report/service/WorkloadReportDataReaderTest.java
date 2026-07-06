@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
-public class WorkloadReportDataReaderTest {
+class WorkloadReportDataReaderTest {
     @Test
     void givenReportRowsExist_whenReadData_thenReadsPagesWithExpectedParameters() throws Exception {
         NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
@@ -69,7 +71,7 @@ public class WorkloadReportDataReaderTest {
         Assertions.assertEquals(1, pages.size());
         WorkloadReportRow row = pages.getFirst().getFirst();
 
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Test Court", row.getListCourtHouseName());
         Assertions.assertEquals("Other court", row.getListOtherLocation());
         Assertions.assertEquals("British Gas", row.getApplicantNameSurname());
@@ -84,10 +86,9 @@ public class WorkloadReportDataReaderTest {
 
     @Test
     void givenNoLocation_whenReadData_thenLocationParametersAreNull() throws IOException {
-        NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
-        JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
-        List<MapSqlParameterSource> parameterSources = new ArrayList<>();
-        List<String> queries = new ArrayList<>();
+        var jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        var rawJdbcTemplate = mock(JdbcTemplate.class);
+        var parameterSources = new ArrayList<MapSqlParameterSource>();
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
         when(jdbcTemplate.query(
@@ -96,15 +97,14 @@ public class WorkloadReportDataReaderTest {
                         ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
                 .thenAnswer(
                         invocation -> {
-                            queries.add(invocation.getArgument(0));
                             parameterSources.add(invocation.getArgument(1));
                             return List.of();
                         });
 
         WorkloadFilterDto filter =
                 new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         WorkloadReportDataReader reader =
                 new WorkloadReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<WorkloadReportRow> pageReader =
@@ -149,8 +149,8 @@ public class WorkloadReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherLocation"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
@@ -158,7 +158,8 @@ public class WorkloadReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
         }
@@ -171,17 +172,20 @@ public class WorkloadReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new WorkloadFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .location(location);
     }
 
     private void assertLegacyWorkloadsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
-        Assertions.assertTrue(normalisedQuery.contains("first_name as forename_1"));
-        Assertions.assertTrue(normalisedQuery.contains("middle_name as forename_2"));
-        Assertions.assertTrue(normalisedQuery.contains("null as forename_3"));
-        Assertions.assertTrue(normalisedQuery.contains("last_name as surname"));
+        assertThat(normalisedQuery).contains("first_name as forename_1");
+        assertThat(normalisedQuery).contains("middle_name as forename_2");
+        assertThat(normalisedQuery).contains("null as forename_3");
+        assertThat(normalisedQuery).contains("last_name as surname");
+        assertThat(normalisedQuery).contains("ROW_NUMBER() OVER");
+        assertThat(normalisedQuery)
+                .contains("(PARTITION BY ale_ale_id, official_type ORDER BY aleo_id) AS rn");
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(al.other_courthouse) "
@@ -190,8 +194,13 @@ public class WorkloadReportDataReaderTest {
                 normalisedQuery.contains(
                         "UPPER(al.courthouse_code) "
                                 + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
+        Assertions.assertTrue(normalisedQuery.contains("UPPER(cja.cja_code) = UPPER(:cjaCode)"));
         Assertions.assertTrue(
-                normalisedQuery.contains("UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%'"));
+                normalisedQuery.contains(
+                        "UPPER(SUBSTRING(al.courthouse_code FROM 2 FOR 2)) = UPPER(:cjaCode)"));
+        assertThat(normalisedQuery).contains("OR :otherLocation IS NULL");
+        assertThat(normalisedQuery).contains("AND :otherLocation IS NULL");
+        assertThat(normalisedQuery).contains("AND :courthouseCode IS NULL");
     }
 
     private ResultSet resultSet() throws Exception {

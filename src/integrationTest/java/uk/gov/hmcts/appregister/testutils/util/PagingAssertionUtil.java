@@ -8,6 +8,10 @@ import uk.gov.hmcts.appregister.generated.model.Page;
  * uk.gov.hmcts.appregister.generated.model.Page}
  */
 public class PagingAssertionUtil {
+    private PagingAssertionUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     public static void assertPageDetails(
             Page response, int pageSize, int pageNumber, int totalPages, int totalElements) {
         Assertions.assertEquals(pageSize, response.getPageSize());

@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.applicationcode.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,6 @@ import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -40,14 +39,13 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final ApplicationCodeMapper applicationCodeMapper;
     private final ApplicationFeeService feeService;
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final PageMapper pageMapper;
     private final Clock clock;
     private final ZoneId ukZone;
     private final GetApplicationCodeValidator getApplicationCodeValidator;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationCodePage findAll(
             String appCode, String appTitle, LocalDate effectiveDate, PagingWrapper pageable) {
 
@@ -58,7 +56,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
-                (req) -> {
+                req -> {
                     log.debug(
                             "Start: Find Application Codes for code: {} title: {} date: {} paging: {}",
                             appCode,
@@ -69,14 +67,24 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(
                                     appCode, appTitle, searchDate, pageable.getPageable());
+                    var feePairsByReference =
+                            feeService.resolveFeePairs(
+                                    applicationCodeList.stream()
+                                            .map(ApplicationCode::getFeeReference)
+                                            .distinct()
+                                            .toList(),
+                                    searchDate);
 
                     ApplicationCodePage newPage = new ApplicationCodePage();
                     pageMapper.toPage(applicationCodeList, newPage, pageable.getSortStrings());
+                    newPage.setContent(new ArrayList<>());
 
                     // Map each entity to a summary DTO and add to the page content
                     applicationCodeList.map(
                             code -> {
-                                FeePair feePair = feeService.resolveFeePair(code.getFeeReference());
+                                var feePair =
+                                        feePairsByReference.getOrDefault(
+                                                code.getFeeReference(), new FeePair(null, null));
 
                                 return newPage.addContentItem(
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
@@ -90,49 +98,48 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             searchDate,
                             pageable);
 
-                    CodeAndTitle record = new CodeAndTitle(appCode, appTitle);
+                    CodeAndTitle codeAndTitle = new CodeAndTitle(appCode, appTitle);
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
-                            new AuditableResult<>(newPage, applicationCodeMapper.toEntity(record));
+                            new AuditableResult<>(
+                                    newPage, applicationCodeMapper.toEntity(codeAndTitle));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet) {
         return auditService.processAudit(
                 null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                req -> {
-                    return getApplicationCodeValidator.validate(
-                            payloadForGet,
-                            (payload, success) -> {
-                                FeePair feePair =
-                                        feeService.resolveFeePair(
-                                                success.getApplicationCode().getFeeReference(),
-                                                payloadForGet.getDate());
-                                Fee offsiteFee = feePair.offsiteFee();
+                req ->
+                        getApplicationCodeValidator.validate(
+                                payloadForGet,
+                                (payload, success) -> {
+                                    FeePair feePair =
+                                            feeService.resolveFeePair(
+                                                    success.getApplicationCode().getFeeReference(),
+                                                    payloadForGet.getDate());
+                                    Fee offsiteFee = feePair.offsiteFee();
 
-                                AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
-                                        result =
-                                                new AuditableResult<>(
-                                                        applicationCodeMapper
-                                                                .toApplicationCodeGetDetailDto(
-                                                                        success
-                                                                                .getApplicationCode(),
-                                                                        feePair.mainFee(),
-                                                                        offsiteFee),
-                                                        applicationCodeMapper.toEntity(
-                                                                payloadForGet));
+                                    AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
+                                            result =
+                                                    new AuditableResult<>(
+                                                            applicationCodeMapper
+                                                                    .toApplicationCodeGetDetailDto(
+                                                                            success
+                                                                                    .getApplicationCode(),
+                                                                            feePair.mainFee(),
+                                                                            offsiteFee),
+                                                            applicationCodeMapper.toEntity(
+                                                                    payloadForGet));
 
-                                log.debug(
-                                        "Finish: Find Application for app code: {} date: {}",
-                                        payload.getCode(),
-                                        payload.getDate());
-                                return Optional.of(result);
-                            });
-                });
+                                    log.debug(
+                                            "Finish: Find Application for app code: {} date: {}",
+                                            payload.getCode(),
+                                            payload.getDate());
+                                    return Optional.of(result);
+                                }));
     }
 }

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationlist.controller;
 
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -11,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,9 +53,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationListController implements ApplicationListsApi {
-
-    private static final MediaType VND_JSON_V1 =
-            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+    private static final String ACCEPT_HEADER = "Accept";
 
     private final ApplicationListService service;
 
@@ -84,15 +82,12 @@ public class ApplicationListController implements ApplicationListsApi {
         MatchResponse<ApplicationListGetDetailDto> created =
                 service.create(applicationListCreateDto);
 
-        ResponseEntity<ApplicationListGetDetailDto> response =
-                ResponseEntity.status(CREATED)
-                        .varyBy("Accept")
-                        .contentType(VND_JSON_V1)
-                        .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
-                        .eTag(created.getEtag())
-                        .body(created.getPayload());
-
-        return response;
+        return ResponseEntity.status(CREATED)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
+                .eTag(created.getEtag())
+                .body(created.getPayload());
     }
 
     @Override
@@ -108,7 +103,7 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ResponseEntity<ApplicationListGetDetailDto> response =
                 ResponseEntity.status(OK)
-                        .varyBy("Accept")
+                        .varyBy(ACCEPT_HEADER)
                         .contentType(VND_JSON_V1)
                         .eTag(updated.getEtag())
                         .body(updated.getPayload());
@@ -152,7 +147,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ApplicationListGetDetailDto retrieved = service.get(id, pageable);
 
-        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
+        return ResponseEntity.status(OK)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .body(retrieved);
     }
 
     /**
@@ -234,7 +232,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ApplicationListGetPrintDto retrieved = service.print(id);
 
-        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
+        return ResponseEntity.status(OK)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .body(retrieved);
     }
 
     /**

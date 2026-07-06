@@ -11,31 +11,29 @@ class NoSecurityConfigTest {
 
     @Test
     void constructor_allowsLocalDebugRuntimeAndLoopbackAddress() {
-        assertThatCode(
-                        () ->
-                                withContextClassLoader(
-                                        markerClassLoader(),
-                                        () -> new NoSecurityConfig("127.0.0.1")))
+        ClassLoader classLoader = markerClassLoader();
+        ThrowingCallable constructorCall = () -> new NoSecurityConfig("127.0.0.1");
+
+        assertThatCode(() -> withContextClassLoader(classLoader, constructorCall))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void constructor_rejectsRuntimeWithoutLocalDebugMarker() {
-        assertThatThrownBy(
-                        () ->
-                                withContextClassLoader(
-                                        emptyClassLoader(),
-                                        () -> new NoSecurityConfig("127.0.0.1")))
+        ClassLoader classLoader = emptyClassLoader();
+        ThrowingCallable constructorCall = () -> new NoSecurityConfig("127.0.0.1");
+
+        assertThatThrownBy(() -> withContextClassLoader(classLoader, constructorCall))
                 .isInstanceOf(NoSecurityConfigurationException.class)
                 .hasMessageContaining("local debug");
     }
 
     @Test
     void constructor_rejectsNonLoopbackAddress() {
-        assertThatThrownBy(
-                        () ->
-                                withContextClassLoader(
-                                        markerClassLoader(), () -> new NoSecurityConfig("0.0.0.0")))
+        ClassLoader classLoader = markerClassLoader();
+        ThrowingCallable constructorCall = () -> new NoSecurityConfig("0.0.0.0");
+
+        assertThatThrownBy(() -> withContextClassLoader(classLoader, constructorCall))
                 .isInstanceOf(NoSecurityConfigurationException.class)
                 .hasMessageContaining("loopback");
     }
@@ -68,13 +66,17 @@ class NoSecurityConfigTest {
 
     @Test
     void verifyLocalDebugRuntime_allowsClasspathWithMarker() {
-        assertThatCode(() -> NoSecurityConfig.verifyLocalDebugRuntime(markerClassLoader()))
+        ClassLoader classLoader = markerClassLoader();
+
+        assertThatCode(() -> NoSecurityConfig.verifyLocalDebugRuntime(classLoader))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void verifyLocalDebugRuntime_rejectsClasspathWithoutMarker() {
-        assertThatThrownBy(() -> NoSecurityConfig.verifyLocalDebugRuntime(emptyClassLoader()))
+        ClassLoader classLoader = emptyClassLoader();
+
+        assertThatThrownBy(() -> NoSecurityConfig.verifyLocalDebugRuntime(classLoader))
                 .isInstanceOf(NoSecurityConfigurationException.class)
                 .hasMessageContaining("local debug");
     }

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +16,12 @@ import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
  * serialization/deserialisation. Spring Boot 4 expects us to use Jackson 3 but the jackson 3 API
  * does not natively support JsonNullable types. This will need to be addressed later in the
  * development cycle.
+ *
+ * @deprecated since 2026-01-29. Spring Boot 4 expects Jackson 3, but JsonNullable support is not
+ *     yet available
  */
-@Deprecated
-@SuppressWarnings("removal")
+@Deprecated(since = "2026-01-29", forRemoval = false)
+@SuppressWarnings({"removal", "java:S1133"})
 @Configuration
 @RequiredArgsConstructor
 public class JacksonConfig {
@@ -34,6 +38,9 @@ public class JacksonConfig {
         module.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
         module.addDeserializer(LocalTime.class, new StrictLocalTimeDeserializer());
 
-        return builder -> builder.modulesToInstall(new JsonNullableModule(), module);
+        return builder -> {
+            builder.modulesToInstall(new JsonNullableModule(), module);
+            builder.featuresToEnable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        };
     }
 }

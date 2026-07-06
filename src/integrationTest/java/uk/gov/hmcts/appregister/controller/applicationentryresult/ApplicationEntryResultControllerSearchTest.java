@@ -28,8 +28,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationEntryResultControllerSearchTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     void givenCreatedEntryResults_whenGetEntryResults_thenReturnedFieldsAreCorrect()
@@ -96,7 +95,7 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @StabilityTest
-    public void givenApplicationListEntryResult_whenSearchForResults_thenSuccessResponse()
+    void givenApplicationListEntryResult_whenSearchForResults_thenSuccessResponse()
             throws Exception {
         UUID appList =
                 UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createAppList(null)[0]));
@@ -200,9 +199,8 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void
-            givenApplicationListEntryResult_whenSearchForResultsWithClosedList_thenSuccessResponse()
-                    throws Exception {
+    void givenApplicationListEntryResult_whenSearchForResultsWithClosedList_thenSuccessResponse()
+            throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Name of Crown Court");
@@ -263,7 +261,7 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void givenApplicationListEntryResult_whenSearchForResultsWithNoList_thenFailureResponse()
+    void givenApplicationListEntryResult_whenSearchForResultsWithNoList_thenFailureResponse()
             throws Exception {
         UUID appList = UUID.randomUUID();
 
@@ -279,16 +277,15 @@ public class ApplicationEntryResultControllerSearchTest
         // navigate to the second page
         Response response = getEntryResult(token, appList, detailDto, 10, 0);
 
-        Assertions.assertEquals(409, response.getStatusCode());
+        Assertions.assertEquals(404, response.getStatusCode());
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(),
                 response);
     }
 
     @Test
-    public void
-            givenApplicationListEntryResult_whenSearchForResultsWithNoEntry_thenFailureResponse()
-                    throws Exception {
+    void givenApplicationListEntryResult_whenSearchForResultsWithNoEntry_thenFailureResponse()
+            throws Exception {
         UUID appList =
                 UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createAppList(null)[0]));
 
@@ -301,14 +298,32 @@ public class ApplicationEntryResultControllerSearchTest
         // navigate to the second page
         Response response = getEntryResult(token, appList, UUID.randomUUID(), 10, 0);
 
-        Assertions.assertEquals(409, response.getStatusCode());
+        Assertions.assertEquals(404, response.getStatusCode());
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
                 response);
     }
 
     @Test
-    public void givenApplicationListEntryResult_whenApplicationlistDeleted_thenFailureResponse()
+    void givenApplicationListEntryResult_whenEntryBelongsToDifferentList_thenConflictResponse()
+            throws Exception {
+        var context = givenExistingEntry();
+        var otherList = createAndSaveList(Status.OPEN);
+        var otherListEntry = createEntry(otherList);
+        persistance.save(otherListEntry);
+
+        Response response =
+                getEntryResult(
+                        context.token(), context.list().getUuid(), otherListEntry.getUuid(), 10, 0);
+
+        Assertions.assertEquals(409, response.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(),
+                response);
+    }
+
+    @Test
+    void givenApplicationListEntryResult_whenApplicationlistDeleted_thenFailureResponse()
             throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -350,9 +365,8 @@ public class ApplicationEntryResultControllerSearchTest
     }
 
     @Test
-    public void
-            givenApplicationListEntryResult_whenApplicationlistEntryDeleted_thenFailureResponse()
-                    throws Exception {
+    void givenApplicationListEntryResult_whenApplicationlistEntryDeleted_thenFailureResponse()
+            throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Name of Crown Court");
@@ -390,7 +404,7 @@ public class ApplicationEntryResultControllerSearchTest
         // navigate to the second page
         Response actualResponse = getEntryResult(token, appList, detailDto.getId(), 10, 0);
 
-        Assertions.assertEquals(409, actualResponse.getStatusCode());
+        Assertions.assertEquals(404, actualResponse.getStatusCode());
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
                 actualResponse);

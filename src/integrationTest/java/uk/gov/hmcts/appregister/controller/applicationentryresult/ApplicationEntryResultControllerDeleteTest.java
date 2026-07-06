@@ -19,8 +19,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 
-public class ApplicationEntryResultControllerDeleteTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Delete Application List Entry Result: 204 when valid IDs")
@@ -153,14 +152,14 @@ public class ApplicationEntryResultControllerDeleteTest
 
         Response resp = deleteResult(listId, entryId, resultId, getToken());
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
-    @DisplayName("Delete Application List Entry Result: 400 when entry not in list")
-    void givenEntryNotInList_whenDelete_then400() throws Exception {
+    @DisplayName("Delete Application List Entry Result: 404 when result does not exist")
+    void givenResultDoesNotExist_whenDelete_then404() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
@@ -168,13 +167,32 @@ public class ApplicationEntryResultControllerDeleteTest
         Response resp =
                 deleteResult(list.getUuid(), entry.getUuid(), UUID.randomUUID(), getToken());
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST.getCode(),
+                resp);
     }
 
     @Test
-    @DisplayName("Delete Application List Entry Result: 400 when entry result not related to entry")
-    void givenUnrelatedEntry_whenDelete_then400() throws Exception {
+    @DisplayName("Delete Application List Entry Result: 404 when entry does not exist")
+    void givenMissingEntry_whenDelete_then404() throws Exception {
+        var existingResult = givenExistingEntryResult();
+
+        Response resp =
+                deleteResult(
+                        existingResult.list().getUuid(),
+                        UUID.randomUUID(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token());
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Delete Application List Entry Result: 409 when entry result not related to entry")
+    void givenUnrelatedEntry_whenDelete_then404() throws Exception {
         var list = createAndSaveList(OPEN);
 
         var unrelatedEntry = createEntry(list);
@@ -192,8 +210,31 @@ public class ApplicationEntryResultControllerDeleteTest
                         entryResult.getUuid(),
                         getToken());
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY.getCode(),
+                resp);
+    }
+
+    @Test
+    @DisplayName(
+            "Delete Application List Entry Result: 409 when entry result belongs to entry in another list")
+    void givenEntryResultBelongsToDifferentList_whenDelete_then409() throws Exception {
+        var existingResult = givenExistingEntryResult();
+        var otherList = createAndSaveList(OPEN);
+        var otherEntry = createEntry(otherList);
+        persistance.save(otherEntry);
+
+        Response resp =
+                deleteResult(
+                        existingResult.list().getUuid(),
+                        otherEntry.getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token());
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
     }
 
     @Test

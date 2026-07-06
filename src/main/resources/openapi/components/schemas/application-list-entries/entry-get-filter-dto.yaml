@@ -12,7 +12,7 @@ properties:
   courtCode:
     type: string
     description: Name of the court or session where the application is being heard. This has to be Exact.
-    example: "Royal Courts of Justice"
+    example: "LOC123"
     maxLength: 10
 
   otherLocationDescription:
@@ -24,7 +24,7 @@ properties:
   cjaCode:
     type: string
     description: The Criminal Justice Area (CJA) associated with the application. This has to be Exact.
-    example: "CJA-2025-001"
+    example: "52"
     maxLength: 2
 
   applicantOrganisation:

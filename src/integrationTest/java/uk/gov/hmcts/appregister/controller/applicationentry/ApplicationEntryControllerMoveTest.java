@@ -1,12 +1,15 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashSet;
@@ -41,15 +44,14 @@ import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.controller.applicationcode.AbstractApplicationCodeEntryCrudTest;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
-public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCrudTest {
+class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCrudTest {
     @MockitoBean private UserProvider provider;
     @Autowired private DataAuditRepository dataAuditRepository;
     @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
@@ -60,7 +62,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
             "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
     @BeforeEach
-    public void before() {
+    void beforeEach() {
         when(provider.getUserId()).thenReturn("user");
         when(provider.getEmail()).thenReturn("email");
         when(provider.getRoles()).thenReturn(new String[] {"role"});
@@ -74,7 +76,8 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     @Test
     @DisplayName("Move Application List Entries")
-    void givenValidRequest_whenMove_then200() throws Exception {
+    void givenValidRequest_whenMove_then200()
+            throws MalformedURLException, JOSEException, URISyntaxException {
         ApplicationListEntry sourceEntry = new AppListEntryTestData().someMinimal().build();
 
         ApplicationList sourceList = createOpenListWithEntry(sourceEntry);
@@ -91,17 +94,17 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
         targetResp.then().statusCode(HttpStatus.OK.value());
 
-        ApplicationListGetDetailDto targetDetail = targetResp.as(ApplicationListGetDetailDto.class);
+        EntryPage targetDetail = getEntryPage(targetList.getUuid(), getToken());
 
         Assertions.assertTrue(
-                targetDetail.getEntriesSummary().stream()
-                        .anyMatch(e -> e.getUuid().equals(sourceEntry.getUuid())));
+                targetDetail.getContent().stream()
+                        .anyMatch(e -> e.getId().equals(sourceEntry.getUuid())));
 
-        Assertions.assertEquals(2, targetDetail.getEntriesSummary().size());
+        Assertions.assertEquals(2, targetDetail.getContent().size());
 
         var sequences =
-                targetDetail.getEntriesSummary().stream()
-                        .map(ApplicationListEntrySummary::getSequenceNumber)
+                targetDetail.getContent().stream()
+                        .map(entry -> entry.getSequenceNumber())
                         .sorted()
                         .toList();
 
@@ -225,20 +228,45 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         Assertions.assertEquals(sourceList.getId(), persistedFirst.getApplicationList().getId());
         Assertions.assertEquals(sourceList.getId(), persistedSecond.getApplicationList().getId());
 
-        // The audit rows for the move must also roll back with the business transaction.
-        Assertions.assertTrue(
+        // The business move rolls back, but the attempted move audit remains persisted in line
+        // with the legacy autonomous-audit behaviour.
+        val moveAuditRows =
                 dataAuditRepository.findAll().stream()
-                        .noneMatch(
+                        .filter(
                                 row ->
                                         AppListEntryAuditOperation.MOVE_APP_ENTRY
                                                 .getEventName()
-                                                .equals(row.getEventName())));
+                                                .equals(row.getEventName()))
+                        .toList();
+
+        Assertions.assertFalse(moveAuditRows.isEmpty());
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
+                                row ->
+                                        TableNames.APPLICATION_LISTS.equals(row.getTableName())
+                                                && "al_id".equals(row.getColumnName())
+                                                && sourceList
+                                                        .getId()
+                                                        .toString()
+                                                        .equals(row.getOldValue())
+                                                && targetList
+                                                        .getId()
+                                                        .toString()
+                                                        .equals(row.getNewValue())));
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
+                                row ->
+                                        TableNames.APPLICATION_LISTS_ENTRY.equals(
+                                                        row.getTableName())
+                                                && "version".equals(row.getColumnName())));
     }
 
     @Test
     @DisplayName("Move Application List Entries: 404 when source list unknown")
     void givenUnknownTargetApplicationList_whenMoveApplicationListEntries_then404()
-            throws Exception {
+            throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -265,7 +293,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
     @Test
     @DisplayName("Move Application List Entries: 404 when target list unknown")
     void givenUnknownSourceApplicationList_whenMoveApplicationListEntries_then404()
-            throws Exception {
+            throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -291,7 +319,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     @Test
     @DisplayName("Move Application List Entries: 400 when source list not open")
-    void givenClosedSourceList_whenMove_then400() throws Exception {
+    void givenClosedSourceList_whenMove_then400() throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.CLOSED);
@@ -319,7 +347,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     @Test
     @DisplayName("Move Application List Entries: 400 when target list not open")
-    void givenClosedTargetList_whenMove_then400() throws Exception {
+    void givenClosedTargetList_whenMove_then400() throws JOSEException, MalformedURLException {
         var token = getToken();
 
         Response resp =
@@ -355,7 +383,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     @Test
     @DisplayName("Move Application List Entries: 400 when entry unknown")
-    void givenUnknownEntry_whenMove_then400() throws Exception {
+    void givenUnknownEntry_whenMove_then400() throws JOSEException, MalformedURLException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -382,7 +410,8 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     @Test
     @DisplayName("Move Application List Entries: 400 when entry not in source list")
-    void givenEntryNotInSourceList_whenMove_then400() throws Exception {
+    void givenEntryNotInSourceList_whenMove_then400()
+            throws JOSEException, MalformedURLException, URISyntaxException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -391,18 +420,15 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         UUID targetListId = page.getContent().get(1).getId();
         UUID otherListId = page.getContent().get(2).getId();
 
-        Response resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + otherListId), token);
-        ApplicationListGetDetailDto applicationListGetDetailDto =
-                resp.as(ApplicationListGetDetailDto.class);
+        EntryPage applicationListGetDetailDto = getEntryPage(otherListId, token);
 
         Set<UUID> entryIds = new HashSet<>();
-        UUID entry1Id = applicationListGetDetailDto.getEntriesSummary().getFirst().getUuid();
+        UUID entry1Id = applicationListGetDetailDto.getContent().getFirst().getId();
         entryIds.add(entry1Id);
 
         // fire test
-        resp = getMoveApplicationListEntriesResponse(sourceListId, targetListId, entryIds, token);
+        Response resp =
+                getMoveApplicationListEntriesResponse(sourceListId, targetListId, entryIds, token);
 
         // assert success
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
@@ -415,7 +441,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     @Test
     @DisplayName("Move Application List Entries: 400 when entry is deleted")
-    void givenDeletedEntry_whenMove_then400() throws Exception {
+    void givenDeletedEntry_whenMove_then400() throws MalformedURLException, JOSEException {
         ApplicationListEntry deletedEntry = new AppListEntryTestData().someMinimal().build();
         deletedEntry.setDeleted(YES);
 
@@ -436,7 +462,8 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
     @Test
     @DisplayName(
             "Move Application List Entries: 400 with invalid_entry_ids when some entries are missing")
-    void givenMixedValidAndInvalidEntries_whenMove_then400WithInvalidIds() throws Exception {
+    void givenMixedValidAndInvalidEntries_whenMove_then400WithInvalidIds()
+            throws JOSEException, MalformedURLException, URISyntaxException {
         var token = getToken();
 
         ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
@@ -445,21 +472,13 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         UUID targetListId = page.getContent().get(1).getId();
         UUID otherListId = page.getContent().get(2).getId();
 
-        Response sourceResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + sourceListId), token);
+        EntryPage sourceDetail = getEntryPage(sourceListId, token);
 
-        ApplicationListGetDetailDto sourceDetail = sourceResp.as(ApplicationListGetDetailDto.class);
+        UUID validEntryId = sourceDetail.getContent().getFirst().getId();
 
-        UUID validEntryId = sourceDetail.getEntriesSummary().getFirst().getUuid();
+        EntryPage otherDetail = getEntryPage(otherListId, token);
 
-        Response otherResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + otherListId), token);
-
-        ApplicationListGetDetailDto otherDetail = otherResp.as(ApplicationListGetDetailDto.class);
-
-        UUID invalidEntryId = otherDetail.getEntriesSummary().getFirst().getUuid();
+        UUID invalidEntryId = otherDetail.getContent().getFirst().getId();
 
         Set<UUID> entryIds = new HashSet<>();
         entryIds.add(validEntryId);
@@ -474,11 +493,11 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
 
         Assertions.assertNotNull(problemDetail.getDetail());
-        Assertions.assertTrue(problemDetail.getDetail().contains(invalidEntryId.toString()));
+        assertThat(problemDetail.getDetail()).contains(invalidEntryId.toString());
     }
 
     private ApplicationListPage getApplicationListPage(
-            TokenAndJwksKey token, ApplicationListStatus open) throws Exception {
+            TokenAndJwksKey token, ApplicationListStatus open) throws MalformedURLException {
         Response resp =
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(3),
@@ -493,6 +512,22 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         return resp.as(ApplicationListPage.class);
+    }
+
+    private EntryPage getEntryPage(UUID listId, TokenAndJwksKey token)
+            throws MalformedURLException, URISyntaxException {
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
+                        token,
+                        rs ->
+                                rs.header("Accept", VND_JSON_V1)
+                                        .queryParam("pageNumber", 0)
+                                        .queryParam("pageSize", 100)
+                                        .queryParam("sort", "sequenceNumber,asc"));
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        return resp.as(EntryPage.class);
     }
 
     private Response getMoveApplicationListEntriesResponse(
@@ -530,7 +565,7 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
 
     private Response moveEntries(
             ApplicationList sourceList, ApplicationList targetList, Set<UUID> uuidsToMove)
-            throws Exception {
+            throws MalformedURLException, JOSEException {
         return getMoveApplicationListEntriesResponse(
                 sourceList.getUuid(), targetList.getUuid(), uuidsToMove, getToken());
     }

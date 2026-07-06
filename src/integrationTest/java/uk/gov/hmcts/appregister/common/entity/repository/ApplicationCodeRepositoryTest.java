@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +22,7 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
-public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
+class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
@@ -30,7 +32,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     private static final int TOTAL_APP_CODES_COUNT = 45;
 
     @Test
-    public void testBasicInsertionUpdate() {
+    void testBasicInsertionUpdate() {
         // assert that the save has occurred
         long count = applicationCodeRepository.count();
         Assertions.assertEquals(TOTAL_APP_CODES_COUNT, count);
@@ -76,15 +78,16 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetByCodeAndDate() {
+    void testGetByCodeAndDate() {
         List<ApplicationCode> applicationCodeToAssertAgainst =
-                applicationCodeRepository.findByCodeAndDate("AD99002", LocalDate.now());
-        Assertions.assertFalse(applicationCodeToAssertAgainst.isEmpty());
+                applicationCodeRepository.findByCodeAndDate(
+                        "AD99002", LocalDate.now(java.time.ZoneOffset.UTC));
+        assertThat(applicationCodeToAssertAgainst).isNotEmpty();
     }
 
     @Test
-    public void testGetByCodeAndDatePrefersNullEndDate() {
-        LocalDate today = LocalDate.now();
+    void testGetByCodeAndDatePrefersNullEndDate() {
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "ZZ90011";
 
         ApplicationCode bounded = new ApplicationCodeTestData().someComplete();
@@ -110,8 +113,8 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testGetByCodeAndDateUsesExactCodeMatch() {
-        LocalDate today = LocalDate.now();
+    void testGetByCodeAndDateUsesExactCodeMatch() {
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "ZZ90012";
 
         ApplicationCode exactMatch = new ApplicationCodeTestData().someComplete();
@@ -136,8 +139,8 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchExcludesCodeBeforeStartDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 1);
+    void testSearchExcludesCodeBeforeStartDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 1);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90101", "Starts after search date", effectiveDate.plusDays(1), null);
@@ -147,12 +150,12 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                         applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
 
         Assertions.assertEquals(0, results.getTotalElements());
-        Assertions.assertTrue(results.getContent().isEmpty());
+        assertThat(results.getContent()).isEmpty();
     }
 
     @Test
-    public void testSearchIncludesCodeStartingOnActiveDate() {
-        LocalDate today = LocalDate.now();
+    void testSearchIncludesCodeStartingOnActiveDate() {
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         ApplicationCode startsToday = saveApplicationCode("ZZ90013", "Starts Today", today, null);
 
@@ -165,8 +168,8 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchIncludesCodeBetweenStartAndEndDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+    void testSearchIncludesCodeBetweenStartAndEndDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90102",
@@ -183,8 +186,8 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchExcludesCodeAfterEndDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+    void testSearchExcludesCodeAfterEndDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90103",
@@ -197,12 +200,12 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                         applicationCode.getCode(), null, effectiveDate, PageRequest.of(0, 10));
 
         Assertions.assertEquals(0, results.getTotalElements());
-        Assertions.assertTrue(results.getContent().isEmpty());
+        assertThat(results.getContent()).isEmpty();
     }
 
     @Test
-    public void testSearchIncludesCodeWithNullEndDate() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+    void testSearchIncludesCodeWithNullEndDate() {
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         ApplicationCode applicationCode =
                 saveApplicationCode(
                         "ZZ90104", "Open ended effective code", effectiveDate.minusDays(10), null);
@@ -216,8 +219,8 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testSearchPaginationCountsAreBasedOnDateFilteredResults() {
-        LocalDate effectiveDate = LocalDate.of(2020, 1, 15);
+    void testSearchPaginationCountsAreBasedOnDateFilteredResults() {
+        LocalDate effectiveDate = LocalDate.of(2020, Month.JANUARY, 15);
         String code = "ZZ90105";
 
         saveApplicationCode(

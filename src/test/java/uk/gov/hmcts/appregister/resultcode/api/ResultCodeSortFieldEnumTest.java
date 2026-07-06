@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 
-public class ResultCodeSortFieldEnumTest {
+class ResultCodeSortFieldEnumTest {
 
     @Test
     void lookupByApiValue_nameReturnsTitle() {

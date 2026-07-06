@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 
-public class ApplicationListEntryResultEntityMapperTest {
+class ApplicationListEntryResultEntityMapperTest {
 
     @Test
     void testToApplicationListEntryResultForCreate() {

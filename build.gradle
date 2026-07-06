@@ -23,49 +23,30 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '4.0.6'
+  id 'org.springframework.boot' version '4.1.0'
   id 'com.github.ben-manes.versions' version '0.54.0'
-  id 'org.sonarqube' version '7.3.0.8198'
-  id 'org.openapi.generator' version '7.22.0'
+  id 'org.sonarqube' version '7.3.1.8318'
+  id 'org.openapi.generator' version '7.23.0'
   id 'io.freefair.lombok' version '9.5.0'
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.6.0'
-  id 'org.openrewrite.rewrite' version '7.33.0'
+  id 'com.diffplug.spotless' version '8.8.0'
+  id 'org.openrewrite.rewrite' version '7.36.0'
   id 'maven-publish'
-  id 'com.github.jk1.dependency-license-report' version '3.1.2'
-}
-
-/**
- * a task that bundles the OpenAPI spec as json file
- */
-tasks.register('bundleOpenApi', GenerateTask) {
-  generatorName = 'openapi'
-  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
-  outputDir = layout.buildDirectory.dir('specmerge')
-  inputs.files(fileTree('src/main/resources/openapi'))
-}
-
-/**
- * A task that copies the generated OpenAPI spec into the main resources static folder
- */
-tasks.register('copySpecIntoMainResources', Copy) {
-  dependsOn tasks.named('bundleOpenApi')
-  from layout.buildDirectory.file('specmerge/openapi.json')
-  into layout.buildDirectory.file('resources/main/static')
+  id 'com.github.jk1.dependency-license-report' version '3.1.4'
 }
 
 ext {
-  releaseTrainVersion = '2025.1.1' // Example: '2021.0.x' corresponds to Spring Boot 2.6.x or 2.7.x
+  releaseTrainVersion = '2025.1.2' // Example: '2021.0.x' corresponds to Spring Boot 2.6.x or 2.7.x
 }
 
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.5.0'
+  toolVersion = '13.7.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
@@ -74,7 +55,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.1'
+    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.29.0'
   }
 }
 
@@ -251,13 +232,36 @@ tasks.register('bootRunLocalDev', BootRun) {
   description = 'Runs the application locally with no security and P6Spy SQL logging enabled'
   group = 'Application'
   mainClass = application.mainClass
+
+  dependsOn tasks.named('copySpecIntoLocalDebugResources')
+
   classpath = sourceSets.main.runtimeClasspath +
     configurations.localDebugRuntimeOnly +
-    files('src/localDebug/resources')
+    files('src/localDebug/resources') +
+    files(layout.buildDirectory.dir('localDebug/resources'))
 
   def activeProfiles = providers.gradleProperty('springProfiles')
     .orElse(providers.systemProperty('spring.profiles.active'))
     .orElse('nosecurity,p6spy')
+
+  systemProperty 'spring.profiles.active', activeProfiles.get()
+}
+
+tasks.register('bootRunLocalDevAppLogging', BootRun) {
+  description = 'Runs the application locally with no security and the normal application.yaml logging'
+  group = 'Application'
+  mainClass = application.mainClass
+
+  dependsOn tasks.named('copySpecIntoLocalDebugResources')
+
+  classpath = sourceSets.main.runtimeClasspath +
+    configurations.localDebugRuntimeOnly +
+    files('src/localDebug/resources') +
+    files(layout.buildDirectory.dir('localDebug/resources'))
+
+  def activeProfiles = providers.gradleProperty('springProfiles')
+    .orElse(providers.systemProperty('spring.profiles.active'))
+    .orElse('nosecurity')
 
   systemProperty 'spring.profiles.active', activeProfiles.get()
 }
@@ -417,7 +421,6 @@ dependencies {
   // Core Spring Boot Starters
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'org.springframework.boot:spring-boot-starter-actuator'
-  implementation 'org.springframework.boot:spring-boot-starter-json'
   implementation 'org.springframework.boot:spring-boot-jackson2'
   implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
   implementation 'io.micrometer:micrometer-tracing-bridge-brave'
@@ -438,22 +441,29 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
-  compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
   implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.52'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.0'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.7.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.10.0'
+  
+  // Future Jackson 2 overrides for CVE-2026-54515.
+  // Leave commented until the FasterXML 2.x fixes are actually published to Maven Central.
+  // implementation 'com.fasterxml.jackson.core:jackson-core:2.21.5'
+  // implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.5'
+  // implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21.5'
+
+  implementation 'org.flywaydb:flyway-database-postgresql:12.10.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-core
-  implementation 'tools.jackson.core:jackson-core:3.1.4'
+  implementation 'tools.jackson.core:jackson-core:3.2.0'
 
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
-  implementation 'tools.jackson.core:jackson-databind:3.1.4'
+  implementation 'tools.jackson.core:jackson-databind:3.2.0'
 
   // Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
   implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
@@ -461,13 +471,10 @@ dependencies {
   // Source: https://mvnrepository.com/artifact/com.opencsv/opencsv
   implementation 'com.opencsv:opencsv:5.12.0'
 
-  // Source: https://mvnrepository.com/artifact/commons-io/commons-io
-  implementation 'commons-io:commons-io:2.22.0'
-
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.0.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.0.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.0.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.3.Final'
 
   // Lombok
   compileOnly 'org.projectlombok:lombok:1.18.46'
@@ -475,7 +482,7 @@ dependencies {
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
 
   // Database
-  runtimeOnly 'org.postgresql:postgresql:42.7.11'
+  runtimeOnly 'org.postgresql:postgresql:42.7.12'
   localDebugRuntimeOnly 'p6spy:p6spy:3.9.1'
 
   // Testing
@@ -484,7 +491,7 @@ dependencies {
 
   testImplementation 'io.rest-assured:rest-assured:6.0.0'
 
-  testImplementation 'com.squareup.okhttp3:mockwebserver:5.3.2'
+  testImplementation 'com.squareup.okhttp3:mockwebserver:5.4.0'
   testImplementation 'io.github.hakky54:logcaptor:2.12.6'
   testImplementation 'org.testcontainers:testcontainers:2.0.5'
   testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
@@ -494,13 +501,10 @@ dependencies {
   testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
-  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.35.0'
+  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.38.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.22'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.22'
-
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.6.3'
   annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
@@ -538,8 +542,6 @@ tasks.named('processResources', Copy) {
   dependsOn tasks.named('openApiGenerate')
   dependsOn tasks.named('openapiJarArtefact')
   dependsOn tasks.named('flywayArtefact')
-  dependsOn tasks.named('bundleOpenApi')
-  dependsOn tasks.named('copySpecIntoMainResources')
 
   inputs.property('version', artifactVersion)
 
@@ -582,6 +584,7 @@ tasks.named('openApiGenerate') {
   ]
 
   inputs.files(fileTree('src/main/resources/openapi'))
+  dependsOn tasks.named('copyBundledOpenApiYamlToRoot')
 }
 
 // Add a new jar that will be published to maven with the classifier -openapi
@@ -594,6 +597,52 @@ tasks.register('openapiJarArtefact', Jar) {
 tasks.register('flywayArtefact', Jar) {
   archiveClassifier = 'flyway'
   from new File('./flyway/migrations'), new File('./flyway/data_population')
+}
+
+tasks.register('bundleOpenApiJson', GenerateTask) {
+  generatorName = 'openapi'
+  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+  outputDir = layout.buildDirectory.dir('specmerge/json')
+  additionalProperties = [
+    outputFileName: 'openapi.json'
+  ]
+  inputs.files(fileTree('src/main/resources/openapi'))
+}
+
+tasks.register('bundleOpenApiYaml', GenerateTask) {
+  generatorName = 'openapi-yaml'
+  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+  outputDir = layout.buildDirectory.dir('specmerge/yaml')
+  additionalProperties = [
+    outputFile: 'openapi.yaml'
+  ]
+  inputs.files(fileTree('src/main/resources/openapi'))
+}
+
+tasks.register('copyBundledOpenApiYamlToRoot') {
+  dependsOn tasks.named('bundleOpenApiYaml')
+  def bundledSpec = layout.buildDirectory.file('specmerge/yaml/openapi.yaml')
+  def rootSpec = layout.projectDirectory.file('openapi.yaml')
+
+  inputs.file(bundledSpec)
+  outputs.file(rootSpec)
+
+  doLast {
+    copy {
+      from bundledSpec
+      into layout.projectDirectory
+    }
+  }
+}
+
+tasks.named('assemble') {
+  dependsOn tasks.named('copyBundledOpenApiYamlToRoot')
+}
+
+tasks.register('copySpecIntoLocalDebugResources', Copy) {
+  dependsOn tasks.named('bundleOpenApiJson')
+  from layout.buildDirectory.file('specmerge/json/openapi.json')
+  into layout.buildDirectory.dir('localDebug/resources/static/specs')
 }
 
 tasks.named('compileJava') {

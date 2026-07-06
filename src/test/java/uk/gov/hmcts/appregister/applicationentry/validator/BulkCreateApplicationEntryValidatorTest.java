@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -45,7 +48,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BulkCreateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -137,6 +140,23 @@ class BulkCreateApplicationEntryValidatorTest {
     }
 
     @Test
+    void testValidateApplicationListThrowsWhenApplicationListDoesNotExist() {
+        UUID missingListUuid = UUID.randomUUID();
+        when(applicationListRepository.findByUuidIncludingDelete(missingListUuid))
+                .thenReturn(Optional.empty());
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validateApplicationList(missingListUuid));
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, appRegistryException.getCode());
+        assertThat(appRegistryException.getMessage())
+                .isEqualTo("The application list does not exist %s".formatted(missingListUuid));
+    }
+
+    @Test
     void testTrimsApplicationTextToWordingTemplatePlaceholders() {
         applicationCode.setFeeDue(YesOrNo.NO);
         applicationCode.setRequiresRespondent(YesOrNo.NO);
@@ -198,7 +218,7 @@ class BulkCreateApplicationEntryValidatorTest {
         CreateApplicationEntryValidationSuccess success =
                 validator.validate(payload(), (validatable, result) -> result);
 
-        Assertions.assertTrue(entryCreateDto.getWordingFields().isEmpty());
+        assertThat(entryCreateDto.getWordingFields()).isEmpty();
         Assertions.assertEquals(
                 "Request to copy documents",
                 success.getWordingSentence()
@@ -222,11 +242,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "one")));
+        PayloadForCreate<EntryCreateDto> payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
@@ -246,11 +267,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "")));
+        PayloadForCreate<EntryCreateDto> payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());

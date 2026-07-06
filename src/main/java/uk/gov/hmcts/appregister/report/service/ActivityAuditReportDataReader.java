@@ -123,7 +123,11 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                                             .getEventName(),
                                     ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT
                                             .getEventName(),
+                                    ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT
+                                            .getEventName(),
                                     ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT
+                                            .getEventName(),
+                                    ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT
                                             .getEventName(),
                                     ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT
                                             .getEventName(),
@@ -175,6 +179,10 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+    }
+
+    ActivityAuditFilterDto filter() {
+        return filter;
     }
 
     @Override
@@ -251,7 +259,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
     }
 
     private String activityOrderExpression(List<String> orderedEventNames) {
-        StringBuilder expression = new StringBuilder("CASE da.event_name");
+        StringBuilder expression = new StringBuilder(50).append("CASE da.event_name");
         for (int index = 0; index < orderedEventNames.size(); index++) {
             expression.append(" WHEN :eventName").append(index).append(" THEN ").append(index);
         }

@@ -7,7 +7,6 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 
 /**
  * This interface is used to run async jobs.
@@ -41,22 +40,6 @@ public interface AsyncJobService {
             DataReader<T> dataReader,
             AsyncJobLifecycle<T> lifecycle,
             int pageSize);
-
-    /**
-     * runs the job with a csv stream passed to it.
-     *
-     * @param jobType The job type
-     * @param dataReader The reader to read the data.
-     * @param pageReader The page reader to read the page data. Can be null if not needed. As long
-     *     as the data is validate this reader will be hit with the associated page of data.
-     * @param lifecycle The lifecycle to run the job.
-     * @return The job status report response
-     */
-    <T> TrackJobStatusResponse startJob(
-            JobTypeRequest jobType,
-            DataReader<T> dataReader,
-            PageReader<T> pageReader,
-            AsyncJobLifecycle<T> lifecycle);
 
     /**
      * runs the job with a csv stream passed to it.

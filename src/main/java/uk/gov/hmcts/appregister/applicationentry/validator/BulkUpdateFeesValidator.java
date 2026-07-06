@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
+import jakarta.validation.ConstraintViolation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateFeesPayload;
@@ -35,14 +37,17 @@ public class BulkUpdateFeesValidator
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationListEntryRepository applicationListEntryRepository;
     private final BusinessDateProvider businessDateProvider;
+    private final jakarta.validation.Validator beanValidator;
 
     public BulkUpdateFeesValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationListEntryRepository applicationListEntryRepository,
-            BusinessDateProvider businessDateProvider) {
+            BusinessDateProvider businessDateProvider,
+            jakarta.validation.Validator beanValidator) {
         this.applicationListRepository = applicationListRepository;
         this.applicationListEntryRepository = applicationListEntryRepository;
         this.businessDateProvider = businessDateProvider;
+        this.beanValidator = beanValidator;
     }
 
     @Override
@@ -94,31 +99,30 @@ public class BulkUpdateFeesValidator
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
-        Set<UUID> requestedIds = new HashSet<>(payload.data().getEntryIds());
-        return requestedIds;
+        return new HashSet<>(payload.data().getEntryIds());
     }
 
-    @SuppressWarnings("java:S2583")
     private void validateFeeDetails(BulkUpdateFeesPayload payload) {
-        if (payload.data() == null || payload.data().getFeeDetails() == null) {
+        if (payload.data() == null || isNullOrEmpty(payload.data().getFeeDetails())) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_DETAILS_NOT_PROVIDED, "No fee details provided");
         }
 
-        BulkFeeDetailsDto feeDetails = payload.data().getFeeDetails();
+        for (BulkFeeDetailsDto feeDetails : payload.data().getFeeDetails()) {
+            validateFeeDetail(feeDetails);
+        }
+    }
 
-        if (feeDetails.getPaymentStatus() == null) {
+    private void validateFeeDetail(BulkFeeDetailsDto feeDetails) {
+        if (feeDetails == null) {
             throw new AppRegistryException(
-                    AppListEntryError.FEE_PAYMENT_STATUS_REQUIRED,
-                    "paymentStatus must be provided");
+                    AppListEntryError.FEE_DETAILS_NOT_PROVIDED, "Fee detail must be provided");
         }
 
-        if (feeDetails.getStatusDate() == null) {
-            throw new AppRegistryException(
-                    AppListEntryError.FEE_STATUS_DATE_REQUIRED, "statusDate must be provided");
-        }
+        validateRequiredFeeDetailFields(feeDetails);
 
-        if (feeDetails.getPaymentStatus() == DUE && isPaymentReferenceProvided(feeDetails)) {
+        if (feeDetails.getPaymentStatus() == DUE
+                && StringUtils.isNotBlank(feeDetails.getPaymentReference())) {
             throw new AppRegistryException(
                     AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE,
                     "Payment reference must not be provided when fee status is DUE");
@@ -137,16 +141,31 @@ public class BulkUpdateFeesValidator
                     "paymentReference must not be longer than %s characters"
                             .formatted(PAYMENT_REFERENCE_MAX_LENGTH));
         }
+    }
 
-        if (feeDetails.getHasOffsiteFee() == null) {
+    private void validateRequiredFeeDetailFields(BulkFeeDetailsDto feeDetails) {
+        Set<String> missingFields =
+                beanValidator.validate(feeDetails).stream()
+                        .filter(violation -> violation.getInvalidValue() == null)
+                        .map(ConstraintViolation::getPropertyPath)
+                        .map(Object::toString)
+                        .collect(Collectors.toSet());
+
+        if (missingFields.contains("paymentStatus")) {
+            throw new AppRegistryException(
+                    AppListEntryError.FEE_PAYMENT_STATUS_REQUIRED,
+                    "paymentStatus must be provided");
+        }
+
+        if (missingFields.contains("statusDate")) {
+            throw new AppRegistryException(
+                    AppListEntryError.FEE_STATUS_DATE_REQUIRED, "statusDate must be provided");
+        }
+
+        if (missingFields.contains("hasOffsiteFee")) {
             throw new AppRegistryException(
                     AppListEntryError.OFFSITE_FEE_REQUIRED, "hasOffsiteFee must be provided");
         }
-    }
-
-    private boolean isPaymentReferenceProvided(BulkFeeDetailsDto feeDetails) {
-        return feeDetails.getPaymentReference() != null
-                && !feeDetails.getPaymentReference().trim().isEmpty();
     }
 
     private void validateAllEntriesBelongToList(

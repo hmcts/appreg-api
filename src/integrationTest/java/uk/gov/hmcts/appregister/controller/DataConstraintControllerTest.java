@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -33,21 +34,21 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
  *
  * <p>This class is vital to ensure we do not leak implementation details through API response.
  */
-public class DataConstraintControllerTest extends BaseIntegration {
+class DataConstraintControllerTest extends BaseIntegration {
 
     private static final String CODE_WEB_CONTEXT = "application-codes";
     private static final String APP_LIST_WEB_CONTEXT = "application-lists";
     private static final String APP_LIST_ENTRIES_WEB_CONTEXT = "application-lists";
 
     private static final String VALID_COURT_CODE = "CCC003";
-    private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    private static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
 
     @Autowired protected TransactionalUnitOfWork unitOfWork;
 
     @Autowired protected ApplicationListRepository applicationListRepository;
 
     @Test
-    public void testSizeFailure() throws Exception {
+    void testSizeFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -55,7 +56,10 @@ public class DataConstraintControllerTest extends BaseIntegration {
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(CODE_WEB_CONTEXT + "/TOOOOLOOOONG?date=" + LocalDate.now()),
+                        getLocalUrl(
+                                CODE_WEB_CONTEXT
+                                        + "/TOOOOLOOOONG?date="
+                                        + LocalDate.now(java.time.ZoneOffset.UTC)),
                         tokenGenerator.fetchTokenForRole());
 
         // assert the response
@@ -64,12 +68,14 @@ public class DataConstraintControllerTest extends BaseIntegration {
         Assertions.assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
         Assertions.assertEquals(
-                "getApplicationCodeByCodeAndDate.code: size must be between 0 and 10",
+                "Constraints failed for fields:"
+                        + System.lineSeparator()
+                        + "getApplicationCodeByCodeAndDate.code=size must be between 0 and 10",
                 problemDetail.getDetail());
     }
 
     @Test
-    public void testSizeBodyFailure() throws Exception {
+    void testSizeBodyFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -106,7 +112,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testDateFailure() throws Exception {
+    void testDateFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -128,7 +134,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testTimeFailure() throws Exception {
+    void testTimeFailure() throws Exception {
         LocalTime midNight = LocalTime.parse("00:00");
         var createListReq =
                 new ApplicationListCreateDto()
@@ -170,7 +176,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testTimeOnQueryFailure() throws Exception {
+    void testTimeOnQueryFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -196,7 +202,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testHourValueMaximumFailure() throws Exception {
+    void testHourValueMaximumFailure() throws Exception {
         LocalTime midNight = LocalTime.parse("00:00");
         int minutesExceedingMax = 61;
         var createListReq =
@@ -235,7 +241,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testStateEnumFailure() throws Exception {
+    void testStateEnumFailure() throws Exception {
         LocalTime timeofEntry = LocalTime.parse("01:00");
         var createListReq =
                 new ApplicationListCreateDto()
@@ -282,7 +288,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testMismatchFailure() throws Exception {
+    void testMismatchFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -304,7 +310,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testParameterFailure() throws Exception {
+    void testParameterFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -326,7 +332,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testNumberAsString() throws Exception {
+    void testNumberAsString() throws Exception {
         ApplicationListCreateDto createListReq =
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
@@ -365,7 +371,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testEmptyNotAllowed() throws Exception {
+    void testEmptyNotAllowed() throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         entryCreateDto.setWordingFields(null);
@@ -404,7 +410,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testRegexFailureApplicant() throws Exception {
+    void testRegexFailureApplicant() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -522,7 +528,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
     }
 
     @Test
-    public void testRegexFailureRespondent() throws Exception {
+    void testRegexFailureRespondent() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 

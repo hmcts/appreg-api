@@ -11,6 +11,11 @@ class NameAddressValidatorTest {
     private final NameAddressValidator validator = new NameAddressValidator();
 
     @Test
+    void isValid_returnsTrueForNullNameAddress() {
+        assertTrue(validator.isValid(null, null));
+    }
+
+    @Test
     void isValid_returnsTrueForOrganisationWithOnlyOrganisationFields() {
         var nameAddress = new NameAddress();
         nameAddress.setName("Org Ltd");

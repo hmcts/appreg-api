@@ -1,13 +1,21 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.time.Month;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import lombok.val;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
@@ -26,13 +34,42 @@ import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCrudTest {
 
-    private static final LocalDate ORIGINAL_STATUS_DATE = LocalDate.of(2025, 1, 10);
-    private static final LocalDate UPDATED_STATUS_DATE = LocalDate.of(2025, 10, 7);
+    private static final LocalDate ORIGINAL_STATUS_DATE = LocalDate.of(2025, Month.JANUARY, 10);
+    private static final LocalDate UPDATED_STATUS_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
     private static final String ORIGINAL_PAYMENT_REFERENCE = "PAY-ORIGINAL";
     private static final String UPDATED_PAYMENT_REFERENCE = "PAY-UPDATED";
 
     @Test
-    void givenValidEntries_whenBulkUpdateFees_thenFeeDetailsAreReplacedForEveryEntry()
+    void givenBulkFeesRequestContainsUnsupportedNestedField_whenBulkUpdateFees_thenReturns400()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        BulkFeesUpdateDto request = validBulkFeesUpdateDto(Set.of(entry.getId()));
+        ObjectNode requestBody = mapper.valueToTree(request);
+        ArrayNode feeDetails = (ArrayNode) requestBody.path("feeDetails");
+        ((ObjectNode) feeDetails.get(0)).put("unexpected", "value");
+
+        Response response =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT + "/" + entry.getListId() + "/entries/fees"),
+                        tokenGenerator.fetchTokenForRole(),
+                        mapper.writeValueAsString(requestBody));
+
+        response.then().statusCode(400);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+        assertThat(problemDetail.getDetail())
+                .isEqualTo("Unsupported request field: feeDetails[0].unexpected");
+    }
+
+    @Test
+    void givenValidEntries_whenBulkUpdateFees_thenFeeStatusesAreAppendedForEveryEntry()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         EntryGetDetailDto firstEntry =
@@ -67,16 +104,110 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
 
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
-                PaymentStatus.REMITTED,
-                UPDATED_STATUS_DATE,
-                UPDATED_PAYMENT_REFERENCE,
-                true);
+                true,
+                feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()),
-                PaymentStatus.REMITTED,
-                UPDATED_STATUS_DATE,
-                UPDATED_PAYMENT_REFERENCE,
-                true);
+                true,
+                feeStatus(PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
+    }
+
+    @Test
+    void givenValidEntriesAndMultipleFeeDetails_whenBulkUpdateFees_thenAllFeeDetailsAreAppended()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto firstEntry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        EntryGetDetailDto secondEntry =
+                createEntry(
+                        Optional.of(firstEntry.getListId()),
+                        PaymentStatus.DUE,
+                        ORIGINAL_STATUS_DATE,
+                        null,
+                        false);
+        BulkFeesUpdateDto dto =
+                new BulkFeesUpdateDto()
+                        .entryIds(Set.of(firstEntry.getId(), secondEntry.getId()))
+                        .feeDetails(
+                                List.of(
+                                        feeDetails(
+                                                PaymentStatus.PAID,
+                                                UPDATED_STATUS_DATE,
+                                                "PAY-BULK-1",
+                                                false),
+                                        feeDetails(
+                                                PaymentStatus.REMITTED,
+                                                UPDATED_STATUS_DATE,
+                                                "PAY-BULK-2",
+                                                true)));
+
+        differenceLogAsserter.clearLogs();
+
+        Response response = bulkUpdateFees(tokenGenerator, firstEntry.getListId(), dto);
+
+        response.then().statusCode(200);
+        BulkUpdateResponseDto responseDto = response.as(BulkUpdateResponseDto.class);
+        assertThat(responseDto.getTotalCount()).isEqualTo(2);
+        assertThat(responseDto.getUpdatedCount()).isEqualTo(2);
+        assertThat(responseDto.getStatus()).isEqualTo(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+
+        assertFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
+                true,
+                feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
+                feeStatus(PaymentStatus.PAID, UPDATED_STATUS_DATE, "PAY-BULK-1"),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, "PAY-BULK-2"));
+        assertFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()),
+                true,
+                feeStatus(PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null),
+                feeStatus(PaymentStatus.PAID, UPDATED_STATUS_DATE, "PAY-BULK-1"),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, "PAY-BULK-2"));
+    }
+
+    @Test
+    void
+            givenEntryAlreadyHasOffsiteFee_whenBulkUpdateFeesWithoutOffsiteFlag_thenOffsiteFeeIsPreserved()
+                    throws Exception {
+        val tokenGenerator = createAdminToken();
+        val entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        true);
+
+        differenceLogAsserter.clearLogs();
+
+        val response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entry.getId()))
+                                .feeDetails(
+                                        List.of(
+                                                feeDetails(
+                                                        PaymentStatus.REMITTED,
+                                                        UPDATED_STATUS_DATE,
+                                                        UPDATED_PAYMENT_REFERENCE,
+                                                        false))));
+
+        response.then().statusCode(200);
+
+        assertFeeDetails(
+                getEntry(tokenGenerator, entry.getListId(), entry.getId()),
+                true,
+                feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
+                feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
     }
 
     @Test
@@ -191,7 +322,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         BulkFeeDetailsDto feeDetails =
                 feeDetails(
                         PaymentStatus.REMITTED,
-                        LocalDate.now().plusDays(1),
+                        LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1),
                         UPDATED_PAYMENT_REFERENCE,
                         true);
 
@@ -203,7 +334,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         entry.getListId(),
                         new BulkFeesUpdateDto()
                                 .entryIds(Set.of(entry.getId()))
-                                .feeDetails(feeDetails));
+                                .feeDetails(List.of(feeDetails)));
 
         response.then().statusCode(400);
         ProblemAssertUtil.assertEquals(
@@ -282,14 +413,6 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_FEE_STATUS,
                         "alefs_fee_status",
-                        "PAID",
-                        null,
-                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getType().name(),
-                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName()));
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LISTS_FEE_STATUS,
-                        "alefs_fee_status",
                         null,
                         "REMITTED",
                         AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getType().name(),
@@ -324,11 +447,12 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
                 .feeDetails(
-                        feeDetails(
-                                PaymentStatus.REMITTED,
-                                UPDATED_STATUS_DATE,
-                                UPDATED_PAYMENT_REFERENCE,
-                                true));
+                        List.of(
+                                feeDetails(
+                                        PaymentStatus.REMITTED,
+                                        UPDATED_STATUS_DATE,
+                                        UPDATED_PAYMENT_REFERENCE,
+                                        true)));
     }
 
     private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
@@ -373,6 +497,25 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         assertThat(feeStatus.getPaymentStatus()).isEqualTo(expectedStatus);
         assertThat(feeStatus.getStatusDate()).isEqualTo(expectedStatusDate);
         assertThat(feeStatus.getPaymentReference()).isEqualTo(expectedPaymentReference);
+        assertThat(entry.getHasOffsiteFee()).isEqualTo(expectedHasOffsiteFee);
+    }
+
+    private void assertFeeDetails(
+            EntryGetDetailDto entry, boolean expectedHasOffsiteFee, FeeStatus... expectedStatuses) {
+        assertThat(entry.getFeeStatuses())
+                .extracting(
+                        FeeStatus::getPaymentStatus,
+                        FeeStatus::getStatusDate,
+                        FeeStatus::getPaymentReference)
+                .containsExactlyInAnyOrder(
+                        Arrays.stream(expectedStatuses)
+                                .map(
+                                        status ->
+                                                tuple(
+                                                        status.getPaymentStatus(),
+                                                        status.getStatusDate(),
+                                                        status.getPaymentReference()))
+                                .toArray(Tuple[]::new));
         assertThat(entry.getHasOffsiteFee()).isEqualTo(expectedHasOffsiteFee);
     }
 }

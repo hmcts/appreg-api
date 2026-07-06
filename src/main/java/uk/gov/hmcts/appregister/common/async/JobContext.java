@@ -20,7 +20,7 @@ public class JobContext {
      * until the end. This is false by default, so the underlying job will continue to validate each
      * page of data until the end.
      */
-    private boolean isStoppedValidating = false;
+    private boolean isStoppedValidating;
 
     /**
      * determines if any failures have been made.
@@ -46,7 +46,7 @@ public class JobContext {
      * @param errorMsg The error message to log.
      */
     public void logFailure(String errorMsg) {
-        if (validationFailureMessages.stream().filter(msg -> msg.equals(errorMsg)).count() == 0) {
+        if (validationFailureMessages.stream().noneMatch(msg -> msg.equals(errorMsg))) {
             validationFailureMessages.add(errorMsg);
         }
     }

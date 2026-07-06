@@ -36,6 +36,20 @@ class ApplicationListEntryMoveAuditTest {
         Assertions.assertEquals(123L, audit.getId());
     }
 
+    @Test
+    void extractAuditData_usesEmptyStringsWhenListIdOrVersionMissing() {
+        val applicationListEntry = new ApplicationListEntry();
+        applicationListEntry.setId(123L);
+
+        val audit = ApplicationListEntryMoveAudit.from(applicationListEntry);
+        val auditData = audit.extractAuditData(CrudEnum.UPDATE);
+
+        Assertions.assertTrue(
+                containsAuditRow(auditData, TableNames.APPLICATION_LISTS, "al_id", ""));
+        Assertions.assertTrue(
+                containsAuditRow(auditData, TableNames.APPLICATION_LISTS_ENTRY, "version", ""));
+    }
+
     private boolean containsAuditRow(
             List<AuditableData> auditData, String tableName, String fieldName, String value) {
         return auditData.stream()

@@ -1,8 +1,11 @@
 package uk.gov.hmcts.appregister.audit.event;
 
+import lombok.Getter;
+
 /**
  * Describes the audit status of the underlying operation.
  */
+@Getter
 public enum OperationStatus {
     STARTED(1),
     COMPLETED(10),
@@ -12,9 +15,5 @@ public enum OperationStatus {
 
     OperationStatus(int status) {
         this.status = status;
-    }
-
-    public int getStatus() {
-        return status;
     }
 }

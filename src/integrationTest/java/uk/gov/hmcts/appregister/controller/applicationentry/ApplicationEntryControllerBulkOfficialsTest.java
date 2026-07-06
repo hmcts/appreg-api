@@ -85,7 +85,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
     }
 
     @Test
-    void givenMissingApplicationList_whenReplaceOfficials_thenReturns409() throws Exception {
+    void givenMissingApplicationList_whenReplaceOfficials_thenReturns404() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         UUID missingListId = UUID.randomUUID();
 
@@ -95,7 +95,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                         missingListId,
                         validBulkOfficialsUpdateDto(UUID.randomUUID()));
 
-        response.then().statusCode(409);
+        response.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), response);
     }

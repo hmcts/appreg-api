@@ -5,9 +5,12 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
 /**
@@ -17,25 +20,38 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
  */
 @Slf4j
 public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
+    private static final HttpInputMessage EMPTY_INPUT_MESSAGE =
+            new HttpInputMessage() {
+                @Override
+                public InputStream getBody() {
+                    return InputStream.nullInputStream();
+                }
+
+                @Override
+                public HttpHeaders getHeaders() {
+                    return HttpHeaders.EMPTY;
+                }
+            };
 
     @Override
     public LocalTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        JsonToken token = p.currentToken();
+        var token = p.currentToken();
 
         if (token == JsonToken.START_ARRAY) {
             throw new HttpMessageNotReadableException(
                     "Unexpected time format detected %s".formatted(getErroneousArrayString(p)),
-                    null);
-        } else {
-            // Accept string only (you can also accept NUMBER if you want, but here we do not)
-            if (token == JsonToken.VALUE_STRING) {
-                String text = p.getText().trim();
-
-                return LocalTime.parse(text, DateTimeFormatter.ofPattern("HH:mm"));
-            } else {
-                throw new HttpMessageNotReadableException("Unexpected time format detected", null);
-            }
+                    EMPTY_INPUT_MESSAGE);
         }
+
+        // Accept string only (you can also accept NUMBER if you want, but here we do not)
+        if (token == JsonToken.VALUE_STRING) {
+            var text = p.getText().trim();
+
+            return LocalTime.parse(text, DateTimeFormatter.ofPattern("HH:mm"));
+        }
+
+        throw new HttpMessageNotReadableException(
+                "Unexpected time format detected", EMPTY_INPUT_MESSAGE);
     }
 
     /**
@@ -49,12 +65,12 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
             return String.valueOf(p.getText());
         }
 
-        StringBuilder sb = new StringBuilder("[");
-        boolean first = true;
+        var sb = new StringBuilder("[");
+        var first = true;
 
         while (p.nextToken() != JsonToken.END_ARRAY) {
             if (!first) {
-                sb.append(",");
+                sb.append(',');
             }
             first = false;
 
@@ -62,7 +78,7 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
             sb.append(p.getValueAsString(p.getText()));
         }
 
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 }

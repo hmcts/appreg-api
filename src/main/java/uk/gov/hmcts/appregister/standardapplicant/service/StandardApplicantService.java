@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 
 /**
  * Service interface for managing Standard Applicants.
@@ -29,14 +30,22 @@ public interface StandardApplicantService {
             PagingWrapper pageable);
 
     /**
-     * finds a standard applicant by code and date.
+     * finds a standard applicant by code.
      *
      * @param code The code of the standard applicant.
-     * @param date The date to check the validity of the standard applicant. The date has to be
-     *     before the date of the standard applicant and after the expiry date (if present).
      * @return The standard applicant detail DTO.
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException In the eventuality
      *     that the code can't be found
      */
-    StandardApplicantGetDetailDto findByCode(String code, LocalDate date);
+    StandardApplicantGetDetailDto findByCode(String code);
+
+    StandardApplicantPrintDto print(
+            String code,
+            String name,
+            String addressLine1,
+            LocalDate from,
+            LocalDate to,
+            PagingWrapper pageable);
+
+    String generateCsv(String code, String name);
 }

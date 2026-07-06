@@ -1,11 +1,11 @@
 type: object
 description: Request payload to fully replace an existing Application List. Blank fields will be rejected, nulls should be used instead.
+additionalProperties: false
 required:
   - date
   - time
   - description
   - status
-  - version
 
 properties:
 
@@ -19,7 +19,7 @@ properties:
     type: string
     format: time
     description: The time of day at which the Application List is scheduled.
-    example: "10:30"
+    example: "10:30:00"
 
   description:
     type: string

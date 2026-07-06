@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.controller.admin;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.restassured.response.Response;
 import lombok.val;
@@ -13,9 +13,9 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
-public class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
+class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
     @Test
-    public void whenGetJobStatusByName_thenReturnOk() throws Exception {
+    void whenGetJobStatusByName_thenReturnOk() throws Exception {
         var jobName = AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name();
 
         Response responseSpec =
@@ -30,7 +30,7 @@ public class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenGetJobStatusByName_thenReturn404() throws Exception {
+    void whenGetJobStatusByName_thenReturn404() throws Exception {
         var jobName = "SOME_JOB_THAT_DOES_NOT_EXIST";
 
         Response responseSpec =
@@ -48,7 +48,7 @@ public class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
     }
 
     @Test
-    public void whenGetJobStatusByName_thenDataAuditRowIsPersisted() throws Exception {
+    void whenGetJobStatusByName_thenDataAuditRowIsPersisted() throws Exception {
         val jobName = AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name();
 
         // Remove earlier rows so the assertions below only inspect this GET request.

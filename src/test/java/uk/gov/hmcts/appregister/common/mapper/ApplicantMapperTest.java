@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
+import java.time.Month;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -51,7 +52,7 @@ class ApplicantMapperTest {
 
         assertEquals("Doe", mapper.getNameForNameAddress(lastNameOnly));
         assertEquals("Jane", mapper.getNameForNameAddress(firstNameOnly));
-        assertEquals("", mapper.getNameForNameAddress(noPersonName));
+        assertNull(mapper.getNameForNameAddress(noPersonName));
     }
 
     @Test
@@ -150,7 +151,7 @@ class ApplicantMapperTest {
         var person = new RespondentPerson();
         person.setName(fullName);
         person.setContactDetails(contactDetails);
-        person.setDateOfBirth(LocalDate.of(1980, 1, 2));
+        person.setDateOfBirth(LocalDate.of(1980, Month.JANUARY, 2));
 
         var respondent = new Respondent();
         respondent.setPerson(person);
@@ -161,7 +162,7 @@ class ApplicantMapperTest {
         assertEquals("John", mapped.getFirstName());
         assertEquals("Quincy", mapped.getMiddleName());
         assertEquals("Public", mapped.getLastName());
-        assertEquals(LocalDate.of(1980, 1, 2), mapped.getDateOfBirth());
+        assertEquals(LocalDate.of(1980, Month.JANUARY, 2), mapped.getDateOfBirth());
     }
 
     @Test
@@ -251,7 +252,27 @@ class ApplicantMapperTest {
         organisation.setName("Org Ltd");
 
         assertEquals("Org Ltd", mapper.getNameForNameAddress(organisation));
-        assertEquals("", mapper.getNameForNameAddress(null));
+        assertNull(mapper.getNameForNameAddress(null));
+    }
+
+    @Test
+    void toContactDetails_convertsEmptyStringsToNull() {
+        var entity = new NameAddress();
+        entity.setAddress1("");
+        entity.setAddress2("");
+        entity.setPostcode("");
+        entity.setTelephoneNumber("");
+        entity.setMobileNumber("");
+        entity.setEmailAddress("");
+
+        var details = mapper.toContactDetails(entity);
+
+        assertNull(details.getAddressLine1());
+        assertNull(details.getAddressLine2().orElse("value"));
+        assertNull(details.getPostcode());
+        assertNull(details.getPhone().orElse("value"));
+        assertNull(details.getMobile().orElse("value"));
+        assertNull(details.getEmail().orElse("value"));
     }
 
     @Test

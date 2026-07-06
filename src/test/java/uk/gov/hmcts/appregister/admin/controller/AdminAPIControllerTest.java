@@ -1,0 +1,81 @@
+package uk.gov.hmcts.appregister.admin.controller;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
+import uk.gov.hmcts.appregister.generated.model.AdminJobType;
+import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
+
+class AdminAPIControllerTest {
+    private final AdminAPIService adminAPIService = mock(AdminAPIService.class);
+    private final AdminAPIController controller = new AdminAPIController(adminAPIService);
+
+    @Test
+    void enableDisableDatabaseJobByName_delegatesAndReturnsVersionedOkResponse() {
+        ResponseEntity<Void> response =
+                controller.enableDisableDatabaseJobByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB, true);
+
+        verify(adminAPIService)
+                .enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, true);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getVary()).containsExactly("Accept");
+        assertThat(response.getHeaders().getContentType())
+                .hasToString("application/vnd.hmcts.appreg.v1+json");
+    }
+
+    @Test
+    void getDatabaseJobRetentionPeriodByName_delegatesAndReturnsBody() {
+        var body = new JobRetentionPolicy().retentionPeriodDays(365);
+        when(adminAPIService.getDatabaseJobRetentionPeriodByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB))
+                .thenReturn(body);
+
+        ResponseEntity<JobRetentionPolicy> response =
+                controller.getDatabaseJobRetentionPeriodByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
+
+        verify(adminAPIService)
+                .getDatabaseJobRetentionPeriodByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(body);
+    }
+
+    @Test
+    void updateDatabaseJobRetentionPeriodByName_delegatesAndReturnsVersionedOkResponse() {
+        ResponseEntity<Void> response =
+                controller.updateDatabaseJobRetentionPeriodByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365);
+
+        verify(adminAPIService)
+                .updateDatabaseJobRetentionPeriodByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getVary()).containsExactly("Accept");
+        assertThat(response.getHeaders().getContentType())
+                .hasToString("application/vnd.hmcts.appreg.v1+json");
+    }
+
+    @Test
+    void getJobStatus_delegatesAndReturnsBody() {
+        var body = new JobStatus().enabled(true);
+        when(adminAPIService.getDatabaseJobStatusByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB))
+                .thenReturn(body);
+
+        ResponseEntity<JobStatus> response =
+                controller.getJobStatus(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
+
+        verify(adminAPIService)
+                .getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(body);
+    }
+}

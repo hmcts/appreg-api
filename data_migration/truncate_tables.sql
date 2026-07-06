@@ -14,3 +14,5 @@ truncate table appreg.standard_applicants cascade;
 truncate table appreg.national_court_houses cascade;
 truncate table appreg.data_audit cascade;
 truncate table appreg.al_ale_sequence_mapping cascade;
+truncate table appreg.appreg_user_mapping cascade;
+

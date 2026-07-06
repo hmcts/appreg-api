@@ -99,7 +99,7 @@ public class BulkUploadRow implements CsvPojo {
     private MultiValuedMap<String, String> applicationTexts;
 
     public static boolean hasRespondentOrganisation(BulkUploadRow row) {
-        return row != null && StringUtils.isNotBlank(row.getRespondentOrganisationName());
+        return row != null && StringUtils.isNotBlank(row.respondentOrganisationName);
     }
 
     public static boolean hasRespondentPerson(BulkUploadRow row) {

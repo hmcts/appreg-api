@@ -5,10 +5,8 @@ import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH_LIVENESS;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH_READINESS;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,17 +36,11 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthConverter,
-            SecurityEndpointFailureLogger securityEndpointFailureLogger)
-            throws Exception {
+            SecurityEndpointFailureLogger securityEndpointFailureLogger) {
 
         http.authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(
-                                                SWAGGER_UI,
-                                                OPENAPI,
-                                                HEALTH,
-                                                HEALTH_LIVENESS,
-                                                HEALTH_READINESS)
+                                auth.requestMatchers(HEALTH, HEALTH_LIVENESS, HEALTH_READINESS)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())

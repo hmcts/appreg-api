@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,6 +40,21 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         """)
     List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
 
+    @Query(
+            """
+        SELECT f
+        FROM Fee f
+        WHERE LOWER(f.reference) IN :references
+          AND ((f.endDate IS NULL OR f.endDate >= :dateTime) AND f.isOffsite = false
+          AND f.startDate <= :dateTime)
+        ORDER BY LOWER(f.reference),
+                 CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+                 f.endDate DESC,
+                 f.startDate DESC,
+                 f.id DESC
+        """)
+    List<Fee> findByReferenceInBetweenDate(Collection<String> references, LocalDate dateTime);
+
     /**
      * <<<<<<< HEAD Finds a list of Fee entities by their reference and offsite status.
      *
@@ -59,14 +75,6 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         """)
     List<Fee> findByReferenceBetweenDateWithOffsite(
             String reference, LocalDate dateTime, boolean offsiteStatus);
-
-    /**
-     * Finds Fee entities with IDs greater than or equal to the specified value.
-     *
-     * @param value the minimum ID value
-     * @return a list of Fee entities with IDs >= value
-     */
-    List<Fee> findByIdGreaterThanEqual(Integer value);
 
     /**
      * find the fee associated fees with the given ids that is within the window of the date.

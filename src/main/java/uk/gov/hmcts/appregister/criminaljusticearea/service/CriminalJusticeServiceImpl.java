@@ -1,11 +1,11 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -22,9 +22,9 @@ import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
     private final CriminalJusticeMapper criminalJusticeMapper;
     private final PageMapper pageMapper;
@@ -44,8 +44,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                     criminalJusticeMapper.toEntity(code));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override
@@ -54,25 +53,27 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
         return auditService.processAudit(
                 null,
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
-                (req) -> {
+                req -> {
                     org.springframework.data.domain.Page<CriminalJusticeArea> criminalJusticeList =
                             criminalJusticeAreaRepository.search(
                                     code, description, pageable.getPageable());
 
                     CriminalJusticeAreaPage craPage = new CriminalJusticeAreaPage();
                     pageMapper.toPage(criminalJusticeList, craPage, pageable.getSortStrings());
+                    craPage.setContent(new ArrayList<>());
                     criminalJusticeList.stream()
                             .forEach(
-                                    (entry) ->
+                                    entry ->
                                             craPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    CodeAndDescription record = new CodeAndDescription(code, description);
+                    CodeAndDescription codeAndDescription =
+                            new CodeAndDescription(code, description);
                     AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
-                            new AuditableResult<>(craPage, criminalJusticeMapper.toEntity(record));
+                            new AuditableResult<>(
+                                    craPage, criminalJusticeMapper.toEntity(codeAndDescription));
 
                     return Optional.of(result);
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 }

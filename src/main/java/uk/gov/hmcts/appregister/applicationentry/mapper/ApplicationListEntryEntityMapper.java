@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.time.LocalDate;
-import lombok.Setter;
+import lombok.val;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -31,10 +32,20 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
  * AppListEntryOfficial}.
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-@Setter
 public abstract class ApplicationListEntryEntityMapper {
 
-    @Autowired OfficialMapper officialMapper;
+    OfficialMapper officialMapper;
+    private BusinessDateProvider businessDateProvider;
+
+    @Autowired
+    public void setOfficialMapper(OfficialMapper officialMapper) {
+        this.officialMapper = officialMapper;
+    }
+
+    @Autowired
+    public void setBusinessDateProvider(BusinessDateProvider businessDateProvider) {
+        this.businessDateProvider = businessDateProvider;
+    }
 
     public ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,
@@ -80,6 +91,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "entryRescheduled", constant = "N")
     @Mapping(target = "sequenceNumber", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @SuppressWarnings("java:S107")
     public abstract ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,
             String substituteWording,
@@ -145,17 +157,16 @@ public abstract class ApplicationListEntryEntityMapper {
      * @return The fee status type
      */
     public static FeeStatusType toStatus(PaymentStatus paymentStatus) {
-        if (paymentStatus == PaymentStatus.DUE) {
-            return FeeStatusType.DUE;
-        } else if (paymentStatus == PaymentStatus.PAID) {
-            return FeeStatusType.PAID;
-        } else if (paymentStatus == PaymentStatus.REMITTED) {
-            return FeeStatusType.REMITTED;
-        } else if (paymentStatus == PaymentStatus.UNDERTAKEN) {
-            return FeeStatusType.UNDERTAKING;
+        if (paymentStatus == null) {
+            return null;
         }
 
-        return null;
+        return switch (paymentStatus) {
+            case DUE -> FeeStatusType.DUE;
+            case PAID -> FeeStatusType.PAID;
+            case REMITTED -> FeeStatusType.REMITTED;
+            case UNDERTAKEN -> FeeStatusType.UNDERTAKING;
+        };
     }
 
     @Mapping(target = "appListEntry", source = "listEntryEntity")
@@ -177,9 +188,7 @@ public abstract class ApplicationListEntryEntityMapper {
      * @return The lodgement date
      */
     LocalDate getLodgementDate(EntryCreateDto entryCreateDto) {
-        if (entryCreateDto.getLodgementDate() != null) {
-            return entryCreateDto.getLodgementDate();
-        }
-        return LocalDate.now();
+        val lodgementDate = entryCreateDto.getLodgementDate();
+        return lodgementDate != null ? lodgementDate : businessDateProvider.currentUkDate();
     }
 }

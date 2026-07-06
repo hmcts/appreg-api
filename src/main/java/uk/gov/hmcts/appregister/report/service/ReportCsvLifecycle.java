@@ -53,6 +53,10 @@ abstract class ReportCsvLifecycle<T> implements AsyncJobLifecycle<T> {
 
     protected abstract String[] toCsvRow(T row);
 
+    File outputFile() {
+        return file;
+    }
+
     private void ensureHeadersWritten() throws IOException {
         if (headersWritten) {
             return;

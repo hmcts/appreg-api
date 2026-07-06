@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +20,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
 import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.audit.service.NestedAuditPersistenceManager;
 
 @Configuration
 @EnableAspectJAutoProxy
@@ -72,8 +74,10 @@ public class AppConfig implements WebMvcConfigurer {
      * level. See {@link uk.gov.hmcts.appregister.audit.service.AuditOperationService}
      */
     @Bean
-    public DataAuditLogger auditDifferentiator(DataAuditRepository dataAuditRepository) {
-        return new DataAuditLogger(new ReflectiveAuditor(complexDiffEnabled), dataAuditRepository);
+    public DataAuditLogger auditDifferentiator(
+            NestedAuditPersistenceManager nestedAuditPersistenceManager) {
+        return new DataAuditLogger(
+                new ReflectiveAuditor(complexDiffEnabled), nestedAuditPersistenceManager);
     }
 
     /**
@@ -82,12 +86,13 @@ public class AppConfig implements WebMvcConfigurer {
      */
     class ListStringConverter implements GenericConverter {
         @Override
-        public Set<ConvertiblePair> getConvertibleTypes() {
+        public @Nullable Set<@NonNull ConvertiblePair> getConvertibleTypes() {
             return Set.of(new ConvertiblePair(String.class, List.class));
         }
 
         @Override
-        public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+        public @Nullable Object convert(
+                @Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
             if (source instanceof String str) {
                 return List.of(str);
             }

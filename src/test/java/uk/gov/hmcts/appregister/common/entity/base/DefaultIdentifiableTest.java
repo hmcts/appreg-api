@@ -3,10 +3,10 @@ package uk.gov.hmcts.appregister.common.entity.base;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class DefaultIdentifiableTest {
+class DefaultIdentifiableTest {
 
     @Test
-    public void testDefaultMethods() {
+    void testDefaultMethods() {
         Identifiable identifiable = new Identifiable() {};
         Assertions.assertEquals(Identifiable.DEFAULT_VALUE, identifiable.getCode());
         Assertions.assertEquals(Identifiable.DEFAULT_VALUE, identifiable.getTitle());

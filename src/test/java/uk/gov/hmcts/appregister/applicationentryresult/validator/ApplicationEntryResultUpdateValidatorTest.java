@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultUpdateValidatorTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -78,22 +78,25 @@ class ApplicationEntryResultUpdateValidatorTest {
         resolutionCode.setWording("Some wording");
 
         // ---- base validations (AbstractApplicationEntryResultValidator) ----
-        when(applicationListRepository.findByUuidIncludingDelete(eq(applicationListUuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(applicationListUuid))
                 .thenReturn(Optional.of(applicationList));
+        when(applicationListEntryRepository.findByUuid(applicationListEntryUuid))
+                .thenReturn(Optional.of(applicationListEntry));
 
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        eq(applicationListEntryUuid), eq(applicationListUuid)))
+                        applicationListEntryUuid, applicationListUuid))
                 .thenReturn(Optional.of(applicationListEntry));
 
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        eq(dto.getResultCode()), eq(TODAY_UK)))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
         AppListEntryResolution entryResolution = new AppListEntryResolution();
+        when(appListEntryResolutionRepository.findByUuid(resultUuid))
+                .thenReturn(Optional.of(entryResolution));
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-                        eq(resultUuid), eq(applicationListEntryUuid)))
+                        resultUuid, applicationListEntryUuid))
                 .thenReturn(Optional.of(entryResolution));
     }
 
@@ -104,9 +107,7 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateEntryResultDoesNotExist() {
-        when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-                        eq(resultUuid), eq(applicationListEntryUuid)))
-                .thenReturn(Optional.empty());
+        when(appListEntryResolutionRepository.findByUuid(resultUuid)).thenReturn(Optional.empty());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -120,8 +121,25 @@ class ApplicationEntryResultUpdateValidatorTest {
     }
 
     @Test
+    void validateEntryResultDoesNotBelongToEntry() {
+        when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
+                        resultUuid, applicationListEntryUuid))
+                .thenReturn(Optional.empty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_NOT_WITHIN_ENTRY
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
+    }
+
+    @Test
     void validateApplicationListDoesNotExist() {
-        when(applicationListRepository.findByUuidIncludingDelete(eq(applicationListUuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(applicationListUuid))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =
@@ -137,8 +155,7 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateApplicationListEntryDoesNotExist() {
-        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        eq(applicationListEntryUuid), eq(applicationListUuid)))
+        when(applicationListEntryRepository.findByUuid(applicationListEntryUuid))
                 .thenReturn(Optional.empty());
 
         AppRegistryException ex =
@@ -153,9 +170,25 @@ class ApplicationEntryResultUpdateValidatorTest {
     }
 
     @Test
+    void validateApplicationListEntryDoesNotBelongToList() {
+        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                        applicationListEntryUuid, applicationListUuid))
+                .thenReturn(Optional.empty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
+    }
+
+    @Test
     void validateResolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        eq(dto.getResultCode()), eq(TODAY_UK)))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of());
 
         AppRegistryException ex =

@@ -63,6 +63,7 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -85,7 +86,6 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
-import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
@@ -101,7 +101,6 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -110,22 +109,24 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
-import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 
 @SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryMapperTest {
+    private static final LocalDate APPLICATION_LIST_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
 
     private ApplicationListEntryMapper mapper;
+    private final OfficialMapper officialMapper = new OfficialMapper();
 
     @BeforeEach
     void beforeEach() {
         mapper = new ApplicationListEntryMapperImpl();
         mapper.setApplicantMapper(new ApplicantMapperImpl());
-        mapper.setOfficialMapper(new OfficialMapper());
+        mapper.setOfficialMapper(officialMapper);
     }
 
     @Test
@@ -250,55 +251,6 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
-    void testToSummaryModel_provideValidData_validModelGenerated() {
-        NameAddress applicant = new NameAddress();
-        applicant.setName("Mustafa's Org");
-
-        NameAddress respondent = new NameAddress();
-        respondent.setTitle("His Majesty");
-        respondent.setFirstName("Ahmed");
-        respondent.setLastName("Mustafa");
-
-        var postCode = "SW1A 1AA";
-        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired = true;
-        var result = "APPC";
-
-        var uuid = UUID.randomUUID();
-        short sequenceNumber = 1;
-        var accountNumber = "1234567890";
-
-        var projection =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid)
-                        .sequenceNumber(sequenceNumber)
-                        .accountNumber(accountNumber)
-                        .applicant(applicant)
-                        .respondent(respondent)
-                        .postCode(postCode)
-                        .applicationTitle(applicationTitle)
-                        .feeRequired(feeRequired)
-                        .result(result)
-                        .build();
-
-        var mapper = new ApplicationListEntryMapperImpl();
-        mapper.setApplicantMapper(new ApplicantMapperImpl());
-        var model = mapper.toSummaryDto(projection);
-
-        assertApplicationListEntrySummary(
-                uuid,
-                sequenceNumber,
-                model,
-                accountNumber,
-                "Mustafa's Org",
-                "Ahmed Mustafa",
-                postCode,
-                applicationTitle,
-                feeRequired,
-                result);
-    }
-
-    @Test
     void testToApplicationListEntryForListReadAudit_mapsDbBackedFilters() {
         // Build the same path parameter + filter pair that the list-entry read endpoint receives.
         val listId = UUID.randomUUID();
@@ -343,7 +295,7 @@ class ApplicationListEntryMapperTest {
         filterDto.setRespondentPostcode("AA1 1AA");
         filterDto.setCourtCode("COURT1");
         filterDto.setOtherLocationDescription("Room 4");
-        filterDto.setDate(LocalDate.of(2026, 6, 4));
+        filterDto.setDate(LocalDate.of(2026, Month.JUNE, 4));
         filterDto.setCjaCode("CJA01");
         filterDto.setStatus(ApplicationListStatus.CLOSED);
         filterDto.setApplicationTitle("Application Title");
@@ -361,7 +313,7 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals("COURT1", mappedResult.getApplicationList().getCourtCode());
         Assertions.assertEquals("Room 4", mappedResult.getApplicationList().getOtherLocation());
         Assertions.assertEquals(
-                LocalDate.of(2026, 6, 4), mappedResult.getApplicationList().getDate());
+                LocalDate.of(2026, Month.JUNE, 4), mappedResult.getApplicationList().getDate());
         Assertions.assertEquals("CJA01", mappedResult.getApplicationList().getCja().getCode());
         Assertions.assertEquals(Status.CLOSED, mappedResult.getApplicationList().getStatus());
     }
@@ -410,7 +362,7 @@ class ApplicationListEntryMapperTest {
     void testMapOffsetDateTime_returnsLocalDateAndHandlesNull() {
         Assertions.assertNull(mapper.map((OffsetDateTime) null));
         Assertions.assertEquals(
-                LocalDate.of(2026, 6, 4),
+                LocalDate.of(2026, Month.JUNE, 4),
                 mapper.map(OffsetDateTime.of(2026, 6, 4, 9, 30, 0, 0, ZoneOffset.UTC)));
     }
 
@@ -437,100 +389,6 @@ class ApplicationListEntryMapperTest {
 
         assertThat(mapper.getTemplateKeys(applicationCode))
                 .containsExactly("First label", "Second label");
-    }
-
-    @Test
-    void testToSummaryModelList_provideValidData_validModelListGenerated() {
-        NameAddress applicant1 = new NameAddress();
-        applicant1.setName("Mustafa's Org");
-
-        NameAddress respondent1 = new NameAddress();
-        respondent1.setTitle("His Majesty");
-        respondent1.setLastName("Mustafa");
-        respondent1.setFirstName("Ahmed");
-
-        NameAddress applicant2 = new NameAddress();
-        applicant2.setName("Mustafa's Org");
-
-        NameAddress respondent2 = new NameAddress();
-        respondent2.setFirstName("Sarah");
-        respondent2.setLastName("Johnson");
-
-        var accountNumber2 = "1234567891";
-        var postCode2 = "EH1 3QR";
-        var applicationTitle2 = "Copy documents";
-        var feeRequired2 = false;
-        var result2 = "RESP";
-
-        var uuid2 = UUID.randomUUID();
-        short sequenceNumber2 = 2;
-
-        var projection2 =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid2)
-                        .sequenceNumber(sequenceNumber2)
-                        .accountNumber(accountNumber2)
-                        .applicant(applicant2)
-                        .respondent(respondent2)
-                        .postCode(postCode2)
-                        .applicationTitle(applicationTitle2)
-                        .feeRequired(feeRequired2)
-                        .result(result2)
-                        .build();
-
-        var mapper = new ApplicationListEntryMapperImpl();
-        mapper.setApplicantMapper(new ApplicantMapperImpl());
-
-        var uuid1 = UUID.randomUUID();
-        short sequenceNumber1 = 1;
-        var accountNumber1 = "1234567890";
-
-        var postCode1 = "SW1A 1AA";
-        var applicationTitle1 = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired1 = true;
-        var result1 = "APPC";
-
-        var projection1 =
-                ApplicationListEntrySummaryProjectionBuilder.builder()
-                        .uuid(uuid1)
-                        .sequenceNumber(sequenceNumber1)
-                        .accountNumber(accountNumber1)
-                        .applicant(applicant1)
-                        .respondent(respondent1)
-                        .postCode(postCode1)
-                        .applicationTitle(applicationTitle1)
-                        .feeRequired(feeRequired1)
-                        .result(result1)
-                        .build();
-
-        List<ApplicationListEntrySummary> list =
-                mapper.toSummaryDtoList(List.of(projection1, projection2));
-
-        assertThat(list).hasSize(2);
-
-        assertApplicationListEntrySummary(
-                uuid1,
-                sequenceNumber1,
-                list.getFirst(),
-                accountNumber1,
-                "Mustafa's Org",
-                "Ahmed Mustafa",
-                postCode1,
-                applicationTitle1,
-                feeRequired1,
-                result1);
-
-        assertApplicationListEntrySummary(
-                uuid2,
-                sequenceNumber2,
-                list.getLast(),
-                accountNumber2,
-                "Mustafa's Org",
-                "Sarah Johnson",
-                postCode2,
-                applicationTitle2,
-                feeRequired2,
-                result2);
     }
 
     @Test
@@ -790,7 +648,7 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
-    public void toEntrySummary() {
+    void toEntrySummary() {
         // the applicant does have a name so is an organisation
         NameAddress applicant = new NameAddress();
         applicant.setName("name");
@@ -829,7 +687,8 @@ class ApplicationListEntryMapperTest {
         when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
         when(applicationListEntryGetSummaryProjection.getAnameAddress()).thenReturn(applicant);
         when(applicationListEntryGetSummaryProjection.getRnameAddress()).thenReturn(respondent);
-        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl())
+                .thenReturn(APPLICATION_LIST_DATE);
 
         when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
         when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
@@ -849,158 +708,20 @@ class ApplicationListEntryMapperTest {
         UUID listId = UUID.randomUUID();
         when(applicationListEntryGetSummaryProjection.getListId()).thenReturn(listId.toString());
 
-        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl())
+                .thenReturn(APPLICATION_LIST_DATE);
 
         // run test
         EntryGetSummaryDto mappedResult =
                 mapper.toEntrySummary(applicationListEntryGetSummaryProjection);
 
-        // assert
-        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
-        Assertions.assertEquals("leg", mappedResult.getLegislation());
-        Assertions.assertEquals("title", mappedResult.getApplicationTitle());
-        Assertions.assertEquals("name", mappedResult.getApplicant().getOrganisation().getName());
-        Assertions.assertEquals(
-                "aaddress1",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine1());
-        Assertions.assertEquals(
-                "aaddress2",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "aaddress3",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "aaddress4",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "aaddress5",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "atel",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getPhone()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "apostcode",
-                mappedResult.getApplicant().getOrganisation().getContactDetails().getPostcode());
-        Assertions.assertEquals(
-                "aemail",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getEmail()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "amobile",
-                mappedResult
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getMobile()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "raddress1",
-                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine1());
-        Assertions.assertEquals(
-                "raddress2",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "raddress3",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "raddress4",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "raddress5",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "rtel",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getPhone()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "rpostcode",
-                mappedResult.getRespondent().getPerson().getContactDetails().getPostcode());
-        Assertions.assertEquals(
-                "remail",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getEmail()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "rmobile",
-                mappedResult
-                        .getRespondent()
-                        .getPerson()
-                        .getContactDetails()
-                        .getMobile()
-                        .orElse(null));
-        Assertions.assertEquals(
-                "rsurname", mappedResult.getRespondent().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                "rforename2 rforename3",
-                mappedResult.getRespondent().getPerson().getName().getMiddleName().get());
-        Assertions.assertEquals(
-                "rforename1", mappedResult.getRespondent().getPerson().getName().getFirstName());
-        Assertions.assertFalse(mappedResult.getIsFeeRequired());
-        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
-        Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());
-        Assertions.assertEquals(listId.toString(), mappedResult.getListId().toString());
-        Assertions.assertEquals(LocalDate.now(), mappedResult.getDate());
-        Assertions.assertEquals("accref", mappedResult.getAccountNumber().get());
+        assertEntrySummaryDetails(
+                mappedResult,
+                applicant,
+                respondent,
+                uuidForProjection,
+                listId,
+                APPLICATION_LIST_DATE);
     }
 
     @Test
@@ -1077,273 +798,51 @@ class ApplicationListEntryMapperTest {
                 appListEntry.getStandardApplicant().getApplicantCode(),
                 entryGetDetailDto.getStandardApplicantCode());
 
-        // assert the applicant data
-        Assertions.assertEquals(
-                expectedLastName(applicant),
-                entryGetDetailDto.getApplicant().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                expectedFirstName(applicant),
-                entryGetDetailDto.getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                expectedMiddleName(applicant),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getMiddleName()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getTitle(),
-                entryGetDetailDto.getApplicant().getPerson().getName().getTitle());
-        Assertions.assertEquals(
-                applicant.getMobileNumber(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getMobile()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getEmailAddress(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getEmail()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getPostcode(),
-                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getPostcode());
-        Assertions.assertEquals(
-                applicant.getTelephoneNumber(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getPhone()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getAddress1(),
-                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getAddressLine1());
-        Assertions.assertEquals(
-                applicant.getAddress2(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getAddress3(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getAddress4(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .orElse(null));
-        Assertions.assertEquals(
-                applicant.getAddress5(),
-                entryGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .orElse(null));
+        validateApplicantPerson(applicant, entryGetDetailDto.getApplicant());
+        validateRespondentOrganisation(respondent, entryGetDetailDto.getRespondent());
+        assertWordingConstraints(
+                entryGetDetailDto,
+                List.of("Applicant officer1", "Applicant officer2", "Applicant officer3"),
+                List.of("officerVal1", "officerVal2", "officerVal3"),
+                List.of(11, 11, 11));
+        assertOfficials(
+                entryGetDetailDto.getOfficials(),
+                List.of(appListEntryOfficial, appListEntryOfficial2));
+        assertFeeStatuses(
+                entryGetDetailDto.getFeeStatuses(),
+                List.of(applicationListStatus, applicationListStatus2));
+    }
 
-        // assert the respondent details
-        Assertions.assertEquals(
-                respondent.getName(),
-                entryGetDetailDto.getRespondent().getOrganisation().getName());
-        Assertions.assertEquals(
-                respondent.getMobileNumber(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getMobile()
-                        .orElse(null));
-        Assertions.assertEquals(
-                respondent.getEmailAddress(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getEmail()
-                        .orElse(null));
-        Assertions.assertEquals(
-                respondent.getPostcode(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getPostcode());
-        Assertions.assertEquals(
-                respondent.getTelephoneNumber(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getPhone()
-                        .orElse(null));
-        Assertions.assertEquals(
-                respondent.getAddress1(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine1());
-        Assertions.assertEquals(
-                respondent.getAddress2(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .orElse(null));
-        Assertions.assertEquals(
-                respondent.getAddress3(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .orElse(null));
-        Assertions.assertEquals(
-                respondent.getAddress4(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .orElse(null));
-        Assertions.assertEquals(
-                respondent.getAddress5(),
-                entryGetDetailDto
-                        .getRespondent()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .orElse(null));
+    @Test
+    void givenEntryFromClosedList_whenToEntryGetDetailDto_thenMapsContextCodeIdsAndNotes() {
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        NameAddress applicant = new NameAddressTestData().somePerson();
+        ApplicationListEntry appListEntry = new AppListEntryTestData().someComplete();
 
-        Assertions.assertEquals(
-                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
-        Assertions.assertEquals(
-                "Applicant officer1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
-        Assertions.assertEquals(
-                "Applicant officer2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
-        Assertions.assertEquals(
-                "Applicant officer3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
-        Assertions.assertEquals(
-                "officerVal1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
-        Assertions.assertEquals(
-                "officerVal2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
-        Assertions.assertEquals(
-                "officerVal3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
-        Assertions.assertEquals(
-                11,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                11,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                11,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getType());
+        appListEntry.setUuid(entryId);
+        appListEntry.getApplicationList().setUuid(listId);
+        appListEntry.setAnamedaddress(applicant);
+        appListEntry.setStandardApplicant(null);
+        appListEntry.setNotes("Existing notes for closed update journey");
+        appListEntry.setApplicationListEntryWording("Closed read wording");
 
-        Assertions.assertEquals(2, entryGetDetailDto.getOfficials().size());
-        Assertions.assertEquals(
-                appListEntryOfficial.getSurname(),
-                entryGetDetailDto.getOfficials().get(0).getSurname());
-        Assertions.assertEquals(
-                appListEntryOfficial.getForename(),
-                entryGetDetailDto.getOfficials().get(0).getForename());
-        Assertions.assertEquals(
-                mapper.officialMapper.toOfficial(OfficialType.CLERK),
-                entryGetDetailDto.getOfficials().get(0).getType());
-        Assertions.assertEquals(
-                appListEntryOfficial.getTitle(),
-                entryGetDetailDto.getOfficials().get(0).getTitle());
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("AD99002");
+        applicationCode.setWording("Closed read wording");
+        appListEntry.setApplicationCode(applicationCode);
 
-        Assertions.assertEquals(
-                appListEntryOfficial2.getSurname(),
-                entryGetDetailDto.getOfficials().get(1).getSurname());
-        Assertions.assertEquals(
-                appListEntryOfficial2.getForename(),
-                entryGetDetailDto.getOfficials().get(1).getForename());
-        Assertions.assertEquals(
-                mapper.officialMapper.toOfficial(OfficialType.MAGISTRATE),
-                entryGetDetailDto.getOfficials().get(1).getType());
-        Assertions.assertEquals(
-                appListEntryOfficial2.getTitle(),
-                entryGetDetailDto.getOfficials().get(1).getTitle());
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
-        // assert the fee status details
-        Assertions.assertEquals(2, entryGetDetailDto.getFeeStatuses().size());
+        EntryGetDetailDto dto = mapper.toEntryGetDetailDto(appListEntry, false);
 
-        Assertions.assertEquals(
-                applicationListStatus.getAlefsPaymentReference(),
-                entryGetDetailDto.getFeeStatuses().get(0).getPaymentReference());
-        Assertions.assertEquals(
-                PaymentStatus.PAID, entryGetDetailDto.getFeeStatuses().get(0).getPaymentStatus());
-
-        Assertions.assertEquals(
-                applicationListStatus2.getAlefsPaymentReference(),
-                entryGetDetailDto.getFeeStatuses().get(1).getPaymentReference());
-        Assertions.assertEquals(
-                PaymentStatus.REMITTED,
-                entryGetDetailDto.getFeeStatuses().get(1).getPaymentStatus());
+        Assertions.assertEquals(entryId, dto.getId());
+        Assertions.assertEquals(listId, dto.getListId());
+        Assertions.assertEquals("AD99002", dto.getApplicationCode());
+        Assertions.assertEquals("Existing notes for closed update journey", dto.getNotes());
+        Assertions.assertFalse(dto.getHasOffsiteFee());
+        validateApplicantPerson(applicant, dto.getApplicant());
     }
 
     @Test
@@ -1398,104 +897,13 @@ class ApplicationListEntryMapperTest {
         validateRespondentOrganisation(
                 appListEntry.getRnameaddress(), entryGetDetailDto.getRespondent());
 
-        // validate the wording
-        Assertions.assertEquals(
-                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
-        Assertions.assertEquals(
-                "Applicant officer1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
-        Assertions.assertEquals(
-                "Applicant officer2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
-        Assertions.assertEquals(
-                "Applicant officer3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
-        Assertions.assertEquals(
-                "officer1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
-        Assertions.assertEquals(
-                "officer2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
-        Assertions.assertEquals(
-                "officer3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getType());
-
-        // validate the officials
-        Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
-        for (int i = 0; i < entryGetDetailDto.getOfficials().size(); i++) {
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getSurname(),
-                    entryGetDetailDto.getOfficials().get(i).getSurname());
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getForename(),
-                    entryGetDetailDto.getOfficials().get(i).getForename());
-            Assertions.assertEquals(
-                    mapper.officialMapper.toOfficial(
-                            appListEntry.getOfficials().get(i).getOfficialType()),
-                    entryGetDetailDto.getOfficials().get(i).getType());
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getTitle(),
-                    entryGetDetailDto.getOfficials().get(i).getTitle());
-        }
-
-        // validate the statuses
-        Assertions.assertFalse(entryGetDetailDto.getFeeStatuses().isEmpty());
-        for (int i = 0; i < entryGetDetailDto.getFeeStatuses().size(); i++) {
-            Assertions.assertEquals(
-                    appListEntry.getEntryFeeStatuses().get(i).getAlefsPaymentReference(),
-                    entryGetDetailDto.getFeeStatuses().get(i).getPaymentReference());
-            Assertions.assertEquals(
-                    mapper.getStatus(appListEntry.getEntryFeeStatuses().get(i).getAlefsFeeStatus()),
-                    entryGetDetailDto.getFeeStatuses().get(i).getPaymentStatus());
-        }
+        assertWordingConstraints(
+                entryGetDetailDto,
+                List.of("Applicant officer1", "Applicant officer2", "Applicant officer3"),
+                List.of("officer1", "officer2", "officer3"),
+                List.of(10, 10, 10));
+        assertOfficials(entryGetDetailDto.getOfficials(), appListEntry.getOfficials());
+        assertFeeStatuses(entryGetDetailDto.getFeeStatuses(), appListEntry.getEntryFeeStatuses());
     }
 
     @Test
@@ -1548,104 +956,13 @@ class ApplicationListEntryMapperTest {
                 appListEntry.getAnamedaddress(), entryGetDetailDto.getApplicant());
         validateRespondentPerson(appListEntry.getRnameaddress(), entryGetDetailDto.getRespondent());
 
-        // validate the wording
-        Assertions.assertEquals(
-                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
-        Assertions.assertEquals(
-                "Applicant officer1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
-        Assertions.assertEquals(
-                "Applicant officer2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
-        Assertions.assertEquals(
-                "Applicant officer3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
-        Assertions.assertEquals(
-                "officeVal1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
-        Assertions.assertEquals(
-                "officeVal2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
-        Assertions.assertEquals(
-                "officeVal3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                20,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                30,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getType());
-
-        // validate the officials
-        Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
-        for (int i = 0; i < entryGetDetailDto.getOfficials().size(); i++) {
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getSurname(),
-                    entryGetDetailDto.getOfficials().get(i).getSurname());
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getForename(),
-                    entryGetDetailDto.getOfficials().get(i).getForename());
-            Assertions.assertEquals(
-                    mapper.officialMapper.toOfficial(
-                            appListEntry.getOfficials().get(i).getOfficialType()),
-                    entryGetDetailDto.getOfficials().get(i).getType());
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getTitle(),
-                    entryGetDetailDto.getOfficials().get(i).getTitle());
-        }
-
-        // validate the statuses
-        Assertions.assertFalse(entryGetDetailDto.getFeeStatuses().isEmpty());
-        for (int i = 0; i < entryGetDetailDto.getFeeStatuses().size(); i++) {
-            Assertions.assertEquals(
-                    appListEntry.getEntryFeeStatuses().get(i).getAlefsPaymentReference(),
-                    entryGetDetailDto.getFeeStatuses().get(i).getPaymentReference());
-            Assertions.assertEquals(
-                    mapper.getStatus(appListEntry.getEntryFeeStatuses().get(i).getAlefsFeeStatus()),
-                    entryGetDetailDto.getFeeStatuses().get(i).getPaymentStatus());
-        }
+        assertWordingConstraints(
+                entryGetDetailDto,
+                List.of("Applicant officer1", "Applicant officer2", "Applicant officer3"),
+                List.of("officeVal1", "officeVal2", "officeVal3"),
+                List.of(10, 20, 30));
+        assertOfficials(entryGetDetailDto.getOfficials(), appListEntry.getOfficials());
+        assertFeeStatuses(entryGetDetailDto.getFeeStatuses(), appListEntry.getEntryFeeStatuses());
     }
 
     @Test
@@ -1700,126 +1017,84 @@ class ApplicationListEntryMapperTest {
                 appListEntry.getStandardApplicant(), entryGetDetailDto.getApplicant());
         validateRespondentPerson(appListEntry.getRnameaddress(), entryGetDetailDto.getRespondent());
 
-        // validate the wording
-        Assertions.assertEquals(
-                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
-        Assertions.assertEquals(
-                "Applicant officer1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
-        Assertions.assertEquals(
-                "Applicant officer2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
-        Assertions.assertEquals(
-                "Applicant officer3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
-        Assertions.assertEquals(
-                "officeVal1",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
-        Assertions.assertEquals(
-                "officeVal2",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
-        Assertions.assertEquals(
-                "officeVal3",
-                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                10,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getLength());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(1)
-                        .getConstraint()
-                        .getType());
-        Assertions.assertEquals(
-                TemplateConstraint.TypeEnum.TEXT,
-                entryGetDetailDto
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(2)
-                        .getConstraint()
-                        .getType());
+        assertWordingConstraints(
+                entryGetDetailDto,
+                List.of("Applicant officer1", "Applicant officer2", "Applicant officer3"),
+                List.of("officeVal1", "officeVal2", "officeVal3"),
+                List.of(10, 10, 10));
+        assertOfficials(entryGetDetailDto.getOfficials(), appListEntry.getOfficials());
+        assertFeeStatuses(entryGetDetailDto.getFeeStatuses(), appListEntry.getEntryFeeStatuses());
+    }
 
-        // validate the officials
-        Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
-        for (int i = 0; i < entryGetDetailDto.getOfficials().size(); i++) {
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getSurname(),
-                    entryGetDetailDto.getOfficials().get(i).getSurname());
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getForename(),
-                    entryGetDetailDto.getOfficials().get(i).getForename());
-            Assertions.assertEquals(
-                    mapper.officialMapper.toOfficial(
-                            appListEntry.getOfficials().get(i).getOfficialType()),
-                    entryGetDetailDto.getOfficials().get(i).getType());
-            Assertions.assertEquals(
-                    appListEntry.getOfficials().get(i).getTitle(),
-                    entryGetDetailDto.getOfficials().get(i).getTitle());
-        }
+    private void assertEntrySummaryDetails(
+            EntryGetSummaryDto mappedResult,
+            NameAddress applicant,
+            NameAddress respondent,
+            UUID id,
+            UUID listId,
+            LocalDate date) {
+        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
+        Assertions.assertEquals("leg", mappedResult.getLegislation());
+        Assertions.assertEquals("title", mappedResult.getApplicationTitle());
+        validateApplicantOrganisation(applicant, mappedResult.getApplicant());
+        validateRespondentPerson(respondent, mappedResult.getRespondent());
+        Assertions.assertFalse(mappedResult.getIsFeeRequired());
+        Assertions.assertEquals(id.toString(), mappedResult.getId().toString());
+        Assertions.assertEquals(listId.toString(), mappedResult.getListId().toString());
+        Assertions.assertEquals(date, mappedResult.getDate());
+        Assertions.assertEquals("accref", mappedResult.getAccountNumber().get());
+    }
 
-        // validate the statuses
-        Assertions.assertFalse(entryGetDetailDto.getFeeStatuses().isEmpty());
-        for (int i = 0; i < entryGetDetailDto.getFeeStatuses().size(); i++) {
+    private void assertWordingConstraints(
+            EntryGetDetailDto entryGetDetailDto,
+            List<String> expectedKeys,
+            List<String> expectedValues,
+            List<Integer> expectedLengths) {
+        assertThat(entryGetDetailDto.getWording().getSubstitutionKeyConstraints())
+                .hasSize(expectedKeys.size());
+
+        for (int i = 0; i < expectedKeys.size(); i++) {
+            var substitution =
+                    entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(i);
+            Assertions.assertEquals(expectedKeys.get(i), substitution.getKey());
+            Assertions.assertEquals(expectedValues.get(i), substitution.getValue());
             Assertions.assertEquals(
-                    appListEntry.getEntryFeeStatuses().get(i).getAlefsPaymentReference(),
-                    entryGetDetailDto.getFeeStatuses().get(i).getPaymentReference());
+                    expectedLengths.get(i), substitution.getConstraint().getLength());
             Assertions.assertEquals(
-                    mapper.getStatus(appListEntry.getEntryFeeStatuses().get(i).getAlefsFeeStatus()),
-                    entryGetDetailDto.getFeeStatuses().get(i).getPaymentStatus());
+                    TemplateConstraint.TypeEnum.TEXT, substitution.getConstraint().getType());
         }
     }
 
-    private static void assertApplicationListEntrySummary(
-            UUID uuid,
-            int sequenceNumber,
-            ApplicationListEntrySummary dto,
-            String accountNumber,
-            String applicant,
-            String respondent,
-            String postCode,
-            String applicationTitle,
-            boolean feeRequired,
-            String result) {
-        Assertions.assertEquals(uuid, dto.getUuid());
-        Assertions.assertEquals(sequenceNumber, dto.getSequenceNumber());
-        Assertions.assertEquals(accountNumber, dto.getAccountNumber().orElse(null));
-        Assertions.assertEquals(applicant, dto.getApplicant().orElse(null));
-        Assertions.assertEquals(respondent, dto.getRespondent().orElse(null));
-        Assertions.assertEquals(postCode, dto.getPostCode().orElse(null));
-        Assertions.assertEquals(applicationTitle, dto.getApplicationTitle());
-        Assertions.assertEquals(feeRequired, dto.getFeeRequired());
-        Assertions.assertEquals(result, dto.getResult().orElse(null));
+    private void assertOfficials(
+            List<Official> actualOfficials, List<AppListEntryOfficial> expectedOfficials) {
+        assertThat(actualOfficials).isNotEmpty().hasSize(expectedOfficials.size());
+
+        for (int i = 0; i < expectedOfficials.size(); i++) {
+            var expectedOfficial = expectedOfficials.get(i);
+            var actualOfficial = actualOfficials.get(i);
+            Assertions.assertEquals(expectedOfficial.getSurname(), actualOfficial.getSurname());
+            Assertions.assertEquals(expectedOfficial.getForename(), actualOfficial.getForename());
+            Assertions.assertEquals(
+                    officialMapper.toOfficial(expectedOfficial.getOfficialType()),
+                    actualOfficial.getType());
+            Assertions.assertEquals(expectedOfficial.getTitle(), actualOfficial.getTitle());
+        }
+    }
+
+    private void assertFeeStatuses(
+            List<FeeStatus> actualFeeStatuses, List<AppListEntryFeeStatus> expectedFeeStatuses) {
+        assertThat(actualFeeStatuses).isNotEmpty().hasSize(expectedFeeStatuses.size());
+
+        for (int i = 0; i < expectedFeeStatuses.size(); i++) {
+            var expectedFeeStatus = expectedFeeStatuses.get(i);
+            var actualFeeStatus = actualFeeStatuses.get(i);
+            Assertions.assertEquals(
+                    expectedFeeStatus.getAlefsPaymentReference(),
+                    actualFeeStatus.getPaymentReference());
+            Assertions.assertEquals(
+                    mapper.getStatus(expectedFeeStatus.getAlefsFeeStatus()),
+                    actualFeeStatus.getPaymentStatus());
+        }
     }
 
     private void assertContactDetailsEqual(

@@ -8,6 +8,9 @@ import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 import uk.gov.hmcts.appregister.generated.model.TemplateKeyWithConstraint;
 
 public class WordingSubstitutionKeyExtractor {
+    private WordingSubstitutionKeyExtractor() {
+        // Utility class
+    }
 
     @NotNull
     public static List<String> getWordingKeys(String wording) {

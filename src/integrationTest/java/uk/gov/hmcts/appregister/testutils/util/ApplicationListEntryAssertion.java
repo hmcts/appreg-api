@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.testutils.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Objects;
@@ -182,7 +184,7 @@ public class ApplicationListEntryAssertion {
         // assert offsite fee in the database is set if provided
         if (entryCreateUpdateDto.getFeeStatuses() != null
                 && !entryCreateUpdateDto.getFeeStatuses().isEmpty()) {
-            Assertions.assertFalse(applicationListEntry.getEntryFeeIds().isEmpty());
+            assertThat(applicationListEntry.getEntryFeeIds()).isNotEmpty();
 
             boolean containsOffsite = false;
             for (AppListEntryFeeId fee : applicationListEntry.getEntryFeeIds()) {
@@ -196,36 +198,25 @@ public class ApplicationListEntryAssertion {
                     expectedNumberOfFees, applicationListEntry.getEntryFeeIds().size());
         }
 
-        // ensure the database fees align ignoring pre existing fee statuses
+        // ensure the database fees align with the replacement payload or the preserved set when
+        // feeStatuses was omitted from the update
         if (entryCreateUpdateDto.getFeeStatuses() != null) {
             for (int i = 0; i < entryCreateUpdateDto.getFeeStatuses().size(); i++) {
-                if (i >= existingFeeStatuses.size()) {
+                // find the actual fee status in the database
+                AppListEntryFeeStatus actualFeeStatus =
+                        getFeeForReference(
+                                fees,
+                                entryCreateUpdateDto.getFeeStatuses().get(i).getPaymentReference());
 
-                    // find the actual fee status in the database
-                    AppListEntryFeeStatus actualFeeStatus =
-                            getFeeForReference(
-                                    fees,
-                                    entryCreateUpdateDto
-                                            .getFeeStatuses()
-                                            .get(i - existingFeeStatuses.size())
-                                            .getPaymentReference());
+                Assertions.assertNotNull(actualFeeStatus);
+                Assertions.assertEquals(
+                        entryCreateUpdateDto.getFeeStatuses().get(i).getPaymentReference(),
+                        actualFeeStatus.getAlefsPaymentReference());
 
-                    Assertions.assertNotNull(actualFeeStatus);
-                    Assertions.assertEquals(
-                            entryCreateUpdateDto
-                                    .getFeeStatuses()
-                                    .get(i - existingFeeStatuses.size())
-                                    .getPaymentReference(),
-                            actualFeeStatus.getAlefsPaymentReference());
-
-                    Assertions.assertEquals(
-                            ApplicationListEntryEntityMapper.toStatus(
-                                    entryCreateUpdateDto
-                                            .getFeeStatuses()
-                                            .get(i - existingFeeStatuses.size())
-                                            .getPaymentStatus()),
-                            actualFeeStatus.getAlefsFeeStatus());
-                }
+                Assertions.assertEquals(
+                        ApplicationListEntryEntityMapper.toStatus(
+                                entryCreateUpdateDto.getFeeStatuses().get(i).getPaymentStatus()),
+                        actualFeeStatus.getAlefsFeeStatus());
             }
         }
 
@@ -320,35 +311,26 @@ public class ApplicationListEntryAssertion {
                 entryCreateUpdateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
         if (entryCreateUpdateDto.getFeeStatuses() != null) {
-            // assert that we are returning all fee statuses including pre existing ones
             Assertions.assertEquals(
-                    response.getFeeStatuses().size(),
-                    entryCreateUpdateDto.getFeeStatuses().size() + existingFeeStatuses.size());
+                    entryCreateUpdateDto.getFeeStatuses().size(), response.getFeeStatuses().size());
         }
 
-        // ensure the response fees align ignoring pre existing fee statuses in the response
+        // ensure the response fees align with the replacement payload or the preserved set when
+        // feeStatuses was omitted from the update
         for (int i = 0; i < response.getFeeStatuses().size(); i++) {
-            // lets ignore the existing fee statuses and assert against the new ones
-            if (i >= existingFeeStatuses.size()) {
-                Assertions.assertEquals(
-                        entryCreateUpdateDto
-                                .getFeeStatuses()
-                                .get(i - existingFeeStatuses.size())
-                                .getPaymentReference(),
-                        response.getFeeStatuses().get(i).getPaymentReference());
-                Assertions.assertEquals(
-                        entryCreateUpdateDto
-                                .getFeeStatuses()
-                                .get(i - existingFeeStatuses.size())
-                                .getStatusDate(),
-                        response.getFeeStatuses().get(i).getStatusDate());
-                Assertions.assertEquals(
-                        entryCreateUpdateDto
-                                .getFeeStatuses()
-                                .get(i - existingFeeStatuses.size())
-                                .getPaymentStatus(),
-                        response.getFeeStatuses().get(i).getPaymentStatus());
+            if (entryCreateUpdateDto.getFeeStatuses() == null) {
+                break;
             }
+
+            Assertions.assertEquals(
+                    entryCreateUpdateDto.getFeeStatuses().get(i).getPaymentReference(),
+                    response.getFeeStatuses().get(i).getPaymentReference());
+            Assertions.assertEquals(
+                    entryCreateUpdateDto.getFeeStatuses().get(i).getStatusDate(),
+                    response.getFeeStatuses().get(i).getStatusDate());
+            Assertions.assertEquals(
+                    entryCreateUpdateDto.getFeeStatuses().get(i).getPaymentStatus(),
+                    response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
         // ensure the responses aligfns with the officials specified

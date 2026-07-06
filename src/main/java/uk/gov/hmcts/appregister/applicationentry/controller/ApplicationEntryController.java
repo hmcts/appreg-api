@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.controller;
 
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
+
 import jakarta.validation.Validator;
 import java.io.IOException;
 import java.net.URI;
@@ -9,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -80,9 +81,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final ApplicationListEntryMapper applicationListEntryMapper;
 
     private final Validator beanValidator;
-
-    public static final MediaType VND_JSON_V1 =
-            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
 
     @Override
     public ResponseEntity<EntryPage> getEntries(
@@ -159,6 +157,21 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
+    public ResponseEntity<EntryGetDetailDto> getApplicationListEntryFromClosedList(
+            UUID listId, UUID entryId) {
+        PayloadGetEntryInList payloadForGet =
+                PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
+
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                applicationEntryService.getApplicationListEntryDetailFromClosedList(payloadForGet);
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .eTag(matchResponse.getEtag())
+                .body(matchResponse.getPayload());
+    }
+
+    @Override
     public ResponseEntity<EntryPage> getApplicationListEntries(
             UUID listId,
             EntryApplicationListGetFilterDto filter,
@@ -227,6 +240,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         try {
             bulkUploadCsvFormatValidator.validate(file);
+            bulkCreateApplicationEntryValidator.validateApplicationList(listId);
 
             JobTypeRequest jobTypeRequest =
                     JobTypeRequest.builder()

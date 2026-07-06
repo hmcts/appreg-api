@@ -1,8 +1,9 @@
 package uk.gov.hmcts.appregister.job.controller;
 
+import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
+
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -15,10 +16,8 @@ import uk.gov.hmcts.appregister.job.service.JobService;
 @Controller
 @RequiredArgsConstructor
 public class JobApiController implements JobsApi {
-    private final JobService jobService;
 
-    private static final MediaType VND_JSON_V1 =
-            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+    private final JobService jobService;
 
     @Override
     public ResponseEntity<JobAcknowledgement> getJobStatusById(UUID jobId) {

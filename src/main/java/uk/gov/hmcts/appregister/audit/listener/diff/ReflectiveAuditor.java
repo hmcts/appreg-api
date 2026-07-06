@@ -3,9 +3,12 @@ package uk.gov.hmcts.appregister.audit.listener.diff;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +43,44 @@ import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 @Setter
 @RequiredArgsConstructor
 public class ReflectiveAuditor implements Auditor {
+    private record ProcessedMethodTarget(
+            ReflectionCaches.MethodData methodData, int targetIdentityHash) {}
+
+    private static final ClassValue<Set<CrudEnum>> AUDIT_ENABLED_TYPES_CACHE =
+            new ClassValue<>() {
+                @Override
+                protected Set<CrudEnum> computeValue(Class<?> type) {
+                    var auditEnabled = type.getAnnotation(AuditEnabled.class);
+                    if (auditEnabled == null) {
+                        return Collections.emptySet();
+                    }
+
+                    var auditTypes = EnumSet.noneOf(CrudEnum.class);
+                    Collections.addAll(auditTypes, auditEnabled.types());
+                    return auditTypes;
+                }
+            };
+
+    private static final ClassValue<Map<Field, Set<CrudEnum>>> FIELD_AUDIT_ACTIONS_CACHE =
+            new ClassValue<>() {
+                @Override
+                protected Map<Field, Set<CrudEnum>> computeValue(Class<?> type) {
+                    var auditActionsByField = new HashMap<Field, Set<CrudEnum>>();
+
+                    for (Field field : ReflectionCaches.getAllFields(type)) {
+                        var audit = field.getAnnotation(Audit.class);
+                        if (audit == null) {
+                            continue;
+                        }
+
+                        var auditActions = EnumSet.noneOf(CrudEnum.class);
+                        Collections.addAll(auditActions, audit.action());
+                        auditActionsByField.put(field, auditActions);
+                    }
+
+                    return auditActionsByField;
+                }
+            };
 
     /** Do we need to recurse nested objects. */
     private final boolean recurseNestedObjects;
@@ -71,7 +112,7 @@ public class ReflectiveAuditor implements Auditor {
                 diffs,
                 new HashSet<>(),
                 recurseNestedObjects,
-                isAuditableAnnotatedForOperation(crudEnum, val.getClass()));
+                isAuditableAnnotatedForOperation(crudEnum, BeanUtil.getProxyClass(val)));
 
         return diffs;
     }
@@ -80,7 +121,7 @@ public class ReflectiveAuditor implements Auditor {
             CrudEnum crudEnum,
             Object val,
             List<AuditableData> differenceList,
-            Set<String> processed,
+            Set<ProcessedMethodTarget> processed,
             boolean recurseNestedObjects,
             boolean useAnnotations) {
         if (val != null) {
@@ -101,9 +142,7 @@ public class ReflectiveAuditor implements Auditor {
                 }
 
                 // if the object is not complex wrap it
-                if (!isComplexWrapper(method.method().getReturnType())) {
-                    storeAuditDiffData(val, differenceList, method, processed);
-                } else {
+                if (isComplexWrapper(method.method().getReturnType())) {
                     extractAuditDataFromComplex(
                             recurseNestedObjects,
                             method,
@@ -112,6 +151,8 @@ public class ReflectiveAuditor implements Auditor {
                             differenceList,
                             processed,
                             useAnnotations);
+                } else {
+                    storeAuditDiffData(val, differenceList, method, processed);
                 }
             }
         }
@@ -134,7 +175,7 @@ public class ReflectiveAuditor implements Auditor {
             CrudEnum crudEnum,
             Object val,
             List<AuditableData> differenceList,
-            Set<String> processed,
+            Set<ProcessedMethodTarget> processed,
             boolean useAnnotations) {
         // if collection then iterate and compare contents, if not a collection then
         // process the complex objects
@@ -170,7 +211,7 @@ public class ReflectiveAuditor implements Auditor {
             Object val,
             List<AuditableData> differenceList,
             ReflectionCaches.MethodData method,
-            Set<String> processed) {
+            Set<ProcessedMethodTarget> processed) {
         log.trace("Method {}", method.method().getName());
 
         Object valRet = val != null ? invokeMethodForNew(method, val, processed) : "";
@@ -191,7 +232,9 @@ public class ReflectiveAuditor implements Auditor {
     }
 
     private static Object invokeMethodForNew(
-            ReflectionCaches.MethodData method, Object target, Set<String> processed) {
+            ReflectionCaches.MethodData method,
+            Object target,
+            Set<ProcessedMethodTarget> processed) {
         return invokeMethod(method, target, processed);
     }
 
@@ -203,14 +246,18 @@ public class ReflectiveAuditor implements Auditor {
      * @param processed The processed set to avoid infinite recursion
      */
     private static Object invokeMethod(
-            ReflectionCaches.MethodData method, Object target, Set<String> processed) {
+            ReflectionCaches.MethodData method,
+            Object target,
+            Set<ProcessedMethodTarget> processed) {
         if (target != null) {
-            int hash = System.identityHashCode(target);
+            var processedKey = new ProcessedMethodTarget(method, System.identityHashCode(target));
 
-            if (!processed.contains(method.method().toString() + hash)) {
+            if (processed.contains(processedKey)) {
+                log.warn("Already processed {} using {}", method.method(), target);
+            } else {
                 try {
                     Object m = method.method().invoke(target);
-                    processed.add(method.method().toString() + hash);
+                    processed.add(processedKey);
 
                     log.trace("Processed {} on {}", method.method(), target);
                     return m;
@@ -220,8 +267,6 @@ public class ReflectiveAuditor implements Auditor {
                         | SecurityException e) {
                     log.warn("Carrying on processing", e);
                 }
-            } else {
-                log.warn("Already processed {} using {}", method.method(), target);
             }
         }
         return null;
@@ -234,8 +279,9 @@ public class ReflectiveAuditor implements Auditor {
      * @return True or false
      */
     public static boolean isComplexWrapper(Class<?> type) {
-        log.trace("Is complex : {} {}", type.toString(), Keyable.class.isAssignableFrom(type));
-        return isCollection(type) || Keyable.class.isAssignableFrom(type);
+        boolean isKeyable = Keyable.class.isAssignableFrom(type);
+        log.trace("Is complex : {} {}", type, isKeyable);
+        return isCollection(type) || isKeyable;
     }
 
     /**
@@ -245,7 +291,7 @@ public class ReflectiveAuditor implements Auditor {
      * @return True or false
      */
     public static boolean isCollection(Class<?> type) {
-        log.trace("Is complex : {} {}", type.toString(), Keyable.class.isAssignableFrom(type));
+        log.trace("Is collection : {}", type);
         return List.class.isAssignableFrom(type);
     }
 
@@ -257,14 +303,7 @@ public class ReflectiveAuditor implements Auditor {
      * @return true if auditable
      */
     public static boolean isAuditableAnnotatedForOperation(CrudEnum crudEnum, Class<?> cls) {
-        AuditEnabled auditEnabled = cls.getAnnotation(AuditEnabled.class);
-
-        if (auditEnabled != null) {
-            return Arrays.stream(auditEnabled.types()).toList().stream()
-                    .anyMatch(t -> t.equals(crudEnum));
-        }
-
-        return false;
+        return AUDIT_ENABLED_TYPES_CACHE.get(cls).contains(crudEnum);
     }
 
     /**
@@ -275,16 +314,9 @@ public class ReflectiveAuditor implements Auditor {
      * @return true if annotated for the crud operation
      */
     public static boolean isFieldAnnotatedForCrudAuditOperation(Field method, CrudEnum crudEnum) {
-        Audit audit = method.getAnnotation(Audit.class);
-
-        if (audit != null) {
-            for (CrudEnum action : audit.action()) {
-                if (crudEnum == action) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return FIELD_AUDIT_ACTIONS_CACHE
+                .get(method.getDeclaringClass())
+                .getOrDefault(method, Collections.emptySet())
+                .contains(crudEnum);
     }
 }

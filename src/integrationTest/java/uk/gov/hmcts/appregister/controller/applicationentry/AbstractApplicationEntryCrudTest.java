@@ -12,7 +12,9 @@ import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -85,6 +87,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     protected static final String WEB_CONTEXT_UPDATE_CLOSED_ENTRY =
             "application-lists/%s/entries/closed/%s";
 
+    protected static final String WEB_CONTEXT_ENTRY_FROM_CLOSED_LIST =
+            "application-lists/%s/entries/closed/%s";
+
     protected static final String WEB_CONTEXT_CREATE_ENTRY_RESULT =
             "application-lists/%s/entries/%s/results";
 
@@ -116,8 +121,10 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     @Autowired protected AppListEntryResolutionRepository appListEntryResolutionRepository;
     @Autowired protected ApplicationCodeRepository applicationCodeRepository;
 
-    protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    protected static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
+    protected static final OffsetDateTime TEST_OFFSET_DATE_TIME =
+            OffsetDateTime.of(TEST_DATE, TEST_TIME, ZoneOffset.UTC);
     protected static final String VALID_COURT_CODE = "CCC003";
 
     @BeforeEach
@@ -709,7 +716,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         updateDto.setWordingFields(
                 List.of(
                         new TemplateSubstitution("Premises Address", "test wording"),
-                        new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
+                        new TemplateSubstitution("Premises Date", TEST_DATE.toString())));
 
         // Ensure rule compliance
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
@@ -729,7 +736,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         applicationCode.setFeeDue(YesOrNo.YES);
         applicationCode.setRequiresRespondent(YesOrNo.YES);
         applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
-        applicationCode.setStartDate(LocalDate.now().minusDays(10));
+        applicationCode.setStartDate(TEST_DATE.minusDays(10));
         applicationCode.setEndDate(endDate);
         return persistance.save(applicationCode);
     }
@@ -745,7 +752,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         fee.setDescription(description);
         fee.setAmount(amount);
         fee.setOffsite(offsite);
-        fee.setStartDate(LocalDate.now().minusDays(10));
+        fee.setStartDate(TEST_DATE.minusDays(10));
         fee.setEndDate(endDate);
         return persistance.save(fee);
     }
@@ -788,9 +795,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         resolutionCode.setTitle(resultCode + " title");
         resolutionCode.setWording(resultCode + " wording");
         resolutionCode.setLegislation("Test legislation");
-        resolutionCode.setStartDate(LocalDate.now());
+        resolutionCode.setStartDate(TEST_DATE);
         resolutionCode.setChangedBy(1L);
-        resolutionCode.setChangedDate(OffsetDateTime.now());
+        resolutionCode.setChangedDate(TEST_OFFSET_DATE_TIME);
         resolutionCode = persistance.save(resolutionCode);
 
         ApplicationCode persistedCode =
@@ -873,9 +880,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         applicationCode.setFeeDue(NO);
         applicationCode.setRequiresRespondent(NO);
         applicationCode.setBulkRespondentAllowed(NO);
-        applicationCode.setStartDate(LocalDate.now());
+        applicationCode.setStartDate(TEST_DATE);
         applicationCode.setChangedBy(1L);
-        applicationCode.setChangedDate(OffsetDateTime.now());
+        applicationCode.setChangedDate(TEST_OFFSET_DATE_TIME);
         applicationCode.setCreatedUser("email");
         return applicationCode;
     }
@@ -903,9 +910,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         resolutionCode.setTitle(resultCode + " title");
         resolutionCode.setWording(resultCode + " wording");
         resolutionCode.setLegislation("Test legislation");
-        resolutionCode.setStartDate(LocalDate.now());
+        resolutionCode.setStartDate(TEST_DATE);
         resolutionCode.setChangedBy(1L);
-        resolutionCode.setChangedDate(OffsetDateTime.now());
+        resolutionCode.setChangedDate(TEST_OFFSET_DATE_TIME);
         resolutionCode = persistance.save(resolutionCode);
 
         AppListEntryResolution entryResolution = new AppListEntryResolution();

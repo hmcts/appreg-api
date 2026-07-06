@@ -31,10 +31,14 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 
-public class ReflectiveAuditorTest {
+class ReflectiveAuditorTest {
+    private static final OffsetDateTime OLD_CHANGED_DATE =
+            OffsetDateTime.parse("2025-01-02T03:04:05Z");
+    private static final OffsetDateTime NEW_CHANGED_DATE =
+            OffsetDateTime.parse("2025-01-03T03:04:05Z");
 
     @Test
-    public void testParsingWithRecursionParsingDisabledAndInfiniteRecursionDetection() {
+    void testParsingWithRecursionParsingDisabledAndInfiniteRecursionDetection() {
         TestEntityAuditable test2 = new TestEntityAuditable();
         test2.id = 123L;
         test2.resolutionWording = "32";
@@ -74,7 +78,7 @@ public class ReflectiveAuditorTest {
     }
 
     @Test
-    public void testWithComplexAndBasicListWithRecursionOffForComplexObjects() {
+    void testWithComplexAndBasicListWithRecursionOffForComplexObjects() {
         TestEntityAuditable test = new TestEntityAuditable();
 
         test.resolutionWording = "32";
@@ -107,7 +111,7 @@ public class ReflectiveAuditorTest {
     }
 
     @Test
-    public void testAuditForDeleteWithAnnotation() {
+    void testAuditForDeleteWithAnnotation() {
         TestEntityAuditable test = new TestEntityAuditable();
 
         test.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
@@ -133,7 +137,7 @@ public class ReflectiveAuditorTest {
     }
 
     @Test
-    public void testWithSuperFields() {
+    void testWithSuperFields() {
         TestEntityAuditable test = new TestEntityAuditable();
 
         test.resolutionWording = "32";
@@ -142,7 +146,7 @@ public class ReflectiveAuditorTest {
         test.id = 123L;
         test.name = "random name";
         test.setChangedBy("old user");
-        test.setChangedDate(OffsetDateTime.now());
+        test.setChangedDate(OLD_CHANGED_DATE);
 
         TestEntityAuditable newTest = new TestEntityAuditable();
 
@@ -152,7 +156,7 @@ public class ReflectiveAuditorTest {
         newTest.id = 1235L;
         newTest.name = "random name New";
         newTest.setChangedBy("new user");
-        newTest.setChangedDate(OffsetDateTime.now());
+        newTest.setChangedDate(NEW_CHANGED_DATE);
 
         ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
 
@@ -180,7 +184,7 @@ public class ReflectiveAuditorTest {
     }
 
     @Test
-    public void testDeleteAppListAuditData() {
+    void testDeleteAppListAuditData() {
         ApplicationList appList = new AppListTestData().someComplete();
         appList.setId(123L);
         ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);

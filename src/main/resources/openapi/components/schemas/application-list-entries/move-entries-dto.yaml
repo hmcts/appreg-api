@@ -1,5 +1,6 @@
 type: object
 description: Parameters to move entries from one Application List to another.
+additionalProperties: false
 required:
   - targetListId
   - entryIds
@@ -19,4 +20,6 @@ properties:
     items:
       type: string
       format: uuid
-    example:   "[\"3fa85f64-5717-4562-b3fc-2c963f66afa6\", \"3fa85f64-5717-4562-b3fc-2c963f66afa7\"]"
+    example:
+      - "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - "3fa85f64-5717-4562-b3fc-2c963f66afa7"

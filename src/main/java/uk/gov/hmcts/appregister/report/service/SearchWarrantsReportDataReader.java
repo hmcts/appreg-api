@@ -101,41 +101,7 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                 c.application_list_entry_wording
             FROM candidate_apps c
             WHERE (
-                    (
-                        :cjaCode IS NOT NULL
-                        AND UPPER(c.cja_code) = UPPER(:cjaCode)
-                        AND UPPER(c.other_courthouse)
-                            LIKE '%' || UPPER(:otherCourthouse) || '%'
-                        AND :courthouseCode IS NULL
-                    )
-                    OR (
-                        :cjaCode IS NULL
-                        AND (
-                            UPPER(c.other_courthouse)
-                                LIKE '%' || UPPER(:otherCourthouse) || '%'
-                            OR :otherCourthouse IS NULL
-                        )
-                        AND (
-                            UPPER(c.courthouse_code)
-                                LIKE '%' || UPPER(:courthouseCode) || '%'
-                            OR :courthouseCode IS NULL
-                        )
-                    )
-                    OR (
-                            :cjaCode IS NOT NULL
-                        AND (
-                            UPPER(SUBSTRING(c.courthouse_code FROM 2 FOR 2))
-                                = UPPER(:cjaCode)
-                            OR UPPER(c.cja_code) = UPPER(:cjaCode)
-                        )
-                        AND :otherCourthouse IS NULL
-                        AND :courthouseCode IS NULL
-                    )
-                    OR (
-                        :cjaCode IS NULL
-                        AND :otherCourthouse IS NULL
-                        AND :courthouseCode IS NULL
-                    )
+                    {{LEGACY_LOCATION_PREDICATE}}
                 )
                 AND (
                     :hasCursor IS FALSE
@@ -145,7 +111,14 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                 )
             ORDER BY c.list_date DESC, c.ale_id DESC
             LIMIT :limit
-            """;
+            """
+                    .replace(
+                            "{{LEGACY_LOCATION_PREDICATE}}",
+                            LegacyMisReportLocationSql.predicate(
+                                    "c.courthouse_code",
+                                    "c.other_courthouse",
+                                    "c.cja_code",
+                                    "otherCourthouse"));
 
     private static final RowMapper<SearchWarrantsReportRow> ROW_MAPPER =
             new SearchWarrantsReportRowMapper();
@@ -161,6 +134,10 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+    }
+
+    SearchWarrantsReportFilterDto filter() {
+        return filter;
     }
 
     @Override

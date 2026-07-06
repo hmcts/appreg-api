@@ -10,7 +10,6 @@ import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
@@ -20,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -31,8 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
-public class ApplicationEntryResultControllerCreateTest
-        extends AbstractApplicationEntryResultCrudTest {
+class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Create Application List Entry Result: 201 when valid request")
@@ -183,13 +182,13 @@ public class ApplicationEntryResultControllerCreateTest
 
         Response resp = createResult(listId, entryId, token, payload);
 
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: 400 when list closed")
+    @DisplayName("Create Application List Entry Result: 409 when list closed")
     void givenClosedList_whenCreate_then400() throws Exception {
         var list = createAndSaveList(CLOSED);
 
@@ -209,8 +208,8 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: 400 when entry not in list")
-    void givenEntryNotInList_whenCreate_then400() throws Exception {
+    @DisplayName("Create Application List Entry Result: 409 when entry not in list")
+    void givenEntryNotInList_whenCreate_then409() throws Exception {
         var list = createAndSaveList(OPEN);
         var list2 = createAndSaveList(OPEN);
 
@@ -228,7 +227,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_WITHIN_LIST.getCode(), resp);
     }
 
     @Test
@@ -260,7 +259,7 @@ public class ApplicationEntryResultControllerCreateTest
         var entry = createEntry(list);
         persistance.save(entry);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
         saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
@@ -311,7 +310,7 @@ public class ApplicationEntryResultControllerCreateTest
         var entry = createEntry(list);
         persistance.save(entry);
 
-        LocalDate date = LocalDate.now();
+        LocalDate date = LocalDate.now(java.time.ZoneOffset.UTC);
 
         var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
         var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
@@ -347,9 +346,8 @@ public class ApplicationEntryResultControllerCreateTest
     private static final String RTC_CODE = "RTC";
 
     @Test
-    public void
-            givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessOkResponse()
-                    throws Exception {
+    void givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessOkResponse()
+            throws Exception {
         val list = createAndSaveList(OPEN);
         val entry = createEntry(list);
 
@@ -362,7 +360,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -588,12 +586,38 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
+            givenBulkResultRequestWithDuplicateEntryIds_whenACallIsMadeWithAList_thenFailureBadRequestResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        persistance.save(entry);
+
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        Response resp = createBulkResult(list.getUuid(), getToken(), bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE.getCode(), resp);
+    }
+
+    @Test
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithAListThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(UUID.randomUUID(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(UUID.randomUUID(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -613,7 +637,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithAEntryThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -630,7 +654,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -650,7 +674,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithToANonExistentResultCode_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -665,7 +689,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode("NOTEXIST");
@@ -685,7 +709,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultRequest_whenACallIsMadeWithIncorrectTemplateValues_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -702,7 +726,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -720,7 +744,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenAValidBulkResultWithNoListRequest_whenACallIsMadeWithTwoEntries_thenSuccessOkResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -735,7 +759,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -961,7 +985,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultWithNoListRequest_whenACallIsMadeWithAEntryThatDoesNotExist_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -978,7 +1002,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);
@@ -998,7 +1022,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultWithNoListRequest_whenACallIsMadeWithToANonExistentResultCode_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -1013,7 +1037,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the payload to result 2 entries against the list
         BulkResultDto bulkResultDto = new BulkResultDto();
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode("NOTEXIST");
@@ -1033,7 +1057,7 @@ public class ApplicationEntryResultControllerCreateTest
     }
 
     @Test
-    public void
+    void
             givenBulkResultWithNoListRequest_whenACallIsMadeWithIncorrectTemplateValues_thenFailureConflictResponse()
                     throws Exception {
         val list = createAndSaveList(OPEN);
@@ -1050,7 +1074,7 @@ public class ApplicationEntryResultControllerCreateTest
         BulkResultDto bulkResultDto = new BulkResultDto();
 
         // add an entry that does not exist
-        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+        bulkResultDto.setEntryIds(List.of(entry.getUuid(), entry2.getUuid()));
 
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setResultCode(RTC_CODE);

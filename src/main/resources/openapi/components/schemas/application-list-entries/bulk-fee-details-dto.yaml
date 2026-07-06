@@ -1,5 +1,6 @@
 type: object
-description: Fee details to apply to every selected Application List Entry.
+description: One fee detail row to apply to every selected Application List Entry.
+additionalProperties: false
 required:
   - paymentStatus
   - statusDate
@@ -25,5 +26,7 @@ properties:
 
   hasOffsiteFee:
     type: boolean
-    description: Indicates whether an off-site fee applies.
+    description: >
+      When true on any supplied fee detail, ensures the selected entries have an off-site fee
+      mapping. False does not remove an existing off-site fee mapping.
     example: true

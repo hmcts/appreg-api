@@ -29,7 +29,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 @Builder
 @Getter
 @Setter
-@AuditEnabled(types = {CrudEnum.READ})
+@AuditEnabled(types = {CrudEnum.READ, CrudEnum.UPDATE})
 public class DatabaseJob implements Keyable {
     @Id
     @Column(name = "dj_id", nullable = false, updatable = false)
@@ -39,11 +39,12 @@ public class DatabaseJob implements Keyable {
     private Long id;
 
     @Column(name = "job_name", nullable = false)
-    @Audit(action = {CrudEnum.READ})
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE})
     private String name;
 
     @Column(name = "job_enabled", nullable = false)
     @Convert(converter = YesNoConverter.class)
+    @Audit(action = {CrudEnum.READ, CrudEnum.UPDATE})
     private YesOrNo enabled;
 
     @Column(name = "job_last_ran")

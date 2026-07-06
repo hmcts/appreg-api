@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.controller.applicationlist;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -14,13 +15,13 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.controller.applicationentryresult.AbstractApplicationEntryResultCrudTest;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -34,6 +35,8 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
     protected static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
     protected static final String UNKNOWN_APPLICATION_LIST_ID =
             "ffffffff-ffff-ffff-ffff-ffffffffffff";
+    private static final String APPC_CODE = "APPC";
+    private static final String APPC_WORDING_KEY = "Name of Crown Court";
 
     // --- Seeded reference data ----------------------------------------------------
     protected static final String VALID_COURT_CODE = "CCC003";
@@ -48,10 +51,10 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
     protected static final String UNKNOWN_COURT_CODE = "ZZZ999";
     protected static final String UNKNOWN_CJA_CODE = "99";
 
-    protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    protected static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
 
-    protected static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
+    protected static final LocalDate TEST_DATE2 = LocalDate.of(2025, Month.OCTOBER, 19);
     protected static final LocalTime TEST_TIME2 = LocalTime.of(11, 30);
 
     @Autowired protected ApplicationListRepository applicationListRepository;
@@ -136,12 +139,11 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
 
     protected void createResultSuccess(UUID listId, UUID entryId) throws Exception {
         var payload =
-                AbstractApplicationEntryResultCrudTest.buildCreatePayload(
-                        AbstractApplicationEntryResultCrudTest.APPC_CODE,
+                new ResultCreateDto(
+                        APPC_CODE,
                         List.of(
                                 new TemplateSubstitution(
-                                        AbstractApplicationEntryResultCrudTest.APPC_WORDING_KEY,
-                                        "The Central Criminal Court")));
+                                        APPC_WORDING_KEY, "The Central Criminal Court")));
 
         Response createEntryResp =
                 restAssuredClient.executePostRequest(

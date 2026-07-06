@@ -7,6 +7,10 @@ import uk.gov.hmcts.appregister.generated.model.TemplateKeyWithConstraint;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 public class TemplateAssertion {
+    private TemplateAssertion() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * Asserts the basic template structure is present.
      *

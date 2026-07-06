@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import java.util.UUID;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
@@ -22,4 +23,6 @@ public interface ReportService {
     ReportJobCreation createListMaintenanceReport(ListMaintenanceFilterDto filter);
 
     ReportJobCreation createPrivateProsecutorsIndexReport(PrivateProsecutorsIndexFilterDto filter);
+
+    ReportDownload downloadReport(UUID jobId);
 }

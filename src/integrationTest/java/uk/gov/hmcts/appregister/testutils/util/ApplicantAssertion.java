@@ -11,6 +11,10 @@ import uk.gov.hmcts.appregister.generated.model.Person;
  * A utility that allows us to compare between a payload and entity.
  */
 public class ApplicantAssertion {
+    private ApplicantAssertion() {
+        /* This utility class should not be instantiated */
+    }
+
     public static void validatePerson(Person applicant, StandardApplicant standardApplicant) {
         Assertions.assertNull(standardApplicant.getName());
 

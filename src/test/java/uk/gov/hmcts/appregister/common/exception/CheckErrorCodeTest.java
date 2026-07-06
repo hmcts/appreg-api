@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,7 +19,7 @@ import org.springframework.core.type.filter.AssignableTypeFilter;
  * <p>Instead of this test class, we could have implemented this as an annotation processor to
  * enforces these rules at compile time, but this class is simpler to maintain.
  */
-public class CheckErrorCodeTest {
+class CheckErrorCodeTest {
 
     private static final String DELINEATOR = "-";
 
@@ -31,14 +33,14 @@ public class CheckErrorCodeTest {
      * all {@link uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum}} implementations.
      */
     @Test
-    public void validateErrorEnums() throws Exception {
+    void validateErrorEnums() throws Exception {
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);
 
         scanner.addIncludeFilter(new AssignableTypeFilter(ErrorCodeEnum.class));
         Set<BeanDefinition> candidates =
                 scanner.findCandidateComponents("uk.gov.hmcts.appregister");
-        Assertions.assertFalse(candidates.isEmpty());
+        assertThat(candidates).isNotEmpty();
 
         List<String> errorCodesForAllClasses = new ArrayList<>();
         for (BeanDefinition bd : candidates) {

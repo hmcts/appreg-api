@@ -635,7 +635,25 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Standard Applicant Print",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{APP_REG_HOST}}/standard-applicants/reports/print",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "standard-applicants"
+              ]
+            }
+          },
+          "response": []
         }
+
       ]
     },
     {
@@ -966,6 +984,43 @@
                 "{{APP_LIST_ID}}",
                 "entries",
                 "fees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Entry From Closed List",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/closed/{{CREATED_ENTRY_ID}}",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "closed",
+                "{{CREATED_ENTRY_ID}}"
               ]
             }
           },

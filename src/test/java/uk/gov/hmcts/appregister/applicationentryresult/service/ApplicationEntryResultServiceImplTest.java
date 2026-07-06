@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
@@ -78,7 +80,7 @@ import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationEntryResultServiceImplTest {
+class ApplicationEntryResultServiceImplTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
@@ -90,6 +92,7 @@ public class ApplicationEntryResultServiceImplTest {
     @Mock private EntityManager entityManager;
     @Mock private UserProvider userProvider;
     @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private ObjectProvider<ApplicationEntryResultService> selfProvider;
 
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
@@ -152,12 +155,14 @@ public class ApplicationEntryResultServiceImplTest {
                         bulkResultEntry,
                         matchService,
                         auditOperationService,
-                        List.of(auditOperationLifecycleListener),
                         applicationListEntryResultMapper,
                         applicationListEntryResultEntityMapper,
                         new PageMapper(),
+                        selfProvider,
                         entityManager,
                         userProvider);
+
+        lenient().when(selfProvider.getIfAvailable()).thenReturn(service);
     }
 
     @Test
@@ -308,6 +313,38 @@ public class ApplicationEntryResultServiceImplTest {
         Assertions.assertEquals(resultGetDto, resultPage.getContent().get(0));
         Assertions.assertEquals(resultGetDto1, resultPage.getContent().get(1));
         Assertions.assertEquals("testSort", resultPage.getSort().getOrders().get(0).getProperty());
+    }
+
+    @Test
+    void search_emptyPage_returnsEmptyContentList() {
+        PayloadGetEntryResultInList payloadGetEntryResultInList =
+                PayloadGetEntryResultInList.builder().build();
+
+        org.springframework.data.domain.Pageable pageable =
+                Mockito.mock(org.springframework.data.domain.Pageable.class);
+
+        Page<ApplicationListEntryResultWithResultCodeProjection> page =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(appListEntryResolutionRepository.getResolutionDetailsForApplicationListAndEntry(
+                        payloadGetEntryResultInList.getListId(),
+                        payloadGetEntryResultInList.getEntryId(),
+                        pageable))
+                .thenReturn(page);
+
+        getValidator.setSuccess(
+                ListEntryResultGetValidationSuccess.builder()
+                        .applicationList(new ApplicationList())
+                        .applicationListEntry(new ApplicationListEntry())
+                        .build());
+
+        String testSort = "testSort";
+        PagingWrapper pagingWrapper = new PagingWrapper(SortableField.of(testSort), pageable);
+
+        ResultPage resultPage = service.search(payloadGetEntryResultInList, pagingWrapper);
+
+        Assertions.assertNotNull(resultPage.getContent());
+        Assertions.assertTrue(resultPage.getContent().isEmpty());
     }
 
     @Test
@@ -474,9 +511,7 @@ public class ApplicationEntryResultServiceImplTest {
         public <T, E extends Keyable> T processAudit(
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-
-            return processAudit(
-                    null, auditType, execution, (AuditOperationLifecycleListener[]) null);
+            return processAudit(null, auditType, execution);
         }
 
         @Override
@@ -484,27 +519,6 @@ public class ApplicationEntryResultServiceImplTest {
                 E oldValue,
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-
-            return processAudit(
-                    oldValue, auditType, execution, (AuditOperationLifecycleListener[]) null);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-
-            return processAudit(null, auditType, execution, listener);
-        }
-
-        @Override
-        public <T, E extends Keyable> T processAudit(
-                E oldValue,
-                AuditOperation auditType,
-                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-                AuditOperationLifecycleListener... listener) {
-
             StartEvent event = new StartEvent(auditType, "test-trace-id", oldValue);
             Optional<AuditableResult<T, E>> result = execution.apply(event);
             return result.map(AuditableResult::getResultingValue).orElse(null);

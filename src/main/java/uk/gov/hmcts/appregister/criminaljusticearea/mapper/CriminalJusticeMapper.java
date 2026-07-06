@@ -1,9 +1,12 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.mapper;
 
+import org.mapstruct.AfterMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 
 /**
@@ -17,10 +20,15 @@ public interface CriminalJusticeMapper {
     @Mapping(target = "description", source = "description")
     CriminalJusticeAreaGetDto toDto(CriminalJusticeArea criminalJusticeArea);
 
+    @AfterMapping
+    default void sanitizeDto(@MappingTarget CriminalJusticeAreaGetDto target) {
+        OutgoingDtoSanitiser.sanitize(target);
+    }
+
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "code")
     @Mapping(target = "description", source = "description")
-    CriminalJusticeArea toEntity(CodeAndDescription record);
+    CriminalJusticeArea toEntity(CodeAndDescription codeAndDescription);
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "code")

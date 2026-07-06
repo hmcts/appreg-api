@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,11 +17,12 @@ import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import utils.ConstraintAssertion;
 
-public class ApplicationEntryDtoTest {
+class ApplicationEntryDtoTest {
 
     private ObjectMapper objectMapper;
 
@@ -32,7 +34,7 @@ public class ApplicationEntryDtoTest {
     }
 
     @Test
-    void testEntryCreateDtoEmptyStringErrors() throws Exception {
+    void testEntryCreateDtoEmptyStringErrors() {
         // Create an instance of EntryCreateDto
         EntryCreateDto entryCreateDto = new EntryCreateDto();
 
@@ -69,7 +71,7 @@ public class ApplicationEntryDtoTest {
     }
 
     @Test
-    void testEntryUpdateDtoEmptyStringErrors() throws Exception {
+    void testEntryUpdateDtoEmptyStringErrors() {
         // Create an instance of EntryCreateDto
         EntryUpdateDto entryUpdateDto = new EntryUpdateDto();
 
@@ -103,6 +105,29 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "caseReference", "size must be between 1 and 15");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "applicationCode", "size must be between 1 and 10");
+    }
+
+    @Test
+    void testEntryUpdateClosedDtoAllowsEmptyAdditionalNotes() {
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("");
+
+        Set<ConstraintViolation<Object>> constraintValidator = validate(entryUpdateClosedDto);
+
+        Assertions.assertEquals(0, constraintValidator.size());
+    }
+
+    @Test
+    void testEntryUpdateClosedDtoRejectsAdditionalNotesAboveLimit() {
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("a".repeat(4001));
+
+        Set<ConstraintViolation<Object>> constraintValidator = validate(entryUpdateClosedDto);
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        Assertions.assertEquals(1, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "additionalNotes", "size must be between 0 and 4000");
     }
 
     @Test
@@ -153,11 +178,12 @@ public class ApplicationEntryDtoTest {
         return new BulkFeesUpdateDto()
                 .entryIds(entryIds)
                 .feeDetails(
-                        new BulkFeeDetailsDto()
-                                .paymentStatus(PaymentStatus.PAID)
-                                .statusDate(LocalDate.of(2025, 10, 7))
-                                .paymentReference("PAY-001")
-                                .hasOffsiteFee(false));
+                        List.of(
+                                new BulkFeeDetailsDto()
+                                        .paymentStatus(PaymentStatus.PAID)
+                                        .statusDate(LocalDate.of(2025, Month.OCTOBER, 7))
+                                        .paymentReference("PAY-001")
+                                        .hasOffsiteFee(false)));
     }
 
     private Set<UUID> entryIds(int totalCount) {

@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.concurrency;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,14 +16,14 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 @ExtendWith(MockitoExtension.class)
-public class MatchServiceImplTest {
+class MatchServiceImplTest {
 
     @Mock private HttpMatchProviderImpl matchRequest;
 
     @InjectMocks public MatchServiceImpl matchService;
 
     @Test
-    public void testProcessMatchSuccess() {
+    void testProcessMatchSuccess() {
         DummyKeyableThatIsVersionable versionable = new DummyKeyableThatIsVersionable(1L);
         versionable.setVersion(1L);
 
@@ -32,11 +33,14 @@ public class MatchServiceImplTest {
 
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
-        matchService.matchOnRequest(
-                () -> {
-                    return matchResponse;
-                },
-                List.of(versionable));
+        MatchResponse<String> response =
+                matchService.matchOnRequest(
+                        () -> {
+                            return matchResponse;
+                        },
+                        List.of(versionable));
+
+        Assertions.assertSame(matchResponse, response);
     }
 
     @Test
@@ -53,15 +57,13 @@ public class MatchServiceImplTest {
         DummyKeyableThatIsVersionable versionable1 = new DummyKeyableThatIsVersionable(1L);
         versionable1.setVersion(1L);
 
-        AppRegistryException exception =
+        Supplier<MatchResponse<String>> supplier =
+                () -> MatchResponse.of("test", List.of(versionable));
+        List<Keyable> currentValues = List.of(versionable1);
+        var exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () ->
-                                matchService.matchOnRequest(
-                                        () -> {
-                                            return MatchResponse.of("test", List.of(versionable));
-                                        },
-                                        List.of(versionable1)));
+                        () -> matchService.matchOnRequest(supplier, currentValues));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 
@@ -75,15 +77,15 @@ public class MatchServiceImplTest {
         DummyKeyableThatIsVersionable versionable1 = new DummyKeyableThatIsVersionable(2L);
 
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
+        List<Keyable> versionables = List.of(versionable1);
+        Supplier<MatchResponse<String>> changedResponse =
+                () -> MatchResponse.of(payload, versionables);
 
         // change the id to simulate a conflict
         AppRegistryException exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () ->
-                                matchService.matchOnRequest(
-                                        () -> MatchResponse.of(payload, List.of(versionable1)),
-                                        List.of(versionable1)));
+                        () -> matchService.matchOnRequest(changedResponse, versionables));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 

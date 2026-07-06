@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -18,7 +19,7 @@ import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudTest {
+class ApplicationEntryControllerDeleteTest extends AbstractApplicationEntryCrudTest {
 
     @Test
     void givenValidRequest_whenDeleteWithValidId_then204() throws Exception {
@@ -28,7 +29,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
@@ -37,7 +38,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -120,7 +121,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithInvalidListId_then409() throws Exception {
+    void givenValidRequest_whenDeleteWithInvalidListId_then404() throws Exception {
         var tokenGenerator = createAdminToken();
 
         // delete the entry
@@ -131,9 +132,37 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
                                         UUID.randomUUID(), UUID.randomUUID())),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpecDelete.then().statusCode(409);
+        responseSpecDelete.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecDelete);
+    }
+
+    @Test
+    void givenClosedApplicationList_whenDeleteEntry_then409AndEntryIsNotDeleted() throws Exception {
+        ApplicationList applicationList = createAndSaveList(Status.CLOSED);
+        ApplicationListEntry applicationListEntry = persistance.save(createEntry(applicationList));
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpecDelete =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(
+                                DELETE_ENTRY_CONTEXT.formatted(
+                                        applicationList.getUuid(), applicationListEntry.getUuid())),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpecDelete.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                responseSpecDelete);
+
+        boolean entryDeleted =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository
+                                        .findByUuidIncludingDelete(applicationListEntry.getUuid())
+                                        .orElseThrow()
+                                        .isDeleted());
+        Assertions.assertFalse(entryDeleted);
     }
 
     @Test
@@ -144,7 +173,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
@@ -153,7 +182,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -177,6 +206,47 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
     }
 
     @Test
+    void givenValidRequest_whenDeleteWithDeletedEntryId_then409() throws Exception {
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("test wording");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
+
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        String surnameToLookup = UUID.randomUUID().toString();
+
+        entryCreateDto.setWordingFields(List.of(substitution, substitution1));
+
+        var tokenGenerator = createAdminToken();
+
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
+        AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+
+        int rowsUpdated =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository.softDeleteByUuid(
+                                        createdDto.getDetailDto().getId()));
+        Assertions.assertEquals(1, rowsUpdated);
+
+        Response responseSpecDelete =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(
+                                DELETE_ENTRY_CONTEXT.formatted(
+                                        createdDto.getDetailDto().getListId(),
+                                        createdDto.getDetailDto().getId())),
+                        tokenGenerator.fetchTokenForRole());
+        responseSpecDelete.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode(),
+                responseSpecDelete);
+    }
+
+    @Test
     void givenValidRequest_whenDeleteWithEntryNotInList_then409() throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
@@ -184,7 +254,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue(LocalDate.now().toString());
+        substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
@@ -194,7 +264,7 @@ public class ApplicationEntryControllerDeleteTest extends AbstractApplicationEnt
 
         var tokenGenerator = createAdminToken();
 
-        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1));
         AbstractApplicationEntryCrudTest.SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 

@@ -1,5 +1,6 @@
 type: object
 description: Request payload to create an Application List. Blank fields will be rejected, nulls should be used instead.
+additionalProperties: false
 required:
   - date
   - time
@@ -18,7 +19,7 @@ properties:
     type: string
     format: time
     description: The time of day at which the Application List is scheduled, seconds are optional.
-    example: "10:30"
+    example: "10:30:00"
 
   description:
     type: string

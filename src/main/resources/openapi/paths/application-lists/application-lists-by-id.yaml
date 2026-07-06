@@ -9,6 +9,7 @@ get:
   operationId: getApplicationList
   tags: [ application-lists ]
   summary: Get an Application List by id
+  description: Returns the Application List identified by `listId`.
   parameters:
     - in: query
       name: pageNumber
@@ -21,14 +22,14 @@ get:
     - in: query
       name: sort
       description: >
-        Repeatable sort parameter. Format per item: `property,(asc|desc)`.
-        Example: `?sort=name,asc&sort=code,desc`.
+        Sort parameter. Format: `property,(asc|desc)`.
+        Currently only a single sort value is supported. Example: `?sort=name,asc`.
       style: form
       explode: true
       schema:
         type: array
         items: { type: string }
-        example: [ "name,asc", "code,desc" ]
+        example: [ "name,asc" ]
   responses:
     "200":
       description: Application List detail
@@ -55,7 +56,8 @@ put:
     Full replacement (PUT) of an existing Application List. The `id` is taken from
     the path; the request body must satisfy the same constraints as create
     (including the XOR location rule: either `courtLocation` or (`otherLocationDescription` + `criminalJusticeAreaCode`)).
-    The request must include the current `version` for optimistic concurrency; a mismatch results in 409 Conflict.
+    The request must include a valid `If-Match` header for optimistic concurrency control;
+    a mismatch results in 409 Conflict.
   requestBody:
     required: true
     content:

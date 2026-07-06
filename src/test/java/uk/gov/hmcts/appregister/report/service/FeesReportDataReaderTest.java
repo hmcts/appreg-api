@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +70,7 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals(1, pages.size());
         FeesReportRow row = pages.getFirst().getFirst();
 
-        Assertions.assertEquals(LocalDate.of(2018, 5, 18), row.getListDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 18), row.getListDate());
         Assertions.assertEquals("B01IX00 - Westminster", row.getCourthouseName());
         Assertions.assertEquals("Other court", row.getOtherCourthouse());
         Assertions.assertEquals("01", row.getCjaCode());
@@ -80,7 +82,7 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals(BigDecimal.valueOf(1), row.getOffSiteFeeValue());
         Assertions.assertEquals(BigDecimal.valueOf(21), row.getTotalFeeValue());
         Assertions.assertEquals("Due", row.getFeeStatus());
-        Assertions.assertEquals(LocalDate.of(2018, 12, 3), row.getFeeStatusDate());
+        Assertions.assertEquals(LocalDate.of(2018, Month.DECEMBER, 3), row.getFeeStatusDate());
         Assertions.assertEquals("REF-1", row.getPaymentReference());
 
         Assertions.assertEquals(2, parameterSources.size());
@@ -111,8 +113,8 @@ class FeesReportDataReaderTest {
 
         FeesReportFilterDto filter =
                 new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31));
+                        .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                        .dateTo(LocalDate.of(2018, Month.MAY, 31));
         FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<FeesReportRow> pageReader =
                 (rows, context) -> Assertions.fail("No rows expected");
@@ -156,8 +158,8 @@ class FeesReportDataReaderTest {
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
-        Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
-        Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), parameters.getValue("dateFrom"));
+        Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("STD1", parameters.getValue("standardApplicantCode"));
         Assertions.assertEquals("John Smith", parameters.getValue("applicantName"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
@@ -167,7 +169,8 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(
+                    LocalDate.of(2018, Month.MAY, 18), parameters.getValue("lastListDate"));
             Assertions.assertEquals(123L, parameters.getValue("lastApplicationListEntryId"));
         } else {
             Assertions.assertNull(parameters.getValue("lastListDate"));
@@ -182,8 +185,8 @@ class FeesReportDataReaderTest {
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
         return new FeesReportFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31))
+                .dateFrom(LocalDate.of(2018, Month.MAY, 1))
+                .dateTo(LocalDate.of(2018, Month.MAY, 31))
                 .standardApplicantCode("STD1")
                 .applicantName("John Smith")
                 .location(location);
@@ -199,8 +202,8 @@ class FeesReportDataReaderTest {
         Assertions.assertTrue(finalSelectIndex > -1);
         Assertions.assertTrue(cursorPredicateIndex < latestFeeStatusIndex);
         Assertions.assertEquals(-1, query.indexOf(":hasCursor IS FALSE", finalSelectIndex));
-        Assertions.assertTrue(query.contains("EXISTS ("));
-        Assertions.assertTrue(query.contains("FROM app_list_entry_fee_id cursor_alefi"));
+        assertThat(query).contains("EXISTS (");
+        assertThat(query).contains("FROM app_list_entry_fee_id cursor_alefi");
     }
 
     private void assertLegacyFeesQueryShape(String query) {
@@ -213,9 +216,9 @@ class FeesReportDataReaderTest {
                 normalisedQuery.contains(
                         "UPPER(sa.standard_applicant_code) "
                                 + "LIKE '%' || UPPER(:standardApplicantCode) || '%'"));
-        Assertions.assertTrue(normalisedQuery.contains("COALESCE(b.forename_1, '')"));
-        Assertions.assertTrue(normalisedQuery.contains("COALESCE(b.surname, '')"));
-        Assertions.assertTrue(normalisedQuery.contains("NULLIF(TRIM("));
+        assertThat(normalisedQuery).contains("COALESCE(b.forename_1, '')");
+        assertThat(normalisedQuery).contains("COALESCE(b.surname, '')");
+        assertThat(normalisedQuery).contains("NULLIF(TRIM(");
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(b.applicant_display_name) "
@@ -236,8 +239,8 @@ class FeesReportDataReaderTest {
                         "UPPER(b.courthouse_code) " + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
         Assertions.assertTrue(
                 normalisedQuery.contains("UPPER(SUBSTRING(b.courthouse_code FROM 2 FOR 2))"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :otherCourthouse IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseCode IS NULL"));
+        assertThat(normalisedQuery).contains("AND :otherCourthouse IS NULL");
+        assertThat(normalisedQuery).contains("AND :courthouseCode IS NULL");
         Assertions.assertEquals(-1, normalisedQuery.indexOf("UPPER(b.courthouse_code) = UPPER"));
         Assertions.assertEquals(-1, normalisedQuery.indexOf("UPPER(sa.standard_applicant_code) ="));
     }
@@ -246,7 +249,7 @@ class FeesReportDataReaderTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.getLong("ale_id")).thenReturn(123L);
         when(resultSet.getObject("list_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2018, 5, 18));
+                .thenReturn(LocalDate.of(2018, Month.MAY, 18));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Westminster");
         when(resultSet.getString("other_courthouse")).thenReturn("Other court");
         when(resultSet.getString("cja_code")).thenReturn("01");
@@ -259,7 +262,7 @@ class FeesReportDataReaderTest {
         when(resultSet.getBigDecimal("total_fee_value")).thenReturn(BigDecimal.valueOf(21));
         when(resultSet.getString("fee_status")).thenReturn("Due");
         when(resultSet.getObject("fee_status_date", LocalDate.class))
-                .thenReturn(LocalDate.of(2018, 12, 3));
+                .thenReturn(LocalDate.of(2018, Month.DECEMBER, 3));
         when(resultSet.getString("payment_reference")).thenReturn("REF-1");
         return resultSet;
     }

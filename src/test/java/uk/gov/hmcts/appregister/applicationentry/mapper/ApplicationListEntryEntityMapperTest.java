@@ -1,6 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -20,6 +24,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -31,6 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 @SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryEntityMapperTest {
+    private static final LocalDate BUSINESS_DATE = LocalDate.of(2025, Month.JANUARY, 2);
 
     private ApplicationListEntryEntityMapper mapper;
 
@@ -41,6 +47,10 @@ class ApplicationListEntryEntityMapperTest {
         mapper = new ApplicationListEntryEntityMapperImpl();
         applicantMapper = new ApplicantMapperImpl();
         mapper.setOfficialMapper(new OfficialMapperImpl());
+        mapper.setBusinessDateProvider(
+                new BusinessDateProvider(
+                        Clock.fixed(Instant.parse("2025-01-02T03:04:05Z"), ZoneId.of("UTC")),
+                        ZoneId.of("Europe/London")));
     }
 
     @Test
@@ -90,13 +100,37 @@ class ApplicationListEntryEntityMapperTest {
     }
 
     @Test
+    void testToApplicationListEntryUsesBusinessDateWhenLodgementDateMissing() {
+        EntryCreateDto entryCreateDto = new EntryCreateDto();
+
+        ApplicationListEntry applicationListEntry =
+                mapper.toApplicationListEntry(
+                        entryCreateDto, null, null, null, null, null, null, YesOrNo.NO);
+
+        Assertions.assertEquals(BUSINESS_DATE, applicationListEntry.getLodgementDate());
+    }
+
+    @Test
+    void testToApplicationListEntryUsesProvidedLodgementDate() {
+        EntryCreateDto entryCreateDto = new EntryCreateDto();
+        LocalDate lodgementDate = LocalDate.of(2025, Month.FEBRUARY, 14);
+        entryCreateDto.setLodgementDate(lodgementDate);
+
+        ApplicationListEntry applicationListEntry =
+                mapper.toApplicationListEntry(
+                        entryCreateDto, null, null, null, null, null, null, YesOrNo.NO);
+
+        Assertions.assertEquals(lodgementDate, applicationListEntry.getLodgementDate());
+    }
+
+    @Test
     void testToFeeStatus() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         ApplicationListEntry applicationList =
                 Instancio.of(ApplicationListEntry.class).withSettings(settings).create();
 
         FeeStatus status = new FeeStatus();
-        status.setStatusDate(LocalDate.now());
+        status.setStatusDate(BUSINESS_DATE);
         status.setPaymentStatus(PaymentStatus.DUE);
         status.setPaymentReference("Ref");
 

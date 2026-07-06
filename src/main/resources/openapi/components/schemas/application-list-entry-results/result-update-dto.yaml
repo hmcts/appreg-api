@@ -1,5 +1,6 @@
 type: object
 description: Request payload to update an Application List Entry Result. Blank fields will be rejected, nulls should be used instead.
+additionalProperties: false
 required:
   - resultCode
 

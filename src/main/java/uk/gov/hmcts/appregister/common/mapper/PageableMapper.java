@@ -72,8 +72,6 @@ public class PageableMapper {
             Sort.Direction defaultDirection,
             Function<String, ? extends SortableOperationEnum> findSortFieldEnum) {
 
-        // TODO: This is the one line that needs removing
-        // if we want to support multiple sort values
         validateAgainstMultipleSortSupported(sort);
 
         if (size != null && size > maxPageSize) {
@@ -173,12 +171,11 @@ public class PageableMapper {
             }
 
             // if we have a sort that is empty then error else parse
-            if (!prop.isEmpty()) {
-                orders.add(new Sort.Order(dir, prop).nullsLast());
-            } else {
+            if (prop.isEmpty()) {
                 throw new AppRegistryException(
                         CommonAppError.SORT_NOT_SUITABLE, "Sort value %s is not suitable");
             }
+            orders.add(new Sort.Order(dir, prop).nullsLast());
         }
 
         return Sort.by(orders);

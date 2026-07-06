@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
@@ -40,18 +39,6 @@ public class ApplicationEntryResultCreationValidator
     @Override
     public void validate(PayloadForCreateEntryResult<ResultCreateDto> validatable) {
         validate(validatable, (v, s) -> null);
-    }
-
-    @Override
-    public <R> R validate(
-            PayloadForCreateEntryResult<ResultCreateDto> validatable,
-            BiFunction<
-                            PayloadForCreateEntryResult<ResultCreateDto>,
-                            ListEntryResultCreateValidationSuccess,
-                            R>
-                    validateSuccess) {
-
-        return super.validate(validatable, validateSuccess);
     }
 
     @Override

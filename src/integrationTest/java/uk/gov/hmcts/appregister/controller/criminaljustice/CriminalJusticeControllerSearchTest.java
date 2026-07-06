@@ -1,7 +1,10 @@
 package uk.gov.hmcts.appregister.controller;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +35,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest {
+class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "criminal-justice-areas";
     // expectations based on the flyway test data
     private static final String EXPECTED_CODE = "CD";
@@ -57,8 +60,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaWithValidCode_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaWithValidCode_thenReturn200()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -103,8 +106,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenValidRequest_whenGetCriminalJusticeAreaWithInvalidCode_thenReturn404()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaWithInvalidCode_thenReturn404()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -130,8 +133,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreaByCode_thenReturnFields()
-            throws Exception {
+    void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreaByCode_thenReturnFields()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         var code = "K1";
         var description = "Created CJA";
         createCriminalJusticeArea(code, description);
@@ -152,7 +155,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeArea_thenReturn200() throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeArea_thenReturn200()
+            throws URISyntaxException, MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -215,8 +219,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaWithPaging_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaWithPaging_thenReturn200()
+            throws MalformedURLException, JOSEException {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -283,9 +287,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void
-            givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreas_thenReturnSummaryFields()
-                    throws Exception {
+    void givenCreatedCriminalJusticeArea_whenGetCriminalJusticeAreas_thenReturnSummaryFields()
+            throws Exception {
         var code = "K2";
         var description = "Created Summary CJA";
         createCriminalJusticeArea(code, description);
@@ -313,7 +316,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaSort_thenReturn200() throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaSort_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -377,8 +380,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenValidRequest_whenGetCriminalJusticeAreaInvalidSort_thenReturn400()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaInvalidSort_thenReturn400() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -402,8 +404,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaFilterByCode_thenReturn200()
-            throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaFilterByCode_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -469,7 +470,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void givenValidRequest_whenGetCriminalJusticeAreaFilterByDescription_thenReturn200()
+    void givenValidRequest_whenGetCriminalJusticeAreaFilterByDescription_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -536,9 +537,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
 
     @Test
     @StabilityTest
-    public void
-            givenValidRequest_whenGetCriminalJusticeAreaFilterByCodeAndDescription_thenReturn200()
-                    throws Exception {
+    void givenValidRequest_whenGetCriminalJusticeAreaFilterByCodeAndDescription_thenReturn200()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -604,8 +604,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @StabilityTest
-    public void givenCriminalJusticeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-            throws Exception {
+    void givenCriminalJusticeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws MalformedURLException, JOSEException {
         for (CriminalJusticeSortFieldEnum criminalJusticeSortFieldEnum :
                 CriminalJusticeSortFieldEnum.values()) {
 
@@ -668,7 +668,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @StabilityTest
-    public void givenASuccessfulFilterPartialDescription_whenSearch_thenSuccessResponse()
+    void givenASuccessfulFilterPartialDescription_whenSearch_thenSuccessResponse()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -725,13 +725,16 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
                 RestEndpointDescription.builder()
                         .url(
                                 getLocalUrlWithDate(
-                                        WEB_CONTEXT + "/" + EXPECTED_CODE, OffsetDateTime.now()))
+                                        WEB_CONTEXT + "/" + EXPECTED_CODE,
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
                 RestEndpointDescription.builder()
-                        .url(getLocalUrlWithDate(WEB_CONTEXT, OffsetDateTime.now()))
+                        .url(
+                                getLocalUrlWithDate(
+                                        WEB_CONTEXT, OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
@@ -762,7 +765,8 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
     }
 
     @Test
-    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+    void givenValidRequest_whenMultipleSortsArePresent_thenReturn400()
+            throws MalformedURLException, JOSEException {
         var token = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         Response responseSpec =

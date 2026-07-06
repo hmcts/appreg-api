@@ -1,11 +1,10 @@
 package uk.gov.hmcts.appregister.job.service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -16,14 +15,13 @@ import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class JobServiceImpl implements JobService {
     private final JobMapper jobMapper;
 
     private final JobExistanceValidator statusJobValidator;
 
     private final AuditOperationService auditService;
-
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     @Override
     public JobAcknowledgement getJobAckById(UUID jobId) {
@@ -35,8 +33,7 @@ public class JobServiceImpl implements JobService {
                     return Optional.of(
                             new AuditableResult<>(
                                     jobMapper.toDto(jobStatusResponse), jobMapper.toEntity(jobId)));
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 
     @Override

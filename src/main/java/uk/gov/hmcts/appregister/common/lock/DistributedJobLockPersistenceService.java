@@ -10,7 +10,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 
 @Component
 @RequiredArgsConstructor
-class DistributedJobLockPersistenceService {
+public class DistributedJobLockPersistenceService {
     private final DatabaseJobRepository databaseJobRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

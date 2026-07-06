@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
+import uk.gov.hmcts.appregister.audit.service.NestedAuditPersistenceManager;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 /**
  * A class that allows us to assert against audit log data. This class reads the logs from {@link
@@ -17,8 +19,12 @@ import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
 @RequiredArgsConstructor
 @Component
 public class DataAuditLogAsserter {
+    private final DataAuditRepository dataAuditRepository;
+
     protected final LogCaptor dataAuditLogger =
             LogCaptor.forClass(uk.gov.hmcts.appregister.audit.listener.DataAuditLogger.class);
+    protected final LogCaptor nestedAuditPersistenceLogger =
+            LogCaptor.forClass(NestedAuditPersistenceManager.class);
 
     protected final LogCaptor reflectiveDifferentiator =
             LogCaptor.forClass(ReflectiveAuditor.class);
@@ -84,7 +90,13 @@ public class DataAuditLogAsserter {
                         newValue != null ? newValue : ".*",
                         updateType,
                         eventName),
-                dataAuditExpected);
+                dataAuditExpected,
+                tableName,
+                columnName,
+                oldValue,
+                newValue,
+                updateType,
+                eventName);
     }
 
     /**
@@ -109,6 +121,7 @@ public class DataAuditLogAsserter {
      * @param assertion The assertion to find
      * @return The data audit count
      */
+    @SuppressWarnings({"java:S3776"})
     public int assertDataAuditChange(DataAuditResult assertion) {
 
         // if we are not looking for old or new audi logs
@@ -118,7 +131,7 @@ public class DataAuditLogAsserter {
 
         // find new audit log exists
         if (assertion.newAuditRegex() != null) {
-            for (String log : dataAuditLogger.getDebugLogs()) {
+            for (String log : getAuditDebugLogs()) {
                 if (Pattern.matches(replaceSchema(assertion.newAuditRegex()), log)) {
                     newLogFound = true;
                 }
@@ -127,7 +140,7 @@ public class DataAuditLogAsserter {
 
         // check if old audit log exists
         if (assertion.oldAuditRegex() != null) {
-            for (String log : dataAuditLogger.getDebugLogs()) {
+            for (String log : getAuditDebugLogs()) {
                 if (!Pattern.matches(replaceSchema(assertion.oldAuditRegex()), log)) {
                     oldLogFound = true;
                 }
@@ -137,11 +150,21 @@ public class DataAuditLogAsserter {
         int matchCount = 0;
 
         // check the data audit record log exists
-        for (String log : dataAuditLogger.getDebugLogs()) {
+        for (String log : getAuditDebugLogs()) {
             if (Pattern.matches(replaceSchema(assertion.dataAuditRegex()), log)) {
                 auditLogFound = true;
                 matchCount = matchCount + 1;
             }
+        }
+
+        if (!auditLogFound && assertion.dataAuditExpected() && isPersisted(assertion)) {
+            auditLogFound = true;
+            matchCount = 1;
+        }
+
+        if (!auditLogFound && assertion.dataAuditExpected()) {
+            matchCount = waitForPersistedAudit(assertion);
+            auditLogFound = matchCount > 0;
         }
 
         if (!oldLogFound || !newLogFound || !auditLogFound) {
@@ -149,6 +172,29 @@ public class DataAuditLogAsserter {
         }
 
         return matchCount;
+    }
+
+    private java.util.List<String> getAuditDebugLogs() {
+        var combinedLogs = new java.util.ArrayList<String>(dataAuditLogger.getDebugLogs());
+        combinedLogs.addAll(nestedAuditPersistenceLogger.getDebugLogs());
+        return combinedLogs;
+    }
+
+    private int waitForPersistedAudit(DataAuditResult assertion) {
+        for (var attempt = 0; attempt < 10; attempt++) {
+            if (isPersisted(assertion)) {
+                return 1;
+            }
+
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException interruptedException) {
+                Thread.currentThread().interrupt();
+                return 0;
+            }
+        }
+
+        return 0;
     }
 
     public void assertFieldLogPresent(String tableName, String fieldName, boolean newAudit) {
@@ -222,6 +268,7 @@ public class DataAuditLogAsserter {
      */
     public void clearLogs() {
         dataAuditLogger.clearLogs();
+        nestedAuditPersistenceLogger.clearLogs();
     }
 
     /**
@@ -264,5 +311,39 @@ public class DataAuditLogAsserter {
             String oldAuditRegex,
             String newAuditRegex,
             String dataAuditRegex,
-            boolean dataAuditExpected) {}
+            boolean dataAuditExpected,
+            String tableName,
+            String columnName,
+            String oldValue,
+            String newValue,
+            String updateType,
+            String eventName) {}
+
+    private boolean isPersisted(DataAuditResult assertion) {
+        return dataAuditRepository.findAll().stream()
+                .anyMatch(
+                        audit ->
+                                assertion.tableName().equals(audit.getTableName())
+                                        && assertion.columnName().equals(audit.getColumnName())
+                                        && matchesAuditValue(
+                                                assertion.oldValue(), audit.getOldValue())
+                                        && matchesAuditValue(
+                                                assertion.newValue(), audit.getNewValue())
+                                        && assertion
+                                                .updateType()
+                                                .equals(audit.getUpdateType().name())
+                                        && assertion.eventName().equals(audit.getEventName()));
+    }
+
+    private boolean matchesAuditValue(String expectedValue, String actualValue) {
+        if (expectedValue == null || ".*".equals(expectedValue)) {
+            return true;
+        }
+
+        if (actualValue == null) {
+            return false;
+        }
+
+        return Pattern.matches(expectedValue, actualValue);
+    }
 }

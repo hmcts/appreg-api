@@ -11,10 +11,11 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 
 class ApplicationListMappingHelperTest {
+    private final ApplicationListMappingHelper helper = new ApplicationListMappingHelper();
 
     @Test
     void testFormatDurationWithNullDurationReturnsNull() {
-        Assertions.assertNull(ApplicationListMappingHelper.formatDuration(null));
+        Assertions.assertNull(helper.formatDuration(null));
     }
 
     @Test
@@ -23,7 +24,7 @@ class ApplicationListMappingHelperTest {
         when(app.getDurationHours()).thenReturn((short) 1);
         when(app.getDurationMinutes()).thenReturn((short) 30);
 
-        String result = ApplicationListMappingHelper.formatDuration(app);
+        String result = helper.formatDuration(app);
 
         Assertions.assertEquals("1 Hours 30 Minutes", result);
     }
@@ -34,14 +35,14 @@ class ApplicationListMappingHelperTest {
         when(app.getDurationHours()).thenReturn((short) 0);
         when(app.getDurationMinutes()).thenReturn((short) 5);
 
-        String result = ApplicationListMappingHelper.formatDuration(app);
+        String result = helper.formatDuration(app);
 
         Assertions.assertEquals("0 Hours 5 Minutes", result);
     }
 
     @Test
     void testFormatCjaWithNullCjaReturnsNull() {
-        Assertions.assertNull(ApplicationListMappingHelper.formatCja(null));
+        Assertions.assertNull(helper.formatCja(null));
     }
 
     @Test
@@ -50,7 +51,7 @@ class ApplicationListMappingHelperTest {
         when(cja.getCode()).thenReturn(null);
         when(cja.getDescription()).thenReturn(null);
 
-        Assertions.assertNull(ApplicationListMappingHelper.formatCja(cja));
+        Assertions.assertNull(helper.formatCja(cja));
     }
 
     @Test
@@ -59,7 +60,7 @@ class ApplicationListMappingHelperTest {
         when(cja.getCode()).thenReturn(null);
         when(cja.getDescription()).thenReturn(CJA1_DESCRIPTION);
 
-        Assertions.assertEquals(CJA1_DESCRIPTION, ApplicationListMappingHelper.formatCja(cja));
+        Assertions.assertEquals(CJA1_DESCRIPTION, helper.formatCja(cja));
     }
 
     @Test
@@ -68,7 +69,7 @@ class ApplicationListMappingHelperTest {
         when(cja.getCode()).thenReturn(CJA1_CODE);
         when(cja.getDescription()).thenReturn(null);
 
-        Assertions.assertEquals(CJA1_CODE, ApplicationListMappingHelper.formatCja(cja));
+        Assertions.assertEquals(CJA1_CODE, helper.formatCja(cja));
     }
 
     @Test
@@ -77,7 +78,6 @@ class ApplicationListMappingHelperTest {
         when(cja.getCode()).thenReturn(CJA1_CODE);
         when(cja.getDescription()).thenReturn(CJA1_DESCRIPTION);
 
-        Assertions.assertEquals(
-                CJA1_CODE + " - " + CJA1_DESCRIPTION, ApplicationListMappingHelper.formatCja(cja));
+        Assertions.assertEquals(CJA1_CODE + " - " + CJA1_DESCRIPTION, helper.formatCja(cja));
     }
 }

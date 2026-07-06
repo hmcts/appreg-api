@@ -7,7 +7,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 
-public class ApplicationCodeControllerSecurityTest extends AbstractSecurityControllerTest {
+class ApplicationCodeControllerSecurityTest extends AbstractSecurityControllerTest {
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
@@ -18,7 +18,10 @@ public class ApplicationCodeControllerSecurityTest extends AbstractSecurityContr
                         .successRole(RoleEnum.ADMIN)
                         .build(),
                 RestEndpointDescription.builder()
-                        .url(getLocalUrlWithDate("application-codes/2", OffsetDateTime.now()))
+                        .url(
+                                getLocalUrlWithDate(
+                                        "application-codes/2",
+                                        OffsetDateTime.now(java.time.ZoneOffset.UTC)))
                         .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)

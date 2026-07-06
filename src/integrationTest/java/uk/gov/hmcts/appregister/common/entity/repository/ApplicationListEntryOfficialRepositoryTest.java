@@ -19,14 +19,16 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
-import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 
 @Transactional
 @Rollback
-public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTest {
+class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTest {
+
+    private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
+            List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
     @Autowired
     private ApplicationListEntryOfficialRepository applicationListEntryOfficialRepository;
@@ -36,7 +38,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
     record OfficialKey(String title, String forename, String surname, OfficialType type) {}
 
     @Test
-    public void testFindByApplicationListUuidForPrinting() {
+    void testFindByApplicationListUuidForPrinting() {
         // Arrange: one list with two entries
         ApplicationList list = new AppListTestData().someMinimal().build();
 
@@ -51,16 +53,14 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
         // Act: bulk fetch by list UUID
         List<ApplicationListEntryOfficialPrintProjection> officials =
                 applicationListEntryOfficialRepository.findByApplicationListUuidForPrinting(
-                        list.getUuid(), OfficialTypeUtil.PRINTABLE_CODES);
+                        list.getUuid(), PRINTABLE_OFFICIAL_TYPES);
 
         // Assert: non-null and only printable types returned
         assertNotNull(officials);
         assertTrue(
                 officials.stream()
                         .allMatch(
-                                official ->
-                                        OfficialTypeUtil.PRINTABLE_CODES.contains(
-                                                official.getType())),
+                                official -> PRINTABLE_OFFICIAL_TYPES.contains(official.getType())),
                 "Non-printable official type returned");
 
         // Build expected map: entryId -> set of officials (title, forename, surname, type)

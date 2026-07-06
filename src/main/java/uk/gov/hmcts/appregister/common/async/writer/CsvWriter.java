@@ -1,7 +1,9 @@
 package uk.gov.hmcts.appregister.common.async.writer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.HeaderNameBaseMappingStrategy;
+import com.opencsv.bean.MappingStrategy;
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
@@ -11,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -81,16 +84,49 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
 
                 // write the csv pojos to a csv file
                 beanToCsv.write(csv); // must pass a collection
-            } catch (CsvDataTypeMismatchException dataTypeMismatchException) {
+            } catch (CsvDataTypeMismatchException
+                    | CsvRequiredFieldEmptyException dataTypeMismatchException) {
                 jobContext.logFailure(dataTypeMismatchException.getMessage());
-            } catch (CsvRequiredFieldEmptyException csvRequiredFieldEmptyException) {
-                jobContext.logFailure(csvRequiredFieldEmptyException.getMessage());
             }
         }
     }
 
+    public String writeToString(List<T> csv, Class<T> typeClass, String[] header)
+            throws IOException {
+        StringBuilder csvString = new StringBuilder();
+
+        try (StringWriter writer = new StringWriter()) {
+            // any specific errors related to formatting are logged to the context by default
+            try {
+                MappingStrategy<T> mappingStrategy = new ColumnPositionMappingStrategy<>();
+                mappingStrategy.setType(typeClass);
+
+                // open the csv writer
+                StatefulBeanToCsv<T> beanToCsv =
+                        new StatefulBeanToCsvBuilder<T>(writer)
+                                .withApplyQuotesToAll(false)
+                                .withSeparator(DEFAULT_DELIMITER)
+                                .withMappingStrategy(mappingStrategy)
+                                .build();
+
+                // write the csv pojos to a csv file
+                beanToCsv.write(csv); // must pass a collection
+            } catch (CsvDataTypeMismatchException
+                    | CsvRequiredFieldEmptyException dataTypeMismatchException) {
+                log.error(dataTypeMismatchException.getMessage());
+                return null;
+            }
+            for (String headerName : header) {
+                csvString.append(headerName).append(DEFAULT_DELIMITER);
+            }
+            csvString.append("\n");
+            csvString.append(writer);
+        }
+        return csvString.toString();
+    }
+
     /** Do not add a header if it has already been written. */
-    public class NoHeaderStrategy<T> extends HeaderNameBaseMappingStrategy<T> {
+    public class NoHeaderStrategy<R> extends HeaderNameBaseMappingStrategy<R> {
 
         private final File file;
 
@@ -99,7 +135,7 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
         }
 
         @Override
-        public String[] generateHeader(T bean) throws CsvRequiredFieldEmptyException {
+        public String[] generateHeader(R bean) throws CsvRequiredFieldEmptyException {
             // if the file is empty, then we can write the header, otherwise
             // do not bother
             if (file.length() != 0) {
