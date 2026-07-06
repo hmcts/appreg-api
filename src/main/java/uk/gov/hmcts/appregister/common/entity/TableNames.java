@@ -28,4 +28,5 @@ public class TableNames {
     public final String DATABASE_JOBS = "database_jobs";
     public final String RETENTION_POLICY = "retention_policy";
     public final String ASYNC_JOBS = "asynch_jobs";
+    public final String ASYNC_JOBS_APP_LIST_ENTRY = "async_jobs_app_list_entry";
 }

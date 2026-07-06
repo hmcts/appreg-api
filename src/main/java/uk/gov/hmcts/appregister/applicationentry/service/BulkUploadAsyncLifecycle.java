@@ -224,8 +224,15 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             try {
                 EntryCreateDto dto = mapper.toEntryCreateDto(row);
 
-                applicationEntryService.createBulkEntry(
-                        PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build());
+                if (event.getResponse() != null) {
+                    applicationEntryService.createBulkEntry(
+                            PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
+                            event.getResponse().getJobId().getId());
+                } else {
+                    applicationEntryService.createBulkEntry(
+                            PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
+                            null);
+                }
 
             } catch (Exception ex) {
                 log.error("Failed to process row {}", rowNumber, ex);

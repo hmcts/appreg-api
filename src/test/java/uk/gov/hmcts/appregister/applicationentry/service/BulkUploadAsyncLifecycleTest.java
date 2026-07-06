@@ -253,7 +253,7 @@ class BulkUploadAsyncLifecycleTest {
         AsyncJobLifecycleEvent<BulkUploadRow> event =
                 new AsyncJobLifecycleEvent<>(
                         null, List.of(firstRow, secondRow), context, JobStatus1.PROCESSING);
-        when(applicationEntryService.createBulkEntry(any()))
+        when(applicationEntryService.createBulkEntry(any(), any()))
                 .thenReturn(null)
                 .thenThrow(new IllegalStateException("boom"));
 
@@ -263,7 +263,7 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED);
         assertThat(context.getValidationFailureMessages())
                 .containsExactly("Processing failed for row 3: boom");
-        verify(applicationEntryService, times(2)).createBulkEntry(any());
+        verify(applicationEntryService, times(2)).createBulkEntry(any(), any());
     }
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(

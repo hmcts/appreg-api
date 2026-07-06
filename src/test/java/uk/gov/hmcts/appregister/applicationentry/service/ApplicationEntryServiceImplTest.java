@@ -112,6 +112,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMap
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
@@ -193,6 +194,8 @@ class ApplicationEntryServiceImplTest {
     @Mock private AppListEntryFeeRepository appListEntryFeeRepository;
 
     @Mock private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+
+    @Mock private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
 
     @Mock private Clock clock;
 
@@ -341,6 +344,7 @@ class ApplicationEntryServiceImplTest {
                         appListEntryFeeRepository,
                         standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
+                        asyncJobAppListEntryRepository,
                         applicationListEntryMapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -378,6 +382,7 @@ class ApplicationEntryServiceImplTest {
                         appListEntryFeeRepository,
                         standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
+                        asyncJobAppListEntryRepository,
                         mapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -890,7 +895,7 @@ class ApplicationEntryServiceImplTest {
                         .data(entryCreateDto)
                         .build();
 
-        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload);
+        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload, null);
 
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
 
