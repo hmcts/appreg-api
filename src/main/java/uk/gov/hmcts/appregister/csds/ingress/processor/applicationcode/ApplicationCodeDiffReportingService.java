@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
@@ -36,13 +35,9 @@ public class ApplicationCodeDiffReportingService {
     private static final String CHANGE_TYPE_INSERT = "insert";
     private static final String CHANGE_TYPE_UPDATE = "update";
 
-    private final ApplicationListEntryRepository applicationListEntryRepository;
     private final String reportingDir;
 
-    public ApplicationCodeDiffReportingService(
-            CsdsIngressProperties properties,
-            ApplicationListEntryRepository applicationListEntryRepository) {
-        this.applicationListEntryRepository = applicationListEntryRepository;
+    public ApplicationCodeDiffReportingService(CsdsIngressProperties properties) {
         this.reportingDir = properties.getProcessors().getApplicationCodes().getReportingDir();
     }
 
@@ -143,20 +138,6 @@ public class ApplicationCodeDiffReportingService {
         };
     }
 
-    private Map<Long, Long> loadProtectedDeletionCounts(List<Long> applicationCodeIds) {
-        if (applicationCodeIds.isEmpty()) {
-            return Map.of();
-        }
-
-        return applicationListEntryRepository.countByApplicationCodeIds(applicationCodeIds).stream()
-                .collect(
-                        Collectors.toMap(
-                                ApplicationListEntryRepository.ApplicationCodeReferenceCount
-                                        ::getApplicationCodeId,
-                                ApplicationListEntryRepository.ApplicationCodeReferenceCount
-                                        ::getReferenceCount));
-    }
-
     private void writeComparisonCsvFiles(
             String datasetName,
             List<JsonNode> processedData,
@@ -174,8 +155,6 @@ public class ApplicationCodeDiffReportingService {
             val existingPath =
                     outputDir.resolve("application_codes_existing_" + timestamp + ".csv");
             val diffReportPath = outputDir.resolve("application_codes_diff_" + timestamp + ".csv");
-            val protectedDeletionCounts =
-                    loadProtectedDeletionCounts(new ArrayList<>(existingById.keySet()));
 
             Files.writeString(
                     incomingJsonPath,
@@ -185,10 +164,7 @@ public class ApplicationCodeDiffReportingService {
                     incomingCsvPath,
                     buildIncomingCsv(processedData, recordsExtractor),
                     StandardCharsets.UTF_8);
-            Files.writeString(
-                    existingPath,
-                    buildExistingCsv(existingById, protectedDeletionCounts),
-                    StandardCharsets.UTF_8);
+            Files.writeString(existingPath, buildExistingCsv(existingById), StandardCharsets.UTF_8);
             Files.writeString(
                     diffReportPath, buildDiffReportCsv(diffReport), StandardCharsets.UTF_8);
 
@@ -233,20 +209,18 @@ public class ApplicationCodeDiffReportingService {
         return clonedPage;
     }
 
-    private String buildExistingCsv(
-            Map<Long, ApplicationCodeIngressRecord> existingById,
-            Map<Long, Long> protectedDeletionCounts) {
-        val csv = new StringBuilder(csvHeader(true));
+    private String buildExistingCsv(Map<Long, ApplicationCodeIngressRecord> existingById) {
+        val csv = new StringBuilder(csvHeader());
         existingById.values().stream()
                 .sorted(Comparator.comparing(ApplicationCodeIngressRecord::id))
-                .map(item -> item.toCsvRow(protectedDeletionCounts.get(item.id())))
+                .map(this::toExistingCsvRow)
                 .forEach(csv::append);
         return csv.toString();
     }
 
     private String buildIncomingCsv(
             List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        val csv = new StringBuilder(csvHeader(false));
+        val csv = new StringBuilder(csvHeader());
         processedData.stream()
                 .flatMap(page -> recordsExtractor.apply(page).stream())
                 .map(this::toIncomingCsvRow)
@@ -254,12 +228,10 @@ public class ApplicationCodeDiffReportingService {
         return csv.toString();
     }
 
-    private String csvHeader(boolean includeReferenceCount) {
-        val baseHeader =
-                "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation,"
-                        + "feeDue,requiresRespondent,startDate,endDate,"
-                        + "bulkRespondentAllowed,version,feeReference";
-        return includeReferenceCount ? baseHeader + ",referenceCount\n" : baseHeader + "\n";
+    private String csvHeader() {
+        return "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation,"
+                + "feeDue,requiresRespondent,startDate,endDate,"
+                + "bulkRespondentAllowed,version,feeReference\n";
     }
 
     private String buildDiffReportCsv(List<DiffReportRow> diffReport) {
@@ -285,6 +257,26 @@ public class ApplicationCodeDiffReportingService {
                         csvValue(nullableText(node, "BulkRespondentAllowed")),
                         csvValue(nullableLong(node, "RevisionNumber")),
                         csvValue(nullableText(node, "FeeReference")))
+                + "\n";
+    }
+
+    private String toExistingCsvRow(ApplicationCodeIngressRecord item) {
+        return String.join(
+                        ",",
+                        csvValue((Object) null),
+                        csvValue((Object) null),
+                        csvValue(item.id()),
+                        csvValue(item.code()),
+                        csvValue(item.title()),
+                        csvValue(item.wording()),
+                        csvValue(item.legislation()),
+                        csvValue(item.feeDue()),
+                        csvValue(item.requiresRespondent()),
+                        csvValue(item.startDate()),
+                        csvValue(item.endDate()),
+                        csvValue(item.bulkRespondentAllowed()),
+                        csvValue(item.version()),
+                        csvValue(item.feeReference()))
                 + "\n";
     }
 

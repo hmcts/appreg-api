@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 
@@ -24,18 +27,46 @@ public class CsdsIngressProcessor {
     private final List<IDataIngressProcessor<?>> processors;
 
     public boolean runIngress() {
-        return distributedJobLockService.executeWithLock(
-                DATABASE_JOB_NAME, properties.getLeaseDuration(), this::runProcessors);
+        val lock =
+                distributedJobLockService.tryAcquire(
+                        DATABASE_JOB_NAME, properties.getLeaseDuration());
+        if (lock.isEmpty()) {
+            return false;
+        }
+
+        try {
+            runProcessors(lock.get());
+            return true;
+        } finally {
+            if (!distributedJobLockService.release(lock.get())) {
+                log.warn(
+                        "Distributed lock release was skipped for job {} because the lease is no longer owned",
+                        DATABASE_JOB_NAME);
+            }
+        }
     }
 
-    private void runProcessors() {
+    private void runProcessors(DistributedJobLock lock) {
         if (processors.isEmpty()) {
             log.info("Skipping CSDS ingress because no data ingress processors are registered");
             return;
         }
 
-        for (val processor : processors) {
-            runProcessor(processor);
+        for (var index = 0; index < processors.size(); index++) {
+            val processor = processors.get(index);
+            try {
+                runProcessor(processor);
+            } catch (RuntimeException ex) {
+                log.error(
+                        "Skipping CSDS ingress processor {} for target {}.{} after failure",
+                        processor.datasetName(),
+                        processor.targetTable(),
+                        processor.targetKeyField(),
+                        ex);
+            }
+            if (index < processors.size() - 1) {
+                renewLock(lock, processor);
+            }
         }
     }
 
@@ -58,5 +89,13 @@ public class CsdsIngressProcessor {
                 processor.targetTable(),
                 processor.targetKeyField(),
                 duration.toMillis());
+    }
+
+    private void renewLock(DistributedJobLock lock, IDataIngressProcessor<?> processor) {
+        if (!distributedJobLockService.renew(lock)) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "CSDS distributed lease was lost after processor " + processor.datasetName());
+        }
     }
 }

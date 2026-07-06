@@ -1,15 +1,14 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
@@ -20,7 +19,7 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 @Component
 @RequiredArgsConstructor
 public class ApplicationCodeDiffService
-        implements IngressDiffService<List<JsonNode>, ApplicationCodeDiffResult> {
+        implements IngressDiffService<ApplicationCodeDiffRequest, ApplicationCodeDiffResult> {
     private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing ac_id match";
     private static final String UPDATE_REASON_EXISTING_MATCH = "existing ac_id match";
 
@@ -28,31 +27,18 @@ public class ApplicationCodeDiffService
     private final ApplicationCodeIngressDatabaseRowMapper rowMapper;
 
     @Override
-    public ApplicationCodeDiffResult diff(List<JsonNode> processedData) {
-        throw new UnsupportedOperationException("Use diff(...) with record mapping functions");
-    }
+    public ApplicationCodeDiffResult diff(ApplicationCodeDiffRequest request) {
+        val incomingById = new LinkedHashMap<Long, ApplicationCodeIngressRecord>();
+        request.processedData().stream()
+                .flatMap(page -> request.recordsExtractor().apply(page).stream())
+                .map(request.recordMapper())
+                .forEach(item -> addIncomingRecord(request.targetTable(), incomingById, item));
 
-    public ApplicationCodeDiffResult diff(
-            String targetTable,
-            List<JsonNode> processedData,
-            Function<JsonNode, ApplicationCodeIngressRecord> recordMapper,
-            Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        val incomingById =
-                processedData.stream()
-                        .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .map(recordMapper)
-                        .collect(
-                                Collectors.toMap(
-                                        ApplicationCodeIngressRecord::id,
-                                        item -> item,
-                                        (first, second) -> second,
-                                        LinkedHashMap::new));
-
-        log.info("Loading existing CSDS comparison rows from {}", targetTable);
+        log.info("Loading existing CSDS comparison rows from {}", request.targetTable());
         val existingById =
-                tableReadService.loadAll(targetTable, rowMapper).stream()
+                tableReadService.loadAll(request.targetTable(), rowMapper).stream()
                         .collect(
-                                Collectors.toMap(
+                                java.util.stream.Collectors.toMap(
                                         ApplicationCodeIngressRecord::id,
                                         item -> item,
                                         (first, second) -> second,
@@ -70,6 +56,26 @@ public class ApplicationCodeDiffService
         }
 
         return new ApplicationCodeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
+    }
+
+    private void addIncomingRecord(
+            String targetTable,
+            LinkedHashMap<Long, ApplicationCodeIngressRecord> incomingById,
+            ApplicationCodeIngressRecord item) {
+        val existing = incomingById.putIfAbsent(item.id(), item);
+        if (existing == null) {
+            return;
+        }
+
+        log.error(
+                "Duplicate incoming AC_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.id(),
+                targetTable,
+                describe(existing),
+                describe(item));
+        throw new AppRegistryException(
+                CommonAppError.INTERNAL_SERVER_ERROR,
+                "Duplicate incoming AC_ID " + item.id() + " detected for " + targetTable);
     }
 
     private IngressDiffRecord<
@@ -99,5 +105,10 @@ public class ApplicationCodeDiffService
             ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
         // ApplicationCode currently upserts directly from the incoming CSDS representation.
         return incoming;
+    }
+
+    private String describe(ApplicationCodeIngressRecord item) {
+        return "acId=%s, code=%s, title=%s, startDate=%s, version=%s"
+                .formatted(item.id(), item.code(), item.title(), item.startDate(), item.version());
     }
 }

@@ -2,8 +2,6 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -23,7 +21,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
@@ -39,7 +36,6 @@ class ApplicationCodeDataIngressProcessorTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Mock private CsdsIngressClient ingressClient;
-    @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
 
@@ -58,8 +54,7 @@ class ApplicationCodeDataIngressProcessorTest {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
         rowMapper = new ApplicationCodeIngressDatabaseRowMapper();
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
-        diffReportingService =
-                new ApplicationCodeDiffReportingService(properties, applicationListEntryRepository);
+        diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
                 new ApplicationCodeDataIngressProcessor(
                         properties,
@@ -260,8 +255,7 @@ class ApplicationCodeDataIngressProcessorTest {
     void given_reportingDirConfigured_when_apply_then_writesCsvFiles() throws Exception {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
-        diffReportingService =
-                new ApplicationCodeDiffReportingService(properties, applicationListEntryRepository);
+        diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
                 new ApplicationCodeDataIngressProcessor(
                         properties,
@@ -293,8 +287,6 @@ class ApplicationCodeDataIngressProcessorTest {
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
                                 ApplicationCodeIngressRecord.fromEntity(existingMatchedByPssacid)));
-        when(applicationListEntryRepository.countByApplicationCodeIds(List.of(1L, 4L)))
-                .thenReturn(List.of(newReferenceCount(4L, 3L)));
 
         processor.apply(
                 processor.preProcess(
@@ -397,9 +389,8 @@ class ApplicationCodeDataIngressProcessorTest {
             assertThat(existingCsv)
                     .contains(
                             "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation")
-                    .contains("referenceCount")
-                    .contains(",,\"4\",\"A4\"")
-                    .contains("\"3\"");
+                    .doesNotContain("referenceCount")
+                    .contains(",,\"4\",\"A4\"");
             assertThat(diffCsv)
                     .contains("pssApplicationCodeId,applicationCodeId,acId,changeType")
                     .contains("\"1\",\"999\",\"1\",\"update\"")
@@ -433,10 +424,11 @@ class ApplicationCodeDataIngressProcessorTest {
 
         var diffResult =
                 diffService.diff(
-                        "application_codes_test",
-                        processedData,
-                        this::toIngressRecord,
-                        this::extractRecordsFromPage);
+                        new ApplicationCodeDiffRequest(
+                                "application_codes_test",
+                                processedData,
+                                this::toIngressRecord,
+                                this::extractRecordsFromPage));
 
         assertThat(diffResult.diffRecords()).hasSize(2);
         assertThat(diffResult.diffRecords())
@@ -526,6 +518,48 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_firstRecordMissingRequiredField_when_apply_then_failBeforeDatabaseRead() {
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecord(345L, "A3", "Title 3", "Wording 3", 1L),
+                                createSourceRecord(346L, "A4", "Title 4", "Wording 4", 1L)));
+        var invalidRecord =
+                ((com.fasterxml.jackson.databind.node.ObjectNode)
+                        extractRecordsFromPage(processedData.getFirst()).getFirst());
+        invalidRecord.remove("ApplicationTitle");
+
+        assertThatThrownBy(() -> processor.preProcess(processedData))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("ApplicationTitle");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
+    }
+
+    @Test
+    void given_duplicateResolvedAcId_when_apply_then_throwException() {
+        var logCaptor = LogCaptor.forClass(ApplicationCodeDiffService.class);
+        logCaptor.clearLogs();
+
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecordWithoutApplicationCodeId(
+                                        345L, "A3", "Title 3", "Wording 3", 1L),
+                                createSourceRecordWithoutApplicationCodeId(
+                                        345L, "A4", "Title 4", "Wording 4", 2L)));
+
+        assertThatThrownBy(() -> processor.apply(processor.preProcess(processedData)))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Duplicate incoming AC_ID 345");
+        assertThat(logCaptor.getErrorLogs())
+                .anyMatch(
+                        log ->
+                                log.contains(
+                                                "Duplicate incoming AC_ID 345 detected for application_codes")
+                                        && log.contains("duplicate record"));
+    }
+
+    @Test
     void given_processedData_when_preProcess_then_addAcIdAndSortByIt() {
         List<JsonNode> processedData =
                 List.of(
@@ -558,15 +592,13 @@ class ApplicationCodeDataIngressProcessorTest {
 
         assertThat(retrieved).isEmpty();
         verify(ingressClient).retrieveJson("/count/CSDS/ApplicationCode/GD");
-        verify(applicationListEntryRepository, never()).countByApplicationCodeIds(anyCollection());
     }
 
     @Test
     void given_reportingDirMissing_when_apply_then_skipDiffReportingWork() {
         properties.getProcessors().getApplicationCodes().setReportingDir(null);
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
-        diffReportingService =
-                new ApplicationCodeDiffReportingService(properties, applicationListEntryRepository);
+        diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
                 new ApplicationCodeDataIngressProcessor(
                         properties,
@@ -584,22 +616,6 @@ class ApplicationCodeDataIngressProcessorTest {
                                                 1L, "A1", "Title 1", "Wording 1", 1L)))));
 
         verify(tableReadService).loadAll("application_codes", rowMapper);
-        verifyNoInteractions(applicationListEntryRepository);
-    }
-
-    private ApplicationListEntryRepository.ApplicationCodeReferenceCount newReferenceCount(
-            Long applicationCodeId, Long referenceCount) {
-        return new ApplicationListEntryRepository.ApplicationCodeReferenceCount() {
-            @Override
-            public Long getApplicationCodeId() {
-                return applicationCodeId;
-            }
-
-            @Override
-            public long getReferenceCount() {
-                return referenceCount;
-            }
-        };
     }
 
     private ApplicationCode createApplicationCode(
@@ -659,17 +675,36 @@ class ApplicationCodeDataIngressProcessorTest {
         var record =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put("ApplicationCodeID", id)
                         .put("Code", code)
                         .put("ApplicationTitle", title)
                         .put("ApplicationWording", wording)
                         .putNull("Legislation")
                         .put("FeeDue", "Y")
+                        .putNull("FeeReference")
                         .put("Respondent", "N")
                         .put("StartDate", startDate)
+                        .putNull("Notes")
                         .put("BulkRespondentAllowed", "N")
+                        .put("AuthoringStatus", "Published")
+                        .put("PublishingStatus", "Active")
+                        .put("CurrentRecordIndicator", true)
+                        .put("DraftFinalExistsIndicator", false)
                         .put("RevisionNumber", version)
-                        .put("FeeReference", "FEE-1");
+                        .put("RevisionType", "Initial")
+                        .putNull("RevisionDateFrom")
+                        .putNull("RevisionDateTo")
+                        .putNull("ClonedFrom")
+                        .putNull("PSSApplicationCodeID")
+                        .putNull("PSSChangeSetHeaderID")
+                        .putNull("PSSChangeSetItemID")
+                        .put("FID_ApplicationRegisterHeader", 11263L)
+                        .putNull("FID_ReleasePackage")
+                        .put("Updator", "migration");
+        if (id == null) {
+            record.putNull("ApplicationCodeID");
+        } else {
+            record.put("ApplicationCodeID", id);
+        }
         if (endDate == null) {
             record.putNull("EndDate");
             return record;
@@ -682,8 +717,7 @@ class ApplicationCodeDataIngressProcessorTest {
     private com.fasterxml.jackson.databind.node.ObjectNode
             createSourceRecordWithoutApplicationCodeId(
                     Long pssacid, String code, String title, String wording, Long version) {
-        var record = createSourceRecord(0L, code, title, wording, version, "2020-01-01", null);
-        record.remove("ApplicationCodeID");
+        var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
         record.put("PSSApplicationCodeID", pssacid);
         return record;
     }
@@ -708,8 +742,7 @@ class ApplicationCodeDataIngressProcessorTest {
             Long version,
             String startDate,
             String endDate) {
-        var record = createSourceRecord(0L, code, title, wording, version, startDate, endDate);
-        record.remove("ApplicationCodeID");
+        var record = createSourceRecord(null, code, title, wording, version, startDate, endDate);
         record.put("PSSApplicationCodeID", pssacid);
         return record;
     }

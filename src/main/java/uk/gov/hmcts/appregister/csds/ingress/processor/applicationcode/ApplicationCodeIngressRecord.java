@@ -64,45 +64,4 @@ public record ApplicationCodeIngressRecord(
         var field = node.get(fieldName);
         return (field == null || !field.canConvertToLong()) ? null : field.longValue();
     }
-
-    String toCsvRow() {
-        return String.join(
-                        ",",
-                        ApplicationCodeDiffReportingService.csvValue((Object) null),
-                        ApplicationCodeDiffReportingService.csvValue((Object) null),
-                        ApplicationCodeDiffReportingService.csvValue(id),
-                        ApplicationCodeDiffReportingService.csvValue(code),
-                        ApplicationCodeDiffReportingService.csvValue(title),
-                        ApplicationCodeDiffReportingService.csvValue(wording),
-                        ApplicationCodeDiffReportingService.csvValue(legislation),
-                        ApplicationCodeDiffReportingService.csvValue(feeDue),
-                        ApplicationCodeDiffReportingService.csvValue(requiresRespondent),
-                        ApplicationCodeDiffReportingService.csvValue(startDate),
-                        ApplicationCodeDiffReportingService.csvValue(endDate),
-                        ApplicationCodeDiffReportingService.csvValue(bulkRespondentAllowed),
-                        ApplicationCodeDiffReportingService.csvValue(version),
-                        ApplicationCodeDiffReportingService.csvValue(feeReference))
-                + "\n";
-    }
-
-    String toCsvRow(Long referenceCount) {
-        return String.join(
-                        ",",
-                        ApplicationCodeDiffReportingService.csvValue((Object) null),
-                        ApplicationCodeDiffReportingService.csvValue((Object) null),
-                        ApplicationCodeDiffReportingService.csvValue(id),
-                        ApplicationCodeDiffReportingService.csvValue(code),
-                        ApplicationCodeDiffReportingService.csvValue(title),
-                        ApplicationCodeDiffReportingService.csvValue(wording),
-                        ApplicationCodeDiffReportingService.csvValue(legislation),
-                        ApplicationCodeDiffReportingService.csvValue(feeDue),
-                        ApplicationCodeDiffReportingService.csvValue(requiresRespondent),
-                        ApplicationCodeDiffReportingService.csvValue(startDate),
-                        ApplicationCodeDiffReportingService.csvValue(endDate),
-                        ApplicationCodeDiffReportingService.csvValue(bulkRespondentAllowed),
-                        ApplicationCodeDiffReportingService.csvValue(version),
-                        ApplicationCodeDiffReportingService.csvValue(feeReference),
-                        ApplicationCodeDiffReportingService.csvValue(referenceCount))
-                + "\n";
-    }
 }

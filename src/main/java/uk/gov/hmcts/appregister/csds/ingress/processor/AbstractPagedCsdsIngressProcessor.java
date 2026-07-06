@@ -240,6 +240,19 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 "CSDS field " + fieldName + " was missing or invalid for " + datasetName());
     }
 
+    protected final void validateExpectedFields(JsonNode record, List<String> expectedFields) {
+        val missingFields =
+                expectedFields.stream().filter(fieldName -> !record.has(fieldName)).toList();
+        if (!missingFields.isEmpty()) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "CSDS record for "
+                            + datasetName()
+                            + " was missing expected fields: "
+                            + String.join(", ", missingFields));
+        }
+    }
+
     @Override
     public final void apply(T processedData) {
         val diff = diff(processedData);

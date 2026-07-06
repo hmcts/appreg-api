@@ -23,6 +23,35 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressP
         havingValue = "true")
 public class ApplicationCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ApplicationCodeDiffResult> {
+    private static final List<String> REQUIRED_RECORD_FIELDS =
+            List.of(
+                    "ApplicationCodeID",
+                    "Code",
+                    "ApplicationTitle",
+                    "ApplicationWording",
+                    "Legislation",
+                    "FeeDue",
+                    "FeeReference",
+                    "Respondent",
+                    "StartDate",
+                    "EndDate",
+                    "Notes",
+                    "BulkRespondentAllowed",
+                    "AuthoringStatus",
+                    "PublishingStatus",
+                    "CurrentRecordIndicator",
+                    "DraftFinalExistsIndicator",
+                    "RevisionNumber",
+                    "RevisionType",
+                    "RevisionDateFrom",
+                    "RevisionDateTo",
+                    "ClonedFrom",
+                    "PSSApplicationCodeID",
+                    "PSSChangeSetHeaderID",
+                    "PSSChangeSetItemID",
+                    "FID_ApplicationRegisterHeader",
+                    "FID_ReleasePackage",
+                    "Updator");
 
     private final CsdsIngressProperties.ApplicationCodes applicationCodeProperties;
     private final ApplicationCodeDiffService diffService;
@@ -48,6 +77,11 @@ public class ApplicationCodeDataIngressProcessor
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
         if (rawJson.isEmpty()) {
             return rawJson;
+        }
+
+        val firstPageRecords = extractRecords(rawJson.getFirst());
+        if (!firstPageRecords.isEmpty()) {
+            validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
         }
 
         val sortedRecords =
@@ -78,7 +112,8 @@ public class ApplicationCodeDataIngressProcessor
     @Override
     protected ApplicationCodeDiffResult diff(List<JsonNode> processedData) {
         return diffService.diff(
-                targetTable(), processedData, this::toSourceRecord, this::extractRecords);
+                new ApplicationCodeDiffRequest(
+                        targetTable(), processedData, this::toSourceRecord, this::extractRecords));
     }
 
     @Override
@@ -141,10 +176,7 @@ public class ApplicationCodeDataIngressProcessor
         }
 
         val copiedRecord = objectNode.deepCopy();
-        val resolvedId =
-                ApplicationCodeIngressRecord.calculateId(
-                        nullableLong(copiedRecord, "PSSApplicationCodeID"),
-                        nullableLong(copiedRecord, "ApplicationCodeID"));
+        val resolvedId = ApplicationCodeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
             copiedRecord.put("AC_ID", resolvedId);
         }
