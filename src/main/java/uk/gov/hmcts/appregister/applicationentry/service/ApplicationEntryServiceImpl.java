@@ -689,7 +689,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     "No entries found for jobId: " + jobId);
         }
 
-        return asyncJobAppListEntryRepository.findByAsyncJobId(jobId)
+        return entryIds
             .stream()
             .map(AsyncJobsAppListEntry::getAppListEntryId)
             .toList();

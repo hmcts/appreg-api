@@ -266,6 +266,7 @@ class BulkUploadAsyncLifecycleTest {
         verify(applicationEntryService, times(2)).createBulkEntry(any(), any());
     }
 
+
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
         return new AsyncJobLifecycleEvent<>(null, List.of(row), context, JobStatus1.VALIDATING);

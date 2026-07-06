@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -99,6 +100,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -2537,6 +2539,48 @@ class ApplicationEntryServiceImplTest {
         verify(applicationListEntryRepository).save(applicationListEntry);
     }
 
+    @Test
+    void givenBulkImportHasSucceeded_whenGetApplicationListEntriesByJobId_returnsEntries() {
+        UUID jobId = UUID.randomUUID();
+
+        val asyncJobAppListEntry = new AsyncJobsAppListEntry();
+        asyncJobAppListEntry.setAppListEntryId(UUID.randomUUID());
+        asyncJobAppListEntry.setAsyncJobId(jobId);
+
+        List<AsyncJobsAppListEntry> entries = createAsyncJobAppListEntries(jobId, 3);
+
+        List<UUID> expectedEntries = entries
+                .stream()
+                .map(AsyncJobsAppListEntry::getAppListEntryId)
+                .toList();
+
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId))
+            .thenReturn(entries);
+
+        List<UUID> actualEntries = service.getApplicationListEntriesByJobId(jobId);
+
+        Assertions.assertEquals(3, actualEntries.size());
+        verify(asyncJobAppListEntryRepository,times(1)).findByAsyncJobId(jobId);
+
+        for (UUID entryId : actualEntries) {
+            Assertions.assertTrue(expectedEntries.contains(entryId), "Entry ID " + entryId + " should be in the expected entries list");
+        }
+    }
+
+    @Test
+    void givenBulkImportHasNotSucceeded_whenGetApplicationListEntriesByJobId_returnsEmptyList() {
+        UUID jobId = UUID.randomUUID();
+
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId))
+            .thenReturn(List.of());
+
+        AppRegistryException exception =
+            Assertions.assertThrows(AppRegistryException.class, () -> service.getApplicationListEntriesByJobId(jobId));
+
+        Assertions.assertEquals(AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID, exception.getCode());
+        Assertions.assertEquals("No entries found for jobId: %s".formatted(jobId), exception.getMessage());
+    }
+
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
@@ -2891,5 +2935,17 @@ class ApplicationEntryServiceImplTest {
 
         Assertions.assertNotNull(response);
         verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+    }
+
+    private List<AsyncJobsAppListEntry> createAsyncJobAppListEntries(UUID jobId, int count) {
+        return IntStream.range(0, count)
+                .mapToObj(
+                        i -> {
+                            AsyncJobsAppListEntry entry = new AsyncJobsAppListEntry();
+                            entry.setAsyncJobId(jobId);
+                            entry.setAppListEntryId(UUID.randomUUID());
+                            return entry;
+                        })
+                .collect(Collectors.toList());
     }
 }
