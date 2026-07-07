@@ -47,12 +47,17 @@ public class WordingTemplateMapper {
                     wordingTemplate.getKeysToBeSubstituted();
 
             // apply the sentence value to substitution keys
-            sentence.applyValuesTo(keysForSubstitution);
-
-            // substitute using the keys
-            wordingTemplate.substitute(keysForSubstitution);
-
-            log.debug("Re-applied template values against template keys");
+            if (sentence.applyValuesTo(keysForSubstitution)) {
+                // substitute using the keys only when the stored value has the right shape
+                wordingTemplate.substitute(keysForSubstitution);
+                log.debug("Re-applied template values against template keys");
+            } else {
+                log.warn(
+                        "Stored wording '{}' does not match template '{}' and will be returned"
+                                + " without substituted values",
+                        appliedTemplateSupplier.get(),
+                        wordingTemplateSupplier.get());
+            }
 
             // gets the template details with the values that are currently in the database
             // for each key
