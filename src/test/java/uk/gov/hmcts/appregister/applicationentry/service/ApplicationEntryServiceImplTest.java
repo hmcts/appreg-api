@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -159,10 +158,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
-import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
-import uk.gov.hmcts.appregister.generated.model.Person;
-import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -2553,21 +2549,20 @@ class ApplicationEntryServiceImplTest {
 
         List<AsyncJobsAppListEntry> entries = createAsyncJobAppListEntries(jobId, 3);
 
-        List<UUID> expectedEntries = entries
-                .stream()
-                .map(AsyncJobsAppListEntry::getAppListEntryId)
-                .toList();
-
-        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId))
-            .thenReturn(entries);
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(entries);
 
         List<UUID> actualEntries = service.getApplicationListEntriesByJobId(jobId);
 
         Assertions.assertEquals(3, actualEntries.size());
-        verify(asyncJobAppListEntryRepository,times(1)).findByAsyncJobId(jobId);
+        verify(asyncJobAppListEntryRepository, times(1)).findByAsyncJobId(jobId);
+
+        List<UUID> expectedEntries =
+                entries.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
 
         for (UUID entryId : actualEntries) {
-            Assertions.assertTrue(expectedEntries.contains(entryId), "Entry ID " + entryId + " should be in the expected entries list");
+            Assertions.assertTrue(
+                    expectedEntries.contains(entryId),
+                    "Entry ID " + entryId + " should be in the expected entries list");
         }
     }
 
@@ -2575,29 +2570,30 @@ class ApplicationEntryServiceImplTest {
     void givenBulkImportHasNotSucceeded_whenGetApplicationListEntriesByJobId_returnsEmptyList() {
         UUID jobId = UUID.randomUUID();
 
-        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId))
-            .thenReturn(List.of());
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(List.of());
 
         AppRegistryException exception =
-            Assertions.assertThrows(AppRegistryException.class, () -> service.getApplicationListEntriesByJobId(jobId));
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> service.getApplicationListEntriesByJobId(jobId));
 
-        Assertions.assertEquals(AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID, exception.getCode());
-        Assertions.assertEquals("No entries found for jobId: %s".formatted(jobId), exception.getMessage());
+        Assertions.assertEquals(
+                AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID, exception.getCode());
+        Assertions.assertEquals(
+                "No entries found for jobId: %s".formatted(jobId), exception.getMessage());
     }
 
     @Test
     void createBulkEntry_withJobId_shouldSaveAsyncJobAppListEntry() {
-        UUID jobId = UUID.randomUUID();
         UUID listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
-        val entryId = UUID.randomUUID();
 
         when(applicationListRepository.findByUuid(applicationList.getUuid()))
-            .thenReturn(Optional.of(applicationList));
+                .thenReturn(Optional.of(applicationList));
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         EntryCreateDto entryCreateDto =
-            Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
         entryCreateDto.setWordingFields(null);
 
@@ -2606,55 +2602,57 @@ class ApplicationEntryServiceImplTest {
 
         // Now make the call to createBulkEntry
         PayloadForCreate<EntryCreateDto> payload =
-            PayloadForCreate.<EntryCreateDto>builder()
-                .id(applicationList.getUuid())
-                .data(entryCreateDto)
-                .build();
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(applicationList.getUuid())
+                        .data(entryCreateDto)
+                        .build();
 
         when(applicantMapper.toApplicant(payload.getData().getApplicant()))
-            .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(applicantMapper.toRespondent(payload.getData().getRespondent()))
-            .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(nameAddressRepository.save(any()))
-            .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(appListEntryFeeStatusRepository.save(any()))
-            .thenReturn(Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
+                .thenReturn(
+                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
         when(appListEntryOfficialRepository.save(any()))
-            .thenReturn(Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+                .thenReturn(
+                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
 
+        val entryId = UUID.randomUUID();
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
         success =
-            CreateApplicationEntryValidationSuccess.builder()
-                .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                .fee(null)
-                .applicationCode(code)
-                .sa(new StandardApplicant())
-                .applicationList(applicationList)
-                .build();
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
+                        .fee(null)
+                        .applicationCode(code)
+                        .sa(new StandardApplicant())
+                        .applicationList(applicationList)
+                        .build();
 
         entry.setVersion(1L);
-        when(applicationListEntryRepository.save(any()))
-            .thenReturn(entry);
+        when(applicationListEntryRepository.save(any())).thenReturn(entry);
 
         when(applicationListEntryEntityMapper.toApplicationListEntry(
-            eq(entryCreateDto),
-            notNull(),
-            any(),
-            any(),
-            any(),
-            any(),
-            any(),
-            eq(YesOrNo.YES)))
-            .thenReturn(entry);
+                        eq(entryCreateDto),
+                        notNull(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(YesOrNo.YES)))
+                .thenReturn(entry);
 
         EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
         entryGetDetailDto.setHasOffsiteFee(false);
 
-        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(any(), anyList(), any(), any(), any())
-            )
-            .thenReturn(entryGetDetailDto);
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        any(), anyList(), any(), any(), any()))
+                .thenReturn(entryGetDetailDto);
 
-
+        UUID jobId = UUID.randomUUID();
         service.createBulkEntry(payload, jobId);
 
         // Ensure that we called save on asyncJobAppListEntryRepository with the correct values
@@ -2671,14 +2669,13 @@ class ApplicationEntryServiceImplTest {
     void createBulkEntry_withoutJobId_shouldNotSaveAsyncJobAppListEntry() {
         UUID listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
-        val entryId = UUID.randomUUID();
 
         when(applicationListRepository.findByUuid(applicationList.getUuid()))
-            .thenReturn(Optional.of(applicationList));
+                .thenReturn(Optional.of(applicationList));
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         EntryCreateDto entryCreateDto =
-            Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
         entryCreateDto.setWordingFields(null);
 
@@ -2687,54 +2684,55 @@ class ApplicationEntryServiceImplTest {
 
         // Now make the call to createBulkEntry
         PayloadForCreate<EntryCreateDto> payload =
-            PayloadForCreate.<EntryCreateDto>builder()
-                .id(applicationList.getUuid())
-                .data(entryCreateDto)
-                .build();
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(applicationList.getUuid())
+                        .data(entryCreateDto)
+                        .build();
 
         when(applicantMapper.toApplicant(payload.getData().getApplicant()))
-            .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(applicantMapper.toRespondent(payload.getData().getRespondent()))
-            .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(nameAddressRepository.save(any()))
-            .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(appListEntryFeeStatusRepository.save(any()))
-            .thenReturn(Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
+                .thenReturn(
+                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
         when(appListEntryOfficialRepository.save(any()))
-            .thenReturn(Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+                .thenReturn(
+                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
 
+        val entryId = UUID.randomUUID();
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
         success =
-            CreateApplicationEntryValidationSuccess.builder()
-                .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                .fee(null)
-                .applicationCode(code)
-                .sa(new StandardApplicant())
-                .applicationList(applicationList)
-                .build();
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
+                        .fee(null)
+                        .applicationCode(code)
+                        .sa(new StandardApplicant())
+                        .applicationList(applicationList)
+                        .build();
 
         entry.setVersion(1L);
-        when(applicationListEntryRepository.save(any()))
-            .thenReturn(entry);
+        when(applicationListEntryRepository.save(any())).thenReturn(entry);
 
         when(applicationListEntryEntityMapper.toApplicationListEntry(
-            eq(entryCreateDto),
-            notNull(),
-            any(),
-            any(),
-            any(),
-            any(),
-            any(),
-            eq(YesOrNo.YES)))
-            .thenReturn(entry);
+                        eq(entryCreateDto),
+                        notNull(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(YesOrNo.YES)))
+                .thenReturn(entry);
 
         EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
         entryGetDetailDto.setHasOffsiteFee(false);
 
-        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(any(), anyList(), any(), any(), any())
-        )
-            .thenReturn(entryGetDetailDto);
-
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        any(), anyList(), any(), any(), any()))
+                .thenReturn(entryGetDetailDto);
 
         service.createBulkEntry(payload, null);
         verify(asyncJobAppListEntryRepository, times(0)).save(any());
@@ -3105,6 +3103,6 @@ class ApplicationEntryServiceImplTest {
                             entry.setAppListEntryId(UUID.randomUUID());
                             return entry;
                         })
-                .collect(Collectors.toList());
+                .toList();
     }
 }
