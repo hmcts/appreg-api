@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
@@ -18,8 +17,7 @@ class WordingTemplateMapperTest {
     private final WordingTemplateMapper wordingTemplateMapper = new WordingTemplateMapper();
 
     @Test
-    void
-            givenStoredWordingHasFewerPlaceholdersWhenGetTemplateDetailThenReturnsTemplateWithoutValues() {
+    void givenStoredWordingHasFewerPlaceholdersWhenGetTemplateDetailThenFillsWhatItCan() {
         TemplateDetail detail =
                 wordingTemplateMapper.getTemplateDetail(
                         () -> TEMPLATE_WORDING, () -> STAGED_ENTRY_WORDING);
@@ -32,6 +30,21 @@ class WordingTemplateMapperTest {
                 detail.getTemplate());
         assertEquals(1, detail.getSubstitutionKeyConstraints().size());
         assertEquals("Number", detail.getSubstitutionKeyConstraints().get(0).getKey());
-        assertNull(detail.getSubstitutionKeyConstraints().get(0).getValue());
+        assertEquals("", detail.getSubstitutionKeyConstraints().get(0).getValue());
+    }
+
+    @Test
+    void givenStoredWordingHasSomePlaceholdersWhenGetTemplateDetailThenLeavesTheRestBlank() {
+        TemplateDetail detail =
+                wordingTemplateMapper.getTemplateDetail(
+                        () -> "Alpha {TEXT|First|10} Beta {TEXT|Second|10} Gamma {TEXT|Third|10}",
+                        () -> "Alpha {one} Beta {two}");
+
+        assertNotNull(detail);
+        assertEquals("Alpha {{First}} Beta {{Second}} Gamma {{Third}}", detail.getTemplate());
+        assertEquals(3, detail.getSubstitutionKeyConstraints().size());
+        assertEquals("one", detail.getSubstitutionKeyConstraints().get(0).getValue());
+        assertEquals("two", detail.getSubstitutionKeyConstraints().get(1).getValue());
+        assertEquals("", detail.getSubstitutionKeyConstraints().get(2).getValue());
     }
 }
