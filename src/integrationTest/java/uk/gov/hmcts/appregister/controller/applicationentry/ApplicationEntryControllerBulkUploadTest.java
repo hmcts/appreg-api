@@ -19,11 +19,13 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
@@ -34,6 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
@@ -49,6 +52,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
     private static final int CSV_ROW_COUNT = 5;
 
+
+    @Autowired private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
     @Autowired private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @Test
@@ -251,6 +256,70 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                     AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT.getCode().getType().get(),
                     detail.getType());
         }
+    }
+
+    @Test
+    void givenSuccessfulBulkUpload_whenBulkUploadApplicationListEntries_thenSucceeds() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+
+        UUID listId = createNewApplicationList(token);
+        Assertions.assertEquals(0, countEntriesForList(listId));
+
+        Response response =
+            restAssuredClient.executePostRequest(
+                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                token,
+                "file",
+                csvFile(),
+                "text/csv");
+
+        assertThat(response.getStatusCode()).isEqualTo(202);
+
+        JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+        Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
+
+        JobStatus1 status = acknowledgement.getStatus();
+        while(!status.equals(JobStatus1.COMPLETED)) {
+            Thread.sleep(1000);
+            Response jobStatusResponse =
+                restAssuredClient.executeGetRequest(
+                    getLocalUrl("jobs/" + acknowledgement.getId()), token);
+            assertThat(jobStatusResponse.getStatusCode()).isEqualTo(200);
+            JobAcknowledgement jobStatus = jobStatusResponse.as(JobAcknowledgement.class);
+            status = jobStatus.getStatus();
+        }
+
+        String jobId = acknowledgement.getId().toString();
+
+        assertThat(jobId).isNotEmpty();
+
+        Response appListEntriesForJob =
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(CREATE_ENTRY_CONTEXT + "/entries/bulk-import/" + jobId),
+                token);
+
+        assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(200);
+        UUID[] appListEntries = appListEntriesForJob.as(UUID[].class);
+        assertThat(appListEntries).hasSizeGreaterThan(0);
+    }
+
+    @Test
+    void givenWrongJobId_whenBulkUploadApplicationListEntries_thenFails() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+
+        Response appListEntriesForJob =
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(CREATE_ENTRY_CONTEXT +
+                                "/entries/bulk-import/" +
+                                new UUID(0,0)),
+                token);
+
+        assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(404);
+        ProblemDetail detail = appListEntriesForJob.as(ProblemDetail.class);
+        assertThat(detail.getType()).isEqualTo(AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID.getCode().getType().get());
+        assertThat(detail.getDetail()).isEqualTo("Cannot find entries for jobId");
     }
 
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
