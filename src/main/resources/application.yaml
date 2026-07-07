@@ -98,9 +98,6 @@ appreg:
       enable-complex-diff: true
   csds:
     ingress:
-      enabled: false
-      startup-runner:
-        enabled: false
       base-url: ${CSDS_BASE_URL:https://csds.dev.apps.hmcts.net/api/rest}
       access-keys:
       - ${CSDS_KEY_1:}
@@ -112,12 +109,12 @@ appreg:
       processors:
         application-codes:
           enabled: false
-          table-name: application_codes_test
+          table-name: application_codes_staging
           primary-key: ac_id
-          mock: csds/application_codes.json
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ApplicationCodeID
-          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+#          mock: csds/application_codesx.json
+#          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
   job:
     page-size: 10
   report:

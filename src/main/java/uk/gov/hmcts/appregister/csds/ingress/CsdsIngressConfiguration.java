@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.csds.ingress;
 
 import lombok.val;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +18,6 @@ public class CsdsIngressConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "appreg.csds.ingress", name = "enabled", havingValue = "true")
     RestClient csdsIngressRestClient(
             RestClient.Builder restClientBuilder, CsdsIngressProperties properties) {
         val requestFactory = new SimpleClientHttpRequestFactory();
@@ -27,9 +25,6 @@ public class CsdsIngressConfiguration {
                 Math.toIntExact(properties.getConnectTimeout().toMillis()));
         requestFactory.setReadTimeout(Math.toIntExact(properties.getReadTimeout().toMillis()));
 
-        return restClientBuilder
-                .baseUrl(properties.getBaseUrl())
-                .requestFactory(requestFactory)
-                .build();
+        return restClientBuilder.requestFactory(requestFactory).build();
     }
 }

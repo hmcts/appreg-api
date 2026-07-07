@@ -32,7 +32,6 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
 @TestPropertySource(
         properties = {
-            "appreg.csds.ingress.enabled=true",
             "appreg.csds.ingress.page-size=2",
             "appreg.csds.ingress.processors.application-codes.enabled=true",
             "appreg.csds.ingress.processors.application-codes.reporting-dir=${java.io.tmpdir}",

@@ -7,7 +7,6 @@ import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -19,7 +18,6 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "appreg.csds.ingress", name = "enabled", havingValue = "true")
 class CsdsIngressClientImpl implements CsdsIngressClient {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -81,9 +79,18 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
     }
 
     private URI buildUri(String path) {
-        // Use a relative URI so RestClient keeps the configured base URL but does not re-encode
-        // already-escaped query fragments like %24limit.
-        return URI.create(normalizePath(path));
+        // Build the full URI explicitly so a configured base URL with a path component like
+        // /api/rest is preserved while already-escaped query fragments such as %24limit are left
+        // untouched.
+        return URI.create(normalizeBaseUrl(properties.getBaseUrl()) + normalizePath(path));
+    }
+
+    private static String normalizeBaseUrl(String baseUrl) {
+        var normalized = baseUrl;
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
     }
 
     private static void validatePath(String path) {

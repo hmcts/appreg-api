@@ -1,4 +1,4 @@
-CREATE TABLE application_codes_test (
+CREATE TABLE application_codes_staging (
     ac_id NUMERIC NOT NULL,
     application_code varchar(10) NOT NULL,
     application_code_title varchar(500) NOT NULL,
@@ -18,6 +18,6 @@ CREATE TABLE application_codes_test (
     ac_fee_reference varchar(12)
 );
 
-CREATE INDEX act_application_code_idx ON application_codes_test (application_code);
-CREATE INDEX act_fee_reference_idx ON application_codes_test (ac_fee_reference);
-ALTER TABLE application_codes_test ADD CONSTRAINT application_codes_test_pk PRIMARY KEY (ac_id);
+CREATE INDEX acs_application_code_idx ON application_codes_staging (application_code);
+CREATE INDEX acs_fee_reference_idx ON application_codes_staging (ac_fee_reference);
+ALTER TABLE application_codes_staging ADD CONSTRAINT application_codes_staging_pk PRIMARY KEY (ac_id);

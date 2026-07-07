@@ -56,7 +56,7 @@ class JdbcBulkUpsertServiceTest {
                 .thenReturn(new int[] {1});
 
         var result =
-                service.upsertBatch("application_codes_test", "ac_id", List.of(item), rowMapper);
+                service.upsertBatch("application_codes_staging", "ac_id", List.of(item), rowMapper);
 
         var sqlCaptor = ArgumentCaptor.forClass(String.class);
         var paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource[].class);
@@ -64,7 +64,7 @@ class JdbcBulkUpsertServiceTest {
 
         assertThat(result).containsExactly(1);
         assertThat(sqlCaptor.getValue())
-                .contains("INSERT INTO appreg.application_codes_test")
+                .contains("INSERT INTO appreg.application_codes_staging")
                 .contains("ON CONFLICT (ac_id) DO UPDATE")
                 .contains("changed_date = current_timestamp");
         assertThat(paramsCaptor.getValue()).hasSize(1);

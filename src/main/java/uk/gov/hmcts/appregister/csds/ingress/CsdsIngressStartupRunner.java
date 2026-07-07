@@ -6,14 +6,16 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@Profile("nosecurity")
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-        prefix = "appreg.csds.ingress",
-        name = {"enabled", "startup-runner.enabled"},
+        prefix = "appreg.csds.ingress.startup-runner",
+        name = "enabled",
         havingValue = "true")
 class CsdsIngressStartupRunner implements ApplicationRunner {
     private final CsdsIngressProcessor csdsIngressProcessor;

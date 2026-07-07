@@ -36,10 +36,10 @@ class JdbcIngressTableReadServiceTest {
         when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
                 .thenReturn((List) List.of("row"));
 
-        var result = service.loadAll("application_codes_test", rowMapper);
+        var result = service.loadAll("application_codes_staging", rowMapper);
 
         assertThat(result).containsExactly("row");
-        verify(jdbcTemplate).query("SELECT * FROM appreg.application_codes_test", rowMapper);
+        verify(jdbcTemplate).query("SELECT * FROM appreg.application_codes_staging", rowMapper);
     }
 
     @Test

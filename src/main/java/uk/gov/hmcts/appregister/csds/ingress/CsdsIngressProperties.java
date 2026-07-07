@@ -14,8 +14,6 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 public class CsdsIngressProperties {
-    private boolean enabled;
-
     private String baseUrl;
 
     private List<String> accessKeys = List.of();
@@ -34,9 +32,12 @@ public class CsdsIngressProperties {
 
     private Processors processors = new Processors();
 
-    @AssertTrue(message = "Enabled CSDS ingress requires a baseUrl and at least one accessKey")
+    @AssertTrue(
+            message =
+                    "Configured CSDS ingress requires a baseUrl, accessKeyHeader, at least one accessKey, "
+                            + "durations, pageSize and valid processor configuration")
     public boolean isConfigurationValid() {
-        if (!enabled) {
+        if (!isActive()) {
             return true;
         }
 
@@ -58,6 +59,11 @@ public class CsdsIngressProperties {
                 && pageSize > 0;
     }
 
+    private boolean isActive() {
+        return startupRunner != null && startupRunner.isEnabled()
+                || processors != null && processors.hasEnabledProcessor();
+    }
+
     @Getter
     @Setter
     public static class StartupRunner {
@@ -71,6 +77,10 @@ public class CsdsIngressProperties {
 
         private boolean isConfigurationValid() {
             return applicationCodes != null && applicationCodes.isConfigurationValid();
+        }
+
+        private boolean hasEnabledProcessor() {
+            return applicationCodes != null && applicationCodes.isEnabled();
         }
     }
 

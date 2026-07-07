@@ -18,7 +18,8 @@ class CsdsIngressClientImplTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void given_percentEncodedPagingParameters_when_retrieveJson_then_preservesThemInRequestUri() {
+    void
+            given_baseUrlWithPathAndPercentEncodedPagingParameters_when_retrieveJson_then_preservesFullRequestUri() {
         var restClient = mock(RestClient.class);
         var requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
         var requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
@@ -45,6 +46,8 @@ class CsdsIngressClientImplTest {
         var uriCaptor = ArgumentCaptor.forClass(URI.class);
         org.mockito.Mockito.verify(requestHeadersUriSpec).uri(uriCaptor.capture());
         assertThat(uriCaptor.getValue().toString())
-                .isEqualTo("/query/CSDS/ApplicationCode/GD?%24limit=100&%24offset=200");
+                .isEqualTo(
+                        "https://csds.dev.apps.hmcts.net/api/rest/query/CSDS/ApplicationCode/GD"
+                                + "?%24limit=100&%24offset=200");
     }
 }

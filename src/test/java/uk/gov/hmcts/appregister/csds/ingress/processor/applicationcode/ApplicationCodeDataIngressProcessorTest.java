@@ -412,7 +412,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null);
-        when(tableReadService.loadAll("application_codes_test", rowMapper))
+        when(tableReadService.loadAll("application_codes_staging", rowMapper))
                 .thenReturn(List.of(ApplicationCodeIngressRecord.fromEntity(existingUpdated)));
 
         List<JsonNode> processedData =
@@ -425,7 +425,7 @@ class ApplicationCodeDataIngressProcessorTest {
         var diffResult =
                 diffService.diff(
                         new ApplicationCodeDiffRequest(
-                                "application_codes_test",
+                                "application_codes_staging",
                                 processedData,
                                 this::toIngressRecord,
                                 this::extractRecordsFromPage));

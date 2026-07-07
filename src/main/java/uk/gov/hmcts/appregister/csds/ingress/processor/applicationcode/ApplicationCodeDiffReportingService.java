@@ -49,7 +49,7 @@ public class ApplicationCodeDiffReportingService {
             ApplicationCodeDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         if (!StringUtils.hasText(reportingDir)) {
-            log.info("CSDS reporting disabled for {}", datasetName);
+            log.debug("CSDS reporting disabled for {}", datasetName);
             return;
         }
 

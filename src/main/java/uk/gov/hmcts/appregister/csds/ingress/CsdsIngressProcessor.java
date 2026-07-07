@@ -6,7 +6,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -17,7 +16,6 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "appreg.csds.ingress", name = "enabled", havingValue = "true")
 public class CsdsIngressProcessor {
     public static final String DATABASE_JOB_NAME = "CSDS_DATA_INGRESS";
 
