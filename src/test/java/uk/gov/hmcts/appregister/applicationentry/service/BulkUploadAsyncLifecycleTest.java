@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -28,11 +29,14 @@ import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplication
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobType;
 
 @ExtendWith(OutputCaptureExtension.class)
 class BulkUploadAsyncLifecycleTest {
@@ -40,6 +44,7 @@ class BulkUploadAsyncLifecycleTest {
     private BulkUploadAsyncLifecycle lifecycle;
     private ApplicationEntryService applicationEntryService;
     private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+    private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
     private UUID listId;
 
     @BeforeEach
@@ -50,6 +55,7 @@ class BulkUploadAsyncLifecycleTest {
 
         applicationEntryService = mock(ApplicationEntryService.class);
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
+        asyncJobAppListEntryRepository = mock(AsyncJobAppListEntryRepository.class);
         listId = UUID.randomUUID();
 
         lifecycle =
@@ -265,7 +271,6 @@ class BulkUploadAsyncLifecycleTest {
                 .containsExactly("Processing failed for row 3: boom");
         verify(applicationEntryService, times(2)).createBulkEntry(any(), any());
     }
-
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
