@@ -231,11 +231,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONTENT_TOO_LARGE,
                     "Uploaded file must not be larger than 5MB",
-                    "ALE-47")),
-
-    BULK_UPLOAD_CANNOT_FIND_JOBID(
-            DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "Cannot find entries for jobId", "ALE-48"));
+                    "ALE-47"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

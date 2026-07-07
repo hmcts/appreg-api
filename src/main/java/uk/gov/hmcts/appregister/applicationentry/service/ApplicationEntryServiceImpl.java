@@ -52,6 +52,7 @@ import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
@@ -101,6 +102,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
 @Component
 @RequiredArgsConstructor
@@ -172,6 +174,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
     private final MeterRegistry meterRegistry;
+
+    private final JobExistanceValidator jobExistanceValidator;
 
     @Override
     @Transactional(readOnly = true)
@@ -684,13 +688,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         List<AsyncJobsAppListEntry> entryIds =
                 asyncJobAppListEntryRepository.findByAsyncJobId(jobId);
 
-        if (entryIds.isEmpty()) {
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID,
-                    "No entries found for jobId: " + jobId);
-        }
+        return jobExistanceValidator.validate(
+                jobId,
+                (uuid, success) -> {
+                    if (entryIds.isEmpty()) {
+                        throw new AppRegistryException(
+                                JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER,
+                                "No entries found for jobId: " + jobId);
+                    }
 
-        return entryIds.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
+                    return entryIds.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
+                });
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {

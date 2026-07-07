@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import java.io.File;
@@ -19,6 +20,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -302,7 +304,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
-    void givenWrongJobId_whenBulkUploadApplicationListEntries_thenFails() throws Exception {
+    void givenNonExistentJobId_whenBulkUploadApplicationListEntries_thenFails() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
 
@@ -315,9 +317,63 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(404);
         ProblemDetail detail = appListEntriesForJob.as(ProblemDetail.class);
         assertThat(detail.getType())
-                .isEqualTo(
-                        AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID.getCode().getType().get());
-        assertThat(detail.getDetail()).isEqualTo("Cannot find entries for jobId");
+                .isEqualTo(JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER.getCode().getType().get());
+        assertThat(detail.getDetail())
+                .isEqualTo("The requested job does not exist or it is not for the user");
+    }
+
+    @Test
+    void givenWrongJobIdForUser_whenBulkUploadApplicationListEntries_thenFails() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey adminToken = tokenGenerator.fetchTokenForRole();
+
+        UUID listId = createNewApplicationList(adminToken);
+        Assertions.assertEquals(0, countEntriesForList(listId));
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                        adminToken,
+                        "file",
+                        csvFile(),
+                        "text/csv");
+
+        assertThat(response.getStatusCode()).isEqualTo(202);
+
+        JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+        Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
+
+        JobStatus1 status = acknowledgement.getStatus();
+        while (!status.equals(JobStatus1.COMPLETED)) {
+            Thread.sleep(1000);
+            Response jobStatusResponse =
+                    restAssuredClient.executeGetRequest(
+                            getLocalUrl("jobs/" + acknowledgement.getId()), adminToken);
+            assertThat(jobStatusResponse.getStatusCode()).isEqualTo(200);
+            JobAcknowledgement jobStatus = jobStatusResponse.as(JobAcknowledgement.class);
+            status = jobStatus.getStatus();
+        }
+
+        String jobId = acknowledgement.getId().toString();
+
+        assertThat(jobId).isNotEmpty();
+
+        when(provider.getUserId()).thenReturn("different-user-id");
+        when(provider.getEmail()).thenReturn("different@user.com");
+        when(provider.getRoles()).thenReturn(new String[] {"role"});
+
+        Response appListEntriesForJob =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT + "/entries/bulk-import/" + new UUID(0, 0)),
+                        getToken());
+
+        assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(404);
+        ProblemDetail detail = appListEntriesForJob.as(ProblemDetail.class);
+        assertThat(detail.getType())
+                .isEqualTo(JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER.getCode().getType().get());
+        assertThat(detail.getDetail())
+                .isEqualTo("The requested job does not exist or it is not for the user");
     }
 
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {

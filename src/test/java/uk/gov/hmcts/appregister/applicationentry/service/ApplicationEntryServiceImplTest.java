@@ -88,6 +88,8 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -161,6 +163,8 @@ import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
+import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -200,6 +204,8 @@ class ApplicationEntryServiceImplTest {
     @Mock private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
 
     @Mock private Clock clock;
+
+    @Mock private JobExistanceValidator jobExistanceValidator;
 
     private CreateApplicationEntryValidationSuccess success;
 
@@ -357,7 +363,8 @@ class ApplicationEntryServiceImplTest {
                         clock,
                         businessDateProvider,
                         deleteEntryValidator,
-                        meterRegistry);
+                        meterRegistry,
+                        jobExistanceValidator);
     }
 
     @Test
@@ -395,7 +402,8 @@ class ApplicationEntryServiceImplTest {
                         clock,
                         businessDateProvider,
                         deleteEntryValidator,
-                        meterRegistry);
+                        meterRegistry,
+                        jobExistanceValidator);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -2543,6 +2551,17 @@ class ApplicationEntryServiceImplTest {
     void givenBulkImportHasSucceeded_whenGetApplicationListEntriesByJobId_returnsEntries() {
         UUID jobId = UUID.randomUUID();
 
+        when(jobExistanceValidator.validate(eq(jobId), any()))
+                .thenAnswer(
+                        invocation -> {
+                            @SuppressWarnings("unchecked")
+                            val validateFunction =
+                                    (BiFunction<UUID, JobSuccess, JobStatusResponse>)
+                                            invocation.getArgument(1);
+
+                            return validateFunction.apply(jobId, new JobSuccess());
+                        });
+
         val asyncJobAppListEntry = new AsyncJobsAppListEntry();
         asyncJobAppListEntry.setAppListEntryId(UUID.randomUUID());
         asyncJobAppListEntry.setAsyncJobId(jobId);
@@ -2570,6 +2589,18 @@ class ApplicationEntryServiceImplTest {
     void givenBulkImportHasNotSucceeded_whenGetApplicationListEntriesByJobId_returnsEmptyList() {
         UUID jobId = UUID.randomUUID();
 
+        when(jobExistanceValidator.validate(eq(jobId), any()))
+                .thenAnswer(
+                        invocation -> {
+                            @SuppressWarnings("unchecked")
+                            val validateFunction =
+                                    (BiFunction<UUID, JobSuccess, JobStatusResponse>)
+                                            invocation.getArgument(1);
+
+                            val success = new JobSuccess();
+                            return validateFunction.apply(jobId, success);
+                        });
+
         when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(List.of());
 
         AppRegistryException exception =
@@ -2577,8 +2608,7 @@ class ApplicationEntryServiceImplTest {
                         AppRegistryException.class,
                         () -> service.getApplicationListEntriesByJobId(jobId));
 
-        Assertions.assertEquals(
-                AppListEntryError.BULK_UPLOAD_CANNOT_FIND_JOBID, exception.getCode());
+        Assertions.assertEquals(JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER, exception.getCode());
         Assertions.assertEquals(
                 "No entries found for jobId: %s".formatted(jobId), exception.getMessage());
     }
