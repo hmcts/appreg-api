@@ -1,0 +1,19 @@
+type: object
+description: Print-ready Standard Applicans report payload.
+required: [ reportTitle, searchCriteria, generatedAt, recordCount, applicants ]
+properties:
+  reportTitle: 
+    type: string
+    example: "Standard Applicants Report"
+  searchCriteria:
+    $ref: './standard-applicant-print-search-criteria-dto.yaml'
+  generatedAt:
+    type: string
+    format: date-time
+  recordCount:
+    type: integer
+    format: int32
+  applicants:
+    type: array
+    items:
+      $ref: './standard-applicant-print-row-dto.yaml'

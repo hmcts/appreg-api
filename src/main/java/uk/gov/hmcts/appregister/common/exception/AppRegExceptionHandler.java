@@ -37,7 +37,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 
 @Slf4j
@@ -339,6 +341,23 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         logExpectedClientError(resolveStatusCode(status, problemDetail), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<@NonNull Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        ResponseEntity<ProblemDetail> response =
+                handleAppRegisterApiException(
+                        new AppRegistryException(
+                                AppListEntryError.BULK_UPLOAD_FILE_TOO_LARGE,
+                                "Uploaded file exceeded the configured maximum size",
+                                ex));
+
+        return new ResponseEntity<>(
+                response.getBody(), response.getHeaders(), response.getStatusCode());
     }
 
     /**

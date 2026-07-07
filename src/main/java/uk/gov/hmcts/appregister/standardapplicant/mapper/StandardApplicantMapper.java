@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
 import uk.gov.hmcts.appregister.standardapplicant.model.StandardApplicantCsvRow;
 
 /**
@@ -143,6 +144,62 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "applicantEndDate", source = "applicantEndDate")
     public abstract List<StandardApplicantCsvRow> toEntity(
             List<StandardApplicant> standardApplicants);
+
+    @Mapping(target = "code", source = "standardApplicant.applicantCode")
+    @Mapping(target = "useFrom", source = "standardApplicant.applicantStartDate")
+    @Mapping(target = "name", source = "standardApplicant.name")
+    @Mapping(target = "useTo", source = "standardApplicant.applicantEndDate")
+    @Mapping(target = "title", source = "standardApplicant.applicantTitle")
+    @Mapping(target = "addressLine1", source = "standardApplicant.addressLine1")
+    @Mapping(target = "forename1", source = "standardApplicant.applicantForename1")
+    @Mapping(target = "addressLine2", source = "standardApplicant.addressLine2")
+    @Mapping(target = "forename2", source = "standardApplicant.applicantForename2")
+    @Mapping(target = "addressLine3", source = "standardApplicant.addressLine3")
+    @Mapping(target = "forename3", source = "standardApplicant.applicantForename3")
+    @Mapping(target = "addressLine4", source = "standardApplicant.addressLine4")
+    @Mapping(target = "surname", source = "standardApplicant.applicantSurname")
+    @Mapping(target = "addressLine5", source = "standardApplicant.addressLine5")
+    @Mapping(target = "emailAddress", source = "standardApplicant.emailAddress")
+    @Mapping(target = "postcode", source = "standardApplicant.postcode")
+    @Mapping(target = "telephoneNumber", source = "standardApplicant.telephoneNumber")
+    @Mapping(target = "mobileNumber", source = "standardApplicant.mobileNumber")
+    public abstract StandardApplicantPrintRowDto toPrintRowDto(
+            StandardApplicantEnrichedProjection projection);
+
+    @AfterMapping
+    protected void ensureRequiredPrintRowFieldsArePresent(
+            @MappingTarget StandardApplicantPrintRowDto target) {
+        target.setCode(requiredNullable(target.getCode()));
+        target.setUseFrom(requiredNullable(target.getUseFrom()));
+        target.setName(requiredNullable(target.getName()));
+        target.setUseTo(requiredNullable(target.getUseTo()));
+        target.setTitle(requiredNullable(target.getTitle()));
+        target.setAddressLine1(requiredNullable(target.getAddressLine1()));
+        target.setForename1(requiredNullable(target.getForename1()));
+        target.setAddressLine2(requiredNullable(target.getAddressLine2()));
+        target.setForename2(requiredNullable(target.getForename2()));
+        target.setAddressLine3(requiredNullable(target.getAddressLine3()));
+        target.setForename3(requiredNullable(target.getForename3()));
+        target.setAddressLine4(requiredNullable(target.getAddressLine4()));
+        target.setSurname(requiredNullable(target.getSurname()));
+        target.setAddressLine5(requiredNullable(target.getAddressLine5()));
+        target.setEmailAddress(requiredNullable(target.getEmailAddress()));
+        target.setPostcode(requiredNullable(target.getPostcode()));
+        target.setTelephoneNumber(requiredNullable(target.getTelephoneNumber()));
+        target.setMobileNumber(requiredNullable(target.getMobileNumber()));
+    }
+
+    private static <T> JsonNullable<T> requiredNullable(JsonNullable<T> value) {
+        return value != null && value.isPresent() ? value : JsonNullable.of(null);
+    }
+
+    protected JsonNullable<String> map(String value) {
+        return JsonNullable.of(OutgoingDtoSanitiser.emptyToNull(value));
+    }
+
+    protected JsonNullable<LocalDate> map(LocalDate value) {
+        return JsonNullable.of(value);
+    }
 
     @Named("toEndDate")
     static JsonNullable<LocalDate> toEndDate(LocalDate date) {

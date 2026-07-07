@@ -2429,7 +2429,7 @@ paths:
   /application-lists/{listId}/entries/bulk-import:
     post:
       description: |
-        Validates the target application list and CSV structure up front, then enqueues a background job that validates the uploaded rows and, if valid, atomically inserts all rows in a single transaction. If row validation or commit fails, the entire transaction is rolled back and the job ends in `FAILED`.
+        Validates the target application list and CSV structure up front, then enqueues a background job that validates the uploaded rows and, if valid, automatically inserts all rows in a single transaction. If row validation or commit fails, the entire transaction is rolled back and the job ends in `FAILED`. There is a file size limitation of 5MB.
       operationId: bulkUploadApplicationListEntries
       parameters:
       - description: ID of the Application List receiving the uploaded entries.
@@ -2531,7 +2531,7 @@ paths:
                     type: https://errors.hmcts.net/common/payload-too-large
                     title: Payload Too Large
                     status: 413
-                    detail: The uploaded file exceeds the maximum permitted size.
+                    detail: Uploaded file must not be larger than 5MB
               schema:
                 $ref: "#/components/schemas/problem"
           description: Request entity is too large to be processed.
@@ -5180,6 +5180,123 @@ paths:
       summary: "Get Standard Applicants (paginated, filterable)"
       tags:
       - standard-applicants
+  /standard-applicants/reports/print:
+    get:
+      description: |
+        Returns all data required for printing Standard Applicants filtered by the supported print criteria; code, name, addressLine1, from and to.  Dates are returned in ISO format; frontend PDF rendering should display dates as dd/MM/yyyy for legacy parity.
+      operationId: printStandardApplicants
+      parameters:
+      - description: Filter by code.
+        in: query
+        name: code
+        schema:
+          maxLength: 10
+          type: string
+      - description: Filter by applicant name.
+        in: query
+        name: name
+        schema:
+          maxLength: 100
+          type: string
+      - description: Filter by from date.
+        in: query
+        name: from
+        schema:
+          format: date
+          type: string
+      - description: Filter by to date.
+        in: query
+        name: to
+        schema:
+          format: date
+          type: string
+      - description: Filter by address line 1.
+        in: query
+        name: addressLine1
+        schema:
+          maxLength: 255
+          type: string
+      - description: "Sort parameter. Format `property,(asc|desc)`."
+        in: query
+        name: sort
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        "200":
+          content:
+            application/vnd.hmcts.appreg.v1+json:
+              schema:
+                $ref: "#/components/schemas/standard-applicant-print-dto"
+          description: Print-ready Standard Applicants payload.
+          headers:
+            Vary:
+              description: Response varies by Accept for media-type versioning.
+              schema:
+                example: Accept
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Invalid request parameters.
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "406":
+          content:
+            application/problem+json:
+              examples:
+                notAcceptable:
+                  value:
+                    type: https://errors.hmcts.net/common/not-acceptable
+                    title: Not Acceptable
+                    status: 406
+                    detail: Requested media type/version not acceptable
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Requested media type/version not acceptable.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+      summary: Get a print-ready JSON payload for a Standard Applicants
+      tags:
+      - standard-applicants
   /standard-applicants/{code}:
     get:
       description: |
@@ -5483,7 +5600,7 @@ components:
                 type: https://errors.hmcts.net/common/payload-too-large
                 title: Payload Too Large
                 status: 413
-                detail: The uploaded file exceeds the maximum permitted size.
+                detail: Uploaded file must not be larger than 5MB
           schema:
             $ref: "#/components/schemas/problem"
       description: Request entity is too large to be processed.
@@ -7084,6 +7201,31 @@ components:
               $ref: "#/components/schemas/standard-applicant-get-summary-dto"
             type: array
         type: object
+    standard-applicant-print-dto:
+      description: Print-ready Standard Applicans report payload.
+      properties:
+        reportTitle:
+          example: Standard Applicants Report
+          type: string
+        searchCriteria:
+          $ref: "#/components/schemas/standard-applicant-print-search-criteria-dto"
+        generatedAt:
+          format: date-time
+          type: string
+        recordCount:
+          format: int32
+          type: integer
+        applicants:
+          items:
+            $ref: "#/components/schemas/standard-applicant-print-row-dto"
+          type: array
+      required:
+      - applicants
+      - generatedAt
+      - recordCount
+      - reportTitle
+      - searchCriteria
+      type: object
     standard-applicant-get-detail-dto:
       description: Immutable DTO representing a detailed Standard Applicant.
       properties:
@@ -7632,6 +7774,112 @@ components:
       - endDate
       - "name,"
       - startDate
+      type: object
+    standard-applicant-print-search-criteria-dto:
+      description: Search criteria used for the Standard Applicants print report.
+      properties:
+        code:
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+        addressLine1:
+          nullable: true
+          type: string
+        from:
+          format: date
+          nullable: true
+          type: string
+        to:
+          format: date
+          nullable: true
+          type: string
+      required:
+      - addressLine1
+      - code
+      - from
+      - name
+      - to
+      type: object
+    standard-applicant-print-row-dto:
+      description: Legacy Standard Applicants print row.
+      properties:
+        code:
+          nullable: true
+          type: string
+        useFrom:
+          format: date
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+        useTo:
+          format: date
+          nullable: true
+          type: string
+        title:
+          nullable: true
+          type: string
+        addressLine1:
+          nullable: true
+          type: string
+        forename1:
+          nullable: true
+          type: string
+        addressLine2:
+          nullable: true
+          type: string
+        forename2:
+          nullable: true
+          type: string
+        addressLine3:
+          nullable: true
+          type: string
+        forename3:
+          nullable: true
+          type: string
+        addressLine4:
+          nullable: true
+          type: string
+        surname:
+          nullable: true
+          type: string
+        addressLine5:
+          nullable: true
+          type: string
+        emailAddress:
+          nullable: true
+          type: string
+        postcode:
+          nullable: true
+          type: string
+        telephoneNumber:
+          nullable: true
+          type: string
+        mobileNumber:
+          nullable: true
+          type: string
+      required:
+      - addressLine1
+      - addressLine2
+      - addressLine3
+      - addressLine4
+      - addressLine5
+      - code
+      - emailAddress
+      - forename1
+      - forename2
+      - forename3
+      - mobileNumber
+      - name
+      - postcode
+      - surname
+      - telephoneNumber
+      - title
+      - useFrom
+      - useTo
       type: object
     sort:
       description: Sorting state for the returned page.

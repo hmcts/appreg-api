@@ -36,23 +36,29 @@ public enum StandardApplicantCodeError implements ErrorCodeEnum {
                     "Standard Applicant Codes found when only one was expected",
                     "SA-2")),
 
+    PRINT_RESULT_LIMIT_EXCEEDED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Standard Applicant print result limit exceeded",
+                    "SA-3")),
+
     CODE_AND_NAME_EXCLUSION_VIOLATION(
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Either code or name must be provided, but not both",
-                    "SA-3")),
+                    "SA-4")),
 
     CANNOT_GENERATE_CSV(
             DefaultErrorDetail.create(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Unable to generate CSV for Standard Applicants",
-                    "SA-4")),
+                    "SA-5")),
 
     NO_RESULTS_FOUND_FOR_CSV_GENERATION(
             DefaultErrorDetail.create(
                     HttpStatus.NOT_FOUND,
                     "No records found for the provided code or name",
-                    "SA-5"));
+                    "SA-6"));
 
     /** Backing detail for the error code. */
     private final DefaultErrorDetail defaultErrorCode;
