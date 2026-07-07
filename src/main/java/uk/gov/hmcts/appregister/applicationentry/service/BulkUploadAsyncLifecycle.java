@@ -102,28 +102,28 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         validateApplicationList(context);
 
-        List<BulkUploadError> allErrors = new ArrayList<>();
-
         int rowNumber = FIRST_DATA_ROW_NUMBER;
 
-        List<BulkUploadError> rowErrors = new ArrayList<>();
+        List<BulkUploadError> allErrors = new ArrayList<>();
+
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
+            List<BulkUploadError> rowErrors = new ArrayList<>();
 
             rowErrors.addAll(validator.validateRow(rowNumber, row));
             rowErrors.addAll(validateMappedDto(rowNumber, dto));
-            rowErrors.addAll(validateBusinessRules(rowNumber, dto));
+
+            if (rowErrors.isEmpty()) {
+                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
+            }
+
+            allErrors.addAll(rowErrors);
             rowNumber++;
         }
 
-        if (!rowErrors.isEmpty()) {
-            logValidationFailure(context, rowErrors);
-            allErrors.addAll(rowErrors);
-        }
-
         if (!allErrors.isEmpty()) {
+            logValidationFailure(context, allErrors);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
-
             throw new AppRegistryException(
                     AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
                     "One or more rows failed validation during bulk upload");
