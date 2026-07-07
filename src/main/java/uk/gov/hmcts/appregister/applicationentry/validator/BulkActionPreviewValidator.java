@@ -46,7 +46,7 @@ public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRe
         }
     }
 
-    public void validateLimit(int selectedCount, int limit) {
+    public void validateLimit(long selectedCount, int limit) {
         if (selectedCount > limit) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT,

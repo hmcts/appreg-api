@@ -124,6 +124,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
@@ -274,6 +275,8 @@ class ApplicationEntryServiceImplTest {
 
     @Spy private final PageMapper pageMapper = new PageMapper();
 
+    private PageableMapper pageableMapper;
+
     @Spy
     private DummyUpdateApplicationEntryValidator updateApplicationEntryValidator =
             new DummyUpdateApplicationEntryValidator(
@@ -324,6 +327,9 @@ class ApplicationEntryServiceImplTest {
                         businessDateProvider,
                         Validation.buildDefaultValidatorFactory().getValidator());
         bulkActionPreviewValidator = new BulkActionPreviewValidator();
+        pageableMapper = new PageableMapper();
+        pageableMapper.setDefaultPageSize(10);
+        pageableMapper.setMaxPageSize(100);
         meterRegistry = new SimpleMeterRegistry();
 
         Fee fee = new FeeTestData().someComplete();
@@ -335,6 +341,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         feeRepository,
                         pageMapper,
+                        pageableMapper,
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
                         bulkActionPreviewValidator,
@@ -373,6 +380,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         feeRepository,
                         pageMapper,
+                        pageableMapper,
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
                         bulkActionPreviewValidator,
@@ -2858,6 +2866,16 @@ class ApplicationEntryServiceImplTest {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
         UUID firstEntryId = UUID.randomUUID();
         UUID secondEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection firstProjection =
+                bulkActionPreviewProjection(firstEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection secondProjection =
+                bulkActionPreviewProjection(secondEntryId, 2L);
+        EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+
+        stubBulkActionPreviewSummaryPage(2, firstProjection, secondProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
 
         BulkActionPreviewResponseDto response =
                 service.bulkActionPreview(bulkActionPreviewRequest(firstEntryId, secondEntryId));
@@ -2868,7 +2886,7 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(2, response.getEligibleCount());
         Assertions.assertEquals(0, response.getIneligibleCount());
         Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
-        Assertions.assertEquals(List.of(), response.getEntries());
+        Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
     }
 
     @Test
@@ -2885,6 +2903,157 @@ class ApplicationEntryServiceImplTest {
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
+    }
+
+    @Test
+    void given_filterSelection_when_bulkActionPreview_then_return_matching_ids_and_entry_context() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setApplicantSurname("Smith");
+        filter.setStatus(ApplicationListStatus.OPEN);
+
+        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
+                .thenReturn(Status.OPEN);
+        stubBulkActionPreviewSummaryPage(1, projection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewFilterRequest(filter, List.of("date,desc"), List.of()));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(2, response.getLimit());
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(entryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(summary), response.getEntries());
+    }
+
+    @Test
+    void
+            given_filterSelectionWithExclusions_when_bulkActionPreview_then_pass_exclusions_to_search() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID excludedEntryId = UUID.randomUUID();
+        List<UUID> excludedEntryIds = List.of(excludedEntryId);
+
+        stubBulkActionPreviewSummaryPage(0);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewFilterRequest(
+                                new EntryGetFilterDto(), List.of(), excludedEntryIds));
+
+        Assertions.assertEquals(0, response.getSelectedCount());
+        Assertions.assertEquals(List.of(), response.getEntryIds());
+        Assertions.assertEquals(List.of(), response.getEntries());
+        verify(applicationListEntryRepository)
+                .searchForBulkActionPreviewSummary(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(false),
+                        anyList(),
+                        eq(true),
+                        eq(excludedEntryIds),
+                        any(Pageable.class));
+    }
+
+    @Test
+    void given_filterSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(UUID.randomUUID(), 1L);
+
+        stubBulkActionPreviewSummaryPage(2, projection);
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.bulkActionPreview(
+                                        bulkActionPreviewFilterRequest(
+                                                new EntryGetFilterDto(), List.of(), List.of())));
+
+        Assertions.assertEquals(
+                AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
+        verify(applicationListEntryMapStructMapper, never()).toEntrySummary(any());
+    }
+
+    @Test
+    void given_idsSelection_when_repositoryReturnsDifferentOrder_then_preserve_selected_order() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID firstEntryId = UUID.randomUUID();
+        UUID secondEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection firstProjection =
+                bulkActionPreviewProjection(firstEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection secondProjection =
+                bulkActionPreviewProjection(secondEntryId, 2L);
+        EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+
+        stubBulkActionPreviewSummaryPage(2, secondProjection, firstProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(firstEntryId, secondEntryId));
+
+        Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void given_previewEntriesHaveResultCodes_when_bulkActionPreview_then_set_resulted_context() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
+        ApplicationListEntryResolutionProjection resolutionProjection =
+                mock(ApplicationListEntryResolutionProjection.class);
+        ResolutionCode resolutionCode = mock(ResolutionCode.class);
+        ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
+
+        when(resolutionProjection.getEntryId()).thenReturn(1L);
+        when(resolutionProjection.getResolutionCode()).thenReturn(resolutionCode);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of(resolutionProjection));
+        when(applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(resolutionCode))
+                .thenReturn(resultCode);
+        stubBulkActionPreviewSummaryPage(1, projection);
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(entryId));
+
+        Assertions.assertEquals(
+                List.of(resultCode), response.getEntries().getFirst().getResulted());
+        Assertions.assertTrue(response.getEntries().getFirst().getIsResulted());
+        Assertions.assertSame(summary, response.getEntries().getFirst());
     }
 
     @Test
@@ -2940,5 +3109,65 @@ class ApplicationEntryServiceImplTest {
                         new BulkActionSelectionDto()
                                 .selectionType(BulkActionSelectionType.IDS)
                                 .entryIds(List.of(entryIds)));
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewFilterRequest(
+            EntryGetFilterDto filter, List<String> sort, List<UUID> excludedEntryIds) {
+        return new BulkActionPreviewRequestDto()
+                .action(BulkActionType.UPDATE_NOTES)
+                .selection(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.FILTER)
+                                .filter(filter)
+                                .sort(sort)
+                                .excludedEntryIds(excludedEntryIds));
+    }
+
+    private void stubBulkActionPreviewSummaryPage(
+            long totalElements, ApplicationListEntryGetSummaryProjection... projections) {
+        when(applicationListEntryRepository.searchForBulkActionPreviewSummary(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        anyBoolean(),
+                        anyList(),
+                        anyBoolean(),
+                        anyList(),
+                        any(Pageable.class)))
+                .thenReturn(
+                        new PageImpl<>(List.of(projections), Pageable.unpaged(), totalElements));
+    }
+
+    private ApplicationListEntryGetSummaryProjection bulkActionPreviewProjection(
+            UUID entryId, Long id) {
+        ApplicationListEntryGetSummaryProjection projection =
+                mock(ApplicationListEntryGetSummaryProjection.class);
+        when(projection.getUuid()).thenReturn(entryId.toString());
+        when(projection.getId()).thenReturn(id);
+        return projection;
+    }
+
+    private EntryGetSummaryDto stubEntrySummary(
+            ApplicationListEntryGetSummaryProjection projection, UUID entryId) {
+        EntryGetSummaryDto summary = new EntryGetSummaryDto().id(entryId);
+        when(applicationListEntryMapStructMapper.toEntrySummary(projection)).thenReturn(summary);
+        return summary;
     }
 }

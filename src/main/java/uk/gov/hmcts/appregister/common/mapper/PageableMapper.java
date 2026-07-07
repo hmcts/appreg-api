@@ -50,7 +50,20 @@ public class PageableMapper {
                 sort,
                 sortConfig.defaultSort(),
                 defaultDirection,
-                sortConfig.externalLookup());
+                sortConfig.externalLookup(),
+                true);
+    }
+
+    public PagingWrapper bulkActionPreviewFrom(
+            List<String> sort, int limit, SortConfig sortConfig, Sort.Direction defaultDirection) {
+        return from(
+                0,
+                limit,
+                sort,
+                sortConfig.defaultSort(),
+                defaultDirection,
+                sortConfig.externalLookup(),
+                false);
     }
 
     /**
@@ -71,10 +84,22 @@ public class PageableMapper {
             SortableOperationEnum defaultSortProperty,
             Sort.Direction defaultDirection,
             Function<String, ? extends SortableOperationEnum> findSortFieldEnum) {
+        return from(
+                page, size, sort, defaultSortProperty, defaultDirection, findSortFieldEnum, true);
+    }
+
+    private PagingWrapper from(
+            Integer page,
+            Integer size,
+            List<String> sort,
+            SortableOperationEnum defaultSortProperty,
+            Sort.Direction defaultDirection,
+            Function<String, ? extends SortableOperationEnum> findSortFieldEnum,
+            boolean applyMaxPageSize) {
 
         validateAgainstMultipleSortSupported(sort);
 
-        if (size != null && size > maxPageSize) {
+        if (applyMaxPageSize && size != null && size > maxPageSize) {
             size = maxPageSize;
         }
         Sort sortSpec;

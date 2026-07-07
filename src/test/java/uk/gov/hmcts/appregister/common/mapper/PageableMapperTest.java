@@ -182,6 +182,29 @@ class PageableMapperTest {
     }
 
     @Test
+    void bulkActionPreviewFrom_usesBulkLimitWithoutPublicPageSizeCap() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(100);
+        appPageable.setDefaultPageSize(23);
+
+        PagingWrapper pageable =
+                appPageable.bulkActionPreviewFrom(
+                        List.of(ApplicationEntrySortFieldEnum.DATE.getApiValue() + ",desc"),
+                        2000,
+                        ApplicationEntrySortConfig.SEARCH,
+                        Sort.Direction.ASC);
+
+        Assertions.assertEquals(0, pageable.getPageable().getPageNumber());
+        Assertions.assertEquals(2000, pageable.getPageable().getPageSize());
+        Assertions.assertEquals(
+                ApplicationEntrySortFieldEnum.DATE.getEntityValue()[0],
+                pageable.getPageable().getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.DESC,
+                pageable.getPageable().getSort().get().findFirst().get().getDirection());
+    }
+
+    @Test
     void testPageableSortDirectionFailure() {
         var appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
