@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -36,7 +37,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                 val response =
                         csdsIngressRestClient
                                 .get()
-                                .uri(normalizePath(path))
+                                .uri(buildUri(path))
                                 .header(properties.getAccessKeyHeader(), accessKey)
                                 .accept(MediaType.APPLICATION_JSON)
                                 .retrieve()
@@ -77,6 +78,12 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                     "Failed to parse CSDS JSON for path " + path,
                     ex);
         }
+    }
+
+    private URI buildUri(String path) {
+        // Use a relative URI so RestClient keeps the configured base URL but does not re-encode
+        // already-escaped query fragments like %24limit.
+        return URI.create(normalizePath(path));
     }
 
     private static void validatePath(String path) {

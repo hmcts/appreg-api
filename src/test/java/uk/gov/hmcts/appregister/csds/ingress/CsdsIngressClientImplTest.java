@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
@@ -24,7 +25,7 @@ class CsdsIngressClientImplTest {
         var responseSpec = mock(RestClient.ResponseSpec.class);
 
         when(restClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(any(String.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersUriSpec.uri(any(URI.class))).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.header(eq("Api-Key"), eq("test-key")))
                 .thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.accept(MediaType.APPLICATION_JSON)).thenReturn(requestHeadersSpec);
@@ -41,7 +42,7 @@ class CsdsIngressClientImplTest {
 
         client.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=100&%24offset=200");
 
-        var uriCaptor = ArgumentCaptor.forClass(String.class);
+        var uriCaptor = ArgumentCaptor.forClass(URI.class);
         org.mockito.Mockito.verify(requestHeadersUriSpec).uri(uriCaptor.capture());
         assertThat(uriCaptor.getValue().toString())
                 .isEqualTo("/query/CSDS/ApplicationCode/GD?%24limit=100&%24offset=200");

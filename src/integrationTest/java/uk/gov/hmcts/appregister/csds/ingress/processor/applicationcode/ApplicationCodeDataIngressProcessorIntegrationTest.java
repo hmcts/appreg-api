@@ -173,11 +173,25 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                         .put("ApplicationWording", applicationCode.getWording())
                         .put("FeeDue", applicationCode.getFeeDue().getValue())
                         .put("Respondent", applicationCode.getRequiresRespondent().getValue())
-                        .put("RevisionNumber", applicationCode.getVersion())
                         .put("StartDate", applicationCode.getStartDate().toString())
+                        .putNull("Notes")
                         .put(
                                 "BulkRespondentAllowed",
-                                applicationCode.getBulkRespondentAllowed().getValue());
+                                applicationCode.getBulkRespondentAllowed().getValue())
+                        .put("AuthoringStatus", "Published")
+                        .put("PublishingStatus", "Active")
+                        .put("CurrentRecordIndicator", true)
+                        .put("DraftFinalExistsIndicator", false)
+                        .put("RevisionNumber", applicationCode.getVersion())
+                        .put("RevisionType", "Initial")
+                        .putNull("RevisionDateFrom")
+                        .putNull("RevisionDateTo")
+                        .putNull("ClonedFrom")
+                        .putNull("PSSChangeSetHeaderID")
+                        .putNull("PSSChangeSetItemID")
+                        .put("FID_ApplicationRegisterHeader", 11263L)
+                        .putNull("FID_ReleasePackage")
+                        .put("Updator", "migration");
 
         putNullableText(node, "Legislation", applicationCode.getLegislation());
         putNullableText(node, "FeeReference", applicationCode.getFeeReference());
@@ -197,10 +211,25 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .put("FeeDue", YesOrNo.YES.getValue())
                 .put("FeeReference", "FEE-1")
                 .put("Respondent", YesOrNo.NO.getValue())
-                .put("RevisionNumber", 1)
                 .put("StartDate", "2020-01-01")
                 .putNull("EndDate")
-                .put("BulkRespondentAllowed", YesOrNo.NO.getValue());
+                .putNull("Notes")
+                .put("BulkRespondentAllowed", YesOrNo.NO.getValue())
+                .put("AuthoringStatus", "Published")
+                .put("PublishingStatus", "Active")
+                .put("CurrentRecordIndicator", true)
+                .put("DraftFinalExistsIndicator", false)
+                .put("RevisionNumber", 1)
+                .put("RevisionType", "Initial")
+                .putNull("RevisionDateFrom")
+                .putNull("RevisionDateTo")
+                .putNull("ClonedFrom")
+                .putNull("PSSApplicationCodeID")
+                .putNull("PSSChangeSetHeaderID")
+                .putNull("PSSChangeSetItemID")
+                .put("FID_ApplicationRegisterHeader", 11263L)
+                .putNull("FID_ReleasePackage")
+                .put("Updator", "migration");
     }
 
     private void putNullableDate(ObjectNode node, String fieldName, java.time.LocalDate value) {
