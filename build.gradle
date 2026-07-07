@@ -416,6 +416,7 @@ ext {
 }
 
 ext['snakeyaml.version'] = '2.0'
+ext['tomcat.version'] = '11.0.23'
 
 dependencies {
   // Core Spring Boot Starters
