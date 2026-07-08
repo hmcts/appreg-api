@@ -26,6 +26,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+import uk.gov.hmcts.appregister.generated.model.FullName;
+import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -147,15 +149,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     (validatable, result) -> null);
             return List.of();
         } catch (AppRegistryException exception) {
-            String name = null;
-            if (dto.getRespondent() != null
-                    && (dto.getRespondent().getOrganisation() != null
-                            || dto.getRespondent().getPerson() != null)) {
-                name =
-                        dto.getRespondent().getOrganisation() != null
-                                ? dto.getRespondent().getOrganisation().getName()
-                                : dto.getRespondent().getPerson().getName().toString();
-            }
             return List.of(
                     new BulkUploadError(
                             rowNumber,
@@ -171,7 +164,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                             .getPerson()
                                             .getContactDetails()
                                             .getAddressLine1(),
-                            name,
+                            getName(dto.getRespondent()),
                             "DATA_ERROR"));
         }
     }
@@ -197,10 +190,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private static BulkUploadError toBulkUploadError(
             int rowNumber, ConstraintViolation<EntryCreateDto> violation) {
-        String name =
-                violation.getRootBean().getRespondent().getOrganisation() != null
-                        ? violation.getRootBean().getRespondent().getOrganisation().getName()
-                        : violation.getRootBean().getRespondent().getPerson().getName().toString();
+
         return new BulkUploadError(
                 rowNumber,
                 violation.getPropertyPath().toString(),
@@ -219,7 +209,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                 .getPerson()
                                 .getContactDetails()
                                 .getAddressLine1(),
-                name,
+                getName(violation.getRootBean().getRespondent()),
                 "DATA_ERROR");
     }
 
@@ -301,5 +291,22 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
 
         log.info("Bulk upload completed successfully");
+    }
+
+    private static String getName(Respondent respondent) {
+        if (respondent.getOrganisation() != null) {
+            return respondent.getOrganisation().getName();
+        }
+
+        FullName fullName = respondent.getPerson().getName();
+        if (fullName.getMiddleName().get() != null) {
+            return "%s %s %s"
+                    .formatted(
+                            fullName.getFirstName(),
+                            fullName.getMiddleName().get(),
+                            fullName.getLastName());
+        }
+
+        return "%s %s".formatted(fullName.getFirstName(), fullName.getLastName());
     }
 }

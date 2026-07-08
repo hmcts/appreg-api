@@ -81,7 +81,7 @@ class BulkUploadAsyncLifecycleTest {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
-        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+        final AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
@@ -109,6 +109,41 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("\"message\":\"must match")
                 .contains("\"addressLine1\":\"1 Example Street\"")
                 .contains("\"name\":\"Example Organisation\"")
+                .contains("\"errorType\":\"DATA_ERROR\"");
+
+        // Respondent Test
+        BulkUploadRow respondentRow = validRespondentRow();
+        respondentRow.setRespondentPostcode("invalid");
+
+        context = new JobContext();
+        final AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+
+        exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.person.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                row.getRespondentAddressLine1(),
+                                                "John Doe",
+                                                "DATA_ERROR"))));
+        assertThat(output)
+                .contains("Bulk upload validation failure for list")
+                .contains("\"rowNumber\":2")
+                .contains("respondent.person.contactDetails.postcode")
+                .contains("\"rejectedValue\":\"invalid\"")
+                .contains("\"message\":\"must match")
+                .contains("\"addressLine1\":\"1 Example Street\"")
+                .contains("\"name\":\"John Doe\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
     }
 
@@ -313,6 +348,20 @@ class BulkUploadAsyncLifecycleTest {
         row.setRespondentAddressLine1("1 Example Street");
         row.setRespondentPostcode("AA1 1AA");
         row.setRespondentEmail("example.organisation@example.com");
+        row.setRespondentTelephone("0207 1111111");
+        row.setRespondentMobile("07771 111111");
+        return row;
+    }
+
+    private static BulkUploadRow validRespondentRow() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("AP99001");
+        row.setRespondentFirstName("John");
+        row.setRespondentLastName("Doe");
+        row.setRespondentAddressLine1("1 Example Street");
+        row.setRespondentPostcode("AA1 1AA");
+        row.setRespondentEmail("example.respondent@example.com");
         row.setRespondentTelephone("0207 1111111");
         row.setRespondentMobile("07771 111111");
         return row;
