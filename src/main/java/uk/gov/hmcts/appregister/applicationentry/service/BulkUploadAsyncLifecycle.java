@@ -129,7 +129,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         // the job context as JSON for easier parsing later
         for (String e : errorMessages) {
             BulkUploadError bulkUploadError =
-                new BulkUploadError(-1, BULK_UPLOAD_ROW, null, e, null, null, "HEADER_ERROR");
+                    new BulkUploadError(-1, BULK_UPLOAD_ROW, null, e, null, null, "HEADER_ERROR");
             allErrors.addFirst(bulkUploadError);
         }
 
@@ -237,7 +237,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
-
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
