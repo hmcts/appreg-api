@@ -13,12 +13,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
+import java.util.stream.LongStream;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -32,6 +34,11 @@ import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
+import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
@@ -219,6 +226,165 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
         Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
         assertThat(response.getIds()).doesNotContain(nonMatchingEntry.getUuid());
+    }
+
+    @Test
+    void givenFilterSelection_whenBulkActionPreview_thenReturnMatchingIdsAndEntryContext()
+            throws Exception {
+        ApplicationList matchingList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry matchingEntry = createEntry(matchingList);
+        matchingEntry.setAccountNumber("PV-FILTER-1");
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationList nonMatchingList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry nonMatchingEntry = createEntry(nonMatchingList);
+        nonMatchingEntry.setAccountNumber("PV-FILTER-2");
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setAccountReference("PV-FILTER-1");
+
+        BulkActionPreviewResponseDto response =
+                executeBulkActionPreview(
+                        createAdminToken(),
+                        bulkActionPreviewFilterRequest(
+                                BulkActionType.UPDATE_NOTES,
+                                filter,
+                                List.of("date,desc"),
+                                List.of()));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(2000, response.getLimit());
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getEntryIds());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .containsExactly(matchingEntry.getUuid());
+        assertThat(response.getEntries().getFirst().getAccountNumber().orElse(null))
+                .isEqualTo("PV-FILTER-1");
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .doesNotContain(nonMatchingEntry.getUuid());
+    }
+
+    @Test
+    void givenIdsSelection_whenBulkActionPreview_thenReturnSubmittedOrderAndEntryContext()
+            throws Exception {
+        ApplicationList firstList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry firstEntry = createEntry(firstList);
+        firstEntry.setAccountNumber("PREVIEW-IDS-1");
+        firstEntry = persistance.save(firstEntry);
+
+        ApplicationList secondList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry secondEntry = createEntry(secondList);
+        secondEntry.setAccountNumber("PREVIEW-IDS-2");
+        secondEntry = persistance.save(secondEntry);
+
+        BulkActionPreviewResponseDto response =
+                executeBulkActionPreview(
+                        createAdminToken(),
+                        bulkActionPreviewIdsRequest(
+                                BulkActionType.PRINT_PAGE,
+                                List.of(secondEntry.getUuid(), firstEntry.getUuid())));
+
+        Assertions.assertEquals(BulkActionType.PRINT_PAGE, response.getAction());
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(2, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(
+                List.of(secondEntry.getUuid(), firstEntry.getUuid()), response.getEntryIds());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .containsExactly(secondEntry.getUuid(), firstEntry.getUuid());
+    }
+
+    @Test
+    void givenFilterSelectionWithExcludedEntryIds_whenBulkActionPreview_thenExcludeEntries()
+            throws Exception {
+        ApplicationList list = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry includedEntry = createEntry(list);
+        includedEntry.setAccountNumber("PV-EXCLUDE");
+        includedEntry.setSequenceNumber((short) 1);
+        includedEntry = persistance.save(includedEntry);
+
+        ApplicationListEntry excludedEntry = createEntry(list);
+        excludedEntry.setAccountNumber("PV-EXCLUDE");
+        excludedEntry.setSequenceNumber((short) 2);
+        excludedEntry = persistance.save(excludedEntry);
+
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setAccountReference("PV-EXCLUDE");
+
+        BulkActionPreviewResponseDto response =
+                executeBulkActionPreview(
+                        createAdminToken(),
+                        bulkActionPreviewFilterRequest(
+                                BulkActionType.PRINT_CONTINUOUS,
+                                filter,
+                                List.of(),
+                                List.of(excludedEntry.getUuid())));
+
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(includedEntry.getUuid()), response.getEntryIds());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .containsExactly(includedEntry.getUuid());
+    }
+
+    @Test
+    void givenResultSelected_whenBulkActionPreview_thenOnlyOpenEntriesAreEligible()
+            throws Exception {
+        ApplicationList openList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry openEntry = createEntry(openList);
+        openEntry.setAccountNumber("PV-RESULT");
+        openEntry = persistance.save(openEntry);
+
+        ApplicationList closedList = createAndSaveList(Status.CLOSED);
+        ApplicationListEntry closedEntry = createEntry(closedList);
+        closedEntry.setAccountNumber("PV-RESULT");
+        closedEntry = persistance.save(closedEntry);
+
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setAccountReference("PV-RESULT");
+
+        BulkActionPreviewResponseDto response =
+                executeBulkActionPreview(
+                        createAdminToken(),
+                        bulkActionPreviewFilterRequest(
+                                BulkActionType.RESULT_SELECTED, filter, List.of(), List.of()));
+
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(openEntry.getUuid()), response.getEntryIds());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .containsExactly(openEntry.getUuid());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .doesNotContain(closedEntry.getUuid());
+    }
+
+    @Test
+    void givenIdsSelectionAboveGlobalLimit_whenBulkActionPreview_thenReturnProblemJson()
+            throws Exception {
+        List<UUID> entryIds =
+                LongStream.rangeClosed(1, 2001).mapToObj(value -> new UUID(0L, value)).toList();
+
+        Response response =
+                executeBulkActionPreviewResponse(
+                        createAdminToken(),
+                        bulkActionPreviewIdsRequest(BulkActionType.UPDATE_NOTES, entryIds));
+
+        response.then().statusCode(413);
+        assertThat(response.getHeader("Content-Type")).contains("application/problem+json");
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT.getCode(), response);
     }
 
     @Test
@@ -1247,6 +1413,47 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
         responseSpec.then().statusCode(200);
         return responseSpec.as(EntryPage.class);
+    }
+
+    private BulkActionPreviewResponseDto executeBulkActionPreview(
+            TokenGenerator tokenGenerator, BulkActionPreviewRequestDto request) throws Exception {
+        Response response = executeBulkActionPreviewResponse(tokenGenerator, request);
+
+        response.then().statusCode(200);
+        return response.as(BulkActionPreviewResponseDto.class);
+    }
+
+    private Response executeBulkActionPreviewResponse(
+            TokenGenerator tokenGenerator, BulkActionPreviewRequestDto request) throws Exception {
+        return restAssuredClient.executePostRequest(
+                getLocalUrl(WEB_CONTEXT + "/bulk-action-preview"),
+                tokenGenerator.fetchTokenForRole(),
+                request);
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewFilterRequest(
+            BulkActionType action,
+            EntryGetFilterDto filter,
+            List<String> sort,
+            List<UUID> excludedEntryIds) {
+        return new BulkActionPreviewRequestDto()
+                .action(action)
+                .selection(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.FILTER)
+                                .filter(filter)
+                                .sort(sort)
+                                .excludedEntryIds(excludedEntryIds));
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewIdsRequest(
+            BulkActionType action, List<UUID> entryIds) {
+        return new BulkActionPreviewRequestDto()
+                .action(action)
+                .selection(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(entryIds));
     }
 
     /** Executes search and asserts the expected single Turner result. */

@@ -54,18 +54,6 @@ public class PageableMapper {
                 true);
     }
 
-    public PagingWrapper bulkActionPreviewFrom(
-            List<String> sort, int limit, SortConfig sortConfig, Sort.Direction defaultDirection) {
-        return from(
-                0,
-                limit,
-                sort,
-                sortConfig.defaultSort(),
-                defaultDirection,
-                sortConfig.externalLookup(),
-                false);
-    }
-
     /**
      * map from a set of values to a spring pageable.
      *
@@ -140,6 +128,18 @@ public class PageableMapper {
         int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
 
         return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
+    }
+
+    public PagingWrapper from(
+            List<String> sort, int limit, SortConfig sortConfig, Sort.Direction defaultDirection) {
+        return from(
+                0,
+                limit,
+                sort,
+                sortConfig.defaultSort(),
+                defaultDirection,
+                sortConfig.externalLookup(),
+                false);
     }
 
     private void addTieBreaker(List<String> mappedSorts, String tieBreaker) {

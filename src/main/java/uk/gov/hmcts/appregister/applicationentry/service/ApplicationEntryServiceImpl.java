@@ -355,7 +355,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 selection.getFilter() == null ? new EntryGetFilterDto() : selection.getFilter();
         List<UUID> excludedEntryIds = safeEntryIds(selection.getExcludedEntryIds());
         PagingWrapper pageable =
-                pageableMapper.bulkActionPreviewFrom(
+                pageableMapper.from(
                         selection.getSort(),
                         bulkActionPreviewGlobalLimit,
                         ApplicationEntrySortConfig.SEARCH,
@@ -378,7 +378,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 selectedEntryIds.size(), bulkActionPreviewGlobalLimit);
 
         PagingWrapper pageable =
-                pageableMapper.bulkActionPreviewFrom(
+                pageableMapper.from(
                         List.of(),
                         bulkActionPreviewGlobalLimit,
                         ApplicationEntrySortConfig.SEARCH,

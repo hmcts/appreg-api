@@ -182,13 +182,13 @@ class PageableMapperTest {
     }
 
     @Test
-    void bulkActionPreviewFrom_usesBulkLimitWithoutPublicPageSizeCap() {
+    void from_withBulkLimit_usesBulkLimitWithoutPublicPageSizeCap() {
         PageableMapper appPageable = new PageableMapper();
         appPageable.setMaxPageSize(100);
         appPageable.setDefaultPageSize(23);
 
         PagingWrapper pageable =
-                appPageable.bulkActionPreviewFrom(
+                appPageable.from(
                         List.of(ApplicationEntrySortFieldEnum.DATE.getApiValue() + ",desc"),
                         2000,
                         ApplicationEntrySortConfig.SEARCH,

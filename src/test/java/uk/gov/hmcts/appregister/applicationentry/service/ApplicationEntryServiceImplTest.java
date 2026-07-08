@@ -2870,8 +2870,8 @@ class ApplicationEntryServiceImplTest {
                 bulkActionPreviewProjection(firstEntryId, 1L);
         ApplicationListEntryGetSummaryProjection secondProjection =
                 bulkActionPreviewProjection(secondEntryId, 2L);
-        EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
-        EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+        final EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        final EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
 
         stubBulkActionPreviewSummaryPage(2, firstProjection, secondProjection);
         when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
@@ -2911,7 +2911,7 @@ class ApplicationEntryServiceImplTest {
         UUID entryId = UUID.randomUUID();
         ApplicationListEntryGetSummaryProjection projection =
                 bulkActionPreviewProjection(entryId, 1L);
-        EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
+        final EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
         EntryGetFilterDto filter = new EntryGetFilterDto();
         filter.setApplicantSurname("Smith");
         filter.setStatus(ApplicationListStatus.OPEN);
@@ -3013,8 +3013,8 @@ class ApplicationEntryServiceImplTest {
                 bulkActionPreviewProjection(firstEntryId, 1L);
         ApplicationListEntryGetSummaryProjection secondProjection =
                 bulkActionPreviewProjection(secondEntryId, 2L);
-        EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
-        EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+        final EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        final EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
 
         stubBulkActionPreviewSummaryPage(2, secondProjection, firstProjection);
         when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
@@ -3033,11 +3033,11 @@ class ApplicationEntryServiceImplTest {
         UUID entryId = UUID.randomUUID();
         ApplicationListEntryGetSummaryProjection projection =
                 bulkActionPreviewProjection(entryId, 1L);
-        EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
-        ApplicationListEntryResolutionProjection resolutionProjection =
+        final EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
+        final ApplicationListEntryResolutionProjection resolutionProjection =
                 mock(ApplicationListEntryResolutionProjection.class);
-        ResolutionCode resolutionCode = mock(ResolutionCode.class);
-        ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
+        final ResolutionCode resolutionCode = mock(ResolutionCode.class);
+        final ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
 
         when(resolutionProjection.getEntryId()).thenReturn(1L);
         when(resolutionProjection.getResolutionCode()).thenReturn(resolutionCode);
@@ -3065,9 +3065,9 @@ class ApplicationEntryServiceImplTest {
                 bulkActionPreviewProjection(openEntryId, 1L);
         ApplicationListEntryGetSummaryProjection closedProjection =
                 bulkActionPreviewProjection(closedEntryId, 2L);
-        EntryGetSummaryDto openSummary =
+        final EntryGetSummaryDto openSummary =
                 stubEntrySummary(openProjection, openEntryId, ApplicationListStatus.OPEN);
-        EntryGetSummaryDto closedSummary =
+        final EntryGetSummaryDto closedSummary =
                 stubEntrySummary(closedProjection, closedEntryId, ApplicationListStatus.CLOSED);
 
         stubBulkActionPreviewSummaryPage(2, openProjection, closedProjection);
@@ -3094,12 +3094,12 @@ class ApplicationEntryServiceImplTest {
         UUID entryId = UUID.randomUUID();
         ApplicationListEntryGetSummaryProjection projection =
                 bulkActionPreviewProjection(entryId, 1L);
-        EntryGetSummaryDto summary =
+        final EntryGetSummaryDto summary =
                 stubEntrySummary(projection, entryId, ApplicationListStatus.OPEN);
-        ApplicationListEntryResolutionProjection resolutionProjection =
+        final ApplicationListEntryResolutionProjection resolutionProjection =
                 mock(ApplicationListEntryResolutionProjection.class);
-        ResolutionCode resolutionCode = mock(ResolutionCode.class);
-        ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
+        final ResolutionCode resolutionCode = mock(ResolutionCode.class);
+        final ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
 
         when(resolutionProjection.getEntryId()).thenReturn(1L);
         when(resolutionProjection.getResolutionCode()).thenReturn(resolutionCode);
@@ -3127,7 +3127,7 @@ class ApplicationEntryServiceImplTest {
         UUID entryId = UUID.randomUUID();
         ApplicationListEntryGetSummaryProjection projection =
                 bulkActionPreviewProjection(entryId, 1L);
-        EntryGetSummaryDto summary =
+        final EntryGetSummaryDto summary =
                 stubEntrySummary(projection, entryId, ApplicationListStatus.CLOSED);
 
         stubBulkActionPreviewSummaryPage(1, projection);
