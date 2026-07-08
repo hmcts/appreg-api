@@ -98,4 +98,31 @@ class ApplicationListEntryResultMapperTest {
                         .getConstraint()
                         .getType());
     }
+
+    @Test
+    void givenLegacyOverlongStoredResultWording_whenToResultGetDto_thenReturnsStoredValue() {
+        ApplicationListEntryResultMapper applicationListEntryResultMapper =
+                new ApplicationListEntryResultMapperImpl();
+        applicationListEntryResultMapper.setWordingTemplateMapper(new WordingTemplateMapperImpl());
+
+        AppListEntryResolution appListEntryResolution = new AppListEntryResolution();
+        ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setWording("Legacy result wording {TEXT|Reference|4}");
+        appListEntryResolution.setResolutionCode(resolutionCode);
+        appListEntryResolution.setResolutionWording("Legacy result wording {E1234567890}");
+
+        ResultGetDto resultGetDto =
+                applicationListEntryResultMapper.toResultGetDto(appListEntryResolution);
+
+        Assertions.assertEquals(
+                "Legacy result wording {{Reference}}", resultGetDto.getWording().getTemplate());
+        Assertions.assertEquals(
+                1, resultGetDto.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Reference",
+                resultGetDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "E1234567890",
+                resultGetDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+    }
 }
