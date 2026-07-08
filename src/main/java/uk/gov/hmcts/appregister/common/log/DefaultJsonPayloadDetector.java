@@ -16,7 +16,7 @@ public class DefaultJsonPayloadDetector implements JsonPayloadDetector {
         }
 
         String subtype = mediaType.getSubtype();
-        if (subtype == null || subtype.isBlank()) {
+        if (subtype.isBlank()) {
             return false;
         }
 

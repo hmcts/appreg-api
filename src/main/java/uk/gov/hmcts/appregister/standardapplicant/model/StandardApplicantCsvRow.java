@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 @Setter
 public class StandardApplicantCsvRow implements CsvPojo {
 
-    public static final String[] Header = {"Applicant Code", "Name", "Use From", "Use To"};
+    protected static final String[] Header = {"Applicant Code", "Name", "Use From", "Use To"};
 
     @CsvBindByPosition(position = 0)
     private String applicantCode;

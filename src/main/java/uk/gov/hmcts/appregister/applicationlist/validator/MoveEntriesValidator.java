@@ -54,7 +54,7 @@ public class MoveEntriesValidator
 
         validateLists(sourceList, targetList);
 
-        if (moveEntriesDto.getEntryIds() == null || moveEntriesDto.getEntryIds().isEmpty()) {
+        if (moveEntriesDto.getEntryIds().isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
