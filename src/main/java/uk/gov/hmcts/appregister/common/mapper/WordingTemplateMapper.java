@@ -28,6 +28,26 @@ public class WordingTemplateMapper {
      */
     public TemplateDetail getTemplateDetail(
             Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
+        return getTemplateDetail(wordingTemplateSupplier, appliedTemplateSupplier, true);
+    }
+
+    /**
+     * gets template detail for stored applied wording without re-validating legacy values against
+     * current write-time constraints.
+     *
+     * @param wordingTemplateSupplier The wording template
+     * @param appliedTemplateSupplier The stored applied wording
+     * @return The template details
+     */
+    public TemplateDetail getStoredTemplateDetail(
+            Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
+        return getTemplateDetail(wordingTemplateSupplier, appliedTemplateSupplier, false);
+    }
+
+    private TemplateDetail getTemplateDetail(
+            Supplier<String> wordingTemplateSupplier,
+            Supplier<String> appliedTemplateSupplier,
+            boolean validateStoredValues) {
         log.debug("Parsing template {}", wordingTemplateSupplier.get());
 
         WordingTemplateSentence wordingTemplate =
@@ -55,14 +75,24 @@ public class WordingTemplateMapper {
                         templateables.length);
             }
 
-            for (int i = 0; i < templateables.length; i++) {
-                String value = i < appliedValues.size() ? appliedValues.get(i) : "";
-                wordingTemplate.substituteForTemplate(templateables[i], value);
+            if (validateStoredValues) {
+                for (int i = 0; i < templateables.length; i++) {
+                    String value = i < appliedValues.size() ? appliedValues.get(i) : "";
+                    wordingTemplate.substituteForTemplate(templateables[i], value);
+                }
+
+                // gets the template details with the values that are currently in the database
+                // for each key
+                return wordingTemplate.getDetail();
             }
 
-            // gets the template details with the values that are currently in the database
-            // for each key
-            return wordingTemplate.getDetail();
+            TemplateDetail detail = wordingTemplate.getDetail();
+            for (int i = 0; i < detail.getSubstitutionKeyConstraints().size(); i++) {
+                String value = i < appliedValues.size() ? appliedValues.get(i) : "";
+                detail.getSubstitutionKeyConstraints().get(i).setValue(value);
+            }
+
+            return detail;
         } else {
             log.debug("No applied values to parse");
 

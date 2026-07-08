@@ -47,4 +47,18 @@ class WordingTemplateMapperTest {
         assertEquals("two", detail.getSubstitutionKeyConstraints().get(1).getValue());
         assertEquals("", detail.getSubstitutionKeyConstraints().get(2).getValue());
     }
+
+    @Test
+    void givenStoredWordingExceedsCurrentConstraintWhenGetTemplateDetailThenReturnStoredValue() {
+        TemplateDetail detail =
+                wordingTemplateMapper.getStoredTemplateDetail(
+                        () -> "Legacy wording {TEXT|Reference|4}",
+                        () -> "Legacy wording {E1234567890}");
+
+        assertNotNull(detail);
+        assertEquals("Legacy wording {{Reference}}", detail.getTemplate());
+        assertEquals(1, detail.getSubstitutionKeyConstraints().size());
+        assertEquals("Reference", detail.getSubstitutionKeyConstraints().get(0).getKey());
+        assertEquals("E1234567890", detail.getSubstitutionKeyConstraints().get(0).getValue());
+    }
 }
