@@ -14,21 +14,7 @@ public class BulkUploadError {
     private String location;
     private String rejectedValue;
     private String message;
-
-    @Override
-    public String toString() {
-        StringBuilder error =
-                new StringBuilder(30)
-                        .append("Row ")
-                        .append(rowNumber)
-                        .append(" [")
-                        .append(location)
-                        .append(']');
-
-        if (rejectedValue != null) {
-            error.append(" rejected value [").append(rejectedValue).append("]");
-        }
-
-        return error.append(": ").append(message).toString();
-    }
+    private String addressLine1;
+    private String name;
+    private String errorType;
 }
