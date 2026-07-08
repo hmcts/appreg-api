@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
@@ -42,7 +43,8 @@ public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRe
     }
 
     private void validateIdsSelection(BulkActionSelectionDto selection) {
-        if (isNullOrEmpty(selection.getEntryIds())) {
+        if (isNullOrEmpty(selection.getEntryIds())
+                || selection.getEntryIds().stream().anyMatch(Objects::isNull)) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_ACTION_ENTRY_IDS_REQUIRED,
                     "entryIds must be provided for IDS selection");

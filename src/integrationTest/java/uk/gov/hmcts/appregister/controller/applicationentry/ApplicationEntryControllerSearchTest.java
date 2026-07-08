@@ -388,6 +388,18 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
+    void givenIdsSelectionWithNullEntryId_whenBulkActionPreview_thenReturnProblemJson()
+            throws Exception {
+        restAssuredClient
+                .executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/bulk-action-preview"),
+                        createAdminToken().fetchTokenForRole(),
+                        "{\"action\":\"UPDATE_NOTES\",\"selection\":{\"selectionType\":\"IDS\",\"entryIds\":[null]}}")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
     void givenClosedStandardPersonApplicant_whenSearchByApplicantSurname_thenReturnMatchingEntry()
             throws Exception {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 5);

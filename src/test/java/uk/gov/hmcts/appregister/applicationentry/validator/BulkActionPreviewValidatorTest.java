@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,20 @@ class BulkActionPreviewValidatorTest {
                         new BulkActionSelectionDto()
                                 .selectionType(BulkActionSelectionType.IDS)
                                 .entryIds(List.of()));
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(request));
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_ACTION_ENTRY_IDS_REQUIRED);
+    }
+
+    @Test
+    void givenIdsSelectionWithNullEntryId_whenValidate_thenThrowsEntryIdsRequired() {
+        var request =
+                validRequest(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(Collections.singletonList(null)));
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> validator.validate(request));
