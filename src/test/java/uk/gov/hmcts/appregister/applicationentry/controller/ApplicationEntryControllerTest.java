@@ -43,6 +43,8 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -107,6 +109,21 @@ class ApplicationEntryControllerTest {
         verify(applicationEntryService).search(filter, paging);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(page);
+        assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
+    }
+
+    @Test
+    void bulkActionPreview_delegatesToServiceAndReturnsOkResponse() {
+        var request = new BulkActionPreviewRequestDto();
+        var body = new BulkActionPreviewResponseDto();
+        when(applicationEntryService.bulkActionPreview(request)).thenReturn(body);
+
+        ResponseEntity<BulkActionPreviewResponseDto> response =
+                controller.bulkActionPreview(request);
+
+        verify(applicationEntryService).bulkActionPreview(request);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(body);
         assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
     }
 

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import java.util.List;
 import java.util.UUID;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
@@ -8,6 +9,8 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
@@ -32,6 +35,16 @@ public interface ApplicationEntryService {
     EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
 
     /**
+     * Resolves a bulk action selection into selected entry IDs and entry summary context, applying
+     * the configured global bulk action limit before returning row data.
+     *
+     * @param request The bulk action preview request containing the action and selection criteria
+     * @return A preview containing selected counts, eligible counts, selected IDs, and entry
+     *     context
+     */
+    BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request);
+
+    /**
      * Creates an application entry. A fee status record(s) is created for the entry if provided,
      * officials are created if provided as well as applicant and respondants are created if
      * provided. The code works according to the rules prescribed by the defined application code.
@@ -53,7 +66,7 @@ public interface ApplicationEntryService {
      * @return The entry get detail inside of a match response which contains an etag
      */
     MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto);
+            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId);
 
     /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,
@@ -146,4 +159,6 @@ public interface ApplicationEntryService {
      *     or the associated target ApplicationList entity is not found
      */
     void deleteEntry(PayloadForDeleteEntry idToDelete);
+
+    List<UUID> getApplicationListEntriesByJobId(UUID jobId);
 }
