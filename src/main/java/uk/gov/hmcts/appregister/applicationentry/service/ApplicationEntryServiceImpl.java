@@ -56,6 +56,7 @@ import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
@@ -64,6 +65,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
@@ -72,6 +74,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRe
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
@@ -110,6 +113,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
 @Component
 @RequiredArgsConstructor
@@ -168,6 +172,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final AppListEntryFeeRepository appListEntryFeeRepository;
     private final StandardApplicantRepository standardApplicantRepository;
     private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+    private final AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
 
     private final ApplicationListEntryMapper applicationListEntryMapStructMapper;
     private final ApplicantMapper applicantMapper;
@@ -188,6 +193,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
     private final MeterRegistry meterRegistry;
+
+    private final JobExistanceValidator jobExistanceValidator;
 
     @Override
     @Transactional(readOnly = true)
@@ -475,14 +482,15 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
+        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO, null);
     }
 
     private MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
                     validator,
-            YesOrNo bulkUpload) {
+            YesOrNo bulkUpload,
+            UUID jobId) {
         log.debug("Started create application entry for list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
@@ -525,6 +533,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                     refreshEntity(
                                                             applicationListEntryRepository.save(
                                                                     listEntryEntity));
+
                                             log.debug(
                                                     "Created application entry with id: {}",
                                                     listEntryEntity.getId());
@@ -552,6 +561,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                             entryGetDetailDto.setHasOffsiteFee(
                                                     entryCreateDto.getData().getHasOffsiteFee());
 
+                                            if (bulkUpload.isYes() && jobId != null) {
+                                                AsyncJobsAppListEntry asyncJobsAppListEntry =
+                                                        AsyncJobsAppListEntry.builder()
+                                                                .asyncJobId(jobId)
+                                                                .appListEntryId(
+                                                                        listEntryEntity.getUuid())
+                                                                .build();
+                                                asyncJobAppListEntryRepository.save(
+                                                        asyncJobsAppListEntry);
+                                            }
+
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             MatchResponse.of(
@@ -573,8 +593,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
+            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId) {
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES, jobId);
     }
 
     @Override
@@ -851,6 +871,24 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
             throw exception;
         }
+    }
+
+    @Override
+    public List<UUID> getApplicationListEntriesByJobId(UUID jobId) {
+        List<AsyncJobsAppListEntry> entryIds =
+                asyncJobAppListEntryRepository.findByAsyncJobId(jobId);
+
+        return jobExistanceValidator.validate(
+                jobId,
+                (uuid, success) -> {
+                    if (entryIds.isEmpty()) {
+                        throw new AppRegistryException(
+                                JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER,
+                                "No entries found for jobId: " + jobId);
+                    }
+
+                    return entryIds.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
+                });
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {

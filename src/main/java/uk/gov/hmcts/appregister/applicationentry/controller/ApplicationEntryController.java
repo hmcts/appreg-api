@@ -336,6 +336,14 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .body(response);
     }
 
+    @Override
+    public ResponseEntity<List<UUID>> getBulkResultApplicationListEntriesByJobId(UUID jobId) {
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(applicationEntryService.getApplicationListEntriesByJobId(jobId));
+    }
+
     /**
      * Builds the resource location URI for a given Application List Entry ID.
      *

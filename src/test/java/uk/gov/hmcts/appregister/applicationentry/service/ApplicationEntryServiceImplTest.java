@@ -90,6 +90,8 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -101,6 +103,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -114,6 +117,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMap
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
@@ -140,6 +144,7 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
@@ -166,6 +171,8 @@ import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
+import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -202,7 +209,11 @@ class ApplicationEntryServiceImplTest {
 
     @Mock private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
+    @Mock private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
+
     @Mock private Clock clock;
+
+    @Mock private JobExistanceValidator jobExistanceValidator;
 
     private CreateApplicationEntryValidationSuccess success;
 
@@ -358,6 +369,7 @@ class ApplicationEntryServiceImplTest {
                         appListEntryFeeRepository,
                         standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
+                        asyncJobAppListEntryRepository,
                         applicationListEntryMapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -368,7 +380,8 @@ class ApplicationEntryServiceImplTest {
                         clock,
                         businessDateProvider,
                         deleteEntryValidator,
-                        meterRegistry);
+                        meterRegistry,
+                        jobExistanceValidator);
     }
 
     @Test
@@ -397,6 +410,7 @@ class ApplicationEntryServiceImplTest {
                         appListEntryFeeRepository,
                         standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
+                        asyncJobAppListEntryRepository,
                         mapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -407,7 +421,8 @@ class ApplicationEntryServiceImplTest {
                         clock,
                         businessDateProvider,
                         deleteEntryValidator,
-                        meterRegistry);
+                        meterRegistry,
+                        jobExistanceValidator);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -909,7 +924,7 @@ class ApplicationEntryServiceImplTest {
                         .data(entryCreateDto)
                         .build();
 
-        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload);
+        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload, null);
 
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
 
@@ -2551,6 +2566,227 @@ class ApplicationEntryServiceImplTest {
         verify(applicationListEntryRepository).save(applicationListEntry);
     }
 
+    @Test
+    void givenBulkImportHasSucceeded_whenGetApplicationListEntriesByJobId_returnsEntries() {
+        UUID jobId = UUID.randomUUID();
+
+        when(jobExistanceValidator.validate(eq(jobId), any()))
+                .thenAnswer(
+                        invocation -> {
+                            @SuppressWarnings("unchecked")
+                            val validateFunction =
+                                    (BiFunction<UUID, JobSuccess, JobStatusResponse>)
+                                            invocation.getArgument(1);
+
+                            return validateFunction.apply(jobId, new JobSuccess());
+                        });
+
+        val asyncJobAppListEntry = new AsyncJobsAppListEntry();
+        asyncJobAppListEntry.setAppListEntryId(UUID.randomUUID());
+        asyncJobAppListEntry.setAsyncJobId(jobId);
+
+        List<AsyncJobsAppListEntry> entries = createAsyncJobAppListEntries(jobId, 3);
+
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(entries);
+
+        List<UUID> actualEntries = service.getApplicationListEntriesByJobId(jobId);
+
+        Assertions.assertEquals(3, actualEntries.size());
+        verify(asyncJobAppListEntryRepository, times(1)).findByAsyncJobId(jobId);
+
+        List<UUID> expectedEntries =
+                entries.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
+
+        for (UUID entryId : actualEntries) {
+            Assertions.assertTrue(
+                    expectedEntries.contains(entryId),
+                    "Entry ID " + entryId + " should be in the expected entries list");
+        }
+    }
+
+    @Test
+    void givenBulkImportHasNotSucceeded_whenGetApplicationListEntriesByJobId_returnsEmptyList() {
+        UUID jobId = UUID.randomUUID();
+
+        when(jobExistanceValidator.validate(eq(jobId), any()))
+                .thenAnswer(
+                        invocation -> {
+                            @SuppressWarnings("unchecked")
+                            val validateFunction =
+                                    (BiFunction<UUID, JobSuccess, JobStatusResponse>)
+                                            invocation.getArgument(1);
+
+                            val success = new JobSuccess();
+                            return validateFunction.apply(jobId, success);
+                        });
+
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(List.of());
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> service.getApplicationListEntriesByJobId(jobId));
+
+        Assertions.assertEquals(JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER, exception.getCode());
+        Assertions.assertEquals(
+                "No entries found for jobId: %s".formatted(jobId), exception.getMessage());
+    }
+
+    @Test
+    void createBulkEntry_withJobId_shouldSaveAsyncJobAppListEntry() {
+        UUID listId = UUID.randomUUID();
+        val applicationList = openApplicationList(listId);
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
+        entryCreateDto.setWordingFields(null);
+
+        ApplicationCode code = new ApplicationCode();
+        code.setWording("Test Wording");
+
+        // Now make the call to createBulkEntry
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(applicationList.getUuid())
+                        .data(entryCreateDto)
+                        .build();
+
+        when(applicantMapper.toApplicant(payload.getData().getApplicant()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(applicantMapper.toRespondent(payload.getData().getRespondent()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(nameAddressRepository.save(any()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(appListEntryFeeStatusRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
+        when(appListEntryOfficialRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+
+        val entryId = UUID.randomUUID();
+        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
+        success =
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
+                        .fee(null)
+                        .applicationCode(code)
+                        .sa(new StandardApplicant())
+                        .applicationList(applicationList)
+                        .build();
+
+        entry.setVersion(1L);
+        when(applicationListEntryRepository.save(any())).thenReturn(entry);
+
+        when(applicationListEntryEntityMapper.toApplicationListEntry(
+                        eq(entryCreateDto),
+                        notNull(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(YesOrNo.YES)))
+                .thenReturn(entry);
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        entryGetDetailDto.setHasOffsiteFee(false);
+
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        any(), anyList(), any(), any(), any()))
+                .thenReturn(entryGetDetailDto);
+
+        UUID jobId = UUID.randomUUID();
+        service.createBulkEntry(payload, jobId);
+
+        // Ensure that we called save on asyncJobAppListEntryRepository with the correct values
+        ArgumentCaptor<AsyncJobsAppListEntry> captor =
+                ArgumentCaptor.forClass(AsyncJobsAppListEntry.class);
+        verify(asyncJobAppListEntryRepository).save(captor.capture());
+
+        AsyncJobsAppListEntry savedEntity = captor.getValue();
+        Assertions.assertEquals(jobId, savedEntity.getAsyncJobId());
+        Assertions.assertEquals(entryId, savedEntity.getAppListEntryId());
+    }
+
+    @Test
+    void createBulkEntry_withoutJobId_shouldNotSaveAsyncJobAppListEntry() {
+        UUID listId = UUID.randomUUID();
+        val applicationList = openApplicationList(listId);
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
+        entryCreateDto.setWordingFields(null);
+
+        ApplicationCode code = new ApplicationCode();
+        code.setWording("Test Wording");
+
+        // Now make the call to createBulkEntry
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(applicationList.getUuid())
+                        .data(entryCreateDto)
+                        .build();
+
+        when(applicantMapper.toApplicant(payload.getData().getApplicant()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(applicantMapper.toRespondent(payload.getData().getRespondent()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(nameAddressRepository.save(any()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(appListEntryFeeStatusRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
+        when(appListEntryOfficialRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+
+        val entryId = UUID.randomUUID();
+        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
+        success =
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
+                        .fee(null)
+                        .applicationCode(code)
+                        .sa(new StandardApplicant())
+                        .applicationList(applicationList)
+                        .build();
+
+        entry.setVersion(1L);
+        when(applicationListEntryRepository.save(any())).thenReturn(entry);
+
+        when(applicationListEntryEntityMapper.toApplicationListEntry(
+                        eq(entryCreateDto),
+                        notNull(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(YesOrNo.YES)))
+                .thenReturn(entry);
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        entryGetDetailDto.setHasOffsiteFee(false);
+
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        any(), anyList(), any(), any(), any()))
+                .thenReturn(entryGetDetailDto);
+
+        service.createBulkEntry(payload, null);
+        verify(asyncJobAppListEntryRepository, times(0)).save(any());
+    }
+
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
@@ -3189,6 +3425,18 @@ class ApplicationEntryServiceImplTest {
 
         Assertions.assertNotNull(response);
         verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+    }
+
+    private List<AsyncJobsAppListEntry> createAsyncJobAppListEntries(UUID jobId, int count) {
+        return IntStream.range(0, count)
+                .mapToObj(
+                        i -> {
+                            AsyncJobsAppListEntry entry = new AsyncJobsAppListEntry();
+                            entry.setAsyncJobId(jobId);
+                            entry.setAppListEntryId(UUID.randomUUID());
+                            return entry;
+                        })
+                .toList();
     }
 
     private BulkActionPreviewRequestDto bulkActionPreviewRequest(UUID... entryIds) {

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import java.util.List;
 import java.util.UUID;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
@@ -65,7 +66,7 @@ public interface ApplicationEntryService {
      * @return The entry get detail inside of a match response which contains an etag
      */
     MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto);
+            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId);
 
     /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,
@@ -158,4 +159,6 @@ public interface ApplicationEntryService {
      *     or the associated target ApplicationList entity is not found
      */
     void deleteEntry(PayloadForDeleteEntry idToDelete);
+
+    List<UUID> getApplicationListEntriesByJobId(UUID jobId);
 }
