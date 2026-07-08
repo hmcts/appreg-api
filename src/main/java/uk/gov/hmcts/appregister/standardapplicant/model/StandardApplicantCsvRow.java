@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.model;
 
 import com.opencsv.bean.CsvBindByPosition;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
@@ -9,7 +10,8 @@ import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 @Setter
 public class StandardApplicantCsvRow implements CsvPojo {
 
-    public static final String[] Header = {"Applicant Code", "Name", "Use From", "Use To"};
+    public static final List<String> Header =
+            List.of("Applicant Code", "Name", "Use From", "Use To");
 
     @CsvBindByPosition(position = 0)
     private String applicantCode;
