@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.template.BraceSubstitutedSentence;
+import uk.gov.hmcts.appregister.common.template.Templateable;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
-import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
  * A common wording template mapper.
@@ -42,17 +42,23 @@ public class WordingTemplateMapper {
             BraceSubstitutedSentence sentence =
                     BraceSubstitutedSentence.withSubstitutedSentence(appliedTemplateSupplier.get());
 
-            // get substitution keys that need to be replaced
-            List<TemplateSubstitution> keysForSubstitution =
-                    wordingTemplate.getKeysToBeSubstituted();
+            List<String> appliedValues = sentence.getAppliedValues();
+            Templateable[] templateables = wordingTemplate.getTemplateableContents();
 
-            // apply the sentence value to substitution keys
-            sentence.applyValuesTo(keysForSubstitution);
+            if (appliedValues.size() != templateables.length) {
+                log.warn(
+                        "Stored wording '{}' contains {} values but template '{}' expects {}."
+                                + " Filling what we can and leaving the rest blank.",
+                        appliedTemplateSupplier.get(),
+                        appliedValues.size(),
+                        wordingTemplateSupplier.get(),
+                        templateables.length);
+            }
 
-            // substitute using the keys
-            wordingTemplate.substitute(keysForSubstitution);
-
-            log.debug("Re-applied template values against template keys");
+            for (int i = 0; i < templateables.length; i++) {
+                String value = i < appliedValues.size() ? appliedValues.get(i) : "";
+                wordingTemplate.substituteForTemplate(templateables[i], value);
+            }
 
             // gets the template details with the values that are currently in the database
             // for each key
