@@ -25,6 +25,7 @@ public class MoveEntriesValidator
     }
 
     @Override
+    @SuppressWarnings("java:S2589")
     public <R> R validate(
             MoveEntriesPayload payload,
             BiFunction<MoveEntriesPayload, MoveEntriesValidationSuccess, R> createSupplier) {

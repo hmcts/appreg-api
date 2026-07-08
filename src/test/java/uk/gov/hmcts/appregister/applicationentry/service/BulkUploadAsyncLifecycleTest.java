@@ -10,6 +10,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import java.io.IOException;
 import java.util.List;
@@ -19,10 +21,12 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedConstruction;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
@@ -82,7 +86,7 @@ class BulkUploadAsyncLifecycleTest {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
-        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+        final AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
@@ -90,19 +94,104 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
-                .anySatisfy(
-                        message -> {
-                            assertThat(message)
-                                    .contains(
-                                            "Row 2 [respondent.organisation.contactDetails.postcode]");
-                            assertThat(message).contains("rejected value [invalid]");
-                            assertThat(message).contains("must match");
-                        });
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.organisation.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
         assertThat(output)
                 .contains("Bulk upload validation failure for list")
-                .contains("Row 2 [respondent.organisation.contactDetails.postcode]")
-                .contains("rejected value [invalid]")
-                .contains("must match");
+                .contains("\"rowNumber\":2")
+                .contains("respondent.organisation.contactDetails.postcode")
+                .contains("\"rejectedValue\":\"invalid\"")
+                .contains("\"message\":\"must match")
+                .contains("\"addressLine1\":\"1 Example Street\"")
+                .contains("\"name\":\"Example Organisation\"")
+                .contains("\"errorType\":\"DATA_ERROR\"");
+
+        // Respondent Test
+        BulkUploadRow respondentRow = validRespondentRow();
+        respondentRow.setRespondentPostcode("invalid");
+
+        context = new JobContext();
+        final AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+
+        exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.person.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                row.getRespondentAddressLine1(),
+                                                "John Doe",
+                                                "DATA_ERROR"))));
+        assertThat(output)
+                .contains("Bulk upload validation failure for list")
+                .contains("\"rowNumber\":2")
+                .contains("respondent.person.contactDetails.postcode")
+                .contains("\"rejectedValue\":\"invalid\"")
+                .contains("\"message\":\"must match")
+                .contains("\"addressLine1\":\"1 Example Street\"")
+                .contains("\"name\":\"John Doe\"")
+                .contains("\"errorType\":\"DATA_ERROR\"");
+    }
+
+    @Test
+    void
+            givenPostcodeViolatesOpenApiPattern_whenValidatingRespondentWithMidddleName_thenLogsBeanValidationFailure(
+                    CapturedOutput output) {
+        // Respondent Test
+        BulkUploadRow respondentRow = validRespondentRow();
+        respondentRow.setRespondentPostcode("invalid");
+        respondentRow.setRespondentMiddleName("Middle");
+
+        JobContext context = new JobContext();
+        final AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.person.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                respondentRow.getRespondentAddressLine1(),
+                                                "John Middle Doe",
+                                                "DATA_ERROR"))));
+        assertThat(output)
+                .contains("Bulk upload validation failure for list")
+                .contains("\"rowNumber\":2")
+                .contains("respondent.person.contactDetails.postcode")
+                .contains("\"rejectedValue\":\"invalid\"")
+                .contains("\"message\":\"must match")
+                .contains("\"addressLine1\":\"1 Example Street\"")
+                .contains("\"name\":\"John Middle Doe\"")
+                .contains("\"errorType\":\"DATA_ERROR\"");
     }
 
     @Test
@@ -224,12 +313,69 @@ class BulkUploadAsyncLifecycleTest {
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
-                        "Row 2 [APPLICATION_TEXT]: APPLICATION_TEXT1 is required for code AP99001");
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "APPLICATION_TEXT",
+                                                null,
+                                                "APPLICATION_TEXT1 is required for code AP99001",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
     }
 
     @Test
-    void givenUnknownBusinessRuleFailure_whenValidating_thenUsesGenericRowLocation() {
+    void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors() {
         BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+
+        JobContext context = new JobContext();
+        context.logFailure("first header validation failure");
+        context.logFailure("second header validation failure");
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "second header validation failure",
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"),
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "first header validation failure",
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"),
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.organisation.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
+    }
+
+    @Test
+    void givenUnknownBusinessRuleFailureForPersonRespondent_whenValidating_thenUsesMiddleName() {
+        BulkUploadRow row = validRespondentRow();
+        row.setRespondentMiddleName("Byron");
         doThrow(
                         new AppRegistryException(
                                 CommonAppError.INTERNAL_SERVER_ERROR,
@@ -242,10 +388,52 @@ class BulkUploadAsyncLifecycleTest {
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
+        String name =
+                row.getRespondentOrganisationName() != null
+                        ? row.getRespondentOrganisationName()
+                        : row.getRespondentForename1() + " " + row.getRespondentSurname();
+
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
-                .containsExactly("Row 2 [BULK_UPLOAD_ROW]: Unexpected validation failure");
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "Unexpected validation failure",
+                                                row.getRespondentAddressLine1(),
+                                                "John Byron Doe",
+                                                "DATA_ERROR"))));
+
+        BulkUploadRow respondentRow = validRespondentRow();
+        doThrow(
+                        new AppRegistryException(
+                                CommonAppError.INTERNAL_SERVER_ERROR,
+                                "Unexpected validation failure"))
+                .when(bulkCreateApplicationEntryValidator)
+                .validate(any(), any());
+        context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+
+        exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "Unexpected validation failure",
+                                                row.getRespondentAddressLine1(),
+                                                "John Doe",
+                                                "DATA_ERROR"))));
     }
 
     @Test
@@ -269,6 +457,70 @@ class BulkUploadAsyncLifecycleTest {
         verify(applicationEntryService, times(2)).createBulkEntry(any(), any());
     }
 
+    @Test
+    void givenUnableToConvertErrorToJson_thenThrowsJsonProcessingError(CapturedOutput output) {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+        JobContext context = new JobContext();
+
+        try (MockedConstruction<ObjectMapper> ignored =
+                org.mockito.Mockito.mockConstruction(
+                        ObjectMapper.class,
+                        (mock, constructionContext) ->
+                                when(mock.writeValueAsString(any()))
+                                        .thenThrow(new JsonProcessingException("boom") {}))) {
+
+            AppRegistryException exception =
+                    assertThrows(
+                            AppRegistryException.class,
+                            () -> lifecycle.validating(event(row, context)));
+
+            assertThat(exception.getCode())
+                    .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        }
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly("Bulk upload validation failure for list " + listId + ": boom");
+
+        assertThat(output)
+                .contains("Failed to serialize bulk upload errors to JSON for list")
+                .contains(listId.toString())
+                .contains("boom");
+    }
+
+    @Test
+    void givenTooManyColumnsInCsv_whenValidating_thenContextErrorContainsHeaderError()
+            throws IOException {
+        String headerErrorMessage = "Too many columns in CSV file";
+        JobContext context = new JobContext();
+        context.logFailure(headerErrorMessage);
+
+        BulkUploadRow row = validOrganisationRow();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                headerErrorMessage,
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"))));
+
+        verify(bulkCreateApplicationEntryValidator).validateApplicationList(listId);
+        verify(bulkCreateApplicationEntryValidator).validate(any(), any());
+    }
+
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
         return new AsyncJobLifecycleEvent<>(null, List.of(row), context, JobStatus1.VALIDATING);
@@ -285,5 +537,28 @@ class BulkUploadAsyncLifecycleTest {
         row.setRespondentTelephone("0207 1111111");
         row.setRespondentMobile("07771 111111");
         return row;
+    }
+
+    private static BulkUploadRow validRespondentRow() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("AP99001");
+        row.setRespondentFirstName("John");
+        row.setRespondentLastName("Doe");
+        row.setRespondentAddressLine1("1 Example Street");
+        row.setRespondentPostcode("AA1 1AA");
+        row.setRespondentEmail("example.respondent@example.com");
+        row.setRespondentTelephone("0207 1111111");
+        row.setRespondentMobile("07771 111111");
+        return row;
+    }
+
+    private static String createErrorDescription(List<BulkUploadError> errors) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.writeValueAsString(errors);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize errors", e);
+        }
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DefaultJsonPayloadDetector implements JsonPayloadDetector {
+    @SuppressWarnings("java:S2589")
     @Override
     public boolean isJson(@Nullable MediaType mediaType) {
         if (mediaType == null) {
