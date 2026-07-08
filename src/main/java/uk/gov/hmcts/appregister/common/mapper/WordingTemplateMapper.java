@@ -31,19 +31,6 @@ public class WordingTemplateMapper {
         return getTemplateDetail(wordingTemplateSupplier, appliedTemplateSupplier, true);
     }
 
-    /**
-     * gets template detail for stored applied wording without re-validating legacy values against
-     * current write-time constraints.
-     *
-     * @param wordingTemplateSupplier The wording template
-     * @param appliedTemplateSupplier The stored applied wording
-     * @return The template details
-     */
-    public TemplateDetail getStoredTemplateDetail(
-            Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
-        return getTemplateDetail(wordingTemplateSupplier, appliedTemplateSupplier, false);
-    }
-
     private TemplateDetail getTemplateDetail(
             Supplier<String> wordingTemplateSupplier,
             Supplier<String> appliedTemplateSupplier,
@@ -98,5 +85,18 @@ public class WordingTemplateMapper {
 
             return wordingTemplate.getDetail();
         }
+    }
+
+    /**
+     * gets template detail for stored applied wording without re-validating legacy values against
+     * current write-time constraints.
+     *
+     * @param wordingTemplateSupplier The wording template
+     * @param appliedTemplateSupplier The stored applied wording
+     * @return The template details
+     */
+    public TemplateDetail getStoredTemplateDetail(
+            Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
+        return getTemplateDetail(wordingTemplateSupplier, appliedTemplateSupplier, false);
     }
 }
