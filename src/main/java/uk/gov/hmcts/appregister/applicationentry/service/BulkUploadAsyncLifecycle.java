@@ -123,6 +123,20 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowNumber++;
         }
 
+        List<String> errorMessages = context.getValidationFailureMessages();
+
+        // we're going to convert the existing message into a BulkUploadError object and log it to
+        // the job context as JSON for easier parsing later
+        for (String e : errorMessages) {
+            BulkUploadError bulkUploadError =
+                new BulkUploadError(-1, BULK_UPLOAD_ROW, null, e, null, null, "HEADER_ERROR");
+            allErrors.addFirst(bulkUploadError);
+        }
+
+        // We will clear the existing errors in the context as the original errors have been added
+        // above
+        context.setValidationFailureMessages(new ArrayList<>());
+
         if (!allErrors.isEmpty()) {
             logValidationFailure(context, allErrors);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
@@ -223,19 +237,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
-        List<String> errorMessages = context.getValidationFailureMessages();
 
-        // we're going to convert the existing message into a BulkUploadError object and log it to
-        // the job context as JSON for easier parsing later
-        for (String e : errorMessages) {
-            BulkUploadError bulkUploadError =
-                    new BulkUploadError(-1, BULK_UPLOAD_ROW, null, e, null, null, "HEADER_ERROR");
-            error.addFirst(bulkUploadError);
-        }
-
-        // We will clear the existing errors in the context as the original errors have been added
-        // above
-        context.getValidationFailureMessages().clear();
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
