@@ -846,6 +846,29 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void givenLegacyOverlongStoredWording_whenToEntryGetDetailDto_thenReturnsStoredValue() {
+        ApplicationListEntry appListEntry = new AppListEntryTestData().someComplete();
+        appListEntry.setStandardApplicant(null);
+
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setWording("Legacy wording {TEXT|Reference|4}");
+        appListEntry.setApplicationCode(applicationCode);
+        appListEntry.setApplicationListEntryWording("Legacy wording {E1234567890}");
+
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        EntryGetDetailDto dto = mapper.toEntryGetDetailDto(appListEntry, false);
+
+        Assertions.assertEquals("Legacy wording {{Reference}}", dto.getWording().getTemplate());
+        Assertions.assertEquals(1, dto.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Reference", dto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "E1234567890", dto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+    }
+
+    @Test
     void
             toEntryGetDetailDtoApplicantPersonRespondentOrg_provideValidData_validModelListGenerated() {
         AppListEntryTestData appListEntryTestData = new AppListEntryTestData();

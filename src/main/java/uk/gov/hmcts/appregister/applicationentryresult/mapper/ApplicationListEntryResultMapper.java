@@ -32,7 +32,7 @@ public abstract class ApplicationListEntryResultMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(getWordingTemplateMapper().getTemplateDetail("
+                    "java(getWordingTemplateMapper().getStoredTemplateDetail("
                             + "() -> appListEntryResolution.getResolutionCode().getWording(),"
                             + "() -> appListEntryResolution.getResolutionWording()))")
     public abstract ResultGetDto toResultGetDto(AppListEntryResolution appListEntryResolution);
@@ -43,7 +43,7 @@ public abstract class ApplicationListEntryResultMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(getWordingTemplateMapper().getTemplateDetail("
+                    "java(getWordingTemplateMapper().getStoredTemplateDetail("
                             + "() -> appListEntryResolution.getResolutionCode().getWording(),"
                             + "() -> appListEntryResolution.getResolution().getResolutionWording()))")
     public abstract ResultGetDto toResultGetDto(
