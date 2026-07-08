@@ -279,8 +279,56 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenUnknownBusinessRuleFailure_whenValidating_thenUsesGenericRowLocation() {
+    void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors() {
         BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+
+        JobContext context = new JobContext();
+        context.logFailure("first header validation failure");
+        context.logFailure("second header validation failure");
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "second header validation failure",
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"),
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "first header validation failure",
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"),
+                                        new BulkUploadError(
+                                                2,
+                                                "respondent.organisation.contactDetails.postcode",
+                                                "invalid",
+                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
+                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
+    }
+
+    @Test
+    void givenUnknownBusinessRuleFailureForPersonRespondent_whenValidating_thenUsesMiddleName() {
+        BulkUploadRow row = validRespondentRow();
+        row.setRespondentMiddleName("Byron");
         doThrow(
                         new AppRegistryException(
                                 CommonAppError.INTERNAL_SERVER_ERROR,
@@ -292,11 +340,6 @@ class BulkUploadAsyncLifecycleTest {
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
-
-        String name =
-                row.getRespondentOrganisationName() != null
-                        ? row.getRespondentOrganisationName()
-                        : row.getRespondentForename1() + " " + row.getRespondentSurname();
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -310,7 +353,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "Unexpected validation failure",
                                                 row.getRespondentAddressLine1(),
-                                                name,
+                                                "John Byron Doe",
                                                 "DATA_ERROR"))));
     }
 
