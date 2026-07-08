@@ -25,6 +25,7 @@ public class MoveEntriesValidator
     }
 
     @Override
+    @SuppressWarnings("java:S2589")
     public <R> R validate(
             MoveEntriesPayload payload,
             BiFunction<MoveEntriesPayload, MoveEntriesValidationSuccess, R> createSupplier) {
@@ -54,7 +55,7 @@ public class MoveEntriesValidator
 
         validateLists(sourceList, targetList);
 
-        if (moveEntriesDto.getEntryIds().isEmpty()) {
+        if (moveEntriesDto.getEntryIds() == null || moveEntriesDto.getEntryIds().isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }

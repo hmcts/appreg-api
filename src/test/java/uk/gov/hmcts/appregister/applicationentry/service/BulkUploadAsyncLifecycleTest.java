@@ -106,7 +106,10 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("\"rowNumber\":2")
                 .contains("respondent.organisation.contactDetails.postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"must match");
+                .contains("\"message\":\"must match")
+                .contains("\"addressLine1\":\"1 Example Street\"")
+                .contains("\"name\":\"Example Organisation\"")
+                .contains("\"errorType\":\"DATA_ERROR\"");
     }
 
     @Test
