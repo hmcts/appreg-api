@@ -1509,7 +1509,7 @@ paths:
                     type: https://errors.hmcts.net/common/payload-too-large
                     title: Payload Too Large
                     status: 413
-                    detail: The uploaded file exceeds the maximum permitted size.
+                    detail: Uploaded file must not be larger than 5MB
               schema:
                 $ref: "#/components/schemas/problem"
           description: Request entity is too large to be processed.

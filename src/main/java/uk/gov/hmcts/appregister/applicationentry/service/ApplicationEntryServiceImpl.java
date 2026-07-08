@@ -89,10 +89,12 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
+import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
@@ -304,15 +306,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         BulkActionPreviewResolution resolution =
                 resolveBulkActionPreviewSelection(request.getSelection());
+        BulkActionPreviewEligibility eligibility =
+                resolveBulkActionPreviewEligibility(request.getAction(), resolution);
 
         return new BulkActionPreviewResponseDto()
                 .action(request.getAction())
                 .limit(bulkActionPreviewGlobalLimit)
                 .selectedCount(resolution.selectedCount())
-                .eligibleCount(resolution.selectedCount())
-                .ineligibleCount(0)
-                .entryIds(resolution.entryIds())
-                .entries(resolution.entries());
+                .eligibleCount(eligibility.eligibleCount())
+                .ineligibleCount(resolution.selectedCount() - eligibility.eligibleCount())
+                .entryIds(eligibility.entryIds())
+                .entries(eligibility.entries());
     }
 
     private BulkActionPreviewResolution resolveBulkActionPreviewSelection(
@@ -322,6 +326,27 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
 
         return resolveFilterBulkActionPreview(selection);
+    }
+
+    private BulkActionPreviewEligibility resolveBulkActionPreviewEligibility(
+            BulkActionType action, BulkActionPreviewResolution resolution) {
+        if (action != BulkActionType.RESULT_SELECTED) {
+            return new BulkActionPreviewEligibility(resolution.entryIds(), resolution.entries());
+        }
+
+        List<EntryGetSummaryDto> eligibleEntries =
+                resolution.entries().stream().filter(this::isResultSelectedEligible).toList();
+
+        return new BulkActionPreviewEligibility(
+                toEntryIdsFromSummaries(eligibleEntries), eligibleEntries);
+    }
+
+    private boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
+        return entry.getStatus() == ApplicationListStatus.OPEN;
+    }
+
+    private List<UUID> toEntryIdsFromSummaries(List<EntryGetSummaryDto> entries) {
+        return entries.stream().map(EntryGetSummaryDto::getId).toList();
     }
 
     private BulkActionPreviewResolution resolveFilterBulkActionPreview(
@@ -1953,4 +1978,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private record BulkActionPreviewResolution(
             int selectedCount, List<UUID> entryIds, List<EntryGetSummaryDto> entries) {}
+
+    private record BulkActionPreviewEligibility(
+            List<UUID> entryIds, List<EntryGetSummaryDto> entries) {
+        int eligibleCount() {
+            return entryIds.size();
+        }
+    }
 }

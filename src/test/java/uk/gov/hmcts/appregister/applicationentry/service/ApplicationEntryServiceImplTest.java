@@ -3057,6 +3057,95 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void given_resultSelectedClosedEntries_when_bulkActionPreview_then_returnOnlyOpenEntries() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID openEntryId = UUID.randomUUID();
+        UUID closedEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection openProjection =
+                bulkActionPreviewProjection(openEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection closedProjection =
+                bulkActionPreviewProjection(closedEntryId, 2L);
+        EntryGetSummaryDto openSummary =
+                stubEntrySummary(openProjection, openEntryId, ApplicationListStatus.OPEN);
+        EntryGetSummaryDto closedSummary =
+                stubEntrySummary(closedProjection, closedEntryId, ApplicationListStatus.CLOSED);
+
+        stubBulkActionPreviewSummaryPage(2, openProjection, closedProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewRequest(
+                                BulkActionType.RESULT_SELECTED, openEntryId, closedEntryId));
+
+        Assertions.assertEquals(BulkActionType.RESULT_SELECTED, response.getAction());
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(openEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(openSummary), response.getEntries());
+        Assertions.assertFalse(response.getEntries().contains(closedSummary));
+    }
+
+    @Test
+    void given_resultSelectedOpenResultedEntry_when_bulkActionPreview_then_remainEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        EntryGetSummaryDto summary =
+                stubEntrySummary(projection, entryId, ApplicationListStatus.OPEN);
+        ApplicationListEntryResolutionProjection resolutionProjection =
+                mock(ApplicationListEntryResolutionProjection.class);
+        ResolutionCode resolutionCode = mock(ResolutionCode.class);
+        ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
+
+        when(resolutionProjection.getEntryId()).thenReturn(1L);
+        when(resolutionProjection.getResolutionCode()).thenReturn(resolutionCode);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of(resolutionProjection));
+        when(applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(resolutionCode))
+                .thenReturn(resultCode);
+        stubBulkActionPreviewSummaryPage(1, projection);
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewRequest(BulkActionType.RESULT_SELECTED, entryId));
+
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(entryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(summary), response.getEntries());
+        Assertions.assertTrue(response.getEntries().getFirst().getIsResulted());
+    }
+
+    @Test
+    void given_updateNotesClosedEntries_when_bulkActionPreview_then_allEntriesRemainEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        EntryGetSummaryDto summary =
+                stubEntrySummary(projection, entryId, ApplicationListStatus.CLOSED);
+
+        stubBulkActionPreviewSummaryPage(1, projection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(entryId));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(entryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(summary), response.getEntries());
+    }
+
+    @Test
     void given_validPayload_when_updateEntry_then_save_and_return_response() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
@@ -3103,8 +3192,13 @@ class ApplicationEntryServiceImplTest {
     }
 
     private BulkActionPreviewRequestDto bulkActionPreviewRequest(UUID... entryIds) {
+        return bulkActionPreviewRequest(BulkActionType.UPDATE_NOTES, entryIds);
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewRequest(
+            BulkActionType action, UUID... entryIds) {
         return new BulkActionPreviewRequestDto()
-                .action(BulkActionType.UPDATE_NOTES)
+                .action(action)
                 .selection(
                         new BulkActionSelectionDto()
                                 .selectionType(BulkActionSelectionType.IDS)
@@ -3166,7 +3260,14 @@ class ApplicationEntryServiceImplTest {
 
     private EntryGetSummaryDto stubEntrySummary(
             ApplicationListEntryGetSummaryProjection projection, UUID entryId) {
-        EntryGetSummaryDto summary = new EntryGetSummaryDto().id(entryId);
+        return stubEntrySummary(projection, entryId, ApplicationListStatus.OPEN);
+    }
+
+    private EntryGetSummaryDto stubEntrySummary(
+            ApplicationListEntryGetSummaryProjection projection,
+            UUID entryId,
+            ApplicationListStatus status) {
+        EntryGetSummaryDto summary = new EntryGetSummaryDto().id(entryId).status(status);
         when(applicationListEntryMapStructMapper.toEntrySummary(projection)).thenReturn(summary);
         return summary;
     }
