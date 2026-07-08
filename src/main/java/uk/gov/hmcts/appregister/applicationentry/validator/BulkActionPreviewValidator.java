@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
 
 /**
- * Validates bulk action preview requests and enforces global selection limits.
+ * Validates bulk action preview semantic rules and enforces global selection limits.
  */
 @Component
 public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRequestDto, Void> {
@@ -26,23 +26,7 @@ public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRe
                     AppListEntryError.BULK_ACTION_REQUIRED, "Bulk action request is missing");
         }
 
-        if (request.getAction() == null) {
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_ACTION_REQUIRED, "Bulk action must be provided");
-        }
-
         BulkActionSelectionDto selection = request.getSelection();
-        if (selection == null) {
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_ACTION_SELECTION_REQUIRED,
-                    "Bulk action selection must be provided");
-        }
-
-        if (selection.getSelectionType() == null) {
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_ACTION_SELECTION_TYPE_REQUIRED,
-                    "Bulk action selectionType must be provided");
-        }
 
         if (selection.getSelectionType() == BulkActionSelectionType.IDS) {
             validateIdsSelection(selection);

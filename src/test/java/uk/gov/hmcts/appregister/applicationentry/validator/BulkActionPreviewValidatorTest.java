@@ -28,40 +28,6 @@ class BulkActionPreviewValidatorTest {
     }
 
     @Test
-    void givenMissingAction_whenValidate_thenThrowsBulkActionRequired() {
-        var request = new BulkActionPreviewRequestDto().selection(filterSelection());
-
-        AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(request));
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_ACTION_REQUIRED);
-    }
-
-    @Test
-    void givenMissingSelection_whenValidate_thenThrowsSelectionRequired() {
-        var request = new BulkActionPreviewRequestDto().action(BulkActionType.UPDATE_NOTES);
-
-        AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(request));
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_ACTION_SELECTION_REQUIRED);
-    }
-
-    @Test
-    void givenMissingSelectionType_whenValidate_thenThrowsSelectionTypeRequired() {
-        var request =
-                new BulkActionPreviewRequestDto()
-                        .action(BulkActionType.UPDATE_NOTES)
-                        .selection(new BulkActionSelectionDto());
-
-        AppRegistryException exception =
-                assertThrows(AppRegistryException.class, () -> validator.validate(request));
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_ACTION_SELECTION_TYPE_REQUIRED);
-    }
-
-    @Test
     void givenIdsSelectionWithoutEntryIds_whenValidate_thenThrowsEntryIdsRequired() {
         var request =
                 validRequest(
