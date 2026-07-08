@@ -521,8 +521,8 @@ class StandardApplicantServiceTest {
                 .thenReturn(List.of(sa));
         String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null);
         Assertions.assertNotNull(csv);
-        Assertions.assertArrayEquals(
-                StandardApplicantCsvRow.Header, csv.split("\n")[0].split("\\|"));
+        Assertions.assertEquals(
+                StandardApplicantCsvRow.Header, List.of(csv.split("\n")[0].split("\\|")));
         List<StandardApplicantCsvRow> rows = parseCsv(csv);
         for (int i = 1; i < rows.size(); i++) {
             dataComparison(rows.get(i), sa);
@@ -551,8 +551,8 @@ class StandardApplicantServiceTest {
         when(repository.findByCodeAndName(any(), eq(sa.getName()))).thenReturn(List.of(sa));
         String csv = standardApplicantService.generateCsv(null, sa.getName());
         Assertions.assertNotNull(csv);
-        Assertions.assertArrayEquals(
-                StandardApplicantCsvRow.Header, csv.split("\n")[0].split("\\|"));
+        Assertions.assertEquals(
+                StandardApplicantCsvRow.Header, List.of(csv.split("\n")[0].split("\\|")));
         List<StandardApplicantCsvRow> rows = parseCsv(csv);
         for (int i = 1; i < rows.size(); i++) {
             dataComparison(rows.get(i), sa);
