@@ -1,0 +1,5 @@
+type: string
+description: How the global bulk action selection should be resolved.
+enum:
+  - FILTER
+  - IDS

@@ -8,6 +8,7 @@ import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LIST
 import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LISTS_FEE_STATUS;
 import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING;
 import static uk.gov.hmcts.appregister.common.entity.TableNames.ASYNC_JOBS;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.ASYNC_JOBS_APP_LIST_ENTRY;
 import static uk.gov.hmcts.appregister.common.entity.TableNames.FEE;
 import static uk.gov.hmcts.appregister.common.entity.TableNames.RESOLUTION_CODES;
 import static uk.gov.hmcts.appregister.common.entity.TableNames.STANDARD_APPLICANTS;
@@ -44,6 +45,7 @@ public class DatabaseReset {
         deleteAll(APPLCATION_LISTS_ENTRY_FEE_ID);
         deleteByIdGreaterThanOrEqual(APPLICATION_LISTS_FEE_STATUS, "alefs_id");
         deleteByIdGreaterThanOrEqual(APPLCATION_LISTS_ENTRY_OFFICIAL, "aleo_id");
+        deleteByIdGreaterThanOrEqual(ASYNC_JOBS_APP_LIST_ENTRY, "aj_ale_id");
         deleteByIdGreaterThanOrEqual("application_register", "ar_id");
         deleteByIdGreaterThanOrEqual("app_list_entry_resolutions", "aler_id");
         deleteByIdGreaterThanOrEqual(FEE, "fee_id");

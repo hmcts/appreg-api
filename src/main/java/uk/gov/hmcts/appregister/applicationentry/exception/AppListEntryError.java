@@ -231,7 +231,32 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONTENT_TOO_LARGE,
                     "Uploaded file must not be larger than 5MB",
-                    "ALE-47"));
+                    "ALE-47")),
+    BULK_ACTION_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Bulk action must be provided", "ALE-48")),
+
+    BULK_ACTION_SELECTION_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Bulk action selection must be provided", "ALE-49")),
+
+    BULK_ACTION_SELECTION_TYPE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Bulk action selectionType must be provided",
+                    "ALE-50")),
+
+    BULK_ACTION_ENTRY_IDS_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "entryIds must be provided for IDS selection",
+                    "ALE-51")),
+
+    BULK_ACTION_SELECTION_EXCEEDS_LIMIT(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONTENT_TOO_LARGE,
+                    "Bulk action selection exceeds the configured limit",
+                    "ALE-52"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

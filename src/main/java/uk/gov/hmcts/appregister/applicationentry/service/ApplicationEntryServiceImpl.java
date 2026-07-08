@@ -17,9 +17,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
@@ -33,6 +36,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
@@ -52,6 +56,7 @@ import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
@@ -60,6 +65,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
@@ -68,6 +74,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRe
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
@@ -77,6 +84,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
@@ -84,6 +92,12 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
+import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
@@ -99,6 +113,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
 @Component
 @RequiredArgsConstructor
@@ -116,6 +131,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final String METRIC_SUCCEEDED = "succeeded";
     private static final String METRIC_FAILED = "failed";
     private static final int NOTES_MAX_LENGTH = 4000;
+    private static final UUID BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID = new UUID(0L, 0L);
+
+    @Value("${appreg.bulk-action-preview.global-limit:2000}")
+    private int bulkActionPreviewGlobalLimit;
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -123,9 +142,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final PageMapper pageMapper;
 
+    private final PageableMapper pageableMapper;
+
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
 
     private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+
+    private final BulkActionPreviewValidator bulkActionPreviewValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -149,6 +172,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final AppListEntryFeeRepository appListEntryFeeRepository;
     private final StandardApplicantRepository standardApplicantRepository;
     private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+    private final AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
 
     private final ApplicationListEntryMapper applicationListEntryMapStructMapper;
     private final ApplicantMapper applicantMapper;
@@ -169,6 +193,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
     private final MeterRegistry meterRegistry;
+
+    private final JobExistanceValidator jobExistanceValidator;
 
     @Override
     @Transactional(readOnly = true)
@@ -281,18 +307,190 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request) {
+        bulkActionPreviewValidator.validate(request);
+
+        BulkActionPreviewResolution resolution =
+                resolveBulkActionPreviewSelection(request.getSelection());
+        BulkActionPreviewEligibility eligibility =
+                resolveBulkActionPreviewEligibility(request.getAction(), resolution);
+
+        return new BulkActionPreviewResponseDto()
+                .action(request.getAction())
+                .limit(bulkActionPreviewGlobalLimit)
+                .selectedCount(resolution.selectedCount())
+                .eligibleCount(eligibility.eligibleCount())
+                .ineligibleCount(resolution.selectedCount() - eligibility.eligibleCount())
+                .entryIds(eligibility.entryIds())
+                .entries(eligibility.entries());
+    }
+
+    private BulkActionPreviewResolution resolveBulkActionPreviewSelection(
+            BulkActionSelectionDto selection) {
+        if (selection.getSelectionType() == BulkActionSelectionType.IDS) {
+            return resolveIdsBulkActionPreview(selection);
+        }
+
+        return resolveFilterBulkActionPreview(selection);
+    }
+
+    private BulkActionPreviewEligibility resolveBulkActionPreviewEligibility(
+            BulkActionType action, BulkActionPreviewResolution resolution) {
+        if (action != BulkActionType.RESULT_SELECTED) {
+            return new BulkActionPreviewEligibility(resolution.entryIds(), resolution.entries());
+        }
+
+        List<EntryGetSummaryDto> eligibleEntries =
+                resolution.entries().stream().filter(this::isResultSelectedEligible).toList();
+
+        return new BulkActionPreviewEligibility(
+                toEntryIdsFromSummaries(eligibleEntries), eligibleEntries);
+    }
+
+    private boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
+        return entry.getStatus() == ApplicationListStatus.OPEN;
+    }
+
+    private List<UUID> toEntryIdsFromSummaries(List<EntryGetSummaryDto> entries) {
+        return entries.stream().map(EntryGetSummaryDto::getId).toList();
+    }
+
+    private BulkActionPreviewResolution resolveFilterBulkActionPreview(
+            BulkActionSelectionDto selection) {
+        EntryGetFilterDto filterDto =
+                selection.getFilter() == null ? new EntryGetFilterDto() : selection.getFilter();
+        List<UUID> excludedEntryIds = safeEntryIds(selection.getExcludedEntryIds());
+        PagingWrapper pageable =
+                pageableMapper.from(
+                        selection.getSort(),
+                        bulkActionPreviewGlobalLimit,
+                        ApplicationEntrySortConfig.SEARCH,
+                        Sort.Direction.ASC);
+
+        Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                searchForBulkActionPreviewSummary(filterDto, List.of(), excludedEntryIds, pageable);
+
+        int selectedCount = selectedCountWithinLimit(resultPage.getTotalElements());
+        List<ApplicationListEntryGetSummaryProjection> entries = resultPage.getContent();
+
+        return new BulkActionPreviewResolution(
+                selectedCount, toEntryIds(entries), buildEntrySummaries(entries));
+    }
+
+    private BulkActionPreviewResolution resolveIdsBulkActionPreview(
+            BulkActionSelectionDto selection) {
+        List<UUID> selectedEntryIds = List.copyOf(selection.getEntryIds());
+        bulkActionPreviewValidator.validateLimit(
+                selectedEntryIds.size(), bulkActionPreviewGlobalLimit);
+
+        PagingWrapper pageable =
+                pageableMapper.from(
+                        List.of(),
+                        bulkActionPreviewGlobalLimit,
+                        ApplicationEntrySortConfig.SEARCH,
+                        Sort.Direction.ASC);
+
+        Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                searchForBulkActionPreviewSummary(
+                        new EntryGetFilterDto(), selectedEntryIds, List.of(), pageable);
+        List<ApplicationListEntryGetSummaryProjection> entries =
+                orderEntriesBySelectedIds(resultPage.getContent(), selectedEntryIds);
+
+        return new BulkActionPreviewResolution(
+                Math.toIntExact(resultPage.getTotalElements()),
+                toEntryIds(entries),
+                buildEntrySummaries(entries));
+    }
+
+    private Page<ApplicationListEntryGetSummaryProjection> searchForBulkActionPreviewSummary(
+            EntryGetFilterDto filterDto,
+            List<UUID> entryIds,
+            List<UUID> excludedEntryIds,
+            PagingWrapper pageable) {
+        Status status = applicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
+        boolean hasEntryIds = !entryIds.isEmpty();
+        boolean hasExcludedEntryIds = !excludedEntryIds.isEmpty();
+
+        return applicationListEntryRepository.searchForBulkActionPreviewSummary(
+                null,
+                filterDto.getDate() != null,
+                filterDto.getDate(),
+                filterDto.getCourtCode(),
+                filterDto.getOtherLocationDescription(),
+                filterDto.getCjaCode(),
+                filterDto.getApplicantOrganisation(),
+                filterDto.getApplicantSurname(),
+                filterDto.getApplicantName(),
+                filterDto.getStandardApplicantCode(),
+                status,
+                filterDto.getRespondentOrganisation(),
+                filterDto.getRespondentSurname(),
+                filterDto.getRespondentName(),
+                filterDto.getRespondentPostcode(),
+                filterDto.getAccountReference(),
+                filterDto.getApplicationTitle(),
+                null,
+                null,
+                null,
+                hasEntryIds,
+                queryEntryIds(entryIds),
+                hasExcludedEntryIds,
+                queryEntryIds(excludedEntryIds),
+                pageable.getPageable());
+    }
+
+    private int selectedCountWithinLimit(long selectedCount) {
+        bulkActionPreviewValidator.validateLimit(selectedCount, bulkActionPreviewGlobalLimit);
+        return Math.toIntExact(selectedCount);
+    }
+
+    private List<UUID> safeEntryIds(List<UUID> entryIds) {
+        return entryIds == null ? List.of() : List.copyOf(entryIds);
+    }
+
+    private List<UUID> queryEntryIds(List<UUID> entryIds) {
+        return entryIds.isEmpty() ? List.of(BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID) : entryIds;
+    }
+
+    private List<ApplicationListEntryGetSummaryProjection> orderEntriesBySelectedIds(
+            List<ApplicationListEntryGetSummaryProjection> entries, List<UUID> selectedEntryIds) {
+        Map<UUID, ApplicationListEntryGetSummaryProjection> entriesByUuid =
+                entries.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        this::getEntryUuid,
+                                        entry -> entry,
+                                        (first, second) -> first));
+
+        return selectedEntryIds.stream()
+                .map(entriesByUuid::get)
+                .filter(entry -> entry != null)
+                .toList();
+    }
+
+    private List<UUID> toEntryIds(List<ApplicationListEntryGetSummaryProjection> entries) {
+        return entries.stream().map(this::getEntryUuid).toList();
+    }
+
+    private UUID getEntryUuid(ApplicationListEntryGetSummaryProjection entry) {
+        return UUID.fromString(entry.getUuid());
+    }
+
+    @Override
     @Transactional
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
+        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO, null);
     }
 
     private MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
                     validator,
-            YesOrNo bulkUpload) {
+            YesOrNo bulkUpload,
+            UUID jobId) {
         log.debug("Started create application entry for list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
@@ -335,6 +533,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                     refreshEntity(
                                                             applicationListEntryRepository.save(
                                                                     listEntryEntity));
+
                                             log.debug(
                                                     "Created application entry with id: {}",
                                                     listEntryEntity.getId());
@@ -362,6 +561,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                             entryGetDetailDto.setHasOffsiteFee(
                                                     entryCreateDto.getData().getHasOffsiteFee());
 
+                                            if (bulkUpload.isYes() && jobId != null) {
+                                                AsyncJobsAppListEntry asyncJobsAppListEntry =
+                                                        AsyncJobsAppListEntry.builder()
+                                                                .asyncJobId(jobId)
+                                                                .appListEntryId(
+                                                                        listEntryEntity.getUuid())
+                                                                .build();
+                                                asyncJobAppListEntryRepository.save(
+                                                        asyncJobsAppListEntry);
+                                            }
+
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             MatchResponse.of(
@@ -383,8 +593,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
+            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId) {
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES, jobId);
     }
 
     @Override
@@ -661,6 +871,24 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
             throw exception;
         }
+    }
+
+    @Override
+    public List<UUID> getApplicationListEntriesByJobId(UUID jobId) {
+        List<AsyncJobsAppListEntry> entryIds =
+                asyncJobAppListEntryRepository.findByAsyncJobId(jobId);
+
+        return jobExistanceValidator.validate(
+                jobId,
+                (uuid, success) -> {
+                    if (entryIds.isEmpty()) {
+                        throw new AppRegistryException(
+                                JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER,
+                                "No entries found for jobId: " + jobId);
+                    }
+
+                    return entryIds.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
+                });
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
@@ -1734,12 +1962,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private Map<Long, List<ResultCodeGetSummaryDto>> getCodesByEntryId(
-            Page<ApplicationListEntryGetSummaryProjection> resultPage) {
+            List<ApplicationListEntryGetSummaryProjection> entries) {
 
         List<Long> entryIds =
-                resultPage.getContent().stream()
-                        .map(ApplicationListEntryGetSummaryProjection::getId)
-                        .toList();
+                entries.stream().map(ApplicationListEntryGetSummaryProjection::getId).toList();
 
         if (entryIds.isEmpty()) {
             return Map.of();
@@ -1756,18 +1982,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         this::toResultCodeGetSummaryDto, Collectors.toList())));
     }
 
-    private EntryPage buildEntryPage(
-            Page<ApplicationListEntryGetSummaryProjection> resultPage, PagingWrapper pageable) {
+    private List<EntryGetSummaryDto> buildEntrySummaries(
+            List<ApplicationListEntryGetSummaryProjection> entries) {
 
-        Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId = getCodesByEntryId(resultPage);
+        Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId = getCodesByEntryId(entries);
 
-        EntryPage entryPage = new EntryPage();
-        pageMapper.toPage(resultPage, entryPage, pageable.getSortStrings());
-        entryPage.setContent(new ArrayList<>());
-
-        resultPage
-                .getContent()
-                .forEach(
+        return entries.stream()
+                .map(
                         entry -> {
                             EntryGetSummaryDto entrySummary =
                                     applicationListEntryMapStructMapper.toEntrySummary(entry);
@@ -1778,9 +1999,28 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             entrySummary.setResulted(resultCodes);
                             entrySummary.setIsResulted(!resultCodes.isEmpty());
 
-                            entryPage.addContentItem(entrySummary);
-                        });
+                            return entrySummary;
+                        })
+                .toList();
+    }
+
+    private EntryPage buildEntryPage(
+            Page<ApplicationListEntryGetSummaryProjection> resultPage, PagingWrapper pageable) {
+
+        EntryPage entryPage = new EntryPage();
+        pageMapper.toPage(resultPage, entryPage, pageable.getSortStrings());
+        entryPage.setContent(new ArrayList<>(buildEntrySummaries(resultPage.getContent())));
 
         return entryPage;
+    }
+
+    private record BulkActionPreviewResolution(
+            int selectedCount, List<UUID> entryIds, List<EntryGetSummaryDto> entries) {}
+
+    private record BulkActionPreviewEligibility(
+            List<UUID> entryIds, List<EntryGetSummaryDto> entries) {
+        int eligibleCount() {
+            return entryIds.size();
+        }
     }
 }

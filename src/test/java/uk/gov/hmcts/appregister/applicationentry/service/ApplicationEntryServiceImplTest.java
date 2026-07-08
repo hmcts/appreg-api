@@ -51,6 +51,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
@@ -60,6 +61,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
@@ -88,6 +90,8 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -99,6 +103,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -112,6 +117,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMap
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
@@ -122,6 +128,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
@@ -137,7 +144,13 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
+import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
+import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
@@ -158,6 +171,8 @@ import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
+import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -194,7 +209,11 @@ class ApplicationEntryServiceImplTest {
 
     @Mock private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
+    @Mock private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
+
     @Mock private Clock clock;
+
+    @Mock private JobExistanceValidator jobExistanceValidator;
 
     private CreateApplicationEntryValidationSuccess success;
 
@@ -258,6 +277,7 @@ class ApplicationEntryServiceImplTest {
     private BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
     private BulkUpdateFeesValidator bulkUpdateFeesValidator;
+    private BulkActionPreviewValidator bulkActionPreviewValidator;
     private SimpleMeterRegistry meterRegistry;
 
     @Spy
@@ -265,6 +285,8 @@ class ApplicationEntryServiceImplTest {
             new ApplicationListEntryEntityMapperImpl();
 
     @Spy private final PageMapper pageMapper = new PageMapper();
+
+    private PageableMapper pageableMapper;
 
     @Spy
     private DummyUpdateApplicationEntryValidator updateApplicationEntryValidator =
@@ -315,6 +337,10 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         businessDateProvider,
                         Validation.buildDefaultValidatorFactory().getValidator());
+        bulkActionPreviewValidator = new BulkActionPreviewValidator();
+        pageableMapper = new PageableMapper();
+        pageableMapper.setDefaultPageSize(10);
+        pageableMapper.setMaxPageSize(100);
         meterRegistry = new SimpleMeterRegistry();
 
         Fee fee = new FeeTestData().someComplete();
@@ -326,8 +352,10 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         feeRepository,
                         pageMapper,
+                        pageableMapper,
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
+                        bulkActionPreviewValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
@@ -341,6 +369,7 @@ class ApplicationEntryServiceImplTest {
                         appListEntryFeeRepository,
                         standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
+                        asyncJobAppListEntryRepository,
                         applicationListEntryMapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -351,7 +380,8 @@ class ApplicationEntryServiceImplTest {
                         clock,
                         businessDateProvider,
                         deleteEntryValidator,
-                        meterRegistry);
+                        meterRegistry,
+                        jobExistanceValidator);
     }
 
     @Test
@@ -363,8 +393,10 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         feeRepository,
                         pageMapper,
+                        pageableMapper,
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
+                        bulkActionPreviewValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
@@ -378,6 +410,7 @@ class ApplicationEntryServiceImplTest {
                         appListEntryFeeRepository,
                         standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
+                        asyncJobAppListEntryRepository,
                         mapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -388,7 +421,8 @@ class ApplicationEntryServiceImplTest {
                         clock,
                         businessDateProvider,
                         deleteEntryValidator,
-                        meterRegistry);
+                        meterRegistry,
+                        jobExistanceValidator);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -890,7 +924,7 @@ class ApplicationEntryServiceImplTest {
                         .data(entryCreateDto)
                         .build();
 
-        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload);
+        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload, null);
 
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
 
@@ -2532,6 +2566,227 @@ class ApplicationEntryServiceImplTest {
         verify(applicationListEntryRepository).save(applicationListEntry);
     }
 
+    @Test
+    void givenBulkImportHasSucceeded_whenGetApplicationListEntriesByJobId_returnsEntries() {
+        UUID jobId = UUID.randomUUID();
+
+        when(jobExistanceValidator.validate(eq(jobId), any()))
+                .thenAnswer(
+                        invocation -> {
+                            @SuppressWarnings("unchecked")
+                            val validateFunction =
+                                    (BiFunction<UUID, JobSuccess, JobStatusResponse>)
+                                            invocation.getArgument(1);
+
+                            return validateFunction.apply(jobId, new JobSuccess());
+                        });
+
+        val asyncJobAppListEntry = new AsyncJobsAppListEntry();
+        asyncJobAppListEntry.setAppListEntryId(UUID.randomUUID());
+        asyncJobAppListEntry.setAsyncJobId(jobId);
+
+        List<AsyncJobsAppListEntry> entries = createAsyncJobAppListEntries(jobId, 3);
+
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(entries);
+
+        List<UUID> actualEntries = service.getApplicationListEntriesByJobId(jobId);
+
+        Assertions.assertEquals(3, actualEntries.size());
+        verify(asyncJobAppListEntryRepository, times(1)).findByAsyncJobId(jobId);
+
+        List<UUID> expectedEntries =
+                entries.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
+
+        for (UUID entryId : actualEntries) {
+            Assertions.assertTrue(
+                    expectedEntries.contains(entryId),
+                    "Entry ID " + entryId + " should be in the expected entries list");
+        }
+    }
+
+    @Test
+    void givenBulkImportHasNotSucceeded_whenGetApplicationListEntriesByJobId_returnsEmptyList() {
+        UUID jobId = UUID.randomUUID();
+
+        when(jobExistanceValidator.validate(eq(jobId), any()))
+                .thenAnswer(
+                        invocation -> {
+                            @SuppressWarnings("unchecked")
+                            val validateFunction =
+                                    (BiFunction<UUID, JobSuccess, JobStatusResponse>)
+                                            invocation.getArgument(1);
+
+                            val success = new JobSuccess();
+                            return validateFunction.apply(jobId, success);
+                        });
+
+        when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(List.of());
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> service.getApplicationListEntriesByJobId(jobId));
+
+        Assertions.assertEquals(JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER, exception.getCode());
+        Assertions.assertEquals(
+                "No entries found for jobId: %s".formatted(jobId), exception.getMessage());
+    }
+
+    @Test
+    void createBulkEntry_withJobId_shouldSaveAsyncJobAppListEntry() {
+        UUID listId = UUID.randomUUID();
+        val applicationList = openApplicationList(listId);
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
+        entryCreateDto.setWordingFields(null);
+
+        ApplicationCode code = new ApplicationCode();
+        code.setWording("Test Wording");
+
+        // Now make the call to createBulkEntry
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(applicationList.getUuid())
+                        .data(entryCreateDto)
+                        .build();
+
+        when(applicantMapper.toApplicant(payload.getData().getApplicant()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(applicantMapper.toRespondent(payload.getData().getRespondent()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(nameAddressRepository.save(any()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(appListEntryFeeStatusRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
+        when(appListEntryOfficialRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+
+        val entryId = UUID.randomUUID();
+        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
+        success =
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
+                        .fee(null)
+                        .applicationCode(code)
+                        .sa(new StandardApplicant())
+                        .applicationList(applicationList)
+                        .build();
+
+        entry.setVersion(1L);
+        when(applicationListEntryRepository.save(any())).thenReturn(entry);
+
+        when(applicationListEntryEntityMapper.toApplicationListEntry(
+                        eq(entryCreateDto),
+                        notNull(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(YesOrNo.YES)))
+                .thenReturn(entry);
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        entryGetDetailDto.setHasOffsiteFee(false);
+
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        any(), anyList(), any(), any(), any()))
+                .thenReturn(entryGetDetailDto);
+
+        UUID jobId = UUID.randomUUID();
+        service.createBulkEntry(payload, jobId);
+
+        // Ensure that we called save on asyncJobAppListEntryRepository with the correct values
+        ArgumentCaptor<AsyncJobsAppListEntry> captor =
+                ArgumentCaptor.forClass(AsyncJobsAppListEntry.class);
+        verify(asyncJobAppListEntryRepository).save(captor.capture());
+
+        AsyncJobsAppListEntry savedEntity = captor.getValue();
+        Assertions.assertEquals(jobId, savedEntity.getAsyncJobId());
+        Assertions.assertEquals(entryId, savedEntity.getAppListEntryId());
+    }
+
+    @Test
+    void createBulkEntry_withoutJobId_shouldNotSaveAsyncJobAppListEntry() {
+        UUID listId = UUID.randomUUID();
+        val applicationList = openApplicationList(listId);
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
+        entryCreateDto.setWordingFields(null);
+
+        ApplicationCode code = new ApplicationCode();
+        code.setWording("Test Wording");
+
+        // Now make the call to createBulkEntry
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(applicationList.getUuid())
+                        .data(entryCreateDto)
+                        .build();
+
+        when(applicantMapper.toApplicant(payload.getData().getApplicant()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(applicantMapper.toRespondent(payload.getData().getRespondent()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(nameAddressRepository.save(any()))
+                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
+        when(appListEntryFeeStatusRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
+        when(appListEntryOfficialRepository.save(any()))
+                .thenReturn(
+                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+
+        val entryId = UUID.randomUUID();
+        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
+        success =
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
+                        .fee(null)
+                        .applicationCode(code)
+                        .sa(new StandardApplicant())
+                        .applicationList(applicationList)
+                        .build();
+
+        entry.setVersion(1L);
+        when(applicationListEntryRepository.save(any())).thenReturn(entry);
+
+        when(applicationListEntryEntityMapper.toApplicationListEntry(
+                        eq(entryCreateDto),
+                        notNull(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(YesOrNo.YES)))
+                .thenReturn(entry);
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        entryGetDetailDto.setHasOffsiteFee(false);
+
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        any(), anyList(), any(), any(), any()))
+                .thenReturn(entryGetDetailDto);
+
+        service.createBulkEntry(payload, null);
+        verify(asyncJobAppListEntryRepository, times(0)).save(any());
+    }
+
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
@@ -2843,6 +3098,290 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void given_idsSelection_when_bulkActionPreview_then_return_submitted_ids_and_counts() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID firstEntryId = UUID.randomUUID();
+        UUID secondEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection firstProjection =
+                bulkActionPreviewProjection(firstEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection secondProjection =
+                bulkActionPreviewProjection(secondEntryId, 2L);
+        final EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        final EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+
+        stubBulkActionPreviewSummaryPage(2, firstProjection, secondProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(firstEntryId, secondEntryId));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(2, response.getLimit());
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(2, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void given_idsSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.bulkActionPreview(
+                                        bulkActionPreviewRequest(
+                                                UUID.randomUUID(), UUID.randomUUID())));
+
+        Assertions.assertEquals(
+                AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
+    }
+
+    @Test
+    void given_filterSelection_when_bulkActionPreview_then_return_matching_ids_and_entry_context() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        final EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setApplicantSurname("Smith");
+        filter.setStatus(ApplicationListStatus.OPEN);
+
+        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
+                .thenReturn(Status.OPEN);
+        stubBulkActionPreviewSummaryPage(1, projection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewFilterRequest(filter, List.of("date,desc"), List.of()));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(2, response.getLimit());
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(entryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(summary), response.getEntries());
+    }
+
+    @Test
+    void
+            given_filterSelectionWithExclusions_when_bulkActionPreview_then_pass_exclusions_to_search() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID excludedEntryId = UUID.randomUUID();
+        List<UUID> excludedEntryIds = List.of(excludedEntryId);
+
+        stubBulkActionPreviewSummaryPage(0);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewFilterRequest(
+                                new EntryGetFilterDto(), List.of(), excludedEntryIds));
+
+        Assertions.assertEquals(0, response.getSelectedCount());
+        Assertions.assertEquals(List.of(), response.getEntryIds());
+        Assertions.assertEquals(List.of(), response.getEntries());
+        verify(applicationListEntryRepository)
+                .searchForBulkActionPreviewSummary(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(false),
+                        anyList(),
+                        eq(true),
+                        eq(excludedEntryIds),
+                        any(Pageable.class));
+    }
+
+    @Test
+    void given_filterSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(UUID.randomUUID(), 1L);
+
+        stubBulkActionPreviewSummaryPage(2, projection);
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.bulkActionPreview(
+                                        bulkActionPreviewFilterRequest(
+                                                new EntryGetFilterDto(), List.of(), List.of())));
+
+        Assertions.assertEquals(
+                AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
+        verify(applicationListEntryMapStructMapper, never()).toEntrySummary(any());
+    }
+
+    @Test
+    void given_idsSelection_when_repositoryReturnsDifferentOrder_then_preserve_selected_order() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID firstEntryId = UUID.randomUUID();
+        UUID secondEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection firstProjection =
+                bulkActionPreviewProjection(firstEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection secondProjection =
+                bulkActionPreviewProjection(secondEntryId, 2L);
+        final EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        final EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+
+        stubBulkActionPreviewSummaryPage(2, secondProjection, firstProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(firstEntryId, secondEntryId));
+
+        Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void given_previewEntriesHaveResultCodes_when_bulkActionPreview_then_set_resulted_context() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        final EntryGetSummaryDto summary = stubEntrySummary(projection, entryId);
+        final ApplicationListEntryResolutionProjection resolutionProjection =
+                mock(ApplicationListEntryResolutionProjection.class);
+        final ResolutionCode resolutionCode = mock(ResolutionCode.class);
+        final ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
+
+        when(resolutionProjection.getEntryId()).thenReturn(1L);
+        when(resolutionProjection.getResolutionCode()).thenReturn(resolutionCode);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of(resolutionProjection));
+        when(applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(resolutionCode))
+                .thenReturn(resultCode);
+        stubBulkActionPreviewSummaryPage(1, projection);
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(entryId));
+
+        Assertions.assertEquals(
+                List.of(resultCode), response.getEntries().getFirst().getResulted());
+        Assertions.assertTrue(response.getEntries().getFirst().getIsResulted());
+        Assertions.assertSame(summary, response.getEntries().getFirst());
+    }
+
+    @Test
+    void given_resultSelectedClosedEntries_when_bulkActionPreview_then_returnOnlyOpenEntries() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
+        UUID openEntryId = UUID.randomUUID();
+        UUID closedEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection openProjection =
+                bulkActionPreviewProjection(openEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection closedProjection =
+                bulkActionPreviewProjection(closedEntryId, 2L);
+        final EntryGetSummaryDto openSummary =
+                stubEntrySummary(openProjection, openEntryId, ApplicationListStatus.OPEN);
+        final EntryGetSummaryDto closedSummary =
+                stubEntrySummary(closedProjection, closedEntryId, ApplicationListStatus.CLOSED);
+
+        stubBulkActionPreviewSummaryPage(2, openProjection, closedProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewRequest(
+                                BulkActionType.RESULT_SELECTED, openEntryId, closedEntryId));
+
+        Assertions.assertEquals(BulkActionType.RESULT_SELECTED, response.getAction());
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(openEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(openSummary), response.getEntries());
+        Assertions.assertFalse(response.getEntries().contains(closedSummary));
+    }
+
+    @Test
+    void given_resultSelectedOpenResultedEntry_when_bulkActionPreview_then_remainEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        final EntryGetSummaryDto summary =
+                stubEntrySummary(projection, entryId, ApplicationListStatus.OPEN);
+        final ApplicationListEntryResolutionProjection resolutionProjection =
+                mock(ApplicationListEntryResolutionProjection.class);
+        final ResolutionCode resolutionCode = mock(ResolutionCode.class);
+        final ResultCodeGetSummaryDto resultCode = new ResultCodeGetSummaryDto();
+
+        when(resolutionProjection.getEntryId()).thenReturn(1L);
+        when(resolutionProjection.getResolutionCode()).thenReturn(resolutionCode);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of(resolutionProjection));
+        when(applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(resolutionCode))
+                .thenReturn(resultCode);
+        stubBulkActionPreviewSummaryPage(1, projection);
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        bulkActionPreviewRequest(BulkActionType.RESULT_SELECTED, entryId));
+
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(entryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(summary), response.getEntries());
+        Assertions.assertTrue(response.getEntries().getFirst().getIsResulted());
+    }
+
+    @Test
+    void given_updateNotesClosedEntries_when_bulkActionPreview_then_allEntriesRemainEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        UUID entryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection projection =
+                bulkActionPreviewProjection(entryId, 1L);
+        final EntryGetSummaryDto summary =
+                stubEntrySummary(projection, entryId, ApplicationListStatus.CLOSED);
+
+        stubBulkActionPreviewSummaryPage(1, projection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(bulkActionPreviewRequest(entryId));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_NOTES, response.getAction());
+        Assertions.assertEquals(1, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(0, response.getIneligibleCount());
+        Assertions.assertEquals(List.of(entryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(summary), response.getEntries());
+    }
+
+    @Test
     void given_validPayload_when_updateEntry_then_save_and_return_response() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
@@ -2886,5 +3425,98 @@ class ApplicationEntryServiceImplTest {
 
         Assertions.assertNotNull(response);
         verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+    }
+
+    private List<AsyncJobsAppListEntry> createAsyncJobAppListEntries(UUID jobId, int count) {
+        return IntStream.range(0, count)
+                .mapToObj(
+                        i -> {
+                            AsyncJobsAppListEntry entry = new AsyncJobsAppListEntry();
+                            entry.setAsyncJobId(jobId);
+                            entry.setAppListEntryId(UUID.randomUUID());
+                            return entry;
+                        })
+                .toList();
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewRequest(UUID... entryIds) {
+        return bulkActionPreviewRequest(BulkActionType.UPDATE_NOTES, entryIds);
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewRequest(
+            BulkActionType action, UUID... entryIds) {
+        return new BulkActionPreviewRequestDto()
+                .action(action)
+                .selection(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(List.of(entryIds)));
+    }
+
+    private BulkActionPreviewRequestDto bulkActionPreviewFilterRequest(
+            EntryGetFilterDto filter, List<String> sort, List<UUID> excludedEntryIds) {
+        return new BulkActionPreviewRequestDto()
+                .action(BulkActionType.UPDATE_NOTES)
+                .selection(
+                        new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.FILTER)
+                                .filter(filter)
+                                .sort(sort)
+                                .excludedEntryIds(excludedEntryIds));
+    }
+
+    private void stubBulkActionPreviewSummaryPage(
+            long totalElements, ApplicationListEntryGetSummaryProjection... projections) {
+        when(applicationListEntryRepository.searchForBulkActionPreviewSummary(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        anyBoolean(),
+                        anyList(),
+                        anyBoolean(),
+                        anyList(),
+                        any(Pageable.class)))
+                .thenReturn(
+                        new PageImpl<>(List.of(projections), Pageable.unpaged(), totalElements));
+    }
+
+    private ApplicationListEntryGetSummaryProjection bulkActionPreviewProjection(
+            UUID entryId, Long id) {
+        ApplicationListEntryGetSummaryProjection projection =
+                mock(ApplicationListEntryGetSummaryProjection.class);
+        when(projection.getUuid()).thenReturn(entryId.toString());
+        when(projection.getId()).thenReturn(id);
+        return projection;
+    }
+
+    private EntryGetSummaryDto stubEntrySummary(
+            ApplicationListEntryGetSummaryProjection projection, UUID entryId) {
+        return stubEntrySummary(projection, entryId, ApplicationListStatus.OPEN);
+    }
+
+    private EntryGetSummaryDto stubEntrySummary(
+            ApplicationListEntryGetSummaryProjection projection,
+            UUID entryId,
+            ApplicationListStatus status) {
+        EntryGetSummaryDto summary = new EntryGetSummaryDto().id(entryId).status(status);
+        when(applicationListEntryMapStructMapper.toEntrySummary(projection)).thenReturn(summary);
+        return summary;
     }
 }

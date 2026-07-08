@@ -66,12 +66,14 @@ paths:
   # APPLICATION LIST ENTRIES
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
   /application-list-entries/ids:                                    { $ref: './paths/application-list-entries/entry-ids.yaml' }
+  /application-list-entries/bulk-action-preview:                    { $ref: './paths/application-list-entries/bulk-action-preview.yaml' }
   /application-lists/{listId}/entries:                              { $ref: './paths/application-list-entries/application-list-entries.yaml' }
   /application-lists/{listId}/entries/ids:                          { $ref: './paths/application-list-entries/application-list-entry-ids.yaml' }
   /application-lists/{listId}/entries/officials:                    { $ref: './paths/application-list-entries/entries-officials.yaml' }
   /application-lists/{listId}/entries/fees:                         { $ref: './paths/application-list-entries/entries-fees.yaml' }
   /application-lists/{listId}/entries/{entryId}:                    { $ref: './paths/application-list-entries/application-list-entries-by-id.yaml' }
   /application-lists/{listId}/entries/bulk-import:                  { $ref: './paths/application-list-entries/entries-bulk-import.yaml' }
+  /application-lists/entries/bulk-import/{jobId}:                   { $ref: './paths/application-list-entries/entries-bulk-import-get-app-list-entries-by-job-id.yaml' }
   /application-lists/{listId}/entries/move:                         { $ref: './paths/application-list-entries/entries-move.yaml' }
   /application-lists/{listId}/entries/closed/{entryId}:             { $ref: './paths/application-list-entries/application-list-closed-entries.yaml' }
 
@@ -80,6 +82,7 @@ paths:
   /application-lists/entries/results:                               { $ref: './paths/application-list-entry-results/entries-bulk-result.yaml' }
   /application-lists/{listId}/entries/{entryId}/results:            { $ref: './paths/application-list-entry-results/application-list-entry-results.yaml' }
   /application-lists/{listId}/entries/{entryId}/results/{resultId}: { $ref: './paths/application-list-entry-results/application-list-entry-results-by-id.yaml' }
+
   # COURT LOCATIONS
   /court-locations:                                                 { $ref: './paths/court-locations/court-locations.yaml' }
   /court-locations/{code}:                                          { $ref: './paths/court-locations/court-locations-by-code.yaml' }

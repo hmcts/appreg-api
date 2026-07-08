@@ -337,6 +337,177 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
 
     @Query(
             """
+             SELECT
+                    al.date  AS date,
+                    ale.uuid AS uuid,
+                    ale.id AS id,
+                    al.courtCode  AS courtCode,
+                    ac.legislation as legislation,
+                    ac.feeDue as feeRequired,
+                    aler.id as result,
+                    cja.code AS cjaCode,
+                    al.otherLocation AS otherLocationDescription,
+                    ana as anameAddress,
+                    sa.applicantCode AS standardApplicantCode,
+                    rna as rnameAddress,
+                    ac.title as title,
+                    al.status AS status,
+                    al.date as dateOfAl,
+                    ana.name as applicationorganisation,
+                    ana.lastName as applicantSurname,
+                    CASE WHEN ana.name IS NOT NULL THEN
+                         ana.name
+                    WHEN ana.lastName IS NOT NULL OR ana.firstName IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)
+                    WHEN sa.name IS NOT NULL THEN
+                         sa.name
+                    WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname)
+                    END as applicantName,
+                    CASE WHEN rna.name IS NOT NULL THEN
+                         rna.name
+                    WHEN rna.lastName IS NOT NULL OR rna.firstName IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)
+                    END as respondentName,
+                    rna.name as respondentOrganisation,
+                    rna.lastName as respondentSurname,
+                    rna.postcode as respondentPostcode,
+                    ale.accountNumber as  accountReference,
+                    sa as standardApplicant,
+                    al.uuid as listId,
+                    ac.title AS applicationTitle,
+                    ale.sequenceNumber as sequenceNumber,
+                    rc.resultCode as resulted,
+                    CASE WHEN aler.id IS NULL THEN false ELSE true END as isResulted
+                from ApplicationListEntry ale
+                LEFT JOIN ale.anamedaddress ana
+                LEFT JOIN ale.standardApplicant sa
+                LEFT JOIN ale.rnameaddress rna
+                LEFT JOIN ale.applicationCode ac
+                LEFT JOIN ale.applicationList al
+                LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
+                LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+                    AND aler.id = (
+                        SELECT MAX(sub.id)
+                        FROM AppListEntryResolution sub
+                        WHERE sub.applicationList = ale
+                    )
+                LEFT JOIN aler.resolutionCode rc
+            WHERE  (:hasHearingDate = false OR :hasHearingDate IS NULL OR al.date = :hearingDate)
+                    AND (:applicationListId IS NULL OR al.uuid = :applicationListId)
+                    AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
+                            LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
+                    AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
+                    AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
+                    AND (
+                            :applicantName IS NULL
+                            OR (
+                                    ana.code = 'NA'
+                                    AND LOWER(COALESCE(
+                                            ana.name,
+                                            FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)))
+                                            LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR LOWER(COALESCE(
+                                            sa.name,
+                                            FUNCTION(
+                                                    'concat_ws',
+                                                    ' ',
+                                                    sa.applicantForename1,
+                                                    sa.applicantSurname)))
+                                    LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
+                                            ESCAPE '\\'
+                    )
+                    AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
+                            LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
+                            AND ana.code='NA')
+                    AND (
+                            :applicantSurname IS NULL
+                            OR (
+                                    ana.id IS NOT NULL
+                                    AND ana.code='NA'
+                                    AND LOWER(ana.lastName)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR (
+                                    ana.id IS NULL
+                                    AND sa.name IS NULL
+                                    AND LOWER(sa.applicantSurname)
+                                            LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                    )
+                    AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
+                            LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
+                    AND (:status IS NULL OR :status=ale.applicationList.status)
+                    AND (:respondentName IS NULL OR
+                                LOWER(COALESCE(
+                                        rna.name,
+                                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)))
+                                        LIKE CONCAT('%', LOWER(cast(:respondentName AS string )), '%')
+                                            ESCAPE '\\' AND rna.code='RE')
+                    AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
+                            LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
+                    AND (:respondentSurname IS NULL OR LOWER(rna.lastName) LIKE CONCAT('%',
+                            LOWER(cast(:respondentSurname AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
+                    AND (:accountReference IS NULL OR  LOWER(ale.accountNumber)
+                            LIKE CONCAT('%', LOWER(cast(:accountReference AS string)), '%')
+                                         ESCAPE '\\')
+                    AND (:respondentPostcode IS NULL OR LOWER(rna.postcode) LIKE
+                              CONCAT('%', LOWER(cast(:respondentPostcode AS string)), '%')
+                                          ESCAPE '\\' AND rna.code='RE')
+                    AND (:applicationTitle IS NULL OR LOWER(ac.title) LIKE
+                                CONCAT('%', LOWER(cast(:applicationTitle AS string)), '%')  ESCAPE '\\')
+                    AND (:feeRequired IS NULL OR ac.feeDue = CASE WHEN :feeRequired = true THEN 'Y' ELSE 'N' END)
+                    AND (:sequenceNumber IS NULL OR ale.sequenceNumber = :sequenceNumber)
+                    AND (
+                            :resulted IS NULL
+                            OR EXISTS (
+                                    SELECT 1
+                                    FROM AppListEntryResolution allResolutions
+                                    JOIN allResolutions.resolutionCode anyResolutionCode
+                                    WHERE allResolutions.applicationList = ale
+                                    AND LOWER(anyResolutionCode.resultCode)
+                                            LIKE CONCAT('%', LOWER(cast(:resulted AS string)), '%') ESCAPE '\\'
+                            )
+                    )
+                    AND (:hasEntryIds = false OR ale.uuid IN :entryIds)
+                    AND (:hasExcludedEntryIds = false OR ale.uuid NOT IN :excludedEntryIds)
+                    AND (al.deleted IS NULL OR al.deleted <> 'Y')
+                    AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+            """)
+    @SuppressWarnings("java:S107")
+    Page<ApplicationListEntryGetSummaryProjection> searchForBulkActionPreviewSummary(
+            @Param("applicationListId") UUID applicationListId,
+            Boolean hasHearingDate,
+            @Param("hearingDate") LocalDate hearingDate,
+            @Param("courtCode") String courtCode,
+            @LikeParam @Param("otherLocationDescription") String otherLocationDescription,
+            @Param("cjaCode") String cjaCode,
+            @LikeParam @Param("applicantOrganisation") String applicantOrganisation,
+            @LikeParam @Param("applicantSurname") String applicantSurname,
+            @LikeParam @Param("applicantName") String applicantName,
+            @LikeParam @Param("standardApplicantCode") String standardApplicantCode,
+            @Param("status") Status status,
+            @LikeParam @Param("respondentOrganisation") String respondentOrganisation,
+            @LikeParam @Param("respondentSurname") String respondentSurname,
+            @LikeParam @Param("respondentName") String respondentName,
+            @LikeParam @Param("respondentPostcode") String respondentPostcode,
+            @LikeParam @Param("accountReference") String accountReference,
+            @LikeParam @Param("applicationTitle") String applicationTitle,
+            @LikeParam @Param("resulted") String resulted,
+            @Param("feeRequired") Boolean feeRequired,
+            @Param("sequenceNumber") Integer sequenceNumber,
+            @Param("hasEntryIds") boolean hasEntryIds,
+            @Param("entryIds") Collection<UUID> entryIds,
+            @Param("hasExcludedEntryIds") boolean hasExcludedEntryIds,
+            @Param("excludedEntryIds") Collection<UUID> excludedEntryIds,
+            Pageable pageable);
+
+    @Query(
+            """
              SELECT ale.uuid
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana

@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplication
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
@@ -44,6 +45,7 @@ class BulkUploadAsyncLifecycleTest {
     private BulkUploadAsyncLifecycle lifecycle;
     private ApplicationEntryService applicationEntryService;
     private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+    private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
     private UUID listId;
 
     @BeforeEach
@@ -54,6 +56,7 @@ class BulkUploadAsyncLifecycleTest {
 
         applicationEntryService = mock(ApplicationEntryService.class);
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
+        asyncJobAppListEntryRepository = mock(AsyncJobAppListEntryRepository.class);
         listId = UUID.randomUUID();
 
         lifecycle =
@@ -441,7 +444,7 @@ class BulkUploadAsyncLifecycleTest {
         AsyncJobLifecycleEvent<BulkUploadRow> event =
                 new AsyncJobLifecycleEvent<>(
                         null, List.of(firstRow, secondRow), context, JobStatus1.PROCESSING);
-        when(applicationEntryService.createBulkEntry(any()))
+        when(applicationEntryService.createBulkEntry(any(), any()))
                 .thenReturn(null)
                 .thenThrow(new IllegalStateException("boom"));
 
@@ -451,7 +454,7 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED);
         assertThat(context.getValidationFailureMessages())
                 .containsExactly("Processing failed for row 3: boom");
-        verify(applicationEntryService, times(2)).createBulkEntry(any());
+        verify(applicationEntryService, times(2)).createBulkEntry(any(), any());
     }
 
     @Test
