@@ -1,5 +1,8 @@
 type: object
-description: Selection criteria for a global bulk action preview.
+description: >
+  Selection criteria for a global bulk action preview.
+  When selectionType is IDS, entryIds must contain at least one non-null entry ID.
+  When selectionType is FILTER, filter, sort, and excludedEntryIds describe the select-all-matching selection.
 additionalProperties: false
 required:
   - selectionType
@@ -24,6 +27,7 @@ properties:
   entryIds:
     type: array
     description: Explicitly selected Application List Entry IDs.
+    minItems: 1
     items:
       type: string
       format: uuid

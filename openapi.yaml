@@ -7491,7 +7491,8 @@ components:
       type: string
     bulk-action-selection-dto:
       additionalProperties: false
-      description: Selection criteria for a global bulk action preview.
+      description: |
+        Selection criteria for a global bulk action preview. When selectionType is IDS, entryIds must contain at least one non-null entry ID. When selectionType is FILTER, filter, sort, and excludedEntryIds describe the select-all-matching selection.
       properties:
         selectionType:
           $ref: "#/components/schemas/bulk-action-selection-type"
@@ -7510,6 +7511,7 @@ components:
           items:
             format: uuid
             type: string
+          minItems: 1
           type: array
         excludedEntryIds:
           description: Entry IDs excluded from a select-all-matching filter selection.
