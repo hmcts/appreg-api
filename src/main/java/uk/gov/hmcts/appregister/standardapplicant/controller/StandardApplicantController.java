@@ -101,6 +101,7 @@ public class StandardApplicantController implements StandardApplicantsApi {
                 .body(service.print(code, name, addressLine1, from, to, pageable));
     }
 
+    @Override
     public ResponseEntity<String> standardApplicantsExport(
             @Nullable String code, @Nullable String name) {
         return ResponseEntity.ok(service.generateCsv(code, name));

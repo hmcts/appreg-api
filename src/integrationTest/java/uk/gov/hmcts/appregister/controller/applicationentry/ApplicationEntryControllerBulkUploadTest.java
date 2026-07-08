@@ -146,7 +146,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
             Assertions.assertEquals(JobStatus1.FAILED, completedJob.getStatus());
             assertThat(completedJob.getErrorDescription())
                     .isNotBlank()
-                    .contains("Row 2 [APPLICATION_CODE]")
+                    .contains("\"rowNumber\":2")
+                    .contains("\"location\":\"APPLICATION_CODE\"")
                     .contains("ZZ99999");
             Assertions.assertEquals(0, countEntriesForList(listId));
         }

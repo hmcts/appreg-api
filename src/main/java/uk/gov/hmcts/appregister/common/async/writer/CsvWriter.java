@@ -91,7 +91,7 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
         }
     }
 
-    public String writeToString(List<T> csv, Class<T> typeClass, String[] header)
+    public String writeToString(List<T> csv, Class<T> typeClass, List<String> header)
             throws IOException {
         StringBuilder csvString = new StringBuilder();
 

@@ -140,7 +140,7 @@ public class UpdateApplicationEntryValidator
                 fee,
                 saCode,
                 applicationList,
-                applicationListEntryRepository.findByUuid(payload.getEntryId()).get());
+                applicationListEntryRepository.findByUuid(payload.getEntryId()).orElse(null));
     }
 
     @Override
