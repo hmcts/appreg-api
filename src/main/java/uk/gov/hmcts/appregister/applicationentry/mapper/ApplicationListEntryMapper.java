@@ -448,7 +448,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(getWordingTemplateMapper().getTemplateDetail("
+                    "java(getWordingTemplateMapper().getStoredTemplateDetail("
                             + "() -> applicationListEntry.getApplicationCode().getWording(),"
                             + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
@@ -492,7 +492,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(
             target = "wording",
             expression =
-                    "java(getWordingTemplateMapper().getTemplateDetail("
+                    "java(getWordingTemplateMapper().getStoredTemplateDetail("
                             + "() -> applicationListEntry.getApplicationCode().getWording(),"
                             + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(
