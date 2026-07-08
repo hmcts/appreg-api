@@ -13,6 +13,9 @@ import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
 
+/**
+ * Validates bulk action preview requests and enforces global selection limits.
+ */
 @Component
 public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRequestDto, Void> {
 

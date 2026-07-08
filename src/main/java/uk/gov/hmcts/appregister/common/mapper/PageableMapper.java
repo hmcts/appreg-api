@@ -130,6 +130,18 @@ public class PageableMapper {
         return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
     }
 
+    /**
+     * Maps sort values to the first page of a pageable using the supplied limit as the page size.
+     * Unlike request pageable overloads, this method does not cap the page size at the configured
+     * maximum because bulk limits are validated separately.
+     *
+     * @param sort Each entry will contain a property and optionally a direction separated by a
+     *     comma
+     * @param limit The page size to request
+     * @param sortConfig The sort policy containing the default internal sort and external lookup
+     * @param defaultDirection The default direction to sort if no sort is specified
+     * @return A paging wrapper for the first page using the supplied limit
+     */
     public PagingWrapper from(
             List<String> sort, int limit, SortConfig sortConfig, Sort.Direction defaultDirection) {
         return from(

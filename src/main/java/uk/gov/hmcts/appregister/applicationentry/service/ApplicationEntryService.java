@@ -33,6 +33,14 @@ public interface ApplicationEntryService {
 
     EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
 
+    /**
+     * Resolves a bulk action selection into selected entry IDs and entry summary context, applying
+     * the configured global bulk action limit before returning row data.
+     *
+     * @param request The bulk action preview request containing the action and selection criteria
+     * @return A preview containing selected counts, eligible counts, selected IDs, and entry
+     *     context
+     */
     BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request);
 
     /**
