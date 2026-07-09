@@ -119,7 +119,7 @@ appreg:
 #          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
-          enabled: false
+          enabled: true
           table-name: resolution_codes_staging
           primary-key: rc_id
           source-entity-name: ResolutionCode
