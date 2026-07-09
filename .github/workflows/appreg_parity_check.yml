@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload token usage summary
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codex-parity-usage-summary
           path: ${{ runner.temp }}/parity-output/codex-usage-summary.json
