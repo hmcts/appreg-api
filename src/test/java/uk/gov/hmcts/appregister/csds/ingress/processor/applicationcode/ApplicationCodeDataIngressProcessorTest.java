@@ -252,6 +252,45 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_processedData_when_ingest_then_returnsAppliedSummary() {
+        var existingUpdated =
+                createApplicationCode(
+                        345L,
+                        "A2",
+                        "Title 2",
+                        "Wording 2",
+                        1L,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null);
+        var existingUnmatched =
+                createApplicationCode(
+                        4L,
+                        "A4",
+                        "Title 4",
+                        "Wording 4",
+                        1L,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null);
+        when(tableReadService.loadAll("application_codes", rowMapper))
+                .thenReturn(
+                        List.of(
+                                ApplicationCodeIngressRecord.fromEntity(existingUpdated),
+                                ApplicationCodeIngressRecord.fromEntity(existingUnmatched)));
+
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecordWithPssacid(
+                                        345L, 2L, "A2", "Updated Title", "Wording 2", 2L),
+                                createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L)));
+
+        var response = processor.ingest(processedData);
+
+        assertThat(response.getInserted()).isEqualTo(1);
+        assertThat(response.getUpdated()).isEqualTo(1);
+    }
+
+    @Test
     void given_reportingDirConfigured_when_apply_then_writesCsvFiles() throws Exception {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);

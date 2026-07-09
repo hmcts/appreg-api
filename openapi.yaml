@@ -384,6 +384,147 @@ paths:
       summary: Update a database job retention period by its name.
       tags:
       - admin
+  /admin/csds/{processor}/ingest:
+    post:
+      description: |
+        Runs the requested CSDS processor synchronously against an uploaded JSON snapshot rendered from the reporting pipeline. The request must contain a single file part named `file` with the same top-level structure as the report output, including a `records` array. The processor key in the path must be one of `application_codes`, `resolution_codes`, `fee`, `national_court_houses`, or `standard_applicants`. Only `application_codes` is currently implemented; the others return `501 Not Implemented`. The endpoint honours the distributed CSDS ingest lock and returns `423 Locked` if another run already owns it. Uploaded files are limited to 5MB.
+      operationId: ingestCsdsData
+      parameters:
+      - description: CSDS processor key. This maps to the processor name used by the
+          manual ingest path.
+        in: path
+        name: processor
+        required: true
+        schema:
+          enum:
+          - application_codes
+          - resolution_codes
+          - fee
+          - national_court_houses
+          - standard_applicants
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ingestCsdsData_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/vnd.hmcts.appreg.v1+json:
+              schema:
+                $ref: "#/components/schemas/csds-ingest-response"
+          description: CSDS ingest completed successfully.
+          headers:
+            Vary:
+              description: Response varies by Accept for media-type versioning.
+              example: Accept
+              schema:
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Invalid request parameters.
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "413":
+          content:
+            application/problem+json:
+              examples:
+                payload-too-large:
+                  value:
+                    type: https://errors.hmcts.net/common/payload-too-large
+                    title: Payload Too Large
+                    status: 413
+                    detail: Uploaded file must not be larger than 5MB
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Request entity is too large to be processed.
+        "415":
+          content:
+            application/problem+json:
+              examples:
+                unsupported-media-type:
+                  value:
+                    type: https://errors.hmcts.net/common/unsupported-media-type
+                    title: Unsupported Media Type
+                    status: 415
+                    detail: The content type 'application/xml' is not supported. Expected
+                      'text/csv' or 'multipart/form-data'.
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: The server does not support the media type of the request.
+        "423":
+          content:
+            application/problem+json:
+              examples:
+                locked:
+                  value:
+                    type: https://errors.hmcts.net/common/locked
+                    title: Locked
+                    status: 423
+                    detail: The CSDS ingest is already running
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: The requested operation could not start because the resource
+            is locked.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+        "501":
+          content:
+            application/problem+json:
+              examples:
+                not-implemented:
+                  value:
+                    type: https://errors.hmcts.net/common/not-implemented
+                    title: Not Implemented
+                    status: 501
+                    detail: The requested CSDS ingest processor is not implemented
+                      yet
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: The requested processor is recognised but not yet implemented.
+      summary: Ingest a CSDS snapshot file.
+      tags:
+      - admin
   /application-codes:
     get:
       description: |
@@ -5666,19 +5807,6 @@ components:
           schema:
             $ref: "#/components/schemas/problem"
       description: Invalid request parameters.
-    not-acceptable-error:
-      content:
-        application/problem+json:
-          examples:
-            notAcceptable:
-              value:
-                type: https://errors.hmcts.net/common/not-acceptable
-                title: Not Acceptable
-                status: 406
-                detail: Requested media type/version not acceptable
-          schema:
-            $ref: "#/components/schemas/problem"
-      description: Requested media type/version not acceptable.
     payload-too-large-error:
       content:
         application/problem+json:
@@ -5706,6 +5834,46 @@ components:
           schema:
             $ref: "#/components/schemas/problem"
       description: The server does not support the media type of the request.
+    locked-error:
+      content:
+        application/problem+json:
+          examples:
+            locked:
+              value:
+                type: https://errors.hmcts.net/common/locked
+                title: Locked
+                status: 423
+                detail: The CSDS ingest is already running
+          schema:
+            $ref: "#/components/schemas/problem"
+      description: The requested operation could not start because the resource is
+        locked.
+    not-implemented-error:
+      content:
+        application/problem+json:
+          examples:
+            not-implemented:
+              value:
+                type: https://errors.hmcts.net/common/not-implemented
+                title: Not Implemented
+                status: 501
+                detail: The requested CSDS ingest processor is not implemented yet
+          schema:
+            $ref: "#/components/schemas/problem"
+      description: The requested processor is recognised but not yet implemented.
+    not-acceptable-error:
+      content:
+        application/problem+json:
+          examples:
+            notAcceptable:
+              value:
+                type: https://errors.hmcts.net/common/not-acceptable
+                title: Not Acceptable
+                status: 406
+                detail: Requested media type/version not acceptable
+          schema:
+            $ref: "#/components/schemas/problem"
+      description: Requested media type/version not acceptable.
   schemas:
     application-code-get-summary-dto:
       description: "Lightweight DTO for Application Codes, used in list/search views."
@@ -5827,6 +5995,24 @@ components:
           example: 1825
           minimum: 1
           type: integer
+      type: object
+    csds-ingest-response:
+      additionalProperties: false
+      description: Summary returned when a CSDS ingest file has been processed.
+      properties:
+        inserted:
+          description: Number of records inserted by the ingest.
+          example: 12
+          format: int32
+          type: integer
+        updated:
+          description: Number of records updated by the ingest.
+          example: 12
+          format: int32
+          type: integer
+      required:
+      - inserted
+      - updated
       type: object
     application-code-page:
       allOf:
@@ -8193,6 +8379,14 @@ components:
           type: string
       required:
       - addressLine1
+      type: object
+    ingestCsdsData_request:
+      properties:
+        file:
+          format: binary
+          type: string
+      required:
+      - file
       type: object
     bulkUploadApplicationListEntries_request:
       properties:

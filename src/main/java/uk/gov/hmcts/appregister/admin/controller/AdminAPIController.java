@@ -10,12 +10,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.api.AdminApi;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
+import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
@@ -27,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus;
 public class AdminAPIController implements AdminApi {
 
     private final AdminAPIService adminAPIService;
+    private final CsdsIngestService csdsIngestService;
 
     @Override
     @PutMapping(
@@ -64,5 +70,19 @@ public class AdminAPIController implements AdminApi {
             produces = {"application/vnd.hmcts.appreg.v1+json", "application/problem+json"})
     public ResponseEntity<JobStatus> getJobStatus(@PathVariable("jobType") AdminJobType jobType) {
         return ResponseEntity.ok(adminAPIService.getDatabaseJobStatusByName(jobType));
+    }
+
+    @Override
+    @PostMapping(
+            value = PATH_INGEST_CSDS_DATA,
+            consumes = {"multipart/form-data"},
+            produces = {"application/vnd.hmcts.appreg.v1+json", "application/problem+json"})
+    public ResponseEntity<CsdsIngestResponse> ingestCsdsData(
+            @PathVariable("processor") String processor,
+            @RequestPart(value = "file", required = true) MultipartFile file) {
+        return ResponseEntity.ok()
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .body(csdsIngestService.ingest(processor, file));
     }
 }

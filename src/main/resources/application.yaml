@@ -110,12 +110,12 @@ appreg:
       page-size: 100
       processors:
         application-codes:
-          enabled: false
+          enabled: true
           table-name: application_codes_staging
           primary-key: ac_id
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ApplicationCodeID
-#          mock: csds/application_codesx.json
+          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
   job:
     page-size: 10

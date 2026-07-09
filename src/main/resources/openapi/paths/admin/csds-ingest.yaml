@@ -1,0 +1,59 @@
+post:
+  operationId: ingestCsdsData
+  tags: [ admin ]
+  summary: Ingest a CSDS snapshot file.
+  description: >
+    Runs the requested CSDS processor synchronously against an uploaded JSON snapshot rendered
+    from the reporting pipeline. The request must contain a single file part named `file` with the
+    same top-level structure as the report output, including a `records` array. The processor key
+    in the path must be one of `application_codes`, `resolution_codes`, `fee`,
+    `national_court_houses`, or `standard_applicants`. Only `application_codes` is currently
+    implemented; the others return `501 Not Implemented`. The endpoint honours the distributed CSDS
+    ingest lock and returns `423 Locked` if another run already owns it. Uploaded files are
+    limited to 5MB.
+  parameters:
+    - in: path
+      name: processor
+      required: true
+      schema:
+        type: string
+        enum:
+          - application_codes
+          - resolution_codes
+          - fee
+          - national_court_houses
+          - standard_applicants
+      description: CSDS processor key. This maps to the processor name used by the manual ingest path.
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - file
+          properties:
+            file:
+              type: string
+              format: binary
+  responses:
+    "200":
+      description: CSDS ingest completed successfully.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+          example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/admin/csds-ingest-response.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
+    "415": { $ref: "../../components/responses/unsupported-media-type-error.yaml" }
+    "423": { $ref: "../../components/responses/locked-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+    "501": { $ref: "../../components/responses/not-implemented-error.yaml" }
