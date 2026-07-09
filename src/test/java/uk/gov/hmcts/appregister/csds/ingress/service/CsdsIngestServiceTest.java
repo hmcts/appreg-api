@@ -73,6 +73,7 @@ class CsdsIngestServiceTest {
         when(userProvider.getUserId()).thenReturn("tenant:object");
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.enabled()).thenReturn(true);
         when(distributedJobLockService.tryAcquire(
                         eq("CSDS_DATA_INGRESS"), eq(Duration.ofMinutes(5))))
                 .thenReturn(Optional.of(lock));
@@ -93,6 +94,8 @@ class CsdsIngestServiceTest {
     void given_knownButUnimplementedProcessor_when_ingest_then_throwsNotImplementedError()
             throws Exception {
         var file = mock(MultipartFile.class);
+        when(applicationCodeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
 
         assertThatThrownBy(
                         () ->
@@ -106,6 +109,30 @@ class CsdsIngestServiceTest {
                                         .isEqualTo(CsdsIngestError.PROCESSOR_NOT_IMPLEMENTED));
 
         verify(applicationCodeProcessor).processorName();
+        verifyNoMoreInteractions(applicationCodeProcessor);
+        verifyNoInteractions(distributedJobLockService);
+    }
+
+    @Test
+    void given_knownButDisabledProcessor_when_ingest_then_throwsDisabledError() throws Exception {
+        var file = mock(MultipartFile.class);
+        when(applicationCodeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.enabled()).thenReturn(false);
+
+        assertThatThrownBy(
+                        () ->
+                                service.ingest(
+                                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(),
+                                        file))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.PROCESSOR_DISABLED));
+
+        verify(applicationCodeProcessor).processorName();
+        verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
         verifyNoInteractions(distributedJobLockService);
     }
@@ -130,6 +157,7 @@ class CsdsIngestServiceTest {
         when(file.isEmpty()).thenReturn(true);
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.enabled()).thenReturn(true);
 
         assertThatThrownBy(
                         () ->
@@ -143,6 +171,7 @@ class CsdsIngestServiceTest {
                                         .isEqualTo(CsdsIngestError.FILE_MISSING));
 
         verify(applicationCodeProcessor).processorName();
+        verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
         verifyNoInteractions(distributedJobLockService);
     }
@@ -156,6 +185,7 @@ class CsdsIngestServiceTest {
         when(userProvider.getUserId()).thenReturn("tenant:object");
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.enabled()).thenReturn(true);
         when(distributedJobLockService.tryAcquire(
                         eq("CSDS_DATA_INGRESS"), eq(Duration.ofMinutes(5))))
                 .thenReturn(Optional.of(lock));
@@ -174,6 +204,7 @@ class CsdsIngestServiceTest {
 
         verify(distributedJobLockService).release(lock);
         verify(applicationCodeProcessor).processorName();
+        verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
     }
 

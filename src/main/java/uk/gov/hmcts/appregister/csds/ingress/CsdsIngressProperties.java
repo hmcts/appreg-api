@@ -92,7 +92,8 @@ public class CsdsIngressProperties {
         }
 
         private boolean hasEnabledProcessorWithoutMock() {
-            return applicationCodes != null && applicationCodes.requiresRemoteAccess();
+            return applicationCodes != null && applicationCodes.requiresRemoteAccess()
+                    || resolutionCodes != null && resolutionCodes.requiresRemoteAccess();
         }
     }
 

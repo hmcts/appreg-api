@@ -32,6 +32,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
 
     @Override
+    public final boolean enabled() {
+        return processorProperties.isEnabled();
+    }
+
+    @Override
     public final List<JsonNode> retrieve(CsdsIngressClient ingressClient) {
         val mockFilePath = mockFilePath();
         if (StringUtils.hasText(mockFilePath)) {

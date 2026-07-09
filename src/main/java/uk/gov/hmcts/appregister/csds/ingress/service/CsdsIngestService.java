@@ -63,18 +63,31 @@ public class CsdsIngestService {
     }
 
     private IDataIngressProcessor<?> requireProcessor(CsdsIngestProcessorName processorType) {
-        return processors.stream()
-                .filter(
-                        candidate ->
-                                processorType.getExternalName().equals(candidate.processorName()))
-                .findFirst()
-                .orElseThrow(
-                        () ->
-                                new AppRegistryException(
-                                        CsdsIngestError.PROCESSOR_NOT_IMPLEMENTED,
-                                        "The CSDS ingest processor "
-                                                + processorType.getExternalName()
-                                                + " is not implemented yet"));
+        var processor =
+                processors.stream()
+                        .filter(
+                                candidate ->
+                                        processorType
+                                                .getExternalName()
+                                                .equals(candidate.processorName()))
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                CsdsIngestError.PROCESSOR_NOT_IMPLEMENTED,
+                                                "The CSDS ingest processor "
+                                                        + processorType.getExternalName()
+                                                        + " is not implemented yet"));
+
+        if (!processor.enabled()) {
+            throw new AppRegistryException(
+                    CsdsIngestError.PROCESSOR_DISABLED,
+                    "The CSDS ingest processor "
+                            + processorType.getExternalName()
+                            + " is disabled");
+        }
+
+        return processor;
     }
 
     private void validateFile(MultipartFile file) {

@@ -26,6 +26,11 @@ public enum CsdsIngestError implements ErrorCodeEnum {
                     HttpStatus.NOT_IMPLEMENTED,
                     "The requested CSDS ingest processor is not implemented yet",
                     "CSI-4")),
+    PROCESSOR_DISABLED(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The requested CSDS ingest processor is disabled",
+                    "CSI-6")),
     LOCKED(
             DefaultErrorDetail.create(
                     HttpStatus.LOCKED, "The CSDS ingest is already running", "CSI-5"));

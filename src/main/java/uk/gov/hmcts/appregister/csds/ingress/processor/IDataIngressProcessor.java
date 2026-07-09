@@ -8,6 +8,10 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 public interface IDataIngressProcessor<T> {
     String processorName();
 
+    default boolean enabled() {
+        return true;
+    }
+
     String targetTable();
 
     String targetKeyField();

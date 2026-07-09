@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
@@ -19,10 +18,6 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(
-        prefix = "appreg.csds.ingress.processors.resolution-codes",
-        name = "enabled",
-        havingValue = "true")
 public class ResolutionCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ResolutionCodeDiffResult> {
     private static final List<String> REQUIRED_RECORD_FIELDS =
