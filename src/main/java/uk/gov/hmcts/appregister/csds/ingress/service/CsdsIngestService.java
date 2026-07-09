@@ -51,7 +51,10 @@ public class CsdsIngestService {
                     } finally {
                         if (!distributedJobLockService.release(lock)) {
                             log.warn(
-                                    "Distributed lock release was skipped for job {} because the lease is no longer owned",
+                                    """
+                                    Distributed lock release was skipped for job {}
+                                     because the lease is no longer owned
+                                    """,
                                     CsdsIngressProcessor.DATABASE_JOB_NAME);
                         }
                     }
