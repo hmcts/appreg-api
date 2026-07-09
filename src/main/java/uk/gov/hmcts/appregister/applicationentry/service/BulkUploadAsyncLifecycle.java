@@ -16,8 +16,8 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
-import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadRowApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
@@ -77,8 +77,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private final UUID listId;
     private final ApplicationEntryService applicationEntryService;
-    private final BulkUploadApplicationEntryValidator validator;
-    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+    private final BulkUploadRowApplicationEntryValidator validator;
+    private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
     private final ApplicationListEntryMapper mapper;
     private final Validator beanValidator;
 
@@ -91,8 +91,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void validating(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
+        final long start = System.nanoTime();
         List<BulkUploadRow> rows = event.getData();
-        JobContext context = event.getContext();
 
         log.info("Validating bulk upload for list {}", listId);
 
@@ -101,8 +101,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     AppListEntryError.BULK_UPLOAD_EMPTY_FILE,
                     "Uploaded file contains no data rows");
         }
-
-        validateApplicationList(context);
 
         int rowNumber = FIRST_DATA_ROW_NUMBER;
 
@@ -123,6 +121,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowNumber++;
         }
 
+        JobContext context = event.getContext();
         List<String> errorMessages = context.getValidationFailureMessages();
 
         // we're going to convert the existing message into a BulkUploadError object and log it to
@@ -146,6 +145,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
 
         log.info("Bulk upload validation passed");
+        long end = System.nanoTime();
+        log.warn("Bulk upload validation took {} ms", (end - start) / 1_000_000);
     }
 
     private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {
@@ -158,7 +159,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private List<BulkUploadError> validateBusinessRules(int rowNumber, EntryCreateDto dto) {
         try {
-            bulkCreateApplicationEntryValidator.validate(
+            bulkUploadApplicationEntryValidator.validate(
                     PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
                     (validatable, result) -> null);
             return List.of();
@@ -180,20 +181,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                             .getAddressLine1(),
                             getName(dto.getRespondent()),
                             "DATA_ERROR"));
-        }
-    }
-
-    private void validateApplicationList(JobContext context) {
-        try {
-            bulkCreateApplicationEntryValidator.validateApplicationList(listId);
-        } catch (AppRegistryException exception) {
-            String failureMessage = "[APPLICATION_LIST]: %s".formatted(exception.getMessage());
-            context.logFailure(failureMessage);
-            log.warn(
-                    "Bulk upload application list validation failure for list {}: {}",
-                    listId,
-                    failureMessage);
-            throw exception;
         }
     }
 
@@ -263,6 +250,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
+        final long start = System.nanoTime();
         List<BulkUploadRow> rows = event.getData();
         JobContext context = event.getContext();
 
@@ -298,6 +286,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowNumber++;
         }
         log.info("Bulk upload completed successfully");
+        long end = System.nanoTime();
+        log.warn("Bulk upload processing took {} ms", (end - start) / 1_000_000);
     }
 
     private static String getName(Respondent respondent) {

@@ -40,6 +40,19 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     List<StandardApplicant> findStandardApplicantByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE sa.applicantStartDate <= :date
+        AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
+        """)
+    List<StandardApplicant> findAllStandardApplicantByDate(LocalDate date);
+
     /**
      * Finds StandardApplicant rows by applicant code without filtering by lodgement date.
      *

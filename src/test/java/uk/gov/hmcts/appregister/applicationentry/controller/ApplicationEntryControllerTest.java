@@ -30,9 +30,9 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
-import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadCsvFormatValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadRowApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
@@ -61,10 +61,10 @@ class ApplicationEntryControllerTest {
     private final AsyncJobService asyncJobService = mock(AsyncJobService.class);
     private final JobService jobService = mock(JobService.class);
     private final UserProvider userProvider = mock(UserProvider.class);
-    private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator =
+    private final BulkUploadRowApplicationEntryValidator bulkUploadRowApplicationEntryValidator =
+            mock(BulkUploadRowApplicationEntryValidator.class);
+    private final BulkUploadApplicationEntryValidator bulkCreateApplicationEntryValidator =
             mock(BulkUploadApplicationEntryValidator.class);
-    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator =
-            mock(BulkCreateApplicationEntryValidator.class);
     private final BulkUploadCsvFormatValidator bulkUploadCsvFormatValidator =
             mock(BulkUploadCsvFormatValidator.class);
     private final ApplicationListEntryMapper applicationListEntryMapper =
@@ -78,7 +78,7 @@ class ApplicationEntryControllerTest {
                     asyncJobService,
                     jobService,
                     userProvider,
-                    bulkUploadApplicationEntryValidator,
+                    bulkUploadRowApplicationEntryValidator,
                     bulkCreateApplicationEntryValidator,
                     bulkUploadCsvFormatValidator,
                     applicationListEntryMapper,

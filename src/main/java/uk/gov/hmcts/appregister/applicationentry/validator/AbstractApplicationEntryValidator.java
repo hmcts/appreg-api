@@ -37,11 +37,15 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @RequiredArgsConstructor
 public abstract class AbstractApplicationEntryValidator<T, O> implements Validator<T, O> {
     private final ApplicationListRepository applicationListRepository;
-    private final ApplicationCodeRepository applicationCodeRepository;
+    protected final ApplicationCodeRepository applicationCodeRepository;
     private final ApplicationFeeService feeService;
-    private final BusinessDateProvider businessDateProvider;
+    protected final BusinessDateProvider businessDateProvider;
 
-    private final StandardApplicantRepository standardApplicantRepository;
+    protected final StandardApplicantRepository standardApplicantRepository;
+
+    // caching reference data to reduce database calls when bulk importing.
+    private List<String> standardApplicantCodes;
+    private List<String> applicationCodes;
 
     private static final String BULK_RESPONDENT_NOT_REQUIRED_MESSAGE =
             "Bulk respondent not required for code %s";
@@ -213,7 +217,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *
      * @param dto The dto to validate
      */
-    private void ensureApplicantMutualExclusion(T dto) {
+    protected void ensureApplicantMutualExclusion(T dto) {
         boolean hasOrganisation =
                 getApplicant(dto) != null && getApplicant(dto).getOrganisation() != null;
 
@@ -326,7 +330,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
     protected abstract LocalDate getLodgementDate(T validatable);
 
-    private void validateOfficialCounts(T dto) {
+    protected void validateOfficialCounts(T dto) {
         List<Official> officials = getOfficials(dto);
         if (officials == null || officials.isEmpty()) {
             return;
@@ -367,7 +371,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *
      * @param dto The dto to validate
      */
-    private void ensureRespondentMutualExclusion(T dto) {
+    protected void ensureRespondentMutualExclusion(T dto) {
         if (getRespondent(dto) != null
                 && !(getRespondent(dto) != null && getRespondent(dto).getOrganisation() != null)
                         ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
@@ -432,7 +436,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *
      * @param validatable The validatable payload
      */
-    private FeePair validateFee(ApplicationCode applicationCode, T validatable) {
+    protected FeePair validateFee(ApplicationCode applicationCode, T validatable) {
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
                 getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
@@ -529,7 +533,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param applicationCode The application code
      * @param validatable The validatable payload
      */
-    private void validateRespondent(ApplicationCode applicationCode, T validatable) {
+    protected void validateRespondent(ApplicationCode applicationCode, T validatable) {
         boolean respondentRequired = applicationCode.getRequiresRespondent() == YesOrNo.YES;
         boolean bulkRespondentAllowed = applicationCode.getBulkRespondentAllowed() == YesOrNo.YES;
         boolean hasRespondent = getRespondent(validatable) != null;
@@ -630,7 +634,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 && getNumberOfRespondents(validatable) == 0;
     }
 
-    private void validateLodgementDate(T validatable) {
+    protected void validateLodgementDate(T validatable) {
         LocalDate lodgementDate = getLodgementDate(validatable);
         if (lodgementDate != null && lodgementDate.isAfter(currentBusinessDate())) {
             throw new AppRegistryException(

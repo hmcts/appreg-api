@@ -26,9 +26,9 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
-import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadCsvFormatValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadRowApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
@@ -74,9 +74,9 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     private final UserProvider userProvider;
 
-    private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
+    private final BulkUploadRowApplicationEntryValidator bulkUploadRowApplicationEntryValidator;
 
-    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+    private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
 
     private final BulkUploadCsvFormatValidator bulkUploadCsvFormatValidator;
 
@@ -254,7 +254,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         try {
             bulkUploadCsvFormatValidator.validate(file);
-            bulkCreateApplicationEntryValidator.validateApplicationList(listId);
+            bulkUploadApplicationEntryValidator.validateApplicationList(listId);
 
             JobTypeRequest jobTypeRequest =
                     JobTypeRequest.builder()
@@ -271,8 +271,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                             new BulkUploadAsyncLifecycle(
                                     listId,
                                     applicationEntryService,
+                                    bulkUploadRowApplicationEntryValidator,
                                     bulkUploadApplicationEntryValidator,
-                                    bulkCreateApplicationEntryValidator,
                                     applicationListEntryMapper,
                                     beanValidator));
 

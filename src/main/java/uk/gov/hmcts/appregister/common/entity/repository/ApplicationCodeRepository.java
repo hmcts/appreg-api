@@ -61,4 +61,13 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             @Param("title") String title,
             @Param("date") LocalDate date,
             Pageable pageable);
+
+    @Query(
+            """
+        SELECT c
+        FROM ApplicationCode c
+          WHERE c.startDate <= :date
+          AND (c.endDate IS NULL OR c.endDate >= :date)
+        """)
+    List<ApplicationCode> findAllCodesByDate(LocalDate date);
 }

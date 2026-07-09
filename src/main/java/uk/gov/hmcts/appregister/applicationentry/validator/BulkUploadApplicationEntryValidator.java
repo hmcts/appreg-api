@@ -1,126 +1,149 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import com.opencsv.bean.CsvBindByName;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
+import java.util.HashMap;
+import java.util.UUID;
+import java.util.function.BiFunction;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
-import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationcode.enumeration.ApplicationCodeTypeEnum;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 
-/**
- * Performs structural and business-rule validation for application entry bulk upload CSV files.
- */
 @Component
-public class BulkUploadApplicationEntryValidator {
+@Slf4j
+public class BulkUploadApplicationEntryValidator extends CreateApplicationEntryValidator {
+    HashMap<String, ApplicationCode> applicationCodeCache = new HashMap<>();
+    HashMap<String, StandardApplicant> standardApplicantCache = new HashMap<>();
 
-    /**
-     * Validates a single mapped upload row and returns all discovered row-level validation errors.
-     *
-     * @param rowNumber the 1-based CSV row number including the header row
-     * @param row the parsed bulk upload row to validate
-     * @return the list of validation errors for the supplied row
-     */
-    public List<BulkUploadError> validateRow(int rowNumber, BulkUploadRow row) {
-        List<BulkUploadError> errors = new ArrayList<>();
-        boolean hasOrganisation = BulkUploadRow.hasRespondentOrganisation(row);
-        boolean hasPerson = BulkUploadRow.hasRespondentPerson(row);
-        String name = null;
-        if (hasOrganisation || hasPerson) {
-            name =
-                    row.getRespondentOrganisationName() == null
-                            ? row.getRespondentForename1() + " " + row.getRespondentSurname()
-                            : row.getRespondentOrganisationName();
-        }
-        final String errorType = "DATA_ERROR";
-
-        // --- REQUIRED FIELDS ---
-
-        if (StringUtils.isBlank(row.getApplicantCode())) {
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnName("applicantCode"),
-                            null,
-                            "Applicant code is required",
-                            row.getRespondentAddressLine1(),
-                            name,
-                            errorType));
-        }
-
-        if (StringUtils.isBlank(row.getApplicationCode())) {
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnName("applicationCode"),
-                            null,
-                            "Application code is required",
-                            row.getRespondentAddressLine1(),
-                            name,
-                            errorType));
-        }
-
-        // --- RESPONDENT RULES ---
-
-        // Must not have both
-        if (hasOrganisation && hasPerson) {
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnNames(),
-                            null,
-                            "Respondent cannot be both organisation and person",
-                            row.getRespondentAddressLine1(),
-                            name,
-                            errorType));
-        }
-
-        // Must have at least one
-        if (!hasOrganisation && !hasPerson) {
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnNames(),
-                            null,
-                            "Respondent details must be provided",
-                            row.getRespondentAddressLine1(),
-                            name,
-                            errorType));
-        }
-
-        return errors;
+    public BulkUploadApplicationEntryValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationCodeRepository applicationCodeRepository,
+            ApplicationFeeService feeService,
+            BusinessDateProvider businessDateProvider,
+            StandardApplicantRepository standardApplicantRepository) {
+        super(
+                applicationListRepository,
+                applicationCodeRepository,
+                feeService,
+                businessDateProvider,
+                standardApplicantRepository);
     }
 
-    private static String columnNames() {
-        return Arrays.stream(
-                        new String[] {
-                            "respondentOrganisationName",
-                            "respondentForename1",
-                            "respondentSurname",
-                            "respondentFirstName",
-                            "respondentLastName"
-                        })
-                .map(BulkUploadApplicationEntryValidator::columnName)
-                .collect(Collectors.joining("/"));
+    @Override
+    public <R> R validate(
+            PayloadForCreate<EntryCreateDto> validatable,
+            BiFunction<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess, R>
+                    validateSuccess) {
+
+        if (applicationCodeCache.isEmpty()) {
+            cacheApplicationCodes();
+        }
+
+        if (standardApplicantCache.isEmpty()) {
+            cacheStandardApplicants();
+        }
+
+        ensureRespondentMutualExclusion(validatable);
+
+        ensureApplicantMutualExclusion(validatable);
+
+        validateOfficialCounts(validatable);
+
+        val code = validateApplicationCode(validatable);
+        StandardApplicant sa = validateStandardApplicant(validatable);
+
+        // parse the wording template and error if not valid
+        WordingTemplateSentence wordingTemplateCollection =
+                WordingTemplateSentence.with(code.getWording());
+
+        validateLodgementDate(validatable);
+
+        // if fee is due get the fee
+        FeePair fee = validateFee(code, validatable);
+
+        // validate the respondent if required
+        validateRespondent(code, validatable);
+
+        if (validateSuccess != null) {
+            return validateSuccess.apply(
+                    validatable,
+                    getResult(code, wordingTemplateCollection, fee, sa, null, validatable));
+        }
+        return null;
     }
 
-    private static String columnName(String fieldName) {
-        try {
-            Field field = BulkUploadRow.class.getDeclaredField(fieldName);
-            CsvBindByName binding = field.getAnnotation(CsvBindByName.class);
+    private void cacheApplicationCodes() {
 
-            if (binding == null) {
-                throw new IllegalStateException(
-                        "Bulk upload row field %s is missing @CsvBindByName".formatted(fieldName));
-            }
-
-            return binding.column();
-        } catch (NoSuchFieldException e) {
-            throw new IllegalStateException(
-                    "Bulk upload row field %s does not exist".formatted(fieldName), e);
+        for (ApplicationCode code :
+                applicationCodeRepository.findAllCodesByDate(
+                        super.businessDateProvider.currentUkDate())) {
+            applicationCodeCache.put(code.getCode(), code);
         }
+    }
+
+    private void cacheStandardApplicants() {
+        for (StandardApplicant sa :
+                standardApplicantRepository.findAllStandardApplicantByDate(
+                        super.businessDateProvider.currentUkDate())) {
+            standardApplicantCache.put(sa.getApplicantCode(), sa);
+        }
+    }
+
+    private ApplicationCode validateApplicationCode(PayloadForCreate<EntryCreateDto> validatable) {
+        if (getApplicationCode(validatable) != null
+                && ApplicationCodeTypeEnum.isMatching(
+                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES, getApplicationCode(validatable))
+                && (getAccountNumber(validatable) == null
+                        || getAccountNumber(validatable).isEmpty())) {
+            throw new AppRegistryException(
+                    AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                    "Application number required for application code %s"
+                            .formatted(getApplicationCode(validatable)));
+        }
+
+        // validate that the application code exists and is valid for today
+        ApplicationCode code = applicationCodeCache.get(getApplicationCode(validatable));
+
+        if (code == null) {
+            throw new AppRegistryException(
+                    AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
+                    "No valid code can be found %s".formatted(getApplicationCode(validatable)));
+        }
+
+        log.debug("Validated the application code {}", getApplicationCode(validatable));
+        return code;
+    }
+
+    private StandardApplicant validateStandardApplicant(
+            PayloadForCreate<EntryCreateDto> validatable) {
+        String standardApplicantCode = getStandardApplicantCode(validatable);
+        val saCode = standardApplicantCache.get(getStandardApplicantCode(validatable));
+
+        if (saCode == null) {
+            // throw exception we expect a valid standard applicant code
+            throw new AppRegistryException(
+                    AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
+                    "The standard applicant does not exist %s".formatted(standardApplicantCode));
+        }
+
+        log.debug("Validated standard applicant {}", standardApplicantCode);
+
+        return saCode;
+    }
+
+    public void validateApplicationList(UUID applicationListUuid) {
+        validateParentApplicationList(applicationListUuid);
     }
 }

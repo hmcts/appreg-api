@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 
-class BulkUploadApplicationEntryValidatorTest {
+class BulkUploadRowApplicationEntryValidatorTest {
 
-    private final BulkUploadApplicationEntryValidator validator =
-            new BulkUploadApplicationEntryValidator();
+    private final BulkUploadRowApplicationEntryValidator validator =
+            new BulkUploadRowApplicationEntryValidator();
 
     @Test
     void givenValidOrganisationRow_whenValidateRow_thenReturnsNoErrors() {

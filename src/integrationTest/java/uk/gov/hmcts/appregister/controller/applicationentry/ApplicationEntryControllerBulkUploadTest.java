@@ -281,7 +281,9 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
 
         JobStatus1 status = acknowledgement.getStatus();
-        while (!status.equals(JobStatus1.COMPLETED)) {
+        int retries = 0;
+        int maxRetries = 5; // Set a maximum number of retries
+        while (!status.equals(JobStatus1.COMPLETED) && retries < maxRetries) {
             Thread.sleep(1000);
             Response jobStatusResponse =
                     restAssuredClient.executeGetRequest(
@@ -289,6 +291,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
             assertThat(jobStatusResponse.getStatusCode()).isEqualTo(200);
             JobAcknowledgement jobStatus = jobStatusResponse.as(JobAcknowledgement.class);
             status = jobStatus.getStatus();
+            retries++;
         }
 
         String jobId = acknowledgement.getId().toString();
