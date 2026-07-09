@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
+package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -10,8 +10,8 @@ import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
+import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
@@ -19,17 +19,17 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ApplicationCodeDiffService
-        implements IngressDiffService<ApplicationCodeDiffRequest, ApplicationCodeDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing ac_id match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing ac_id match";
+public class ResolutionCodeDiffService
+        implements IngressDiffService<ResolutionCodeDiffRequest, ResolutionCodeDiffResult> {
+    private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing rc_id match";
+    private static final String UPDATE_REASON_EXISTING_MATCH = "existing rc_id match";
 
     private final JdbcIngressTableReadService tableReadService;
-    private final ApplicationCodeIngressDatabaseRowMapper rowMapper;
+    private final ResolutionCodeIngressDatabaseRowMapper rowMapper;
 
     @Override
-    public ApplicationCodeDiffResult diff(ApplicationCodeDiffRequest request) {
-        val incomingById = new LinkedHashMap<Long, ApplicationCodeIngressRecord>();
+    public ResolutionCodeDiffResult diff(ResolutionCodeDiffRequest request) {
+        val incomingById = new LinkedHashMap<Long, ResolutionCodeIngressRecord>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
@@ -40,7 +40,7 @@ public class ApplicationCodeDiffService
                 tableReadService.loadAll(request.targetTable(), rowMapper).stream()
                         .collect(
                                 Collectors.toMap(
-                                        ApplicationCodeIngressRecord::id,
+                                        ResolutionCodeIngressRecord::id,
                                         item -> item,
                                         (first, second) -> second,
                                         LinkedHashMap::new));
@@ -48,49 +48,49 @@ public class ApplicationCodeDiffService
         val diffRecords =
                 new ArrayList<
                         IngressDiffRecord<
-                                ApplicationCodeIngressRecord,
-                                ApplicationCodeIngressRecord,
-                                ApplicationCodeIngressRecord>>();
+                                ResolutionCodeIngressRecord,
+                                ResolutionCodeIngressRecord,
+                                ResolutionCodeIngressRecord>>();
         for (val incoming : incomingById.values()) {
             val existing = existingById.get(incoming.id());
             diffRecords.add(determineDiffRecord(existing, incoming));
         }
 
-        return new ApplicationCodeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
+        return new ResolutionCodeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
     }
 
     private void addIncomingRecord(
             String targetTable,
-            LinkedHashMap<Long, ApplicationCodeIngressRecord> incomingById,
-            ApplicationCodeIngressRecord item) {
+            LinkedHashMap<Long, ResolutionCodeIngressRecord> incomingById,
+            ResolutionCodeIngressRecord item) {
         val existing = incomingById.putIfAbsent(item.id(), item);
         if (existing == null) {
             return;
         }
 
         log.error(
-                "Duplicate incoming AC_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                "Duplicate incoming RC_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
                 item.id(),
                 targetTable,
                 describe(existing),
                 describe(item));
         throw new AppRegistryException(
                 CommonAppError.INTERNAL_SERVER_ERROR,
-                "Duplicate incoming AC_ID " + item.id() + " detected for " + targetTable);
+                "Duplicate incoming RC_ID " + item.id() + " detected for " + targetTable);
     }
 
     private IngressDiffRecord<
-                    ApplicationCodeIngressRecord,
-                    ApplicationCodeIngressRecord,
-                    ApplicationCodeIngressRecord>
+                    ResolutionCodeIngressRecord,
+                    ResolutionCodeIngressRecord,
+                    ResolutionCodeIngressRecord>
             determineDiffRecord(
-                    ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
+                    ResolutionCodeIngressRecord existing, ResolutionCodeIngressRecord incoming) {
         if (existing == null) {
             return new IngressDiffRecord<>(
                     IngressOperation.INSERT,
                     incoming,
                     null,
-                    buildIntendedRecord(null, incoming),
+                    incoming,
                     INSERT_REASON_NO_EXISTING_MATCH);
         }
 
@@ -98,18 +98,12 @@ public class ApplicationCodeDiffService
                 IngressOperation.UPDATE,
                 incoming,
                 existing,
-                buildIntendedRecord(existing, incoming),
+                incoming,
                 UPDATE_REASON_EXISTING_MATCH);
     }
 
-    private ApplicationCodeIngressRecord buildIntendedRecord(
-            ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
-        // ApplicationCode currently upserts directly from the incoming CSDS representation.
-        return incoming;
-    }
-
-    private String describe(ApplicationCodeIngressRecord item) {
-        return "acId=%s, code=%s, title=%s, startDate=%s, version=%s"
+    private String describe(ResolutionCodeIngressRecord item) {
+        return "rcId=%s, code=%s, title=%s, startDate=%s, version=%s"
                 .formatted(item.id(), item.code(), item.title(), item.startDate(), item.version());
     }
 }

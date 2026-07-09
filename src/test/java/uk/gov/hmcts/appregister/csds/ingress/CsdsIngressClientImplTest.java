@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
@@ -37,14 +39,14 @@ class CsdsIngressClientImplTest {
         var properties = new CsdsIngressProperties();
         properties.setBaseUrl("https://csds.dev.apps.hmcts.net/api/rest");
         properties.setAccessKeyHeader("Api-Key");
-        properties.setAccessKeys(java.util.List.of("test-key"));
+        properties.setAccessKeys(List.of("test-key"));
 
         var client = new CsdsIngressClientImpl(restClient, properties);
 
         client.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=100&%24offset=200");
 
         var uriCaptor = ArgumentCaptor.forClass(URI.class);
-        org.mockito.Mockito.verify(requestHeadersUriSpec).uri(uriCaptor.capture());
+        verify(requestHeadersUriSpec).uri(uriCaptor.capture());
         assertThat(uriCaptor.getValue().toString())
                 .isEqualTo(
                         "https://csds.dev.apps.hmcts.net/api/rest/query/CSDS/ApplicationCode/GD"

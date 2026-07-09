@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress.database;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,8 +107,8 @@ public class ApplicationCodeIngressDatabaseRowMapper
                 rs.getString("application_legislation"),
                 YesOrNo.fromValue(rs.getString("fee_due")),
                 YesOrNo.fromValue(rs.getString("application_code_respondent")),
-                rs.getObject("application_code_start_date", java.time.LocalDate.class),
-                rs.getObject("application_code_end_date", java.time.LocalDate.class),
+                rs.getObject("application_code_start_date", LocalDate.class),
+                rs.getObject("application_code_end_date", LocalDate.class),
                 YesOrNo.fromValue(rs.getString("bulk_respondent_allowed")),
                 rs.getLong("version"),
                 rs.getString("ac_fee_reference"));
