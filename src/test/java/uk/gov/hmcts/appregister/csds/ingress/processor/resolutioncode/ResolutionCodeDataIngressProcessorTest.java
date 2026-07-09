@@ -248,10 +248,10 @@ class ResolutionCodeDataIngressProcessorTest {
 
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(record -> record.get("RC_ID").longValue())
+                .extracting(item -> item.get("RC_ID").longValue())
                 .containsExactly(100001L, 100002L, 100003L);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(record -> record.get("ResolutionCodeID").longValue())
+                .extracting(item -> item.get("ResolutionCodeID").longValue())
                 .containsExactly(1L, 2L, 3L);
     }
 

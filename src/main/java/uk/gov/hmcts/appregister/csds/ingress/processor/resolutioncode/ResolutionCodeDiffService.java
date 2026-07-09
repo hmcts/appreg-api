@@ -89,7 +89,7 @@ public class ResolutionCodeDiffService
                     IngressOperation.INSERT,
                     incoming,
                     null,
-                    buildIntendedRecord(null, incoming),
+                    incoming,
                     INSERT_REASON_NO_EXISTING_MATCH);
         }
 
@@ -97,13 +97,8 @@ public class ResolutionCodeDiffService
                 IngressOperation.UPDATE,
                 incoming,
                 existing,
-                buildIntendedRecord(existing, incoming),
+                incoming,
                 UPDATE_REASON_EXISTING_MATCH);
-    }
-
-    private ResolutionCodeIngressRecord buildIntendedRecord(
-            ResolutionCodeIngressRecord existing, ResolutionCodeIngressRecord incoming) {
-        return incoming;
     }
 
     private String describe(ResolutionCodeIngressRecord item) {
