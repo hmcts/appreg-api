@@ -66,7 +66,7 @@ jobs:
         run: ./.github/scripts/codex-jira-implement.sh
 
       - name: Upload Codex output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codex-jira-output
           path: ${{ runner.temp }}/codex-output
@@ -110,7 +110,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -136,7 +136,7 @@ jobs:
 
       - name: Upload verified Codex output
         if: steps.verify.outputs.passed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: |
@@ -148,7 +148,7 @@ jobs:
 
       - name: Upload verification failure
         if: steps.verify.outputs.passed != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-verification-failure
@@ -193,13 +193,13 @@ jobs:
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
       - name: Download verification failure
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
@@ -213,7 +213,7 @@ jobs:
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Upload repaired Codex output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -257,7 +257,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -283,7 +283,7 @@ jobs:
 
       - name: Upload verified Codex output
         if: steps.verify.outputs.passed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: |
@@ -295,7 +295,7 @@ jobs:
 
       - name: Upload verification failure
         if: steps.verify.outputs.passed != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-verification-failure
@@ -340,13 +340,13 @@ jobs:
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
       - name: Download verification failure
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
@@ -360,7 +360,7 @@ jobs:
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Upload repaired Codex output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -404,7 +404,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -430,7 +430,7 @@ jobs:
 
       - name: Upload verified Codex output
         if: steps.verify.outputs.passed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: |
@@ -442,7 +442,7 @@ jobs:
 
       - name: Upload verification failure
         if: steps.verify.outputs.passed != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-verification-failure
@@ -487,13 +487,13 @@ jobs:
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
       - name: Download verification failure
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
@@ -507,7 +507,7 @@ jobs:
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Upload repaired Codex output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -551,7 +551,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -577,7 +577,7 @@ jobs:
 
       - name: Upload verified Codex output
         if: steps.verify.outputs.passed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: |
@@ -589,7 +589,7 @@ jobs:
 
       - name: Upload verification failure
         if: steps.verify.outputs.passed != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-verification-failure
@@ -652,13 +652,13 @@ jobs:
           echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
       - name: Download Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
 
       - name: Download verified Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: ${{ runner.temp }}/codex-verified
@@ -737,7 +737,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -775,7 +775,7 @@ jobs:
 
       - name: Upload PR verification failure
         if: steps.verify.outputs.passed != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-pr-verification-failure
@@ -820,13 +820,13 @@ jobs:
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
       - name: Download PR verification failure
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
@@ -840,7 +840,7 @@ jobs:
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Upload repaired Codex output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -891,7 +891,7 @@ jobs:
           java-version: 21
 
       - name: Download repaired Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
@@ -917,7 +917,7 @@ jobs:
 
       - name: Upload verified repaired Codex output
         if: steps.verify.outputs.passed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: |
@@ -929,7 +929,7 @@ jobs:
 
       - name: Upload repaired verification failure
         if: steps.verify.outputs.passed != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-pr-repair-verification-failure
@@ -979,13 +979,13 @@ jobs:
           echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
       - name: Download repaired Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
 
       - name: Download verified repaired Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_VERIFIED_ARTIFACT }}
           path: ${{ runner.temp }}/codex-verified
@@ -1044,7 +1044,7 @@ jobs:
           java-version: 21
 
       - name: Download repaired Codex output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output

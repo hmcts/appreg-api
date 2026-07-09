@@ -119,6 +119,34 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew bootRunLocalDevAppLogging -PspringProfiles=nosecurity,functional
   ```
 
+- **Test CSDS ingress locally**
+  The one-shot CSDS ingress startup runner is local-only and is only available when the
+  `nosecurity` profile is active. It runs the enabled ingress processors once on startup and then
+  shuts the application down.
+
+  Before running it:
+  - ensure your local database contains the `CSDS_DATA_INGRESS` row in `database_jobs`
+  - set a valid `CSDS_KEY_1`
+  - enable the processor you want to exercise, for example
+    `APPREG_CSDS_INGRESS_PROCESSORS_APPLICATION_CODES_ENABLED=true`
+  - set `APPREG_CSDS_INGRESS_STARTUP_RUNNER_ENABLED=true`
+  - optionally set `CSDS_APPLICATION_CODES_REPORTING_DIR=./appreg-csds-ingress` to write the diff
+    artifacts
+
+  Example:
+  ```bash
+  APPREG_CSDS_INGRESS_STARTUP_RUNNER_ENABLED=true \
+  APPREG_CSDS_INGRESS_PROCESSORS_APPLICATION_CODES_ENABLED=true \
+  CSDS_KEY_1=replace-with-valid-key \
+  CSDS_APPLICATION_CODES_REPORTING_DIR=./appreg-csds-ingress \
+  ./gradlew bootRunLocalDev
+  ```
+
+  Notes:
+  - the startup runner is only created for local `bootRunLocalDev`-style runs because it is behind
+    the `nosecurity` profile
+  - if `reporting-dir` is set, the ingress run writes comparison artifacts there for inspection
+
 ## Authentication and Authorisation Failure Logging
 
 Protected endpoint responses returning `401` or `403` are logged at `WARN` using the existing App

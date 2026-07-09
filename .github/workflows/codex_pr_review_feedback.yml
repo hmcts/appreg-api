@@ -168,7 +168,7 @@ jobs:
         run: ./.github/scripts/codex-pr-review-feedback.sh
 
       - name: Upload Codex review output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codex-review-output
           path: ${{ runner.temp }}/codex-output
@@ -204,13 +204,13 @@ jobs:
           chmod +x "$RUNNER_TEMP/codex-pr-review-publish.sh"
 
       - name: Download Codex review output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: codex-review-output
           path: ${{ runner.temp }}/codex-output
 
       - name: Download verified Codex review output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: codex-review-verified
           path: ${{ runner.temp }}/codex-verified
@@ -267,7 +267,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex review output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: codex-review-output
           path: ${{ runner.temp }}/codex-output
@@ -279,7 +279,7 @@ jobs:
         run: ./.github/scripts/codex-pr-review-verify.sh
 
       - name: Upload verified Codex review output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codex-review-verified
           path: |
