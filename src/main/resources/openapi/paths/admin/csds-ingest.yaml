@@ -10,7 +10,7 @@ post:
     in CSDS ingress configuration; disabled processors return `409 Conflict`, and recognised but
     unimplemented processors return `501 Not Implemented`. The endpoint honours the distributed
     CSDS ingest lock and returns `423 Locked` if another run already owns it. Uploaded files are
-    limited to 5MB.
+    limited to 1MB.
   parameters:
     - in: path
       name: processor
@@ -52,8 +52,8 @@ post:
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
-    "409": { $ref: "../../components/responses/conflict-error.yaml" }
-    "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
+    "409": { $ref: "../../components/responses/csds-conflict-error.yaml" }
+    "413": { $ref: "../../components/responses/csds-payload-too-large-error.yaml" }
     "415": { $ref: "../../components/responses/unsupported-media-type-error.yaml" }
     "423": { $ref: "../../components/responses/locked-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }

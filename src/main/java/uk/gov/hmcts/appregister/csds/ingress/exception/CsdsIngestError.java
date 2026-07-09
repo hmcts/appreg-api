@@ -14,6 +14,11 @@ public enum CsdsIngestError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "CSDS ingest file must be provided and not empty",
                     "CSI-1")),
+    FILE_TOO_LARGE(
+            DefaultErrorDetail.create(
+                    HttpStatus.PAYLOAD_TOO_LARGE,
+                    "CSDS ingest file must not be larger than 1MB",
+                    "CSI-7")),
     INVALID_FILE_FORMAT(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,

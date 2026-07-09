@@ -177,6 +177,32 @@ class CsdsIngestServiceTest {
     }
 
     @Test
+    void given_fileLargerThanOneMegabyte_when_ingest_then_throwsPayloadTooLargeError() {
+        var file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getSize()).thenReturn(CsdsIngestService.MAX_FILE_SIZE_BYTES + 1);
+        when(applicationCodeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.enabled()).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                service.ingest(
+                                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(),
+                                        file))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.FILE_TOO_LARGE));
+
+        verify(applicationCodeProcessor).processorName();
+        verify(applicationCodeProcessor).enabled();
+        verifyNoMoreInteractions(applicationCodeProcessor);
+        verifyNoInteractions(distributedJobLockService);
+    }
+
+    @Test
     void given_fileWithoutRecordsArray_when_ingest_then_throwsInvalidFormatError()
             throws Exception {
         var file = mockFile("{\"responseCode\":1}");
