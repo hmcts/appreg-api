@@ -169,8 +169,8 @@ class ResolutionCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Retrieved 1 mock CSDS page for resolution_codes_staging "
-                                                + "using page size 2 and reported count 1"));
+                                        "Loaded mock CSDS payload for resolution_codes_staging "
+                                                + "with 1 records"));
     }
 
     @Test

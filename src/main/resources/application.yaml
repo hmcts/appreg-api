@@ -100,9 +100,10 @@ appreg:
       enable-complex-diff: true
   csds:
     ingress:
-      base-url: ${CSDS_BASE_URL}
+      base-url: ${CSDS_BASE_URL:http://noop}
       access-keys:
-      - ${CSDS_KEY_1:}
+      - ${CSDS_KEY_1:missing_1}
+      - ${CSDS_KEY_2:missing_2}
       access-key-header: Api-Key
       lease-duration: PT5M
       connect-timeout: PT10S
@@ -115,7 +116,7 @@ appreg:
           primary-key: ac_id
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ApplicationCodeID
-#          mock: csds/application_codesx.json
+#          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
           enabled: true
@@ -123,8 +124,8 @@ appreg:
           primary-key: rc_id
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ResolutionCodeID
-#          mock: csds/resolution_codesx.json
-          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+#          mock: csds/resolution_codes.json
+#          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
   job:
     page-size: 10
   report:

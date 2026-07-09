@@ -134,8 +134,8 @@ class ApplicationCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Retrieved 1 mock CSDS page for application_codes "
-                                                + "using page size 2 and reported count 200"));
+                                        "Loaded mock CSDS payload for application_codes "
+                                                + "with 200 records"));
     }
 
     @Test

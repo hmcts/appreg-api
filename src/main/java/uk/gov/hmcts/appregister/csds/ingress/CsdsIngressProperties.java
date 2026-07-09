@@ -77,15 +77,12 @@ public class CsdsIngressProperties {
         private ResolutionCodes resolutionCodes = new ResolutionCodes();
 
         private boolean isConfigurationValid() {
-            return applicationCodes != null
-                    && applicationCodes.isConfigurationValid()
-                    && resolutionCodes != null
+            return applicationCodes.isConfigurationValid()
                     && resolutionCodes.isConfigurationValid();
         }
 
         private boolean hasEnabledProcessor() {
-            return (applicationCodes != null && applicationCodes.isEnabled())
-                    || (resolutionCodes != null && resolutionCodes.isEnabled());
+            return applicationCodes.isEnabled() || resolutionCodes.isEnabled();
         }
     }
 
