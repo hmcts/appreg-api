@@ -24,6 +24,7 @@ class CsdsIngressStartupRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         log.info("Running CSDS ingress on application startup");
+        log.info("CSDS startup runner is active and will shut the application down after the run");
 
         try {
             var executed = csdsIngressProcessor.runIngress();

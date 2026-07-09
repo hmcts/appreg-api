@@ -100,7 +100,7 @@ appreg:
       enable-complex-diff: true
   csds:
     ingress:
-      base-url: ${CSDS_BASE_URL:https://csds.dev.apps.hmcts.net/api/rest}
+      base-url: ${CSDS_BASE_URL}
       access-keys:
       - ${CSDS_KEY_1:}
       access-key-header: Api-Key
@@ -117,6 +117,14 @@ appreg:
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ApplicationCodeID
 #          mock: csds/application_codesx.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+        resolution-codes:
+          enabled: true
+          table-name: resolution_codes_staging
+          primary-key: rc_id
+          source-entity-name: ResolutionCode
+          parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ResolutionCodeID
+#          mock: csds/resolution_codesx.json
+          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
   job:
     page-size: 10
   report:
