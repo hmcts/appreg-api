@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
+package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Comparator;
@@ -12,12 +12,12 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReportingService;
 
 @Component
-public class ApplicationCodeDiffReportingService
-        extends AbstractIngressDiffReportingService<ApplicationCodeIngressRecord> {
+public class ResolutionCodeDiffReportingService
+        extends AbstractIngressDiffReportingService<ResolutionCodeIngressRecord> {
     private final String reportingDir;
 
-    public ApplicationCodeDiffReportingService(CsdsIngressProperties properties) {
-        this.reportingDir = properties.getProcessors().getApplicationCodes().getReportingDir();
+    public ResolutionCodeDiffReportingService(CsdsIngressProperties properties) {
+        this.reportingDir = properties.getProcessors().getResolutionCodes().getReportingDir();
     }
 
     public void reportDiff(
@@ -25,7 +25,7 @@ public class ApplicationCodeDiffReportingService
             String targetTable,
             String targetKeyField,
             List<JsonNode> processedData,
-            ApplicationCodeDiffResult diffResult,
+            ResolutionCodeDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         super.reportDiff(
                 reportingDir,
@@ -41,7 +41,7 @@ public class ApplicationCodeDiffReportingService
 
     @Override
     protected String filePrefix() {
-        return "application_codes";
+        return "resolution_codes";
     }
 
     @Override
@@ -49,18 +49,18 @@ public class ApplicationCodeDiffReportingService
             List<JsonNode> processedData,
             List<
                             IngressDiffRecord<
-                                    ApplicationCodeIngressRecord,
-                                    ApplicationCodeIngressRecord,
-                                    ApplicationCodeIngressRecord>>
+                                    ResolutionCodeIngressRecord,
+                                    ResolutionCodeIngressRecord,
+                                    ResolutionCodeIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByAcId =
+        var incomingRecordsByRcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, "AC_ID") != null)
+                        .filter(item -> nullableLong(item, "RC_ID") != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, "AC_ID"),
+                                        item -> nullableLong(item, "RC_ID"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -68,21 +68,21 @@ public class ApplicationCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByAcId.get(item.intended().id()),
-                                                "PSSApplicationCodeID"),
+                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                "PSSRCID"),
                                         nullableLong(
-                                                incomingRecordsByAcId.get(item.intended().id()),
-                                                "ApplicationCodeID"),
+                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                "ResolutionCodeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
     }
 
     @Override
-    protected String buildExistingCsv(Map<Long, ApplicationCodeIngressRecord> existingById) {
+    protected String buildExistingCsv(Map<Long, ResolutionCodeIngressRecord> existingById) {
         var csv = new StringBuilder(csvHeader());
         existingById.values().stream()
-                .sorted(Comparator.comparing(ApplicationCodeIngressRecord::id))
+                .sorted(Comparator.comparing(ResolutionCodeIngressRecord::id))
                 .map(this::toExistingCsvRow)
                 .forEach(csv::append);
         return csv.toString();
@@ -100,37 +100,34 @@ public class ApplicationCodeDiffReportingService
     }
 
     private String csvHeader() {
-        return "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation,"
-                + "feeDue,requiresRespondent,startDate,endDate,"
-                + "bulkRespondentAllowed,version,feeReference\n";
+        return "pssResolutionCodeId,resolutionCodeId,rcId,code,title,wording,legislation,"
+                + "recipient1Email,recipient2Email,startDate,endDate,version\n";
     }
 
     @Override
     protected String diffReportHeader() {
-        return "pssApplicationCodeId,applicationCodeId,acId,changeType\n";
+        return "pssResolutionCodeId,resolutionCodeId,rcId,changeType\n";
     }
 
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, "PSSApplicationCodeID")),
-                        csvValue(nullableLong(node, "ApplicationCodeID")),
-                        csvValue(nullableLong(node, "AC_ID")),
+                        csvValue(nullableLong(node, "PSSRCID")),
+                        csvValue(nullableLong(node, "ResolutionCodeID")),
+                        csvValue(nullableLong(node, "RC_ID")),
                         csvValue(nullableText(node, "Code")),
-                        csvValue(nullableText(node, "ApplicationTitle")),
-                        csvValue(nullableText(node, "ApplicationWording")),
+                        csvValue(nullableText(node, "ResultTitle")),
+                        csvValue(nullableText(node, "ResultWording")),
                         csvValue(nullableText(node, "Legislation")),
-                        csvValue(nullableText(node, "FeeDue")),
-                        csvValue(nullableText(node, "Respondent")),
+                        csvValue(nullableText(node, "Recipient1Email")),
+                        csvValue(nullableText(node, "Recipient2Email")),
                         csvValue(nullableText(node, "StartDate")),
                         csvValue(nullableText(node, "EndDate")),
-                        csvValue(nullableText(node, "BulkRespondentAllowed")),
-                        csvValue(nullableLong(node, "RevisionNumber")),
-                        csvValue(nullableText(node, "FeeReference")))
+                        csvValue(nullableLong(node, "RevisionNumber")))
                 + "\n";
     }
 
-    private String toExistingCsvRow(ApplicationCodeIngressRecord item) {
+    private String toExistingCsvRow(ResolutionCodeIngressRecord item) {
         return String.join(
                         ",",
                         csvValue((Object) null),
@@ -140,31 +137,29 @@ public class ApplicationCodeDiffReportingService
                         csvValue(item.title()),
                         csvValue(item.wording()),
                         csvValue(item.legislation()),
-                        csvValue(item.feeDue()),
-                        csvValue(item.requiresRespondent()),
+                        csvValue(item.recipient1Email()),
+                        csvValue(item.recipient2Email()),
                         csvValue(item.startDate()),
                         csvValue(item.endDate()),
-                        csvValue(item.bulkRespondentAllowed()),
-                        csvValue(item.version()),
-                        csvValue(item.feeReference()))
+                        csvValue(item.version()))
                 + "\n";
     }
 
     private record DiffReportRow(
-            Long pssApplicationCodeId, Long applicationCodeId, Long acId, String changeType)
+            Long pssResolutionCodeId, Long resolutionCodeId, Long rcId, String changeType)
             implements DiffReportCsvRow {
         @Override
         public Long sortId() {
-            return acId;
+            return rcId;
         }
 
         @Override
         public String toCsvRow() {
             return String.join(
                             ",",
-                            csvValue(pssApplicationCodeId),
-                            csvValue(applicationCodeId),
-                            csvValue(acId),
+                            csvValue(pssResolutionCodeId),
+                            csvValue(resolutionCodeId),
+                            csvValue(rcId),
                             csvValue(changeType))
                     + "\n";
         }

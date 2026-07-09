@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -133,8 +134,8 @@ class ApplicationCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Retrieved 1 mock CSDS page for application_codes "
-                                                + "using page size 2 and reported count 200"));
+                                        "Loaded mock CSDS payload for application_codes "
+                                                + "with 200 records"));
     }
 
     @Test
@@ -565,8 +566,7 @@ class ApplicationCodeDataIngressProcessorTest {
                                 createSourceRecord(345L, "A3", "Title 3", "Wording 3", 1L),
                                 createSourceRecord(346L, "A4", "Title 4", "Wording 4", 1L)));
         var invalidRecord =
-                ((com.fasterxml.jackson.databind.node.ObjectNode)
-                        extractRecordsFromPage(processedData.getFirst()).getFirst());
+                ((ObjectNode) extractRecordsFromPage(processedData.getFirst()).getFirst());
         invalidRecord.remove("ApplicationTitle");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
@@ -682,8 +682,7 @@ class ApplicationCodeDataIngressProcessorTest {
                 .build();
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createPageResponse(
-            com.fasterxml.jackson.databind.node.ObjectNode... records) {
+    private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
         for (var record : records) {
@@ -692,19 +691,18 @@ class ApplicationCodeDataIngressProcessorTest {
         return page;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createPageResponseWithMetadata(
-            int responseCode, com.fasterxml.jackson.databind.node.ObjectNode... records) {
+    private ObjectNode createPageResponseWithMetadata(int responseCode, ObjectNode... records) {
         var page = createPageResponse(records);
         page.put("responseCode", responseCode);
         return page;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecord(
+    private ObjectNode createSourceRecord(
             Long id, String code, String title, String wording, Long version) {
         return createSourceRecord(id, code, title, wording, version, "2020-01-01", null);
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecord(
+    private ObjectNode createSourceRecord(
             Long id,
             String code,
             String title,
@@ -754,15 +752,14 @@ class ApplicationCodeDataIngressProcessorTest {
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode
-            createSourceRecordWithoutApplicationCodeId(
-                    Long pssacid, String code, String title, String wording, Long version) {
+    private ObjectNode createSourceRecordWithoutApplicationCodeId(
+            Long pssacid, String code, String title, String wording, Long version) {
         var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
         record.put("PSSApplicationCodeID", pssacid);
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecordWithPssacid(
+    private ObjectNode createSourceRecordWithPssacid(
             Long pssacid,
             Long applicationCodeId,
             String code,
@@ -774,7 +771,7 @@ class ApplicationCodeDataIngressProcessorTest {
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecordWithPssacid(
+    private ObjectNode createSourceRecordWithPssacid(
             Long pssacid,
             String code,
             String title,

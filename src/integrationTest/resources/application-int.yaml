@@ -24,5 +24,12 @@ appreg:
   audit:
     diff:
       enable-complex-diff: true
+  csds:
+    ingress:
+      processors:
+        application-codes:
+          enabled: false
+        resolution-codes:
+          enabled: false
   job:
     page-size: 2

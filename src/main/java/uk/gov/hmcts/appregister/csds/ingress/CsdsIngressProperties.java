@@ -80,13 +80,15 @@ public class CsdsIngressProperties {
     @Setter
     public static class Processors {
         private ApplicationCodes applicationCodes = new ApplicationCodes();
+        private ResolutionCodes resolutionCodes = new ResolutionCodes();
 
         private boolean isConfigurationValid() {
-            return applicationCodes != null && applicationCodes.isConfigurationValid();
+            return applicationCodes.isConfigurationValid()
+                    && resolutionCodes.isConfigurationValid();
         }
 
         private boolean hasEnabledProcessor() {
-            return applicationCodes != null && applicationCodes.isEnabled();
+            return applicationCodes.isEnabled() || resolutionCodes.isEnabled();
         }
 
         private boolean hasEnabledProcessorWithoutMock() {
@@ -139,6 +141,14 @@ public class CsdsIngressProperties {
     public static class ApplicationCodes extends ProcessorProperties {
         public ApplicationCodes() {
             super("ApplicationCode", "application_codes", "ac_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class ResolutionCodes extends ProcessorProperties {
+        public ResolutionCodes() {
+            super("ResolutionCode", "resolution_codes_staging", "rc_id");
         }
     }
 }

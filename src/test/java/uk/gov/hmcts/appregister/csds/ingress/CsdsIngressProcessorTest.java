@@ -98,8 +98,7 @@ class CsdsIngressProcessorTest {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(3));
         @SuppressWarnings("unchecked")
-        IDataIngressProcessor<String> secondProcessor =
-                mock(IDataIngressProcessor.class);
+        IDataIngressProcessor<String> secondProcessor = mock(IDataIngressProcessor.class);
 
         var processor =
                 new CsdsIngressProcessor(
@@ -142,7 +141,7 @@ class CsdsIngressProcessorTest {
         properties.setLeaseDuration(Duration.ofMinutes(3));
         @SuppressWarnings("unchecked")
         IDataIngressProcessor<String> secondProcessor =
-                mock(IDataIngressProcessor.class);
+                org.mockito.Mockito.mock(IDataIngressProcessor.class);
         var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
         logCaptor.clearLogs();
 

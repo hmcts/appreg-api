@@ -38,9 +38,8 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
             val mockResponse = loadMockResponse(mockFilePath);
             if (mockResponse != null) {
                 log.info(
-                        "Retrieved 1 mock CSDS page for {} using page size {} and reported count {}",
+                        "Loaded mock CSDS payload for {} with {} records",
                         datasetName(),
-                        properties.getPageSize(),
                         extractRecords(mockResponse).size());
                 return List.of(mockResponse);
             }

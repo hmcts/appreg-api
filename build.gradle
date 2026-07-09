@@ -473,7 +473,6 @@ dependencies {
   implementation 'com.opencsv:opencsv:5.12.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.4.4.Final'
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.4.Final'
   annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.4.Final'
 
