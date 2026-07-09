@@ -8,10 +8,12 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -500,8 +502,7 @@ class ResolutionCodeDataIngressProcessorTest {
                                 createSourceRecord(345L, "R3", "Title 3", "Wording 3", 1L),
                                 createSourceRecord(346L, "R4", "Title 4", "Wording 4", 1L)));
         var invalidRecord =
-                ((com.fasterxml.jackson.databind.node.ObjectNode)
-                        extractRecordsFromPage(processedData.getFirst()).getFirst());
+                ((ObjectNode) extractRecordsFromPage(processedData.getFirst()).getFirst());
         invalidRecord.remove("ResultTitle");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
@@ -584,8 +585,7 @@ class ResolutionCodeDataIngressProcessorTest {
                 nullableLong(node, "RevisionNumber"));
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createPageResponse(
-            com.fasterxml.jackson.databind.node.ObjectNode... records) {
+    private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
         for (var record : records) {
@@ -594,12 +594,12 @@ class ResolutionCodeDataIngressProcessorTest {
         return page;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecord(
+    private ObjectNode createSourceRecord(
             Long id, String code, String title, String wording, Long version) {
         return createSourceRecord(id, code, title, wording, version, "2020-01-01", null);
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecord(
+    private ObjectNode createSourceRecord(
             Long id,
             String code,
             String title,
@@ -645,15 +645,14 @@ class ResolutionCodeDataIngressProcessorTest {
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode
-            createSourceRecordWithoutResolutionCodeId(
-                    Long pssrcid, String code, String title, String wording, Long version) {
+    private ObjectNode createSourceRecordWithoutResolutionCodeId(
+            Long pssrcid, String code, String title, String wording, Long version) {
         var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
         record.put("PSSRCID", pssrcid);
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecordWithPssrcid(
+    private ObjectNode createSourceRecordWithPssrcid(
             Long pssrcid,
             Long resolutionCodeId,
             String code,
@@ -667,7 +666,7 @@ class ResolutionCodeDataIngressProcessorTest {
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {
         var records = page.get("records");
-        var extracted = new java.util.ArrayList<JsonNode>();
+        var extracted = new ArrayList<JsonNode>();
         records.forEach(extracted::add);
         return List.copyOf(extracted);
     }

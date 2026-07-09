@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -38,7 +39,7 @@ public class ResolutionCodeDiffService
         val existingById =
                 tableReadService.loadAll(request.targetTable(), rowMapper).stream()
                         .collect(
-                                java.util.stream.Collectors.toMap(
+                                Collectors.toMap(
                                         ResolutionCodeIngressRecord::id,
                                         item -> item,
                                         (first, second) -> second,

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress.database;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,8 +107,8 @@ public class ResolutionCodeIngressDatabaseRowMapper
                 rs.getString(LEGISLATION),
                 rs.getString(EMAIL_1),
                 rs.getString(EMAIL_2),
-                rs.getObject(START_DATE, java.time.LocalDate.class),
-                rs.getObject(END_DATE, java.time.LocalDate.class),
+                rs.getObject(START_DATE, LocalDate.class),
+                rs.getObject(END_DATE, LocalDate.class),
                 rs.getLong(VERSION));
     }
 }
