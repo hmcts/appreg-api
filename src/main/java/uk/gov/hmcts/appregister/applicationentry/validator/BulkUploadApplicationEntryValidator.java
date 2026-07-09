@@ -84,6 +84,11 @@ public class BulkUploadApplicationEntryValidator extends CreateApplicationEntryV
         return null;
     }
 
+    @Override
+    protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
+        return false;
+    }
+
     private void cacheApplicationCodes() {
 
         for (ApplicationCode code :
