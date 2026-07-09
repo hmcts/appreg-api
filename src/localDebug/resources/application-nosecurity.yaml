@@ -19,3 +19,9 @@ management:
     web:
       exposure:
         include: health,info,prometheus,rest-implementation-status
+
+appreg:
+  csds:
+    ingress:
+      startup-runner:
+        enabled: ${APPREG_CSDS_INGRESS_STARTUP_RUNNER_ENABLED:false}

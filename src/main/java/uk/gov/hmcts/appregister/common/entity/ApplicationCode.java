@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -103,8 +102,8 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     private YesOrNo bulkRespondentAllowed;
 
     @Column(name = "version", nullable = false)
-    @Version
-    private Long version;
+    @Builder.Default
+    private Long version = 0L;
 
     @Column(name = "user_name")
     private String userName;
