@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -788,7 +789,7 @@ class ApplicationCodeDataIngressProcessorTest {
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {
         var records = page.get("records");
-        var extracted = new java.util.ArrayList<JsonNode>();
+        var extracted = new ArrayList<JsonNode>();
         records.forEach(extracted::add);
         return List.copyOf(extracted);
     }

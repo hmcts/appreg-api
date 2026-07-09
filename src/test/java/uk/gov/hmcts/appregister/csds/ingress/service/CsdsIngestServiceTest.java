@@ -55,7 +55,7 @@ class CsdsIngestServiceTest {
                         List.of((IDataIngressProcessor<?>) applicationCodeProcessor),
                         distributedJobLockService,
                         properties,
-                        new AuditOperationServiceImpl(java.util.List.of()),
+                        new AuditOperationServiceImpl(List.of()),
                         userProvider,
                         OBJECT_MAPPER);
     }

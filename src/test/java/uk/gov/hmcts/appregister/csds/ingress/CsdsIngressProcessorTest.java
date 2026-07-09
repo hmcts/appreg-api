@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +51,7 @@ class CsdsIngressProcessorTest {
 
         when(distributedJobLockService.tryAcquire(
                         eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.of(lock));
+                .thenReturn(Optional.of(lock));
         when(distributedJobLockService.release(lock)).thenReturn(true);
         when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
         when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
@@ -83,7 +85,7 @@ class CsdsIngressProcessorTest {
 
         when(distributedJobLockService.tryAcquire(
                         eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.empty());
+                .thenReturn(Optional.empty());
 
         var executed = processor.runIngress();
 
@@ -97,7 +99,7 @@ class CsdsIngressProcessorTest {
         properties.setLeaseDuration(Duration.ofMinutes(3));
         @SuppressWarnings("unchecked")
         IDataIngressProcessor<String> secondProcessor =
-                org.mockito.Mockito.mock(IDataIngressProcessor.class);
+                mock(IDataIngressProcessor.class);
 
         var processor =
                 new CsdsIngressProcessor(
@@ -116,7 +118,7 @@ class CsdsIngressProcessorTest {
 
         when(distributedJobLockService.tryAcquire(
                         eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.of(lock));
+                .thenReturn(Optional.of(lock));
         when(distributedJobLockService.renew(lock)).thenReturn(true);
         when(distributedJobLockService.release(lock)).thenReturn(true);
         when(dataIngressProcessor.datasetName()).thenReturn("test-dataset-1");
@@ -140,7 +142,7 @@ class CsdsIngressProcessorTest {
         properties.setLeaseDuration(Duration.ofMinutes(3));
         @SuppressWarnings("unchecked")
         IDataIngressProcessor<String> secondProcessor =
-                org.mockito.Mockito.mock(IDataIngressProcessor.class);
+                mock(IDataIngressProcessor.class);
         var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
         logCaptor.clearLogs();
 
@@ -161,7 +163,7 @@ class CsdsIngressProcessorTest {
 
         when(distributedJobLockService.tryAcquire(
                         eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.of(lock));
+                .thenReturn(Optional.of(lock));
         when(distributedJobLockService.renew(lock)).thenReturn(true);
         when(distributedJobLockService.release(lock)).thenReturn(true);
         when(dataIngressProcessor.datasetName()).thenReturn("test-dataset-1");

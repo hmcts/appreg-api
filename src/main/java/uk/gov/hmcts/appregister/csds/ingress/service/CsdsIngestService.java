@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -47,7 +48,7 @@ public class CsdsIngestService {
                     var lock = acquireLock();
                     try {
                         var response = processor.ingest(parse(file));
-                        return java.util.Optional.of(new AuditableResult<>(response, audit));
+                        return Optional.of(new AuditableResult<>(response, audit));
                     } finally {
                         if (!distributedJobLockService.release(lock)) {
                             log.warn(
