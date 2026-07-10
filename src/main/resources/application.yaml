@@ -127,7 +127,7 @@ appreg:
 #          mock: csds/resolution_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         fee:
-          enabled: true
+          enabled: false
           table-name: fee_staging
           primary-key: fee_id
           source-entity-name: CivilFee
