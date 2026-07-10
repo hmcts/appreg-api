@@ -1,0 +1,40 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+    example: "123e4567-e89b-12d3-a456-426655440000"
+post:
+  operationId: applicationListEntryBulkActionPreview
+  tags: [ application-list-entries ]
+  summary: Resolve Application List bulk action selection preview
+  description: >
+    Resolves a selection within a single Application List into entry IDs and row context,
+    enforcing the configured single-list bulk action limit.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/application-list-entries/application-list-entry-bulk-action-preview-request-dto.yaml"
+  responses:
+    "200":
+      description: Bulk action preview for the resolved Application List selection.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/application-list-entries/bulk-action-preview-response-dto.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
