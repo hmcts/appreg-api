@@ -164,12 +164,12 @@ class ResolutionCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Loaded CSDS mock response for resolution_codes_staging from "
+                                        "Loaded CSDS mock response for resolution_codes from "
                                                 + mockFile))
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Loaded mock CSDS payload for resolution_codes_staging "
+                                        "Loaded mock CSDS payload for resolution_codes "
                                                 + "with 1 records"));
     }
 
@@ -196,13 +196,12 @@ class ResolutionCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Configured CSDS mock response for resolution_codes_staging "
+                                        "Configured CSDS mock response for resolution_codes "
                                                 + "was not found at "
                                                 + "classpath:csds/does_not_exist.json. "
                                                 + "Falling back to endpoint."));
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log -> log.contains("Retrieved 1 CSDS pages for resolution_codes_staging"));
+                .anyMatch(log -> log.contains("Retrieved 1 CSDS pages for resolution_codes"));
     }
 
     @Test
@@ -228,12 +227,11 @@ class ResolutionCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Failed to load CSDS mock response for resolution_codes_staging from "
+                                        "Failed to load CSDS mock response for resolution_codes from "
                                                 + invalidMockFile
                                                 + ". Falling back to endpoint."));
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log -> log.contains("Retrieved 1 CSDS pages for resolution_codes_staging"));
+                .anyMatch(log -> log.contains("Retrieved 1 CSDS pages for resolution_codes"));
     }
 
     @Test
@@ -311,7 +309,7 @@ class ResolutionCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "CSDS ingress processor resolution_codes_staging "
+                                        "CSDS ingress processor resolution_codes "
                                                 + "produced inserts=1, updates=1"));
 
         try (var fileStream = Files.list(tempDir)) {
@@ -373,6 +371,48 @@ class ResolutionCodeDataIngressProcessorTest {
                     .contains("\"345\",\"2\",\"345\",\"update\"")
                     .contains(",\"3\",\"100003\",\"insert\"");
         }
+    }
+
+    @Test
+    void given_processedData_when_ingest_then_returnsAppliedSummary() {
+        var existingUpdated =
+                new ResolutionCodeIngressRecord(
+                        345L,
+                        "R2",
+                        "Title 2",
+                        "Wording 2",
+                        "Legislation 2",
+                        "email1@example.com",
+                        "email2@example.com",
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null,
+                        1L);
+        var existingUnmatched =
+                new ResolutionCodeIngressRecord(
+                        4L,
+                        "R4",
+                        "Title 4",
+                        "Wording 4",
+                        "Legislation 4",
+                        null,
+                        null,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(existingUpdated, existingUnmatched));
+
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecordWithPssrcid(
+                                        345L, 2L, "R2", "Updated Title", "Wording 2", 2L),
+                                createSourceRecord(3L, "R3", "Title 3", "Wording 3", 1L)));
+
+        var response = processor.ingest(processedData);
+
+        assertThat(response.getInserted()).isEqualTo(1);
+        assertThat(response.getUpdated()).isEqualTo(1);
     }
 
     @Test

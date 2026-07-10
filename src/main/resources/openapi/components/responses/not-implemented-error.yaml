@@ -1,0 +1,12 @@
+description: The requested processor is recognised but not yet implemented.
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      not-implemented:
+        value:
+          type: https://errors.hmcts.net/common/not-implemented
+          title: Not Implemented
+          status: 501
+          detail: The requested CSDS ingest processor is not implemented yet

@@ -41,10 +41,7 @@ public class CsdsIngressProperties {
             return true;
         }
 
-        return StringUtils.hasText(baseUrl)
-                && StringUtils.hasText(accessKeyHeader)
-                && accessKeys.stream().anyMatch(StringUtils::hasText)
-                && leaseDuration != null
+        return leaseDuration != null
                 && !leaseDuration.isNegative()
                 && !leaseDuration.isZero()
                 && connectTimeout != null
@@ -56,12 +53,21 @@ public class CsdsIngressProperties {
                 && startupRunner != null
                 && processors != null
                 && processors.isConfigurationValid()
-                && pageSize > 0;
+                && pageSize > 0
+                && (!requiresRemoteAccess()
+                        || (StringUtils.hasText(baseUrl)
+                                && StringUtils.hasText(accessKeyHeader)
+                                && accessKeys.stream().anyMatch(StringUtils::hasText)));
     }
 
     private boolean isActive() {
         return startupRunner != null && startupRunner.isEnabled()
                 || processors != null && processors.hasEnabledProcessor();
+    }
+
+    private boolean requiresRemoteAccess() {
+        return startupRunner != null && startupRunner.isEnabled()
+                || processors != null && processors.hasEnabledProcessorWithoutMock();
     }
 
     @Getter
@@ -83,6 +89,11 @@ public class CsdsIngressProperties {
 
         private boolean hasEnabledProcessor() {
             return applicationCodes.isEnabled() || resolutionCodes.isEnabled();
+        }
+
+        private boolean hasEnabledProcessorWithoutMock() {
+            return applicationCodes != null && applicationCodes.requiresRemoteAccess()
+                    || resolutionCodes != null && resolutionCodes.requiresRemoteAccess();
         }
     }
 
@@ -119,6 +130,10 @@ public class CsdsIngressProperties {
                     || (StringUtils.hasText(sourceEntityName)
                             && StringUtils.hasText(tableName)
                             && StringUtils.hasText(primaryKey));
+        }
+
+        protected boolean requiresRemoteAccess() {
+            return enabled && !StringUtils.hasText(mock);
         }
     }
 
