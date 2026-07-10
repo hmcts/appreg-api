@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -192,6 +193,40 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
         }
 
         return field.asText();
+    }
+
+    protected final BigDecimal requiredBigDecimal(JsonNode node, String fieldName) {
+        val value = nullableBigDecimal(node, fieldName);
+        if (value == null) {
+            throw invalidField(fieldName);
+        }
+
+        return value;
+    }
+
+    protected final BigDecimal nullableBigDecimal(JsonNode node, String fieldName) {
+        val field = node.get(fieldName);
+        if (field == null || field.isNull()) {
+            return null;
+        }
+
+        try {
+            if (field.isNumber()) {
+                return field.decimalValue();
+            }
+            if (field.isTextual() && StringUtils.hasText(field.asText())) {
+                return new BigDecimal(field.asText());
+            }
+            return null;
+        } catch (NumberFormatException ex) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "CSDS field "
+                            + fieldName
+                            + " contained an invalid decimal value for "
+                            + datasetName(),
+                    ex);
+        }
     }
 
     protected final YesOrNo requiredYesOrNo(JsonNode node, String fieldName) {

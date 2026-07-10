@@ -46,6 +46,25 @@ class CsdsIngressPropertiesTest {
         assertThat(properties.isConfigurationValid()).isFalse();
     }
 
+    @Test
+    void given_enabledFeeProcessorWithoutMock_when_validate_then_remoteCredentialsAreRequired() {
+        var properties = baseProperties();
+        properties.getProcessors().getFee().setEnabled(true);
+        properties.getProcessors().getFee().setMock(null);
+
+        assertThat(properties.isConfigurationValid()).isFalse();
+    }
+
+    @Test
+    void given_enabledFeeProcessorMissingTableName_when_validate_then_configurationIsInvalid() {
+        var properties = baseProperties();
+        properties.getProcessors().getFee().setEnabled(true);
+        properties.getProcessors().getFee().setMock("csds/fee.json");
+        properties.getProcessors().getFee().setTableName(null);
+
+        assertThat(properties.isConfigurationValid()).isFalse();
+    }
+
     private CsdsIngressProperties baseProperties() {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(5));
