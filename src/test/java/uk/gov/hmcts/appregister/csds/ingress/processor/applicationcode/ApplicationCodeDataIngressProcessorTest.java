@@ -600,7 +600,7 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_processedData_when_preProcess_then_addAcIdAndSortByIt() {
+    void given_processedData_when_preProcess_then_addAcIdAndPreserveIncomingOrder() {
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
@@ -614,12 +614,42 @@ class ApplicationCodeDataIngressProcessorTest {
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(record -> record.get("AC_ID").longValue())
                 .containsExactly(
+                        ApplicationCodeIngressRecord.calculateId(null, 3L),
                         ApplicationCodeIngressRecord.calculateId(null, 1L),
-                        ApplicationCodeIngressRecord.calculateId(null, 2L),
-                        ApplicationCodeIngressRecord.calculateId(null, 3L));
+                        ApplicationCodeIngressRecord.calculateId(null, 2L));
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(record -> record.get("ApplicationCodeID").longValue())
-                .containsExactly(1L, 2L, 3L);
+                .containsExactly(3L, 1L, 2L);
+    }
+
+    @Test
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addAcId() {
+        var record = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
+        record.remove(
+                List.of(
+                        "Notes",
+                        "AuthoringStatus",
+                        "PublishingStatus",
+                        "CurrentRecordIndicator",
+                        "DraftFinalExistsIndicator",
+                        "RevisionType",
+                        "RevisionDateFrom",
+                        "RevisionDateTo",
+                        "ClonedFrom",
+                        "PSSChangeSetHeaderID",
+                        "PSSChangeSetItemID",
+                        "FID_ApplicationRegisterHeader",
+                        "FID_ReleasePackage",
+                        "Updator"));
+
+        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+
+        assertThat(
+                        extractRecordsFromPage(preProcessed.getFirst())
+                                .getFirst()
+                                .get("AC_ID")
+                                .longValue())
+                .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
     }
 
     @Test

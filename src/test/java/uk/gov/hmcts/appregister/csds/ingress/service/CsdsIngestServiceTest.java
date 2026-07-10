@@ -39,6 +39,7 @@ class CsdsIngestServiceTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Mock private IDataIngressProcessor<CsdsIngestResponse> applicationCodeProcessor;
+    @Mock private IDataIngressProcessor<CsdsIngestResponse> feeProcessor;
     @Mock private DistributedJobLockService distributedJobLockService;
     @Mock private UserProvider userProvider;
 
@@ -51,7 +52,7 @@ class CsdsIngestServiceTest {
         properties.setLeaseDuration(Duration.ofMinutes(5));
         service =
                 new CsdsIngestService(
-                        List.of((IDataIngressProcessor<?>) applicationCodeProcessor),
+                        List.of((IDataIngressProcessor<?>) applicationCodeProcessor, feeProcessor),
                         distributedJobLockService,
                         properties,
                         new AuditOperationServiceImpl(List.of()),
@@ -84,6 +85,36 @@ class CsdsIngestServiceTest {
         assertThat(actual).isSameAs(response);
         verify(applicationCodeProcessor).processorName();
         verify(applicationCodeProcessor).ingest(parsedPagesCaptor.capture());
+        assertThat(parsedPagesCaptor.getValue()).hasSize(1).first().isInstanceOf(JsonNode.class);
+        verify(distributedJobLockService).release(lock);
+    }
+
+    @Test
+    void given_validFeeFileAndAvailableLock_when_ingest_then_processesFeeFileAndReturnsSummary()
+            throws Exception {
+        var file = mockFile("{\"responseCode\":1,\"records\":[{\"FEE_ID\":33}]}");
+        var lock = new DistributedJobLock("CSDS_DATA_INGRESS", "token", Duration.ofMinutes(5));
+        var response = new CsdsIngestResponse().inserted(2).updated(1);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<JsonNode>> parsedPagesCaptor = ArgumentCaptor.forClass(List.class);
+
+        when(userProvider.getUserId()).thenReturn("tenant:object");
+        when(applicationCodeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(feeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.FEE.getExternalName());
+        when(feeProcessor.enabled()).thenReturn(true);
+        when(distributedJobLockService.tryAcquire("CSDS_DATA_INGRESS", Duration.ofMinutes(5)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(feeProcessor.ingest(anyList())).thenReturn(response);
+
+        var actual = service.ingest(CsdsIngestProcessorName.FEE.getExternalName(), file);
+
+        assertThat(actual).isSameAs(response);
+        verify(applicationCodeProcessor).processorName();
+        verify(feeProcessor).processorName();
+        verify(feeProcessor).ingest(parsedPagesCaptor.capture());
         assertThat(parsedPagesCaptor.getValue()).hasSize(1).first().isInstanceOf(JsonNode.class);
         verify(distributedJobLockService).release(lock);
     }
@@ -124,6 +155,31 @@ class CsdsIngestServiceTest {
         verify(applicationCodeProcessor).processorName();
         verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
+        verifyNoInteractions(distributedJobLockService);
+    }
+
+    @Test
+    void given_knownButDisabledFeeProcessor_when_ingest_then_throwsDisabledError()
+            throws Exception {
+        var file = mock(MultipartFile.class);
+        when(applicationCodeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(feeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.FEE.getExternalName());
+        when(feeProcessor.enabled()).thenReturn(false);
+
+        assertThatThrownBy(
+                        () -> service.ingest(CsdsIngestProcessorName.FEE.getExternalName(), file))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.PROCESSOR_DISABLED));
+
+        verify(applicationCodeProcessor).processorName();
+        verify(feeProcessor).processorName();
+        verify(feeProcessor).enabled();
+        verifyNoMoreInteractions(applicationCodeProcessor, feeProcessor);
         verifyNoInteractions(distributedJobLockService);
     }
 
@@ -181,6 +237,32 @@ class CsdsIngestServiceTest {
         verify(applicationCodeProcessor).processorName();
         verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
+        verifyNoInteractions(distributedJobLockService);
+    }
+
+    @Test
+    void given_feeFileLargerThanOneMegabyte_when_ingest_then_throwsPayloadTooLargeError() {
+        var file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getSize()).thenReturn(CsdsIngestService.MAX_FILE_SIZE_BYTES + 1);
+        when(applicationCodeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(feeProcessor.processorName())
+                .thenReturn(CsdsIngestProcessorName.FEE.getExternalName());
+        when(feeProcessor.enabled()).thenReturn(true);
+
+        assertThatThrownBy(
+                        () -> service.ingest(CsdsIngestProcessorName.FEE.getExternalName(), file))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.FILE_TOO_LARGE));
+
+        verify(applicationCodeProcessor).processorName();
+        verify(feeProcessor).processorName();
+        verify(feeProcessor).enabled();
+        verifyNoMoreInteractions(applicationCodeProcessor, feeProcessor);
         verifyNoInteractions(distributedJobLockService);
     }
 

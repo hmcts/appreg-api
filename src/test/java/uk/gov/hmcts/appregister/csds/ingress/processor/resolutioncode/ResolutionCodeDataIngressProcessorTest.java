@@ -236,7 +236,7 @@ class ResolutionCodeDataIngressProcessorTest {
 
     @Test
     void
-            given_processedData_withoutBulkRespondentAllowed_when_preProcess_then_addRcIdAndSortByResolutionCodeId() {
+            given_processedData_withoutBulkRespondentAllowed_when_preProcess_then_addRcIdAndPreserveIncomingOrder() {
         var preProcessed =
                 processor.preProcess(
                         List.of(
@@ -249,10 +249,40 @@ class ResolutionCodeDataIngressProcessorTest {
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(item -> item.get("RC_ID").longValue())
-                .containsExactly(100001L, 100002L, 100003L);
+                .containsExactly(100003L, 100001L, 100002L);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(item -> item.get("ResolutionCodeID").longValue())
-                .containsExactly(1L, 2L, 3L);
+                .containsExactly(3L, 1L, 2L);
+    }
+
+    @Test
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addRcId() {
+        var record = createSourceRecord(3L, "RC3", "Title 3", "Wording 3", 1L);
+        record.remove(
+                List.of(
+                        "Notes",
+                        "AuthoringStatus",
+                        "PublishingStatus",
+                        "CurrentRecordIndicator",
+                        "DraftFinalExistsIndicator",
+                        "RevisionType",
+                        "RevisionDateFrom",
+                        "RevisionDateTo",
+                        "ClonedFrom",
+                        "PSSChangeSetHeaderID",
+                        "PSSChangeSetItemID",
+                        "FID_ApplicationRegisterHeader",
+                        "FID_ReleasePackage",
+                        "Updator"));
+
+        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+
+        assertThat(
+                        extractRecordsFromPage(preProcessed.getFirst())
+                                .getFirst()
+                                .get("RC_ID")
+                                .longValue())
+                .isEqualTo(ResolutionCodeIngressRecord.calculateId(null, 3L));
     }
 
     @Test

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Comparator;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -23,6 +22,7 @@ public class ApplicationCodeDataIngressProcessor
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ApplicationCodeID",
+                    "PSSApplicationCodeID",
                     "Code",
                     "ApplicationTitle",
                     "ApplicationWording",
@@ -32,23 +32,8 @@ public class ApplicationCodeDataIngressProcessor
                     "Respondent",
                     "StartDate",
                     "EndDate",
-                    "Notes",
                     "BulkRespondentAllowed",
-                    "AuthoringStatus",
-                    "PublishingStatus",
-                    "CurrentRecordIndicator",
-                    "DraftFinalExistsIndicator",
-                    "RevisionNumber",
-                    "RevisionType",
-                    "RevisionDateFrom",
-                    "RevisionDateTo",
-                    "ClonedFrom",
-                    "PSSApplicationCodeID",
-                    "PSSChangeSetHeaderID",
-                    "PSSChangeSetItemID",
-                    "FID_ApplicationRegisterHeader",
-                    "FID_ReleasePackage",
-                    "Updator");
+                    "RevisionNumber");
 
     private final CsdsIngressProperties.ApplicationCodes applicationCodeProperties;
     private final ApplicationCodeDiffService diffService;
@@ -81,18 +66,14 @@ public class ApplicationCodeDataIngressProcessor
             validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
         }
 
-        val sortedRecords =
+        val resolvedRecords =
                 rawJson.stream()
                         .flatMap(page -> extractRecords(page).stream())
                         .map(this::withResolvedAcId)
-                        .sorted(
-                                Comparator.comparing(
-                                        this::applicationCodeIdForSort,
-                                        Comparator.nullsLast(Long::compareTo)))
                         .toList();
         ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
-        val sortedArray = normalisedPage.putArray("records");
-        sortedRecords.forEach(sortedArray::add);
+        val recordsArray = normalisedPage.putArray("records");
+        resolvedRecords.forEach(recordsArray::add);
         return List.of(normalisedPage);
     }
 
@@ -202,9 +183,5 @@ public class ApplicationCodeDataIngressProcessor
             copiedRecord.put("AC_ID", resolvedId);
         }
         return copiedRecord;
-    }
-
-    private Long applicationCodeIdForSort(JsonNode node) {
-        return nullableLong(node, "ApplicationCodeID");
     }
 }

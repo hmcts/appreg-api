@@ -81,19 +81,22 @@ public class CsdsIngressProperties {
     public static class Processors {
         private ApplicationCodes applicationCodes = new ApplicationCodes();
         private ResolutionCodes resolutionCodes = new ResolutionCodes();
+        private Fee fee = new Fee();
 
         private boolean isConfigurationValid() {
             return applicationCodes.isConfigurationValid()
-                    && resolutionCodes.isConfigurationValid();
+                    && resolutionCodes.isConfigurationValid()
+                    && fee.isConfigurationValid();
         }
 
         private boolean hasEnabledProcessor() {
-            return applicationCodes.isEnabled() || resolutionCodes.isEnabled();
+            return applicationCodes.isEnabled() || resolutionCodes.isEnabled() || fee.isEnabled();
         }
 
         private boolean hasEnabledProcessorWithoutMock() {
-            return applicationCodes != null && applicationCodes.requiresRemoteAccess()
-                    || resolutionCodes != null && resolutionCodes.requiresRemoteAccess();
+            return applicationCodes.requiresRemoteAccess()
+                    || resolutionCodes.requiresRemoteAccess()
+                    || fee.requiresRemoteAccess();
         }
     }
 
@@ -150,6 +153,14 @@ public class CsdsIngressProperties {
     public static class ResolutionCodes extends ProcessorProperties {
         public ResolutionCodes() {
             super("ResolutionCode", "resolution_codes_staging", "rc_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class Fee extends ProcessorProperties {
+        public Fee() {
+            super("CivilFee", "fee_staging", "fee_id");
         }
     }
 }

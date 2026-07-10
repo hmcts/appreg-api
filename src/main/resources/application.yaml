@@ -119,13 +119,21 @@ appreg:
 #          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
-          enabled: true
+          enabled: false
           table-name: resolution_codes_staging
           primary-key: rc_id
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+        fee:
+          enabled: true
+          table-name: fee_staging
+          primary-key: fee_id
+          source-entity-name: CivilFee
+          parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
+#          mock: csds/fee.json
+#          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
   job:
     page-size: 10
   report:
