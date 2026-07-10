@@ -254,6 +254,45 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_processedData_when_ingest_then_returnsAppliedSummary() {
+        var existingUpdated =
+                createApplicationCode(
+                        345L,
+                        "A2",
+                        "Title 2",
+                        "Wording 2",
+                        1L,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null);
+        var existingUnmatched =
+                createApplicationCode(
+                        4L,
+                        "A4",
+                        "Title 4",
+                        "Wording 4",
+                        1L,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null);
+        when(tableReadService.loadAll("application_codes", rowMapper))
+                .thenReturn(
+                        List.of(
+                                ApplicationCodeIngressRecord.fromEntity(existingUpdated),
+                                ApplicationCodeIngressRecord.fromEntity(existingUnmatched)));
+
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecordWithPssacid(
+                                        345L, 2L, "A2", "Updated Title", "Wording 2", 2L),
+                                createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L)));
+
+        var response = processor.ingest(processedData);
+
+        assertThat(response.getInserted()).isEqualTo(1);
+        assertThat(response.getUpdated()).isEqualTo(1);
+    }
+
+    @Test
     void given_reportingDirConfigured_when_apply_then_writesCsvFiles() throws Exception {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
@@ -561,7 +600,7 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_processedData_when_preProcess_then_addAcIdAndSortByIt() {
+    void given_processedData_when_preProcess_then_addAcIdAndPreserveIncomingOrder() {
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
@@ -575,12 +614,42 @@ class ApplicationCodeDataIngressProcessorTest {
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(record -> record.get("AC_ID").longValue())
                 .containsExactly(
+                        ApplicationCodeIngressRecord.calculateId(null, 3L),
                         ApplicationCodeIngressRecord.calculateId(null, 1L),
-                        ApplicationCodeIngressRecord.calculateId(null, 2L),
-                        ApplicationCodeIngressRecord.calculateId(null, 3L));
+                        ApplicationCodeIngressRecord.calculateId(null, 2L));
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(record -> record.get("ApplicationCodeID").longValue())
-                .containsExactly(1L, 2L, 3L);
+                .containsExactly(3L, 1L, 2L);
+    }
+
+    @Test
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addAcId() {
+        var record = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
+        record.remove(
+                List.of(
+                        "Notes",
+                        "AuthoringStatus",
+                        "PublishingStatus",
+                        "CurrentRecordIndicator",
+                        "DraftFinalExistsIndicator",
+                        "RevisionType",
+                        "RevisionDateFrom",
+                        "RevisionDateTo",
+                        "ClonedFrom",
+                        "PSSChangeSetHeaderID",
+                        "PSSChangeSetItemID",
+                        "FID_ApplicationRegisterHeader",
+                        "FID_ReleasePackage",
+                        "Updator"));
+
+        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+
+        assertThat(
+                        extractRecordsFromPage(preProcessed.getFirst())
+                                .getFirst()
+                                .get("AC_ID")
+                                .longValue())
+                .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
     }
 
     @Test

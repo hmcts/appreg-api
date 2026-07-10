@@ -18,7 +18,7 @@ public record ResolutionCodeIngressRecord(
     private static final String RC_ID_FIELD = "RC_ID";
     private static final String RESOLUTION_CODE_ID_FIELD = "ResolutionCodeID";
     private static final String PSS_RESOLUTION_CODE_ID_FIELD = "PSSRCID";
-    private static final long RESOLUTION_CODE_ID_OFFSET = 100000L;
+    private static final long NEW_RECORD_ID_OFFSET = 100000L;
 
     public static @Nullable Long calculateId(
             @Nullable Long pssrcid, @Nullable Long resolutionCodeId) {
@@ -26,7 +26,7 @@ public record ResolutionCodeIngressRecord(
             return pssrcid;
         }
 
-        return resolutionCodeId == null ? null : resolutionCodeId + RESOLUTION_CODE_ID_OFFSET;
+        return resolutionCodeId == null ? null : resolutionCodeId + NEW_RECORD_ID_OFFSET;
     }
 
     public static @Nullable Long resolveId(JsonNode node) {

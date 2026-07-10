@@ -1,0 +1,12 @@
+description: The requested CSDS ingest processor is disabled.
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      csds-conflict:
+        value:
+          type: https://errors.hmcts.net/common/conflict
+          title: The requested CSDS ingest processor is disabled
+          status: 409
+          detail: The requested CSDS ingest processor is disabled

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
+package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -8,8 +8,8 @@ import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.database.FeeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
-import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
@@ -17,36 +17,34 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
 @Component
-public class ResolutionCodeDataIngressProcessor
-        extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ResolutionCodeDiffResult> {
+public class FeeDataIngressProcessor
+        extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, FeeDiffResult> {
+    private static final long DEFAULT_FEE_VERSION = 1L;
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
-                    "ResolutionCodeID",
-                    "PSSRCID",
-                    "Code",
-                    "ResultTitle",
-                    "ResultWording",
-                    "Legislation",
-                    "Recipient1Email",
-                    "Recipient2Email",
+                    "CivilFeeID",
+                    "FeeReference",
+                    "Description",
+                    "FeeValue",
                     "StartDate",
                     "EndDate",
-                    "RevisionNumber");
+                    "RevisionNumber",
+                    "PSSFixedListID");
 
-    private final CsdsIngressProperties.ResolutionCodes resolutionCodeProperties;
-    private final ResolutionCodeDiffService diffService;
-    private final ResolutionCodeDiffReportingService diffReportingService;
+    private final CsdsIngressProperties.Fee feeProperties;
+    private final FeeDiffService diffService;
+    private final FeeDiffReportingService diffReportingService;
     private final JdbcBulkUpsertService bulkUpsertService;
-    private final ResolutionCodeIngressDatabaseRowMapper rowMapper;
+    private final FeeIngressDatabaseRowMapper rowMapper;
 
-    public ResolutionCodeDataIngressProcessor(
+    public FeeDataIngressProcessor(
             CsdsIngressProperties properties,
-            ResolutionCodeDiffService diffService,
-            ResolutionCodeDiffReportingService diffReportingService,
+            FeeDiffService diffService,
+            FeeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
-            ResolutionCodeIngressDatabaseRowMapper rowMapper) {
-        super(properties, properties.getProcessors().getResolutionCodes());
-        resolutionCodeProperties = properties.getProcessors().getResolutionCodes();
+            FeeIngressDatabaseRowMapper rowMapper) {
+        super(properties, properties.getProcessors().getFee());
+        this.feeProperties = properties.getProcessors().getFee();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
         this.bulkUpsertService = bulkUpsertService;
@@ -67,7 +65,7 @@ public class ResolutionCodeDataIngressProcessor
         val resolvedRecords =
                 rawJson.stream()
                         .flatMap(page -> extractRecords(page).stream())
-                        .map(this::withResolvedRcId)
+                        .map(this::withResolvedFeeId)
                         .toList();
         ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
         val recordsArray = normalisedPage.putArray("records");
@@ -77,23 +75,23 @@ public class ResolutionCodeDataIngressProcessor
 
     @Override
     protected String queryParameters() {
-        return resolutionCodeProperties.getParameters();
+        return feeProperties.getParameters();
     }
 
     @Override
     protected String mockFilePath() {
-        return resolutionCodeProperties.getMock();
+        return feeProperties.getMock();
     }
 
     @Override
-    protected ResolutionCodeDiffResult diff(List<JsonNode> processedData) {
+    protected FeeDiffResult diff(List<JsonNode> processedData) {
         return diffService.diff(
-                new ResolutionCodeDiffRequest(
+                new FeeDiffRequest(
                         targetTable(), processedData, this::toSourceRecord, this::extractRecords));
     }
 
     @Override
-    protected void logDiffSummary(ResolutionCodeDiffResult diff) {
+    protected void logDiffSummary(FeeDiffResult diff) {
         val insertCount =
                 diff.diffRecords().stream()
                         .filter(item -> item.operation() == IngressOperation.INSERT)
@@ -110,7 +108,7 @@ public class ResolutionCodeDataIngressProcessor
     }
 
     @Override
-    protected void report(List<JsonNode> processedData, ResolutionCodeDiffResult diff) {
+    protected void report(List<JsonNode> processedData, FeeDiffResult diff) {
         diffReportingService.reportDiff(
                 datasetName(),
                 targetTable(),
@@ -121,7 +119,7 @@ public class ResolutionCodeDataIngressProcessor
     }
 
     @Override
-    protected void applyDiff(ResolutionCodeDiffResult diff) {
+    protected void applyDiff(FeeDiffResult diff) {
         val rows =
                 diff.diffRecords().stream()
                         .filter(item -> item.operation() != IngressOperation.IGNORE)
@@ -132,7 +130,7 @@ public class ResolutionCodeDataIngressProcessor
 
     @Override
     public String processorName() {
-        return CsdsIngestProcessorName.RESOLUTION_CODES.getExternalName();
+        return CsdsIngestProcessorName.FEE.getExternalName();
     }
 
     @Override
@@ -149,34 +147,46 @@ public class ResolutionCodeDataIngressProcessor
         return new CsdsIngestResponse().inserted(insertedCount).updated(updatedCount);
     }
 
-    private int countByOperation(ResolutionCodeDiffResult diff, IngressOperation operation) {
+    private int countByOperation(FeeDiffResult diff, IngressOperation operation) {
         return Math.toIntExact(
                 diff.diffRecords().stream().filter(item -> item.operation() == operation).count());
     }
 
-    private ResolutionCodeIngressRecord toSourceRecord(JsonNode node) {
-        return new ResolutionCodeIngressRecord(
-                requiredLong(node, "RC_ID"),
-                requiredText(node, "Code"),
-                requiredText(node, "ResultTitle"),
-                requiredText(node, "ResultWording"),
-                nullableText(node, "Legislation"),
-                nullableText(node, "Recipient1Email"),
-                nullableText(node, "Recipient2Email"),
+    private FeeIngressRecord toSourceRecord(JsonNode node) {
+        return new FeeIngressRecord(
+                requiredLong(node, "FEE_ID"),
+                requiredText(node, "FeeReference"),
+                requiredText(node, "Description"),
+                requiredBigDecimal(node, "FeeValue"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                requiredLong(node, "RevisionNumber"));
+                resolvedVersion(node));
     }
 
-    private JsonNode withResolvedRcId(JsonNode node) {
+    private Long resolvedVersion(JsonNode node) {
+        val revisionNumber = nullableLong(node, "RevisionNumber");
+        if (revisionNumber != null) {
+            return revisionNumber;
+        }
+
+        val versionNumber = nullableLong(node, "VersionNumber");
+        if (versionNumber != null) {
+            return versionNumber;
+        }
+
+        // CSDS currently returns null fee revision/version values for some live records.
+        return DEFAULT_FEE_VERSION;
+    }
+
+    private JsonNode withResolvedFeeId(JsonNode node) {
         if (!(node instanceof ObjectNode objectNode)) {
             return node;
         }
 
         val copiedRecord = objectNode.deepCopy();
-        val resolvedId = ResolutionCodeIngressRecord.resolveId(copiedRecord);
+        val resolvedId = FeeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
-            copiedRecord.put("RC_ID", resolvedId);
+            copiedRecord.put("FEE_ID", resolvedId);
         }
         return copiedRecord;
     }
