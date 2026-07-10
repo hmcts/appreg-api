@@ -6,6 +6,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -66,7 +67,7 @@ public interface ApplicationEntryService {
      * @return The entry get detail inside of a match response which contains an etag
      */
     MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId);
+            PayloadForCreate<EntryCreateDto> entryCreateDto);
 
     /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,
@@ -161,4 +162,9 @@ public interface ApplicationEntryService {
     void deleteEntry(PayloadForDeleteEntry idToDelete);
 
     List<UUID> getApplicationListEntriesByJobId(UUID jobId);
+
+    void bulkImport(
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            UUID jobId,
+            CreateApplicationEntryValidationSuccess success);
 }

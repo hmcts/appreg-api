@@ -7,6 +7,7 @@ import jakarta.validation.Validator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,9 +19,11 @@ import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadRowApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
@@ -79,8 +82,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private final ApplicationEntryService applicationEntryService;
     private final BulkUploadRowApplicationEntryValidator validator;
     private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
+    private final LinkedHashMap<EntryCreateDto, CreateApplicationEntryValidationSuccess>
+            validationCache = new LinkedHashMap<>();
     private final ApplicationListEntryMapper mapper;
     private final Validator beanValidator;
+
+    private ApplicationList validatedApplicationList;
+
+    public void setApplicationList(ApplicationList applicationList) {
+        this.validatedApplicationList = applicationList;
+    }
 
     /**
      * Validates uploaded rows before processing starts and records row-level failures in the job
@@ -161,7 +172,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         try {
             bulkUploadApplicationEntryValidator.validate(
                     PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
-                    (validatable, result) -> null);
+                    (validatable, success) -> {
+                        success.setApplicationList(validatedApplicationList);
+                        synchronized (validationCache) {
+                            validationCache.put(dto, success);
+                        }
+                        return success;
+                    });
             return List.of();
         } catch (AppRegistryException exception) {
             return List.of(
@@ -251,40 +268,47 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
         final long start = System.nanoTime();
-        List<BulkUploadRow> rows = event.getData();
         JobContext context = event.getContext();
 
         log.info("Processing bulk upload for list {}", listId);
 
         int rowNumber = FIRST_DATA_ROW_NUMBER;
 
-        for (BulkUploadRow row : rows) {
+        synchronized (validationCache) {
             try {
-                EntryCreateDto dto = mapper.toEntryCreateDto(row);
-
-                if (event.getResponse() != null) {
-                    applicationEntryService.createBulkEntry(
-                            PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
-                            event.getResponse().getJobId().getId());
-                } else {
-                    applicationEntryService.createBulkEntry(
-                            PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
-                            null);
+                for (var entry : validationCache.entrySet()) {
+                    try {
+                        applicationEntryService.bulkImport(
+                                PayloadForCreate.<EntryCreateDto>builder()
+                                        .id(listId)
+                                        .data(entry.getKey())
+                                        .build(),
+                                event.getResponse().getJobId().getId(),
+                                entry.getValue());
+                        rowNumber++;
+                    } catch (Exception ex) {
+                        log.error("Failed to process row {}", rowNumber, ex);
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        context.logFailure(
+                                objectMapper.writeValueAsString(
+                                        new BulkUploadError(
+                                                rowNumber,
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                ex.getMessage(),
+                                                "PROCESSING_ERROR")));
+                        // Atomic failure
+                        throw new AppRegistryException(
+                                AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED, ex.getMessage());
+                    }
                 }
-
-            } catch (Exception ex) {
-                log.error("Failed to process row {}", rowNumber, ex);
-
-                context.logFailure(
-                        "Processing failed for row " + rowNumber + ": " + ex.getMessage());
-
-                // Atomic failure
-                throw new AppRegistryException(
-                        AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED, ex.getMessage());
+            } finally {
+                validationCache.clear();
             }
-
-            rowNumber++;
         }
+
         log.info("Bulk upload completed successfully");
         long end = System.nanoTime();
         log.warn("Bulk upload processing took {} ms", (end - start) / 1_000_000);

@@ -34,6 +34,7 @@ import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
@@ -254,7 +255,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         try {
             bulkUploadCsvFormatValidator.validate(file);
-            bulkUploadApplicationEntryValidator.validateApplicationList(listId);
+            ApplicationList appList =
+                    bulkUploadApplicationEntryValidator.validateApplicationList(listId);
 
             JobTypeRequest jobTypeRequest =
                     JobTypeRequest.builder()
@@ -264,17 +266,18 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
             CsvReader<BulkUploadRow> csvReader = new CsvReader<>(file, BulkUploadRow.class);
 
+            var bulkUploadAsyncLifecycle =
+                    new BulkUploadAsyncLifecycle(
+                            listId,
+                            applicationEntryService,
+                            bulkUploadRowApplicationEntryValidator,
+                            bulkUploadApplicationEntryValidator,
+                            applicationListEntryMapper,
+                            beanValidator);
+            bulkUploadAsyncLifecycle.setApplicationList(appList);
+
             TrackJobStatusResponse trackJobStatusResponse =
-                    asyncJobService.startJob(
-                            jobTypeRequest,
-                            csvReader,
-                            new BulkUploadAsyncLifecycle(
-                                    listId,
-                                    applicationEntryService,
-                                    bulkUploadRowApplicationEntryValidator,
-                                    bulkUploadApplicationEntryValidator,
-                                    applicationListEntryMapper,
-                                    beanValidator));
+                    asyncJobService.startJob(jobTypeRequest, csvReader, bulkUploadAsyncLifecycle);
 
             JobAcknowledgement ack = jobService.getJobAckById(trackJobStatusResponse.getUuid());
 

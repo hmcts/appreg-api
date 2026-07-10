@@ -924,7 +924,7 @@ class ApplicationEntryServiceImplTest {
                         .data(entryCreateDto)
                         .build();
 
-        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload, null);
+        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload);
 
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
 
@@ -2633,7 +2633,7 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void createBulkEntry_withJobId_shouldSaveAsyncJobAppListEntry() {
+    void bulkImport_withJobId_shouldSaveAsyncJobAppListEntry() {
         UUID listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
 
@@ -2702,7 +2702,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(entryGetDetailDto);
 
         UUID jobId = UUID.randomUUID();
-        service.createBulkEntry(payload, jobId);
+        service.bulkImport(payload, jobId, success);
 
         // Ensure that we called save on asyncJobAppListEntryRepository with the correct values
         ArgumentCaptor<AsyncJobsAppListEntry> captor =
@@ -2783,7 +2783,7 @@ class ApplicationEntryServiceImplTest {
                         any(), anyList(), any(), any(), any()))
                 .thenReturn(entryGetDetailDto);
 
-        service.createBulkEntry(payload, null);
+        service.createBulkEntry(payload);
         verify(asyncJobAppListEntryRepository, times(0)).save(any());
     }
 

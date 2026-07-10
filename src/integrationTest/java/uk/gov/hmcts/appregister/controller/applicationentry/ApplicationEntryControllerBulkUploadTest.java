@@ -295,7 +295,6 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         }
 
         String jobId = acknowledgement.getId().toString();
-
         assertThat(jobId).isNotEmpty();
 
         Response appListEntriesForJob =

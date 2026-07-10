@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
@@ -133,6 +135,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final int NOTES_MAX_LENGTH = 4000;
     private static final UUID BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID = new UUID(0L, 0L);
 
+
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
 
@@ -195,6 +198,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final MeterRegistry meterRegistry;
 
     private final JobExistanceValidator jobExistanceValidator;
+
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -463,10 +468,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         entry -> entry,
                                         (first, second) -> first));
 
-        return selectedEntryIds.stream()
-                .map(entriesByUuid::get)
-                .filter(entry -> entry != null)
-                .toList();
+        return selectedEntryIds.stream().map(entriesByUuid::get).filter(Objects::nonNull).toList();
     }
 
     private List<UUID> toEntryIds(List<ApplicationListEntryGetSummaryProjection> entries) {
@@ -482,15 +484,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO, null);
+        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
     }
 
     private MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
                     validator,
-            YesOrNo bulkUpload,
-            UUID jobId) {
+            YesOrNo bulkUpload) {
         log.debug("Started create application entry for list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
@@ -500,86 +501,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         (dto, success) ->
                                 auditService.processAudit(
                                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
-                                        req -> {
-                                            NameAddress applicantToSave =
-                                                    createApplicant(entryCreateDto);
-
-                                            NameAddress respondentToSave =
-                                                    createRespondent(entryCreateDto);
-
-                                            // save the list
-                                            ApplicationListEntry listEntryEntity =
-                                                    applicationListEntryEntityMapper
-                                                            .toApplicationListEntry(
-                                                                    entryCreateDto.getData(),
-                                                                    success.getWordingSentence()
-                                                                            .substitute(
-                                                                                    entryCreateDto
-                                                                                            .getData()
-                                                                                            .getWordingFields())
-                                                                            .getSubstitutedString(),
-                                                                    success.getSa(),
-                                                                    applicantToSave,
-                                                                    respondentToSave,
-                                                                    success.getApplicationCode(),
-                                                                    success.getApplicationList(),
-                                                                    bulkUpload);
-
-                                            Long alId = success.getApplicationList().getId();
-                                            short seq = allocateNextSequence(alId);
-                                            listEntryEntity.setSequenceNumber(seq);
-
-                                            listEntryEntity =
-                                                    refreshEntity(
-                                                            applicationListEntryRepository.save(
-                                                                    listEntryEntity));
-
-                                            log.debug(
-                                                    "Created application entry with id: {}",
-                                                    listEntryEntity.getId());
-
-                                            List<AppListEntryFeeStatus> statusList =
-                                                    createFeeStatus(
-                                                            listEntryEntity,
-                                                            entryCreateDto,
-                                                            success,
-                                                            bulkUpload);
-
-                                            List<AppListEntryOfficial> officialList =
-                                                    createOfficial(listEntryEntity, entryCreateDto);
-
-                                            createFees(success, listEntryEntity, entryCreateDto);
-
-                                            EntryGetDetailDto entryGetDetailDto =
-                                                    applicationListEntryMapStructMapper
-                                                            .toEntryGetDetailDto(
-                                                                    listEntryEntity,
-                                                                    statusList,
-                                                                    success.getFee(),
-                                                                    officialList,
-                                                                    success.getSa());
-                                            entryGetDetailDto.setHasOffsiteFee(
-                                                    entryCreateDto.getData().getHasOffsiteFee());
-
-                                            if (bulkUpload.isYes() && jobId != null) {
-                                                AsyncJobsAppListEntry asyncJobsAppListEntry =
-                                                        AsyncJobsAppListEntry.builder()
-                                                                .asyncJobId(jobId)
-                                                                .appListEntryId(
-                                                                        listEntryEntity.getUuid())
-                                                                .build();
-                                                asyncJobAppListEntryRepository.save(
-                                                        asyncJobsAppListEntry);
-                                            }
-
-                                            return Optional.of(
-                                                    new AuditableResult<>(
-                                                            MatchResponse.of(
-                                                                    entryGetDetailDto,
-                                                                    getKeyablesForCreateUpdateEtag(
-                                                                            listEntryEntity)),
-                                                            listEntryEntity));
-                                        }));
+                                        req -> saveEntry(dto, null, success, bulkUpload)));
 
         log.debug(
                 "Finished create application entry for list {} entry {}",
@@ -593,8 +515,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId) {
-        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES, jobId);
+            PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
     }
 
     @Override
@@ -889,6 +811,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                     return entryIds.stream().map(AsyncJobsAppListEntry::getAppListEntryId).toList();
                 });
+    }
+
+    @Override
+    public void bulkImport(
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            UUID jobId,
+            CreateApplicationEntryValidationSuccess success) {
+        auditService.processAudit(
+                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
+                req -> saveEntry(entryCreateDto, jobId, success, YesOrNo.YES));
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
@@ -1882,6 +1814,70 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 idToDelete.getId());
     }
 
+    private Optional<AuditableResult<MatchResponse<EntryGetDetailDto>, ApplicationListEntry>>
+            saveEntry(
+                    PayloadForCreate<EntryCreateDto> entryCreateDto,
+                    UUID jobId,
+                    CreateApplicationEntryValidationSuccess success,
+                    YesOrNo bulkUpload) {
+        NameAddress applicantToSave = createApplicant(entryCreateDto);
+
+        NameAddress respondentToSave = createRespondent(entryCreateDto); //todo replace this with jdbc call
+
+        // save the list
+        ApplicationListEntry listEntryEntity =
+                applicationListEntryEntityMapper.toApplicationListEntry(
+                        entryCreateDto.getData(),
+                        success.getWordingSentence()
+                                .substitute(entryCreateDto.getData().getWordingFields())
+                                .getSubstitutedString(),
+                        success.getSa(),
+                        applicantToSave,
+                        respondentToSave,
+                        success.getApplicationCode(),
+                        success.getApplicationList(),
+                        bulkUpload);
+
+        Long alId = success.getApplicationList().getId();
+        short seq = allocateNextSequence(alId); // TODO replace this with JDBC call
+        listEntryEntity.setSequenceNumber(seq);
+
+        listEntryEntity = refreshEntity(applicationListEntryRepository.save(listEntryEntity)); // replace this with jdbc call
+
+        log.debug("Created application entry with id: {}", listEntryEntity.getId());
+
+        List<AppListEntryFeeStatus> statusList =
+                createFeeStatus(listEntryEntity, entryCreateDto, success, bulkUpload);
+
+        List<AppListEntryOfficial> officialList = createOfficial(listEntryEntity, entryCreateDto);
+
+        createFees(success, listEntryEntity, entryCreateDto);
+
+        EntryGetDetailDto entryGetDetailDto =
+                applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                        listEntryEntity,
+                        statusList,
+                        success.getFee(),
+                        officialList,
+                        success.getSa());
+        entryGetDetailDto.setHasOffsiteFee(entryCreateDto.getData().getHasOffsiteFee());
+
+        if (bulkUpload.isYes() && jobId != null) {
+            AsyncJobsAppListEntry asyncJobsAppListEntry =
+                    AsyncJobsAppListEntry.builder()
+                            .asyncJobId(jobId)
+                            .appListEntryId(listEntryEntity.getUuid())
+                            .build();
+            asyncJobAppListEntryRepository.save(asyncJobsAppListEntry);
+        }
+
+        return Optional.of(
+                new AuditableResult<>(
+                        MatchResponse.of(
+                                entryGetDetailDto, getKeyablesForCreateUpdateEtag(listEntryEntity)),
+                        listEntryEntity));
+    }
+
     /**
      * has an offsite fee for the entry.
      *
@@ -2012,6 +2008,15 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         entryPage.setContent(new ArrayList<>(buildEntrySummaries(resultPage.getContent())));
 
         return entryPage;
+    }
+
+    private void saveRespondent(PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        NameAddress respondent = applicantMapper.toRespondent(entryCreateDto.getData().getRespondent());
+
+        final String sql =
+                "INSERT INTO name_address (name, title, first_name, middle_name, last_name, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number) "
+                        + "VALUES (gen_random_uuid(), ?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.execute(sql.formatted(respondent.getnam));
     }
 
     private record BulkActionPreviewResolution(
