@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.csds.ingress.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -74,8 +73,7 @@ class CsdsIngestServiceTest {
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
         when(applicationCodeProcessor.enabled()).thenReturn(true);
-        when(distributedJobLockService.tryAcquire(
-                        eq("CSDS_DATA_INGRESS"), eq(Duration.ofMinutes(5))))
+        when(distributedJobLockService.tryAcquire("CSDS_DATA_INGRESS", Duration.ofMinutes(5)))
                 .thenReturn(Optional.of(lock));
         when(distributedJobLockService.release(lock)).thenReturn(true);
         when(applicationCodeProcessor.ingest(anyList())).thenReturn(response);
@@ -91,17 +89,13 @@ class CsdsIngestServiceTest {
     }
 
     @Test
-    void given_knownButUnimplementedProcessor_when_ingest_then_throwsNotImplementedError()
-            throws Exception {
+    void given_knownButUnimplementedProcessor_when_ingest_then_throwsNotImplementedError() {
         var file = mock(MultipartFile.class);
+        var processorName = CsdsIngestProcessorName.RESOLUTION_CODES.getExternalName();
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
 
-        assertThatThrownBy(
-                        () ->
-                                service.ingest(
-                                        CsdsIngestProcessorName.RESOLUTION_CODES.getExternalName(),
-                                        file))
+        assertThatThrownBy(() -> service.ingest(processorName, file))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         thrown ->
@@ -114,17 +108,13 @@ class CsdsIngestServiceTest {
     }
 
     @Test
-    void given_knownButDisabledProcessor_when_ingest_then_throwsDisabledError() throws Exception {
+    void given_knownButDisabledProcessor_when_ingest_then_throwsDisabledError() {
         var file = mock(MultipartFile.class);
-        when(applicationCodeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
+        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
         when(applicationCodeProcessor.enabled()).thenReturn(false);
 
-        assertThatThrownBy(
-                        () ->
-                                service.ingest(
-                                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(),
-                                        file))
+        assertThatThrownBy(() -> service.ingest(processorName, file))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         thrown ->
@@ -154,16 +144,12 @@ class CsdsIngestServiceTest {
     @Test
     void given_emptyFile_when_ingest_then_throwsMissingFileError() {
         var file = mock(MultipartFile.class);
+        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
         when(file.isEmpty()).thenReturn(true);
-        when(applicationCodeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
         when(applicationCodeProcessor.enabled()).thenReturn(true);
 
-        assertThatThrownBy(
-                        () ->
-                                service.ingest(
-                                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(),
-                                        file))
+        assertThatThrownBy(() -> service.ingest(processorName, file))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         thrown ->
@@ -179,17 +165,13 @@ class CsdsIngestServiceTest {
     @Test
     void given_fileLargerThanOneMegabyte_when_ingest_then_throwsPayloadTooLargeError() {
         var file = mock(MultipartFile.class);
+        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
         when(file.isEmpty()).thenReturn(false);
         when(file.getSize()).thenReturn(CsdsIngestService.MAX_FILE_SIZE_BYTES + 1);
-        when(applicationCodeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
         when(applicationCodeProcessor.enabled()).thenReturn(true);
 
-        assertThatThrownBy(
-                        () ->
-                                service.ingest(
-                                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(),
-                                        file))
+        assertThatThrownBy(() -> service.ingest(processorName, file))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         thrown ->
@@ -206,22 +188,17 @@ class CsdsIngestServiceTest {
     void given_fileWithoutRecordsArray_when_ingest_then_throwsInvalidFormatError()
             throws Exception {
         var file = mockFile("{\"responseCode\":1}");
+        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
         var lock = new DistributedJobLock("CSDS_DATA_INGRESS", "token", Duration.ofMinutes(5));
 
         when(userProvider.getUserId()).thenReturn("tenant:object");
-        when(applicationCodeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
+        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
         when(applicationCodeProcessor.enabled()).thenReturn(true);
-        when(distributedJobLockService.tryAcquire(
-                        eq("CSDS_DATA_INGRESS"), eq(Duration.ofMinutes(5))))
+        when(distributedJobLockService.tryAcquire("CSDS_DATA_INGRESS", Duration.ofMinutes(5)))
                 .thenReturn(Optional.of(lock));
         when(distributedJobLockService.release(lock)).thenReturn(true);
 
-        assertThatThrownBy(
-                        () ->
-                                service.ingest(
-                                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(),
-                                        file))
+        assertThatThrownBy(() -> service.ingest(processorName, file))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         thrown ->

@@ -374,6 +374,48 @@ class ResolutionCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_processedData_when_ingest_then_returnsAppliedSummary() {
+        var existingUpdated =
+                new ResolutionCodeIngressRecord(
+                        345L,
+                        "R2",
+                        "Title 2",
+                        "Wording 2",
+                        "Legislation 2",
+                        "email1@example.com",
+                        "email2@example.com",
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null,
+                        1L);
+        var existingUnmatched =
+                new ResolutionCodeIngressRecord(
+                        4L,
+                        "R4",
+                        "Title 4",
+                        "Wording 4",
+                        "Legislation 4",
+                        null,
+                        null,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(existingUpdated, existingUnmatched));
+
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecordWithPssrcid(
+                                        345L, 2L, "R2", "Updated Title", "Wording 2", 2L),
+                                createSourceRecord(3L, "R3", "Title 3", "Wording 3", 1L)));
+
+        var response = processor.ingest(processedData);
+
+        assertThat(response.getInserted()).isEqualTo(1);
+        assertThat(response.getUpdated()).isEqualTo(1);
+    }
+
+    @Test
     void given_processedData_when_diffCalculated_then_includeIntendedUpsertRecord() {
         var existingUpdated =
                 new ResolutionCodeIngressRecord(

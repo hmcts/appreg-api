@@ -4,6 +4,7 @@ import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JS
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -30,6 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus;
 @Controller
 @RequiredArgsConstructor
 public class AdminAPIController implements AdminApi {
+    private static final String VARY_ACCEPT = HttpHeaders.ACCEPT;
 
     private final AdminAPIService adminAPIService;
     private final CsdsIngestService csdsIngestService;
@@ -41,7 +43,7 @@ public class AdminAPIController implements AdminApi {
     public ResponseEntity<Void> enableDisableDatabaseJobByName(
             @PathVariable("jobType") AdminJobType jobName, @RequestParam("enable") Boolean enable) {
         adminAPIService.enableDisableDatabaseJobByName(jobName, enable);
-        return ResponseEntity.ok().varyBy("Accept").contentType(VND_JSON_V1).build();
+        return ResponseEntity.ok().varyBy(VARY_ACCEPT).contentType(VND_JSON_V1).build();
     }
 
     @Override
@@ -61,7 +63,7 @@ public class AdminAPIController implements AdminApi {
             @PathVariable("jobType") AdminJobType jobName,
             @RequestParam("retentionPeriodDays") Integer retentionPeriodDays) {
         adminAPIService.updateDatabaseJobRetentionPeriodByName(jobName, retentionPeriodDays);
-        return ResponseEntity.ok().varyBy("Accept").contentType(VND_JSON_V1).build();
+        return ResponseEntity.ok().varyBy(VARY_ACCEPT).contentType(VND_JSON_V1).build();
     }
 
     @Override
@@ -81,7 +83,7 @@ public class AdminAPIController implements AdminApi {
             @PathVariable("processor") String processor,
             @RequestPart(value = "file", required = true) MultipartFile file) {
         return ResponseEntity.ok()
-                .varyBy("Accept")
+                .varyBy(VARY_ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(csdsIngestService.ingest(processor, file));
     }

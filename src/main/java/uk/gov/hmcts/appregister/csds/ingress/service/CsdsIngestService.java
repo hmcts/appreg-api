@@ -29,7 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 @RequiredArgsConstructor
 @Slf4j
 public class CsdsIngestService {
-    static final long MAX_FILE_SIZE_BYTES = 1024 * 1024;
+    static final long MAX_FILE_SIZE_BYTES = 1024L * 1024;
 
     private final List<IDataIngressProcessor<?>> processors;
     private final DistributedJobLockService distributedJobLockService;
