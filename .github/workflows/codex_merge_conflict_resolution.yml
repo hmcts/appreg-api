@@ -223,7 +223,7 @@ jobs:
         run: ./.github/scripts/codex-merge-conflict-implement.sh
 
       - name: Upload Codex conflict-resolution output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codex-conflict-output
           path: ${{ runner.temp }}/codex-conflict-output
@@ -265,7 +265,7 @@ jobs:
           java-version: 21
 
       - name: Download Codex conflict-resolution output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: codex-conflict-output
           path: ${{ runner.temp }}/codex-conflict-output
@@ -288,7 +288,7 @@ jobs:
 
       - name: Upload verified conflict-resolution output
         if: steps.verify.outputs.passed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codex-conflict-verified
           path: |
@@ -325,13 +325,13 @@ jobs:
           persist-credentials: false
 
       - name: Download Codex conflict-resolution output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: codex-conflict-output
           path: ${{ runner.temp }}/codex-conflict-output
 
       - name: Download verified conflict-resolution output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: codex-conflict-verified
           path: ${{ runner.temp }}/codex-conflict-verified

@@ -33,3 +33,4 @@ applicationinsights-agent-*.jar
 /.dockerignore
 
 /*.hprof
+/appreg-csds-ingress/
