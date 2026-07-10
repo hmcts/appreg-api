@@ -27,7 +27,6 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS");
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Clock REPORTING_CLOCK = Clock.systemUTC();
-    private static final String CHANGE_TYPE_IGNORE = "ignore";
     private static final String CHANGE_TYPE_INSERT = "insert";
     private static final String CHANGE_TYPE_UPDATE = "update";
     private static final String RECORDS_FIELD = "records";
@@ -64,15 +63,14 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
                 recordsExtractor);
 
         log.info(
-                "CSDS diff for {} on {}.{}: incoming={}, existing={}, inserts={}, updates={}, ignores={}",
+                "CSDS diff for {} on {}.{}: incoming={}, existing={}, inserts={}, updates={}",
                 datasetName,
                 targetTable,
                 targetKeyField,
                 incomingById.size(),
                 existingById.size(),
                 countByOperation(diffRecords, IngressOperation.INSERT),
-                countByOperation(diffRecords, IngressOperation.UPDATE),
-                countByOperation(diffRecords, IngressOperation.IGNORE));
+                countByOperation(diffRecords, IngressOperation.UPDATE));
     }
 
     protected abstract String filePrefix();
@@ -93,7 +91,6 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
         return switch (operation) {
             case INSERT -> CHANGE_TYPE_INSERT;
             case UPDATE -> CHANGE_TYPE_UPDATE;
-            case IGNORE -> CHANGE_TYPE_IGNORE;
         };
     }
 

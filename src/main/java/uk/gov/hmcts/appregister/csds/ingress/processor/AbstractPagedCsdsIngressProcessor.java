@@ -135,7 +135,9 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     private String queryPath() {
-        return "/query/"
+        return "/"
+                + queryPathType()
+                + "/"
                 + DATA_LOCATION_NAME
                 + "/"
                 + processorProperties.getSourceEntityName()
@@ -145,6 +147,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     protected String queryParameters() {
         return null;
+    }
+
+    protected String queryPathType() {
+        return "query";
     }
 
     protected String mockFilePath() {
@@ -293,7 +299,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     @Override
-    public final void apply(T processedData) {
+    public void apply(T processedData) {
         val diff = diff(processedData);
         logDiffSummary(diff);
         report(processedData, diff);

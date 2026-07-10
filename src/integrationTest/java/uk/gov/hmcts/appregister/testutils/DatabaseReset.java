@@ -58,6 +58,7 @@ public class DatabaseReset {
         deleteByIdGreaterThanOrEqual("criminal_justice_area", "cja_id");
         deleteByIdGreaterThanOrEqual("national_court_houses", "nch_id");
         deleteByIdGreaterThanOrEqual(STANDARD_APPLICANTS, "sa_id");
+        deleteAll("standard_applicants_staging");
         deleteByIdGreaterThanOrEqual(ASYNC_JOBS, "aj_id");
         deleteAll("data_audit");
     }

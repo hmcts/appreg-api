@@ -125,7 +125,7 @@ appreg:
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json
-#          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
         fee:
           enabled: false
           table-name: fee_staging
@@ -134,6 +134,14 @@ appreg:
           parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
 #          mock: csds/fee.json
 #          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
+        standard-applicants:
+          enabled: false
+          table-name: standard_applicants_staging
+          primary-key: sa_id
+          source-entity-name: DA_GetStandardApplicant
+          parameters: ?%24f=PublishingStatus='Active'&%24f=CurrentRecordIndicator='true'&%24expr=Updator
+#          mock: csds/standard_applicants.json
+#          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
   job:
     page-size: 10
   report:
