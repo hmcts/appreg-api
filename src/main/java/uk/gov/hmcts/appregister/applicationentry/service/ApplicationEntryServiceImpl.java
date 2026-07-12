@@ -2,29 +2,8 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
@@ -120,6 +99,29 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -140,7 +142,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private static final String NAME_ADDRESS_SQL =
         "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, changed_by, changed_date) "
-            + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+            + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+            + "RETURNING na_id";
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
@@ -511,7 +514,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         (dto, success) ->
                                 auditService.processAudit(
                                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
-                                        req -> saveEntry(dto, null, success, bulkUpload)));
+                                        req -> saveEntry(dto, null, success, bulkUpload, -1)));
 
         log.debug(
                 "Finished create application entry for list {} entry {}",
@@ -827,10 +830,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     public void bulkImport(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             UUID jobId,
-            CreateApplicationEntryValidationSuccess success) {
+            CreateApplicationEntryValidationSuccess success,
+            int sequenceNumber) {
         auditService.processAudit(
                 AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
-                req -> saveEntry(entryCreateDto, jobId, success, YesOrNo.YES));
+                req -> saveEntry(entryCreateDto, jobId, success, YesOrNo.YES, sequenceNumber));
     }
 
     private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
@@ -1173,7 +1177,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             req -> {
                                 NameAddress respondentToAdded = applicantMapper.toRespondent(
                                     entryCreateDto.getData().getRespondent());
-                                saveRespondent(entryCreateDto);
+                                respondentToAdded.setId(saveRespondent(entryCreateDto));
+                                respondentToAdded.setVersion(1L);
                                 log.debug(
                                         "Created respondent with id: {}",
                                         respondentToAdded.getId());
@@ -1828,10 +1833,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     PayloadForCreate<EntryCreateDto> entryCreateDto,
                     UUID jobId,
                     CreateApplicationEntryValidationSuccess success,
-                    YesOrNo bulkUpload) {
+                    YesOrNo bulkUpload,
+                    int entrySequence) {
         NameAddress applicantToSave = createApplicant(entryCreateDto);
 
-        NameAddress respondentToSave = createRespondent(entryCreateDto); //todo replace this with jdbc call
+        NameAddress respondentToSave = createRespondent(entryCreateDto);
 
         // save the list
         ApplicationListEntry listEntryEntity =
@@ -1848,19 +1854,23 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         bulkUpload);
 
         Long alId = success.getApplicationList().getId();
-        short seq = allocateNextSequence(alId); // TODO replace this with JDBC call
-        listEntryEntity.setSequenceNumber(seq);
+        if (entrySequence > 0) {
+            listEntryEntity.setSequenceNumber((short) entrySequence);
+        } else {
+            short seq = allocateNextSequence(alId);
+            listEntryEntity.setSequenceNumber(seq);
+        }
 
-        listEntryEntity = refreshEntity(applicationListEntryRepository.save(listEntryEntity)); // replace this with jdbc call
+        listEntryEntity = refreshEntity(applicationListEntryRepository.save(listEntryEntity)); // TODO replace this with jdbc call
 
         log.debug("Created application entry with id: {}", listEntryEntity.getId());
 
         List<AppListEntryFeeStatus> statusList =
-                createFeeStatus(listEntryEntity, entryCreateDto, success, bulkUpload);
+                createFeeStatus(listEntryEntity, entryCreateDto, success, bulkUpload); // TODO replace with jdbc call returning ids
 
-        List<AppListEntryOfficial> officialList = createOfficial(listEntryEntity, entryCreateDto);
+        List<AppListEntryOfficial> officialList = createOfficial(listEntryEntity, entryCreateDto); // TODO replace with jdbc call returning ids
 
-        createFees(success, listEntryEntity, entryCreateDto);
+        createFees(success, listEntryEntity, entryCreateDto); // TODO replace with jdbc call returning ids
 
         EntryGetDetailDto entryGetDetailDto =
                 applicationListEntryMapStructMapper.toEntryGetDetailDto(
@@ -2019,28 +2029,35 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return entryPage;
     }
 
-    private void saveRespondent(PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        //TODO need to fix null constraint issues
+    private Long saveRespondent(PayloadForCreate<EntryCreateDto> entryCreateDto) {
         NameAddress respondent = applicantMapper.toRespondent(entryCreateDto.getData().getRespondent());
-        jdbcTemplate.update(NAME_ADDRESS_SQL.formatted(schema + "." + TableNames.NAME_ADDRESS, schema),
-                            respondent.getName(),
-                            respondent.getTitle(),
-                            respondent.getFirstName(),
-                            respondent.getMiddleName(),
-                            respondent.getLastName(),
-                            respondent.getAddress1(),
-                            respondent.getAddress2(),
-                            respondent.getAddress3(),
-                            respondent.getAddress4(),
-                            respondent.getAddress5(),
-                            respondent.getPostcode(),
-                            respondent.getEmailAddress(),
-                            respondent.getTelephoneNumber(),
-                            respondent.getMobileNumber(),
-                            1L,
-                            loggedInUser.getUserId()
 
-        );
+        return jdbcTemplate.execute(NAME_ADDRESS_SQL.formatted(schema + "." + TableNames.NAME_ADDRESS, schema),
+             (PreparedStatementCallback<Long>)  psc -> {
+                 psc.setString(1, respondent.getName());
+                 psc.setString(2, respondent.getTitle());
+                 psc.setString(3, respondent.getFirstName());
+                 psc.setString(4, respondent.getMiddleName());
+                 psc.setString(5, respondent.getLastName());
+                 psc.setString(6, respondent.getAddress1());
+                 psc.setString(7, respondent.getAddress2());
+                 psc.setString(8, respondent.getAddress3());
+                 psc.setString(9, respondent.getAddress4());
+                 psc.setString(10, respondent.getAddress5());
+                 psc.setString(11, respondent.getPostcode());
+                 psc.setString(12, respondent.getEmailAddress());
+                 psc.setString(13, respondent.getTelephoneNumber());
+                 psc.setString(14, respondent.getMobileNumber());
+                 psc.setLong(15, 1L);
+                 psc.setString(16, loggedInUser.getUserId());
+
+                 try (var rs = psc.executeQuery()) {
+                     if (rs.next()) {
+                         return rs.getLong(1);
+                     }
+                     throw new IllegalStateException("No na_id returned when saving respondent");
+                 }
+             });
     }
 
     private record BulkActionPreviewResolution(

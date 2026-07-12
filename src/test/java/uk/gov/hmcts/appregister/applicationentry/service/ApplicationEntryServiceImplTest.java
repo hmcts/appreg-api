@@ -2713,7 +2713,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(entryGetDetailDto);
 
         UUID jobId = UUID.randomUUID();
-        service.bulkImport(payload, jobId, success);
+        service.bulkImport(payload, jobId, success, -1);
 
         // Ensure that we called save on asyncJobAppListEntryRepository with the correct values
         ArgumentCaptor<AsyncJobsAppListEntry> captor =

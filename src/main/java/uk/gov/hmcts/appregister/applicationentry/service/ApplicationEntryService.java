@@ -166,5 +166,6 @@ public interface ApplicationEntryService {
     void bulkImport(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             UUID jobId,
-            CreateApplicationEntryValidationSuccess success);
+            CreateApplicationEntryValidationSuccess success,
+            int sequenceNumber);
 }

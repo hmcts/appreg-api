@@ -89,6 +89,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private ApplicationList validatedApplicationList;
 
+    private int offset = 0;
+
     public void setApplicationList(ApplicationList applicationList) {
         this.validatedApplicationList = applicationList;
     }
@@ -284,7 +286,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                         .data(entry.getKey())
                                         .build(),
                                 event.getResponse().getJobId().getId(),
-                                entry.getValue());
+                                entry.getValue(), (offset * rowNumber) + rowNumber);
                         rowNumber++;
                     } catch (Exception ex) {
                         log.error("Failed to process row {}", rowNumber, ex);
@@ -312,6 +314,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.info("Bulk upload completed successfully");
         long end = System.nanoTime();
         log.warn("Bulk upload processing took {} ms", (end - start) / 1_000_000);
+        offset++;
     }
 
     private static String getName(Respondent respondent) {
