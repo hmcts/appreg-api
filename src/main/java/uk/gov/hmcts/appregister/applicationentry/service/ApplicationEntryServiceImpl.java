@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
@@ -70,6 +71,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
@@ -90,6 +92,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -135,6 +138,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final int NOTES_MAX_LENGTH = 4000;
     private static final UUID BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID = new UUID(0L, 0L);
 
+    private static final String NAME_ADDRESS_SQL =
+        "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, changed_by, changed_date) "
+            + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
@@ -200,6 +206,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final JobExistanceValidator jobExistanceValidator;
 
     private final JdbcTemplate jdbcTemplate;
+    private final UserProvider loggedInUser;
+
+    @Value("${spring.jpa.properties.hibernate.default_schema}")
+    private String schema;
 
     @Override
     @Transactional(readOnly = true)
@@ -1161,10 +1171,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     auditService.processAudit(
                             AppListEntryAuditOperation.CREATE_RESPONDENT,
                             req -> {
-                                NameAddress respondentToAdded =
-                                        nameAddressRepository.save(
-                                                applicantMapper.toRespondent(
-                                                        entryCreateDto.getData().getRespondent()));
+                                NameAddress respondentToAdded = applicantMapper.toRespondent(
+                                    entryCreateDto.getData().getRespondent());
+                                saveRespondent(entryCreateDto);
                                 log.debug(
                                         "Created respondent with id: {}",
                                         respondentToAdded.getId());
@@ -2011,12 +2020,27 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private void saveRespondent(PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        //TODO need to fix null constraint issues
         NameAddress respondent = applicantMapper.toRespondent(entryCreateDto.getData().getRespondent());
+        jdbcTemplate.update(NAME_ADDRESS_SQL.formatted(schema + "." + TableNames.NAME_ADDRESS, schema),
+                            respondent.getName(),
+                            respondent.getTitle(),
+                            respondent.getFirstName(),
+                            respondent.getMiddleName(),
+                            respondent.getLastName(),
+                            respondent.getAddress1(),
+                            respondent.getAddress2(),
+                            respondent.getAddress3(),
+                            respondent.getAddress4(),
+                            respondent.getAddress5(),
+                            respondent.getPostcode(),
+                            respondent.getEmailAddress(),
+                            respondent.getTelephoneNumber(),
+                            respondent.getMobileNumber(),
+                            1L,
+                            loggedInUser.getUserId()
 
-        final String sql =
-                "INSERT INTO name_address (name, title, first_name, middle_name, last_name, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number) "
-                        + "VALUES (gen_random_uuid(), ?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.execute(sql.formatted(respondent.getnam));
+        );
     }
 
     private record BulkActionPreviewResolution(

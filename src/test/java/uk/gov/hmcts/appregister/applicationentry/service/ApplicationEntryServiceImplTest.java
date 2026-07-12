@@ -51,6 +51,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
@@ -132,6 +133,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.SubstitutedSentence;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
@@ -215,6 +217,8 @@ class ApplicationEntryServiceImplTest {
 
     @Mock private JobExistanceValidator jobExistanceValidator;
 
+    @Mock private JdbcTemplate template;
+
     private CreateApplicationEntryValidationSuccess success;
 
     private UpdateApplicationEntryValidationSuccess updateSuccess;
@@ -249,6 +253,8 @@ class ApplicationEntryServiceImplTest {
     @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private ApplicationFeeService feeService;
+
+    @Mock private UserProvider userProvider;
 
     private ApplicationEntryService service;
 
@@ -381,7 +387,10 @@ class ApplicationEntryServiceImplTest {
                         businessDateProvider,
                         deleteEntryValidator,
                         meterRegistry,
-                        jobExistanceValidator);
+                        jobExistanceValidator,
+                        template,
+                        userProvider
+                        );
     }
 
     @Test
@@ -422,7 +431,9 @@ class ApplicationEntryServiceImplTest {
                         businessDateProvider,
                         deleteEntryValidator,
                         meterRegistry,
-                        jobExistanceValidator);
+                        jobExistanceValidator,
+                        template,
+                        userProvider);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
