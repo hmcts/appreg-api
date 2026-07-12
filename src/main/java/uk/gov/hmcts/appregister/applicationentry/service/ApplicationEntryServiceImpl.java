@@ -150,6 +150,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         "(ale_id, al_al_id, sa_sa_id, ac_ac_id, r_na_id, number_of_bulk_respondents, application_list_entry_wording, case_reference, account_number, entry_rescheduled, notes, \"version\", changed_by, changed_date, bulk_upload, user_name, sequence_number, tcep_status, message_uuid, retry_count, lodgement_date, id, delete_by, delete_date, is_deleted) " +
         "VALUES (nextval('%s.ale_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, gen_random_uuid(), null, null, 'N'::bpchar) " +
         "RETURNING ale_id";
+    private static final String APPLICATION_LIST_ENTRY_OFFICIAL_SQL = "INSERT INTO %s (ale_ao_id, ale_ale_id, ao_na_id, \"version\", changed_by, changed_date, user_name) " +
+        "VALUES (nextval('%s.ale_ao_seq'), ?, ?, ?, ?, CURRENT_TIMESTAMP, ?) " +
+        "RETURNING ale_ao_id";
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
@@ -962,11 +965,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 auditService.processAudit(
                         AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY,
                         req -> {
-                            AppListEntryOfficial newOfficialEntity =
-                                    appListEntryOfficialRepository.save(
-                                            applicationListEntryEntityMapper.toOfficial(
-                                                    official, listEntryEntity));
-
+                            AppListEntryOfficial newOfficialEntity = applicationListEntryEntityMapper.toOfficial(official, listEntryEntity);
+                            newOfficialEntity.setId(saveOfficial(newOfficialEntity));
                             log.debug(
                                     "Official created and mapped to application entry with id: {}",
                                     newOfficialEntity.getId());
@@ -2099,6 +2099,27 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             return rs.getLong(1);
                         }
                         throw new IllegalStateException("No ale_id returned when saving application list entry");
+                    }
+                });
+    }
+
+    private Long saveOfficial( AppListEntryOfficial official) {
+        return jdbcTemplate.execute(APPLICATION_LIST_ENTRY_OFFICIAL_SQL.formatted(schema + "." + TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, schema),
+                (PreparedStatementCallback<Long>) psc -> {
+                    psc.setLong(1, official.getAppListEntry().getId());
+                    psc.setString(2, official.getTitle());
+                    psc.setString(3, official.getForename());
+                    psc.setString(4, official.getSurname());
+                    psc.setString(5, official.getOfficialType().getValue());
+                    psc.setString(6, official.getChangedBy());
+                    psc.setTimestamp(7, Timestamp.valueOf(official.getChangedDate().toLocalDateTime()));
+                    psc.setString(8, loggedInUser.getUserId());
+
+                    try (var rs = psc.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getLong(1);
+                        }
+                        throw new IllegalStateException("No aleo_id returned when saving application list entry official");
                     }
                 });
     }
