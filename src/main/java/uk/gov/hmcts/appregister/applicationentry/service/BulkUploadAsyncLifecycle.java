@@ -275,6 +275,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.info("Processing bulk upload for list {}", listId);
 
         int rowNumber = FIRST_DATA_ROW_NUMBER;
+        int rowCount = 1;
 
         synchronized (validationCache) {
             try {
@@ -286,8 +287,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                         .data(entry.getKey())
                                         .build(),
                                 event.getResponse().getJobId().getId(),
-                                entry.getValue(), (offset * rowNumber) + rowNumber);
+                                entry.getValue(), (offset * rowCount) + rowCount);
                         rowNumber++;
+                        rowCount++;
                     } catch (Exception ex) {
                         log.error("Failed to process row {}", rowNumber, ex);
                         ObjectMapper objectMapper = new ObjectMapper();
@@ -315,6 +317,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         long end = System.nanoTime();
         log.warn("Bulk upload processing took {} ms", (end - start) / 1_000_000);
         offset++;
+        log.warn("Processed {} rows in this batch", offset * (rowCount - 1));
     }
 
     private static String getName(Respondent respondent) {

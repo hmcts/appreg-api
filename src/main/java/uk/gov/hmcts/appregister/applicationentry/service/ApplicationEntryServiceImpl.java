@@ -99,6 +99,8 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -144,6 +146,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, changed_by, changed_date) "
             + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
             + "RETURNING na_id";
+    private static final String APPLICATION_LIST_ENTRY_SQL = "INSERT INTO %s " +
+        "(ale_id, al_al_id, sa_sa_id, ac_ac_id, r_na_id, number_of_bulk_respondents, application_list_entry_wording, case_reference, account_number, entry_rescheduled, notes, \"version\", changed_by, changed_date, bulk_upload, user_name, sequence_number, tcep_status, message_uuid, retry_count, lodgement_date, id, delete_by, delete_date, is_deleted) " +
+        "VALUES (nextval('%s.ale_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, gen_random_uuid(), null, null, 'N'::bpchar) " +
+        "RETURNING ale_id";
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
@@ -1861,8 +1867,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             listEntryEntity.setSequenceNumber(seq);
         }
 
-        listEntryEntity = refreshEntity(applicationListEntryRepository.save(listEntryEntity)); // TODO replace this with jdbc call
-
+        listEntryEntity.setId(saveApplicationListEntry(listEntryEntity, respondentToSave.getId()));
+        listEntryEntity.setVersion(1L);
         log.debug("Created application entry with id: {}", listEntryEntity.getId());
 
         List<AppListEntryFeeStatus> statusList =
@@ -2058,6 +2064,43 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                      throw new IllegalStateException("No na_id returned when saving respondent");
                  }
              });
+    }
+
+    private Long saveApplicationListEntry(ApplicationListEntry entry, Long nameAddressId) {
+        return jdbcTemplate.execute(
+                APPLICATION_LIST_ENTRY_SQL.formatted(schema + "." + TableNames.APPLICATION_LISTS_ENTRY, schema),
+                (PreparedStatementCallback<Long>) psc -> {
+                    psc.setLong(1, entry.getApplicationList().getId());
+                    psc.setLong(2, entry.getStandardApplicant().getId());
+                    psc.setLong(3, entry.getApplicationCode().getId());
+                    psc.setLong(4, nameAddressId);
+                    if (Objects.nonNull(entry.getNumberOfBulkRespondents())) {
+                        psc.setShort(5, entry.getNumberOfBulkRespondents());
+                    } else {
+                        psc.setNull(5, Types.SMALLINT);
+                    }
+                    psc.setString(6, entry.getApplicationListEntryWording());
+                    psc.setString(7, entry.getCaseReference());
+                    psc.setString(8, entry.getAccountNumber());
+                    psc.setString(9, entry.getEntryRescheduled());
+                    psc.setString(10, entry.getNotes());
+                    psc.setLong(11, 1L);
+                    psc.setString(12, loggedInUser.getUserId());
+                    psc.setString(13, entry.getBulkUpload());
+                    psc.setString(14, entry.getCreatedUser());
+                    psc.setInt(15, entry.getSequenceNumber());
+                    psc.setString(16, entry.getTcepStatus());
+                    psc.setString(17, entry.getMessageUuid());
+                    psc.setString(18, entry.getRetryCount());
+                    psc.setTimestamp(19, Timestamp.valueOf(entry.getLodgementDate().atStartOfDay()));
+
+                    try (var rs = psc.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getLong(1);
+                        }
+                        throw new IllegalStateException("No ale_id returned when saving application list entry");
+                    }
+                });
     }
 
     private record BulkActionPreviewResolution(
