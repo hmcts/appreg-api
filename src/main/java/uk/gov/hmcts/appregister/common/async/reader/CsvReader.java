@@ -45,6 +45,9 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
     /** The default csv delimiter to read. */
     private static final char DEFAULT_DELIMITER = '|';
 
+    private static final String FIELD_COUNT_MISMATCH_MESSAGE =
+            "Number of data fields does not match number of headers.";
+
     public CsvReader(MultipartFile file, Class<T> cls) throws IOException {
         this(file.getInputStream(), cls);
     }
@@ -132,7 +135,11 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
             log.error("Error reading csv file", e);
             // add the csv error to the job context
             if (jobContext != null) {
-                jobContext.logFailure(e.getMessage());
+                if (FIELD_COUNT_MISMATCH_MESSAGE.equals(e.getMessage())) {
+                    jobContext.logFieldCountMismatch(e.getMessage());
+                } else {
+                    jobContext.logFailure(e.getMessage());
+                }
                 // ignore the exception from being thrown
                 return null;
             } else {

@@ -81,6 +81,42 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenFieldCountMismatchAfterFinalRow_whenFailed_thenFormatsHeaderError() {
+        JobContext context = new JobContext();
+        context.logFieldCountMismatch("Number of data fields does not match number of headers.");
+        AsyncJobLifecycleEvent<BulkUploadRow> event =
+                new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED);
+
+        lifecycle.failed(event);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                "Number of data fields does not match number of headers.",
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"))));
+    }
+
+    @Test
+    void givenNonReaderFailure_whenFailed_thenPreservesExistingFailure() {
+        JobContext context = new JobContext();
+        context.logFailure("Processing failed for row 2");
+        AsyncJobLifecycleEvent<BulkUploadRow> event =
+                new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED);
+
+        lifecycle.failed(event);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly("Processing failed for row 2");
+    }
+
+    @Test
     void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure(
             CapturedOutput output) {
         BulkUploadRow row = validOrganisationRow();
@@ -493,7 +529,7 @@ class BulkUploadAsyncLifecycleTest {
             throws IOException {
         String headerErrorMessage = "Too many columns in CSV file";
         JobContext context = new JobContext();
-        context.logFailure(headerErrorMessage);
+        context.logFieldCountMismatch(headerErrorMessage);
 
         BulkUploadRow row = validOrganisationRow();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
@@ -503,6 +539,21 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                -1,
+                                                "BULK_UPLOAD_ROW",
+                                                null,
+                                                headerErrorMessage,
+                                                null,
+                                                null,
+                                                "HEADER_ERROR"))));
+
+        lifecycle.failed(new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED));
 
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
