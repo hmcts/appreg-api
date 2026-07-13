@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Clock;
@@ -145,9 +146,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, "
                     + "address_l2, address_l3, "
                     + "address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, "
-                    + "changed_by, changed_date, code) "
+                    + "changed_by, changed_date, code, date_of_birth) "
                     + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-                    + " ?, CURRENT_TIMESTAMP, ?)"
+                    + " ?, CURRENT_TIMESTAMP, ?, ?)"
                     + "RETURNING na_id";
     private static final String APPLICATION_LIST_ENTRY_SQL =
             "INSERT INTO %s "
@@ -2080,6 +2081,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             psc.setLong(15, 1L);
                             psc.setString(16, loggedInUser.getUserId());
                             psc.setString(17, nameAddress.getCode().getCode());
+                            if (Objects.nonNull(nameAddress.getDateOfBirth())) {
+                                psc.setDate(18, Date.valueOf(nameAddress.getDateOfBirth()));
+                            } else {
+                                psc.setNull(18, Types.DATE);
+                            }
 
                             try (var rs = psc.executeQuery()) {
                                 if (rs.next()) {
