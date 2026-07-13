@@ -52,6 +52,14 @@ public class CsdsIngressProcessor {
 
         for (var index = 0; index < processors.size(); index++) {
             val processor = processors.get(index);
+            if (!processor.enabled()) {
+                log.info(
+                        "Skipping disabled CSDS ingress processor {} for target {}.{}",
+                        processor.datasetName(),
+                        processor.targetTable(),
+                        processor.targetKeyField());
+                continue;
+            }
             try {
                 runProcessor(processor);
             } catch (RuntimeException ex) {

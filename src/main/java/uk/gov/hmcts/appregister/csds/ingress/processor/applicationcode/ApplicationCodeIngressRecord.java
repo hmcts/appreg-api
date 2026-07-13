@@ -22,7 +22,7 @@ public record ApplicationCodeIngressRecord(
     private static final String AC_ID_FIELD = "AC_ID";
     private static final String APPLICATION_CODE_ID_FIELD = "ApplicationCodeID";
     private static final String PSS_APPLICATION_CODE_ID_FIELD = "PSSApplicationCodeID";
-    private static final long APPLICATION_CODE_ID_OFFSET = 100000L;
+    private static final long NEW_RECORD_ID_OFFSET = 100000L;
 
     static ApplicationCodeIngressRecord fromEntity(ApplicationCode applicationCode) {
         return new ApplicationCodeIngressRecord(
@@ -46,7 +46,7 @@ public record ApplicationCodeIngressRecord(
             return pssacid;
         }
 
-        return applicationCodeId == null ? null : applicationCodeId + APPLICATION_CODE_ID_OFFSET;
+        return applicationCodeId == null ? null : applicationCodeId + NEW_RECORD_ID_OFFSET;
     }
 
     public static @Nullable Long resolveId(JsonNode node) {
