@@ -52,14 +52,13 @@ public class StandardApplicantIngressApplyService {
                     user_name = 'CSDS_INGRESS'
                 WHERE standard_applicant_end_date IS NULL
                 """
-                        // NOSONAR (java:S2077): the schema and table name are regex-validated SQL
-                        // identifiers.
-                        .formatted(validatedSchema, targetTable);
+                        // Schema and table name are regex-validated SQL identifiers.
+                        .formatted(validatedSchema, targetTable); // NOSONAR
         var parameters = new HashMap<String, Object>();
         parameters.put("today", businessDateProvider.currentUkDate());
         if (!incomingById.isEmpty()) {
-            // NOSONAR (java:S2077): targetKeyField is a regex-validated SQL identifier.
-            sql += " AND " + targetKeyField + " NOT IN (:incomingIds)";
+            // targetKeyField is a regex-validated SQL identifier.
+            sql += " AND " + targetKeyField + " NOT IN (:incomingIds)"; // NOSONAR
             parameters.put("incomingIds", incomingById.keySet());
         }
         jdbcTemplate.update(sql, parameters);
