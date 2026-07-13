@@ -30,17 +30,18 @@ public class StandardApplicantIngressApplyService {
     @Transactional
     public void reconcileAndUpsert(
             String targetTable, String targetKeyField, StandardApplicantDiffResult diff) {
-        validateIdentifier(targetTable, "tableName");
-        validateIdentifier(targetKeyField, "primaryKey");
-        endDateMissingApplicants(targetTable, targetKeyField, diff.incomingById());
+        val validatedTableName = requireSqlIdentifier(targetTable, "tableName");
+        val validatedPrimaryKey = requireSqlIdentifier(targetKeyField, "primaryKey");
+        endDateMissingApplicants(validatedTableName, validatedPrimaryKey, diff.incomingById());
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
-        bulkUpsertService.upsertBatch(targetTable, targetKeyField, rows, rowMapper);
+        bulkUpsertService.upsertBatch(validatedTableName, validatedPrimaryKey, rows, rowMapper);
     }
 
     private void endDateMissingApplicants(
             String targetTable,
             String targetKeyField,
             Map<Long, StandardApplicantIngressRecord> incomingById) {
+        val validatedSchema = requireSqlIdentifier(schema, "schema");
         var sql =
                 """
                 UPDATE %s.%s
@@ -51,19 +52,23 @@ public class StandardApplicantIngressApplyService {
                     user_name = 'CSDS_INGRESS'
                 WHERE standard_applicant_end_date IS NULL
                 """
-                        .formatted(schema, targetTable);
+                        // NOSONAR (java:S2077): the schema and table name are regex-validated SQL
+                        // identifiers.
+                        .formatted(validatedSchema, targetTable);
         var parameters = new HashMap<String, Object>();
         parameters.put("today", businessDateProvider.currentUkDate());
         if (!incomingById.isEmpty()) {
+            // NOSONAR (java:S2077): targetKeyField is a regex-validated SQL identifier.
             sql += " AND " + targetKeyField + " NOT IN (:incomingIds)";
             parameters.put("incomingIds", incomingById.keySet());
         }
         jdbcTemplate.update(sql, parameters);
     }
 
-    private void validateIdentifier(String value, String description) {
+    private String requireSqlIdentifier(String value, String description) {
         if (!StringUtils.hasText(value) || !SQL_IDENTIFIER.matcher(value).matches()) {
             throw new IllegalArgumentException("Invalid SQL " + description + ": " + value);
         }
+        return value;
     }
 }

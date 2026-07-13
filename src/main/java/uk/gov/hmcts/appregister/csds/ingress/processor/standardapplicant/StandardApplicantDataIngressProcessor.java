@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 public class StandardApplicantDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, StandardApplicantDiffResult> {
     private static final String MISSING_ADDRESS = "<missing>";
+    private static final String SA_ID = "SA_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ApplicantID",
@@ -144,7 +145,7 @@ public class StandardApplicantDataIngressProcessor
     private StandardApplicantIngressRecord toSourceRecord(JsonNode node) {
         val address = firstAddress(node);
         return new StandardApplicantIngressRecord(
-                requiredLong(node, "SA_ID"),
+                requiredLong(node, SA_ID),
                 requiredText(node, "Code"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "Enddate"),
@@ -168,9 +169,9 @@ public class StandardApplicantDataIngressProcessor
         val psssaId = nullableLong(copiedRecord, "PSSSAID");
         val applicantId = nullableLong(copiedRecord, "ApplicantID");
         if (psssaId != null) {
-            copiedRecord.put("SA_ID", psssaId);
+            copiedRecord.put(SA_ID, psssaId);
         } else if (applicantId != null) {
-            copiedRecord.put("SA_ID", applicantId + 100000L);
+            copiedRecord.put(SA_ID, applicantId + 100000L);
         }
         return copiedRecord;
     }

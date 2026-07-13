@@ -15,31 +15,54 @@ public class StandardApplicantIngressDatabaseRowMapper
         implements IngressDatabaseRowMapper<StandardApplicantIngressRecord>,
                 RowMapper<StandardApplicantIngressRecord> {
     private static final String TECHNICAL_USERNAME = "CSDS_INGRESS";
+    private static final String ID = "sa_id";
+    private static final String CODE = "standard_applicant_code";
+    private static final String START_DATE = "standard_applicant_start_date";
+    private static final String END_DATE = "standard_applicant_end_date";
+    private static final String VERSION = "version";
+    private static final String CHANGED_BY = "changed_by";
+    private static final String CHANGED_DATE = "changed_date";
+    private static final String USER_NAME = "user_name";
+    private static final String NAME = "name";
+    private static final String TITLE = "title";
+    private static final String FORENAME_1 = "forename_1";
+    private static final String FORENAME_2 = "forename_2";
+    private static final String FORENAME_3 = "forename_3";
+    private static final String SURNAME = "surname";
+    private static final String ADDRESS_1 = "address_l1";
+    private static final String ADDRESS_2 = "address_l2";
+    private static final String ADDRESS_3 = "address_l3";
+    private static final String ADDRESS_4 = "address_l4";
+    private static final String ADDRESS_5 = "address_l5";
+    private static final String POSTCODE = "postcode";
+    private static final String EMAIL_ADDRESS = "email_address";
+    private static final String TELEPHONE_NUMBER = "telephone_number";
+    private static final String MOBILE_NUMBER = "mobile_number";
     private static final List<String> COLUMNS =
             List.of(
-                    "sa_id",
-                    "standard_applicant_code",
-                    "standard_applicant_start_date",
-                    "standard_applicant_end_date",
-                    "version",
-                    "changed_by",
-                    "changed_date",
-                    "user_name",
-                    "name",
-                    "title",
-                    "forename_1",
-                    "forename_2",
-                    "forename_3",
-                    "surname",
-                    "address_l1",
-                    "address_l2",
-                    "address_l3",
-                    "address_l4",
-                    "address_l5",
-                    "postcode",
-                    "email_address",
-                    "telephone_number",
-                    "mobile_number");
+                    ID,
+                    CODE,
+                    START_DATE,
+                    END_DATE,
+                    VERSION,
+                    CHANGED_BY,
+                    CHANGED_DATE,
+                    USER_NAME,
+                    NAME,
+                    TITLE,
+                    FORENAME_1,
+                    FORENAME_2,
+                    FORENAME_3,
+                    SURNAME,
+                    ADDRESS_1,
+                    ADDRESS_2,
+                    ADDRESS_3,
+                    ADDRESS_4,
+                    ADDRESS_5,
+                    POSTCODE,
+                    EMAIL_ADDRESS,
+                    TELEPHONE_NUMBER,
+                    MOBILE_NUMBER);
     private static final List<String> UPDATABLE_COLUMNS = COLUMNS.subList(1, COLUMNS.size());
 
     @Override
@@ -54,59 +77,59 @@ public class StandardApplicantIngressDatabaseRowMapper
 
     @Override
     public Map<String, String> insertExpressions() {
-        return Map.of("changed_date", "current_timestamp");
+        return Map.of(CHANGED_DATE, "current_timestamp");
     }
 
     @Override
     public Map<String, String> updateExpressions() {
-        return Map.of("changed_date", "current_timestamp");
+        return Map.of(CHANGED_DATE, "current_timestamp");
     }
 
     @Override
     public Map<String, Object> toRow(StandardApplicantIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
-        row.put("sa_id", item.id());
-        row.put("standard_applicant_code", item.code());
-        row.put("standard_applicant_start_date", item.startDate());
-        row.put("standard_applicant_end_date", item.endDate());
-        row.put("version", item.version());
-        row.put("changed_by", 0L);
-        row.put("changed_date", null);
-        row.put("user_name", TECHNICAL_USERNAME);
-        row.put("name", item.name());
-        row.put("title", null);
-        row.put("forename_1", null);
-        row.put("forename_2", null);
-        row.put("forename_3", null);
-        row.put("surname", null);
-        row.put("address_l1", item.addressLine1());
-        row.put("address_l2", item.addressLine2());
-        row.put("address_l3", item.addressLine3());
-        row.put("address_l4", item.addressLine4());
-        row.put("address_l5", item.addressLine5());
-        row.put("postcode", item.postcode());
-        row.put("email_address", item.emailAddress());
-        row.put("telephone_number", item.telephoneNumber());
-        row.put("mobile_number", null);
+        row.put(ID, item.id());
+        row.put(CODE, item.code());
+        row.put(START_DATE, item.startDate());
+        row.put(END_DATE, item.endDate());
+        row.put(VERSION, item.version());
+        row.put(CHANGED_BY, 0L);
+        row.put(CHANGED_DATE, null);
+        row.put(USER_NAME, TECHNICAL_USERNAME);
+        row.put(NAME, item.name());
+        row.put(TITLE, null);
+        row.put(FORENAME_1, null);
+        row.put(FORENAME_2, null);
+        row.put(FORENAME_3, null);
+        row.put(SURNAME, null);
+        row.put(ADDRESS_1, item.addressLine1());
+        row.put(ADDRESS_2, item.addressLine2());
+        row.put(ADDRESS_3, item.addressLine3());
+        row.put(ADDRESS_4, item.addressLine4());
+        row.put(ADDRESS_5, item.addressLine5());
+        row.put(POSTCODE, item.postcode());
+        row.put(EMAIL_ADDRESS, item.emailAddress());
+        row.put(TELEPHONE_NUMBER, item.telephoneNumber());
+        row.put(MOBILE_NUMBER, null);
         return row;
     }
 
     @Override
     public StandardApplicantIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
         return new StandardApplicantIngressRecord(
-                rs.getLong("sa_id"),
-                rs.getString("standard_applicant_code"),
-                rs.getObject("standard_applicant_start_date", LocalDate.class),
-                rs.getObject("standard_applicant_end_date", LocalDate.class),
-                rs.getLong("version"),
-                rs.getString("name"),
-                rs.getString("address_l1"),
-                rs.getString("address_l2"),
-                rs.getString("address_l3"),
-                rs.getString("address_l4"),
-                rs.getString("address_l5"),
-                rs.getString("postcode"),
-                rs.getString("email_address"),
-                rs.getString("telephone_number"));
+                rs.getLong(ID),
+                rs.getString(CODE),
+                rs.getObject(START_DATE, LocalDate.class),
+                rs.getObject(END_DATE, LocalDate.class),
+                rs.getLong(VERSION),
+                rs.getString(NAME),
+                rs.getString(ADDRESS_1),
+                rs.getString(ADDRESS_2),
+                rs.getString(ADDRESS_3),
+                rs.getString(ADDRESS_4),
+                rs.getString(ADDRESS_5),
+                rs.getString(POSTCODE),
+                rs.getString(EMAIL_ADDRESS),
+                rs.getString(TELEPHONE_NUMBER));
     }
 }

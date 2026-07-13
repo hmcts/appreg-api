@@ -14,6 +14,17 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 @Component
 public class StandardApplicantDiffReportingService
         extends AbstractIngressDiffReportingService<StandardApplicantIngressRecord> {
+    private static final String APPLICANT_ID = "ApplicantID";
+    private static final String PSSSA_ID = "PSSSAID";
+    private static final String SA_ID = "SA_ID";
+    private static final String CODE = "Code";
+    private static final String NAME = "OrganisationName";
+    private static final String START_DATE = "StartDate";
+    private static final String END_DATE = "Enddate";
+    private static final String VERSION = "RevisionNumber";
+    private static final String CSV_HEADER =
+            "psssaId,applicantId,saId,code,name,startDate,endDate,version\n";
+    private static final String DIFF_REPORT_HEADER = "psssaId,applicantId,saId,changeType\n";
     private final String reportingDir;
 
     public StandardApplicantDiffReportingService(CsdsIngressProperties properties) {
@@ -57,10 +68,10 @@ public class StandardApplicantDiffReportingService
         var incomingRecordsBySaId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, "SA_ID") != null)
+                        .filter(item -> nullableLong(item, SA_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, "SA_ID"),
+                                        item -> nullableLong(item, SA_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -68,8 +79,8 @@ public class StandardApplicantDiffReportingService
                         item -> {
                             var source = incomingRecordsBySaId.get(item.intended().id());
                             return new DiffReportRow(
-                                    nullableLong(source, "PSSSAID"),
-                                    nullableLong(source, "ApplicantID"),
+                                    nullableLong(source, PSSSA_ID),
+                                    nullableLong(source, APPLICANT_ID),
                                     item.intended().id(),
                                     changeType(item.operation()));
                         })
@@ -78,45 +89,39 @@ public class StandardApplicantDiffReportingService
 
     @Override
     protected String buildExistingCsv(Map<Long, StandardApplicantIngressRecord> existingById) {
-        var csv = new StringBuilder(csvHeader());
-        existingById.values().stream()
-                .sorted(Comparator.comparing(StandardApplicantIngressRecord::id))
-                .map(this::toExistingCsvRow)
-                .forEach(csv::append);
-        return csv.toString();
+        return buildCsv(
+                CSV_HEADER,
+                existingById.values().stream()
+                        .sorted(Comparator.comparing(StandardApplicantIngressRecord::id))
+                        .map(this::toExistingCsvRow));
     }
 
     @Override
     protected String buildIncomingCsv(
             List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var csv = new StringBuilder(csvHeader());
-        processedData.stream()
-                .flatMap(page -> recordsExtractor.apply(page).stream())
-                .map(this::toIncomingCsvRow)
-                .forEach(csv::append);
-        return csv.toString();
-    }
-
-    private String csvHeader() {
-        return "psssaId,applicantId,saId,code,name,startDate,endDate,version\n";
+        return buildCsv(
+                CSV_HEADER,
+                processedData.stream()
+                        .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .map(this::toIncomingCsvRow));
     }
 
     @Override
     protected String diffReportHeader() {
-        return "psssaId,applicantId,saId,changeType\n";
+        return DIFF_REPORT_HEADER;
     }
 
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, "PSSSAID")),
-                        csvValue(nullableLong(node, "ApplicantID")),
-                        csvValue(nullableLong(node, "SA_ID")),
-                        csvValue(nullableText(node, "Code")),
-                        csvValue(nullableText(node, "OrganisationName")),
-                        csvValue(nullableText(node, "StartDate")),
-                        csvValue(nullableText(node, "Enddate")),
-                        csvValue(nullableLong(node, "RevisionNumber")))
+                        csvValue(nullableLong(node, PSSSA_ID)),
+                        csvValue(nullableLong(node, APPLICANT_ID)),
+                        csvValue(nullableLong(node, SA_ID)),
+                        csvValue(nullableText(node, CODE)),
+                        csvValue(nullableText(node, NAME)),
+                        csvValue(nullableText(node, START_DATE)),
+                        csvValue(nullableText(node, END_DATE)),
+                        csvValue(nullableLong(node, VERSION)))
                 + "\n";
     }
 

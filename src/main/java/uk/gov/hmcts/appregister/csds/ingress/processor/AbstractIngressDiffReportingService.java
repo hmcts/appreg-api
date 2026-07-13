@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -97,6 +98,12 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
     protected final String buildDiffReportCsv(List<DiffReportCsvRow> diffReport) {
         var csv = new StringBuilder(diffReportHeader());
         diffReport.stream().map(DiffReportCsvRow::toCsvRow).forEach(csv::append);
+        return csv.toString();
+    }
+
+    protected final String buildCsv(String header, Stream<String> rows) {
+        var csv = new StringBuilder(header);
+        rows.forEach(csv::append);
         return csv.toString();
     }
 
