@@ -10,6 +10,8 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
@@ -34,6 +36,20 @@ public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRe
         }
     }
 
+    public void validateApplicationListEntryBulkActionPreview(
+            ApplicationListEntryBulkActionPreviewRequestDto request) {
+        if (request == null) {
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_ACTION_REQUIRED, "Bulk action request is missing");
+        }
+
+        ApplicationListEntryBulkActionSelectionDto selection = request.getSelection();
+
+        if (selection.getSelectionType() == BulkActionSelectionType.IDS) {
+            validateIdsSelection(selection);
+        }
+    }
+
     public void validateLimit(long selectedCount, int limit) {
         if (selectedCount > limit) {
             throw new AppRegistryException(
@@ -43,14 +59,20 @@ public class BulkActionPreviewValidator implements Validator<BulkActionPreviewRe
     }
 
     private void validateIdsSelection(BulkActionSelectionDto selection) {
-        if (isNullOrEmpty(selection.getEntryIds())
-                || selection.getEntryIds().stream().anyMatch(Objects::isNull)) {
+        validateEntryIds(selection.getEntryIds());
+    }
+
+    private void validateIdsSelection(ApplicationListEntryBulkActionSelectionDto selection) {
+        validateEntryIds(selection.getEntryIds());
+    }
+
+    private void validateEntryIds(List<UUID> entryIds) {
+        if (isNullOrEmpty(entryIds) || entryIds.stream().anyMatch(Objects::isNull)) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_ACTION_ENTRY_IDS_REQUIRED,
                     "entryIds must be provided for IDS selection");
         }
 
-        List<UUID> entryIds = selection.getEntryIds();
         if (new HashSet<>(entryIds).size() != entryIds.size()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE,

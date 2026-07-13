@@ -9,6 +9,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
@@ -43,6 +44,19 @@ public interface ApplicationEntryService {
      *     context
      */
     BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request);
+
+    /**
+     * Resolves a bulk action selection scoped to one application list into selected entry IDs and
+     * entry summary context, applying the configured single-list bulk action limit before returning
+     * row data.
+     *
+     * @param listId The application list that scopes the selected entries
+     * @param request The bulk action preview request containing the action and selection criteria
+     * @return A preview containing selected counts, eligible counts, selected IDs, and entry
+     *     context
+     */
+    BulkActionPreviewResponseDto bulkActionPreview(
+            UUID listId, ApplicationListEntryBulkActionPreviewRequestDto request);
 
     /**
      * Creates an application entry. A fee status record(s) is created for the entry if provided,
