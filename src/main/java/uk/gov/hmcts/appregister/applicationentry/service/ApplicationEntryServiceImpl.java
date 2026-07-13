@@ -85,6 +85,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -144,8 +145,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, "
                     + "address_l2, address_l3, "
                     + "address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, "
-                    + "changed_by, changed_date) "
-                    + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+                    + "changed_by, changed_date, code) "
+                    + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
+                " ?, CURRENT_TIMESTAMP, ?)"
                     + "RETURNING na_id";
     private static final String APPLICATION_LIST_ENTRY_SQL =
             "INSERT INTO %s "
@@ -1169,6 +1171,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 NameAddress applicantToAdded =
                                         applicantMapper.toApplicant(
                                                 entryCreateDto.getData().getApplicant());
+                                applicantToAdded.setCode(NameAddressCodeType.APPLICANT);
                                 applicantToAdded.setId(saveNameAddress(applicantToAdded));
                                 log.debug(
                                         "Created applicant with id: {}", applicantToAdded.getId());
@@ -1197,6 +1200,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 NameAddress respondentToAdded =
                                         applicantMapper.toRespondent(
                                                 entryCreateDto.getData().getRespondent());
+                                respondentToAdded.setCode(NameAddressCodeType.RESPONDENT);
                                 respondentToAdded.setId(saveNameAddress(respondentToAdded));
                                 respondentToAdded.setVersion(1L);
                                 log.debug(
@@ -2076,6 +2080,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             psc.setString(14, nameAddress.getMobileNumber());
                             psc.setLong(15, 1L);
                             psc.setString(16, loggedInUser.getUserId());
+                            psc.setString(17, nameAddress.getCode().getCode());
 
                             try (var rs = psc.executeQuery()) {
                                 if (rs.next()) {
