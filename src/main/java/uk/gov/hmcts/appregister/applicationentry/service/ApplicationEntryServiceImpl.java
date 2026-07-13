@@ -326,7 +326,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional(readOnly = true)
     public BulkActionPreviewResponseDto bulkActionPreview(
             UUID listId, ApplicationListEntryBulkActionPreviewRequestDto request) {
-        bulkActionPreviewValidator.validateApplicationListEntryBulkActionPreview(request);
+        bulkActionPreviewValidator.validateApplicationListEntryBulkActionPreview(listId, request);
 
         BulkActionPreviewResolution resolution =
                 resolveApplicationListBulkActionPreviewSelection(listId, request.getSelection());

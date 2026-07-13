@@ -147,7 +147,7 @@ class ApplicationEntryDtoTest {
 
     @Test
     void testBulkFeesUpdateDtoAllowsOperationalEntryLimit() {
-        BulkFeesUpdateDto dto = validBulkFeesUpdateDto(entryIds(500));
+        BulkFeesUpdateDto dto = validBulkFeesUpdateDto(entryIds(1050));
 
         Set<ConstraintViolation<Object>> constraintValidator = validate(dto);
 
@@ -156,14 +156,14 @@ class ApplicationEntryDtoTest {
 
     @Test
     void testBulkFeesUpdateDtoRejectsEntryIdsAboveOperationalLimit() {
-        BulkFeesUpdateDto dto = validBulkFeesUpdateDto(entryIds(501));
+        BulkFeesUpdateDto dto = validBulkFeesUpdateDto(entryIds(1051));
 
         Set<ConstraintViolation<Object>> constraintValidator = validate(dto);
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "entryIds", "size must be between 1 and 500");
+                listConstraint, "entryIds", "size must be between 1 and 1050");
     }
 
     private Set<ConstraintViolation<Object>> validate(Object value) {

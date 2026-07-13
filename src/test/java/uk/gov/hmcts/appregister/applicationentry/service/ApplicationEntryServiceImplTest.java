@@ -110,6 +110,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.model.EntryToList;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
@@ -145,6 +146,8 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
@@ -337,7 +340,7 @@ class ApplicationEntryServiceImplTest {
                         applicationListEntryRepository,
                         businessDateProvider,
                         Validation.buildDefaultValidatorFactory().getValidator());
-        bulkActionPreviewValidator = new BulkActionPreviewValidator();
+        bulkActionPreviewValidator = new BulkActionPreviewValidator(applicationListEntryRepository);
         pageableMapper = new PageableMapper();
         pageableMapper.setDefaultPageSize(10);
         pageableMapper.setMaxPageSize(100);
@@ -1962,7 +1965,7 @@ class ApplicationEntryServiceImplTest {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         List<ApplicationListEntry> entries =
-                IntStream.range(0, 500)
+                IntStream.range(0, 1050)
                         .mapToObj(
                                 index ->
                                         applicationListEntry(
@@ -1987,11 +1990,11 @@ class ApplicationEntryServiceImplTest {
 
         BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
 
-        Assertions.assertEquals(500, response.getTotalCount());
-        Assertions.assertEquals(500, response.getUpdatedCount());
+        Assertions.assertEquals(1050, response.getTotalCount());
+        Assertions.assertEquals(1050, response.getUpdatedCount());
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(listId), anySet());
-        verify(appListEntryFeeStatusRepository, times(500)).save(any(AppListEntryFeeStatus.class));
+        verify(appListEntryFeeStatusRepository, times(1050)).save(any(AppListEntryFeeStatus.class));
         verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
 
@@ -3142,6 +3145,40 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void given_applicationListIdsSelection_when_bulkActionPreview_then_return_preview() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewSingleListLimit", 2);
+        UUID listId = UUID.randomUUID();
+        UUID firstEntryId = UUID.randomUUID();
+        UUID secondEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection firstProjection =
+                bulkActionPreviewProjection(firstEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection secondProjection =
+                bulkActionPreviewProjection(secondEntryId, 2L);
+        final EntryGetSummaryDto firstSummary = stubEntrySummary(firstProjection, firstEntryId);
+        final EntryGetSummaryDto secondSummary = stubEntrySummary(secondProjection, secondEntryId);
+
+        when(applicationListEntryRepository.findApplicationListForAllEntries(anyList()))
+                .thenReturn(
+                        List.of(
+                                new EntryToList(firstEntryId, listId),
+                                new EntryToList(secondEntryId, listId)));
+        stubBulkActionPreviewSummaryPage(2, firstProjection, secondProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        listId,
+                        applicationListBulkActionPreviewRequest(firstEntryId, secondEntryId));
+
+        Assertions.assertEquals(BulkActionType.UPDATE_FEE_DETAILS, response.getAction());
+        Assertions.assertEquals(2, response.getLimit());
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
     void given_filterSelection_when_bulkActionPreview_then_return_matching_ids_and_entry_context() {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
         UUID entryId = UUID.randomUUID();
@@ -3449,6 +3486,16 @@ class ApplicationEntryServiceImplTest {
                 .action(action)
                 .selection(
                         new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(List.of(entryIds)));
+    }
+
+    private ApplicationListEntryBulkActionPreviewRequestDto applicationListBulkActionPreviewRequest(
+            UUID... entryIds) {
+        return new ApplicationListEntryBulkActionPreviewRequestDto()
+                .action(BulkActionType.UPDATE_FEE_DETAILS)
+                .selection(
+                        new ApplicationListEntryBulkActionSelectionDto()
                                 .selectionType(BulkActionSelectionType.IDS)
                                 .entryIds(List.of(entryIds)));
     }

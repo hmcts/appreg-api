@@ -18,6 +18,7 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
@@ -33,6 +34,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
@@ -397,6 +400,37 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
                         "{\"action\":\"UPDATE_NOTES\",\"selection\":{\"selectionType\":\"IDS\",\"entryIds\":[null]}}")
                 .then()
                 .statusCode(400);
+    }
+
+    @Test
+    void
+            givenIdsSelectionFromAnotherList_whenApplicationListBulkActionPreview_thenReturnForbiddenProblemJson()
+                    throws Exception {
+        ApplicationList sourceList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry sourceEntry = createEntry(sourceList);
+        sourceEntry = persistance.save(sourceEntry);
+
+        ApplicationList otherList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry otherEntry = createEntry(otherList);
+        otherEntry = persistance.save(otherEntry);
+
+        Response response =
+                executeApplicationListBulkActionPreviewResponse(
+                        createAdminToken(),
+                        sourceList.getUuid(),
+                        applicationListBulkActionPreviewIdsRequest(
+                                BulkActionType.UPDATE_FEE_DETAILS,
+                                List.of(sourceEntry.getUuid(), otherEntry.getUuid())));
+
+        response.then().statusCode(403);
+        assertThat(response.getHeader("Content-Type")).contains("application/problem+json");
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString())
+                .isEqualTo(AppListEntryError.ENTRY_NOT_ACCESSIBLE_FOR_LIST.getCode().getAppCode());
+        assertThat(problemDetail.getTitle())
+                .isEqualTo(
+                        "One or more application list entries do not belong to the application list");
+        assertThat(problemDetail.getDetail()).contains(otherEntry.getUuid().toString());
     }
 
     @Test
@@ -1443,6 +1477,17 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
                 request);
     }
 
+    private Response executeApplicationListBulkActionPreviewResponse(
+            TokenGenerator tokenGenerator,
+            UUID listId,
+            ApplicationListEntryBulkActionPreviewRequestDto request)
+            throws Exception {
+        return restAssuredClient.executePostRequest(
+                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-action-preview"),
+                tokenGenerator.fetchTokenForRole(),
+                request);
+    }
+
     private BulkActionPreviewRequestDto bulkActionPreviewFilterRequest(
             BulkActionType action,
             EntryGetFilterDto filter,
@@ -1464,6 +1509,16 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
                 .action(action)
                 .selection(
                         new BulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(entryIds));
+    }
+
+    private ApplicationListEntryBulkActionPreviewRequestDto
+            applicationListBulkActionPreviewIdsRequest(BulkActionType action, List<UUID> entryIds) {
+        return new ApplicationListEntryBulkActionPreviewRequestDto()
+                .action(action)
+                .selection(
+                        new ApplicationListEntryBulkActionSelectionDto()
                                 .selectionType(BulkActionSelectionType.IDS)
                                 .entryIds(entryIds));
     }
