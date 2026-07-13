@@ -146,8 +146,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     + "address_l2, address_l3, "
                     + "address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, "
                     + "changed_by, changed_date, code) "
-                    + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
-                " ?, CURRENT_TIMESTAMP, ?)"
+                    + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+                    + " ?, CURRENT_TIMESTAMP, ?)"
                     + "RETURNING na_id";
     private static final String APPLICATION_LIST_ENTRY_SQL =
             "INSERT INTO %s "
@@ -1641,8 +1641,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         auditService.processAudit(
                                 null,
                                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
-                                r ->
-                                {
+                                r -> {
                                     // get the entries for the list
                                     Page<ApplicationListEntryGetSummaryProjection> entries =
                                             applicationListEntryRepository.searchForGetSummary(
