@@ -32,15 +32,18 @@ public class StandardApplicantDataIngressProcessor
 
     private final CsdsIngressProperties.StandardApplicants standardApplicantProperties;
     private final StandardApplicantDiffService diffService;
+    private final StandardApplicantDiffReportingService diffReportingService;
     private final StandardApplicantIngressApplyService applyService;
 
     public StandardApplicantDataIngressProcessor(
             CsdsIngressProperties properties,
             StandardApplicantDiffService diffService,
+            StandardApplicantDiffReportingService diffReportingService,
             StandardApplicantIngressApplyService applyService) {
         super(properties, properties.getProcessors().getStandardApplicants());
         standardApplicantProperties = properties.getProcessors().getStandardApplicants();
         this.diffService = diffService;
+        this.diffReportingService = diffReportingService;
         this.applyService = applyService;
     }
 
@@ -75,6 +78,11 @@ public class StandardApplicantDataIngressProcessor
     }
 
     @Override
+    protected boolean usesCountEndpoint() {
+        return false;
+    }
+
+    @Override
     protected String mockFilePath() {
         return standardApplicantProperties.getMock();
     }
@@ -87,13 +95,27 @@ public class StandardApplicantDataIngressProcessor
     }
 
     @Override
-    public void apply(List<JsonNode> processedData) {
-        val diff = diff(processedData);
+    protected void logDiffSummary(StandardApplicantDiffResult diff) {
         log.info(
                 "CSDS ingress processor {} produced inserts={}, updates={}",
                 datasetName(),
                 countByOperation(diff, IngressOperation.INSERT),
                 countByOperation(diff, IngressOperation.UPDATE));
+    }
+
+    @Override
+    protected void report(List<JsonNode> processedData, StandardApplicantDiffResult diff) {
+        diffReportingService.reportDiff(
+                datasetName(),
+                targetTable(),
+                targetKeyField(),
+                processedData,
+                diff,
+                this::extractRecords);
+    }
+
+    @Override
+    protected void applyDiff(StandardApplicantDiffResult diff) {
         applyService.reconcileAndUpsert(targetTable(), targetKeyField(), diff);
     }
 
@@ -106,7 +128,9 @@ public class StandardApplicantDataIngressProcessor
     public CsdsIngestResponse ingest(List<JsonNode> rawJson) {
         val processedData = preProcess(rawJson);
         val diff = diff(processedData);
-        applyService.reconcileAndUpsert(targetTable(), targetKeyField(), diff);
+        logDiffSummary(diff);
+        report(processedData, diff);
+        applyDiff(diff);
         return new CsdsIngestResponse()
                 .inserted(countByOperation(diff, IngressOperation.INSERT))
                 .updated(countByOperation(diff, IngressOperation.UPDATE));

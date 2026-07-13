@@ -9,10 +9,13 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,6 +34,7 @@ class StandardApplicantDataIngressProcessorTest {
 
     private CsdsIngressProperties properties;
     private StandardApplicantDataIngressProcessor processor;
+    @TempDir Path tempDir;
 
     @BeforeEach
     void setUp() {
@@ -41,6 +45,7 @@ class StandardApplicantDataIngressProcessorTest {
                         properties,
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
+                        new StandardApplicantDiffReportingService(properties),
                         applyService);
     }
 
@@ -50,13 +55,11 @@ class StandardApplicantDataIngressProcessorTest {
                 .getProcessors()
                 .getStandardApplicants()
                 .setParameters("?$f=PublishingStatus='Active'");
-        var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
-        var firstPage = createPage();
-        var secondPage = createPage();
+        var firstPage = createPage(OBJECT_MAPPER.createObjectNode());
+        var secondPage = createPage(OBJECT_MAPPER.createObjectNode());
+        var emptyPage = createPage();
         var parameters = "?$f=PublishingStatus='Active'";
 
-        when(ingressClient.retrieveJson("/count/CSDS/DA_GetStandardApplicant/GD" + parameters))
-                .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
                         "/named-query/CSDS/DA_GetStandardApplicant/GD"
                                 + parameters
@@ -67,6 +70,11 @@ class StandardApplicantDataIngressProcessorTest {
                                 + parameters
                                 + "&%24limit=2&%24offset=2"))
                 .thenReturn(secondPage);
+        when(ingressClient.retrieveJson(
+                        "/named-query/CSDS/DA_GetStandardApplicant/GD"
+                                + parameters
+                                + "&%24limit=2&%24offset=4"))
+                .thenReturn(emptyPage);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);
     }
@@ -92,6 +100,31 @@ class StandardApplicantDataIngressProcessorTest {
         assertThat(fallbackIdRecord.addressLine1()).isEqualTo("<missing>");
         assertThat(fallbackIdRecord.emailAddress()).isEqualTo("email@example.test");
         assertThat(fallbackIdRecord.telephoneNumber()).isEqualTo("020 1234 5678");
+    }
+
+    @Test
+    void given_reportingDirConfigured_when_apply_then_writesComparisonReports() throws Exception {
+        properties.getProcessors().getStandardApplicants().setReportingDir(tempDir.toString());
+        processor =
+                new StandardApplicantDataIngressProcessor(
+                        properties,
+                        new StandardApplicantDiffService(
+                                tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
+                        new StandardApplicantDiffReportingService(properties),
+                        applyService);
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of());
+
+        processor.apply(
+                processor.preProcess(
+                        List.of(createPage(sourceRecord(9659L, 6278L, "Derbyshire")))));
+
+        try (var files = Files.list(tempDir)) {
+            assertThat(files.map(path -> path.getFileName().toString()).toList())
+                    .anyMatch(name -> name.startsWith("standard_applicants_incoming_"))
+                    .anyMatch(name -> name.startsWith("standard_applicants_existing_"))
+                    .anyMatch(name -> name.startsWith("standard_applicants_diff_"));
+        }
     }
 
     private ObjectNode sourceRecord(Long applicantId, Long psssaId, String organisationName) {

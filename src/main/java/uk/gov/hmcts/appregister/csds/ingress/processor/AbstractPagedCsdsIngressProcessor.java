@@ -51,6 +51,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
             }
         }
 
+        if (!usesCountEndpoint()) {
+            return retrieveUntilEmptyPage(ingressClient);
+        }
+
         val totalCount =
                 extractCount(
                         ingressClient.retrieveJson(
@@ -88,6 +92,31 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 totalCount,
                 fetchedRecordCount);
 
+        return List.copyOf(responses);
+    }
+
+    private List<JsonNode> retrieveUntilEmptyPage(CsdsIngressClient ingressClient) {
+        val responses = new ArrayList<JsonNode>();
+        for (var offset = 0; ; offset += properties.getPageSize()) {
+            val response =
+                    ingressClient.retrieveJson(
+                            appendPagingParameters(
+                                    appendQueryParameters(queryPath(), queryParameters()),
+                                    "%24limit="
+                                            + properties.getPageSize()
+                                            + "&%24offset="
+                                            + offset));
+            if (extractRecords(response).isEmpty()) {
+                break;
+            }
+            responses.add(response);
+        }
+
+        log.info(
+                "Retrieved {} CSDS pages for {} using page size {} until an empty page",
+                responses.size(),
+                datasetName(),
+                properties.getPageSize());
         return List.copyOf(responses);
     }
 
@@ -151,6 +180,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     protected String queryPathType() {
         return "query";
+    }
+
+    protected boolean usesCountEndpoint() {
+        return true;
     }
 
     protected String mockFilePath() {

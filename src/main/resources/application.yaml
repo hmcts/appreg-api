@@ -139,7 +139,7 @@ appreg:
           table-name: standard_applicants_staging
           primary-key: sa_id
           source-entity-name: DA_GetStandardApplicant
-          parameters: ?%24f=PublishingStatus='Active'&%24f=CurrentRecordIndicator='true'&%24expr=Updator
+          parameters: ?%24f=PublishingStatus='Active'&%24f=CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json
 #          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
   job:
