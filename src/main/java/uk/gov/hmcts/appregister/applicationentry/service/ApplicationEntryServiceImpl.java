@@ -2,8 +2,31 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
@@ -99,31 +122,6 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -143,16 +141,26 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final UUID BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID = new UUID(0L, 0L);
 
     private static final String NAME_ADDRESS_SQL =
-        "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, changed_by, changed_date) "
-            + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
-            + "RETURNING na_id";
-    private static final String APPLICATION_LIST_ENTRY_SQL = "INSERT INTO %s " +
-        "(ale_id, al_al_id, sa_sa_id, ac_ac_id, r_na_id, number_of_bulk_respondents, application_list_entry_wording, case_reference, account_number, entry_rescheduled, notes, \"version\", changed_by, changed_date, bulk_upload, user_name, sequence_number, tcep_status, message_uuid, retry_count, lodgement_date, id, delete_by, delete_date, is_deleted) " +
-        "VALUES (nextval('%s.ale_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, gen_random_uuid(), null, null, 'N'::bpchar) " +
-        "RETURNING ale_id";
-    private static final String APPLICATION_LIST_ENTRY_OFFICIAL_SQL = "INSERT INTO %s (ale_ao_id, ale_ale_id, ao_na_id, \"version\", changed_by, changed_date, user_name) " +
-        "VALUES (nextval('%s.ale_ao_seq'), ?, ?, ?, ?, CURRENT_TIMESTAMP, ?) " +
-        "RETURNING ale_ao_id";
+            "INSERT INTO %s (na_id, name, title, first_name, middle_name, last_name, address_l1, "
+                    + "address_l2, address_l3, "
+                    + "address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, "
+                    + "changed_by, changed_date) "
+                    + "VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)"
+                    + "RETURNING na_id";
+    private static final String APPLICATION_LIST_ENTRY_SQL =
+            "INSERT INTO %s "
+                    + "(ale_id, al_al_id, sa_sa_id, ac_ac_id, a_na_id, r_na_id, number_of_bulk_respondents, "
+                    + "application_list_entry_wording, case_reference, account_number, entry_rescheduled, notes, "
+                    + "\"version\", changed_by, changed_date, bulk_upload, user_name, sequence_number, tcep_status, "
+                    + "message_uuid, retry_count, lodgement_date, id, delete_by, delete_date, is_deleted) "
+                    + "VALUES (nextval('%s.ale_seq'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, "
+                    + "?, ?, ?, ?, ?, gen_random_uuid(), null, null, 'N'::bpchar) "
+                    + "RETURNING ale_id, id";
+    private static final String APPLICATION_LIST_ENTRY_OFFICIAL_SQL =
+            "INSERT INTO %s (aleo_id, ale_ale_id, title, forename, surname, official_type, "
+                    + "changed_by, changed_date, user_name) "
+                    + "VALUES (nextval('%s.aleo_seq'), ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?) "
+                    + "RETURNING aleo_id";
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
@@ -509,7 +517,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
     }
 
-    private MatchResponse<EntryGetDetailDto> createEntry(
+    @Transactional
+    protected MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
                     validator,
@@ -836,6 +845,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional
+    @NestedAudit
     public void bulkImport(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             UUID jobId,
@@ -965,7 +976,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 auditService.processAudit(
                         AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY,
                         req -> {
-                            AppListEntryOfficial newOfficialEntity = applicationListEntryEntityMapper.toOfficial(official, listEntryEntity);
+                            AppListEntryOfficial newOfficialEntity =
+                                    applicationListEntryEntityMapper.toOfficial(
+                                            official, listEntryEntity);
                             newOfficialEntity.setId(saveOfficial(newOfficialEntity));
                             log.debug(
                                     "Official created and mapped to application entry with id: {}",
@@ -1156,7 +1169,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 NameAddress applicantToAdded =
                                         applicantMapper.toApplicant(
                                                 entryCreateDto.getData().getApplicant());
-                                nameAddressRepository.save(applicantToAdded);
+                                applicantToAdded.setId(saveNameAddress(applicantToAdded));
                                 log.debug(
                                         "Created applicant with id: {}", applicantToAdded.getId());
 
@@ -1181,9 +1194,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     auditService.processAudit(
                             AppListEntryAuditOperation.CREATE_RESPONDENT,
                             req -> {
-                                NameAddress respondentToAdded = applicantMapper.toRespondent(
-                                    entryCreateDto.getData().getRespondent());
-                                respondentToAdded.setId(saveRespondent(entryCreateDto));
+                                NameAddress respondentToAdded =
+                                        applicantMapper.toRespondent(
+                                                entryCreateDto.getData().getRespondent());
+                                respondentToAdded.setId(saveNameAddress(respondentToAdded));
                                 respondentToAdded.setVersion(1L);
                                 log.debug(
                                         "Created respondent with id: {}",
@@ -1623,7 +1637,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         auditService.processAudit(
                                 null,
                                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
-                                r -> {
+                                r ->
+                                {
                                     // get the entries for the list
                                     Page<ApplicationListEntryGetSummaryProjection> entries =
                                             applicationListEntryRepository.searchForGetSummary(
@@ -1867,16 +1882,21 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             listEntryEntity.setSequenceNumber(seq);
         }
 
-        listEntryEntity.setId(saveApplicationListEntry(listEntryEntity, respondentToSave.getId()));
+        SavedApplicationListEntry sale = saveApplicationListEntry(listEntryEntity);
+        listEntryEntity.setId(sale.aleId);
+        listEntryEntity.setUuid(sale.uuid);
         listEntryEntity.setVersion(1L);
         log.debug("Created application entry with id: {}", listEntryEntity.getId());
 
         List<AppListEntryFeeStatus> statusList =
-                createFeeStatus(listEntryEntity, entryCreateDto, success, bulkUpload); // TODO replace with jdbc call returning ids
+                createFeeStatus(listEntryEntity, entryCreateDto, success, bulkUpload);
 
-        List<AppListEntryOfficial> officialList = createOfficial(listEntryEntity, entryCreateDto); // TODO replace with jdbc call returning ids
+        List<AppListEntryOfficial> officialList = createOfficial(listEntryEntity, entryCreateDto);
 
-        createFees(success, listEntryEntity, entryCreateDto); // TODO replace with jdbc call returning ids
+        createFees(
+                success,
+                listEntryEntity,
+                entryCreateDto); // TODO replace with jdbc call returning ids
 
         EntryGetDetailDto entryGetDetailDto =
                 applicationListEntryMapStructMapper.toEntryGetDetailDto(
@@ -2035,93 +2055,115 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return entryPage;
     }
 
-    private Long saveRespondent(PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        NameAddress respondent = applicantMapper.toRespondent(entryCreateDto.getData().getRespondent());
-
-        return jdbcTemplate.execute(NAME_ADDRESS_SQL.formatted(schema + "." + TableNames.NAME_ADDRESS, schema),
-             (PreparedStatementCallback<Long>)  psc -> {
-                 psc.setString(1, respondent.getName());
-                 psc.setString(2, respondent.getTitle());
-                 psc.setString(3, respondent.getFirstName());
-                 psc.setString(4, respondent.getMiddleName());
-                 psc.setString(5, respondent.getLastName());
-                 psc.setString(6, respondent.getAddress1());
-                 psc.setString(7, respondent.getAddress2());
-                 psc.setString(8, respondent.getAddress3());
-                 psc.setString(9, respondent.getAddress4());
-                 psc.setString(10, respondent.getAddress5());
-                 psc.setString(11, respondent.getPostcode());
-                 psc.setString(12, respondent.getEmailAddress());
-                 psc.setString(13, respondent.getTelephoneNumber());
-                 psc.setString(14, respondent.getMobileNumber());
-                 psc.setLong(15, 1L);
-                 psc.setString(16, loggedInUser.getUserId());
-
-                 try (var rs = psc.executeQuery()) {
-                     if (rs.next()) {
-                         return rs.getLong(1);
-                     }
-                     throw new IllegalStateException("No na_id returned when saving respondent");
-                 }
-             });
-    }
-
-    private Long saveApplicationListEntry(ApplicationListEntry entry, Long nameAddressId) {
+    private Long saveNameAddress(NameAddress nameAddress) {
         return jdbcTemplate.execute(
-                APPLICATION_LIST_ENTRY_SQL.formatted(schema + "." + TableNames.APPLICATION_LISTS_ENTRY, schema),
-                (PreparedStatementCallback<Long>) psc -> {
-                    psc.setLong(1, entry.getApplicationList().getId());
-                    psc.setLong(2, entry.getStandardApplicant().getId());
-                    psc.setLong(3, entry.getApplicationCode().getId());
-                    psc.setLong(4, nameAddressId);
-                    if (Objects.nonNull(entry.getNumberOfBulkRespondents())) {
-                        psc.setShort(5, entry.getNumberOfBulkRespondents());
-                    } else {
-                        psc.setNull(5, Types.SMALLINT);
-                    }
-                    psc.setString(6, entry.getApplicationListEntryWording());
-                    psc.setString(7, entry.getCaseReference());
-                    psc.setString(8, entry.getAccountNumber());
-                    psc.setString(9, entry.getEntryRescheduled());
-                    psc.setString(10, entry.getNotes());
-                    psc.setLong(11, 1L);
-                    psc.setString(12, loggedInUser.getUserId());
-                    psc.setString(13, entry.getBulkUpload());
-                    psc.setString(14, entry.getCreatedUser());
-                    psc.setInt(15, entry.getSequenceNumber());
-                    psc.setString(16, entry.getTcepStatus());
-                    psc.setString(17, entry.getMessageUuid());
-                    psc.setString(18, entry.getRetryCount());
-                    psc.setTimestamp(19, Timestamp.valueOf(entry.getLodgementDate().atStartOfDay()));
+                NAME_ADDRESS_SQL.formatted(schema + "." + TableNames.NAME_ADDRESS, schema),
+                (PreparedStatementCallback<Long>)
+                        psc -> {
+                            psc.setString(1, nameAddress.getName());
+                            psc.setString(2, nameAddress.getTitle());
+                            psc.setString(3, nameAddress.getFirstName());
+                            psc.setString(4, nameAddress.getMiddleName());
+                            psc.setString(5, nameAddress.getLastName());
+                            psc.setString(6, nameAddress.getAddress1());
+                            psc.setString(7, nameAddress.getAddress2());
+                            psc.setString(8, nameAddress.getAddress3());
+                            psc.setString(9, nameAddress.getAddress4());
+                            psc.setString(10, nameAddress.getAddress5());
+                            psc.setString(11, nameAddress.getPostcode());
+                            psc.setString(12, nameAddress.getEmailAddress());
+                            psc.setString(13, nameAddress.getTelephoneNumber());
+                            psc.setString(14, nameAddress.getMobileNumber());
+                            psc.setLong(15, 1L);
+                            psc.setString(16, loggedInUser.getUserId());
 
-                    try (var rs = psc.executeQuery()) {
-                        if (rs.next()) {
-                            return rs.getLong(1);
-                        }
-                        throw new IllegalStateException("No ale_id returned when saving application list entry");
-                    }
-                });
+                            try (var rs = psc.executeQuery()) {
+                                if (rs.next()) {
+                                    return rs.getLong(1);
+                                }
+                                throw new IllegalStateException(
+                                        "No na_id returned when saving respondent");
+                            }
+                        });
     }
 
-    private Long saveOfficial( AppListEntryOfficial official) {
-        return jdbcTemplate.execute(APPLICATION_LIST_ENTRY_OFFICIAL_SQL.formatted(schema + "." + TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, schema),
-                (PreparedStatementCallback<Long>) psc -> {
-                    psc.setLong(1, official.getAppListEntry().getId());
-                    psc.setString(2, official.getTitle());
-                    psc.setString(3, official.getForename());
-                    psc.setString(4, official.getSurname());
-                    psc.setString(5, official.getOfficialType().getValue());
-                    psc.setString(6, official.getChangedBy());
-                    psc.setTimestamp(7, Timestamp.valueOf(official.getChangedDate().toLocalDateTime()));
-                    psc.setString(8, loggedInUser.getUserId());
+    private SavedApplicationListEntry saveApplicationListEntry(ApplicationListEntry entry) {
+        return jdbcTemplate.execute(
+                APPLICATION_LIST_ENTRY_SQL.formatted(
+                        schema + "." + TableNames.APPLICATION_LISTS_ENTRY, schema),
+                (PreparedStatementCallback<SavedApplicationListEntry>)
+                        psc -> {
+                            psc.setLong(1, entry.getApplicationList().getId());
+                            if (Objects.nonNull(entry.getStandardApplicant())) {
+                                psc.setLong(2, entry.getStandardApplicant().getId());
+                            } else {
+                                psc.setNull(2, Types.BIGINT);
+                            }
+                            psc.setLong(3, entry.getApplicationCode().getId());
+                            if (Objects.nonNull(entry.getAnamedaddress())) {
+                                psc.setLong(4, entry.getAnamedaddress().getId());
+                            } else {
+                                psc.setNull(4, Types.BIGINT);
+                            }
+                            if (Objects.nonNull(entry.getRnameaddress())) {
+                                psc.setLong(5, entry.getRnameaddress().getId());
+                            } else {
+                                psc.setNull(5, Types.BIGINT);
+                            }
+                            if (Objects.nonNull(entry.getNumberOfBulkRespondents())) {
+                                psc.setShort(6, entry.getNumberOfBulkRespondents());
+                            } else {
+                                psc.setNull(6, Types.SMALLINT);
+                            }
+                            psc.setString(7, entry.getApplicationListEntryWording());
+                            psc.setString(8, entry.getCaseReference());
+                            psc.setString(9, entry.getAccountNumber());
+                            psc.setString(10, entry.getEntryRescheduled());
+                            psc.setString(11, entry.getNotes());
+                            psc.setLong(12, 1L);
+                            psc.setString(13, loggedInUser.getUserId());
+                            psc.setString(14, entry.getBulkUpload());
+                            psc.setString(15, entry.getCreatedUser());
+                            psc.setInt(16, entry.getSequenceNumber());
+                            psc.setString(17, entry.getTcepStatus());
+                            psc.setString(18, entry.getMessageUuid());
+                            psc.setString(19, entry.getRetryCount());
+                            psc.setTimestamp(
+                                    20, Timestamp.valueOf(entry.getLodgementDate().atStartOfDay()));
 
-                    try (var rs = psc.executeQuery()) {
-                        if (rs.next()) {
-                            return rs.getLong(1);
-                        }
-                        throw new IllegalStateException("No aleo_id returned when saving application list entry official");
-                    }
-                });
+                            try (var rs = psc.executeQuery()) {
+                                if (rs.next()) {
+                                    return new SavedApplicationListEntry(
+                                            rs.getLong(1), rs.getObject(2, UUID.class));
+                                }
+                                throw new IllegalStateException(
+                                        "No ale_id returned when saving application list entry");
+                            }
+                        });
+    }
+
+    private Long saveOfficial(AppListEntryOfficial official) {
+        return jdbcTemplate.execute(
+                APPLICATION_LIST_ENTRY_OFFICIAL_SQL.formatted(
+                        schema + "." + TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, schema),
+                (PreparedStatementCallback<Long>)
+                        psc -> {
+                            psc.setLong(1, official.getAppListEntry().getId());
+                            psc.setString(2, official.getTitle());
+                            psc.setString(3, official.getForename());
+                            psc.setString(4, official.getSurname());
+                            psc.setString(5, official.getOfficialType().getValue());
+                            psc.setString(6, loggedInUser.getUserId());
+                            psc.setString(7, loggedInUser.getUserId());
+
+                            try (var rs = psc.executeQuery()) {
+                                if (rs.next()) {
+                                    return rs.getLong(1);
+                                }
+                                throw new IllegalStateException(
+                                        "No aleo_id returned when saving application list entry official");
+                            }
+                        });
     }
 
     private record BulkActionPreviewResolution(
@@ -2133,4 +2175,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             return entryIds.size();
         }
     }
+
+    record SavedApplicationListEntry(Long aleId, UUID uuid) {}
 }

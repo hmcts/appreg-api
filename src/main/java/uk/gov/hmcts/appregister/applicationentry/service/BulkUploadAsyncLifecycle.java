@@ -89,7 +89,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private ApplicationList validatedApplicationList;
 
-    private int offset = 0;
+    private short sequenceNumber = 1;
 
     public void setApplicationList(ApplicationList applicationList) {
         this.validatedApplicationList = applicationList;
@@ -104,7 +104,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void validating(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
-        final long start = System.nanoTime();
         List<BulkUploadRow> rows = event.getData();
 
         log.info("Validating bulk upload for list {}", listId);
@@ -151,15 +150,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         if (!allErrors.isEmpty()) {
             logValidationFailure(context, allErrors);
-            log.error("Bulk upload validation failed with {} errors", allErrors.size());
+            log.warn("Bulk upload validation failed with {} errors", allErrors.size());
             throw new AppRegistryException(
                     AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
                     "One or more rows failed validation during bulk upload");
         }
 
-        log.info("Bulk upload validation passed");
-        long end = System.nanoTime();
-        log.warn("Bulk upload validation took {} ms", (end - start) / 1_000_000);
+        log.warn("Bulk upload validation passed");
     }
 
     private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {
@@ -275,7 +272,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.info("Processing bulk upload for list {}", listId);
 
         int rowNumber = FIRST_DATA_ROW_NUMBER;
-        int rowCount = 1;
 
         synchronized (validationCache) {
             try {
@@ -287,9 +283,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                         .data(entry.getKey())
                                         .build(),
                                 event.getResponse().getJobId().getId(),
-                                entry.getValue(), (offset * rowCount) + rowCount);
+                                entry.getValue(),
+                                sequenceNumber);
                         rowNumber++;
-                        rowCount++;
+
                     } catch (Exception ex) {
                         log.error("Failed to process row {}", rowNumber, ex);
                         ObjectMapper objectMapper = new ObjectMapper();
@@ -306,6 +303,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         // Atomic failure
                         throw new AppRegistryException(
                                 AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED, ex.getMessage());
+                    } finally {
+                        sequenceNumber++;
                     }
                 }
             } finally {
@@ -316,8 +315,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.info("Bulk upload completed successfully");
         long end = System.nanoTime();
         log.warn("Bulk upload processing took {} ms", (end - start) / 1_000_000);
-        offset++;
-        log.warn("Processed {} rows in this batch", offset * (rowCount - 1));
+        log.warn("Processed {} rows in this batch", sequenceNumber);
     }
 
     private static String getName(Respondent respondent) {

@@ -294,7 +294,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             throws Exception {
 
         entryCreateDto.getApplicant().getPerson().getName().setLastName(uniqueSurname);
-        entryCreateDto.getApplicant().getPerson().getName().setLastName(uniqueSurname);
 
         Response responseSpecCreate =
                 restAssuredClient.executePostRequest(
