@@ -165,6 +165,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     + "VALUES (nextval('%s.aleo_seq'), ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?) "
                     + "RETURNING aleo_id";
 
+    private static final String APPLICATION_LIST_ENTRY_FEE_SQL =
+            "INSERT INTO %s (ale_ale_id, fee_fee_id, version, changed_by, changed_date, user_name) "
+                    + "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?);";
+
+    private static final String APPLICATION_LIST_ENTRY_FEE_STATUS_SQL =
+            "INSERT INTO %s (alefs_id, alefs_ale_id, alefs_payment_reference, alefs_fee_status, "
+                    + "alefs_fee_status_date, alefs_version, alefs_changed_by, alefs_changed_date, "
+                    + "alefs_user_name, alefs_status_creation_date) "
+                    + "VALUES(nextval('%s.alefs_seq'), ?,?,?,?,?,?,CURRENT_TIMESTAMP,?,CURRENT_TIMESTAMP) "
+                    + "RETURNING alefs_id";
+
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
 
@@ -923,15 +934,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         AppListEntryFeeId appListEntryFeeId = new AppListEntryFeeId();
                         appListEntryFeeId.setAppListEntryId(listEntryEntity.getId());
                         appListEntryFeeId.setFeeId(success.getFee().mainFee().getId());
-                        var savedAppListEntryFeeId =
-                                appListEntryFeeRepository.save(appListEntryFeeId);
+                        saveAppListEntryFee(appListEntryFeeId);
 
                         log.debug(
                                 "Created Fee: {} to Entry: {}",
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
-                        return Optional.of(new AuditableResult<>(null, savedAppListEntryFeeId));
+                        return Optional.of(new AuditableResult<>(null, appListEntryFeeId));
                     });
         }
 
@@ -948,15 +958,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         AppListEntryFeeId appListEntryFeeId = new AppListEntryFeeId();
                         appListEntryFeeId.setAppListEntryId(listEntryEntity.getId());
                         appListEntryFeeId.setFeeId(success.getFee().offsiteFee().getId());
-                        var savedAppListEntryFeeId =
-                                appListEntryFeeRepository.save(appListEntryFeeId);
+                        saveAppListEntryFee(appListEntryFeeId);
 
                         log.debug(
                                 CREATED_OFFSITE_FEE_LOG,
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
-                        return Optional.of(new AuditableResult<>(null, savedAppListEntryFeeId));
+                        return Optional.of(new AuditableResult<>(null, appListEntryFeeId));
                     });
         }
     }
@@ -1064,13 +1073,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         auditService.processAudit(
                 AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY,
                 req -> {
-                    AppListEntryFeeStatus createdAppListStatus =
-                            appListEntryFeeStatusRepository.save(appListEntryFeeStatus);
-                    statusList.add(createdAppListStatus);
+                    appListEntryFeeStatus.setId(saveAppListEntryFeeStatus(appListEntryFeeStatus));
+                    statusList.add(appListEntryFeeStatus);
                     log.debug(
                             "Fee status created and mapped to application entry with id: {}",
-                            createdAppListStatus.getId());
-                    return Optional.of(new AuditableResult<>(null, createdAppListStatus));
+                            appListEntryFeeStatus.getId());
+                    return Optional.of(new AuditableResult<>(null, appListEntryFeeStatus));
                 });
     }
 
@@ -1893,7 +1901,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         log.debug("Created application entry with id: {}", listEntryEntity.getId());
 
         List<AppListEntryFeeStatus> statusList =
-                createFeeStatus(listEntryEntity, entryCreateDto, success, bulkUpload);
+                createFeeStatus(
+                        listEntryEntity,
+                        entryCreateDto,
+                        success,
+                        bulkUpload); // TODO replace with jdbc call returning ids
 
         List<AppListEntryOfficial> officialList = createOfficial(listEntryEntity, entryCreateDto);
 
@@ -2059,7 +2071,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return entryPage;
     }
 
-    private Long saveNameAddress(NameAddress nameAddress) {
+    Long saveNameAddress(NameAddress nameAddress) {
         return jdbcTemplate.execute(
                 NAME_ADDRESS_SQL.formatted(schema + "." + TableNames.NAME_ADDRESS, schema),
                 (PreparedStatementCallback<Long>)
@@ -2097,7 +2109,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         });
     }
 
-    private SavedApplicationListEntry saveApplicationListEntry(ApplicationListEntry entry) {
+    SavedApplicationListEntry saveApplicationListEntry(ApplicationListEntry entry) {
         return jdbcTemplate.execute(
                 APPLICATION_LIST_ENTRY_SQL.formatted(
                         schema + "." + TableNames.APPLICATION_LISTS_ENTRY, schema),
@@ -2152,7 +2164,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         });
     }
 
-    private Long saveOfficial(AppListEntryOfficial official) {
+    Long saveOfficial(AppListEntryOfficial official) {
         return jdbcTemplate.execute(
                 APPLICATION_LIST_ENTRY_OFFICIAL_SQL.formatted(
                         schema + "." + TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, schema),
@@ -2172,6 +2184,50 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 }
                                 throw new IllegalStateException(
                                         "No aleo_id returned when saving application list entry official");
+                            }
+                        });
+    }
+
+    void saveAppListEntryFee(AppListEntryFeeId appListEntryFeeId) {
+        jdbcTemplate.execute(
+                APPLICATION_LIST_ENTRY_FEE_SQL.formatted(
+                        schema + "." + TableNames.APPLCATION_LISTS_ENTRY_FEE_ID, schema),
+                (PreparedStatementCallback<Void>)
+                        psc -> {
+                            psc.setLong(1, appListEntryFeeId.getAppListEntryId());
+                            psc.setLong(2, appListEntryFeeId.getFeeId());
+                            psc.setLong(3, 1L);
+                            psc.setString(4, loggedInUser.getUserId());
+                            psc.setString(5, loggedInUser.getUserId());
+
+                            psc.execute();
+                            return null;
+                        });
+    }
+
+    Long saveAppListEntryFeeStatus(AppListEntryFeeStatus feeStatus) {
+        return jdbcTemplate.execute(
+                APPLICATION_LIST_ENTRY_FEE_STATUS_SQL.formatted(
+                        schema + "." + TableNames.APPLICATION_LISTS_FEE_STATUS, schema),
+                (PreparedStatementCallback<Long>)
+                        psc -> {
+                            psc.setLong(1, feeStatus.getAppListEntry().getId());
+                            psc.setString(2, feeStatus.getAlefsPaymentReference());
+                            psc.setString(3, feeStatus.getAlefsFeeStatus().getDisplayName());
+                            psc.setTimestamp(
+                                    4,
+                                    Timestamp.valueOf(
+                                            feeStatus.getAlefsFeeStatusDate().atStartOfDay()));
+                            psc.setLong(5, 1L);
+                            psc.setString(6, loggedInUser.getUserId());
+                            psc.setString(7, loggedInUser.getUserId());
+
+                            try (var rs = psc.executeQuery()) {
+                                if (rs.next()) {
+                                    return rs.getLong(1);
+                                }
+                                throw new IllegalStateException(
+                                        "No alefs_id returned when saving AppListEntryFeeStatus");
                             }
                         });
     }

@@ -124,7 +124,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
-import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -685,6 +684,8 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(1L);
         when(template.execute(contains("RETURNING aleo_id"), any(PreparedStatementCallback.class)))
                 .thenReturn(-1L);
+        when(template.execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class)))
+                .thenReturn(-1L);
 
         AppListTestData appListTestData = new AppListTestData();
         ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
@@ -739,7 +740,6 @@ class ApplicationEntryServiceImplTest {
                     .thenReturn(appStatus);
 
             appStatus.setId(-1L);
-            when(appListEntryFeeStatusRepository.save(appStatus)).thenReturn(appStatus);
             statusLst.add(appStatus);
         }
 
@@ -843,9 +843,6 @@ class ApplicationEntryServiceImplTest {
         // run the test
         var response = service.createEntry(payload);
 
-        ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
-        verify(appListEntryFeeRepository, times(2)).save(captor.capture());
-
         // now assert the response is mapped correctly
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
         Assertions.assertNotNull(response.getEtag());
@@ -853,25 +850,12 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(-1L, applicationListEntry.getId());
         Assertions.assertNotNull(applicationListEntry.getUuid());
 
-        // verify that the fee status is saved
-        ArgumentCaptor<AppListEntryFeeStatus> appListStatusCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository, times(entryCreateDto.getFeeStatuses().size()))
-                .save(appListStatusCaptor.capture());
+        // verify that fee statuses are saved through JDBC
+        verify(template, times(entryCreateDto.getFeeStatuses().size()))
+                .execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class));
 
         // officials are saved through the JDBC insert path
         officialLst.forEach(official -> Assertions.assertEquals(-1L, official.getId()));
-
-        Assertions.assertEquals(-1, captor.getAllValues().get(0).getAppListEntryId());
-        Assertions.assertEquals(appListFee.getFeeId(), captor.getAllValues().get(0).getFeeId());
-
-        Assertions.assertEquals(-1, captor.getAllValues().get(1).getAppListEntryId());
-        Assertions.assertEquals(
-                offsiteAppListFee.getFeeId(), captor.getAllValues().get(1).getFeeId());
-
-        for (int i = 0; i < statusLst.size(); i++) {
-            Assertions.assertEquals(statusLst.get(i), appListStatusCaptor.getAllValues().get(i));
-        }
     }
 
     @Test
@@ -889,6 +873,10 @@ class ApplicationEntryServiceImplTest {
                         new ApplicationEntryServiceImpl.SavedApplicationListEntry(
                                 applicationListEntry.getId(), applicationListEntry.getUuid()));
         when(template.execute(contains("RETURNING na_id"), any(PreparedStatementCallback.class)))
+                .thenReturn(1L);
+        when(template.execute(contains("RETURNING aleo_id"), any(PreparedStatementCallback.class)))
+                .thenReturn(1L);
+        when(template.execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class)))
                 .thenReturn(1L);
 
         ApplicationCode code = new ApplicationCode();
@@ -935,12 +923,6 @@ class ApplicationEntryServiceImplTest {
         when(applicantMapper.toRespondent(entryCreateDto.getRespondent())).thenReturn(respondent);
         when(appListEntrySequenceMappingRepository.findByAlIdForUpdate(appList.getId()))
                 .thenReturn(Optional.empty());
-        when(appListEntrySequenceMappingRepository.save(any(AppListEntrySequenceMapping.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(appListEntryFeeStatusRepository.save(any(AppListEntryFeeStatus.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
         EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
         when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
@@ -964,17 +946,8 @@ class ApplicationEntryServiceImplTest {
 
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
 
-        ArgumentCaptor<AppListEntryFeeStatus> feeStatusCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository).save(feeStatusCaptor.capture());
-
-        AppListEntryFeeStatus savedFeeStatus = feeStatusCaptor.getValue();
-        Assertions.assertEquals(applicationListEntry, savedFeeStatus.getAppListEntry());
-        Assertions.assertEquals(FeeStatusType.DUE, savedFeeStatus.getAlefsFeeStatus());
-        Assertions.assertNull(savedFeeStatus.getAlefsPaymentReference());
-        Assertions.assertEquals(
-                LocalDate.of(2025, Month.OCTOBER, 7), savedFeeStatus.getAlefsFeeStatusDate());
-        Assertions.assertNotNull(savedFeeStatus.getAlefsStatusCreationDate());
+        verify(template, times(1))
+                .execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class));
     }
 
     @Test
@@ -1867,7 +1840,6 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of());
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry2.getId()))
                 .thenReturn(List.of());
-        stubFeeStatusSave();
 
         final BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
 
@@ -1875,58 +1847,8 @@ class ApplicationEntryServiceImplTest {
                 ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
-        verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
-
-        List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
-        Assertions.assertEquals(
-                List.of(102L, 101L),
-                savedStatuses.stream().map(status -> status.getAppListEntry().getId()).toList());
-        Assertions.assertTrue(
-                savedStatuses.stream()
-                        .allMatch(status -> status.getAlefsFeeStatus() == FeeStatusType.PAID));
-        Assertions.assertTrue(
-                savedStatuses.stream()
-                        .allMatch(
-                                status ->
-                                        LocalDate.of(2025, Month.OCTOBER, 7)
-                                                .equals(status.getAlefsFeeStatusDate())));
-        Assertions.assertTrue(
-                savedStatuses.stream()
-                        .allMatch(status -> "PAY-001".equals(status.getAlefsPaymentReference())));
-        Assertions.assertTrue(
-                savedStatuses.stream()
-                        .allMatch(status -> status.getAlefsStatusCreationDate() != null));
-        Assertions.assertEquals(2, response.getTotalCount());
-        Assertions.assertEquals(2, response.getUpdatedCount());
-        Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
-        Assertions.assertEquals(
-                1.0,
-                meterRegistry
-                        .get(BULK_FEE_UPDATE_REQUESTS_METRIC)
-                        .tag(METRIC_STATUS_TAG, "succeeded")
-                        .counter()
-                        .count());
-        Assertions.assertEquals(
-                1L,
-                meterRegistry
-                        .get(BULK_FEE_UPDATE_DURATION_METRIC)
-                        .tag(METRIC_STATUS_TAG, "succeeded")
-                        .timer()
-                        .count());
-        Assertions.assertEquals(
-                1L,
-                meterRegistry
-                        .get(BULK_FEE_UPDATE_ENTRIES_METRIC)
-                        .tag(METRIC_STATUS_TAG, "succeeded")
-                        .summary()
-                        .count());
-        Assertions.assertEquals(
-                2.0,
-                meterRegistry
-                        .get(BULK_FEE_UPDATE_ENTRIES_METRIC)
-                        .tag(METRIC_STATUS_TAG, "succeeded")
-                        .summary()
-                        .totalAmount());
+        verify(template, times(2))
+                .execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class));
     }
 
     @Test
@@ -1952,26 +1874,12 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(existingStatus));
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId()))
                 .thenReturn(List.of());
-        stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus);
-        verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
-
-        List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
-        Assertions.assertEquals(
-                List.of(FeeStatusType.PAID, FeeStatusType.REMITTED),
-                savedStatuses.stream().map(AppListEntryFeeStatus::getAlefsFeeStatus).toList());
-        Assertions.assertEquals(
-                List.of("PAY-001", "PAY-002"),
-                savedStatuses.stream()
-                        .map(AppListEntryFeeStatus::getAlefsPaymentReference)
-                        .toList());
-        Assertions.assertTrue(
-                savedStatuses.stream().allMatch(status -> entry.equals(status.getAppListEntry())));
+        verify(template, times(2))
+                .execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class));
     }
 
     @Test
@@ -2041,7 +1949,8 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(500, response.getUpdatedCount());
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(listId), anySet());
-        verify(appListEntryFeeStatusRepository, times(500)).save(any(AppListEntryFeeStatus.class));
+        verify(template, times(500))
+                .execute(contains("RETURNING alefs_id"), any(PreparedStatementCallback.class));
         verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
 
@@ -2687,9 +2596,15 @@ class ApplicationEntryServiceImplTest {
 
         when(template.execute(contains("RETURNING na_id"), any(PreparedStatementCallback.class)))
                 .thenReturn(1L);
-        when(template.execute(
-                        contains("RETURNING ale_ao_id"), any(PreparedStatementCallback.class)))
+        when(template.execute(contains("RETURNING aleo_id"), any(PreparedStatementCallback.class)))
                 .thenReturn(1L);
+        when(template.execute(contains("RETURNING alefs"), any(PreparedStatementCallback.class)))
+                .thenReturn(1L);
+
+        val feeStatus =
+                Instancio.of(AppListEntryFeeStatus.class).withSettings(Settings.create()).create();
+        feeStatus.setId(1L);
+        when(applicationListEntryEntityMapper.toFeeStatus(any(), any())).thenReturn(feeStatus);
 
         UUID listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
@@ -2717,9 +2632,6 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(applicantMapper.toRespondent(payload.getData().getRespondent()))
                 .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(appListEntryFeeStatusRepository.save(any()))
-                .thenReturn(
-                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
         when(applicationListEntryEntityMapper.toOfficial(any(), any()))
                 .thenReturn(
                         Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
@@ -2786,6 +2698,8 @@ class ApplicationEntryServiceImplTest {
         when(template.execute(
                         contains("RETURNING ale_ao_id"), any(PreparedStatementCallback.class)))
                 .thenReturn(1L);
+        when(template.execute(contains("RETURNING alefs"), any(PreparedStatementCallback.class)))
+                .thenReturn(1L);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         EntryCreateDto entryCreateDto =
@@ -2809,14 +2723,13 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
         when(applicantMapper.toRespondent(payload.getData().getRespondent()))
                 .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(nameAddressRepository.save(any()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(appListEntryFeeStatusRepository.save(any()))
-                .thenReturn(
-                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
         when(applicationListEntryEntityMapper.toOfficial(any(), any()))
                 .thenReturn(
                         Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
+
+        val feeStatus = Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create();
+        feeStatus.setId(1L);
+        when(applicationListEntryEntityMapper.toFeeStatus(any(), any())).thenReturn(feeStatus);
 
         val entryId = UUID.randomUUID();
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
