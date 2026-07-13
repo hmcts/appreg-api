@@ -17,6 +17,8 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("java:S2077") // SQL identifiers are restricted to lowercase letters, digits and
+// underscores.
 public class StandardApplicantIngressApplyService {
     private static final Pattern SQL_IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
     private final NamedParameterJdbcTemplate jdbcTemplate;
