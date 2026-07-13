@@ -135,6 +135,6 @@ appreg:
 #          mock: csds/fee.json
 #          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
   job:
-    page-size: 10
+    page-size: 25
   report:
     page-size: 500
