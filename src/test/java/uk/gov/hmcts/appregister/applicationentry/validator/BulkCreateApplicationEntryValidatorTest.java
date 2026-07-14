@@ -203,11 +203,12 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        var payload = payload();
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> validator.validate(payload(), (validatable, result) -> result));
+                        () -> validator.validate(payload, (validatable, result) -> result));
 
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, appRegistryException.getCode());
