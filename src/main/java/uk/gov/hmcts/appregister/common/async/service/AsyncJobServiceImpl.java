@@ -241,7 +241,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                     },
                     jobContext);
 
-            if (!pageRead.get()) {
+            if (!pageRead.get() && !jobContext.hasFailure()) {
                 fireLifecycleEvent(jobStatusResponse, List.of(), status, lifecycle, jobContext);
             }
         }

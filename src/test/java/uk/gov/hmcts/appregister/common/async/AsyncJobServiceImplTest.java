@@ -241,6 +241,46 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
     }
 
+    @Test
+    void validationFirstJob_doesNotEmitEmptyValidationPageWhenReaderAlreadyFailed()
+            throws Exception {
+        String userId = "userId";
+        UUID jobId = UUID.randomUUID();
+        JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
+        when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
+
+        @SuppressWarnings("unchecked")
+        DataReader<PersonCsvPojo> reader = Mockito.mock(DataReader.class);
+        var lifecycle = mockLifecycle();
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.BULK_UPLOAD_ENTRIES)
+                        .userName(userId)
+                        .build();
+
+        Mockito.doAnswer(
+                        invocation -> {
+                            JobContext context = invocation.getArgument(2);
+                            context.logFailure(
+                                    "Number of data fields does not match number of headers.");
+                            return null;
+                        })
+                .when(reader)
+                .readData(Mockito.any(), Mockito.any(), Mockito.any());
+
+        var outcome = asyncJobServiceImpl.startValidationFirstJob(jobRequest, reader, lifecycle, 1);
+        Assertions.assertThrows(ExecutionException.class, () -> outcome.getFuture().get());
+
+        var events = lifecycleEventCaptor();
+        verify(lifecycle, times(2)).lifeCycleEventPerformed(events.capture());
+        Assertions.assertEquals(JobStatus1.RECEIVED, events.getAllValues().get(0).getJobStatus());
+        Assertions.assertEquals(JobStatus1.FAILED, events.getAllValues().get(1).getJobStatus());
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+    }
+
     private static void assertValidationFirstOrder(
             List<AsyncJobLifecycleEvent<PersonCsvPojo>> events) {
         Assertions.assertEquals(JobStatus1.RECEIVED, events.get(0).getJobStatus());
