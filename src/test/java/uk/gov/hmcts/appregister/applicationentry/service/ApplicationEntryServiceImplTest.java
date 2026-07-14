@@ -51,6 +51,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
@@ -62,7 +63,6 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
-import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -144,7 +144,6 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
-import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
@@ -262,15 +261,6 @@ class ApplicationEntryServiceImplTest {
                     standardApplicantRepository);
 
     @Spy
-    private DummyBulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator =
-            new DummyBulkCreateApplicationEntryValidator(
-                    applicationListRepository,
-                    applicationCodeRepository,
-                    feeService,
-                    businessDateProvider,
-                    standardApplicantRepository);
-
-    @Spy
     private DummyMoveEntriesValidator moveEntriesValidator =
             new DummyMoveEntriesValidator(applicationListRepository);
 
@@ -354,7 +344,6 @@ class ApplicationEntryServiceImplTest {
                         pageMapper,
                         pageableMapper,
                         createApplicationEntryValidator,
-                        bulkCreateApplicationEntryValidator,
                         bulkActionPreviewValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
@@ -395,7 +384,6 @@ class ApplicationEntryServiceImplTest {
                         pageMapper,
                         pageableMapper,
                         createApplicationEntryValidator,
-                        bulkCreateApplicationEntryValidator,
                         bulkActionPreviewValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
@@ -845,100 +833,6 @@ class ApplicationEntryServiceImplTest {
             Assertions.assertEquals(
                     officialLst.get(i), appListOfficialCaptor.getAllValues().get(i));
         }
-    }
-
-    @Test
-    void testBulkCreateCreatesInitialFeeStatusWhenFeeResolved() {
-        ApplicationList appList = new ApplicationList();
-        appList.setId(1L);
-
-        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
-        applicationListEntry.setId(2L);
-        applicationListEntry.setUuid(UUID.randomUUID());
-        applicationListEntry.setVersion(1L);
-
-        ApplicationCode code = new ApplicationCode();
-        code.setId(3L);
-        code.setCode("AD99001");
-        code.setWording("Request to copy documents");
-
-        EntryCreateDto entryCreateDto = new EntryCreateDto();
-        entryCreateDto.setApplicationCode("AD99001");
-        entryCreateDto.setStandardApplicantCode("APP001");
-        entryCreateDto.setWordingFields(List.of());
-        entryCreateDto.setFeeStatuses(null);
-        entryCreateDto.setOfficials(null);
-        entryCreateDto.setHasOffsiteFee(false);
-
-        Fee fee = new Fee();
-        fee.setId(4L);
-        fee.setVersion(1L);
-        FeePair pair = new FeePair(fee, null);
-        StandardApplicant sa = new StandardApplicant();
-
-        success =
-                CreateApplicationEntryValidationSuccess.builder()
-                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                        .fee(pair)
-                        .applicationCode(code)
-                        .sa(sa)
-                        .applicationList(appList)
-                        .build();
-
-        when(applicationListEntryEntityMapper.toApplicationListEntry(
-                        eq(entryCreateDto),
-                        eq(code.getWording()),
-                        eq(sa),
-                        isNull(),
-                        isNull(),
-                        eq(code),
-                        eq(appList),
-                        eq(YesOrNo.YES)))
-                .thenReturn(applicationListEntry);
-        when(applicationListEntryRepository.save(applicationListEntry))
-                .thenReturn(applicationListEntry);
-        when(appListEntrySequenceMappingRepository.findByAlIdForUpdate(appList.getId()))
-                .thenReturn(Optional.empty());
-        when(appListEntrySequenceMappingRepository.save(any(AppListEntrySequenceMapping.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(appListEntryFeeStatusRepository.save(any(AppListEntryFeeStatus.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-        when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
-        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        eq(applicationListEntry), anyList(), eq(pair), anyList(), eq(sa)))
-                .thenReturn(entryGetDetailDto);
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(applicationListEntry.getUuid()))
-                .thenReturn(List.of());
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(
-                        applicationListEntry.getUuid()))
-                .thenReturn(List.of());
-        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
-                .thenReturn(List.of(fee));
-
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(UUID.randomUUID())
-                        .data(entryCreateDto)
-                        .build();
-
-        MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload, null);
-
-        Assertions.assertEquals(entryGetDetailDto, response.getPayload());
-
-        ArgumentCaptor<AppListEntryFeeStatus> feeStatusCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
-        verify(appListEntryFeeStatusRepository).save(feeStatusCaptor.capture());
-
-        AppListEntryFeeStatus savedFeeStatus = feeStatusCaptor.getValue();
-        Assertions.assertEquals(applicationListEntry, savedFeeStatus.getAppListEntry());
-        Assertions.assertEquals(FeeStatusType.DUE, savedFeeStatus.getAlefsFeeStatus());
-        Assertions.assertNull(savedFeeStatus.getAlefsPaymentReference());
-        Assertions.assertEquals(
-                LocalDate.of(2025, Month.OCTOBER, 7), savedFeeStatus.getAlefsFeeStatusDate());
-        Assertions.assertNotNull(savedFeeStatus.getAlefsStatusCreationDate());
     }
 
     @Test
@@ -2264,7 +2158,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -2283,7 +2177,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -2300,7 +2194,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -2319,7 +2213,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -2338,7 +2232,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -2356,7 +2250,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -2375,7 +2269,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -2394,7 +2288,7 @@ class ApplicationEntryServiceImplTest {
         assertThatThrownBy(() -> service.move(sourceListId, dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -2541,7 +2435,7 @@ class ApplicationEntryServiceImplTest {
                             Assertions.assertEquals(
                                     AppListEntryError.NOTES_TOO_LONG, appEx.getCode());
                             Assertions.assertEquals(
-                                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                                    HttpStatus.BAD_REQUEST,
                                     appEx.getCode().getCode().getHttpCode());
                         });
 
@@ -2632,192 +2526,9 @@ class ApplicationEntryServiceImplTest {
                 "No entries found for jobId: %s".formatted(jobId), exception.getMessage());
     }
 
-    @Test
-    void createBulkEntry_withJobId_shouldSaveAsyncJobAppListEntry() {
-        UUID listId = UUID.randomUUID();
-        val applicationList = openApplicationList(listId);
-
-        when(applicationListRepository.findByUuid(applicationList.getUuid()))
-                .thenReturn(Optional.of(applicationList));
-
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        EntryCreateDto entryCreateDto =
-                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
-        entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
-        entryCreateDto.setWordingFields(null);
-
-        ApplicationCode code = new ApplicationCode();
-        code.setWording("Test Wording");
-
-        // Now make the call to createBulkEntry
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(applicationList.getUuid())
-                        .data(entryCreateDto)
-                        .build();
-
-        when(applicantMapper.toApplicant(payload.getData().getApplicant()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(applicantMapper.toRespondent(payload.getData().getRespondent()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(nameAddressRepository.save(any()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(appListEntryFeeStatusRepository.save(any()))
-                .thenReturn(
-                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
-        when(appListEntryOfficialRepository.save(any()))
-                .thenReturn(
-                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
-
-        val entryId = UUID.randomUUID();
-        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
-        success =
-                CreateApplicationEntryValidationSuccess.builder()
-                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                        .fee(null)
-                        .applicationCode(code)
-                        .sa(new StandardApplicant())
-                        .applicationList(applicationList)
-                        .build();
-
-        entry.setVersion(1L);
-        when(applicationListEntryRepository.save(any())).thenReturn(entry);
-
-        when(applicationListEntryEntityMapper.toApplicationListEntry(
-                        eq(entryCreateDto),
-                        notNull(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        eq(YesOrNo.YES)))
-                .thenReturn(entry);
-
-        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
-        entryGetDetailDto.setHasOffsiteFee(false);
-
-        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        any(), anyList(), any(), any(), any()))
-                .thenReturn(entryGetDetailDto);
-
-        UUID jobId = UUID.randomUUID();
-        service.createBulkEntry(payload, jobId);
-
-        // Ensure that we called save on asyncJobAppListEntryRepository with the correct values
-        ArgumentCaptor<AsyncJobsAppListEntry> captor =
-                ArgumentCaptor.forClass(AsyncJobsAppListEntry.class);
-        verify(asyncJobAppListEntryRepository).save(captor.capture());
-
-        AsyncJobsAppListEntry savedEntity = captor.getValue();
-        Assertions.assertEquals(jobId, savedEntity.getAsyncJobId());
-        Assertions.assertEquals(entryId, savedEntity.getAppListEntryId());
-    }
-
-    @Test
-    void createBulkEntry_withoutJobId_shouldNotSaveAsyncJobAppListEntry() {
-        UUID listId = UUID.randomUUID();
-        val applicationList = openApplicationList(listId);
-
-        when(applicationListRepository.findByUuid(applicationList.getUuid()))
-                .thenReturn(Optional.of(applicationList));
-
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        EntryCreateDto entryCreateDto =
-                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
-        entryCreateDto.setApplicant(Instancio.of(Applicant.class).withSettings(settings).create());
-        entryCreateDto.setWordingFields(null);
-
-        ApplicationCode code = new ApplicationCode();
-        code.setWording("Test Wording");
-
-        // Now make the call to createBulkEntry
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(applicationList.getUuid())
-                        .data(entryCreateDto)
-                        .build();
-
-        when(applicantMapper.toApplicant(payload.getData().getApplicant()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(applicantMapper.toRespondent(payload.getData().getRespondent()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(nameAddressRepository.save(any()))
-                .thenReturn(Instancio.of(NameAddress.class).withSettings(settings).create());
-        when(appListEntryFeeStatusRepository.save(any()))
-                .thenReturn(
-                        Instancio.of(AppListEntryFeeStatus.class).withSettings(settings).create());
-        when(appListEntryOfficialRepository.save(any()))
-                .thenReturn(
-                        Instancio.of(AppListEntryOfficial.class).withSettings(settings).create());
-
-        val entryId = UUID.randomUUID();
-        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 2);
-        success =
-                CreateApplicationEntryValidationSuccess.builder()
-                        .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                        .fee(null)
-                        .applicationCode(code)
-                        .sa(new StandardApplicant())
-                        .applicationList(applicationList)
-                        .build();
-
-        entry.setVersion(1L);
-        when(applicationListEntryRepository.save(any())).thenReturn(entry);
-
-        when(applicationListEntryEntityMapper.toApplicationListEntry(
-                        eq(entryCreateDto),
-                        notNull(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        eq(YesOrNo.YES)))
-                .thenReturn(entry);
-
-        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
-        entryGetDetailDto.setHasOffsiteFee(false);
-
-        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        any(), anyList(), any(), any(), any()))
-                .thenReturn(entryGetDetailDto);
-
-        service.createBulkEntry(payload, null);
-        verify(asyncJobAppListEntryRepository, times(0)).save(any());
-    }
-
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
-                ApplicationListRepository applicationListRepository,
-                ApplicationCodeRepository applicationCodeRepository,
-                ApplicationFeeService feeService,
-                BusinessDateProvider businessDateProvider,
-                StandardApplicantRepository standardApplicantRepository) {
-            super(
-                    applicationListRepository,
-                    applicationCodeRepository,
-                    feeService,
-                    businessDateProvider,
-                    standardApplicantRepository);
-        }
-
-        @Override
-        public <R> R validate(
-                PayloadForCreate<EntryCreateDto> validatable,
-                BiFunction<
-                                PayloadForCreate<EntryCreateDto>,
-                                CreateApplicationEntryValidationSuccess,
-                                R>
-                        validateSuccess) {
-            return validateSuccess.apply(validatable, success);
-        }
-    }
-
-    class DummyBulkCreateApplicationEntryValidator extends BulkCreateApplicationEntryValidator {
-
-        public DummyBulkCreateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
                 ApplicationFeeService feeService,
@@ -2959,8 +2670,7 @@ class ApplicationEntryServiceImplTest {
         @Override
         public <R> R validate(
                 MoveEntriesPayload payload,
-                java.util.function.BiFunction<MoveEntriesPayload, MoveEntriesValidationSuccess, R>
-                        createSupplier) {
+                BiFunction<MoveEntriesPayload, MoveEntriesValidationSuccess, R> createSupplier) {
 
             return createSupplier.apply(payload, success);
         }
@@ -2983,7 +2693,7 @@ class ApplicationEntryServiceImplTest {
         @Override
         public <R> R validate(
                 PayloadForUpdateClosedEntry payload,
-                java.util.function.BiFunction<
+                BiFunction<
                                 PayloadForUpdateClosedEntry,
                                 UpdateApplicationEntryClosedValidationSuccess,
                                 R>

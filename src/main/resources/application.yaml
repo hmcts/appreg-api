@@ -93,6 +93,9 @@ azure:
 
 
 appreg:
+  bulk-import:
+    page-size: ${BULK_IMPORT_PAGE_SIZE:250}
+    write-audit-mode: ${BULK_IMPORT_WRITE_AUDIT_MODE:BULK}
   bulk-action-preview:
     global-limit: 2000
   audit:
