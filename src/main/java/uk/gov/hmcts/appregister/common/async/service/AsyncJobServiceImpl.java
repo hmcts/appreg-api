@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.async.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +10,7 @@ import java.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -111,9 +113,10 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                         lifecycle,
                         jobContext,
                         pageImport,
-                        SecurityContextHolder.getContext());
+                        SecurityContextHolder.getContext(),
+                        MDC.getCopyOfContextMap());
 
-        // the core import logic will be processed in a seperate thread
+        // the core import logic will be processed in a separate thread
         Future<?> futureJobOutcome = executor.submit(process);
 
         return new TrackJobStatusResponse(jobStatusResponse, futureJobOutcome);
@@ -145,8 +148,16 @@ public class AsyncJobServiceImpl implements AsyncJobService {
 
         private final SecurityContext authentication;
 
+        private final Map<String, String> loggingContext;
+
         @Override
         public void run() {
+            if (loggingContext == null) {
+                MDC.clear();
+            } else {
+                MDC.setContextMap(loggingContext);
+            }
+
             // set the authentication on the thread local of this thread.
             SecurityContextHolder.setContext(authentication);
 
@@ -219,6 +230,9 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                     dataReader.close();
                 } catch (IOException e) {
                     log.warn("Failed to clean up async job data reader", e);
+                } finally {
+                    SecurityContextHolder.clearContext();
+                    MDC.clear();
                 }
             }
         }
@@ -247,7 +261,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                             : jobContext.getCommaDelimitedFailureMessage());
 
             // now force a failure to roll back any database transactional data that
-            // was commited
+            // was committed
             // in this transaction. This sits irrespective to
             // any state transitions that may have been made for the job process.
             throw new RuntimeException(t);
@@ -256,7 +270,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         /**
          * fire an event and change the state of the underlying job.
          *
-         * @param response The jobn to fire the event for and the forthcoming state transition.
+         * @param response The job to fire the event for and the forthcoming state transition.
          * @param data The read data to pass to the lifecycle event.
          * @param status The status to set the job to.
          * @param lifecycle The lifecycle to fire the event for.
@@ -269,7 +283,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                 AsyncJobLifecycle<T> lifecycle,
                 JobContext context)
                 throws IOException {
-            log.debug("Processing {} for job {}", status, response.getJobId());
+            log.debug("Processing {} for job {}", status, response.getJobId().getId());
 
             // fire the lifecycle event
             lifecycle.lifeCycleEventPerformed(
@@ -277,12 +291,17 @@ public class AsyncJobServiceImpl implements AsyncJobService {
 
             handleFailure(jobContext, jobStatusResponse, status);
 
-            // ensure we set the status
             persistence.setJobStatus(response.getJobId(), status);
 
-            log.info("Job {} is now {}", response.getJobId(), status);
+            if (status == JobStatus1.RECEIVED
+                    || status == JobStatus1.COMPLETED
+                    || status == JobStatus1.FAILED) {
+                log.info("Job {} is now {}", response.getJobId().getId(), status);
+            } else {
+                log.debug("Job {} is now {}", response.getJobId().getId(), status);
+            }
 
-            log.debug("Processed {} for job {}", status, response.getJobId());
+            log.debug("Processed {} for job {}", status, response.getJobId().getId());
         }
 
         /**

@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
@@ -62,6 +63,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         File fileToLoad = new File(resource.getFile());
 
         List<PersonCsvPojo> output = new ArrayList<>();
+        MDC.put("traceId", "bulk-import-trace");
         CsvReader<PersonCsvPojo> csvReader = new CsvReader<>(fileToLoad, PersonCsvPojo.class);
         try (csvReader) {
             JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
@@ -80,7 +82,10 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     asyncJobServiceImpl.startJob(
                             jobRequest,
                             csvReader,
-                            (data, context) -> output.addAll(data),
+                            (data, context) -> {
+                                Assertions.assertEquals("bulk-import-trace", MDC.get("traceId"));
+                                output.addAll(data);
+                            },
                             lifecycle);
 
             // assert that we synchronously get the response
@@ -157,6 +162,8 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
             Assertions.assertEquals(
                     JobStatus1.COMPLETED,
                     lifecycleEventArgumentCaptor.getAllValues().get(7).getJobStatus());
+        } finally {
+            MDC.clear();
         }
 
         Assertions.assertThrows(IOException.class, csvReader::getInputStream);

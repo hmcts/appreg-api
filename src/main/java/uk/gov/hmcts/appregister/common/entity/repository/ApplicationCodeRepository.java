@@ -36,6 +36,21 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             """)
     List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
+    /** Returns all application-code rows active on the supplied date in selection order. */
+    @Query(
+            """
+            SELECT c
+            FROM ApplicationCode c
+            WHERE c.startDate <= :date
+              AND (c.endDate IS NULL OR c.endDate >= :date)
+            ORDER BY LOWER(c.code),
+                     CASE WHEN c.endDate IS NULL THEN 0 ELSE 1 END,
+                     c.endDate DESC,
+                     c.startDate DESC,
+                     c.id DESC
+            """)
+    List<ApplicationCode> findAllByDate(@Param("date") LocalDate date);
+
     /**
      * Retrieve a page of active Application Codes filtered by code/title (case-insensitive).
      *

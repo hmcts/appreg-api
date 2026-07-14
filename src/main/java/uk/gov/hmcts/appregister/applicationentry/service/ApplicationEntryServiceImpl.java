@@ -37,7 +37,6 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
-import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -78,7 +77,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
-import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -91,7 +89,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
-import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
@@ -145,8 +142,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final PageableMapper pageableMapper;
 
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
-
-    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
 
     private final BulkActionPreviewValidator bulkActionPreviewValidator;
 
@@ -482,20 +477,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @NestedAudit
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO, null);
-    }
-
-    private MatchResponse<EntryGetDetailDto> createEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto,
-            Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
-                    validator,
-            YesOrNo bulkUpload,
-            UUID jobId) {
         log.debug("Started create application entry for list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
-                validator.validate(
+                createApplicationEntryValidator.validate(
                         entryCreateDto,
                         (dto, success) ->
                                 auditService.processAudit(
@@ -523,7 +509,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                     respondentToSave,
                                                                     success.getApplicationCode(),
                                                                     success.getApplicationList(),
-                                                                    bulkUpload);
+                                                                    YesOrNo.NO);
 
                                             Long alId = success.getApplicationList().getId();
                                             short seq = allocateNextSequence(alId);
@@ -540,10 +526,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                                             List<AppListEntryFeeStatus> statusList =
                                                     createFeeStatus(
-                                                            listEntryEntity,
-                                                            entryCreateDto,
-                                                            success,
-                                                            bulkUpload);
+                                                            listEntryEntity, entryCreateDto);
 
                                             List<AppListEntryOfficial> officialList =
                                                     createOfficial(listEntryEntity, entryCreateDto);
@@ -561,17 +544,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                             entryGetDetailDto.setHasOffsiteFee(
                                                     entryCreateDto.getData().getHasOffsiteFee());
 
-                                            if (bulkUpload.isYes() && jobId != null) {
-                                                AsyncJobsAppListEntry asyncJobsAppListEntry =
-                                                        AsyncJobsAppListEntry.builder()
-                                                                .asyncJobId(jobId)
-                                                                .appListEntryId(
-                                                                        listEntryEntity.getUuid())
-                                                                .build();
-                                                asyncJobAppListEntryRepository.save(
-                                                        asyncJobsAppListEntry);
-                                            }
-
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             MatchResponse.of(
@@ -587,14 +559,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 getDetailDto.getPayload().getId());
 
         return getDetailDto;
-    }
-
-    @Override
-    @Transactional
-    @NestedAudit
-    public MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId) {
-        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES, jobId);
     }
 
     @Override
@@ -1032,15 +996,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
      *
      * @param listEntryEntity The list entry entity to add the officials to
      * @param entryCreateDto The create payload containing the fee statuses
-     * @param success The successful validation result containing resolved fees
-     * @param bulkUpload The bulk upload indicator for the create path
      * @return The application fees that were created
      */
     private List<AppListEntryFeeStatus> createFeeStatus(
-            ApplicationListEntry listEntryEntity,
-            PayloadForCreate<EntryCreateDto> entryCreateDto,
-            CreateApplicationEntryValidationSuccess success,
-            YesOrNo bulkUpload) {
+            ApplicationListEntry listEntryEntity, PayloadForCreate<EntryCreateDto> entryCreateDto) {
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         List<FeeStatus> feeStatuses =
@@ -1054,29 +1013,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             saveFeeStatus(appListEntryFeeStatus, statusList);
         }
 
-        if (feeStatuses.isEmpty() && shouldCreateInitialBulkUploadFeeStatus(success, bulkUpload)) {
-            saveFeeStatus(createInitialBulkUploadFeeStatus(listEntryEntity), statusList);
-        }
-
         return statusList;
-    }
-
-    private boolean shouldCreateInitialBulkUploadFeeStatus(
-            CreateApplicationEntryValidationSuccess success, YesOrNo bulkUpload) {
-        return bulkUpload == YesOrNo.YES
-                && success.getFee() != null
-                && success.getFee().mainFee() != null;
-    }
-
-    private AppListEntryFeeStatus createInitialBulkUploadFeeStatus(
-            ApplicationListEntry listEntryEntity) {
-        AppListEntryFeeStatus feeStatus = new AppListEntryFeeStatus();
-        feeStatus.setAppListEntry(listEntryEntity);
-        feeStatus.setAlefsFeeStatus(FeeStatusType.DUE);
-        feeStatus.setAlefsPaymentReference(null);
-        feeStatus.setAlefsFeeStatusDate(businessDateProvider.currentUkDate());
-        feeStatus.setAlefsStatusCreationDate(OffsetDateTime.now(clock));
-        return feeStatus;
     }
 
     private AppListEntryFeeStatus createBulkFeeStatus(

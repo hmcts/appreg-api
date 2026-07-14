@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
+import uk.gov.hmcts.appregister.applicationentry.service.BulkImportService;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
@@ -57,7 +59,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
-import uk.gov.hmcts.appregister.job.service.JobService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 @Controller
@@ -66,11 +67,11 @@ import uk.gov.hmcts.appregister.job.service.JobService;
 public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final ApplicationEntryService applicationEntryService;
 
+    private final BulkImportService bulkImportService;
+
     private final PageableMapper pageableMapper;
 
     private final AsyncJobService asyncJobService;
-
-    private final JobService jobService;
 
     private final UserProvider userProvider;
 
@@ -83,6 +84,9 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final ApplicationListEntryMapper applicationListEntryMapper;
 
     private final Validator beanValidator;
+
+    @Value("${appreg.bulk-import.page-size:25}")
+    private int bulkImportPageSize = 25;
 
     @Override
     public ResponseEntity<EntryPage> getEntries(
@@ -244,7 +248,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     public ResponseEntity<JobAcknowledgement> bulkUploadApplicationListEntries(
             UUID listId, MultipartFile file) {
 
-        log.info("Starting bulk upload for application list: {}", listId);
+        log.debug("Accepting bulk upload for application list {}", listId);
 
         if (file == null || file.isEmpty()) {
             throw new AppRegistryException(
@@ -254,7 +258,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         try {
             bulkUploadCsvFormatValidator.validate(file);
-            bulkCreateApplicationEntryValidator.validateApplicationList(listId);
+            var applicationList =
+                    bulkCreateApplicationEntryValidator.validateApplicationList(listId);
 
             JobTypeRequest jobTypeRequest =
                     JobTypeRequest.builder()
@@ -270,13 +275,19 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                             csvReader,
                             new BulkUploadAsyncLifecycle(
                                     listId,
-                                    applicationEntryService,
+                                    applicationList,
+                                    bulkImportService,
                                     bulkUploadApplicationEntryValidator,
                                     bulkCreateApplicationEntryValidator,
                                     applicationListEntryMapper,
-                                    beanValidator));
+                                    beanValidator),
+                            bulkImportPageSize);
 
-            JobAcknowledgement ack = jobService.getJobAckById(trackJobStatusResponse.getUuid());
+            JobAcknowledgement ack =
+                    new JobAcknowledgement()
+                            .id(trackJobStatusResponse.getUuid())
+                            .type(trackJobStatusResponse.getType())
+                            .status(trackJobStatusResponse.getStatus());
 
             return ResponseEntity.accepted()
                     .varyBy(HttpHeaders.ACCEPT)
