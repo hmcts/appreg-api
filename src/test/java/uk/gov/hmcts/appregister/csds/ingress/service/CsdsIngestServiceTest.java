@@ -62,7 +62,7 @@ class CsdsIngestServiceTest {
 
     @Test
     void
-            given_validApplicationCodesFileAndAvailableLock_when_ingest_then_processesFileAndReturnsSummary()
+            given_validTwoMegabyteFileAndAvailableLock_when_ingest_then_processesFileAndReturnsSummary()
                     throws Exception {
         var file = mockFile("{\"responseCode\":1,\"records\":[{\"AC_ID\":1}]}");
         var lock = new DistributedJobLock("CSDS_DATA_INGRESS", "token", Duration.ofMinutes(5));
@@ -71,6 +71,7 @@ class CsdsIngestServiceTest {
         ArgumentCaptor<List<JsonNode>> parsedPagesCaptor = ArgumentCaptor.forClass(List.class);
 
         when(userProvider.getUserId()).thenReturn("tenant:object");
+        when(file.getSize()).thenReturn(2L * 1024 * 1024);
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
         when(applicationCodeProcessor.enabled()).thenReturn(true);
@@ -215,54 +216,6 @@ class CsdsIngestServiceTest {
         verify(applicationCodeProcessor).processorName();
         verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
-        verifyNoInteractions(distributedJobLockService);
-    }
-
-    @Test
-    void given_fileLargerThanOneMegabyte_when_ingest_then_throwsPayloadTooLargeError() {
-        var file = mock(MultipartFile.class);
-        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getSize()).thenReturn(CsdsIngestService.MAX_FILE_SIZE_BYTES + 1);
-        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
-        when(applicationCodeProcessor.enabled()).thenReturn(true);
-
-        assertThatThrownBy(() -> service.ingest(processorName, file))
-                .isInstanceOf(AppRegistryException.class)
-                .satisfies(
-                        thrown ->
-                                assertThat(((AppRegistryException) thrown).getCode())
-                                        .isEqualTo(CsdsIngestError.FILE_TOO_LARGE));
-
-        verify(applicationCodeProcessor).processorName();
-        verify(applicationCodeProcessor).enabled();
-        verifyNoMoreInteractions(applicationCodeProcessor);
-        verifyNoInteractions(distributedJobLockService);
-    }
-
-    @Test
-    void given_feeFileLargerThanOneMegabyte_when_ingest_then_throwsPayloadTooLargeError() {
-        var file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getSize()).thenReturn(CsdsIngestService.MAX_FILE_SIZE_BYTES + 1);
-        when(applicationCodeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
-        when(feeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.FEE.getExternalName());
-        when(feeProcessor.enabled()).thenReturn(true);
-
-        assertThatThrownBy(
-                        () -> service.ingest(CsdsIngestProcessorName.FEE.getExternalName(), file))
-                .isInstanceOf(AppRegistryException.class)
-                .satisfies(
-                        thrown ->
-                                assertThat(((AppRegistryException) thrown).getCode())
-                                        .isEqualTo(CsdsIngestError.FILE_TOO_LARGE));
-
-        verify(applicationCodeProcessor).processorName();
-        verify(feeProcessor).processorName();
-        verify(feeProcessor).enabled();
-        verifyNoMoreInteractions(applicationCodeProcessor, feeProcessor);
         verifyNoInteractions(distributedJobLockService);
     }
 
