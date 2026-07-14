@@ -105,7 +105,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     @Override
     public void validating(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
         List<BulkUploadRow> rows = event.getData();
-        JobContext context = event.getContext();
 
         log.info("Validating bulk upload for list {}", listId);
 
@@ -134,6 +133,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowNumber++;
         }
 
+        JobContext context = event.getContext();
         addHeaderErrors(context, allErrors);
         context.setFieldCountMismatch(false);
 

@@ -222,7 +222,8 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                     long end = System.nanoTime();
                     log.info(
                             "Job {} completed in {} seconds",
-                            jobStatusResponse.getJobId().getId(), (end - start) / 1_000_000_000.0);
+                            jobStatusResponse.getJobId().getId(),
+                            (end - start) / 1_000_000_000.0);
                 } catch (IOException e) {
                     log.warn("Failed to clean up async job data reader", e);
                 }
