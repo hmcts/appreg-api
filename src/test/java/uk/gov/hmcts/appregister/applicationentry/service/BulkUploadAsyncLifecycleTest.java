@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -510,6 +511,38 @@ class BulkUploadAsyncLifecycleTest {
                                 + " jobId="
                                 + jobId
                                 + " importedEntryCount=2 durationMs=");
+    }
+
+    @Test
+    void givenMultipleProcessingPages_thenPreservesCsvRowNumbers() throws IOException {
+        UUID jobId = UUID.randomUUID();
+        var response =
+                JobStatusResponse.builder()
+                        .uuid(jobId)
+                        .type(JobType.BULK_UPLOAD_ENTRIES)
+                        .status(JobStatus1.PROCESSING)
+                        .userName("user")
+                        .build();
+        var context = new JobContext();
+        var rows = List.of(validOrganisationRow(), validOrganisationRow(), validOrganisationRow());
+        lifecycle.validating(
+                new AsyncJobLifecycleEvent<>(response, rows, context, JobStatus1.VALIDATING));
+        when(bulkImportService.persistPage(eq(jobId), any()))
+                .thenAnswer(invocation -> invocation.<List<?>>getArgument(1).size());
+
+        lifecycle.processing(
+                new AsyncJobLifecycleEvent<>(
+                        response, rows.subList(0, 2), context, JobStatus1.PROCESSING));
+        lifecycle.processing(
+                new AsyncJobLifecycleEvent<>(
+                        response, rows.subList(2, 3), context, JobStatus1.PROCESSING));
+
+        var pageCaptor = ArgumentCaptor.<List<ValidatedBulkImportEntry>>captor();
+        verify(bulkImportService, times(2)).persistPage(eq(jobId), pageCaptor.capture());
+        assertThat(pageCaptor.getAllValues())
+                .flatExtracting(entries -> entries)
+                .extracting(ValidatedBulkImportEntry::rowNumber)
+                .containsExactly(2, 3, 4);
     }
 
     @Test

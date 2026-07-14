@@ -193,7 +193,7 @@ class ApplicationEntryControllerTest {
                             }
                         })
                 .when(asyncJobService)
-                .startJob(
+                .startValidationFirstJob(
                         any(),
                         anyBulkUploadRowDataReader(),
                         anyBulkUploadRowAsyncJobLifecycle(),
@@ -209,7 +209,7 @@ class ApplicationEntryControllerTest {
         verify(bulkUploadCsvFormatValidator).validate(file);
         verify(bulkCreateApplicationEntryValidator).validateApplicationList(listId);
         verify(asyncJobService)
-                .startJob(
+                .startValidationFirstJob(
                         any(),
                         anyBulkUploadRowDataReader(),
                         anyBulkUploadRowAsyncJobLifecycle(),

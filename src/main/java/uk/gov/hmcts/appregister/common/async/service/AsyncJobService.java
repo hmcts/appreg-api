@@ -42,6 +42,21 @@ public interface AsyncJobService {
             int pageSize);
 
     /**
+     * Starts a job that validates every page before processing any page.
+     *
+     * @param jobType The job type.
+     * @param dataReader The reusable reader that supplies both passes.
+     * @param lifecycle The lifecycle to run the job.
+     * @param pageSize The number of records to read in each page.
+     * @return The job status report response.
+     */
+    <T> TrackJobStatusResponse startValidationFirstJob(
+            JobTypeRequest jobType,
+            DataReader<T> dataReader,
+            AsyncJobLifecycle<T> lifecycle,
+            int pageSize);
+
+    /**
      * runs the job with a csv stream passed to it.
      *
      * @param jobId The job id

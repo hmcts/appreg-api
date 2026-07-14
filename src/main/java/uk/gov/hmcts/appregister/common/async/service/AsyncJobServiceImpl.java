@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             JobTypeRequest jobTypeRequest,
             DataReader<T> dataReader,
             AsyncJobLifecycle<T> lifecycle) {
-        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize);
+        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize, false);
     }
 
     @Override
@@ -70,7 +71,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             DataReader<T> dataReader,
             AsyncJobLifecycle<T> lifecycle,
             int pageSize) {
-        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize);
+        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize, false);
     }
 
     public <T> TrackJobStatusResponse startJob(
@@ -78,7 +79,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             DataReader<T> dataReader,
             PageReader<T> pageImport,
             AsyncJobLifecycle<T> lifecycle) {
-        return startJob(jobRequest, dataReader, pageImport, lifecycle, pageSize);
+        return startJob(jobRequest, dataReader, pageImport, lifecycle, pageSize, false);
     }
 
     private <T> TrackJobStatusResponse startJob(
@@ -86,7 +87,8 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             DataReader<T> dataReader,
             PageReader<T> pageImport,
             AsyncJobLifecycle<T> lifecycle,
-            int pageSize) {
+            int pageSize,
+            boolean validationFirst) {
 
         JobContext jobContext = new JobContext();
 
@@ -114,12 +116,22 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                         jobContext,
                         pageImport,
                         SecurityContextHolder.getContext(),
-                        MDC.getCopyOfContextMap());
+                        MDC.getCopyOfContextMap(),
+                        validationFirst);
 
         // the core import logic will be processed in a separate thread
         Future<?> futureJobOutcome = executor.submit(process);
 
         return new TrackJobStatusResponse(jobStatusResponse, futureJobOutcome);
+    }
+
+    @Override
+    public <T> TrackJobStatusResponse startValidationFirstJob(
+            JobTypeRequest jobTypeRequest,
+            DataReader<T> dataReader,
+            AsyncJobLifecycle<T> lifecycle,
+            int pageSize) {
+        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize, true);
     }
 
     @Override
@@ -150,6 +162,8 @@ public class AsyncJobServiceImpl implements AsyncJobService {
 
         private final Map<String, String> loggingContext;
 
+        private final boolean validationFirst;
+
         @Override
         public void run() {
             if (loggingContext == null) {
@@ -173,40 +187,11 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                                         lifecycle,
                                         jobContext);
 
-                                dataReader.readData(
-                                        position,
-                                        (data, ctxt) -> {
-
-                                            // validate the read page of data
-                                            fireEventAndChangeState(
-                                                    jobStatusResponse,
-                                                    data,
-                                                    JobStatus1.VALIDATING,
-                                                    lifecycle,
-                                                    jobContext);
-
-                                            // if we dont have a page read callback then do not
-                                            // call.
-                                            if (pageRead != null) {
-                                                // process the data
-                                                pageRead.readData(data, jobContext);
-                                            }
-
-                                            // if a failure has been detected then stop processing
-                                            // and just ensure that
-                                            // validation is captured for all. We do not support
-                                            // partial fails at this point in time
-                                            if (!jobContext.hasFailure()) {
-                                                // process the state with the read data
-                                                fireEventAndChangeState(
-                                                        jobStatusResponse,
-                                                        data,
-                                                        JobStatus1.PROCESSING,
-                                                        lifecycle,
-                                                        jobContext);
-                                            }
-                                        },
-                                        jobContext);
+                                if (validationFirst) {
+                                    processValidationFirst();
+                                } else {
+                                    processPageByPage();
+                                }
 
                                 // if a failure was detected then fail else complete the job
                                 if (jobContext.hasFailure()) {
@@ -234,6 +219,64 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                     SecurityContextHolder.clearContext();
                     MDC.clear();
                 }
+            }
+        }
+
+        private void processValidationFirst() throws IOException {
+            changeState(jobStatusResponse, JobStatus1.VALIDATING);
+            readPhase(JobStatus1.VALIDATING);
+            failJobIfValidationFailed();
+
+            changeState(jobStatusResponse, JobStatus1.PROCESSING);
+            readPhase(JobStatus1.PROCESSING);
+        }
+
+        private void readPhase(JobStatus1 status) throws IOException {
+            var pageRead = new AtomicBoolean();
+            dataReader.readData(
+                    position,
+                    (data, ctxt) -> {
+                        pageRead.set(true);
+                        fireLifecycleEvent(jobStatusResponse, data, status, lifecycle, jobContext);
+                    },
+                    jobContext);
+
+            if (!pageRead.get()) {
+                fireLifecycleEvent(jobStatusResponse, List.of(), status, lifecycle, jobContext);
+            }
+        }
+
+        private void processPageByPage() throws IOException {
+            dataReader.readData(
+                    position,
+                    (data, ctxt) -> {
+                        fireEventAndChangeState(
+                                jobStatusResponse,
+                                data,
+                                JobStatus1.VALIDATING,
+                                lifecycle,
+                                jobContext);
+
+                        if (pageRead != null) {
+                            pageRead.readData(data, jobContext);
+                        }
+
+                        if (!jobContext.hasFailure()) {
+                            fireEventAndChangeState(
+                                    jobStatusResponse,
+                                    data,
+                                    JobStatus1.PROCESSING,
+                                    lifecycle,
+                                    jobContext);
+                        }
+                    },
+                    jobContext);
+        }
+
+        private void failJobIfValidationFailed() throws JobException {
+            if (jobContext.hasFailure()) {
+                throw new JobException(
+                        "Failed to process job: " + jobStatusResponse.getJobId().getId());
             }
         }
 
@@ -283,14 +326,25 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                 AsyncJobLifecycle<T> lifecycle,
                 JobContext context)
                 throws IOException {
-            log.debug("Processing {} for job {}", status, response.getJobId().getId());
+            fireLifecycleEvent(response, data, status, lifecycle, context);
+            changeState(response, status);
+        }
 
-            // fire the lifecycle event
+        private void fireLifecycleEvent(
+                JobStatusResponse response,
+                List<T> data,
+                JobStatus1 status,
+                AsyncJobLifecycle<T> lifecycle,
+                JobContext context)
+                throws IOException {
+            log.debug("Processing {} for job {}", status, response.getJobId().getId());
             lifecycle.lifeCycleEventPerformed(
                     new AsyncJobLifecycleEvent<>(response, data, context, status));
+            handleFailure(context, response, status);
+            log.debug("Processed {} for job {}", status, response.getJobId().getId());
+        }
 
-            handleFailure(jobContext, jobStatusResponse, status);
-
+        private void changeState(JobStatusResponse response, JobStatus1 status) {
             persistence.setJobStatus(response.getJobId(), status);
 
             if (status == JobStatus1.RECEIVED
@@ -300,8 +354,6 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             } else {
                 log.debug("Job {} is now {}", response.getJobId().getId(), status);
             }
-
-            log.debug("Processed {} for job {}", status, response.getJobId().getId());
         }
 
         /**

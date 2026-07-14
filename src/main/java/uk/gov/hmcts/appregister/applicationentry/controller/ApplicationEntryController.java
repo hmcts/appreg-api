@@ -270,7 +270,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
             CsvReader<BulkUploadRow> csvReader = new CsvReader<>(file, BulkUploadRow.class);
 
             TrackJobStatusResponse trackJobStatusResponse =
-                    asyncJobService.startJob(
+                    asyncJobService.startValidationFirstJob(
                             jobTypeRequest,
                             csvReader,
                             new BulkUploadAsyncLifecycle(

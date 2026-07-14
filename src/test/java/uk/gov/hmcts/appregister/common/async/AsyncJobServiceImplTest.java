@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -167,6 +168,89 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         }
 
         Assertions.assertThrows(IOException.class, csvReader::getInputStream);
+    }
+
+    @Test
+    void validationFirstJob_validatesEveryPageBeforeProcessing() throws Exception {
+        String userId = "userId";
+        UUID jobId = UUID.randomUUID();
+        JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
+        when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
+
+        var resource = Thread.currentThread().getContextClassLoader().getResource("person.csv");
+        var lifecycle = mockLifecycle();
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.BULK_UPLOAD_ENTRIES)
+                        .userName(userId)
+                        .build();
+
+        try (var csvReader =
+                new CsvReader<PersonCsvPojo>(new File(resource.getFile()), PersonCsvPojo.class)) {
+            asyncJobServiceImpl
+                    .startValidationFirstJob(jobRequest, csvReader, lifecycle, 1)
+                    .getFuture()
+                    .get();
+        }
+
+        var events = lifecycleEventCaptor();
+        verify(lifecycle, times(8)).lifeCycleEventPerformed(events.capture());
+        assertValidationFirstOrder(events.getAllValues());
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
+    }
+
+    @Test
+    void validationFirstJob_doesNotProcessWhenValidationFails() throws Exception {
+        String userId = "userId";
+        UUID jobId = UUID.randomUUID();
+        JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
+        when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
+
+        var resource = Thread.currentThread().getContextClassLoader().getResource("person.csv");
+        var lifecycle = mockLifecycle();
+        Mockito.doAnswer(
+                        invocation -> {
+                            AsyncJobLifecycleEvent<?> event = invocation.getArgument(0);
+                            if (event.getJobStatus() == JobStatus1.VALIDATING) {
+                                event.getContext().logFailure("invalid row");
+                            }
+                            return null;
+                        })
+                .when(lifecycle)
+                .lifeCycleEventPerformed(Mockito.any());
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.BULK_UPLOAD_ENTRIES)
+                        .userName(userId)
+                        .build();
+
+        try (var csvReader =
+                new CsvReader<PersonCsvPojo>(new File(resource.getFile()), PersonCsvPojo.class)) {
+            var outcome =
+                    asyncJobServiceImpl.startValidationFirstJob(
+                            jobRequest, csvReader, lifecycle, 1);
+            Assertions.assertThrows(ExecutionException.class, () -> outcome.getFuture().get());
+        }
+
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+    }
+
+    private static void assertValidationFirstOrder(
+            List<AsyncJobLifecycleEvent<PersonCsvPojo>> events) {
+        Assertions.assertEquals(JobStatus1.RECEIVED, events.get(0).getJobStatus());
+        Assertions.assertEquals(JobStatus1.VALIDATING, events.get(1).getJobStatus());
+        Assertions.assertEquals(JobStatus1.VALIDATING, events.get(2).getJobStatus());
+        Assertions.assertEquals(JobStatus1.VALIDATING, events.get(3).getJobStatus());
+        Assertions.assertEquals(JobStatus1.PROCESSING, events.get(4).getJobStatus());
+        Assertions.assertEquals(JobStatus1.PROCESSING, events.get(5).getJobStatus());
+        Assertions.assertEquals(JobStatus1.PROCESSING, events.get(6).getJobStatus());
+        Assertions.assertEquals(JobStatus1.COMPLETED, events.get(7).getJobStatus());
     }
 
     @Test

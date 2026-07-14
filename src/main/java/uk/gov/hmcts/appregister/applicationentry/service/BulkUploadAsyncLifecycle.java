@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
@@ -30,6 +31,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -85,8 +87,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private final ApplicationListEntryMapper mapper;
     private final Validator beanValidator;
     private final List<ValidatedBulkImportEntry> validatedPage = new ArrayList<>();
+    private final List<ValidatedRow> validatedRows = new ArrayList<>();
     private BulkCreateApplicationEntryValidator.Session validationSession;
     private int nextRowNumber = FIRST_DATA_ROW_NUMBER;
+    private int processingIndex;
     private int importedEntryCount;
     private long startedNanos;
 
@@ -109,9 +113,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     @Override
     public void validating(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
         List<BulkUploadRow> rows = event.getData();
-        validatedPage.clear();
-
+        JobContext context = event.getContext();
         if (rows == null || rows.isEmpty()) {
+            context.logFailure("Uploaded file contains no data rows");
             throw new AppRegistryException(
                     AppListEntryError.BULK_UPLOAD_EMPTY_FILE,
                     "Uploaded file contains no data rows");
@@ -137,12 +141,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
         nextRowNumber = rowNumber;
 
-        JobContext context = event.getContext();
         addHeaderErrors(context, allErrors);
         context.setFieldCountMismatch(false);
 
         if (!allErrors.isEmpty()) {
-            validatedPage.clear();
             logValidationFailure(context, allErrors);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
             throw new AppRegistryException(
@@ -202,8 +204,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     .validate(
                             PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
                             (validatable, result) -> {
-                                validatedPage.add(
-                                        new ValidatedBulkImportEntry(rowNumber, dto, result));
+                                validatedRows.add(
+                                        new ValidatedRow(
+                                                rowNumber,
+                                                dto.getWordingFields() == null
+                                                        ? List.of()
+                                                        : List.copyOf(dto.getWordingFields()),
+                                                result));
                                 return result;
                             });
             return List.of();
@@ -306,8 +313,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.debug("Processing bulk-upload page for list {}", listId);
 
         var firstRowNumber =
-                validatedPage.isEmpty() ? nextRowNumber : validatedPage.getFirst().rowNumber();
+                processingIndex < validatedRows.size()
+                        ? validatedRows.get(processingIndex).rowNumber()
+                        : FIRST_DATA_ROW_NUMBER;
         try {
+            prepareValidatedPage(event.getData());
             var jobId = event.getResponse() == null ? null : event.getResponse().getJobId().getId();
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
         } catch (Exception ex) {
@@ -328,8 +338,30 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 importedEntryCount);
     }
 
+    private void prepareValidatedPage(List<BulkUploadRow> rows) {
+        validatedPage.clear();
+        for (var row : rows) {
+            if (processingIndex >= validatedRows.size()) {
+                throw new IllegalStateException("Processing pass contains an unexpected CSV row");
+            }
+
+            var validatedRow = validatedRows.get(processingIndex++);
+            var dto = mapper.toEntryCreateDto(row);
+            dto.setWordingFields(validatedRow.wordingFields());
+            validatedPage.add(
+                    new ValidatedBulkImportEntry(
+                            validatedRow.rowNumber(), dto, validatedRow.validationResult()));
+        }
+    }
+
     @Override
     public void completed(AsyncJobLifecycleEvent<BulkUploadRow> event) {
+        if (processingIndex != validatedRows.size()) {
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED,
+                    "Processing pass did not contain every validated CSV row");
+        }
+
         bulkImportService.completed(
                 listId, event.getResponse().getJobId().getId(), importedEntryCount);
         log.info(
@@ -338,6 +370,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 event.getResponse().getJobId().getId(),
                 importedEntryCount,
                 durationMs());
+        validatedRows.clear();
     }
 
     private long durationMs() {
@@ -345,6 +378,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 ? 0
                 : Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
     }
+
+    private record ValidatedRow(
+            int rowNumber,
+            List<TemplateSubstitution> wordingFields,
+            CreateApplicationEntryValidationSuccess validationResult) {}
 
     private static String getName(Respondent respondent) {
         if (respondent.getOrganisation() != null) {
