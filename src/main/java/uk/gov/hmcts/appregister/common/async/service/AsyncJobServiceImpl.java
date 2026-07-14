@@ -149,12 +149,14 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         public void run() {
             // set the authentication on the thread local of this thread.
             SecurityContextHolder.setContext(authentication);
+            long start = System.nanoTime();
 
             try {
                 // run the runnable inside of a database transaction
                 transactionalUnitOfWork.inTransaction(
                         () -> {
                             try {
+
                                 fireEventAndChangeState(
                                         jobStatusResponse,
                                         null,
@@ -217,6 +219,10 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             } finally {
                 try {
                     dataReader.close();
+                    long end = System.nanoTime();
+                    log.info(
+                            "Job {} completed in {} seconds",
+                            jobStatusResponse.getJobId().getId(), (end - start) / 1_000_000_000.0);
                 } catch (IOException e) {
                     log.warn("Failed to clean up async job data reader", e);
                 }

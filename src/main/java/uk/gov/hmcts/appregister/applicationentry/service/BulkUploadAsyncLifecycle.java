@@ -266,7 +266,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
-        final long start = System.nanoTime();
         JobContext context = event.getContext();
 
         log.info("Processing bulk upload for list {}", listId);
@@ -313,9 +312,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
 
         log.info("Bulk upload completed successfully");
-        long end = System.nanoTime();
-        log.warn("Bulk upload processing took {} ms", (end - start) / 1_000_000);
-        log.warn("Processed {} rows in this batch", sequenceNumber);
     }
 
     private static String getName(Respondent respondent) {
