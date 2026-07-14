@@ -359,11 +359,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     private JsonNode loadMockResponse(String mockFilePath) {
         try {
+            val isClassPathUri = mockFilePath.startsWith("classpath:");
             val resourcePath =
-                    mockFilePath.startsWith("classpath:")
-                            ? mockFilePath.substring(10)
-                            : mockFilePath;
+                    isClassPathUri ? mockFilePath.substring("classpath:".length()) : mockFilePath;
             val resource = new ClassPathResource(resourcePath);
+
             if (resource.exists()) {
                 try (val inputStream = resource.getInputStream()) {
                     val response = OBJECT_MAPPER.readTree(inputStream);
@@ -373,6 +373,14 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                             resourcePath);
                     return response;
                 }
+            }
+
+            if (isClassPathUri) {
+                log.warn(
+                        "Configured CSDS mock response for {} was not found at {}. Falling back to endpoint.",
+                        datasetName(),
+                        mockFilePath);
+                return null;
             }
 
             val filePath = Path.of(mockFilePath);
@@ -387,6 +395,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                     datasetName(),
                     mockFilePath);
             return null;
+
         } catch (IOException ex) {
             log.error(
                     "Failed to load CSDS mock response for {} from {}. Falling back to endpoint.",

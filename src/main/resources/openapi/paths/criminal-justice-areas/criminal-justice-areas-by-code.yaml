@@ -2,10 +2,10 @@ parameters:
   - in: path
     name: code
     required: true
-    description: Code used to identify the Result Code (case-insensitive).
+    description: Code used to identify the Criminal Justice Area (case-insensitive).
     schema:
       type: string
-      maxLength: 10
+      maxLength: 2
     example: "CF"
 get:
   operationId: getCriminalJusticeAreaByCode
