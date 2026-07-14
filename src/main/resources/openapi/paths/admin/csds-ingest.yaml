@@ -9,8 +9,8 @@ post:
     `national_court_houses`, or `standard_applicants`. Implemented processors must also be enabled
     in CSDS ingress configuration; disabled processors return `409 Conflict`, and recognised but
     unimplemented processors return `501 Not Implemented`. The endpoint honours the distributed
-    CSDS ingest lock and returns `423 Locked` if another run already owns it. Uploaded files are
-    limited to 1MB.
+    CSDS ingest lock and returns `423 Locked` if another run already owns it. The global 5MB
+    multipart file limit applies.
   parameters:
     - in: path
       name: processor
@@ -53,7 +53,7 @@ post:
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "409": { $ref: "../../components/responses/csds-conflict-error.yaml" }
-    "413": { $ref: "../../components/responses/csds-payload-too-large-error.yaml" }
+    "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
     "415": { $ref: "../../components/responses/unsupported-media-type-error.yaml" }
     "423": { $ref: "../../components/responses/locked-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
