@@ -195,6 +195,26 @@ class BulkCreateApplicationEntryValidatorTest {
     }
 
     @Test
+    void testRejectsMissingApplicationCode() {
+        entryCreateDto.setApplicationCode(null);
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payload(), (validatable, result) -> result));
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, appRegistryException.getCode());
+        assertThat(appRegistryException.getMessage()).isEqualTo("No valid code can be found null");
+    }
+
+    @Test
     void testTrimsApplicationTextToWordingTemplatePlaceholders() {
         applicationCode.setFeeDue(YesOrNo.NO);
         applicationCode.setRequiresRespondent(YesOrNo.NO);

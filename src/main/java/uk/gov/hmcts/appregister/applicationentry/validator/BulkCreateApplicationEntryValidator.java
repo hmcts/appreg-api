@@ -235,8 +235,13 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
 
         private ApplicationCode applicationCode(PayloadForCreate<EntryCreateDto> validatable) {
             var requestedCode = validatable.getData().getApplicationCode();
-            var applicationCode =
-                    requestedCode == null ? null : applicationCodes.get(normalise(requestedCode));
+            if (requestedCode == null) {
+                throw new AppRegistryException(
+                        AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
+                        "No valid code can be found %s".formatted(requestedCode));
+            }
+
+            var applicationCode = applicationCodes.get(normalise(requestedCode));
             if (applicationCode == null) {
                 throw new AppRegistryException(
                         AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,

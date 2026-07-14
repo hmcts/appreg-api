@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +58,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BulkImportServiceTest {
-    private static final LocalDate BUSINESS_DATE = LocalDate.of(2026, 7, 14);
+    private static final LocalDate BUSINESS_DATE = LocalDate.of(2026, Month.JULY, 14);
 
     @Mock private ApplicationListEntryEntityMapper entryMapper;
     @Mock private ApplicantMapper applicantMapper;

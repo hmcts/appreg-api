@@ -232,16 +232,16 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         }
 
         private void readPhase(JobStatus1 status) throws IOException {
-            var pageRead = new AtomicBoolean();
+            var pageReadInPhase = new AtomicBoolean();
             dataReader.readData(
                     position,
                     (data, ctxt) -> {
-                        pageRead.set(true);
+                        pageReadInPhase.set(true);
                         fireLifecycleEvent(jobStatusResponse, data, status, lifecycle, jobContext);
                     },
                     jobContext);
 
-            if (!pageRead.get() && !jobContext.hasFailure()) {
+            if (!pageReadInPhase.get() && !jobContext.hasFailure()) {
                 fireLifecycleEvent(jobStatusResponse, List.of(), status, lifecycle, jobContext);
             }
         }

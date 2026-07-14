@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.async;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,7 +64,6 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         URL resource = classLoader.getResource("person.csv");
         File fileToLoad = new File(resource.getFile());
 
-        List<PersonCsvPojo> output = new ArrayList<>();
         MDC.put("traceId", "bulk-import-trace");
         CsvReader<PersonCsvPojo> csvReader = new CsvReader<>(fileToLoad, PersonCsvPojo.class);
         try (csvReader) {
@@ -83,10 +83,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     asyncJobServiceImpl.startJob(
                             jobRequest,
                             csvReader,
-                            (data, context) -> {
-                                Assertions.assertEquals("bulk-import-trace", MDC.get("traceId"));
-                                output.addAll(data);
-                            },
+                            (data, context) ->
+                                    Assertions.assertEquals(
+                                            "bulk-import-trace", MDC.get("traceId")),
                             lifecycle);
 
             // assert that we synchronously get the response
@@ -250,7 +249,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
 
         @SuppressWarnings("unchecked")
-        DataReader<PersonCsvPojo> reader = Mockito.mock(DataReader.class);
+        DataReader<PersonCsvPojo> reader = mock(DataReader.class);
         var lifecycle = mockLifecycle();
         var jobRequest =
                 JobTypeRequest.builder()
