@@ -454,9 +454,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
             verify(persistence)
                     .setFailure(
                             jobIdRequest,
-                            "Number of data fields does not match number of headers., "
-                                    + "Failed to process job: "
-                                    + jobIdRequest.getId().toString());
+                            "Number of data fields does not match number of headers.");
         }
     }
 

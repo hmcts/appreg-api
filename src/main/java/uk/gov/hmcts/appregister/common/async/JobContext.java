@@ -15,6 +15,9 @@ import lombok.Setter;
 public class JobContext {
     private List<String> validationFailureMessages = new ArrayList<>();
 
+    /** Indicates that the data reader found a field-count mismatch. */
+    private boolean fieldCountMismatch;
+
     /**
      * Allows the developer to stop the job processing, now or carry on validating each page of data
      * until the end. This is false by default, so the underlying job will continue to validate each
@@ -49,5 +52,15 @@ public class JobContext {
         if (validationFailureMessages.stream().noneMatch(msg -> msg.equals(errorMsg))) {
             validationFailureMessages.add(errorMsg);
         }
+    }
+
+    /**
+     * Logs a field-count mismatch so that the lifecycle can format it appropriately.
+     *
+     * @param errorMsg The field-count mismatch message to log.
+     */
+    public void logFieldCountMismatch(String errorMsg) {
+        fieldCountMismatch = true;
+        logFailure(errorMsg);
     }
 }
