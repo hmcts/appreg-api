@@ -82,12 +82,14 @@ public class CsdsIngressProperties {
         private ApplicationCodes applicationCodes = new ApplicationCodes();
         private ResolutionCodes resolutionCodes = new ResolutionCodes();
         private Fee fee = new Fee();
+        private NationalCourtHouses nationalCourtHouses = new NationalCourtHouses();
         private StandardApplicants standardApplicants = new StandardApplicants();
 
         private boolean isConfigurationValid() {
             return applicationCodes.isConfigurationValid()
                     && resolutionCodes.isConfigurationValid()
                     && fee.isConfigurationValid()
+                    && nationalCourtHouses.isConfigurationValid()
                     && standardApplicants.isConfigurationValid();
         }
 
@@ -95,6 +97,7 @@ public class CsdsIngressProperties {
             return applicationCodes.isEnabled()
                     || resolutionCodes.isEnabled()
                     || fee.isEnabled()
+                    || nationalCourtHouses.isEnabled()
                     || standardApplicants.isEnabled();
         }
 
@@ -102,6 +105,7 @@ public class CsdsIngressProperties {
             return applicationCodes.requiresRemoteAccess()
                     || resolutionCodes.requiresRemoteAccess()
                     || fee.requiresRemoteAccess()
+                    || nationalCourtHouses.requiresRemoteAccess()
                     || standardApplicants.requiresRemoteAccess();
         }
     }
@@ -167,6 +171,14 @@ public class CsdsIngressProperties {
     public static class Fee extends ProcessorProperties {
         public Fee() {
             super("CivilFee", "fee_staging", "fee_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class NationalCourtHouses extends ProcessorProperties {
+        public NationalCourtHouses() {
+            super("Court", "national_court_houses_staging", "nch_id");
         }
     }
 
