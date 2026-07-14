@@ -82,21 +82,27 @@ public class CsdsIngressProperties {
         private ApplicationCodes applicationCodes = new ApplicationCodes();
         private ResolutionCodes resolutionCodes = new ResolutionCodes();
         private Fee fee = new Fee();
+        private StandardApplicants standardApplicants = new StandardApplicants();
 
         private boolean isConfigurationValid() {
             return applicationCodes.isConfigurationValid()
                     && resolutionCodes.isConfigurationValid()
-                    && fee.isConfigurationValid();
+                    && fee.isConfigurationValid()
+                    && standardApplicants.isConfigurationValid();
         }
 
         private boolean hasEnabledProcessor() {
-            return applicationCodes.isEnabled() || resolutionCodes.isEnabled() || fee.isEnabled();
+            return applicationCodes.isEnabled()
+                    || resolutionCodes.isEnabled()
+                    || fee.isEnabled()
+                    || standardApplicants.isEnabled();
         }
 
         private boolean hasEnabledProcessorWithoutMock() {
             return applicationCodes.requiresRemoteAccess()
                     || resolutionCodes.requiresRemoteAccess()
-                    || fee.requiresRemoteAccess();
+                    || fee.requiresRemoteAccess()
+                    || standardApplicants.requiresRemoteAccess();
         }
     }
 
@@ -161,6 +167,14 @@ public class CsdsIngressProperties {
     public static class Fee extends ProcessorProperties {
         public Fee() {
             super("CivilFee", "fee_staging", "fee_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class StandardApplicants extends ProcessorProperties {
+        public StandardApplicants() {
+            super("DA_GetStandardApplicant", "standard_applicants_staging", "sa_id");
         }
     }
 }

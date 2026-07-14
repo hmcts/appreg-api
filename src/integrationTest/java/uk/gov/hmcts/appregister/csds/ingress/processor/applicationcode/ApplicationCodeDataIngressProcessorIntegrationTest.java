@@ -142,7 +142,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "incoming=%d, existing=%d, inserts=1, updates=%d, ignores=0"
+                                        "incoming=%d, existing=%d, inserts=1, updates=%d"
                                                 .formatted(
                                                         totalCount,
                                                         existingApplicationCodes.size(),

@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -27,7 +28,6 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS");
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Clock REPORTING_CLOCK = Clock.systemUTC();
-    private static final String CHANGE_TYPE_IGNORE = "ignore";
     private static final String CHANGE_TYPE_INSERT = "insert";
     private static final String CHANGE_TYPE_UPDATE = "update";
     private static final String RECORDS_FIELD = "records";
@@ -64,15 +64,14 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
                 recordsExtractor);
 
         log.info(
-                "CSDS diff for {} on {}.{}: incoming={}, existing={}, inserts={}, updates={}, ignores={}",
+                "CSDS diff for {} on {}.{}: incoming={}, existing={}, inserts={}, updates={}",
                 datasetName,
                 targetTable,
                 targetKeyField,
                 incomingById.size(),
                 existingById.size(),
                 countByOperation(diffRecords, IngressOperation.INSERT),
-                countByOperation(diffRecords, IngressOperation.UPDATE),
-                countByOperation(diffRecords, IngressOperation.IGNORE));
+                countByOperation(diffRecords, IngressOperation.UPDATE));
     }
 
     protected abstract String filePrefix();
@@ -93,13 +92,18 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
         return switch (operation) {
             case INSERT -> CHANGE_TYPE_INSERT;
             case UPDATE -> CHANGE_TYPE_UPDATE;
-            case IGNORE -> CHANGE_TYPE_IGNORE;
         };
     }
 
     protected final String buildDiffReportCsv(List<DiffReportCsvRow> diffReport) {
         var csv = new StringBuilder(diffReportHeader());
         diffReport.stream().map(DiffReportCsvRow::toCsvRow).forEach(csv::append);
+        return csv.toString();
+    }
+
+    protected final String buildCsv(String header, Stream<String> rows) {
+        var csv = new StringBuilder(header);
+        rows.forEach(csv::append);
         return csv.toString();
     }
 
