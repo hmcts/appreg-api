@@ -54,6 +54,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                         "Failed to retrieve CSDS JSON for path {} using one configured access key: {}",
                         path,
                         ex.getMessage());
+                log.debug("CSDS request failed for path {}", path, ex);
             }
         }
 

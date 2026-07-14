@@ -1,0 +1,12 @@
+description: The requested operation could not start because the resource is locked.
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      locked:
+        value:
+          type: https://errors.hmcts.net/common/locked
+          title: Locked
+          status: 423
+          detail: The CSDS ingest is already running

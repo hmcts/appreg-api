@@ -1,0 +1,17 @@
+type: object
+description: Summary returned when a CSDS ingest file has been processed.
+additionalProperties: false
+required:
+  - inserted
+  - updated
+properties:
+  inserted:
+    type: integer
+    format: int32
+    description: Number of records inserted by the ingest.
+    example: 12
+  updated:
+    type: integer
+    format: int32
+    description: Number of records updated by the ingest.
+    example: 12

@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -141,7 +142,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "incoming=%d, existing=%d, inserts=1, updates=%d, ignores=0"
+                                        "incoming=%d, existing=%d, inserts=1, updates=%d"
                                                 .formatted(
                                                         totalCount,
                                                         existingApplicationCodes.size(),
@@ -231,7 +232,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .put("Updator", "migration");
     }
 
-    private void putNullableDate(ObjectNode node, String fieldName, java.time.LocalDate value) {
+    private void putNullableDate(ObjectNode node, String fieldName, LocalDate value) {
         if (value == null) {
             node.putNull(fieldName);
             return;

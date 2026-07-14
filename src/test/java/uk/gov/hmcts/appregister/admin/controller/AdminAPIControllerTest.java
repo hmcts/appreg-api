@@ -8,14 +8,20 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
+import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 class AdminAPIControllerTest {
     private final AdminAPIService adminAPIService = mock(AdminAPIService.class);
-    private final AdminAPIController controller = new AdminAPIController(adminAPIService);
+    private final CsdsIngestService csdsIngestService = mock(CsdsIngestService.class);
+    private final AdminAPIController controller =
+            new AdminAPIController(adminAPIService, csdsIngestService);
 
     @Test
     void enableDisableDatabaseJobByName_delegatesAndReturnsVersionedOkResponse() {
@@ -76,6 +82,27 @@ class AdminAPIControllerTest {
         verify(adminAPIService)
                 .getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isSameAs(body);
+    }
+
+    @Test
+    void ingestCsdsData_delegatesAndReturnsVersionedOkResponse() {
+        var file = mock(MultipartFile.class);
+        var body = new CsdsIngestResponse().inserted(1).updated(3);
+        when(csdsIngestService.ingest(
+                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(), file))
+                .thenReturn(body);
+
+        ResponseEntity<CsdsIngestResponse> response =
+                controller.ingestCsdsData(
+                        CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(), file);
+
+        verify(csdsIngestService)
+                .ingest(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName(), file);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getVary()).containsExactly("Accept");
+        assertThat(response.getHeaders().getContentType())
+                .hasToString("application/vnd.hmcts.appreg.v1+json");
         assertThat(response.getBody()).isSameAs(body);
     }
 }

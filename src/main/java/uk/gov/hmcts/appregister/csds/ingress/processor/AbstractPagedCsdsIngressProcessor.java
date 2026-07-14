@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -32,18 +33,26 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
 
     @Override
+    public final boolean enabled() {
+        return processorProperties.isEnabled();
+    }
+
+    @Override
     public final List<JsonNode> retrieve(CsdsIngressClient ingressClient) {
         val mockFilePath = mockFilePath();
         if (StringUtils.hasText(mockFilePath)) {
             val mockResponse = loadMockResponse(mockFilePath);
             if (mockResponse != null) {
                 log.info(
-                        "Retrieved 1 mock CSDS page for {} using page size {} and reported count {}",
+                        "Loaded mock CSDS payload for {} with {} records",
                         datasetName(),
-                        properties.getPageSize(),
                         extractRecords(mockResponse).size());
                 return List.of(mockResponse);
             }
+        }
+
+        if (!usesCountEndpoint()) {
+            return retrieveUntilEmptyPage(ingressClient);
         }
 
         val totalCount =
@@ -83,6 +92,31 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 totalCount,
                 fetchedRecordCount);
 
+        return List.copyOf(responses);
+    }
+
+    private List<JsonNode> retrieveUntilEmptyPage(CsdsIngressClient ingressClient) {
+        val responses = new ArrayList<JsonNode>();
+        for (var offset = 0; ; offset += properties.getPageSize()) {
+            val response =
+                    ingressClient.retrieveJson(
+                            appendPagingParameters(
+                                    appendQueryParameters(queryPath(), queryParameters()),
+                                    "%24limit="
+                                            + properties.getPageSize()
+                                            + "&%24offset="
+                                            + offset));
+            if (extractRecords(response).isEmpty()) {
+                break;
+            }
+            responses.add(response);
+        }
+
+        log.info(
+                "Retrieved {} CSDS pages for {} using page size {} until an empty page",
+                responses.size(),
+                datasetName(),
+                properties.getPageSize());
         return List.copyOf(responses);
     }
 
@@ -130,7 +164,9 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     private String queryPath() {
-        return "/query/"
+        return "/"
+                + queryPathType()
+                + "/"
                 + DATA_LOCATION_NAME
                 + "/"
                 + processorProperties.getSourceEntityName()
@@ -140,6 +176,14 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     protected String queryParameters() {
         return null;
+    }
+
+    protected String queryPathType() {
+        return "query";
+    }
+
+    protected boolean usesCountEndpoint() {
+        return true;
     }
 
     protected String mockFilePath() {
@@ -188,6 +232,40 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
         }
 
         return field.asText();
+    }
+
+    protected final BigDecimal requiredBigDecimal(JsonNode node, String fieldName) {
+        val value = nullableBigDecimal(node, fieldName);
+        if (value == null) {
+            throw invalidField(fieldName);
+        }
+
+        return value;
+    }
+
+    protected final BigDecimal nullableBigDecimal(JsonNode node, String fieldName) {
+        val field = node.get(fieldName);
+        if (field == null || field.isNull()) {
+            return null;
+        }
+
+        try {
+            if (field.isNumber()) {
+                return field.decimalValue();
+            }
+            if (field.isTextual() && StringUtils.hasText(field.asText())) {
+                return new BigDecimal(field.asText());
+            }
+            return null;
+        } catch (NumberFormatException ex) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "CSDS field "
+                            + fieldName
+                            + " contained an invalid decimal value for "
+                            + datasetName(),
+                    ex);
+        }
     }
 
     protected final YesOrNo requiredYesOrNo(JsonNode node, String fieldName) {
@@ -254,7 +332,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     @Override
-    public final void apply(T processedData) {
+    public void apply(T processedData) {
         val diff = diff(processedData);
         logDiffSummary(diff);
         report(processedData, diff);

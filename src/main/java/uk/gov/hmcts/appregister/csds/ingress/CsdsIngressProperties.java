@@ -41,10 +41,7 @@ public class CsdsIngressProperties {
             return true;
         }
 
-        return StringUtils.hasText(baseUrl)
-                && StringUtils.hasText(accessKeyHeader)
-                && accessKeys.stream().anyMatch(StringUtils::hasText)
-                && leaseDuration != null
+        return leaseDuration != null
                 && !leaseDuration.isNegative()
                 && !leaseDuration.isZero()
                 && connectTimeout != null
@@ -56,12 +53,21 @@ public class CsdsIngressProperties {
                 && startupRunner != null
                 && processors != null
                 && processors.isConfigurationValid()
-                && pageSize > 0;
+                && pageSize > 0
+                && (!requiresRemoteAccess()
+                        || (StringUtils.hasText(baseUrl)
+                                && StringUtils.hasText(accessKeyHeader)
+                                && accessKeys.stream().anyMatch(StringUtils::hasText)));
     }
 
     private boolean isActive() {
         return startupRunner != null && startupRunner.isEnabled()
                 || processors != null && processors.hasEnabledProcessor();
+    }
+
+    private boolean requiresRemoteAccess() {
+        return startupRunner != null && startupRunner.isEnabled()
+                || processors != null && processors.hasEnabledProcessorWithoutMock();
     }
 
     @Getter
@@ -74,13 +80,29 @@ public class CsdsIngressProperties {
     @Setter
     public static class Processors {
         private ApplicationCodes applicationCodes = new ApplicationCodes();
+        private ResolutionCodes resolutionCodes = new ResolutionCodes();
+        private Fee fee = new Fee();
+        private StandardApplicants standardApplicants = new StandardApplicants();
 
         private boolean isConfigurationValid() {
-            return applicationCodes != null && applicationCodes.isConfigurationValid();
+            return applicationCodes.isConfigurationValid()
+                    && resolutionCodes.isConfigurationValid()
+                    && fee.isConfigurationValid()
+                    && standardApplicants.isConfigurationValid();
         }
 
         private boolean hasEnabledProcessor() {
-            return applicationCodes != null && applicationCodes.isEnabled();
+            return applicationCodes.isEnabled()
+                    || resolutionCodes.isEnabled()
+                    || fee.isEnabled()
+                    || standardApplicants.isEnabled();
+        }
+
+        private boolean hasEnabledProcessorWithoutMock() {
+            return applicationCodes.requiresRemoteAccess()
+                    || resolutionCodes.requiresRemoteAccess()
+                    || fee.requiresRemoteAccess()
+                    || standardApplicants.requiresRemoteAccess();
         }
     }
 
@@ -118,6 +140,10 @@ public class CsdsIngressProperties {
                             && StringUtils.hasText(tableName)
                             && StringUtils.hasText(primaryKey));
         }
+
+        protected boolean requiresRemoteAccess() {
+            return enabled && !StringUtils.hasText(mock);
+        }
     }
 
     @Getter
@@ -125,6 +151,30 @@ public class CsdsIngressProperties {
     public static class ApplicationCodes extends ProcessorProperties {
         public ApplicationCodes() {
             super("ApplicationCode", "application_codes", "ac_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class ResolutionCodes extends ProcessorProperties {
+        public ResolutionCodes() {
+            super("ResolutionCode", "resolution_codes_staging", "rc_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class Fee extends ProcessorProperties {
+        public Fee() {
+            super("CivilFee", "fee_staging", "fee_id");
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class StandardApplicants extends ProcessorProperties {
+        public StandardApplicants() {
+            super("DA_GetStandardApplicant", "standard_applicants_staging", "sa_id");
         }
     }
 }

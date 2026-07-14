@@ -100,9 +100,10 @@ appreg:
       enable-complex-diff: true
   csds:
     ingress:
-      base-url: ${CSDS_BASE_URL:https://csds.dev.apps.hmcts.net/api/rest}
+      base-url: ${CSDS_BASE_URL:http://noop}
       access-keys:
-      - ${CSDS_KEY_1:}
+      - ${CSDS_KEY_1:missing_1}
+      - ${CSDS_KEY_2:missing_2}
       access-key-header: Api-Key
       lease-duration: PT5M
       connect-timeout: PT10S
@@ -115,8 +116,32 @@ appreg:
           primary-key: ac_id
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ApplicationCodeID
-#          mock: csds/application_codesx.json
+#          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+        resolution-codes:
+          enabled: false
+          table-name: resolution_codes_staging
+          primary-key: rc_id
+          source-entity-name: ResolutionCode
+          parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ResolutionCodeID
+#          mock: csds/resolution_codes.json
+#          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
+        fee:
+          enabled: false
+          table-name: fee_staging
+          primary-key: fee_id
+          source-entity-name: CivilFee
+          parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
+#          mock: csds/fee.json
+#          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
+        standard-applicants:
+          enabled: false
+          table-name: standard_applicants_staging
+          primary-key: sa_id
+          source-entity-name: DA_GetStandardApplicant
+          parameters: ?%24f=PublishingStatus='Active'&%24f=CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
+#          mock: csds/standard_applicants.json
+#          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
   job:
     page-size: 10
   report:

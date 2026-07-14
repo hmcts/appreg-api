@@ -8,10 +8,12 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,8 +134,8 @@ class ApplicationCodeDataIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Retrieved 1 mock CSDS page for application_codes "
-                                                + "using page size 2 and reported count 200"));
+                                        "Loaded mock CSDS payload for application_codes "
+                                                + "with 200 records"));
     }
 
     @Test
@@ -240,15 +242,51 @@ class ApplicationCodeDataIngressProcessorTest {
         processor.apply(processor.preProcess(processedData));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=2, existing=2, inserts=1, updates=1, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=2, existing=2, inserts=1, updates=1"));
         assertThat(processorLogCaptor.getInfoLogs())
                 .anyMatch(
                         log ->
                                 log.contains(
                                         "CSDS ingress processor application_codes produced inserts=1, updates=1"));
+    }
+
+    @Test
+    void given_processedData_when_ingest_then_returnsAppliedSummary() {
+        var existingUpdated =
+                createApplicationCode(
+                        345L,
+                        "A2",
+                        "Title 2",
+                        "Wording 2",
+                        1L,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null);
+        var existingUnmatched =
+                createApplicationCode(
+                        4L,
+                        "A4",
+                        "Title 4",
+                        "Wording 4",
+                        1L,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null);
+        when(tableReadService.loadAll("application_codes", rowMapper))
+                .thenReturn(
+                        List.of(
+                                ApplicationCodeIngressRecord.fromEntity(existingUpdated),
+                                ApplicationCodeIngressRecord.fromEntity(existingUnmatched)));
+
+        List<JsonNode> processedData =
+                List.of(
+                        createPageResponse(
+                                createSourceRecordWithPssacid(
+                                        345L, 2L, "A2", "Updated Title", "Wording 2", 2L),
+                                createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L)));
+
+        var response = processor.ingest(processedData);
+
+        assertThat(response.getInserted()).isEqualTo(1);
+        assertThat(response.getUpdated()).isEqualTo(1);
     }
 
     @Test
@@ -464,10 +502,7 @@ class ApplicationCodeDataIngressProcessorTest {
                                                 345L, "A3", "Title 3", "Wording 3", 1L)))));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=1, existing=0, inserts=1, updates=0, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
     }
 
     @Test
@@ -485,10 +520,7 @@ class ApplicationCodeDataIngressProcessorTest {
                                                 345L, "A3", "Title 3", "Wording 3", 1L)))));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=1, existing=0, inserts=1, updates=0, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
     }
 
     @Test
@@ -502,10 +534,7 @@ class ApplicationCodeDataIngressProcessorTest {
         processor.apply(processor.preProcess(List.of(createPageResponse(sourceRecord))));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=1, existing=0, inserts=1, updates=0, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
     }
 
     @Test
@@ -525,8 +554,7 @@ class ApplicationCodeDataIngressProcessorTest {
                                 createSourceRecord(345L, "A3", "Title 3", "Wording 3", 1L),
                                 createSourceRecord(346L, "A4", "Title 4", "Wording 4", 1L)));
         var invalidRecord =
-                ((com.fasterxml.jackson.databind.node.ObjectNode)
-                        extractRecordsFromPage(processedData.getFirst()).getFirst());
+                ((ObjectNode) extractRecordsFromPage(processedData.getFirst()).getFirst());
         invalidRecord.remove("ApplicationTitle");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
@@ -560,7 +588,7 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_processedData_when_preProcess_then_addAcIdAndSortByIt() {
+    void given_processedData_when_preProcess_then_addAcIdAndPreserveIncomingOrder() {
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
@@ -574,12 +602,42 @@ class ApplicationCodeDataIngressProcessorTest {
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(record -> record.get("AC_ID").longValue())
                 .containsExactly(
+                        ApplicationCodeIngressRecord.calculateId(null, 3L),
                         ApplicationCodeIngressRecord.calculateId(null, 1L),
-                        ApplicationCodeIngressRecord.calculateId(null, 2L),
-                        ApplicationCodeIngressRecord.calculateId(null, 3L));
+                        ApplicationCodeIngressRecord.calculateId(null, 2L));
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(record -> record.get("ApplicationCodeID").longValue())
-                .containsExactly(1L, 2L, 3L);
+                .containsExactly(3L, 1L, 2L);
+    }
+
+    @Test
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addAcId() {
+        var record = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
+        record.remove(
+                List.of(
+                        "Notes",
+                        "AuthoringStatus",
+                        "PublishingStatus",
+                        "CurrentRecordIndicator",
+                        "DraftFinalExistsIndicator",
+                        "RevisionType",
+                        "RevisionDateFrom",
+                        "RevisionDateTo",
+                        "ClonedFrom",
+                        "PSSChangeSetHeaderID",
+                        "PSSChangeSetItemID",
+                        "FID_ApplicationRegisterHeader",
+                        "FID_ReleasePackage",
+                        "Updator"));
+
+        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+
+        assertThat(
+                        extractRecordsFromPage(preProcessed.getFirst())
+                                .getFirst()
+                                .get("AC_ID")
+                                .longValue())
+                .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
     }
 
     @Test
@@ -642,8 +700,7 @@ class ApplicationCodeDataIngressProcessorTest {
                 .build();
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createPageResponse(
-            com.fasterxml.jackson.databind.node.ObjectNode... records) {
+    private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
         for (var record : records) {
@@ -652,19 +709,18 @@ class ApplicationCodeDataIngressProcessorTest {
         return page;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createPageResponseWithMetadata(
-            int responseCode, com.fasterxml.jackson.databind.node.ObjectNode... records) {
+    private ObjectNode createPageResponseWithMetadata(int responseCode, ObjectNode... records) {
         var page = createPageResponse(records);
         page.put("responseCode", responseCode);
         return page;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecord(
+    private ObjectNode createSourceRecord(
             Long id, String code, String title, String wording, Long version) {
         return createSourceRecord(id, code, title, wording, version, "2020-01-01", null);
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecord(
+    private ObjectNode createSourceRecord(
             Long id,
             String code,
             String title,
@@ -714,15 +770,14 @@ class ApplicationCodeDataIngressProcessorTest {
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode
-            createSourceRecordWithoutApplicationCodeId(
-                    Long pssacid, String code, String title, String wording, Long version) {
+    private ObjectNode createSourceRecordWithoutApplicationCodeId(
+            Long pssacid, String code, String title, String wording, Long version) {
         var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
         record.put("PSSApplicationCodeID", pssacid);
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecordWithPssacid(
+    private ObjectNode createSourceRecordWithPssacid(
             Long pssacid,
             Long applicationCodeId,
             String code,
@@ -734,7 +789,7 @@ class ApplicationCodeDataIngressProcessorTest {
         return record;
     }
 
-    private com.fasterxml.jackson.databind.node.ObjectNode createSourceRecordWithPssacid(
+    private ObjectNode createSourceRecordWithPssacid(
             Long pssacid,
             String code,
             String title,
@@ -749,7 +804,7 @@ class ApplicationCodeDataIngressProcessorTest {
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {
         var records = page.get("records");
-        var extracted = new java.util.ArrayList<JsonNode>();
+        var extracted = new ArrayList<JsonNode>();
         records.forEach(extracted::add);
         return List.copyOf(extracted);
     }

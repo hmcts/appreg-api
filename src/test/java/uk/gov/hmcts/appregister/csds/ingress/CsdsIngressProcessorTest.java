@@ -1,16 +1,18 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,9 +50,10 @@ class CsdsIngressProcessorTest {
                         CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
 
         when(distributedJobLockService.tryAcquire(
-                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.of(lock));
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
         when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
         when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
         when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
         when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
@@ -82,8 +85,8 @@ class CsdsIngressProcessorTest {
                         List.of(dataIngressProcessor));
 
         when(distributedJobLockService.tryAcquire(
-                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.empty());
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.empty());
 
         var executed = processor.runIngress();
 
@@ -92,12 +95,50 @@ class CsdsIngressProcessorTest {
     }
 
     @Test
+    void given_processorDisabled_when_runIngress_then_skipsProcessorExecution() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(false);
+        when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
+        when(dataIngressProcessor.targetTable()).thenReturn("test_table");
+        when(dataIngressProcessor.targetKeyField()).thenReturn("test_id");
+
+        var executed = processor.runIngress();
+
+        assertThat(executed).isTrue();
+        verify(distributedJobLockService).release(lock);
+        verifyNoMoreInteractions(ingressClient);
+        verify(dataIngressProcessor).enabled();
+        assertThat(logCaptor.getInfoLogs())
+                .anyMatch(
+                        log ->
+                                log.contains(
+                                        "Skipping disabled CSDS ingress processor test-dataset"));
+    }
+
+    @Test
     void given_multipleProcessors_when_runIngress_then_renewsLeaseBetweenProcessors() {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(3));
         @SuppressWarnings("unchecked")
-        IDataIngressProcessor<String> secondProcessor =
-                org.mockito.Mockito.mock(IDataIngressProcessor.class);
+        IDataIngressProcessor<String> secondProcessor = mock(IDataIngressProcessor.class);
 
         var processor =
                 new CsdsIngressProcessor(
@@ -115,13 +156,15 @@ class CsdsIngressProcessorTest {
                         CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
 
         when(distributedJobLockService.tryAcquire(
-                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.of(lock));
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
         when(distributedJobLockService.renew(lock)).thenReturn(true);
         when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
         when(dataIngressProcessor.datasetName()).thenReturn("test-dataset-1");
         when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(firstRawJson);
         when(dataIngressProcessor.preProcess(firstRawJson)).thenReturn("processed-1");
+        when(secondProcessor.enabled()).thenReturn(true);
         when(secondProcessor.datasetName()).thenReturn("test-dataset-2");
         when(secondProcessor.retrieve(ingressClient)).thenReturn(secondRawJson);
         when(secondProcessor.preProcess(secondRawJson)).thenReturn("processed-2");
@@ -139,8 +182,7 @@ class CsdsIngressProcessorTest {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(3));
         @SuppressWarnings("unchecked")
-        IDataIngressProcessor<String> secondProcessor =
-                org.mockito.Mockito.mock(IDataIngressProcessor.class);
+        IDataIngressProcessor<String> secondProcessor = mock(IDataIngressProcessor.class);
         var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
         logCaptor.clearLogs();
 
@@ -160,14 +202,16 @@ class CsdsIngressProcessorTest {
                         CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
 
         when(distributedJobLockService.tryAcquire(
-                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME), eq(Duration.ofMinutes(3))))
-                .thenReturn(java.util.Optional.of(lock));
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
         when(distributedJobLockService.renew(lock)).thenReturn(true);
         when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
         when(dataIngressProcessor.datasetName()).thenReturn("test-dataset-1");
         when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(firstRawJson);
         when(dataIngressProcessor.preProcess(firstRawJson)).thenReturn("processed-1");
         doThrow(new IllegalStateException("boom")).when(dataIngressProcessor).apply("processed-1");
+        when(secondProcessor.enabled()).thenReturn(true);
         when(secondProcessor.datasetName()).thenReturn("test-dataset-2");
         when(secondProcessor.retrieve(ingressClient)).thenReturn(secondRawJson);
         when(secondProcessor.preProcess(secondRawJson)).thenReturn("processed-2");
