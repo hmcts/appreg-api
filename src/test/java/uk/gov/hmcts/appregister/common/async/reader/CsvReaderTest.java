@@ -63,6 +63,7 @@ class CsvReaderTest extends AbstractAsyncTest {
         Assertions.assertEquals(
                 "Number of data fields does not match number of headers.",
                 jobContext.getCommaDelimitedFailureMessage());
+        Assertions.assertTrue(jobContext.isFieldCountMismatch());
     }
 
     @Test

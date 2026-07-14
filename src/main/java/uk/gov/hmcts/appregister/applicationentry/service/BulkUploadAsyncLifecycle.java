@@ -105,6 +105,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     @Override
     public void validating(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
         List<BulkUploadRow> rows = event.getData();
+        JobContext context = event.getContext();
 
         log.info("Validating bulk upload for list {}", listId);
 
@@ -133,20 +134,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowNumber++;
         }
 
-        JobContext context = event.getContext();
-        List<String> errorMessages = context.getValidationFailureMessages();
-
-        // we're going to convert the existing message into a BulkUploadError object and log it to
-        // the job context as JSON for easier parsing later
-        for (String e : errorMessages) {
-            BulkUploadError bulkUploadError =
-                    new BulkUploadError(-1, BULK_UPLOAD_ROW, null, e, null, null, "HEADER_ERROR");
-            allErrors.addFirst(bulkUploadError);
-        }
-
-        // We will clear the existing errors in the context as the original errors have been added
-        // above
-        context.setValidationFailureMessages(new ArrayList<>());
+        addHeaderErrors(context, allErrors);
+        context.setFieldCountMismatch(false);
 
         if (!allErrors.isEmpty()) {
             logValidationFailure(context, allErrors);
@@ -157,6 +146,34 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
 
         log.warn("Bulk upload validation passed");
+    }
+
+    /**
+     * Formats field-count mismatches that occurred after the final validation callback, including
+     * mismatches where the reader could not produce any rows.
+     *
+     * @param event the failed lifecycle event containing the field-count mismatch
+     */
+    @Override
+    public void failed(AsyncJobLifecycleEvent<BulkUploadRow> event) {
+        JobContext context = event.getContext();
+        if (!context.isFieldCountMismatch() || !context.hasFailure()) {
+            return;
+        }
+
+        List<BulkUploadError> errors = new ArrayList<>();
+        addHeaderErrors(context, errors);
+        logValidationFailure(context, errors);
+    }
+
+    private static void addHeaderErrors(JobContext context, List<BulkUploadError> errors) {
+        for (String message : context.getValidationFailureMessages()) {
+            errors.addFirst(
+                    new BulkUploadError(
+                            -1, BULK_UPLOAD_ROW, null, message, null, null, "HEADER_ERROR"));
+        }
+
+        context.setValidationFailureMessages(new ArrayList<>());
     }
 
     private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {

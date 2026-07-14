@@ -158,6 +158,52 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
+    void givenFieldCountMismatchOnOnlyRow_whenJobPolled_thenReturnsStructuredHeaderError()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        String header =
+                "APPLICANT_CODE|RESP_TITLE|RESP_NAME_ORG|RESP_FORENAME1|RESP_FORENAME2"
+                        + "|RESP_FORENAME3|RESP_SURNAME|RESP_ADDLINE1|RESP_ADDLINE2"
+                        + "|RESP_ADDLINE3|RESP_ADDLINE4|RESP_ADDLINE5|RESP_POSTCODE"
+                        + "|RESP_EMAIL|RESP_TEL|RESP_MOBILE|ACCOUNT_NUMBER"
+                        + "|APPLICATION_CODE|APPLICATION_TEXT1|APPLICATION_TEXT2";
+        String malformedRow = String.join("|", java.util.Collections.nCopies(21, ""));
+
+        try (var file = tempCsv(header + "\n" + malformedRow + "\n")) {
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+
+            response.then().statusCode(202);
+            JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+
+            JobAcknowledgement completedJob =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient,
+                            getLocalUrl("jobs/" + acknowledgement.getId()),
+                            tokenGenerator.fetchTokenForRole());
+
+            Assertions.assertEquals(JobStatus1.FAILED, completedJob.getStatus());
+            assertThat(completedJob.getErrorDescription())
+                    .isEqualTo(
+                            "[{\"rowNumber\":-1,\"location\":\"BULK_UPLOAD_ROW\","
+                                    + "\"rejectedValue\":null,\"message\":\"Number of data fields "
+                                    + "does not match number of headers.\",\"addressLine1\":null,"
+                                    + "\"name\":null,\"errorType\":\"HEADER_ERROR\"}]")
+                    .doesNotContain("Failed to process job");
+            Assertions.assertEquals(0, countEntriesForList(listId));
+        }
+    }
+
+    @Test
     void givenMissingApplicationList_whenBulkUploadApplicationListEntries_thenReturns404()
             throws Exception {
         TokenAndJwksKey token = createAdminToken().fetchTokenForRole();

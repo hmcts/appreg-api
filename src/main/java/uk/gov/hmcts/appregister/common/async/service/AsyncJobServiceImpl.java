@@ -239,8 +239,9 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                 log.error("Error calling failure lifecycle", e);
             }
 
-            // if this is a job exception then log the error
-            if (t instanceof JobException) {
+            // Field-count mismatches have already been formatted by the lifecycle. Do not append
+            // the generic job failure message.
+            if (t instanceof JobException && !jobContext.isFieldCountMismatch()) {
                 jobContext.logFailure(t.getMessage());
             }
 
