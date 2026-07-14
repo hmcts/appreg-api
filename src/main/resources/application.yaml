@@ -111,13 +111,13 @@ appreg:
       page-size: 100
       processors:
         application-codes:
-          enabled: true
+          enabled: false
           table-name: application_codes_staging
           primary-key: ac_id
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicationCodeID
 #          mock: csds/application_codes.json
-          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
           enabled: false
           table-name: resolution_codes_staging
@@ -125,7 +125,7 @@ appreg:
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json
-          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
         fee:
           enabled: false
           table-name: fee_staging
@@ -133,7 +133,7 @@ appreg:
           source-entity-name: CivilFee
           parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
 #          mock: csds/fee.json
-          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
         standard-applicants:
           enabled: false
           table-name: standard_applicants_staging
@@ -141,7 +141,7 @@ appreg:
           source-entity-name: DA_GetStandardApplicant
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json
-          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
         national-court-houses:
           enabled: false
           table-name: national_court_houses_staging
@@ -149,7 +149,7 @@ appreg:
           source-entity-name: Court
           parameters: ?%24expr=Updator&%24f=CourtHearingOperationAreaIndicator='true'%20AND%20PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24orderBy=CourtID
 #          mock: csds/national_court_houses.json
-          reporting-dir: ${CSDS_NATIONAL_COURT_HOUSES_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_NATIONAL_COURT_HOUSES_REPORTING_DIR:}
   job:
     page-size: 10
   report:
