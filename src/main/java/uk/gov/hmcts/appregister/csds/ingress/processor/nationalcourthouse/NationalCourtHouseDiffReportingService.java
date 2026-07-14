@@ -14,6 +14,8 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 @Component
 public class NationalCourtHouseDiffReportingService
         extends AbstractIngressDiffReportingService<NationalCourtHouseIngressRecord> {
+    private static final String NCH_ID = "NCH_ID";
+
     private final String reportingDir;
 
     public NationalCourtHouseDiffReportingService(CsdsIngressProperties properties) {
@@ -57,10 +59,10 @@ public class NationalCourtHouseDiffReportingService
         var incomingRecordsByNchId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, "NCH_ID") != null)
+                        .filter(item -> nullableLong(item, NCH_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, "NCH_ID"),
+                                        item -> nullableLong(item, NCH_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -80,23 +82,21 @@ public class NationalCourtHouseDiffReportingService
 
     @Override
     protected String buildExistingCsv(Map<Long, NationalCourtHouseIngressRecord> existingById) {
-        var csv = new StringBuilder(csvHeader());
-        existingById.values().stream()
-                .sorted(Comparator.comparing(NationalCourtHouseIngressRecord::id))
-                .map(this::toExistingCsvRow)
-                .forEach(csv::append);
-        return csv.toString();
+        return buildCsv(
+                csvHeader(),
+                existingById.values().stream()
+                        .sorted(Comparator.comparing(NationalCourtHouseIngressRecord::id))
+                        .map(this::toExistingCsvRow));
     }
 
     @Override
     protected String buildIncomingCsv(
             List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var csv = new StringBuilder(csvHeader());
-        processedData.stream()
-                .flatMap(page -> recordsExtractor.apply(page).stream())
-                .map(this::toIncomingCsvRow)
-                .forEach(csv::append);
-        return csv.toString();
+        return buildCsv(
+                csvHeader(),
+                processedData.stream()
+                        .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .map(this::toIncomingCsvRow));
     }
 
     private String csvHeader() {
@@ -114,7 +114,7 @@ public class NationalCourtHouseDiffReportingService
                         ",",
                         csvValue(nullableLong(node, "PSSNationalCourtHouseID")),
                         csvValue(nullableLong(node, "CourtID")),
-                        csvValue(nullableLong(node, "NCH_ID")),
+                        csvValue(nullableLong(node, NCH_ID)),
                         csvValue(nullableText(node, "CourtName")),
                         csvValue(nullableText(node, "CourtWelshName")),
                         csvValue(nullableText(node, "CourtLocationCode")),

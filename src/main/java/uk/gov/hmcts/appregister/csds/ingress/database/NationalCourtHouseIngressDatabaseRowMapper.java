@@ -42,7 +42,8 @@ public class NationalCourtHouseIngressDatabaseRowMapper
                     COURT_LOCATION_CODE,
                     WELSH_NAME,
                     ORGANISATION_ID);
-    private static final List<String> UPDATABLE_COLUMNS = COLUMNS.subList(1, COLUMNS.size());
+    private static final Map<String, String> TIMESTAMP_EXPRESSION =
+            Map.of(CHANGED_DATE, "current_timestamp");
 
     @Override
     public List<String> columns() {
@@ -50,18 +51,8 @@ public class NationalCourtHouseIngressDatabaseRowMapper
     }
 
     @Override
-    public List<String> updatableColumns() {
-        return UPDATABLE_COLUMNS;
-    }
-
-    @Override
     public Map<String, String> insertExpressions() {
-        return Map.of(CHANGED_DATE, "current_timestamp");
-    }
-
-    @Override
-    public Map<String, String> updateExpressions() {
-        return Map.of(CHANGED_DATE, "current_timestamp");
+        return TIMESTAMP_EXPRESSION;
     }
 
     @Override
