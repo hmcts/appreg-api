@@ -115,7 +115,7 @@ appreg:
           table-name: application_codes_staging
           primary-key: ac_id
           source-entity-name: ApplicationCode
-          parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ApplicationCodeID
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicationCodeID
 #          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
@@ -123,7 +123,7 @@ appreg:
           table-name: resolution_codes_staging
           primary-key: rc_id
           source-entity-name: ResolutionCode
-          parameters: ?%24f=PublishingStatus='Active'&%24expr=Updator&%24orderBy=ResolutionCodeID
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json
 #          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
         fee:
@@ -139,9 +139,17 @@ appreg:
           table-name: standard_applicants_staging
           primary-key: sa_id
           source-entity-name: DA_GetStandardApplicant
-          parameters: ?%24f=PublishingStatus='Active'&%24f=CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json
 #          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
+        national-court-houses:
+          enabled: false
+          table-name: national_court_houses_staging
+          primary-key: nch_id
+          source-entity-name: Court
+          parameters: ?%24expr=Updator&%24f=CourtHearingOperationAreaIndicator='true'%20AND%20PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24orderBy=CourtID
+#          mock: csds/national_court_houses.json
+#          reporting-dir: ${CSDS_NATIONAL_COURT_HOUSES_REPORTING_DIR:}
   job:
     page-size: 10
   report:
