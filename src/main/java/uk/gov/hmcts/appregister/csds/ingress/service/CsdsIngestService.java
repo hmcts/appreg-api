@@ -29,8 +29,6 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 @RequiredArgsConstructor
 @Slf4j
 public class CsdsIngestService {
-    static final long MAX_FILE_SIZE_BYTES = 1024L * 1024;
-
     private final List<IDataIngressProcessor<?>> processors;
     private final DistributedJobLockService distributedJobLockService;
     private final CsdsIngressProperties csdsIngressProperties;
@@ -97,11 +95,6 @@ public class CsdsIngestService {
             throw new AppRegistryException(
                     CsdsIngestError.FILE_MISSING,
                     "CSDS ingest file must be provided and not empty");
-        }
-
-        if (file.getSize() > MAX_FILE_SIZE_BYTES) {
-            throw new AppRegistryException(
-                    CsdsIngestError.FILE_TOO_LARGE, "CSDS ingest file must not be larger than 1MB");
         }
     }
 

@@ -1,11 +1,18 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -19,6 +26,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -27,6 +35,11 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
  */
 @Component
 public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
+
+    private final ApplicationCodeRepository applicationCodeRepository;
+    private final ApplicationFeeService feeService;
+    private final BusinessDateProvider businessDateProvider;
+    private final StandardApplicantRepository standardApplicantRepository;
 
     public BulkCreateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
@@ -40,6 +53,10 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
                 feeService,
                 businessDateProvider,
                 standardApplicantRepository);
+        this.applicationCodeRepository = applicationCodeRepository;
+        this.feeService = feeService;
+        this.businessDateProvider = businessDateProvider;
+        this.standardApplicantRepository = standardApplicantRepository;
     }
 
     @Override
@@ -47,8 +64,56 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
         return false;
     }
 
-    public void validateApplicationList(UUID applicationListUuid) {
-        validateParentApplicationList(applicationListUuid);
+    public ApplicationList validateApplicationList(UUID applicationListUuid) {
+        return validateParentApplicationList(applicationListUuid);
+    }
+
+    /** Creates one reference-data cache for a single import job. */
+    public Session createSession(ApplicationList applicationList) {
+        var businessDate = businessDateProvider.currentUkDate();
+        var applicationCodes =
+                applicationCodeRepository.findAllByDate(businessDate).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        code -> normalise(code.getCode()),
+                                        LinkedHashMap::new,
+                                        Collectors.toList()))
+                        .entrySet()
+                        .stream()
+                        .collect(
+                                Collectors.toUnmodifiableMap(
+                                        Map.Entry::getKey,
+                                        entry ->
+                                                ReferenceDataSelectionUtil
+                                                        .selectFirstOrderedActiveRecord(
+                                                                entry.getValue(),
+                                                                "application code",
+                                                                entry.getKey(),
+                                                                businessDate,
+                                                                ApplicationCode::getEndDate)));
+        var standardApplicants =
+                standardApplicantRepository.findAllByDate(businessDate).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        applicant -> normalise(applicant.getApplicantCode()),
+                                        LinkedHashMap::new,
+                                        Collectors.toList()))
+                        .entrySet()
+                        .stream()
+                        .collect(
+                                Collectors.toUnmodifiableMap(
+                                        Map.Entry::getKey,
+                                        entry ->
+                                                ReferenceDataSelectionUtil
+                                                        .selectFirstOrderedActiveRecord(
+                                                                entry.getValue(),
+                                                                "standard applicant",
+                                                                entry.getKey(),
+                                                                businessDate,
+                                                                StandardApplicant
+                                                                        ::getApplicantEndDate)));
+
+        return new Session(applicationList, applicationCodes, standardApplicants);
     }
 
     @Override
@@ -115,4 +180,78 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
                         })
                 .toList();
     }
+
+    private static String normalise(String value) {
+        return StringUtils.lowerCase(value, Locale.ROOT);
+    }
+
+    /** Job-scoped validation state. A session is confined to one async lifecycle. */
+    public final class Session {
+        private final ApplicationList applicationList;
+        private final Map<String, ApplicationCode> applicationCodes;
+        private final Map<String, StandardApplicant> standardApplicants;
+        private final Map<FeeLookup, FeePair> fees = new HashMap<>();
+
+        private Session(
+                ApplicationList applicationList,
+                Map<String, ApplicationCode> applicationCodes,
+                Map<String, StandardApplicant> standardApplicants) {
+            this.applicationList = applicationList;
+            this.applicationCodes = applicationCodes;
+            this.standardApplicants = standardApplicants;
+        }
+
+        /** Validates one row without repeating application-list or reference-data queries. */
+        public <R> R validate(
+                PayloadForCreate<EntryCreateDto> validatable,
+                BiFunction<
+                                PayloadForCreate<EntryCreateDto>,
+                                CreateApplicationEntryValidationSuccess,
+                                R>
+                        validateSuccess) {
+            return validateUsing(
+                    validatable,
+                    validateSuccess,
+                    ignored -> applicationList,
+                    this::standardApplicant,
+                    this::applicationCode,
+                    this::fee);
+        }
+
+        private StandardApplicant standardApplicant(PayloadForCreate<EntryCreateDto> validatable) {
+            var applicantCode = validatable.getData().getStandardApplicantCode();
+            if (applicantCode == null) {
+                return null;
+            }
+
+            var applicant = standardApplicants.get(normalise(applicantCode));
+            if (applicant == null) {
+                throw new AppRegistryException(
+                        AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
+                        "The standard applicant does not exist %s".formatted(applicantCode));
+            }
+            return applicant;
+        }
+
+        private ApplicationCode applicationCode(PayloadForCreate<EntryCreateDto> validatable) {
+            var requestedCode = validatable.getData().getApplicationCode();
+            var applicationCode = applicationCodes.get(normalise(requestedCode));
+            if (applicationCode == null) {
+                throw new AppRegistryException(
+                        AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
+                        "No valid code can be found %s".formatted(requestedCode));
+            }
+            return applicationCode;
+        }
+
+        private FeePair fee(
+                ApplicationCode applicationCode, PayloadForCreate<EntryCreateDto> validatable) {
+            var lookup =
+                    new FeeLookup(applicationCode.getFeeReference(), getLodgementDate(validatable));
+            return fees.computeIfAbsent(
+                    lookup, key -> feeService.resolveFeePair(key.reference(), key.lodgementDate()));
+        }
+    }
+
+    private record FeeLookup(String reference, LocalDate lodgementDate) {}
 }
