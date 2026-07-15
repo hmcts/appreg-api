@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
@@ -154,6 +155,18 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                     .contains("\"location\":\"APPLICATION_CODE\"")
                     .contains("ZZ99999");
             Assertions.assertEquals(0, countEntriesForList(listId));
+
+            var csvResponse = restAssuredClient
+                .executeGetRequest(getLocalUrl("reports/jobs/" + acknowledgement.getId() + "/download"),
+                                   tokenGenerator.fetchTokenForRole());
+
+            Assertions.assertEquals(200, csvResponse.getStatusCode());
+
+            String errorCSV = csvResponse.getBody().asString();
+
+            Assertions.assertNotNull(errorCSV);
+            Assertions.assertFalse(errorCSV.isBlank());
+            Assertions.assertTrue(errorCSV.contains("No valid code can be found ZZ99999"));
         }
     }
 
@@ -200,6 +213,18 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                                     + "\"name\":null,\"errorType\":\"HEADER_ERROR\"}]")
                     .doesNotContain("Failed to process job");
             Assertions.assertEquals(0, countEntriesForList(listId));
+
+            var csvResponse = restAssuredClient
+                .executeGetRequest(getLocalUrl("reports/jobs/" + acknowledgement.getId() + "/download"),
+                                   tokenGenerator.fetchTokenForRole());
+
+            Assertions.assertEquals(200, csvResponse.getStatusCode());
+
+            String errorCSV = csvResponse.getBody().asString();
+
+            Assertions.assertNotNull(errorCSV);
+            Assertions.assertFalse(errorCSV.isBlank());
+            Assertions.assertTrue(errorCSV.contains("Number of data fields does not match number of headers"));
         }
     }
 
