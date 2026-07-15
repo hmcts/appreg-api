@@ -332,6 +332,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
+        //We can safely delete the temporary CSV file after the first processing pass, as the validated rows are already stored in memory.
+        if (csvFile != null && csvFile.exists()) {
+            Files.delete(csvFile.getAbsoluteFile().toPath());
+        }
+
         JobContext context = event.getContext();
 
         log.debug("Processing bulk-upload page for list {}", listId);
