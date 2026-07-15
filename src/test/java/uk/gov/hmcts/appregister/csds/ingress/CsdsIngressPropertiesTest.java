@@ -65,6 +65,22 @@ class CsdsIngressPropertiesTest {
         assertThat(properties.isConfigurationValid()).isFalse();
     }
 
+    @Test
+    void given_standardApplicantsProcessorDefaults_when_validate_then_usesStagingTable() {
+        var properties = baseProperties();
+
+        assertThat(properties.getProcessors().getStandardApplicants().getTableName())
+                .isEqualTo("standard_applicants_staging");
+    }
+
+    @Test
+    void given_nationalCourtHousesProcessorDefaults_when_validate_then_usesStagingTable() {
+        var properties = baseProperties();
+
+        assertThat(properties.getProcessors().getNationalCourtHouses().getTableName())
+                .isEqualTo("national_court_houses_staging");
+    }
+
     private CsdsIngressProperties baseProperties() {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(5));

@@ -6,11 +6,15 @@ import java.util.Map;
 public interface IngressDatabaseRowMapper<T> {
     List<String> columns();
 
-    List<String> updatableColumns();
+    default List<String> updatableColumns() {
+        return columns().subList(1, columns().size());
+    }
 
     Map<String, String> insertExpressions();
 
-    Map<String, String> updateExpressions();
+    default Map<String, String> updateExpressions() {
+        return insertExpressions();
+    }
 
     Map<String, Object> toRow(T item);
 }

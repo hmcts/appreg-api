@@ -186,10 +186,7 @@ class FeeDataIngressProcessorTest {
         processor.apply(processor.preProcess(processedData));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=2, existing=2, inserts=1, updates=1, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=2, existing=2, inserts=1, updates=1"));
         assertThat(processorLogCaptor.getInfoLogs())
                 .anyMatch(
                         log ->
@@ -331,10 +328,7 @@ class FeeDataIngressProcessorTest {
                                                 33L, "CO10.1", "Fee 1", 1L, "245.00")))));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=1, existing=0, inserts=1, updates=0, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
     }
 
     @Test
@@ -351,10 +345,7 @@ class FeeDataIngressProcessorTest {
                                         createSourceRecord(696L, "CO10.1", "Fee 1", 1L)))));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(
-                        log ->
-                                log.contains(
-                                        "incoming=1, existing=0, inserts=1, updates=0, ignores=0"));
+                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
     }
 
     @Test

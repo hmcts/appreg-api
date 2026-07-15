@@ -7,6 +7,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
@@ -65,22 +66,11 @@ public interface ApplicationEntryService {
      *
      * @param entryCreateDto The entry create dto with an id representing the list
      * @return The entry get detail inside of a match response which contains an etag
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException Data is validated
-     *     for:- - The application list found and/or in the correct state - The application code is
-     *     expecting a fee and it is provided - Suitable Applicants is expected - Suitable
-     *     Respondent is expected ......
+     * @throws AppRegistryException Data is validated for:- - The application list found and/or in
+     *     the correct state - The application code is expecting a fee and it is provided - Suitable
+     *     Applicants is expected - Suitable Respondent is expected ......
      */
     MatchResponse<EntryGetDetailDto> createEntry(PayloadForCreate<EntryCreateDto> entryCreateDto);
-
-    /**
-     * Creates an application entry from a bulk upload row. Bulk upload rows do not include fee
-     * status details.
-     *
-     * @param entryCreateDto The entry create dto with an id representing the list
-     * @return The entry get detail inside of a match response which contains an etag
-     */
-    MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto, UUID jobId);
 
     /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,
@@ -89,10 +79,9 @@ public interface ApplicationEntryService {
      *
      * @param updateEntry The entry update data that representing the list data to be update
      * @return The entry get detail inside of a match response which contains an etag
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException Data is validated
-     *     for:- - The application list found and/or in the correct state - The application code is
-     *     expecting a fee and it is provided - Suitable Applicants is expected - Suitable
-     *     Respondent is expected ......
+     * @throws AppRegistryException Data is validated for:- - The application list found and/or in
+     *     the correct state - The application code is expecting a fee and it is provided - Suitable
+     *     Applicants is expected - Suitable Respondent is expected ......
      */
     MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry);
 
@@ -101,10 +90,9 @@ public interface ApplicationEntryService {
      *
      * @param updateEntry The entry update data that representing the list data to be update
      * @return The match response with no data but an etag for concurrency control.
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException Data is validated
-     *     for:- - The application list found and/or in the correct state - The application code is
-     *     expecting a fee and it is provided - Suitable Applicants is expected - Suitable
-     *     Respondent is expected ......
+     * @throws AppRegistryException Data is validated for:- - The application list found and/or in
+     *     the correct state - The application code is expecting a fee and it is provided - Suitable
+     *     Applicants is expected - Suitable Respondent is expected ......
      */
     MatchResponse<Void> updateClosedEntry(PayloadForUpdateClosedEntry updateEntry);
 
@@ -160,8 +148,8 @@ public interface ApplicationEntryService {
      *
      * @param listId the identifier of the source Application List that currently owns the entries.
      * @param moveEntriesDto details of the destination list and the entries to be moved.
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
-     *     or the associated target ApplicationList entity is not found
+     * @throws AppRegistryException if validation fails, or the associated target ApplicationList
+     *     entity is not found
      */
     void move(UUID listId, MoveEntriesDto moveEntriesDto);
 
@@ -169,8 +157,8 @@ public interface ApplicationEntryService {
      * Soft deletes an application entry.
      *
      * @param idToDelete The id to delete. This contains the list if and the entry id.
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
-     *     or the associated target ApplicationList entity is not found
+     * @throws AppRegistryException if validation fails, or the associated target ApplicationList
+     *     entity is not found
      */
     void deleteEntry(PayloadForDeleteEntry idToDelete);
 

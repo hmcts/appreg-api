@@ -34,3 +34,4 @@ applicationinsights-agent-*.jar
 
 /*.hprof
 /appreg-csds-ingress/
+/temp/
