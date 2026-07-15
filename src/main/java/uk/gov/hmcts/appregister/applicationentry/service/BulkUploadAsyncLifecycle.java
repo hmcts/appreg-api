@@ -1,15 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
@@ -28,6 +20,31 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -82,6 +99,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private final ApplicationListEntryMapper mapper;
     private final Validator beanValidator;
 
+    private File csvFile;
+
     /**
      * Validates uploaded rows before processing starts and records row-level failures in the job
      * context.
@@ -128,6 +147,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         if (!allErrors.isEmpty()) {
             logValidationFailure(context, allErrors);
+            saveErrorCSV(allErrors, event);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
             throw new AppRegistryException(
                     AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
@@ -153,6 +173,17 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         List<BulkUploadError> errors = new ArrayList<>();
         addHeaderErrors(context, errors);
         logValidationFailure(context, errors);
+    }
+
+    public void setCSVFile(MultipartFile file) throws IOException {
+        Path tempcsvPath = File.createTempFile(UUID.randomUUID().toString(), ".csv").toPath();
+
+        // We're copying the file over to a temp file.
+        try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath, StandardCharsets.UTF_8)) {
+            writer.write(new String(file.getBytes(), StandardCharsets.UTF_8));
+        }
+
+        csvFile = new File(tempcsvPath.toString());
     }
 
     private static void addHeaderErrors(JobContext context, List<BulkUploadError> errors) {
@@ -332,5 +363,49 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
 
         return "%s %s".formatted(fullName.getFirstName(), fullName.getLastName());
+    }
+
+    private void saveErrorCSV(List<BulkUploadError> errors, AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
+            String line;
+
+            StringBuilder builder = new StringBuilder();
+
+            String header = reader.readLine();
+
+            if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
+                for(BulkUploadError bulkUploadError : errors) {
+                    if (bulkUploadError.getRowNumber() == -1) {
+                        builder.append(header).append("|").append(bulkUploadError.getMessage()).append("\n");
+                    }
+                }
+            } else {
+                builder.append(header).append("|").append("\n");
+            }
+
+            int rowCount = 2;
+
+            while((line = reader.readLine()) != null) {
+                int finalRowCount = rowCount;
+                if(errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
+                    List<BulkUploadError> rowErrors = errors.stream()
+                            .filter(e -> e.getRowNumber() == finalRowCount).toList();
+                    builder.append(line);
+                    for (BulkUploadError error : rowErrors) {
+                        builder.append("|").append(error.getMessage());
+                    }
+                    builder.append("\n");
+                } else {
+                    builder.append(line).append("|").append("\n");
+                }
+                rowCount++;
+            }
+            InputStream inputStream = new ByteArrayInputStream(
+                builder.toString().getBytes(StandardCharsets.UTF_8)
+            );
+            event.getResponse().write(inputStream);
+        } finally {
+            Files.delete(csvFile.getAbsoluteFile().toPath());
+        }
     }
 }
