@@ -346,7 +346,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenResultSelected_whenBulkActionPreview_thenOnlyOpenEntriesAreEligible()
+    void givenResultSelected_whenBulkActionPreview_thenReturnAllEntriesAndCountClosedIneligible()
             throws Exception {
         ApplicationList openList = createAndSaveList(Status.OPEN);
         ApplicationListEntry openEntry = createEntry(openList);
@@ -370,13 +370,11 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         Assertions.assertEquals(2, response.getSelectedCount());
         Assertions.assertEquals(1, response.getEligibleCount());
         Assertions.assertEquals(1, response.getIneligibleCount());
-        Assertions.assertEquals(List.of(openEntry.getUuid()), response.getEntryIds());
+        assertThat(response.getEntryIds())
+                .containsExactlyInAnyOrder(openEntry.getUuid(), closedEntry.getUuid());
         assertThat(response.getEntries())
                 .extracting(EntryGetSummaryDto::getId)
-                .containsExactly(openEntry.getUuid());
-        assertThat(response.getEntries())
-                .extracting(EntryGetSummaryDto::getId)
-                .doesNotContain(closedEntry.getUuid());
+                .containsExactlyInAnyOrder(openEntry.getUuid(), closedEntry.getUuid());
     }
 
     @Test
@@ -603,7 +601,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
     @Test
     void
-            givenResultSelectedForClosedApplicationList_whenApplicationListBulkActionPreview_thenReturnNoEligibleEntries()
+            givenResultSelectedForClosedApplicationList_whenApplicationListBulkActionPreview_thenReturnEntryAndCountIneligible()
                     throws Exception {
         ApplicationList closedList = createAndSaveList(Status.CLOSED);
 
@@ -625,9 +623,10 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
         Assertions.assertEquals(1, response.getSelectedCount());
         Assertions.assertEquals(0, response.getEligibleCount());
         Assertions.assertEquals(1, response.getIneligibleCount());
-        assertThat(response.getEntryIds()).isEmpty();
-        assertThat(response.getEntryIds()).doesNotContain(closedEntry.getUuid());
-        assertThat(response.getEntries()).isEmpty();
+        assertThat(response.getEntryIds()).containsExactly(closedEntry.getUuid());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .containsExactly(closedEntry.getUuid());
     }
 
     @Test

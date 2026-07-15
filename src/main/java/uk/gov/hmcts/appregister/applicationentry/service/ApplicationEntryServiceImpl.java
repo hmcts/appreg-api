@@ -370,22 +370,22 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private BulkActionPreviewEligibility resolveBulkActionPreviewEligibility(
             BulkActionType action, BulkActionPreviewResolution resolution) {
         if (action != BulkActionType.RESULT_SELECTED) {
-            return new BulkActionPreviewEligibility(resolution.entryIds(), resolution.entries());
+            return new BulkActionPreviewEligibility(
+                    resolution.entryIds(), resolution.entries(), resolution.entryIds().size());
         }
 
-        List<EntryGetSummaryDto> eligibleEntries =
-                resolution.entries().stream().filter(this::isResultSelectedEligible).toList();
+        int eligibleCount =
+                Math.toIntExact(
+                        resolution.entries().stream()
+                                .filter(this::isResultSelectedEligible)
+                                .count());
 
         return new BulkActionPreviewEligibility(
-                toEntryIdsFromSummaries(eligibleEntries), eligibleEntries);
+                resolution.entryIds(), resolution.entries(), eligibleCount);
     }
 
     private boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
         return entry.getStatus() == ApplicationListStatus.OPEN;
-    }
-
-    private List<UUID> toEntryIdsFromSummaries(List<EntryGetSummaryDto> entries) {
-        return entries.stream().map(EntryGetSummaryDto::getId).toList();
     }
 
     private BulkActionPreviewResolution resolveFilterBulkActionPreview(
@@ -2145,9 +2145,5 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             int selectedCount, List<UUID> entryIds, List<EntryGetSummaryDto> entries) {}
 
     private record BulkActionPreviewEligibility(
-            List<UUID> entryIds, List<EntryGetSummaryDto> entries) {
-        int eligibleCount() {
-            return entryIds.size();
-        }
-    }
+            List<UUID> entryIds, List<EntryGetSummaryDto> entries, int eligibleCount) {}
 }

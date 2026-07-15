@@ -3330,7 +3330,8 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void given_resultSelectedClosedEntries_when_bulkActionPreview_then_returnOnlyOpenEntries() {
+    void
+            given_resultSelectedClosedEntries_when_bulkActionPreview_then_returnAllEntriesAndCountClosedIneligible() {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
         UUID openEntryId = UUID.randomUUID();
         UUID closedEntryId = UUID.randomUUID();
@@ -3356,9 +3357,8 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(2, response.getSelectedCount());
         Assertions.assertEquals(1, response.getEligibleCount());
         Assertions.assertEquals(1, response.getIneligibleCount());
-        Assertions.assertEquals(List.of(openEntryId), response.getEntryIds());
-        Assertions.assertEquals(List.of(openSummary), response.getEntries());
-        Assertions.assertFalse(response.getEntries().contains(closedSummary));
+        Assertions.assertEquals(List.of(openEntryId, closedEntryId), response.getEntryIds());
+        Assertions.assertEquals(List.of(openSummary, closedSummary), response.getEntries());
     }
 
     @Test
