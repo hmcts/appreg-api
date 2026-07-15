@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
+import uk.gov.hmcts.appregister.applicationentry.service.BulkImportService;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadCsvFormatValidator;
@@ -39,6 +40,7 @@ import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
@@ -52,14 +54,13 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
-import uk.gov.hmcts.appregister.job.service.JobService;
 
 class ApplicationEntryControllerTest {
     private final ApplicationEntryService applicationEntryService =
             mock(ApplicationEntryService.class);
+    private final BulkImportService bulkImportService = mock(BulkImportService.class);
     private final PageableMapper pageableMapper = mock(PageableMapper.class);
     private final AsyncJobService asyncJobService = mock(AsyncJobService.class);
-    private final JobService jobService = mock(JobService.class);
     private final UserProvider userProvider = mock(UserProvider.class);
     private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator =
             mock(BulkUploadApplicationEntryValidator.class);
@@ -74,9 +75,9 @@ class ApplicationEntryControllerTest {
     private final ApplicationEntryController controller =
             new ApplicationEntryController(
                     applicationEntryService,
+                    bulkImportService,
                     pageableMapper,
                     asyncJobService,
-                    jobService,
                     userProvider,
                     bulkUploadApplicationEntryValidator,
                     bulkCreateApplicationEntryValidator,
@@ -169,6 +170,8 @@ class ApplicationEntryControllerTest {
         when(file.isEmpty()).thenReturn(false);
         when(file.getInputStream()).thenReturn(new ByteArrayInputStream("HEADER\n".getBytes()));
         doNothing().when(bulkUploadCsvFormatValidator).validate(file);
+        when(bulkCreateApplicationEntryValidator.validateApplicationList(listId))
+                .thenReturn(new ApplicationList());
         when(userProvider.getUserId()).thenReturn("user-1");
         var jobStatus =
                 JobStatusResponse.builder()
@@ -190,23 +193,29 @@ class ApplicationEntryControllerTest {
                             }
                         })
                 .when(asyncJobService)
-                .startJob(any(), anyBulkUploadRowDataReader(), anyBulkUploadRowAsyncJobLifecycle());
+                .startValidationFirstJob(
+                        any(),
+                        anyBulkUploadRowDataReader(),
+                        anyBulkUploadRowAsyncJobLifecycle(),
+                        eq(25));
         var acknowledgement =
                 new JobAcknowledgement()
                         .id(jobId)
                         .type(JobType.BULK_UPLOAD_ENTRIES)
                         .status(JobStatus1.RECEIVED);
-        when(jobService.getJobAckById(any())).thenReturn(acknowledgement);
-
         ResponseEntity<JobAcknowledgement> response =
                 controller.bulkUploadApplicationListEntries(listId, file);
 
         verify(bulkUploadCsvFormatValidator).validate(file);
+        verify(bulkCreateApplicationEntryValidator).validateApplicationList(listId);
         verify(asyncJobService)
-                .startJob(any(), anyBulkUploadRowDataReader(), anyBulkUploadRowAsyncJobLifecycle());
-        verify(jobService).getJobAckById(any());
+                .startValidationFirstJob(
+                        any(),
+                        anyBulkUploadRowDataReader(),
+                        anyBulkUploadRowAsyncJobLifecycle(),
+                        eq(25));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-        assertThat(response.getBody()).isSameAs(acknowledgement);
+        assertThat(response.getBody()).isEqualTo(acknowledgement);
         assertThat(response.getHeaders().getFirst("Location")).isEqualTo("/jobs/" + jobId);
         assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
     }

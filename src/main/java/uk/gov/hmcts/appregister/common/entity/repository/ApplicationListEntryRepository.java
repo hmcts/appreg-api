@@ -25,6 +25,12 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
+    interface EntryIdAndUuid {
+        Long getId();
+
+        UUID getUuid();
+    }
+
     interface ApplicationCodeReferenceCount {
         Long getApplicationCodeId();
 
@@ -60,6 +66,10 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @return The application, if found and accessible
      */
     List<ApplicationListEntry> findByApplicationListId(Long listId);
+
+    @Query(
+            "SELECT entry.id AS id, entry.uuid AS uuid FROM ApplicationListEntry entry WHERE entry.id IN :ids")
+    List<EntryIdAndUuid> findIdsAndUuidsByIdIn(@Param("ids") Collection<Long> ids);
 
     /**
      * Finds all applications with the given IDs that are accessible to a specific user. Only

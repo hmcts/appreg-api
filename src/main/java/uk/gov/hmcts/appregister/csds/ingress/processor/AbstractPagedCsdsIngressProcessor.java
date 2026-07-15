@@ -51,6 +51,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
             }
         }
 
+        if (!usesCountEndpoint()) {
+            return retrieveUntilEmptyPage(ingressClient);
+        }
+
         val totalCount =
                 extractCount(
                         ingressClient.retrieveJson(
@@ -88,6 +92,31 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 totalCount,
                 fetchedRecordCount);
 
+        return List.copyOf(responses);
+    }
+
+    private List<JsonNode> retrieveUntilEmptyPage(CsdsIngressClient ingressClient) {
+        val responses = new ArrayList<JsonNode>();
+        for (var offset = 0; ; offset += properties.getPageSize()) {
+            val response =
+                    ingressClient.retrieveJson(
+                            appendPagingParameters(
+                                    appendQueryParameters(queryPath(), queryParameters()),
+                                    "%24limit="
+                                            + properties.getPageSize()
+                                            + "&%24offset="
+                                            + offset));
+            if (extractRecords(response).isEmpty()) {
+                break;
+            }
+            responses.add(response);
+        }
+
+        log.info(
+                "Retrieved {} CSDS pages for {} using page size {} until an empty page",
+                responses.size(),
+                datasetName(),
+                properties.getPageSize());
         return List.copyOf(responses);
     }
 
@@ -135,7 +164,9 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     private String queryPath() {
-        return "/query/"
+        return "/"
+                + queryPathType()
+                + "/"
                 + DATA_LOCATION_NAME
                 + "/"
                 + processorProperties.getSourceEntityName()
@@ -145,6 +176,14 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     protected String queryParameters() {
         return null;
+    }
+
+    protected String queryPathType() {
+        return "query";
+    }
+
+    protected boolean usesCountEndpoint() {
+        return true;
     }
 
     protected String mockFilePath() {
@@ -293,7 +332,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     @Override
-    public final void apply(T processedData) {
+    public void apply(T processedData) {
         val diff = diff(processedData);
         logDiffSummary(diff);
         report(processedData, diff);
@@ -320,11 +359,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     private JsonNode loadMockResponse(String mockFilePath) {
         try {
+            val isClassPathUri = mockFilePath.startsWith("classpath:");
             val resourcePath =
-                    mockFilePath.startsWith("classpath:")
-                            ? mockFilePath.substring(10)
-                            : mockFilePath;
+                    isClassPathUri ? mockFilePath.substring("classpath:".length()) : mockFilePath;
             val resource = new ClassPathResource(resourcePath);
+
             if (resource.exists()) {
                 try (val inputStream = resource.getInputStream()) {
                     val response = OBJECT_MAPPER.readTree(inputStream);
@@ -334,6 +373,14 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                             resourcePath);
                     return response;
                 }
+            }
+
+            if (isClassPathUri) {
+                log.warn(
+                        "Configured CSDS mock response for {} was not found at {}. Falling back to endpoint.",
+                        datasetName(),
+                        mockFilePath);
+                return null;
             }
 
             val filePath = Path.of(mockFilePath);
@@ -348,6 +395,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                     datasetName(),
                     mockFilePath);
             return null;
+
         } catch (IOException ex) {
             log.error(
                     "Failed to load CSDS mock response for {} from {}. Falling back to endpoint.",

@@ -3,6 +3,9 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -140,6 +143,41 @@ class BulkCreateApplicationEntryValidatorTest {
     }
 
     @Test
+    void givenJobSession_whenValidatingRepeatedReferences_thenLoadsAndResolvesOnce() {
+        applicationCode.setCode(entryCreateDto.getApplicationCode());
+        standardApplicant.setApplicantCode("APP001");
+        applicationCode.setFeeDue(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        entryCreateDto.setHasOffsiteFee(true);
+        when(applicationCodeRepository.findAllByDate(TODAY_UK))
+                .thenReturn(List.of(applicationCode));
+        when(standardApplicantRepository.findAllByDate(TODAY_UK))
+                .thenReturn(List.of(standardApplicant));
+
+        var session = validator.createSession(applicationList);
+        var first = session.validate(payload(), (validatable, result) -> result);
+        var second = session.validate(payload(), (validatable, result) -> result);
+
+        assertThat(first.getApplicationCode()).isSameAs(applicationCode);
+        assertThat(second.getSa()).isSameAs(standardApplicant);
+        verify(applicationCodeRepository).findAllByDate(TODAY_UK);
+        verify(standardApplicantRepository).findAllByDate(TODAY_UK);
+        verify(feeService, times(1))
+                .resolveFeePair(applicationCode.getFeeReference(), TODAY_UK.minusDays(1));
+        verify(applicationListRepository, never()).findByUuidIncludingDelete(appListUuid);
+        verify(applicationCodeRepository, never()).findByCodeAndDate(notNull(), notNull());
+        verify(standardApplicantRepository, never())
+                .findStandardApplicantByCodeAndDate(notNull(), notNull());
+    }
+
+    @Test
     void testValidateApplicationListThrowsWhenApplicationListDoesNotExist() {
         UUID missingListUuid = UUID.randomUUID();
         when(applicationListRepository.findByUuidIncludingDelete(missingListUuid))
@@ -154,6 +192,27 @@ class BulkCreateApplicationEntryValidatorTest {
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, appRegistryException.getCode());
         assertThat(appRegistryException.getMessage())
                 .isEqualTo("The application list does not exist %s".formatted(missingListUuid));
+    }
+
+    @Test
+    void testRejectsMissingApplicationCode() {
+        entryCreateDto.setApplicationCode(null);
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        var payload = payload();
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payload, (validatable, result) -> result));
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, appRegistryException.getCode());
+        assertThat(appRegistryException.getMessage()).isEqualTo("No valid code can be found null");
     }
 
     @Test

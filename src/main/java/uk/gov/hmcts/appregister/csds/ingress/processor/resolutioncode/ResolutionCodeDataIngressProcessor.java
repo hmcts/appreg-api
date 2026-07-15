@@ -122,11 +122,7 @@ public class ResolutionCodeDataIngressProcessor
 
     @Override
     protected void applyDiff(ResolutionCodeDiffResult diff) {
-        val rows =
-                diff.diffRecords().stream()
-                        .filter(item -> item.operation() != IngressOperation.IGNORE)
-                        .map(IngressDiffRecord::intended)
-                        .toList();
+        val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(targetTable(), targetKeyField(), rows, rowMapper);
     }
 

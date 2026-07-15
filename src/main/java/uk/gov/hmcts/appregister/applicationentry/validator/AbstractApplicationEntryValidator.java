@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -71,6 +72,28 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      */
     @Override
     public <R> R validate(T validatable, BiFunction<T, O, R> validateSuccess) {
+        return validateUsing(
+                validatable,
+                validateSuccess,
+                this::validateParentApplicationList,
+                this::validateStandardApplicantCode,
+                this::validateApplicationCode,
+                this::resolveFee);
+    }
+
+    /**
+     * Runs the shared entry rules with caller-supplied reference-data resolvers.
+     *
+     * <p>The bulk-import path supplies job-scoped cached resolvers; ordinary user operations keep
+     * using the repository-backed resolvers above.
+     */
+    protected <R> R validateUsing(
+            T validatable,
+            BiFunction<T, O, R> validateSuccess,
+            Function<T, ApplicationList> applicationListResolver,
+            Function<T, StandardApplicant> standardApplicantResolver,
+            Function<T, ApplicationCode> applicationCodeResolver,
+            BiFunction<ApplicationCode, T, FeePair> feeResolver) {
 
         // ensure mutual exclusivity of the respondent
         ensureRespondentMutualExclusion(validatable);
@@ -80,12 +103,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         validateOfficialCounts(validatable);
 
-        ApplicationList applicationList = validateParentApplicationList(validatable);
+        final ApplicationList applicationList = applicationListResolver.apply(validatable);
 
-        StandardApplicant saCode = validateStandardApplicantCode(validatable);
+        final StandardApplicant saCode = standardApplicantResolver.apply(validatable);
 
         // validate that the application code exists and is valid for today
-        ApplicationCode code = validateApplicationCode(validatable);
+        validateAccountNumber(validatable);
+        ApplicationCode code = applicationCodeResolver.apply(validatable);
 
         // parse the wording template and error if not valid
         WordingTemplateSentence wordingTemplateCollection =
@@ -94,7 +118,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         validateLodgementDate(validatable);
 
         // if fee is due get the fee
-        FeePair fee = validateFee(code, validatable);
+        FeePair fee = validateFee(code, validatable, feeResolver);
 
         // validate the respondent if required
         validateRespondent(code, validatable);
@@ -387,22 +411,10 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *
      * @param validatable The dto to validate
      * @return The code if validate
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException In the event of a
-     *     failure
+     * @throws AppRegistryException In the event of a failure
      */
     private ApplicationCode validateApplicationCode(T validatable) {
         LocalDate todayUk = currentBusinessDate();
-        if (getApplicationCode(validatable) != null
-                && ApplicationCodeTypeEnum.isMatching(
-                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES, getApplicationCode(validatable))
-                && (getAccountNumber(validatable) == null
-                        || getAccountNumber(validatable).isEmpty())) {
-            throw new AppRegistryException(
-                    AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
-                    "Application number required for application code %s"
-                            .formatted(getApplicationCode(validatable)));
-        }
-
         // validate that the application code exists and is valid for today
         List<ApplicationCode> code =
                 applicationCodeRepository.findByCodeAndDate(
@@ -423,6 +435,19 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 ApplicationCode::getEndDate);
     }
 
+    private void validateAccountNumber(T validatable) {
+        if (getApplicationCode(validatable) != null
+                && ApplicationCodeTypeEnum.isMatching(
+                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES, getApplicationCode(validatable))
+                && (getAccountNumber(validatable) == null
+                        || getAccountNumber(validatable).isEmpty())) {
+            throw new AppRegistryException(
+                    AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                    "Application number required for application code %s"
+                            .formatted(getApplicationCode(validatable)));
+        }
+    }
+
     /**
      * validate the code and the fees details provided in the payload. If the code requires a fee
      * then one must be provided else an exception is thrown
@@ -432,7 +457,10 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *
      * @param validatable The validatable payload
      */
-    private FeePair validateFee(ApplicationCode applicationCode, T validatable) {
+    private FeePair validateFee(
+            ApplicationCode applicationCode,
+            T validatable,
+            BiFunction<ApplicationCode, T, FeePair> feeResolver) {
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
                 getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
@@ -455,9 +483,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         // if the fee is required but it cant be found then error
         FeePair feeToReturn = null;
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            feeToReturn =
-                    feeService.resolveFeePair(
-                            applicationCode.getFeeReference(), getLodgementDate(validatable));
+            feeToReturn = feeResolver.apply(applicationCode, validatable);
             // this is to hide the offsite fee if the flag is not set, as we only want to return the
             // main fee to the frontend if the offsite fee is not required.
             if (getHasOffsiteFee(validatable) == Boolean.FALSE && feeToReturn != null) {
@@ -466,6 +492,11 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         return feeToReturn;
+    }
+
+    private FeePair resolveFee(ApplicationCode applicationCode, T validatable) {
+        return feeService.resolveFeePair(
+                applicationCode.getFeeReference(), getLodgementDate(validatable));
     }
 
     protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
