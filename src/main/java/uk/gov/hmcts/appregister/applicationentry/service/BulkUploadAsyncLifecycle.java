@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import static uk.gov.hmcts.appregister.common.async.reader.CsvReader.guessCharset;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
@@ -43,7 +45,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
-import static uk.gov.hmcts.appregister.common.async.reader.CsvReader.guessCharset;
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -202,7 +203,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         Charset charset = guessCharset(fileBytes);
 
         // We're copying the file over to a temp file.
-        try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath,charset)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath, charset)) {
             writer.write(new String(file.getBytes(), charset));
             csvFile = new File(tempcsvPath.toString());
         }
@@ -336,7 +337,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
-        //We can safely delete the temporary CSV file after the first processing pass, as the validated rows are already stored in memory.
+        // We can safely delete the temporary CSV file after the first processing pass, as the
+        // validated rows are already stored in memory.
         if (csvFile != null && csvFile.exists()) {
             Files.delete(csvFile.getAbsoluteFile().toPath());
         }
@@ -493,7 +495,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             int finalRowCount = rowCount;
             if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
                 List<BulkUploadError> rowErrors =
-                    errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
+                        errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
                     builder.append("|").append(error.getMessage());
@@ -505,5 +507,4 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowCount++;
         }
     }
-
 }

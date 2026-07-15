@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -178,7 +179,6 @@ class ReportServiceImplTest {
 
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
         when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
-        when(jobStatusResponse.read()).thenThrow(new IOException("boom"));
         runAuditPassThrough();
         ReportServiceImpl service = service();
 
@@ -186,10 +186,7 @@ class ReportServiceImplTest {
                 Assertions.assertThrows(
                         AppRegistryException.class, () -> service.downloadReport(jobId));
 
-        Assertions.assertSame(
-                uk.gov.hmcts.appregister.common.async.exception.JobError
-                        .JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
-                ex.getCode());
+        Assertions.assertSame(JobError.JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD, ex.getCode());
     }
 
     @Test

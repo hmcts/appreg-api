@@ -76,7 +76,8 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
             throws IOException {
         CsvToBean<T> csvToBean;
         // close the reader if it is open
-        try (FileReader reader = new FileReader(source, guessCharset(Files.readAllBytes(source.toPath())))) {
+        try (FileReader reader =
+                new FileReader(source, guessCharset(Files.readAllBytes(source.toPath())))) {
             csvToBean =
                     new CsvToBeanBuilder<T>(reader)
                             .withType(cls)
