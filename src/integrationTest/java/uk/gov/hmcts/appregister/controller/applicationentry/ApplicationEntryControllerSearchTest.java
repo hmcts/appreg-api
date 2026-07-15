@@ -407,9 +407,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenApplicationListFilterSelection_whenApplicationListBulkActionPreview_thenReturnMatchingIdsAndEntryContext()
-                    throws Exception {
+    void givenListFilterSelection_whenListBulkActionPreview_thenReturnMatchingIdsAndContext()
+            throws Exception {
         ApplicationList sourceList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(sourceList);
@@ -457,9 +456,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenApplicationListIdsSelectionUnderLimit_whenApplicationListBulkActionPreview_thenReturnSubmittedOrderAndEntryContext()
-                    throws Exception {
+    void givenListIdsSelectionUnderLimit_whenListBulkActionPreview_thenReturnSubmittedOrder()
+            throws Exception {
         ApplicationList sourceList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry firstEntry = createEntry(sourceList);
@@ -493,9 +491,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenApplicationListFilterSelectionWithExcludedEntryIds_whenApplicationListBulkActionPreview_thenExcludeEntries()
-                    throws Exception {
+    void givenListFilterSelectionWithExclusions_whenListBulkActionPreview_thenExcludeEntries()
+            throws Exception {
         ApplicationList sourceList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry includedEntry = createEntry(sourceList);
@@ -562,9 +559,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenApplicationListFilterSelectionAboveSingleListLimit_whenApplicationListBulkActionPreview_thenReturnProblemJson()
-                    throws Exception {
+    void givenListFilterSelectionAboveLimit_whenListBulkActionPreview_thenReturnProblemJson()
+            throws Exception {
         int originalSingleListLimit = setSingleListBulkActionPreviewLimit(1);
         try {
             ApplicationList sourceList = createAndSaveList(Status.OPEN);
@@ -600,9 +596,8 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenResultSelectedForClosedApplicationList_whenApplicationListBulkActionPreview_thenReturnEntryAndCountIneligible()
-                    throws Exception {
+    void givenResultSelectedForClosedList_whenListBulkActionPreview_thenReturnIneligibleCount()
+            throws Exception {
         ApplicationList closedList = createAndSaveList(Status.CLOSED);
 
         ApplicationListEntry closedEntry = createEntry(closedList);
