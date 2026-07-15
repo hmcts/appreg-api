@@ -131,8 +131,19 @@ class BulkUploadAsyncLifecycleTest {
         JobContext context = new JobContext();
         context.logFieldCountMismatch("Number of data fields does not match number of headers.");
         AsyncJobLifecycleEvent<BulkUploadRow> event =
-                new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED);
+                new AsyncJobLifecycleEvent<>(
+                        new JobStatusResponse(
+                                UUID.randomUUID(),
+                                JobType.BULK_UPLOAD_ENTRIES,
+                                JobStatus1.VALIDATING,
+                                "user",
+                                "error",
+                                persistenceService),
+                        null,
+                        context,
+                        JobStatus1.FAILED);
 
+        lifecycle.setCSVFile(csvFile);
         lifecycle.failed(event);
 
         assertThat(context.getValidationFailureMessages())
