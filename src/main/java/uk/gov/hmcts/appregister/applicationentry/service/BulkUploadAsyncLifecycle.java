@@ -4,7 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -13,6 +22,9 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.core.parameters.P;
+import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
@@ -32,31 +44,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.springframework.web.multipart.MultipartFile;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -173,11 +160,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         if (!allErrors.isEmpty()) {
             logValidationFailure(context, allErrors);
-            saveErrorCSV(allErrors, event);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
+            saveErrorCSV(allErrors, event, context);
             throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                    "One or more rows failed validation during bulk upload");
+                AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                "One or more rows failed validation during bulk upload");
         }
 
         log.debug("Validated bulk-upload page listId={} rowCount={}", listId, rows.size());
@@ -190,7 +177,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      * @param event the failed lifecycle event containing the field-count mismatch
      */
     @Override
-    public void failed(AsyncJobLifecycleEvent<BulkUploadRow> event) {
+    public void failed(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
         log.warn(
                 "Bulk upload failed listId={} jobId={} importedEntryCount={} durationMs={}",
                 listId,
@@ -206,6 +193,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         List<BulkUploadError> errors = new ArrayList<>();
         addHeaderErrors(context, errors);
         logValidationFailure(context, errors);
+        saveErrorCSV(errors, event, context);
     }
 
     public void setCSVFile(MultipartFile file) throws IOException {
@@ -214,9 +202,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         // We're copying the file over to a temp file.
         try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath, StandardCharsets.UTF_8)) {
             writer.write(new String(file.getBytes(), StandardCharsets.UTF_8));
+            csvFile = new File(tempcsvPath.toString());
         }
-
-        csvFile = new File(tempcsvPath.toString());
     }
 
     private static void addHeaderErrors(JobContext context, List<BulkUploadError> errors) {
@@ -440,47 +427,74 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         return "%s %s".formatted(fullName.getFirstName(), fullName.getLastName());
     }
 
-    private void saveErrorCSV(List<BulkUploadError> errors, AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
+    private void saveErrorCSV(
+            List<BulkUploadError> errors, AsyncJobLifecycleEvent<BulkUploadRow> event, JobContext context)
+            throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
-            String line;
 
             StringBuilder builder = new StringBuilder();
+            handleHeader(errors, builder, reader.readLine());
 
-            String header = reader.readLine();
+            writeErrorCSVLine(errors, builder, reader);
 
-            if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
-                for(BulkUploadError bulkUploadError : errors) {
-                    if (bulkUploadError.getRowNumber() == -1) {
-                        builder.append(header).append("|").append(bulkUploadError.getMessage()).append("\n");
-                    }
-                }
-            } else {
-                builder.append(header).append("|").append("\n");
-            }
-
-            int rowCount = 2;
-
-            while((line = reader.readLine()) != null) {
-                int finalRowCount = rowCount;
-                if(errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
-                    List<BulkUploadError> rowErrors = errors.stream()
-                            .filter(e -> e.getRowNumber() == finalRowCount).toList();
-                    builder.append(line);
-                    for (BulkUploadError error : rowErrors) {
-                        builder.append("|").append(error.getMessage());
-                    }
-                    builder.append("\n");
-                } else {
-                    builder.append(line).append("|").append("\n");
-                }
-                rowCount++;
-            }
-            InputStream inputStream = new ByteArrayInputStream(
-                builder.toString().getBytes(StandardCharsets.UTF_8)
-            );
+            InputStream inputStream =
+                    new ByteArrayInputStream(builder.toString().getBytes(StandardCharsets.UTF_8));
             event.getResponse().write(inputStream);
+        } catch (IOException e) {
+            log.error("Failed to save error CSV for list {}: {}", listId, e.getMessage(), e);
+            context.logFailure(
+                "Failed to save error CSV for list "
+                    + listId
+                    + ": "
+                    + e.getMessage());
+        throw new AppRegistryException(
+            AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+            "Failed to save error CSV for list " + listId + ": " + e.getMessage());
+        } catch (NullPointerException e) {
+            log.error("Failed to save error CSV for list {}: {}", listId, e.getMessage(), e);
+            throw new AppRegistryException(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                                           "Failed to save error CSV for list " + listId + ": " + e.getMessage());
         } finally {
-            Files.delete(csvFile.getAbsoluteFile().toPath());
+                if(csvFile != null && csvFile.exists()) {
+                    Files.delete(csvFile.getAbsoluteFile().toPath());
+                }
+        }
+    }
+
+    private void handleHeader(List<BulkUploadError> errors, StringBuilder builder, String header) {
+        if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
+            for (BulkUploadError bulkUploadError : errors) {
+                if (bulkUploadError.getRowNumber() == -1) {
+                    builder.append(header)
+                        .append("|")
+                        .append(bulkUploadError.getMessage())
+                        .append("\n");
+                }
+            }
+        } else {
+            builder.append(header).append("|").append("\n");
+        }
+    }
+
+    private void writeErrorCSVLine(List<BulkUploadError> errors, StringBuilder builder, BufferedReader reader)
+    throws IOException {
+        int rowCount = 2;
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            int finalRowCount = rowCount;
+            if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
+                List<BulkUploadError> rowErrors =
+                    errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
+                builder.append(line);
+                for (BulkUploadError error : rowErrors) {
+                    builder.append("|").append(error.getMessage());
+                }
+                builder.append("\n");
+            } else {
+                builder.append(line).append("|").append("\n");
+            }
+            rowCount++;
         }
     }
 }
