@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +43,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import static uk.gov.hmcts.appregister.common.async.reader.CsvReader.guessCharset;
 
 /**
  * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
@@ -196,10 +198,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     public void setCSVFile(MultipartFile file) throws IOException {
         Path tempcsvPath = File.createTempFile(UUID.randomUUID().toString(), ".csv").toPath();
+        byte[] fileBytes = file.getBytes();
+        Charset charset = guessCharset(fileBytes);
 
         // We're copying the file over to a temp file.
-        try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath, StandardCharsets.UTF_8)) {
-            writer.write(new String(file.getBytes(), StandardCharsets.UTF_8));
+        try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath,charset)) {
+            writer.write(new String(file.getBytes(), charset));
             csvFile = new File(tempcsvPath.toString());
         }
     }
@@ -489,7 +493,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             int finalRowCount = rowCount;
             if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
                 List<BulkUploadError> rowErrors =
-                        errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
+                    errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
                     builder.append("|").append(error.getMessage());
@@ -501,4 +505,5 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowCount++;
         }
     }
+
 }
