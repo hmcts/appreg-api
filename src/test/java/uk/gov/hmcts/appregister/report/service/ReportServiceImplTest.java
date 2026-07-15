@@ -172,7 +172,7 @@ class ReportServiceImplTest {
     }
 
     @Test
-    void givenJobHasFailed_whenDownloadingReport_thenFails() throws IOException{
+    void givenJobHasFailed_whenDownloadingReport_thenFails() throws IOException {
         UUID jobId = UUID.randomUUID();
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
 
@@ -183,28 +183,34 @@ class ReportServiceImplTest {
         ReportServiceImpl service = service();
 
         var ex =
-            Assertions.assertThrows(
-                AppRegistryException.class, () -> service.downloadReport(jobId));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.downloadReport(jobId));
 
         Assertions.assertSame(
-            uk.gov.hmcts.appregister.common.async.exception.JobError
-                .JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
-            ex.getCode());
+                uk.gov.hmcts.appregister.common.async.exception.JobError
+                        .JOB_DOES_NOT_HAVE_DATA_TO_GET_A_DOWNLOAD_STREAM,
+                ex.getCode());
     }
 
     @Test
-    void givenBulkUploadJobHasFailed_whenDownloadingReport_thenSucceeds() throws IOException{
+    void givenBulkUploadJobHasFailed_whenDownloadingReport_thenSucceeds() throws IOException {
         UUID jobId = UUID.randomUUID();
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
 
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
         when(jobStatusResponse.getType()).thenReturn(JobType.BULK_UPLOAD_ENTRIES);
         when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
-        when(jobStatusResponse.read()).thenReturn(new InputStreamResource(new ByteArrayInputStream("report".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+        when(jobStatusResponse.read())
+                .thenReturn(
+                        new InputStreamResource(
+                                new ByteArrayInputStream(
+                                        "report"
+                                                .getBytes(
+                                                        java.nio.charset.StandardCharsets.UTF_8))));
         runAuditPassThrough();
         ReportServiceImpl service = service();
 
-        Assertions.assertDoesNotThrow(() ->service.downloadReport(jobId));
+        Assertions.assertDoesNotThrow(() -> service.downloadReport(jobId));
     }
 
     @Test
