@@ -4211,13 +4211,13 @@ paths:
       description: Returns the Criminal Justice Area matching the supplied code.
       operationId: getCriminalJusticeAreaByCode
       parameters:
-      - description: Code used to identify the Result Code (case-insensitive).
+      - description: Code used to identify the Criminal Justice Area (case-insensitive).
         example: CF
         in: path
         name: code
         required: true
         schema:
-          maxLength: 10
+          maxLength: 2
           type: string
       responses:
         "200":
