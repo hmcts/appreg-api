@@ -17,9 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -660,17 +658,17 @@ class BulkUploadAsyncLifecycleTest {
 
     @Test
     void whenValidating_csvFileIsSet_thenWritesClobSuccessfully() throws IOException {
-        when(csvFile.getBytes())
-            .thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
 
         StringBuilder writtenCsv = new StringBuilder();
-        doAnswer(invocation -> {
-            ByteArrayInputStream inputStream = invocation.getArgument(1);
-            writtenCsv.append(new String(inputStream.readAllBytes()));
-            return null;
-        })
-            .when(persistenceService)
-            .writeClob(any(), any());
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
 
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
@@ -681,15 +679,15 @@ class BulkUploadAsyncLifecycleTest {
         lifecycle.setCSVFile(csvFile);
 
         AppRegistryException exception =
-            assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
-            .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
 
         assertThat(writtenCsv.toString())
-            .contains("HEADER|")
-            .contains("row-two|must match")
-            .contains("row-three|");
+                .contains("HEADER|")
+                .contains("row-two|must match")
+                .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
     }
@@ -703,7 +701,7 @@ class BulkUploadAsyncLifecycleTest {
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         AppRegistryException exception =
-            assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception).isNotNull();
         verify(persistenceService, times(0)).writeClob(any(), any());
@@ -720,21 +718,19 @@ class BulkUploadAsyncLifecycleTest {
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
         lifecycle.setCSVFile(csvFile);
-        doThrow(new IOException("write failed"))
-            .when(persistenceService)
-            .writeClob(any(), any());
+        doThrow(new IOException("write failed")).when(persistenceService).writeClob(any(), any());
 
         AppRegistryException exception =
-            assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception).isNotNull();
 
         assertThat(exception.getCode())
-            .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
 
         assertThat(exception.getMessage())
-            .contains("Failed to save error CSV")
-            .contains("write failed");
+                .contains("Failed to save error CSV")
+                .contains("write failed");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
 

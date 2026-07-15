@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -163,8 +161,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
             saveErrorCSV(allErrors, event, context);
             throw new AppRegistryException(
-                AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                "One or more rows failed validation during bulk upload");
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                    "One or more rows failed validation during bulk upload");
         }
 
         log.debug("Validated bulk-upload page listId={} rowCount={}", listId, rows.size());
@@ -428,7 +426,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void saveErrorCSV(
-            List<BulkUploadError> errors, AsyncJobLifecycleEvent<BulkUploadRow> event, JobContext context)
+            List<BulkUploadError> errors,
+            AsyncJobLifecycleEvent<BulkUploadRow> event,
+            JobContext context)
             throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
 
@@ -443,21 +443,19 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         } catch (IOException e) {
             log.error("Failed to save error CSV for list {}: {}", listId, e.getMessage(), e);
             context.logFailure(
-                "Failed to save error CSV for list "
-                    + listId
-                    + ": "
-                    + e.getMessage());
-        throw new AppRegistryException(
-            AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-            "Failed to save error CSV for list " + listId + ": " + e.getMessage());
+                    "Failed to save error CSV for list " + listId + ": " + e.getMessage());
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                    "Failed to save error CSV for list " + listId + ": " + e.getMessage());
         } catch (NullPointerException e) {
             log.error("Failed to save error CSV for list {}: {}", listId, e.getMessage(), e);
-            throw new AppRegistryException(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                                           "Failed to save error CSV for list " + listId + ": " + e.getMessage());
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                    "Failed to save error CSV for list " + listId + ": " + e.getMessage());
         } finally {
-                if(csvFile != null && csvFile.exists()) {
-                    Files.delete(csvFile.getAbsoluteFile().toPath());
-                }
+            if (csvFile != null && csvFile.exists()) {
+                Files.delete(csvFile.getAbsoluteFile().toPath());
+            }
         }
     }
 
@@ -466,9 +464,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             for (BulkUploadError bulkUploadError : errors) {
                 if (bulkUploadError.getRowNumber() == -1) {
                     builder.append(header)
-                        .append("|")
-                        .append(bulkUploadError.getMessage())
-                        .append("\n");
+                            .append("|")
+                            .append(bulkUploadError.getMessage())
+                            .append("\n");
                 }
             }
         } else {
@@ -476,8 +474,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
     }
 
-    private void writeErrorCSVLine(List<BulkUploadError> errors, StringBuilder builder, BufferedReader reader)
-    throws IOException {
+    private void writeErrorCSVLine(
+            List<BulkUploadError> errors, StringBuilder builder, BufferedReader reader)
+            throws IOException {
         int rowCount = 2;
 
         String line;
@@ -485,7 +484,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             int finalRowCount = rowCount;
             if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
                 List<BulkUploadError> rowErrors =
-                    errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
+                        errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
                     builder.append("|").append(error.getMessage());
