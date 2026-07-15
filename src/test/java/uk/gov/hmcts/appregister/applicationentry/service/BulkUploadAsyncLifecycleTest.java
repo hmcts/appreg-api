@@ -126,7 +126,8 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenFieldCountMismatchAfterFinalRow_whenFailed_thenFormatsHeaderError() {
+    void givenFieldCountMismatchAfterFinalRow_whenFailed_thenFormatsHeaderError()
+            throws IOException {
         JobContext context = new JobContext();
         context.logFieldCountMismatch("Number of data fields does not match number of headers.");
         AsyncJobLifecycleEvent<BulkUploadRow> event =
@@ -149,7 +150,7 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenNonReaderFailure_whenFailed_thenPreservesExistingFailure() {
+    void givenNonReaderFailure_whenFailed_thenPreservesExistingFailure() throws IOException {
         JobContext context = new JobContext();
         context.logFailure("Processing failed for row 2");
         AsyncJobLifecycleEvent<BulkUploadRow> event =
