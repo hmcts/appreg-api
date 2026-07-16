@@ -186,6 +186,8 @@ class ApplicationEntryControllerTest {
         var file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
         when(file.getInputStream()).thenReturn(new ByteArrayInputStream("HEADER\n".getBytes()));
+        when(file.getBytes())
+                .thenReturn(new ByteArrayInputStream("HEADER\n".getBytes()).readAllBytes());
         doNothing().when(bulkUploadCsvFormatValidator).validate(file);
         when(bulkCreateApplicationEntryValidator.validateApplicationList(listId))
                 .thenReturn(new ApplicationList());

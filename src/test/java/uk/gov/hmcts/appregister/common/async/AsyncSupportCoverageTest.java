@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.common.async;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,7 +13,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -51,7 +52,7 @@ class AsyncSupportCoverageTest {
 
     @Test
     void jobStatusResponse_allowsReadAndWriteForActiveJobs() throws IOException {
-        var persistence = Mockito.mock(AsyncJobPersistenceService.class);
+        var persistence = mock(AsyncJobPersistenceService.class);
         var uuid = UUID.randomUUID();
         var response =
                 JobStatusResponse.builder()
@@ -80,7 +81,25 @@ class AsyncSupportCoverageTest {
 
     @Test
     void jobStatusResponse_rejectsWritesForFinishedJobs() {
-        var persistence = Mockito.mock(AsyncJobPersistenceService.class);
+        var persistence = mock(AsyncJobPersistenceService.class);
+        var input = new ByteArrayInputStream(new byte[0]);
+
+        var completedResponse =
+                JobStatusResponse.builder()
+                        .uuid(UUID.randomUUID())
+                        .type(JobType.FEES_REPORT)
+                        .status(JobStatus1.COMPLETED)
+                        .userName("tester")
+                        .errorMessage(null)
+                        .persistence(persistence)
+                        .build();
+
+        assertThrows(JobException.class, () -> completedResponse.write(input));
+    }
+
+    @Test
+    void jobStatusResponse_allowsWriteForFailedJobs() {
+        var persistence = mock(AsyncJobPersistenceService.class);
         var input = new ByteArrayInputStream(new byte[0]);
 
         var failedResponse =
@@ -92,17 +111,7 @@ class AsyncSupportCoverageTest {
                         .errorMessage("bad")
                         .persistence(persistence)
                         .build();
-        var completedResponse =
-                JobStatusResponse.builder()
-                        .uuid(UUID.randomUUID())
-                        .type(JobType.FEES_REPORT)
-                        .status(JobStatus1.COMPLETED)
-                        .userName("tester")
-                        .errorMessage(null)
-                        .persistence(persistence)
-                        .build();
 
-        assertThrows(JobException.class, () -> failedResponse.write(input));
-        assertThrows(JobException.class, () -> completedResponse.write(input));
+        assertDoesNotThrow(() -> failedResponse.write(input));
     }
 }

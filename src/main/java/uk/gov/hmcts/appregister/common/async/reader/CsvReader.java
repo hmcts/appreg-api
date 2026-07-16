@@ -76,7 +76,8 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
             throws IOException {
         CsvToBean<T> csvToBean;
         // close the reader if it is open
-        try (FileReader reader = new FileReader(source, guessCharset(source))) {
+        try (FileReader reader =
+                new FileReader(source, guessCharset(Files.readAllBytes(source.toPath())))) {
             csvToBean =
                     new CsvToBeanBuilder<T>(reader)
                             .withType(cls)
@@ -148,19 +149,19 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
         }
     }
 
-    private Charset guessCharset(File file) throws IOException {
+    public static Charset guessCharset(byte[] fileBytes) throws IOException {
         Charset utf8 = StandardCharsets.UTF_8;
 
         try {
             utf8.newDecoder()
                     .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
                     .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
-                    .decode(java.nio.ByteBuffer.wrap(Files.readAllBytes(file.toPath())));
+                    .decode(java.nio.ByteBuffer.wrap(fileBytes));
 
-            log.info("Detected UTF-8 encoding for file: {}", file.getName());
+            log.info("Detected UTF-8 encoding: ");
             return utf8;
         } catch (java.nio.charset.CharacterCodingException e) {
-            log.info("Detected non-UTF-8 file: {}, using Windows-1252 encoding", file.getName());
+            log.info("Detected non-UTF-8, using Windows-1252 encoding");
             return Charset.forName("Windows-1252");
         }
     }

@@ -312,7 +312,8 @@ public class ReportServiceImpl implements ReportService {
                 ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT,
                 unused -> {
                     JobStatusResponse jobStatusResponse = jobService.getJobStatusById(jobId);
-                    if (jobStatusResponse.getStatus() != JobStatus1.COMPLETED) {
+                    if (jobStatusResponse.getStatus() != JobStatus1.COMPLETED
+                            && jobStatusResponse.getType() != JobType.BULK_UPLOAD_ENTRIES) {
                         throw new AppRegistryException(
                                 JobError.JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD,
                                 "Download stream not available");
