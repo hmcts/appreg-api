@@ -318,7 +318,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         responseSpec.then().statusCode(400);
 
         Assertions.assertTrue(
-                output.getOut()
+                output.toString()
                         .contains(
                                 "[400]: Constraints failed for fields:"
                                         + System.lineSeparator()
@@ -341,7 +341,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         responseSpec.then().statusCode(400);
 
         Assertions.assertTrue(
-                output.getOut()
+                output.toString()
                         .contains(
                                 "[400]: Constraints failed for fields:"
                                         + System.lineSeparator()
