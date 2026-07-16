@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.async.reader;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -19,9 +18,7 @@ class CsvReaderTest extends AbstractAsyncTest {
 
     @Test
     void testRead() throws IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person.csv");
 
         ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
 
@@ -47,9 +44,7 @@ class CsvReaderTest extends AbstractAsyncTest {
 
     @Test
     void testFailFormat() throws IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person_failformat.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person_failformat.csv");
 
         ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
 
@@ -68,9 +63,7 @@ class CsvReaderTest extends AbstractAsyncTest {
 
     @Test
     void testReadWindows1252Format() throws IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("windows-1252.csv");
-        File csv = new File(resource.getFile());
+        File csv = testResourceFile("windows-1252.csv");
 
         ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
         JobContext context = new JobContext();
@@ -86,9 +79,7 @@ class CsvReaderTest extends AbstractAsyncTest {
 
     @Test
     void testReadUTF8Format() throws IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("utf-8.csv");
-        File csv = new File(resource.getFile());
+        File csv = testResourceFile("utf-8.csv");
 
         ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
         JobContext context = new JobContext();
@@ -104,9 +95,7 @@ class CsvReaderTest extends AbstractAsyncTest {
 
     @Test
     void testDataTypeError() throws IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person_faildataformat.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person_faildataformat.csv");
 
         ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
         JobContext jobContext = new JobContext();
