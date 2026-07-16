@@ -366,7 +366,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 bulkUpdateFees(
                         tokenGenerator,
                         entry.getListId(),
-                        validBulkFeesUpdateDto(entryIdsIncluding(entry.getId(), 501)));
+                        validBulkFeesUpdateDto(entryIdsIncluding(entry.getId(), 1051)));
 
         response.then().statusCode(400);
         assertNoBulkFeeAuditWritten();

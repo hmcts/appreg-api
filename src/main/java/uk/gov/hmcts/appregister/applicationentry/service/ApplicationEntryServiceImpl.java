@@ -89,6 +89,8 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
@@ -132,6 +134,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
     private int bulkActionPreviewGlobalLimit;
+
+    @Value("${appreg.bulk-action-preview.single-list-limit:1050}")
+    private int bulkActionPreviewSingleListLimit;
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -308,12 +313,30 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         BulkActionPreviewResolution resolution =
                 resolveBulkActionPreviewSelection(request.getSelection());
+        return buildBulkActionPreviewResponse(
+                request.getAction(), bulkActionPreviewGlobalLimit, resolution);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BulkActionPreviewResponseDto bulkActionPreview(
+            UUID listId, ApplicationListEntryBulkActionPreviewRequestDto request) {
+        bulkActionPreviewValidator.validateApplicationListEntryBulkActionPreview(listId, request);
+
+        BulkActionPreviewResolution resolution =
+                resolveApplicationListBulkActionPreviewSelection(listId, request.getSelection());
+        return buildBulkActionPreviewResponse(
+                request.getAction(), bulkActionPreviewSingleListLimit, resolution);
+    }
+
+    private BulkActionPreviewResponseDto buildBulkActionPreviewResponse(
+            BulkActionType action, int limit, BulkActionPreviewResolution resolution) {
         BulkActionPreviewEligibility eligibility =
-                resolveBulkActionPreviewEligibility(request.getAction(), resolution);
+                resolveBulkActionPreviewEligibility(action, resolution);
 
         return new BulkActionPreviewResponseDto()
-                .action(request.getAction())
-                .limit(bulkActionPreviewGlobalLimit)
+                .action(action)
+                .limit(limit)
                 .selectedCount(resolution.selectedCount())
                 .eligibleCount(eligibility.eligibleCount())
                 .ineligibleCount(resolution.selectedCount() - eligibility.eligibleCount())
@@ -330,25 +353,34 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return resolveFilterBulkActionPreview(selection);
     }
 
+    private BulkActionPreviewResolution resolveApplicationListBulkActionPreviewSelection(
+            UUID listId, ApplicationListEntryBulkActionSelectionDto selection) {
+        if (selection.getSelectionType() == BulkActionSelectionType.IDS) {
+            return resolveApplicationListIdsBulkActionPreview(listId, selection);
+        }
+
+        return resolveApplicationListFilterBulkActionPreview(listId, selection);
+    }
+
     private BulkActionPreviewEligibility resolveBulkActionPreviewEligibility(
             BulkActionType action, BulkActionPreviewResolution resolution) {
         if (action != BulkActionType.RESULT_SELECTED) {
-            return new BulkActionPreviewEligibility(resolution.entryIds(), resolution.entries());
+            return new BulkActionPreviewEligibility(
+                    resolution.entryIds(), resolution.entries(), resolution.entryIds().size());
         }
 
-        List<EntryGetSummaryDto> eligibleEntries =
-                resolution.entries().stream().filter(this::isResultSelectedEligible).toList();
+        int eligibleCount =
+                Math.toIntExact(
+                        resolution.entries().stream()
+                                .filter(this::isResultSelectedEligible)
+                                .count());
 
         return new BulkActionPreviewEligibility(
-                toEntryIdsFromSummaries(eligibleEntries), eligibleEntries);
+                resolution.entryIds(), resolution.entries(), eligibleCount);
     }
 
     private boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
         return entry.getStatus() == ApplicationListStatus.OPEN;
-    }
-
-    private List<UUID> toEntryIdsFromSummaries(List<EntryGetSummaryDto> entries) {
-        return entries.stream().map(EntryGetSummaryDto::getId).toList();
     }
 
     private BulkActionPreviewResolution resolveFilterBulkActionPreview(
@@ -398,6 +430,60 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 buildEntrySummaries(entries));
     }
 
+    private BulkActionPreviewResolution resolveApplicationListFilterBulkActionPreview(
+            UUID listId, ApplicationListEntryBulkActionSelectionDto selection) {
+        EntryApplicationListGetFilterDto filterDto =
+                normaliseEntryListFilter(selection.getFilter());
+        List<UUID> excludedEntryIds = safeEntryIds(selection.getExcludedEntryIds());
+        PagingWrapper pageable =
+                pageableMapper.from(
+                        selection.getSort(),
+                        bulkActionPreviewSingleListLimit,
+                        ApplicationEntrySortConfig.BY_LIST_ID,
+                        Sort.Direction.ASC);
+
+        Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                searchForBulkActionPreviewSummary(
+                        listId, filterDto, List.of(), excludedEntryIds, pageable);
+
+        int selectedCount =
+                selectedCountWithinLimit(
+                        resultPage.getTotalElements(), bulkActionPreviewSingleListLimit);
+        List<ApplicationListEntryGetSummaryProjection> entries = resultPage.getContent();
+
+        return new BulkActionPreviewResolution(
+                selectedCount, toEntryIds(entries), buildEntrySummaries(entries));
+    }
+
+    private BulkActionPreviewResolution resolveApplicationListIdsBulkActionPreview(
+            UUID listId, ApplicationListEntryBulkActionSelectionDto selection) {
+        List<UUID> selectedEntryIds = List.copyOf(selection.getEntryIds());
+        bulkActionPreviewValidator.validateLimit(
+                selectedEntryIds.size(), bulkActionPreviewSingleListLimit);
+
+        PagingWrapper pageable =
+                pageableMapper.from(
+                        List.of(),
+                        bulkActionPreviewSingleListLimit,
+                        ApplicationEntrySortConfig.BY_LIST_ID,
+                        Sort.Direction.ASC);
+
+        Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                searchForBulkActionPreviewSummary(
+                        listId,
+                        new EntryApplicationListGetFilterDto(),
+                        selectedEntryIds,
+                        List.of(),
+                        pageable);
+        List<ApplicationListEntryGetSummaryProjection> entries =
+                orderEntriesBySelectedIds(resultPage.getContent(), selectedEntryIds);
+
+        return new BulkActionPreviewResolution(
+                Math.toIntExact(resultPage.getTotalElements()),
+                toEntryIds(entries),
+                buildEntrySummaries(entries));
+    }
+
     private Page<ApplicationListEntryGetSummaryProjection> searchForBulkActionPreviewSummary(
             EntryGetFilterDto filterDto,
             List<UUID> entryIds,
@@ -435,8 +521,49 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 pageable.getPageable());
     }
 
+    private Page<ApplicationListEntryGetSummaryProjection> searchForBulkActionPreviewSummary(
+            UUID listId,
+            EntryApplicationListGetFilterDto filterDto,
+            List<UUID> entryIds,
+            List<UUID> excludedEntryIds,
+            PagingWrapper pageable) {
+        boolean hasEntryIds = !entryIds.isEmpty();
+        boolean hasExcludedEntryIds = !excludedEntryIds.isEmpty();
+
+        return applicationListEntryRepository.searchForBulkActionPreviewSummary(
+                listId,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                filterDto.getApplicantName(),
+                null,
+                null,
+                null,
+                null,
+                filterDto.getRespondentName(),
+                filterDto.getRespondentPostcode(),
+                filterDto.getAccountReference(),
+                filterDto.getApplicationTitle(),
+                filterDto.getResulted(),
+                filterDto.getFeeRequired(),
+                filterDto.getSequenceNumber(),
+                hasEntryIds,
+                queryEntryIds(entryIds),
+                hasExcludedEntryIds,
+                queryEntryIds(excludedEntryIds),
+                pageable.getPageable());
+    }
+
     private int selectedCountWithinLimit(long selectedCount) {
-        bulkActionPreviewValidator.validateLimit(selectedCount, bulkActionPreviewGlobalLimit);
+        return selectedCountWithinLimit(selectedCount, bulkActionPreviewGlobalLimit);
+    }
+
+    private int selectedCountWithinLimit(long selectedCount, int limit) {
+        bulkActionPreviewValidator.validateLimit(selectedCount, limit);
         return Math.toIntExact(selectedCount);
     }
 
@@ -1955,9 +2082,5 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             int selectedCount, List<UUID> entryIds, List<EntryGetSummaryDto> entries) {}
 
     private record BulkActionPreviewEligibility(
-            List<UUID> entryIds, List<EntryGetSummaryDto> entries) {
-        int eligibleCount() {
-            return entryIds.size();
-        }
-    }
+            List<UUID> entryIds, List<EntryGetSummaryDto> entries, int eligibleCount) {}
 }

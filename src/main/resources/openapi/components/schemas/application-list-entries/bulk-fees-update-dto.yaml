@@ -12,9 +12,9 @@ properties:
     description: >
       Array of entry IDs whose fee-status history should be appended to. All must belong to the list
       in the path.
-      Requests with more than 500 entry IDs are rejected with 400 Bad Request.
+      Requests with more than 1050 entry IDs are rejected with 400 Bad Request.
     minItems: 1
-    maxItems: 500
+    maxItems: 1050
     uniqueItems: true
     items:
       type: string
