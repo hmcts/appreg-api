@@ -6964,7 +6964,7 @@ components:
           type: array
         feeStatuses:
           description: |
-            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. Fee-status rows must only be supplied when the selected application code requires a fee. This operation rejects updates to non-fee application codes when the entry already has fee-status history or when fee-status rows are supplied in the request.
+            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. For application codes that do not require a fee, this operation allows existing historical fee-status rows to be retained unchanged, but rejects new, changed, or cleared fee-status rows.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array

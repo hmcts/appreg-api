@@ -27,6 +27,7 @@ import org.mockito.quality.Strictness;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -37,6 +38,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -358,7 +360,7 @@ class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantFeeNotDueButPersistedFeeStatusPreservedFail() {
+    void testApplicantFeeNotDueButPersistedFeeStatusPreservedSuccess() {
         applicationCode.setFeeDue(YesOrNo.NO);
         entryUpdateDto.setFeeStatuses(null);
 
@@ -367,11 +369,53 @@ class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getApplicant().setOrganisation(null);
 
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
-                .thenReturn(
-                        List.of(
-                                Mockito.mock(
-                                        uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus
-                                                .class)));
+                .thenReturn(List.of(persistedFeeStatus(FeeStatusType.PAID, TODAY_UK, "PAY-123")));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        updateApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testApplicantFeeNotDueButPersistedFeeStatusProvidedUnchangedSuccess() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentReference("PAY-123");
+        feeStatus.setPaymentStatus(PAID);
+        feeStatus.setStatusDate(TODAY_UK);
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(List.of(persistedFeeStatus(FeeStatusType.PAID, TODAY_UK, "PAY-123")));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        updateApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testApplicantFeeNotDueButPersistedFeeStatusProvidedChangedFail() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        var feeStatus = new FeeStatus();
+        feeStatus.setPaymentReference("PAY-456");
+        feeStatus.setPaymentStatus(PAID);
+        feeStatus.setStatusDate(TODAY_UK);
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
+                .thenReturn(List.of(persistedFeeStatus(FeeStatusType.PAID, TODAY_UK, "PAY-123")));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -831,6 +875,15 @@ class UpdateApplicationEntryValidatorTest {
                 fs.setPaymentReference(null); // must NOT be passed when DUE
             }
         }
+    }
+
+    private static AppListEntryFeeStatus persistedFeeStatus(
+            FeeStatusType feeStatusType, LocalDate statusDate, String paymentReference) {
+        AppListEntryFeeStatus persistedFeeStatus = new AppListEntryFeeStatus();
+        persistedFeeStatus.setAlefsFeeStatus(feeStatusType);
+        persistedFeeStatus.setAlefsFeeStatusDate(statusDate);
+        persistedFeeStatus.setAlefsPaymentReference(paymentReference);
+        return persistedFeeStatus;
     }
 
     private static Official official(OfficialType officialType, String suffix) {

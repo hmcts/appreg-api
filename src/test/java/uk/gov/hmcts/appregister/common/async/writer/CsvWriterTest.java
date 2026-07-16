@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.async.writer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,9 +33,7 @@ class CsvWriterTest extends AbstractAsyncTest {
     @Test
     void testWriteAppendsReadData() throws IOException {
         try (CsvWriter<PersonCsvPojo> writer = new CsvWriter<>(PersonCsvPojo.class)) {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            URL resource = classLoader.getResource("person.csv");
-            File fileToLoad = new File(resource.getFile());
+            File fileToLoad = testResourceFile("person.csv");
 
             ReadPagePosition readPagePosition = new ReadPagePosition(1, 0);
 
