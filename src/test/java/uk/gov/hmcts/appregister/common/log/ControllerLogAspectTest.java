@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.log;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 
 class ControllerLogAspectTest {
 
@@ -189,5 +192,33 @@ class ControllerLogAspectTest {
         Assertions.assertSame(exception, thrown);
         Assertions.assertEquals(
                 "Exception occurred during execution", abstractAspectLog.getErrorLogs().getFirst());
+    }
+
+    @Test
+    void logControllerCsdsBatchUpsertExceptionDoesNotLogAspectError() throws Throwable {
+        ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
+        Signature signature = Mockito.mock(Signature.class);
+
+        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        var exception =
+                new CsdsBatchUpsertException(
+                        "CSDS batch upsert failed for application_codes_staging.ac_id",
+                        new RuntimeException("batch failed"),
+                        List.of(
+                                new FailedUpsertRecord<>(
+                                        3L,
+                                        "ERROR: value too long for type character varying(10)")));
+        Mockito.when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        Mockito.when(signature.getName()).thenReturn("testMethod");
+
+        var thrown =
+                Assertions.assertThrows(
+                        CsdsBatchUpsertException.class,
+                        () -> controllerLogAspect.logDuration(customProceedingJoinPoint));
+
+        Assertions.assertSame(exception, thrown);
+        assertThat(abstractAspectLog.getErrorLogs()).isEmpty();
     }
 }

@@ -1,0 +1,7 @@
+description: >
+  Uploaded CSDS snapshot could be parsed, but one or more rows violated target-table constraints.
+  Response detail reports the failing row count; row-level reasons are written to CSDS_AUDIT.
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'

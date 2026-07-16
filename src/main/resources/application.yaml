@@ -115,7 +115,7 @@ appreg:
       page-size: 100
       processors:
         application-codes:
-          enabled: false
+          enabled: true
           table-name: application_codes_staging
           primary-key: ac_id
           source-entity-name: ApplicationCode

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -50,7 +51,8 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
                                         "standard_applicants_staging",
                                         "sa_id",
                                         diffFor(invalidIncoming)))
-                .isInstanceOf(DataIntegrityViolationException.class);
+                .isInstanceOf(CsdsBatchUpsertException.class)
+                .hasCauseInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(endDate(1L)).isNull();
     }

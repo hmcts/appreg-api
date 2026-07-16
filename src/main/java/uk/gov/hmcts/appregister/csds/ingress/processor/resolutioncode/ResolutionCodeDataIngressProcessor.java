@@ -3,16 +3,21 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
@@ -41,11 +46,17 @@ public class ResolutionCodeDataIngressProcessor
 
     public ResolutionCodeDataIngressProcessor(
             CsdsIngressProperties properties,
+            CsdsAuditService csdsAuditService,
+            CsdsIngressTransactionRunner csdsIngressTransactionRunner,
             ResolutionCodeDiffService diffService,
             ResolutionCodeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
             ResolutionCodeIngressDatabaseRowMapper rowMapper) {
-        super(properties, properties.getProcessors().getResolutionCodes());
+        super(
+                properties,
+                properties.getProcessors().getResolutionCodes(),
+                csdsAuditService,
+                csdsIngressTransactionRunner);
         resolutionCodeProperties = properties.getProcessors().getResolutionCodes();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -123,7 +134,30 @@ public class ResolutionCodeDataIngressProcessor
     @Override
     protected void applyDiff(ResolutionCodeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
-        bulkUpsertService.upsertBatch(targetTable(), targetKeyField(), rows, rowMapper);
+        bulkUpsertService.upsertBatch(
+                targetTable(), targetKeyField(), rows, rowMapper, ResolutionCodeIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildSuccessAudits(
+            List<JsonNode> processedData, ResolutionCodeDiffResult diff) {
+        return buildSuccessAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                ResolutionCodeIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildFailureAudits(
+            List<JsonNode> processedData,
+            ResolutionCodeDiffResult diff,
+            CsdsBatchUpsertException ex) {
+        return buildFailureAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                ResolutionCodeIngressRecord::id,
+                ResolutionCodeIngressRecord.class,
+                ex);
     }
 
     @Override
@@ -134,10 +168,7 @@ public class ResolutionCodeDataIngressProcessor
     @Override
     public CsdsIngestResponse ingest(List<JsonNode> rawJson) {
         val processedData = preProcess(rawJson);
-        val diff = diff(processedData);
-        logDiffSummary(diff);
-        report(processedData, diff);
-        applyDiff(diff);
+        val diff = applyWithAuditing(processedData);
 
         var insertedCount = countByOperation(diff, IngressOperation.INSERT);
         var updatedCount = countByOperation(diff, IngressOperation.UPDATE);
@@ -175,5 +206,9 @@ public class ResolutionCodeDataIngressProcessor
             copiedRecord.put("RC_ID", resolvedId);
         }
         return copiedRecord;
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, "RC_ID"));
     }
 }

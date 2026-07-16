@@ -3,16 +3,21 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FeeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
@@ -39,11 +44,17 @@ public class FeeDataIngressProcessor
 
     public FeeDataIngressProcessor(
             CsdsIngressProperties properties,
+            CsdsAuditService csdsAuditService,
+            CsdsIngressTransactionRunner csdsIngressTransactionRunner,
             FeeDiffService diffService,
             FeeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
             FeeIngressDatabaseRowMapper rowMapper) {
-        super(properties, properties.getProcessors().getFee());
+        super(
+                properties,
+                properties.getProcessors().getFee(),
+                csdsAuditService,
+                csdsIngressTransactionRunner);
         this.feeProperties = properties.getProcessors().getFee();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -121,7 +132,26 @@ public class FeeDataIngressProcessor
     @Override
     protected void applyDiff(FeeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
-        bulkUpsertService.upsertBatch(targetTable(), targetKeyField(), rows, rowMapper);
+        bulkUpsertService.upsertBatch(
+                targetTable(), targetKeyField(), rows, rowMapper, FeeIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildSuccessAudits(
+            List<JsonNode> processedData, FeeDiffResult diff) {
+        return buildSuccessAuditEntries(
+                diff.diffRecords(), sourceRecordsById(processedData), FeeIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildFailureAudits(
+            List<JsonNode> processedData, FeeDiffResult diff, CsdsBatchUpsertException ex) {
+        return buildFailureAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                FeeIngressRecord::id,
+                FeeIngressRecord.class,
+                ex);
     }
 
     @Override
@@ -132,10 +162,7 @@ public class FeeDataIngressProcessor
     @Override
     public CsdsIngestResponse ingest(List<JsonNode> rawJson) {
         val processedData = preProcess(rawJson);
-        val diff = diff(processedData);
-        logDiffSummary(diff);
-        report(processedData, diff);
-        applyDiff(diff);
+        val diff = applyWithAuditing(processedData);
 
         var insertedCount = countByOperation(diff, IngressOperation.INSERT);
         var updatedCount = countByOperation(diff, IngressOperation.UPDATE);
@@ -185,5 +212,9 @@ public class FeeDataIngressProcessor
             copiedRecord.put("FEE_ID", resolvedId);
         }
         return copiedRecord;
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, "FEE_ID"));
     }
 }

@@ -25,13 +25,14 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode.Applicati
 @ExtendWith(MockitoExtension.class)
 class JdbcBulkUpsertServiceTest {
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
+    @Mock private JdbcBatchFailureIsolationService jdbcBatchFailureIsolationService;
 
     private JdbcBulkUpsertService service;
     private ApplicationCodeIngressDatabaseRowMapper rowMapper;
 
     @BeforeEach
     void setUp() {
-        service = new JdbcBulkUpsertService(jdbcTemplate);
+        service = new JdbcBulkUpsertService(jdbcTemplate, jdbcBatchFailureIsolationService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         rowMapper = new ApplicationCodeIngressDatabaseRowMapper();
     }
@@ -98,5 +99,39 @@ class JdbcBulkUpsertServiceTest {
                                         rowMapper))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid SQL tableName");
+    }
+
+    @Test
+    void given_batchFailure_when_upsertBatch_then_throwCsdsBatchUpsertException() {
+        var item =
+                new ApplicationCodeIngressRecord(
+                        12L,
+                        "AA00001",
+                        "Title",
+                        "Wording",
+                        null,
+                        YesOrNo.YES,
+                        YesOrNo.NO,
+                        LocalDate.of(2020, Month.JANUARY, 1),
+                        null,
+                        YesOrNo.NO,
+                        3L,
+                        null);
+        when(jdbcTemplate.batchUpdate(anyString(), any(MapSqlParameterSource[].class)))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException("boom"));
+        when(jdbcBatchFailureIsolationService.identifyFailures(
+                        anyString(), any(), any(), any(), any(RuntimeException.class)))
+                .thenReturn(List.of(new FailedUpsertRecord<>(item, "boom")));
+
+        assertThatThrownBy(
+                        () ->
+                                service.upsertBatch(
+                                        "application_codes_staging",
+                                        "ac_id",
+                                        List.of(item),
+                                        rowMapper,
+                                        ApplicationCodeIngressRecord::id))
+                .isInstanceOf(CsdsBatchUpsertException.class)
+                .hasMessageContaining("CSDS batch upsert failed");
     }
 }

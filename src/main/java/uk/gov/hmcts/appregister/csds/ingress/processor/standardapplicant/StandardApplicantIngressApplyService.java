@@ -36,7 +36,12 @@ public class StandardApplicantIngressApplyService {
         val validatedPrimaryKey = requireSqlIdentifier(targetKeyField, "primaryKey");
         endDateMissingApplicants(validatedTableName, validatedPrimaryKey, diff.incomingById());
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
-        bulkUpsertService.upsertBatch(validatedTableName, validatedPrimaryKey, rows, rowMapper);
+        bulkUpsertService.upsertBatch(
+                validatedTableName,
+                validatedPrimaryKey,
+                rows,
+                rowMapper,
+                StandardApplicantIngressRecord::id);
     }
 
     private void endDateMissingApplicants(
