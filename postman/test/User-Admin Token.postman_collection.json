@@ -1,0 +1,269 @@
+{
+  "info": {
+    "_postman_id": "e4142439-3cb7-4d63-98a4-27428db8cd01",
+    "name": "User/Admin Token",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54597971",
+    "_collection_link": "https://go.postman.co/collection/54597317-e4142439-3cb7-4d63-98a4-27428db8cd01?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "User Login",
+      "item": [
+        {
+          "name": "Obtain Token Client_Credentials Copy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "api://cd80c7ad-e5fa-43fa-9489-39d2345e7b47/.default",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtain Token password user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token_user\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{SCOPE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{USER_NAME_ar-test-2}}",
+                  "type": "text",
+                  "uuid": "1e288ea0-d71e-4dd6-8b03-aa00c927d2e0"
+                },
+                {
+                  "key": "password",
+                  "value": "{{PASSWORD}}",
+                  "type": "text",
+                  "uuid": "51abbeb1-d86f-4d13-a73a-0efeb9383324"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtain Token password admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token_admin\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{SCOPE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{USER_NAME_ar-test-5}}",
+                  "type": "text",
+                  "uuid": "1e288ea0-d71e-4dd6-8b03-aa00c927d2e0"
+                },
+                {
+                  "key": "password",
+                  "value": "{{PASSWORD}}",
+                  "type": "text",
+                  "uuid": "51abbeb1-d86f-4d13-a73a-0efeb9383324"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
