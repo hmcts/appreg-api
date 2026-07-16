@@ -269,19 +269,21 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
             CsvReader<BulkUploadRow> csvReader = new CsvReader<>(file, BulkUploadRow.class);
 
+            BulkUploadAsyncLifecycle lifecycle =
+                    new BulkUploadAsyncLifecycle(
+                            listId,
+                            applicationList,
+                            bulkImportService,
+                            bulkUploadApplicationEntryValidator,
+                            bulkCreateApplicationEntryValidator,
+                            applicationListEntryMapper,
+                            beanValidator);
+
+            lifecycle.setCSVFile(file);
+
             TrackJobStatusResponse trackJobStatusResponse =
                     asyncJobService.startValidationFirstJob(
-                            jobTypeRequest,
-                            csvReader,
-                            new BulkUploadAsyncLifecycle(
-                                    listId,
-                                    applicationList,
-                                    bulkImportService,
-                                    bulkUploadApplicationEntryValidator,
-                                    bulkCreateApplicationEntryValidator,
-                                    applicationListEntryMapper,
-                                    beanValidator),
-                            bulkImportPageSize);
+                            jobTypeRequest, csvReader, lifecycle, bulkImportPageSize);
 
             JobAcknowledgement ack =
                     new JobAcknowledgement()
