@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedConstruction;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
@@ -38,6 +41,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntr
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
+import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -53,22 +57,34 @@ class BulkUploadAsyncLifecycleTest {
 
     private BulkUploadAsyncLifecycle lifecycle;
     private BulkImportService bulkImportService;
+    private BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
     private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
     private BulkCreateApplicationEntryValidator.Session validationSession;
     private ApplicationList applicationList;
     private UUID listId;
+    private MultipartFile csvFile;
+
+    private static AsyncJobPersistenceService persistenceService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         ApplicationListEntryMapperImpl mapper = new ApplicationListEntryMapperImpl();
         mapper.setApplicantMapper(new ApplicantMapperImpl());
         mapper.setOfficialMapper(new OfficialMapper());
 
         bulkImportService = mock(BulkImportService.class);
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
+        bulkUploadApplicationEntryValidator = mock(BulkUploadApplicationEntryValidator.class);
         validationSession = mock(BulkCreateApplicationEntryValidator.Session.class);
         applicationList = new ApplicationList();
         listId = UUID.randomUUID();
+        csvFile = mock(MultipartFile.class);
+        when(csvFile.getBytes())
+                .thenReturn(new ByteArrayInputStream("HEADER\n".getBytes()).readAllBytes());
+        persistenceService = mock(AsyncJobPersistenceService.class);
+
+        doNothing().when(persistenceService).writeClob(any(), any());
+
         when(bulkCreateApplicationEntryValidator.createSession(applicationList))
                 .thenReturn(validationSession);
         doAnswer(
@@ -110,12 +126,24 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenFieldCountMismatchAfterFinalRow_whenFailed_thenFormatsHeaderError() {
+    void givenFieldCountMismatchAfterFinalRow_whenFailed_thenFormatsHeaderError()
+            throws IOException {
         JobContext context = new JobContext();
         context.logFieldCountMismatch("Number of data fields does not match number of headers.");
         AsyncJobLifecycleEvent<BulkUploadRow> event =
-                new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED);
+                new AsyncJobLifecycleEvent<>(
+                        new JobStatusResponse(
+                                UUID.randomUUID(),
+                                JobType.BULK_UPLOAD_ENTRIES,
+                                JobStatus1.VALIDATING,
+                                "user",
+                                "error",
+                                persistenceService),
+                        null,
+                        context,
+                        JobStatus1.FAILED);
 
+        lifecycle.setCSVFile(csvFile);
         lifecycle.failed(event);
 
         assertThat(context.getValidationFailureMessages())
@@ -133,7 +161,7 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenNonReaderFailure_whenFailed_thenPreservesExistingFailure() {
+    void givenNonReaderFailure_whenFailed_thenPreservesExistingFailure() throws IOException {
         JobContext context = new JobContext();
         context.logFailure("Processing failed for row 2");
         AsyncJobLifecycleEvent<BulkUploadRow> event =
@@ -147,12 +175,13 @@ class BulkUploadAsyncLifecycleTest {
 
     @Test
     void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure(
-            CapturedOutput output) {
+            CapturedOutput output) throws IOException {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
         final AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
+        lifecycle.setCSVFile(csvFile);
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
@@ -188,6 +217,7 @@ class BulkUploadAsyncLifecycleTest {
         context = new JobContext();
         final AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
 
+        lifecycle.setCSVFile(csvFile);
         exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
 
         assertThat(exception.getCode())
@@ -220,7 +250,7 @@ class BulkUploadAsyncLifecycleTest {
     @Test
     void
             givenPostcodeViolatesOpenApiPattern_whenValidatingRespondentWithMidddleName_thenLogsBeanValidationFailure(
-                    CapturedOutput output) {
+                    CapturedOutput output) throws IOException {
         // Respondent Test
         BulkUploadRow respondentRow = validRespondentRow();
         respondentRow.setRespondentPostcode("invalid");
@@ -228,6 +258,8 @@ class BulkUploadAsyncLifecycleTest {
 
         JobContext context = new JobContext();
         final AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+
+        lifecycle.setCSVFile(csvFile);
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
@@ -305,7 +337,7 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() {
+    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() throws IOException {
         BulkUploadRow row = validOrganisationRow();
         doThrow(
                         new AppRegistryException(
@@ -316,8 +348,12 @@ class BulkUploadAsyncLifecycleTest {
         JobContext context = new JobContext();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
+        lifecycle.setCSVFile(csvFile);
+
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -336,7 +372,8 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors() {
+    void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors()
+            throws IOException {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
 
@@ -344,6 +381,7 @@ class BulkUploadAsyncLifecycleTest {
         context.logFailure("first header validation failure");
         context.logFailure("second header validation failure");
 
+        lifecycle.setCSVFile(csvFile);
         AppRegistryException exception =
                 assertThrows(
                         AppRegistryException.class,
@@ -383,7 +421,8 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenUnknownBusinessRuleFailureForPersonRespondent_whenValidating_thenUsesMiddleName() {
+    void givenUnknownBusinessRuleFailureForPersonRespondent_whenValidating_thenUsesMiddleName()
+            throws IOException {
         BulkUploadRow row = validRespondentRow();
         row.setRespondentMiddleName("Byron");
         doThrow(
@@ -394,6 +433,7 @@ class BulkUploadAsyncLifecycleTest {
                 .validate(any(), any());
         JobContext context = new JobContext();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+        lifecycle.setCSVFile(csvFile);
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
@@ -428,6 +468,7 @@ class BulkUploadAsyncLifecycleTest {
         context = new JobContext();
         AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
 
+        lifecycle.setCSVFile(csvFile);
         exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
 
         assertThat(exception.getCode())
@@ -546,10 +587,12 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenUnableToConvertErrorToJson_thenThrowsJsonProcessingError(CapturedOutput output) {
+    void givenUnableToConvertErrorToJson_thenThrowsJsonProcessingError(CapturedOutput output)
+            throws IOException {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
 
         try (MockedConstruction<ObjectMapper> ignored =
                 mockConstruction(
@@ -586,6 +629,7 @@ class BulkUploadAsyncLifecycleTest {
         BulkUploadRow row = validOrganisationRow();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
+        lifecycle.setCSVFile(csvFile);
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
@@ -621,11 +665,103 @@ class BulkUploadAsyncLifecycleTest {
                                                 "HEADER_ERROR"))));
 
         verify(validationSession).validate(any(), any());
+        verify(persistenceService).writeClob(any(), any());
+    }
+
+    @Test
+    void whenValidating_csvFileIsSet_thenWritesClobSuccessfully() throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+
+        StringBuilder writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+
+        JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(writtenCsv.toString())
+                .contains("HEADER|")
+                .contains("row-two|must match")
+                .contains("row-three|");
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+    }
+
+    @Test
+    void whenValidating_csvFileNotSet_throwsException() throws IOException {
+        JobContext context = new JobContext();
+        context.logFieldCountMismatch("HEADER MISMATCH");
+
+        val row = validOrganisationRow();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception).isNotNull();
+        verify(persistenceService, times(0)).writeClob(any(), any());
+
+        assertThat(exception.getMessage()).contains("Failed to save error CSV");
+    }
+
+    @Test
+    void whenValidating_csvFileDoesNotExist_throwsException() throws IOException {
+        JobContext context = new JobContext();
+        context.logFieldCountMismatch("HEADER MISMATCH");
+
+        val row = validOrganisationRow();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+        doThrow(new IOException("write failed")).when(persistenceService).writeClob(any(), any());
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception).isNotNull();
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(exception.getMessage())
+                .contains("Failed to save error CSV")
+                .contains("write failed");
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+
+        assertThat(exception.getMessage()).contains("Failed to save error CSV");
     }
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
-        return new AsyncJobLifecycleEvent<>(null, List.of(row), context, JobStatus1.VALIDATING);
+        return new AsyncJobLifecycleEvent<>(
+                new JobStatusResponse(
+                        UUID.randomUUID(),
+                        JobType.BULK_UPLOAD_ENTRIES,
+                        JobStatus1.VALIDATING,
+                        "user",
+                        "error",
+                        persistenceService),
+                List.of(row),
+                context,
+                JobStatus1.VALIDATING);
     }
 
     private static BulkUploadRow validOrganisationRow() {

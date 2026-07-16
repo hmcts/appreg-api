@@ -731,6 +731,56 @@
           "response": []
         },
         {
+          "name": "Application List Bulk Action Preview - Fee Update IDS Selection",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"UPDATE_FEE_DETAILS\",\n  \"selection\": {\n    \"selectionType\": \"IDS\",\n    \"entryIds\": [\n      \"{{CREATED_ENTRY_ID}}\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/bulk-action-preview",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "bulk-action-preview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Bulk Upload Application List Entries",
           "event": [
             {

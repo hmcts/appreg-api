@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -60,9 +59,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person.csv");
 
         MDC.put("traceId", "bulk-import-trace");
         CsvReader<PersonCsvPojo> csvReader = new CsvReader<>(fileToLoad, PersonCsvPojo.class);
@@ -176,7 +173,6 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
         when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
 
-        var resource = Thread.currentThread().getContextClassLoader().getResource("person.csv");
         var lifecycle = mockLifecycle();
         var jobRequest =
                 JobTypeRequest.builder()
@@ -185,7 +181,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .build();
 
         try (var csvReader =
-                new CsvReader<PersonCsvPojo>(new File(resource.getFile()), PersonCsvPojo.class)) {
+                new CsvReader<PersonCsvPojo>(testResourceFile("person.csv"), PersonCsvPojo.class)) {
             asyncJobServiceImpl
                     .startValidationFirstJob(jobRequest, csvReader, lifecycle, 1)
                     .getFuture()
@@ -208,7 +204,6 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
         when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
 
-        var resource = Thread.currentThread().getContextClassLoader().getResource("person.csv");
         var lifecycle = mockLifecycle();
         Mockito.doAnswer(
                         invocation -> {
@@ -227,7 +222,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .build();
 
         try (var csvReader =
-                new CsvReader<PersonCsvPojo>(new File(resource.getFile()), PersonCsvPojo.class)) {
+                new CsvReader<PersonCsvPojo>(testResourceFile("person.csv"), PersonCsvPojo.class)) {
             var outcome =
                     asyncJobServiceImpl.startValidationFirstJob(
                             jobRequest, csvReader, lifecycle, 1);
@@ -548,9 +543,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person_failformat.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person_failformat.csv");
 
         List<PersonCsvPojo> output = new ArrayList<>();
         CsvReader<PersonCsvPojo> csvReader = new CsvReader<>(fileToLoad, PersonCsvPojo.class);
@@ -594,9 +587,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
             throws Exception {
         asyncJobServiceImpl.setPageSize(1);
 
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person.csv");
 
         String userId = "userId";
 

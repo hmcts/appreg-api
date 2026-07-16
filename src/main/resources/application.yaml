@@ -98,6 +98,7 @@ appreg:
     write-audit-mode: ${BULK_IMPORT_WRITE_AUDIT_MODE:BULK}
   bulk-action-preview:
     global-limit: 2000
+    single-list-limit: 1050
   audit:
     diff:
       enable-complex-diff: true

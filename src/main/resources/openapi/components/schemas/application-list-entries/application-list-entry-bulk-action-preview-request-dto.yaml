@@ -1,0 +1,14 @@
+type: object
+description: Request to resolve a single-list bulk action selection into IDs and row context.
+additionalProperties: false
+required:
+  - action
+  - selection
+
+properties:
+
+  action:
+    $ref: "./bulk-action-type.yaml"
+
+  selection:
+    $ref: "./application-list-entry-bulk-action-selection-dto.yaml"

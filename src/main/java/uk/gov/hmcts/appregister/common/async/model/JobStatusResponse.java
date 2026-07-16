@@ -32,7 +32,7 @@ public class JobStatusResponse {
     /** The job status. */
     private final JobStatus1 status;
 
-    /** The user name that the job is associated with. */
+    /** The username that the job is associated with. */
     private final String userName;
 
     /** The error message if the job has failed. */
@@ -43,7 +43,7 @@ public class JobStatusResponse {
     protected final AsyncJobPersistenceService persistence;
 
     /**
-     * gets the job based on the response if we ever need to lookup the state of this job again.
+     * gets the job based on the response if we ever need to look up the state of this job again.
      *
      * @return The job id details.
      */
@@ -58,7 +58,7 @@ public class JobStatusResponse {
      * @throws IOException Any problems
      */
     public void write(InputStream updateWithInputStream) throws IOException {
-        if (status.equals(JobStatus1.FAILED) || status.equals(JobStatus1.COMPLETED)) {
+        if (status.equals(JobStatus1.COMPLETED)) {
             throw new JobException("Can't write clob to a finished job %s".formatted(getJobId()));
         }
 

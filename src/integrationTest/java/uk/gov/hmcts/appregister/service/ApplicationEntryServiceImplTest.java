@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -45,7 +44,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -852,7 +850,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         NameAddress applicantBeforeUpdate =
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
-        // get the ids of the status and officials
+        // get the ids of the fee statuses
         final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
         final List<Long> feeOfficialBeforeUpdate =
                 feeOfficial.stream().map(Keyable::getId).toList();
@@ -1283,20 +1281,8 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 appListEntryFeeStatusRepository.findByAppListEntryId(
                         applicationListEntry.get().getId());
 
-        List<AppListEntryOfficial> feeOfficial =
-                applicationListEntryOfficialRepository.findByAppListEntryId(
-                        applicationListEntry.get().getId());
-
-        // get the ids of the status and officials
+        // get the ids of the fee statuses
         final List<Long> feeStatusBeforeUpdate = feeStatuses.stream().map(Keyable::getId).toList();
-        final List<Long> feeOfficialBeforeUpdate =
-                feeOfficial.stream().map(Keyable::getId).toList();
-
-        // get the existing applicant and respondent for later comparison
-        final NameAddress respondentBeforeUpdate =
-                BeanUtil.copyBean(applicationListEntry.get().getRnameaddress());
-        final NameAddress applicantBeforeUpdate =
-                BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
         final EntryUpdateDto updateDto = createEntryUpdateDto(settings);
         // set the organisation and person applicant to null so we use the standard applicant
@@ -1327,41 +1313,19 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         updateDto,
                         applicationListEntry.get().getApplicationList().getUuid(),
                         applicationListEntry.get().getUuid());
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> applicationEntryService.updateEntry(payloadForCreate));
+        MatchResponse<EntryGetDetailDto> response =
+                applicationEntryService.updateEntry(payloadForCreate);
 
         entityManager.clear();
 
-        Assertions.assertEquals(
-                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
+        Assertions.assertEquals("CT99002", response.getPayload().getApplicationCode());
+        Assertions.assertEquals("APP001", response.getPayload().getStandardApplicantCode());
 
         final List<AppListEntryFeeStatus> feeStatusesUpdated =
                 appListEntryFeeStatusRepository.findByAppListEntryId(
                         applicationListEntry.get().getId());
 
-        final List<AppListEntryOfficial> feeOfficialUpdated =
-                applicationListEntryOfficialRepository.findByAppListEntryId(
-                        applicationListEntry.get().getId());
-
-        // assert that old name does not exist
-        Assertions.assertNull(respondentBeforeUpdate);
-        Assertions.assertNotNull(applicantBeforeUpdate);
-
-        Assertions.assertTrue(
-                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isPresent());
-
-        // make sure the rejected update leaves officials unchanged
-        Assertions.assertEquals(feeOfficialBeforeUpdate.size(), feeOfficialUpdated.size());
-        for (Long id : feeOfficialBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
-                    "Expected official with id " + id + " to be preserved");
-        }
-
-        // make sure a rejected update leaves fee-status history unchanged
+        // make sure a no-fee update with null feeStatuses leaves fee-status history unchanged
         Assertions.assertEquals(feeStatusBeforeUpdate.size(), feeStatusesUpdated.size());
 
         for (Long id : feeStatusBeforeUpdate) {

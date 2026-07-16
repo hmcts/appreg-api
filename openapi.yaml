@@ -2037,6 +2037,126 @@ paths:
       summary: "Get Application List Entry IDs (unpaged, filterable)"
       tags:
       - application-list-entries
+  /application-lists/{listId}/entries/bulk-action-preview:
+    post:
+      description: |
+        Resolves a selection within a single Application List into entry IDs and row context, enforcing the configured single-list bulk action limit.
+      operationId: applicationListEntryBulkActionPreview
+      parameters:
+      - description: Public identifier of the Application List.
+        example: 123e4567-e89b-12d3-a456-426655440000
+        in: path
+        name: listId
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/vnd.hmcts.appreg.v1+json:
+            schema:
+              $ref: "#/components/schemas/application-list-entry-bulk-action-preview-request-dto"
+        required: true
+      responses:
+        "200":
+          content:
+            application/vnd.hmcts.appreg.v1+json:
+              schema:
+                $ref: "#/components/schemas/bulk-action-preview-response-dto"
+          description: Bulk action preview for the resolved Application List selection.
+          headers:
+            Vary:
+              description: Response varies by Accept for media-type versioning.
+              schema:
+                example: Accept
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Invalid request parameters.
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "404":
+          content:
+            application/problem+json:
+              examples:
+                missing:
+                  value:
+                    type: https://errors.hmcts.net/appreg/not-found
+                    title: Not Found
+                    status: 404
+                    detail: Result code with id=123 was not found
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: The requested resource was not found.
+        "406":
+          content:
+            application/problem+json:
+              examples:
+                notAcceptable:
+                  value:
+                    type: https://errors.hmcts.net/common/not-acceptable
+                    title: Not Acceptable
+                    status: 406
+                    detail: Requested media type/version not acceptable
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Requested media type/version not acceptable.
+        "413":
+          content:
+            application/problem+json:
+              examples:
+                payload-too-large:
+                  value:
+                    type: https://errors.hmcts.net/common/payload-too-large
+                    title: Payload Too Large
+                    status: 413
+                    detail: Uploaded file must not be larger than 5MB
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Request entity is too large to be processed.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+      summary: Resolve Application List bulk action selection preview
+      tags:
+      - application-list-entries
   /application-lists/{listId}/entries/officials:
     post:
       description: |
@@ -4211,13 +4331,13 @@ paths:
       description: Returns the Criminal Justice Area matching the supplied code.
       operationId: getCriminalJusticeAreaByCode
       parameters:
-      - description: Code used to identify the Result Code (case-insensitive).
+      - description: Code used to identify the Criminal Justice Area (case-insensitive).
         example: CF
         in: path
         name: code
         required: true
         schema:
-          maxLength: 10
+          maxLength: 2
           type: string
       responses:
         "200":
@@ -6772,6 +6892,19 @@ components:
       - lodgementDate
       - numberOfRespondents
       type: object
+    application-list-entry-bulk-action-preview-request-dto:
+      additionalProperties: false
+      description: Request to resolve a single-list bulk action selection into IDs
+        and row context.
+      properties:
+        action:
+          $ref: "#/components/schemas/bulk-action-type"
+        selection:
+          $ref: "#/components/schemas/application-list-entry-bulk-action-selection-dto"
+      required:
+      - action
+      - selection
+      type: object
     bulk-officials-update-dto:
       additionalProperties: false
       description: Replace officials for multiple Application List Entries in one
@@ -6807,14 +6940,14 @@ components:
       properties:
         entryIds:
           description: |
-            Array of entry IDs whose fee-status history should be appended to. All must belong to the list in the path. Requests with more than 500 entry IDs are rejected with 400 Bad Request.
+            Array of entry IDs whose fee-status history should be appended to. All must belong to the list in the path. Requests with more than 1050 entry IDs are rejected with 400 Bad Request.
           example:
           - 3fa85f64-5717-4562-b3fc-2c963f66afa6
           - 3fa85f64-5717-4562-b3fc-2c963f66afa7
           items:
             format: uuid
             type: string
-          maxItems: 500
+          maxItems: 1050
           minItems: 1
           type: array
           uniqueItems: true
@@ -6964,7 +7097,7 @@ components:
           type: array
         feeStatuses:
           description: |
-            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. Fee-status rows must only be supplied when the selected application code requires a fee. This operation rejects updates to non-fee application codes when the entry already has fee-status history or when fee-status rows are supplied in the request.
+            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. For application codes that do not require a fee, this operation allows existing historical fee-status rows to be retained unchanged, but rejects new, changed, or cleared fee-status rows.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array
@@ -7782,10 +7915,13 @@ components:
       - status
       type: object
     bulk-action-type:
-      description: Supported global bulk action types.
+      description: Supported bulk action types.
       enum:
       - RESULT_SELECTED
       - UPDATE_NOTES
+      - MOVE_ENTRIES
+      - UPDATE_OFFICIALS
+      - UPDATE_FEE_DETAILS
       - PRINT_CONTINUOUS
       - PRINT_PAGE
       type: string
@@ -7907,6 +8043,39 @@ components:
           type: string
         type:
           $ref: "#/components/schemas/official-type"
+      type: object
+    application-list-entry-bulk-action-selection-dto:
+      additionalProperties: false
+      description: |
+        Selection criteria for a single Application List bulk action preview. When selectionType is IDS, entryIds must contain at least one non-null entry ID. When selectionType is FILTER, filter, sort, and excludedEntryIds describe the select-all-matching selection.
+      properties:
+        selectionType:
+          $ref: "#/components/schemas/bulk-action-selection-type"
+        filter:
+          $ref: "#/components/schemas/entry-application-list-get-filter-dto"
+        sort:
+          description: |
+            Sort order for the resolved selection. A single value is currently supported. Format: `property,(asc|desc)`.
+          example:
+          - "sequenceNumber,asc"
+          items:
+            type: string
+          type: array
+        entryIds:
+          description: Explicitly selected Application List Entry IDs.
+          items:
+            format: uuid
+            type: string
+          minItems: 1
+          type: array
+        excludedEntryIds:
+          description: Entry IDs excluded from a select-all-matching filter selection.
+          items:
+            format: uuid
+            type: string
+          type: array
+      required:
+      - selectionType
       type: object
     bulk-fee-details-dto:
       additionalProperties: false
