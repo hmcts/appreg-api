@@ -10,6 +10,9 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.io.IOException;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -347,6 +350,38 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                                         + System.lineSeparator()
                                         + "getStandardApplicants.pageSize="
                                         + "must be less than or equal to 100"));
+    }
+
+    @Test
+    void givenMalformedPercentEncoding_whenGetStandardApplicants_thenReturn400() throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        String rawResponse =
+                sendRawGetRequest(
+                        "/" + WEB_CONTEXT + "?name=%",
+                        tokenGenerator.fetchTokenForRole().getToken());
+
+        assertThat(rawResponse).startsWith("HTTP/1.1 400");
+        assertThat(rawResponse).contains("Malformed query parameter encoding");
+    }
+
+    @Test
+    void givenLiteralPercentName_whenGetStandardApplicants_thenReturn200WithEmptyContent()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response response =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request -> request.queryParam("name", "%"));
+
+        response.then().statusCode(200);
+        StandardApplicantPage page = response.as(StandardApplicantPage.class);
+        assertThat(page.getContent()).isEmpty();
+        assertThat(page.getTotalElements()).isZero();
     }
 
     @Test
@@ -1875,6 +1910,24 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
             }
 
             return rs;
+        }
+    }
+
+    private String sendRawGetRequest(String requestTarget, String bearerToken) throws IOException {
+        try (Socket socket = new Socket("localhost", Integer.parseInt(port))) {
+            String request =
+                    "GET "
+                            + requestTarget
+                            + " HTTP/1.1\r\nHost: localhost:"
+                            + port
+                            + "\r\nAuthorization: Bearer "
+                            + bearerToken
+                            + "\r\nConnection: close\r\n\r\n";
+
+            socket.getOutputStream().write(request.getBytes(StandardCharsets.US_ASCII));
+            socket.getOutputStream().flush();
+
+            return new String(socket.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 

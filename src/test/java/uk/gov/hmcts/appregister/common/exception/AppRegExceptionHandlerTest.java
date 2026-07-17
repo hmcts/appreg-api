@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -932,6 +933,26 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals("Access denied", problemDetail.getBody().getDetail());
         Mockito.verify(securityEndpointFailureLogger)
                 .logFailure(request, 403, SecurityEndpointFailureLogger.ACCESS_DENIED);
+    }
+
+    @Test
+    void givenMalformedQueryParameter_whenHandled_thenBadRequestIsReturned() {
+        InvalidParameterException exception =
+                new InvalidParameterException("Character decoding failed");
+
+        ResponseEntity<ProblemDetail> response =
+                exceptionHandler.handleInvalidParameterException(exception);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Assertions.assertNotNull(response.getBody());
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatus());
+        Assertions.assertEquals(
+                "Malformed query parameter encoding", response.getBody().getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().orElseThrow(),
+                response.getBody().getType());
+        assertThat(logCaptor.getWarnLogs()).contains("[400]: Malformed query parameter encoding");
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     @Test
