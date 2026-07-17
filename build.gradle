@@ -369,8 +369,8 @@ def xmls = [
 
 sonarqube {
   properties {
-    property 'sonar.projectName', 'AppReg :: appreg-api'
-    property 'sonar.projectKey', 'uk.gov.hmcts.appreg:appreg-api'
+    property 'sonar.projectName', 'AppReg :: appreg-api-2'
+    property 'sonar.projectKey', 'uk.gov.hmcts.appreg:appreg-api-2'
     property 'sonar.coverage.exclusions', sonarCoverageExclusions
     property(
       'sonar.coverage.jacoco.xmlReportPaths',
