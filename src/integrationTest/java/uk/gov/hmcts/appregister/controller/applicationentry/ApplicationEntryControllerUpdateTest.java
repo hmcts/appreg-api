@@ -1095,7 +1095,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         val updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
         Assertions.assertEquals("Updated audit notes", updatedDto.getNotes());
-        Assertions.assertEquals(5, updatedDto.getNumberOfRespondents());
+        Assertions.assertEquals(JsonNullable.of(5), updatedDto.getNumberOfRespondents());
         Assertions.assertEquals("CT99001", updatedDto.getApplicationCode());
         Assertions.assertEquals("CASE-UPD-001", updatedDto.getCaseReference());
 
@@ -1457,7 +1457,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         entryUpdateDto);
 
         responseSpecUpdate.then().statusCode(200);
-        Assertions.assertNull(
+        Assertions.assertEquals(
+                JsonNullable.of(null),
                 responseSpecUpdate.as(EntryGetDetailDto.class).getNumberOfRespondents());
     }
 

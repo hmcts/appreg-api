@@ -2347,7 +2347,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         val createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
         Assertions.assertEquals("Create audit notes", createdDto.getNotes());
-        Assertions.assertEquals(5, createdDto.getNumberOfRespondents());
+        Assertions.assertEquals(JsonNullable.of(5), createdDto.getNumberOfRespondents());
         Assertions.assertEquals("CT99001", createdDto.getApplicationCode());
         Assertions.assertEquals("CASE-CRT-001", createdDto.getCaseReference());
 
@@ -2641,7 +2641,8 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         entryCreateDto);
 
         responseSpecCreate.then().statusCode(201);
-        Assertions.assertNull(
+        Assertions.assertEquals(
+                JsonNullable.of(null),
                 responseSpecCreate.as(EntryGetDetailDto.class).getNumberOfRespondents());
     }
 
