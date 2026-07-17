@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress.database;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -123,14 +124,16 @@ class JdbcBulkUpsertServiceTest {
                         anyString(), any(), any(), any(), any(RuntimeException.class)))
                 .thenReturn(List.of(new FailedUpsertRecord<>(item, "boom")));
 
-        assertThatThrownBy(
-                        () ->
-                                service.upsertBatch(
-                                        "application_codes_staging",
-                                        "ac_id",
-                                        List.of(item),
-                                        rowMapper,
-                                        ApplicationCodeIngressRecord::id))
+        ThrowingCallable upsertCall =
+                () ->
+                        service.upsertBatch(
+                                "application_codes_staging",
+                                "ac_id",
+                                List.of(item),
+                                rowMapper,
+                                ApplicationCodeIngressRecord::id);
+
+        assertThatThrownBy(upsertCall)
                 .isInstanceOf(CsdsBatchUpsertException.class)
                 .hasMessageContaining("CSDS batch upsert failed");
     }

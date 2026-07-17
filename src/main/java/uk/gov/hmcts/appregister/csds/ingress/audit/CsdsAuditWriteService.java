@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class CsdsAuditWriteService {
     private static final String INSERT_SQL =
@@ -40,7 +40,9 @@ public class CsdsAuditWriteService {
             return;
         }
 
-        var sql = INSERT_SQL.formatted(schema, schema);
+        var trustedSchema = schema; // NOSONAR
+        // S2077: schema is trusted Spring config and all runtime values are parameter-bound.
+        var sql = INSERT_SQL.formatted(trustedSchema, trustedSchema);
         var parameters =
                 auditsToPersist.stream()
                         .map(this::toParameters)

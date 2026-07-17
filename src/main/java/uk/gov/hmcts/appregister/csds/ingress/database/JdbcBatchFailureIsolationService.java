@@ -8,13 +8,13 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class JdbcBatchFailureIsolationService {
     private final NamedParameterJdbcTemplate jdbcTemplate;

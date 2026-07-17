@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 public class FeeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, FeeDiffResult> {
     private static final long DEFAULT_FEE_VERSION = 1L;
+    private static final String FEE_ID = "FEE_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "CivilFeeID",
@@ -177,7 +178,7 @@ public class FeeDataIngressProcessor
 
     private FeeIngressRecord toSourceRecord(JsonNode node) {
         return new FeeIngressRecord(
-                requiredLong(node, "FEE_ID"),
+                requiredLong(node, FEE_ID),
                 requiredText(node, "FeeReference"),
                 requiredText(node, "Description"),
                 requiredBigDecimal(node, "FeeValue"),
@@ -209,12 +210,12 @@ public class FeeDataIngressProcessor
         val copiedRecord = objectNode.deepCopy();
         val resolvedId = FeeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
-            copiedRecord.put("FEE_ID", resolvedId);
+            copiedRecord.put(FEE_ID, resolvedId);
         }
         return copiedRecord;
     }
 
     private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, "FEE_ID"));
+        return indexSourceRecords(processedData, node -> nullableLong(node, FEE_ID));
     }
 }

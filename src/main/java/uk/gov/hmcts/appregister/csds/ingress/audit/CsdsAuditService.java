@@ -5,12 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class CsdsAuditService {
     private static final String AUDIT_CSDS_PARAMETER = "AUDIT_CSDS";
@@ -24,13 +24,15 @@ public class CsdsAuditService {
 
     public CsdsAuditLevel auditLevel() {
         try {
+            var trustedSchema = schema; // NOSONAR
+            // S2077: schema is trusted Spring config and runtime values are parameter-bound.
             var sql =
                     """
                     SELECT parameter_value
                     FROM %s.configuration_parameters
                     WHERE parameter_name = :parameterName
                     """
-                            .formatted(schema);
+                            .formatted(trustedSchema);
             var value =
                     jdbcTemplate.queryForObject(
                             sql,

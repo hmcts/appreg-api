@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 @Component
 public class ApplicationCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ApplicationCodeDiffResult> {
+    private static final String AC_ID = "AC_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ApplicationCodeID",
@@ -185,7 +186,7 @@ public class ApplicationCodeDataIngressProcessor
 
     private ApplicationCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
-                requiredLong(node, "AC_ID"),
+                requiredLong(node, AC_ID),
                 requiredText(node, "Code"),
                 requiredText(node, "ApplicationTitle"),
                 requiredText(node, "ApplicationWording"),
@@ -207,12 +208,12 @@ public class ApplicationCodeDataIngressProcessor
         val copiedRecord = objectNode.deepCopy();
         val resolvedId = ApplicationCodeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
-            copiedRecord.put("AC_ID", resolvedId);
+            copiedRecord.put(AC_ID, resolvedId);
         }
         return copiedRecord;
     }
 
     private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, "AC_ID"));
+        return indexSourceRecords(processedData, node -> nullableLong(node, AC_ID));
     }
 }

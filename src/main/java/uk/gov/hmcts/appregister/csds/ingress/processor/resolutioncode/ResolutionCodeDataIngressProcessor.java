@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 @Component
 public class ResolutionCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ResolutionCodeDiffResult> {
+    private static final String RC_ID = "RC_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ResolutionCodeID",
@@ -183,7 +184,7 @@ public class ResolutionCodeDataIngressProcessor
 
     private ResolutionCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ResolutionCodeIngressRecord(
-                requiredLong(node, "RC_ID"),
+                requiredLong(node, RC_ID),
                 requiredText(node, "Code"),
                 requiredText(node, "ResultTitle"),
                 requiredText(node, "ResultWording"),
@@ -203,12 +204,12 @@ public class ResolutionCodeDataIngressProcessor
         val copiedRecord = objectNode.deepCopy();
         val resolvedId = ResolutionCodeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
-            copiedRecord.put("RC_ID", resolvedId);
+            copiedRecord.put(RC_ID, resolvedId);
         }
         return copiedRecord;
     }
 
     private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, "RC_ID"));
+        return indexSourceRecords(processedData, node -> nullableLong(node, RC_ID));
     }
 }

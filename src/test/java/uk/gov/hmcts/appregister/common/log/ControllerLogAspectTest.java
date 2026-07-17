@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.common.log;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -34,12 +36,12 @@ class ControllerLogAspectTest {
     void logController() throws Throwable {
         controllerAspectLog.clearLogs();
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
         ResponseEntity<String> responseEntity = ResponseEntity.ok("Test Result");
         responseEntity.getHeaders().add("Content-Type", "application/vnd.hmcts.appreg.v1+json");
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
         Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
         Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
         Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
@@ -134,10 +136,10 @@ class ControllerLogAspectTest {
         ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         ConstraintViolationException exception =
                 new ConstraintViolationException("validation failed", Set.of());
-        Mockito.when(customProceedingJoinPoint.proceed()).thenThrow(exception);
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         ConstraintViolationException thrown =
                 Assertions.assertThrows(

@@ -7,19 +7,20 @@ import static org.mockito.Mockito.when;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class CsdsIngressSchedulerTest {
     @Mock private CsdsIngressProcessor csdsIngressProcessor;
+    @InjectMocks private CsdsIngressScheduler scheduler;
 
     @Test
     void given_jobRuns_when_runNightlyIngress_then_logsCompletion() {
         var logCaptor = LogCaptor.forClass(CsdsIngressScheduler.class);
         logCaptor.clearLogs();
         when(csdsIngressProcessor.runIngress()).thenReturn(true);
-        var scheduler = new CsdsIngressScheduler(csdsIngressProcessor);
 
         scheduler.runNightlyIngress();
 
@@ -36,7 +37,6 @@ class CsdsIngressSchedulerTest {
         var logCaptor = LogCaptor.forClass(CsdsIngressScheduler.class);
         logCaptor.clearLogs();
         when(csdsIngressProcessor.runIngress()).thenReturn(false);
-        var scheduler = new CsdsIngressScheduler(csdsIngressProcessor);
 
         scheduler.runNightlyIngress();
 
