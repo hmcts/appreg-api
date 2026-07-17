@@ -427,7 +427,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/problem"
-          description: Invalid request parameters.
+          description: |
+            Uploaded CSDS snapshot could be parsed, but one or more rows violated target-table constraints. Response detail reports the failing row count; row-level reasons are written to CSDS_AUDIT.
         "401":
           content:
             application/problem+json:
@@ -5940,6 +5941,13 @@ components:
           schema:
             $ref: "#/components/schemas/problem"
       description: Invalid request parameters.
+    csds-ingest-bad-request-error:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/problem"
+      description: |
+        Uploaded CSDS snapshot could be parsed, but one or more rows violated target-table constraints. Response detail reports the failing row count; row-level reasons are written to CSDS_AUDIT.
     csds-conflict-error:
       content:
         application/problem+json:
@@ -7102,7 +7110,7 @@ components:
           type: array
         feeStatuses:
           description: |
-            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. Fee-status rows must only be supplied when the selected application code requires a fee. This operation rejects updates to non-fee application codes when the entry already has fee-status history or when fee-status rows are supplied in the request.
+            Fee-status rows to persist for the entry. Providing a list replaces the existing fee-status rows. `null` means the existing fee-status rows are left unchanged. For application codes that do not require a fee, this operation allows existing historical fee-status rows to be retained unchanged, but rejects new, changed, or cleared fee-status rows.
           items:
             $ref: "#/components/schemas/fee-status"
           type: array

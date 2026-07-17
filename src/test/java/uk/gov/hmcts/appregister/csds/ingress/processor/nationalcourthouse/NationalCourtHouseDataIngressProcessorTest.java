@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -26,9 +27,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
 class NationalCourtHouseDataIngressProcessorTest {
@@ -37,6 +41,7 @@ class NationalCourtHouseDataIngressProcessorTest {
     @Mock private CsdsIngressClient ingressClient;
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
+    @Mock private CsdsAuditService csdsAuditService;
 
     @TempDir Path tempDir;
 
@@ -49,15 +54,27 @@ class NationalCourtHouseDataIngressProcessorTest {
         properties = new CsdsIngressProperties();
         properties.setPageSize(2);
         properties.getProcessors().getNationalCourtHouses().setReportingDir(tempDir.toString());
+        lenient().when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.NONE);
         rowMapper = new NationalCourtHouseIngressDatabaseRowMapper();
         var diffService = new NationalCourtHouseDiffService(tableReadService, rowMapper);
         processor =
                 new NationalCourtHouseDataIngressProcessor(
                         properties,
+                        csdsAuditService,
+                        passthroughTransactionRunner(),
                         diffService,
                         new NationalCourtHouseDiffReportingService(properties),
                         bulkUpsertService,
                         rowMapper);
+    }
+
+    private CsdsIngressTransactionRunner passthroughTransactionRunner() {
+        return new CsdsIngressTransactionRunner() {
+            @Override
+            public <T> T execute(java.util.function.Supplier<T> supplier) {
+                return supplier.get();
+            }
+        };
     }
 
     @Test
@@ -130,7 +147,8 @@ class NationalCourtHouseDataIngressProcessorTest {
                                                         .map(NationalCourtHouseIngressRecord::id)
                                                         .toList()
                                                         .equals(List.of(3106L, 103803L))),
-                        same(rowMapper));
+                        same(rowMapper),
+                        org.mockito.ArgumentMatchers.any());
         try (var files = Files.list(tempDir)) {
             assertThat(files.map(path -> path.getFileName().toString()).toList())
                     .anyMatch(name -> name.startsWith("national_court_houses_incoming_"))

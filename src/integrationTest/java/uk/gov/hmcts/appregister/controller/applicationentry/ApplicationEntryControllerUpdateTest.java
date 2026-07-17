@@ -920,7 +920,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenAnInvalidUpdate_whenFeeStatusWouldBePreservedForNonFeeCode_then400IsReturned()
+    void givenUpdate_whenFeeStatusWouldBePreservedForNonFeeCode_then200IsReturned()
             throws Exception {
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setFeeStatuses(null);
@@ -931,18 +931,45 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         var tokenGenerator = createAdminToken();
         val responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        responseSpecUpdate.then().statusCode(400);
-        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+        responseSpecUpdate.then().statusCode(200);
+        EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
 
-        Assertions.assertEquals(
-                AppListEntryError.FEE_NOT_REQUIRED.getCode().getType().get(),
-                problemDetail.getType());
+        Assertions.assertEquals("CT99002", updatedDto.getApplicationCode());
+        assertFeeStatusesMatch(createdDto.getFeeStatuses(), updatedDto.getFeeStatuses());
+    }
+
+    @Test
+    void givenUpdate_whenExistingFeeStatusesAreSentForNonFeeCode_then200IsReturned()
+            throws Exception {
+        var tokenGenerator = createAdminToken();
+        val responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(createdDto.getFeeStatuses());
+        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(200);
+        EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+
+        Assertions.assertEquals("CT99002", updatedDto.getApplicationCode());
+        assertFeeStatusesMatch(createdDto.getFeeStatuses(), updatedDto.getFeeStatuses());
     }
 
     @Test
@@ -1999,5 +2026,23 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         official.setSurname(surname);
         official.setType(type);
         return official;
+    }
+
+    private static void assertFeeStatusesMatch(
+            List<FeeStatus> expectedFeeStatuses, List<FeeStatus> actualFeeStatuses) {
+        assertThat(feeStatusKeys(actualFeeStatuses))
+                .containsExactlyInAnyOrderElementsOf(feeStatusKeys(expectedFeeStatuses));
+    }
+
+    private static List<String> feeStatusKeys(List<FeeStatus> feeStatuses) {
+        return feeStatuses.stream()
+                .map(
+                        feeStatus ->
+                                "%s|%s|%s"
+                                        .formatted(
+                                                feeStatus.getPaymentStatus(),
+                                                feeStatus.getStatusDate(),
+                                                feeStatus.getPaymentReference()))
+                .toList();
     }
 }

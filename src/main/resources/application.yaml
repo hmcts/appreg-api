@@ -115,7 +115,7 @@ appreg:
       page-size: 100
       processors:
         application-codes:
-          enabled: false
+          enabled: true
           table-name: application_codes_staging
           primary-key: ac_id
           source-entity-name: ApplicationCode
@@ -123,7 +123,7 @@ appreg:
 #          mock: csds/application_codes.json
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
-          enabled: false
+          enabled: true
           table-name: resolution_codes_staging
           primary-key: rc_id
           source-entity-name: ResolutionCode
@@ -131,7 +131,7 @@ appreg:
 #          mock: csds/resolution_codes.json
 #          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
         fee:
-          enabled: false
+          enabled: true
           table-name: fee_staging
           primary-key: fee_id
           source-entity-name: CivilFee
@@ -139,7 +139,7 @@ appreg:
 #          mock: csds/fee.json
 #          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
         standard-applicants:
-          enabled: false
+          enabled: true
           table-name: standard_applicants_staging
           primary-key: sa_id
           source-entity-name: DA_GetStandardApplicant
@@ -147,7 +147,7 @@ appreg:
 #          mock: csds/standard_applicants.json
 #          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
         national-court-houses:
-          enabled: false
+          enabled: true
           table-name: national_court_houses_staging
           primary-key: nch_id
           source-entity-name: Court

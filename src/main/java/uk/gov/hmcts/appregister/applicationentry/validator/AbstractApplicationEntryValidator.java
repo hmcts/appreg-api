@@ -474,7 +474,9 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
         }
-        if (!isFeeStatusRequired(applicationCode) && !feeStatuses.isEmpty()) {
+        if (!isFeeStatusRequired(applicationCode)
+                && !feeStatuses.isEmpty()
+                && !isRetainedFeeStatusAllowed(applicationCode, validatable, feeStatuses)) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_NOT_REQUIRED,
                     "Fee not required for code %s".formatted(getApplicationCode(validatable)));
@@ -501,6 +503,11 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
     protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
         return applicationCode.getFeeDue() == YesOrNo.YES;
+    }
+
+    protected boolean isRetainedFeeStatusAllowed(
+            ApplicationCode applicationCode, T validatable, List<FeeStatus> feeStatuses) {
+        return false;
     }
 
     protected LocalDate currentBusinessDate() {

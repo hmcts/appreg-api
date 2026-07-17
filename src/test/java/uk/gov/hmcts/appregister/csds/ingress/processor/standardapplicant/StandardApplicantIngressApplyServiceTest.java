@@ -70,7 +70,8 @@ class StandardApplicantIngressApplyServiceTest {
                         eq("standard_applicants_staging"),
                         eq("sa_id"),
                         eq(List.of(record)),
-                        eq(rowMapper));
+                        eq(rowMapper),
+                        org.mockito.ArgumentMatchers.any());
     }
 
     private StandardApplicantIngressRecord record(Long id) {

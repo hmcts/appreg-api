@@ -3,22 +3,28 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
 @Component
 public class ApplicationCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ApplicationCodeDiffResult> {
+    private static final String AC_ID = "AC_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ApplicationCodeID",
@@ -43,11 +49,17 @@ public class ApplicationCodeDataIngressProcessor
 
     public ApplicationCodeDataIngressProcessor(
             CsdsIngressProperties properties,
+            CsdsAuditService csdsAuditService,
+            CsdsIngressTransactionRunner csdsIngressTransactionRunner,
             ApplicationCodeDiffService diffService,
             ApplicationCodeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
             ApplicationCodeIngressDatabaseRowMapper rowMapper) {
-        super(properties, properties.getProcessors().getApplicationCodes());
+        super(
+                properties,
+                properties.getProcessors().getApplicationCodes(),
+                csdsAuditService,
+                csdsIngressTransactionRunner);
         applicationCodeProperties = properties.getProcessors().getApplicationCodes();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -125,7 +137,30 @@ public class ApplicationCodeDataIngressProcessor
     @Override
     protected void applyDiff(ApplicationCodeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
-        bulkUpsertService.upsertBatch(targetTable(), targetKeyField(), rows, rowMapper);
+        bulkUpsertService.upsertBatch(
+                targetTable(), targetKeyField(), rows, rowMapper, ApplicationCodeIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildSuccessAudits(
+            List<JsonNode> processedData, ApplicationCodeDiffResult diff) {
+        return buildSuccessAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                ApplicationCodeIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildFailureAudits(
+            List<JsonNode> processedData,
+            ApplicationCodeDiffResult diff,
+            CsdsBatchUpsertException ex) {
+        return buildFailureAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                ApplicationCodeIngressRecord::id,
+                ApplicationCodeIngressRecord.class,
+                ex);
     }
 
     @Override
@@ -136,10 +171,7 @@ public class ApplicationCodeDataIngressProcessor
     @Override
     public CsdsIngestResponse ingest(List<JsonNode> rawJson) {
         val processedData = preProcess(rawJson);
-        val diff = diff(processedData);
-        logDiffSummary(diff);
-        report(processedData, diff);
-        applyDiff(diff);
+        val diff = applyWithAuditing(processedData);
 
         var insertedCount = countByOperation(diff, IngressOperation.INSERT);
         var updatedCount = countByOperation(diff, IngressOperation.UPDATE);
@@ -154,7 +186,7 @@ public class ApplicationCodeDataIngressProcessor
 
     private ApplicationCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
-                requiredLong(node, "AC_ID"),
+                requiredLong(node, AC_ID),
                 requiredText(node, "Code"),
                 requiredText(node, "ApplicationTitle"),
                 requiredText(node, "ApplicationWording"),
@@ -176,8 +208,12 @@ public class ApplicationCodeDataIngressProcessor
         val copiedRecord = objectNode.deepCopy();
         val resolvedId = ApplicationCodeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
-            copiedRecord.put("AC_ID", resolvedId);
+            copiedRecord.put(AC_ID, resolvedId);
         }
         return copiedRecord;
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, AC_ID));
     }
 }

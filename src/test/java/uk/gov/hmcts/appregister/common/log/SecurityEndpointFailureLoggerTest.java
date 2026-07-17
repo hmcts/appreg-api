@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import jakarta.servlet.DispatcherType;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,6 +98,29 @@ class SecurityEndpointFailureLoggerTest {
                         "status=401",
                         "category=authentication_failure",
                         "user=anonymous");
+    }
+
+    @Test
+    void givenErrorDispatchRequest_whenLogged_thenLogIsSuppressed() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/error");
+        request.setDispatcherType(DispatcherType.ERROR);
+
+        SecurityEndpointFailureLogger logger =
+                new SecurityEndpointFailureLogger(emptyUserProvider());
+        logger.logFailure(request, 401, SecurityEndpointFailureLogger.AUTHENTICATION_FAILURE);
+
+        assertThat(logCaptor.getWarnLogs()).isEmpty();
+    }
+
+    @Test
+    void givenErrorPathInMdc_whenLogged_thenLogIsSuppressed() {
+        MDC.put(LogMdcFilter.PATH, "/error");
+
+        SecurityEndpointFailureLogger logger =
+                new SecurityEndpointFailureLogger(emptyUserProvider());
+        logger.logFailure(null, 401, SecurityEndpointFailureLogger.AUTHENTICATION_FAILURE);
+
+        assertThat(logCaptor.getWarnLogs()).isEmpty();
     }
 
     private static ObjectProvider<UserProvider> emptyUserProvider() {

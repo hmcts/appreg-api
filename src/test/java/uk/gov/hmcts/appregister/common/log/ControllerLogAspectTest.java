@@ -1,8 +1,12 @@
 package uk.gov.hmcts.appregister.common.log;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
 import java.util.Set;
 import nl.altindag.log.LogCaptor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -10,9 +14,10 @@ import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 
 class ControllerLogAspectTest {
 
@@ -31,18 +36,18 @@ class ControllerLogAspectTest {
     void logController() throws Throwable {
         controllerAspectLog.clearLogs();
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
         ResponseEntity<String> responseEntity = ResponseEntity.ok("Test Result");
         responseEntity.getHeaders().add("Content-Type", "application/vnd.hmcts.appreg.v1+json");
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
-        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
+        when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
+        when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
 
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         // call the aspect method
         ResponseEntity<?> result =
@@ -59,22 +64,22 @@ class ControllerLogAspectTest {
                         .get(1)
                         .startsWith("Finish: Executed ControllerLogAspectTest.testMethod in "));
         assertThat(controllerAspectLog.getDebugLogs().get(1)).endsWith(" ms");
-        Mockito.verify(customProceedingJoinPoint).proceed();
+        verify(customProceedingJoinPoint).proceed();
     }
 
     @Test
     void logControllerNoResult() throws Throwable {
         controllerAspectLog.clearLogs();
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(null);
-        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
+        when(customProceedingJoinPoint.proceed()).thenReturn(null);
+        when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
 
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         // call the aspect method
         String result = (String) controllerLogAspect.logDuration(customProceedingJoinPoint);
@@ -95,7 +100,7 @@ class ControllerLogAspectTest {
     @Test
     void logControllerJsonResponseWithContentTypeParameters() throws Throwable {
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
         ResponseEntity<String> responseEntity =
                 ResponseEntity.ok()
@@ -104,12 +109,12 @@ class ControllerLogAspectTest {
                                 "application/vnd.hmcts.appreg.v1+json;charset=UTF-8")
                         .body("Test Result");
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
-        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
+        when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
+        when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         ResponseEntity<?> result =
                 (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
@@ -126,15 +131,15 @@ class ControllerLogAspectTest {
     @Test
     void logControllerExpectedValidationExceptionWithoutErrorStackTrace() throws Throwable {
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
         ConstraintViolationException exception =
                 new ConstraintViolationException("validation failed", Set.of());
-        Mockito.when(customProceedingJoinPoint.proceed()).thenThrow(exception);
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         ConstraintViolationException thrown =
                 Assertions.assertThrows(
@@ -150,17 +155,17 @@ class ControllerLogAspectTest {
         controllerAspectLog.setLogLevelToInfo();
 
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
         ResponseEntity<String> responseEntity = ResponseEntity.ok("Test Result");
         responseEntity.getHeaders().add("Content-Type", "application/vnd.hmcts.appreg.v1+json");
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
-        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
-        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
+        when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
+        when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         ResponseEntity<?> result =
                 (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
@@ -172,14 +177,14 @@ class ControllerLogAspectTest {
     @Test
     void logControllerUnexpectedExceptionStillLogsError() throws Throwable {
         ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
-        Signature signature = Mockito.mock(Signature.class);
+        Signature signature = mock(Signature.class);
 
-        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
         RuntimeException exception = new RuntimeException("boom");
-        Mockito.when(customProceedingJoinPoint.proceed()).thenThrow(exception);
-        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
-        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
-        Mockito.when(signature.getName()).thenReturn("testMethod");
+        when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
 
         RuntimeException thrown =
                 Assertions.assertThrows(
@@ -189,5 +194,33 @@ class ControllerLogAspectTest {
         Assertions.assertSame(exception, thrown);
         Assertions.assertEquals(
                 "Exception occurred during execution", abstractAspectLog.getErrorLogs().getFirst());
+    }
+
+    @Test
+    void logControllerCsdsBatchUpsertExceptionDoesNotLogAspectError() throws Throwable {
+        ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
+        Signature signature = mock(Signature.class);
+
+        ProceedingJoinPoint customProceedingJoinPoint = mock(ProceedingJoinPoint.class);
+        var exception =
+                new CsdsBatchUpsertException(
+                        "CSDS batch upsert failed for application_codes_staging.ac_id",
+                        new RuntimeException("batch failed"),
+                        List.of(
+                                new FailedUpsertRecord<>(
+                                        3L,
+                                        "ERROR: value too long for type character varying(10)")));
+        when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        when(signature.getName()).thenReturn("testMethod");
+
+        var thrown =
+                Assertions.assertThrows(
+                        CsdsBatchUpsertException.class,
+                        () -> controllerLogAspect.logDuration(customProceedingJoinPoint));
+
+        Assertions.assertSame(exception, thrown);
+        assertThat(abstractAspectLog.getErrorLogs()).isEmpty();
     }
 }
