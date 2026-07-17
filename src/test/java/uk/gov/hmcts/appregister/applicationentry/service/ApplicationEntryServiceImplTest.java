@@ -48,6 +48,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -1784,9 +1785,9 @@ class ApplicationEntryServiceImplTest {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(Set.of(entryId));
         dto.setFeeDetails(
-                List.of(
+            JsonNullable.of(List.of(
                         bulkFeeDetails(PaymentStatus.PAID, "PAY-001", false),
-                        bulkFeeDetails(PaymentStatus.REMITTED, "PAY-002", false)));
+                        bulkFeeDetails(PaymentStatus.REMITTED, "PAY-002", false))));
 
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
@@ -2019,7 +2020,7 @@ class ApplicationEntryServiceImplTest {
             Set<UUID> entryIds, PaymentStatus paymentStatus, boolean hasOffsiteFee) {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(entryIds);
-        dto.setFeeDetails(List.of(bulkFeeDetails(paymentStatus, "PAY-001", hasOffsiteFee)));
+        dto.setFeeDetails(JsonNullable.of(List.of(bulkFeeDetails(paymentStatus, "PAY-001", hasOffsiteFee))));
         return dto;
     }
 

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
@@ -920,15 +921,29 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 entries.sort(
                                         Comparator.comparing(
                                                 ApplicationListEntry::getSequenceNumber));
-                                List<BulkFeeDetailsDto> feeDetails = req.data().getFeeDetails();
-                                boolean hasOffsiteFee = hasOffsiteFee(feeDetails);
+                                List<BulkFeeDetailsDto> feeDetails = req.data().getFeeDetails().orElse(List.of());
+                                boolean hasOffsiteFee = hasOffsiteFee(feeDetails) || Boolean.TRUE.equals(req.data().getHasOffsiteFee());
                                 Supplier<Fee> offsiteFeeSupplier =
                                         offsiteFeeSupplier(hasOffsiteFee);
 
-                                for (ApplicationListEntry entry : entries) {
-                                    appendFeeDetailsForEntry(
+                                if (!feeDetails.isEmpty()) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        appendFeeDetailsForEntry(
                                             entry, feeDetails, hasOffsiteFee, offsiteFeeSupplier);
+                                    }
                                 }
+                                else if (hasOffsiteFee) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        ensureOffsiteFeeMapping(entry, offsiteFeeSupplier);
+                                    }
+                                }
+                                else if (!hasOffsiteFee) {
+                                    for (ApplicationListEntry entry: entries) {
+                                        deleteOffsiteFeeForEntry(entry);
+                                    }
+                                }
+
+
 
                                 int updatedCount = entries.size();
 
@@ -1968,6 +1983,23 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return false;
     }
 
+    private void deleteOffsiteFeeForEntry(ApplicationListEntry entry) {
+        List<AppListEntryFeeId> appListEntryFeeIdList =
+                appListEntryFeeRepository.getEntryFeesForEntry(entry.getId());
+        for (AppListEntryFeeId feeId : appListEntryFeeIdList) {
+            Optional<Fee> fee = feeRepository.findById(feeId.getFeeId());
+            if (fee.isPresent() && fee.get().isOffsite()) {
+                auditService.processAudit(
+                        feeId,
+                        AppListEntryAuditOperation.DELETE_FEE_ENTRY,
+                        req -> {
+                            appListEntryFeeRepository.delete(feeId);
+                            return Optional.empty();
+                        });
+            }
+        }
+    }
+
     /**
      * Reloads the entity so DB-generated fields (e.g. UUID via gen_random_uuid()) are available
      * immediately after save. Calls: - flush(): force the INSERT - refresh(): reselect the row with
@@ -2078,8 +2110,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return entryPage;
     }
 
-    private record BulkActionPreviewResolution(
-            int selectedCount, List<UUID> entryIds, List<EntryGetSummaryDto> entries) {}
+    private record BulkActionPreviewResolution(int selectedCount, List<UUID> entryIds, List<EntryGetSummaryDto> entries) {}
 
     private record BulkActionPreviewEligibility(
             List<UUID> entryIds, List<EntryGetSummaryDto> entries, int eligibleCount) {}

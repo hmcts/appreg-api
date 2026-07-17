@@ -169,7 +169,7 @@ class BulkUpdateFeesValidatorTest {
                         new BulkFeesUpdateDto()
                                 .entryIds(Set.of(entryId))
                                 .feeDetails(new ArrayList<>()));
-        payload.data().getFeeDetails().add(null);
+        payload.data().getFeeDetails().get().add(null);
 
         AppRegistryException exception = validateAndCapture(payload);
 

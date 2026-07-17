@@ -6956,8 +6956,13 @@ components:
             Array of fee-status rows to append to every selected Application List Entry. At least one fee-status row must be provided.
           items:
             $ref: "#/components/schemas/bulk-fee-details-dto"
-          minItems: 1
+          nullable: true
           type: array
+        hasOffsiteFee:
+          default: false
+          description: |
+            If true, ensures that all selected entries have an off-site fee mapping. If false, does not remove any existing off-site fee mapping.
+          type: boolean
       required:
       - entryIds
       - feeDetails
