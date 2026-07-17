@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +47,14 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
     @Spy private TransactionUnitOfWork service = new TransactionUnitOfWork();
 
     @InjectMocks private AsyncJobServiceImpl asyncJobServiceImpl;
+
+    private LogCaptor logCaptor;
+
+    @BeforeEach
+    void beforeEach() {
+        logCaptor = LogCaptor.forClass(AsyncJobServiceImpl.class);
+        logCaptor.clearLogs();
+    }
 
     @Test
     void testAsyncStart() throws Exception {
@@ -431,6 +441,13 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + ", "
                                 + "Failed to process job: "
                                 + jobIdRequest.getId().toString());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "Error processing job: Failed to process job: "
+                                                        + jobIdRequest.getId())));
     }
 
     @Test
@@ -461,6 +478,14 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + jobIdRequest.getId()
                                 + ". Forced termination");
         verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "Error processing job: Job failed during VALIDATING for job "
+                                                        + jobIdRequest.getId()
+                                                        + ". Forced termination")));
     }
 
     @Test
@@ -570,7 +595,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .getFuture()
                         .get();
             } catch (Exception e) {
-                log.error("Error", e);
+                Assertions.assertTrue(
+                        e instanceof ExecutionException
+                                || e.getCause() instanceof ExecutionException);
             }
 
             Assertions.assertEquals(2, output.size());
@@ -605,8 +632,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .getFuture()
                         .get();
             } catch (Exception e) {
-                // we expect an error to be propagated so catch it
-                log.error("Failed", e);
+                Assertions.assertTrue(
+                        e instanceof ExecutionException
+                                || e.getCause() instanceof ExecutionException);
             }
         }
         return reader;

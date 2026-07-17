@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,8 +22,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.StandardApplicantIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
 class StandardApplicantDataIngressProcessorTest {
@@ -31,6 +35,7 @@ class StandardApplicantDataIngressProcessorTest {
     @Mock private CsdsIngressClient ingressClient;
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private StandardApplicantIngressApplyService applyService;
+    @Mock private CsdsAuditService csdsAuditService;
 
     private CsdsIngressProperties properties;
     private StandardApplicantDataIngressProcessor processor;
@@ -40,9 +45,12 @@ class StandardApplicantDataIngressProcessorTest {
     void setUp() {
         properties = new CsdsIngressProperties();
         properties.setPageSize(2);
+        lenient().when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.NONE);
         processor =
                 new StandardApplicantDataIngressProcessor(
                         properties,
+                        csdsAuditService,
+                        passthroughTransactionRunner(),
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
                         new StandardApplicantDiffReportingService(properties),
@@ -108,6 +116,8 @@ class StandardApplicantDataIngressProcessorTest {
         processor =
                 new StandardApplicantDataIngressProcessor(
                         properties,
+                        csdsAuditService,
+                        passthroughTransactionRunner(),
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
                         new StandardApplicantDiffReportingService(properties),
@@ -161,5 +171,14 @@ class StandardApplicantDataIngressProcessorTest {
             array.add(record);
         }
         return page;
+    }
+
+    private CsdsIngressTransactionRunner passthroughTransactionRunner() {
+        return new CsdsIngressTransactionRunner() {
+            @Override
+            public <T> T execute(java.util.function.Supplier<T> supplier) {
+                return supplier.get();
+            }
+        };
     }
 }
