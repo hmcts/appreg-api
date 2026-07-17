@@ -1812,12 +1812,10 @@ class ApplicationEntryServiceImplTest {
 
         service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
-            ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
         verify(appListEntryFeeRepository, times(2)).save(any());
-        verify(appListEntryFeeStatusRepository, times(0)).save(statusCaptor.capture());
+        verify(appListEntryFeeStatusRepository, times(0)).save(any());
     }
 
     @Test
@@ -1853,13 +1851,11 @@ class ApplicationEntryServiceImplTest {
 
         service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
-            ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
         verify(appListEntryFeeRepository, times(2)).getEntryFeesForEntry(anyLong());
         verify(appListEntryFeeRepository, times(2)).delete(any());
-        verify(appListEntryFeeStatusRepository, never()).save(statusCaptor.capture());
+        verify(appListEntryFeeStatusRepository, never()).save(any());
     }
 
     @Test
