@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.val;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
@@ -208,6 +209,62 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 true,
                 feeStatus(PaymentStatus.PAID, ORIGINAL_STATUS_DATE, ORIGINAL_PAYMENT_REFERENCE),
                 feeStatus(PaymentStatus.REMITTED, UPDATED_STATUS_DATE, UPDATED_PAYMENT_REFERENCE));
+    }
+
+    @Test
+    void givenEntryWithoutOffsiteFee_whenBulkUpdateFeesWithOffsiteFlagTRueAndMissingFeeDetails_thenOffsiteFeeIsAdded()
+            throws Exception {
+        val tokenGenerator = createAdminToken();
+        val entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+
+        differenceLogAsserter.clearLogs();
+
+        val response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entry.getId()))
+                                .hasOffsiteFee(true));
+
+        response.then().statusCode(200);
+
+        val entryDto = getEntry(tokenGenerator, entry.getListId(), entry.getId());
+        Assertions.assertEquals(Boolean.TRUE, entryDto.getHasOffsiteFee());
+    }
+
+    @Test
+    void givenEntryWithoutOffsiteFee_whenBulkUpdateFeesWithOffsiteFlagFalseAndMissingFeeDetails_thenOffsiteFeeIsRemoved()
+        throws Exception {
+        val tokenGenerator = createAdminToken();
+        val entry =
+            createEntry(
+                Optional.empty(),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+
+        differenceLogAsserter.clearLogs();
+
+        val response =
+            bulkUpdateFees(
+                tokenGenerator,
+                entry.getListId(),
+                new BulkFeesUpdateDto()
+                    .entryIds(Set.of(entry.getId()))
+                    .hasOffsiteFee(false));
+
+        response.then().statusCode(200);
+
+        val entryDto = getEntry(tokenGenerator, entry.getListId(), entry.getId());
+        Assertions.assertEquals(Boolean.FALSE, entryDto.getHasOffsiteFee());
     }
 
     @Test
