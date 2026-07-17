@@ -3,6 +3,7 @@ java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
   keyVaults:
+    appreg: null
     appreg-kv:
       secrets:
         - name: AppInsightsInstrumentationKey
