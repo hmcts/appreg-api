@@ -147,6 +147,11 @@ public abstract class ApplicationListEntryMapper {
         return sequenceNumber == null ? null : sequenceNumber.shortValue();
     }
 
+    public JsonNullable<Integer> map(Short numberOfBulkRespondents) {
+        return JsonNullable.of(
+                numberOfBulkRespondents == null ? null : numberOfBulkRespondents.intValue());
+    }
+
     /**
      * Utility mapping method to maps contact details from the provided {@link
      * ApplicationListEntryPrintProjection} object to a new {@link ContactDetails} instance based on

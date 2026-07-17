@@ -6855,6 +6855,7 @@ components:
         numberOfRespondents:
           description: Number of respondents required by the Application.
           example: 0
+          nullable: true
           type: integer
         wording:
           $ref: "#/components/schemas/template-detail"
@@ -7026,6 +7027,7 @@ components:
         numberOfRespondents:
           description: Number of respondents required by the Application.
           example: 0
+          nullable: true
           type: integer
         wording:
           $ref: "#/components/schemas/template-detail"
