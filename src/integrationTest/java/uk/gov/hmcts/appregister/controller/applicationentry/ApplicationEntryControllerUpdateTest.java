@@ -1431,9 +1431,8 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
-                    throws Exception {
+    void givenACNotRequireRespondent_BulkRespondentAllowed_NoRespondentAndNoNumber_thenReturn200()
+            throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // Arrange
@@ -1457,16 +1456,9 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        // assert the response
-        responseSpecUpdate
-                .then()
-                .statusCode(400)
-                .body(
-                        "type",
-                        Matchers.equalTo(
-                                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
-                                        .getCode()
-                                        .getAppCode()));
+        responseSpecUpdate.then().statusCode(200);
+        Assertions.assertNull(
+                responseSpecUpdate.as(EntryGetDetailDto.class).getNumberOfRespondents());
     }
 
     @Test

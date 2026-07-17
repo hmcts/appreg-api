@@ -2613,9 +2613,8 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
-                    throws Exception {
+    void givenACNotRequireRespondent_BulkRespondentAllowed_NoRespondentAndNoNumber_thenReturn201()
+            throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
@@ -2641,16 +2640,9 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
 
-        // assert the response
-        responseSpecCreate
-                .then()
-                .statusCode(400)
-                .body(
-                        "type",
-                        Matchers.equalTo(
-                                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
-                                        .getCode()
-                                        .getAppCode()));
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertNull(
+                responseSpecCreate.as(EntryGetDetailDto.class).getNumberOfRespondents());
     }
 
     @Test
