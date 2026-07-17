@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings(
+        "java:S2077") // Schema comes from trusted config; user values are parameter-bound.
 public class CsdsAuditWriteService {
     private static final String INSERT_SQL =
             """

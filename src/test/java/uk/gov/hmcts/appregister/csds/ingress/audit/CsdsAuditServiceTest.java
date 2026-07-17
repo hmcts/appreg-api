@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -27,13 +28,10 @@ class CsdsAuditServiceTest {
     @Mock private CsdsAuditWriteService csdsAuditWriteService;
     @Mock private CsdsAuditFailurePersistenceService csdsAuditFailurePersistenceService;
 
-    private CsdsAuditService service;
+    @InjectMocks private CsdsAuditService service;
 
     @BeforeEach
     void setUp() {
-        service =
-                new CsdsAuditService(
-                        jdbcTemplate, csdsAuditWriteService, csdsAuditFailurePersistenceService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
     }
 

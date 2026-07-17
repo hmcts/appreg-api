@@ -12,6 +12,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings(
+        "java:S2077") // Schema comes from trusted config; user values are parameter-bound.
 public class CsdsAuditService {
     private static final String AUDIT_CSDS_PARAMETER = "AUDIT_CSDS";
 

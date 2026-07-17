@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -28,12 +29,11 @@ class JdbcBulkUpsertServiceTest {
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
     @Mock private JdbcBatchFailureIsolationService jdbcBatchFailureIsolationService;
 
-    private JdbcBulkUpsertService service;
+    @InjectMocks private JdbcBulkUpsertService service;
     private ApplicationCodeIngressDatabaseRowMapper rowMapper;
 
     @BeforeEach
     void setUp() {
-        service = new JdbcBulkUpsertService(jdbcTemplate, jdbcBatchFailureIsolationService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         rowMapper = new ApplicationCodeIngressDatabaseRowMapper();
     }
