@@ -212,8 +212,57 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
     }
 
     @Test
-    void givenEntryWithoutOffsiteFee_whenBulkUpdateFeesWithOffsiteFlagTRueAndMissingFeeDetails_thenOffsiteFeeIsAdded()
-            throws Exception {
+    void
+            givenEntriesWithoutOffsiteFee_whenHasOffSiteFeeIsTrueAndFeeDetailsNotSet_thenOffsiteFeeIsAdded()
+                    throws Exception {
+        val tokenGenerator = createAdminToken();
+        val entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        val entry2 =
+            createEntry(
+                Optional.of(entry.getListId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+
+        val entry3 =
+            createEntry(
+                Optional.of(entry.getListId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+
+        differenceLogAsserter.clearLogs();
+
+        val response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entry.getId(), entry2.getId(), entry3.getId()))
+                                .hasOffsiteFee(true));
+
+        response.then().statusCode(200);
+
+        val entryDto = getEntry(tokenGenerator, entry.getListId(), entry.getId());
+        Assertions.assertEquals(Boolean.TRUE, entryDto.getHasOffsiteFee());
+        val entry2Dto = getEntry(tokenGenerator, entry2.getListId(), entry2.getId());
+        Assertions.assertEquals(Boolean.TRUE, entry2Dto.getHasOffsiteFee());
+        val entry3Dto = getEntry(tokenGenerator, entry3.getListId(), entry3.getId());
+        Assertions.assertEquals(Boolean.TRUE, entry3Dto.getHasOffsiteFee());
+    }
+
+    @Test
+    void
+            givenEntryWithOffsiteFee_whenHasOffsiteFeeFalseAndFeeDetailsNotSet_thenOffsiteFeeIsRemoved()
+                    throws Exception {
         val tokenGenerator = createAdminToken();
         val entry =
                 createEntry(
@@ -223,29 +272,17 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         ORIGINAL_PAYMENT_REFERENCE,
                         false);
 
-        differenceLogAsserter.clearLogs();
-
-        val response =
-                bulkUpdateFees(
-                        tokenGenerator,
-                        entry.getListId(),
-                        new BulkFeesUpdateDto()
-                                .entryIds(Set.of(entry.getId()))
-                                .hasOffsiteFee(true));
-
-        response.then().statusCode(200);
-
-        val entryDto = getEntry(tokenGenerator, entry.getListId(), entry.getId());
-        Assertions.assertEquals(Boolean.TRUE, entryDto.getHasOffsiteFee());
-    }
-
-    @Test
-    void givenEntryWithoutOffsiteFee_whenBulkUpdateFeesWithOffsiteFlagFalseAndMissingFeeDetails_thenOffsiteFeeIsRemoved()
-        throws Exception {
-        val tokenGenerator = createAdminToken();
-        val entry =
+        val entry2 =
             createEntry(
-                Optional.empty(),
+                Optional.of(entry.getListId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+
+        val entry3 =
+            createEntry(
+                Optional.of(entry.getListId()),
                 PaymentStatus.PAID,
                 ORIGINAL_STATUS_DATE,
                 ORIGINAL_PAYMENT_REFERENCE,
@@ -254,17 +291,21 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         differenceLogAsserter.clearLogs();
 
         val response =
-            bulkUpdateFees(
-                tokenGenerator,
-                entry.getListId(),
-                new BulkFeesUpdateDto()
-                    .entryIds(Set.of(entry.getId()))
-                    .hasOffsiteFee(false));
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entry.getId(),entry2.getId(), entry3.getId()))
+                                .hasOffsiteFee(false));
 
         response.then().statusCode(200);
 
         val entryDto = getEntry(tokenGenerator, entry.getListId(), entry.getId());
         Assertions.assertEquals(Boolean.FALSE, entryDto.getHasOffsiteFee());
+        val entry2Dto = getEntry(tokenGenerator, entry2.getListId(), entry2.getId());
+        Assertions.assertEquals(Boolean.FALSE, entry2Dto.getHasOffsiteFee());
+        val entry3Dto = getEntry(tokenGenerator, entry3.getListId(), entry3.getId());
+        Assertions.assertEquals(Boolean.FALSE, entry3Dto.getHasOffsiteFee());
     }
 
     @Test
