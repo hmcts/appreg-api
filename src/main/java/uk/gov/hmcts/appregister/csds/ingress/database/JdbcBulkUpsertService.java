@@ -1,10 +1,13 @@
 package uk.gov.hmcts.appregister.csds.ingress.database;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -16,6 +19,7 @@ public class JdbcBulkUpsertService {
     private static final Pattern SQL_IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final JdbcBatchFailureIsolationService jdbcBatchFailureIsolationService;
 
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schema;
@@ -25,6 +29,15 @@ public class JdbcBulkUpsertService {
             String primaryKey,
             List<T> records,
             IngressDatabaseRowMapper<T> rowMapper) {
+        return upsertBatch(tableName, primaryKey, records, rowMapper, item -> null);
+    }
+
+    public <T> int[] upsertBatch(
+            String tableName,
+            String primaryKey,
+            List<T> records,
+            IngressDatabaseRowMapper<T> rowMapper,
+            Function<T, Long> keyExtractor) {
         if (records.isEmpty()) {
             return new int[0];
         }
@@ -51,7 +64,17 @@ public class JdbcBulkUpsertService {
                         .map(MapSqlParameterSource::new)
                         .toArray(MapSqlParameterSource[]::new);
 
-        return jdbcTemplate.batchUpdate(sql, parameters);
+        try {
+            return jdbcTemplate.batchUpdate(sql, parameters);
+        } catch (DataAccessException ex) {
+            var failures =
+                    jdbcBatchFailureIsolationService.identifyFailures(
+                            sql, records, rowMapper::toRow, keyExtractor, ex);
+            throw new CsdsBatchUpsertException(
+                    "CSDS batch upsert failed for " + tableName + "." + primaryKey,
+                    ex,
+                    new ArrayList<>(failures));
+        }
     }
 
     String buildUpsertSql(

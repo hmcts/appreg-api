@@ -46,6 +46,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
@@ -970,6 +972,39 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(500, problemDetail.getBody().getStatus());
         Assertions.assertEquals(
                 "An unexpected error occurred", problemDetail.getBody().getDetail());
+    }
+
+    @Test
+    void
+            givenCsdsBatchUpsertException_whenTheExceptionIsThrown_thenBadRequestProblemDetailIsReturned() {
+        var exception =
+                new CsdsBatchUpsertException(
+                        "CSDS batch upsert failed for application_codes_staging.ac_id",
+                        new RuntimeException("batch failed"),
+                        List.of(
+                                new FailedUpsertRecord<>(
+                                        3L, "ERROR: value too long for type character varying(10)"),
+                                new FailedUpsertRecord<>(
+                                        4L,
+                                        "ERROR: value too long for type character varying(500)"),
+                                new FailedUpsertRecord<>(
+                                        5L,
+                                        "ERROR: value too long for type character varying(12)")));
+
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleCsdsBatchUpsertException(exception);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertEquals(400, problemDetail.getBody().getStatus());
+        Assertions.assertEquals("CSDS ingest failed", problemDetail.getBody().getTitle());
+        Assertions.assertEquals(
+                "CSDS ingest failed for 3 row(s). See csds_audit for row-level errors.",
+                problemDetail.getBody().getDetail());
+        assertThat(logCaptor.getWarnLogs())
+                .containsExactly(
+                        "[400]: CSDS batch upsert failed for application_codes_staging.ac_id. Failed rows=3.");
+        assertThat(logCaptor.getErrorLogs()).isEmpty();
     }
 
     private static Path path(String value) {

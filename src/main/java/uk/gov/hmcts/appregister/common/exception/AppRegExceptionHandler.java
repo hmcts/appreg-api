@@ -10,6 +10,7 @@ import java.net.URI;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -42,6 +43,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 
 @Slf4j
 @RestControllerAdvice
@@ -168,7 +170,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
         problemDetail.setDetail("Validation failed for fields:");
-        problemDetail.setProperties(new java.util.HashMap<>());
+        problemDetail.setProperties(new HashMap<>());
 
         Map<String, Object> errors = new LinkedHashMap<>();
 
@@ -470,6 +472,18 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied"));
+    }
+
+    @ExceptionHandler(CsdsBatchUpsertException.class)
+    public ResponseEntity<ProblemDetail> handleCsdsBatchUpsertException(
+            CsdsBatchUpsertException ex) {
+        logExpectedClientError(HttpStatus.BAD_REQUEST.value(), ex.logSummary());
+
+        var problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.clientMessage());
+        problemDetail.setTitle("CSDS ingest failed");
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 
     @ExceptionHandler(InvalidParameterException.class)
