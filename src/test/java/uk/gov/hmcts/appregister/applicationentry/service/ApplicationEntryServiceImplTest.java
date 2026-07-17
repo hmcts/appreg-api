@@ -1830,7 +1830,7 @@ class ApplicationEntryServiceImplTest {
         existingStatus1.setId(201L);
 
         val entryId2 = UUID.randomUUID();
-        val entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
+        final var entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
         val existingStatus2 = new AppListEntryFeeStatus();
         existingStatus2.setId(202L);
 

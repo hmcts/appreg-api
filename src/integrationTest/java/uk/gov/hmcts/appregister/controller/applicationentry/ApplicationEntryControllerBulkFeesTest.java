@@ -224,20 +224,20 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         ORIGINAL_PAYMENT_REFERENCE,
                         false);
         val entry2 =
-            createEntry(
-                Optional.of(entry.getListId()),
-                PaymentStatus.PAID,
-                ORIGINAL_STATUS_DATE,
-                ORIGINAL_PAYMENT_REFERENCE,
-                false);
+                createEntry(
+                        Optional.of(entry.getListId()),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
 
         val entry3 =
-            createEntry(
-                Optional.of(entry.getListId()),
-                PaymentStatus.PAID,
-                ORIGINAL_STATUS_DATE,
-                ORIGINAL_PAYMENT_REFERENCE,
-                false);
+                createEntry(
+                        Optional.of(entry.getListId()),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
 
         differenceLogAsserter.clearLogs();
 
@@ -273,20 +273,20 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         false);
 
         val entry2 =
-            createEntry(
-                Optional.of(entry.getListId()),
-                PaymentStatus.PAID,
-                ORIGINAL_STATUS_DATE,
-                ORIGINAL_PAYMENT_REFERENCE,
-                false);
+                createEntry(
+                        Optional.of(entry.getListId()),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
 
         val entry3 =
-            createEntry(
-                Optional.of(entry.getListId()),
-                PaymentStatus.PAID,
-                ORIGINAL_STATUS_DATE,
-                ORIGINAL_PAYMENT_REFERENCE,
-                false);
+                createEntry(
+                        Optional.of(entry.getListId()),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
 
         differenceLogAsserter.clearLogs();
 
@@ -295,7 +295,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         tokenGenerator,
                         entry.getListId(),
                         new BulkFeesUpdateDto()
-                                .entryIds(Set.of(entry.getId(),entry2.getId(), entry3.getId()))
+                                .entryIds(Set.of(entry.getId(), entry2.getId(), entry3.getId()))
                                 .hasOffsiteFee(false));
 
         response.then().statusCode(200);
