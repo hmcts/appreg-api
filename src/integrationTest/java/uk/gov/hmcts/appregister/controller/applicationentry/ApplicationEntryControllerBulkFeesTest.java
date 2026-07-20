@@ -411,20 +411,20 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         differenceLogAsserter.assertNoErrors();
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LISTS_FEE_STATUS,
-                        "alefs_fee_status",
-                        null,
-                        "REMITTED",
-                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getType().name(),
-                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName()));
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "bulk_fees_fee_details",
+                        "",
+                        "",
+                        AppListEntryAuditOperation.BULK_UPDATE_FEES.getType().name(),
+                        AppListEntryAuditOperation.BULK_UPDATE_FEES.getEventName()));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLCATION_LISTS_ENTRY_FEE_ID,
-                        "fee_fee_id",
-                        null,
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "bulk_fees_offsite_entry_ids",
                         "",
-                        AppListEntryAuditOperation.CREATE_FEE_ENTRY.getType().name(),
-                        AppListEntryAuditOperation.CREATE_FEE_ENTRY.getEventName()));
+                        "",
+                        AppListEntryAuditOperation.BULK_UPDATE_FEES.getType().name(),
+                        AppListEntryAuditOperation.BULK_UPDATE_FEES.getEventName()));
     }
 
     private void assertNoBulkFeeAuditWritten() {
