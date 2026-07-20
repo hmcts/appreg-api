@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
@@ -29,12 +30,16 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 
 class ApplicationListControllerTest {
     private final ApplicationListService service = mock(ApplicationListService.class);
+    private final ApplicationEntryService applicationEntryService =
+            mock(ApplicationEntryService.class);
     private final PageableMapper pageableMapper = mock(PageableMapper.class);
     private final ApplicationListController controller =
-            new ApplicationListController(service, pageableMapper);
+            new ApplicationListController(service, applicationEntryService, pageableMapper);
 
     @BeforeEach
     void setUpRequestContext() {
@@ -148,6 +153,19 @@ class ApplicationListControllerTest {
         ResponseEntity<ApplicationListGetPrintDto> actual = controller.printApplicationList(id);
 
         verify(service).print(id);
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(actual.getBody()).isSameAs(body);
+    }
+
+    @Test
+    void printApplicationLists_delegatesAndReturnsOk() {
+        var request = new BulkGetApplicationListEntriesRequestDto();
+        var body = List.of(new EntryGetSummaryDto());
+        when(applicationEntryService.bulkGetApplicationListEntries(request)).thenReturn(body);
+
+        ResponseEntity<List<EntryGetSummaryDto>> actual = controller.printApplicationLists(request);
+
+        verify(applicationEntryService).bulkGetApplicationListEntries(request);
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(actual.getBody()).isSameAs(body);
     }

@@ -1,0 +1,28 @@
+type: object
+required:
+  - listIds
+properties:
+  listIds:
+    type: array
+    description: >
+      Public identifiers of the Application Lists to read from. Must be non-empty, contain no
+      duplicates, and contain at most 2000 items. Response order follows the supplied `listIds`
+      order when `entryIds` is omitted or empty.
+    items:
+      type: string
+      format: uuid
+    example:
+      - "123e4567-e89b-12d3-a456-426655440000"
+      - "123e4567-e89b-12d3-a456-426655440001"
+  entryIds:
+    type: array
+    description: >
+      Optional public identifiers of specific Application List Entries to return. If omitted or
+      empty, all active entries from the supplied `listIds` are returned. If supplied, the response
+      follows the supplied `entryIds` order. Duplicates are rejected.
+    items:
+      type: string
+      format: uuid
+    example:
+      - "123e4567-e89b-12d3-a456-426655440100"
+      - "123e4567-e89b-12d3-a456-426655440101"

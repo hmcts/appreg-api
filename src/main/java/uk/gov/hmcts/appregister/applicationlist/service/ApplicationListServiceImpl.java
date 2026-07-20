@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
+import uk.gov.hmcts.appregister.applicationlist.audit.ApplicationListPrintReadAudit;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
@@ -104,7 +105,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     // Audit
     private final AuditOperationService auditService;
 
-    public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
+    private record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
 
     /**
      * The default internal application entry summary page. This guarantees a stable set of
@@ -438,8 +439,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     // Short-circuit if there are no entries
                     if (entryProjections.isEmpty()) {
                         var printDto = buildGetPrintDto(list, List.of());
-                        AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                                new AuditableResult<>(printDto, mapper.toEntity(id));
+                        var result =
+                                new AuditableResult<>(
+                                        printDto, new ApplicationListPrintReadAudit(id));
 
                         return Optional.of(result);
                     }
@@ -488,8 +490,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     }
 
                     var printDto = buildGetPrintDto(list, dtos);
-                    AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                            new AuditableResult<>(printDto, mapper.toEntity(id));
+                    var result =
+                            new AuditableResult<>(printDto, new ApplicationListPrintReadAudit(id));
 
                     return Optional.of(result);
                 });
@@ -522,7 +524,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return responsePage;
     }
 
-    private String deriveLocation(ApplicationListSummaryProjection al) {
+    private static String deriveLocation(ApplicationListSummaryProjection al) {
         if (al.getCourtName() != null) {
             return al.getCourtName();
         }
@@ -536,10 +538,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     The repository uses [start, end] to match all seconds within that minute.
     When the computed end value wraps to midnight (e.g., 23:59 -> 00:00),
     we record this so the repository can handle the boundary correctly. */
-    private TimeWindow computeTimeWindow(ApplicationListGetFilterDto dto) {
+    private static TimeWindow computeTimeWindow(ApplicationListGetFilterDto dto) {
         if (dto.getTime() != null) {
             LocalTime start = dto.getTime().withSecond(0).withNano(0);
-            LocalTime end = start.plusMinutes(1);
+            LocalTime end = start.plusMinutes(1L);
             boolean wrapsMidnight = end.equals(LocalTime.MIDNIGHT);
 
             return new TimeWindow(start, end, wrapsMidnight);

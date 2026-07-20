@@ -48,6 +48,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
+import uk.gov.hmcts.appregister.applicationlist.audit.ApplicationListPrintReadAudit;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
@@ -1004,7 +1005,7 @@ class ApplicationListServiceImplTest {
     }
 
     @Test
-    void print_auditsLookupIdSurrogate() {
+    void print_auditsLookupIdOnly() {
         UUID id = UUID.randomUUID();
         ApplicationList list = new ApplicationList();
         list.setUuid(id);
@@ -1013,17 +1014,16 @@ class ApplicationListServiceImplTest {
         when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of());
 
         ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
-        ApplicationList auditEntity = new ApplicationList();
-        auditEntity.setUuid(id);
         when(mapper.toGetPrintDto(list)).thenReturn(expected);
-        when(mapper.toEntity(id)).thenReturn(auditEntity);
 
         auditOperationService.clearCapturedAudit();
         ApplicationListGetPrintDto actual = service.print(id);
 
         Assertions.assertEquals(expected, actual);
-        Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());
+        Assertions.assertInstanceOf(
+                ApplicationListPrintReadAudit.class, auditOperationService.getLastNewEntity());
         Assertions.assertNotSame(list, auditOperationService.getLastNewEntity());
+        Assertions.assertEquals(-1L, auditOperationService.getLastNewEntity().getId());
     }
 
     @Test
