@@ -39,6 +39,21 @@ public interface ApplicationListEntryOfficialRepository
     List<ApplicationListEntryOfficialPrintProjection> findByApplicationListUuidForPrinting(
             UUID listUuid, Collection<OfficialType> codes);
 
+    @Query(
+            """
+            SELECT
+               aleo.appListEntry.id as entryId,
+               aleo.officialType as type,
+               aleo.title as title,
+               aleo.forename as forename,
+               aleo.surname as surname
+            FROM AppListEntryOfficial aleo
+            WHERE aleo.appListEntry.id IN :entryIds
+            AND aleo.officialType in :codes
+            """)
+    List<ApplicationListEntryOfficialPrintProjection> findByApplicationListEntryIdsForPrinting(
+            Collection<Long> entryIds, Collection<OfficialType> codes);
+
     /**
      * Finds a single application list entries by list ID, ensuring it belongs to the specified
      * application list and that the list is owned by the given user.

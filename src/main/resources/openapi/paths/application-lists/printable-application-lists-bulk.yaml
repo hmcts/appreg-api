@@ -1,0 +1,38 @@
+post:
+  operationId: printApplicationLists
+  tags:
+    - application-lists
+  summary: Get print-ready Application Lists in bulk
+  description: >
+    Returns print-oriented Application Lists for one or more Application Lists in a single request.
+    Supply `listIds` to scope the search. If `entryIds` is omitted or empty, all active entries
+    from the supplied lists are returned. If `entryIds` is supplied, only the specified active
+    entries from the supplied lists are returned within each returned list. Validation is
+    all-or-nothing.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/application-list-entries/bulk-get-application-list-entries-request-dto.yaml"
+  responses:
+    "200":
+      description: Matching print-ready Application Lists in input order.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            type: array
+            items:
+              $ref: "../../components/schemas/application-lists/application-list-get-print-dto.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
