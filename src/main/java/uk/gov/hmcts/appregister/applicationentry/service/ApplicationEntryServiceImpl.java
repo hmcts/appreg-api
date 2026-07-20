@@ -975,9 +975,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 List<BulkFeeDetailsDto> feeDetails =
                                         req.data().getFeeDetails().orElse(List.of());
                                 boolean hasOffsiteFee =
-                                        hasOffsiteFee(feeDetails)
-                                                || Boolean.TRUE.equals(
-                                                        req.data().getHasOffsiteFee());
+                                        Boolean.TRUE.equals(
+                                                req.data()
+                                                        .getHasOffsiteFee()
+                                                        .orElse(Boolean.FALSE));
                                 Supplier<Fee> offsiteFeeSupplier =
                                         offsiteFeeSupplier(hasOffsiteFee);
                                 Set<Long> entryIdsWithOffsiteMapping =
@@ -988,16 +989,18 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 if (!feeDetails.isEmpty()) {
                                     for (ApplicationListEntry entry : entries) {
                                         appendFeeDetailsForEntry(
-                                            entry,
-                                            feeDetails,
-                                            hasOffsiteFee,
-                                            offsiteFeeSupplier,
-                                            entryIdsWithOffsiteMapping
-                                        );
+                                                entry,
+                                                feeDetails,
+                                                hasOffsiteFee,
+                                                offsiteFeeSupplier,
+                                                entryIdsWithOffsiteMapping);
                                     }
                                 } else if (hasOffsiteFee) {
                                     for (ApplicationListEntry entry : entries) {
-                                        ensureOffsiteFeeMapping(entry, offsiteFeeSupplier, entryIdsWithOffsiteMapping);
+                                        ensureOffsiteFeeMapping(
+                                                entry,
+                                                offsiteFeeSupplier,
+                                                entryIdsWithOffsiteMapping);
                                     }
                                 } else if (!hasOffsiteFee) {
                                     for (ApplicationListEntry entry : entries) {
@@ -1093,11 +1096,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         if (hasOffsiteFee) {
             ensureOffsiteFeeMapping(entry, offsiteFeeSupplier, entryIdsWithOffsiteMapping);
         }
-    }
-
-    private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
-        return feeDetails.stream()
-                .anyMatch(feeDetail -> Boolean.TRUE.equals(feeDetail.getHasOffsiteFee()));
     }
 
     /**

@@ -1708,7 +1708,9 @@ class ApplicationEntryServiceImplTest {
         val existingStatus2 = new AppListEntryFeeStatus();
         existingStatus2.setId(202L);
 
-        final var dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, false);
+        final var dto =
+                bulkFeesUpdateDto(
+                        Set.of(entryId1, entryId2), PaymentStatus.PAID, JsonNullable.of(false));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
@@ -1795,7 +1797,7 @@ class ApplicationEntryServiceImplTest {
         val existingStatus2 = new AppListEntryFeeStatus();
         existingStatus2.setId(202L);
 
-        final var dto = bulkFeeDetailsDtoWithNoFeeDetaisl(Set.of(entryId1, entryId2));
+        final var dto = bulkFeeDetailsDtoWithNoFeeDetails(Set.of(entryId1, entryId2));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
@@ -1836,8 +1838,8 @@ class ApplicationEntryServiceImplTest {
         val existingStatus2 = new AppListEntryFeeStatus();
         existingStatus2.setId(202L);
 
-        final var dto = bulkFeeDetailsDtoWithNoFeeDetaisl(Set.of(entryId1, entryId2));
-        dto.setHasOffsiteFee(false);
+        final var dto = bulkFeeDetailsDtoWithNoFeeDetails(Set.of(entryId1, entryId2));
+        dto.setHasOffsiteFee(JsonNullable.of(false));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
@@ -1871,8 +1873,8 @@ class ApplicationEntryServiceImplTest {
         dto.setFeeDetails(
                 JsonNullable.of(
                         List.of(
-                                bulkFeeDetails(PaymentStatus.PAID, "PAY-001", false),
-                                bulkFeeDetails(PaymentStatus.REMITTED, "PAY-002", false))));
+                                bulkFeeDetails(PaymentStatus.PAID, "PAY-001"),
+                                bulkFeeDetails(PaymentStatus.REMITTED, "PAY-002"))));
 
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
@@ -1908,7 +1910,9 @@ class ApplicationEntryServiceImplTest {
     @Test
     void bulkUpdateFees_recordsFailedMetricWhenValidationFails() {
         val listId = UUID.randomUUID();
-        val dto = bulkFeesUpdateDto(Set.of(UUID.randomUUID()), PaymentStatus.PAID, false);
+        val dto =
+                bulkFeesUpdateDto(
+                        Set.of(UUID.randomUUID()), PaymentStatus.PAID, JsonNullable.undefined());
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.empty());
@@ -1954,7 +1958,7 @@ class ApplicationEntryServiceImplTest {
                         .toList();
         Set<UUID> entryIds =
                 entries.stream().map(ApplicationListEntry::getUuid).collect(Collectors.toSet());
-        final var dto = bulkFeesUpdateDto(entryIds, PaymentStatus.PAID, false);
+        final var dto = bulkFeesUpdateDto(entryIds, PaymentStatus.PAID, JsonNullable.of(false));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
@@ -1981,7 +1985,8 @@ class ApplicationEntryServiceImplTest {
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
         final var entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
-        final var dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, true);
+        final var dto =
+                bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, JsonNullable.of(true));
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
         offsiteFee.setOffsite(true);
@@ -2017,7 +2022,9 @@ class ApplicationEntryServiceImplTest {
         final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
         val entryId2 = UUID.randomUUID();
         final var entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
-        final var dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, true);
+        final var dto =
+                bulkFeesUpdateDto(
+                        Set.of(entryId1, entryId2), PaymentStatus.PAID, JsonNullable.of(true));
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
         offsiteFee.setOffsite(true);
@@ -2058,7 +2065,8 @@ class ApplicationEntryServiceImplTest {
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
-        final var dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, false);
+        final var dto =
+                bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, JsonNullable.undefined());
         val existingOffsiteMapping = new AppListEntryFeeId();
         existingOffsiteMapping.setAppListEntryId(entry.getId());
         existingOffsiteMapping.setFeeId(301L);
@@ -2098,29 +2106,27 @@ class ApplicationEntryServiceImplTest {
     }
 
     private BulkFeesUpdateDto bulkFeesUpdateDto(
-            Set<UUID> entryIds, PaymentStatus paymentStatus, boolean hasOffsiteFee) {
+            Set<UUID> entryIds, PaymentStatus paymentStatus, JsonNullable<Boolean> hasOffsiteFee) {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(entryIds);
-        dto.setFeeDetails(
-                JsonNullable.of(List.of(bulkFeeDetails(paymentStatus, "PAY-001", hasOffsiteFee))));
+        dto.setFeeDetails(JsonNullable.of(List.of(bulkFeeDetails(paymentStatus, "PAY-001"))));
+        dto.setHasOffsiteFee(hasOffsiteFee);
         return dto;
     }
 
-    private BulkFeesUpdateDto bulkFeeDetailsDtoWithNoFeeDetaisl(Set<UUID> entryIds) {
+    private BulkFeesUpdateDto bulkFeeDetailsDtoWithNoFeeDetails(Set<UUID> entryIds) {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(entryIds);
-        dto.setHasOffsiteFee(true);
+        dto.setHasOffsiteFee(JsonNullable.of(true));
         dto.setFeeDetails(JsonNullable.undefined());
         return dto;
     }
 
-    private BulkFeeDetailsDto bulkFeeDetails(
-            PaymentStatus paymentStatus, String paymentReference, boolean hasOffsiteFee) {
+    private BulkFeeDetailsDto bulkFeeDetails(PaymentStatus paymentStatus, String paymentReference) {
         val feeDetails = new BulkFeeDetailsDto();
         feeDetails.setPaymentStatus(paymentStatus);
         feeDetails.setStatusDate(LocalDate.of(2025, Month.OCTOBER, 7));
         feeDetails.setPaymentReference(paymentReference);
-        feeDetails.setHasOffsiteFee(hasOffsiteFee);
         return feeDetails;
     }
 

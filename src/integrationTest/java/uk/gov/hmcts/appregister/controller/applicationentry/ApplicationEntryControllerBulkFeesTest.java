@@ -18,6 +18,7 @@ import lombok.val;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
@@ -51,7 +52,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         ORIGINAL_STATUS_DATE,
                         ORIGINAL_PAYMENT_REFERENCE,
                         false);
-        BulkFeesUpdateDto request = validBulkFeesUpdateDto(Set.of(entry.getId()));
+        BulkFeesUpdateDto request =
+                validBulkFeesUpdateDto(Set.of(entry.getId()), JsonNullable.undefined());
         ObjectNode requestBody = mapper.valueToTree(request);
         ArrayNode feeDetails = (ArrayNode) requestBody.path("feeDetails");
         ((ObjectNode) feeDetails.get(0)).put("unexpected", "value");
@@ -94,7 +96,9 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 bulkUpdateFees(
                         tokenGenerator,
                         firstEntry.getListId(),
-                        validBulkFeesUpdateDto(Set.of(firstEntry.getId(), secondEntry.getId())));
+                        validBulkFeesUpdateDto(
+                                Set.of(firstEntry.getId(), secondEntry.getId()),
+                                JsonNullable.of(true)));
 
         response.then().statusCode(200);
         BulkUpdateResponseDto responseDto = response.as(BulkUpdateResponseDto.class);
@@ -136,18 +140,17 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         BulkFeesUpdateDto dto =
                 new BulkFeesUpdateDto()
                         .entryIds(Set.of(firstEntry.getId(), secondEntry.getId()))
+                        .hasOffsiteFee(true)
                         .feeDetails(
                                 List.of(
                                         feeDetails(
                                                 PaymentStatus.PAID,
                                                 UPDATED_STATUS_DATE,
-                                                "PAY-BULK-1",
-                                                false),
+                                                "PAY-BULK-1"),
                                         feeDetails(
                                                 PaymentStatus.REMITTED,
                                                 UPDATED_STATUS_DATE,
-                                                "PAY-BULK-2",
-                                                true)));
+                                                "PAY-BULK-2")));
 
         differenceLogAsserter.clearLogs();
 
@@ -194,13 +197,13 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         entry.getListId(),
                         new BulkFeesUpdateDto()
                                 .entryIds(Set.of(entry.getId()))
+                                .hasOffsiteFee(true)
                                 .feeDetails(
                                         List.of(
                                                 feeDetails(
                                                         PaymentStatus.REMITTED,
                                                         UPDATED_STATUS_DATE,
-                                                        UPDATED_PAYMENT_REFERENCE,
-                                                        false))));
+                                                        UPDATED_PAYMENT_REFERENCE))));
 
         response.then().statusCode(200);
 
@@ -327,7 +330,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 bulkUpdateFees(
                         tokenGenerator,
                         entry.getListId(),
-                        validBulkFeesUpdateDto(Set.of(entry.getId(), missingEntryId)));
+                        validBulkFeesUpdateDto(
+                                Set.of(entry.getId(), missingEntryId), JsonNullable.undefined()));
 
         response.then().statusCode(400);
         ProblemDetail problemDetail = response.as(ProblemDetail.class);
@@ -364,7 +368,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         tokenGenerator,
                         sourceEntry.getListId(),
                         validBulkFeesUpdateDto(
-                                Set.of(sourceEntry.getId(), otherListEntry.getId())));
+                                Set.of(sourceEntry.getId(), otherListEntry.getId()),
+                                JsonNullable.undefined()));
 
         response.then().statusCode(403);
         ProblemDetail problemDetail = response.as(ProblemDetail.class);
@@ -399,7 +404,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 bulkUpdateFees(
                         tokenGenerator,
                         closedListId,
-                        validBulkFeesUpdateDto(Set.of(UUID.randomUUID())));
+                        validBulkFeesUpdateDto(
+                                Set.of(UUID.randomUUID()), JsonNullable.undefined()));
 
         response.then().statusCode(409);
         ProblemAssertUtil.assertEquals(
@@ -421,8 +427,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 feeDetails(
                         PaymentStatus.REMITTED,
                         LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1),
-                        UPDATED_PAYMENT_REFERENCE,
-                        true);
+                        UPDATED_PAYMENT_REFERENCE);
 
         differenceLogAsserter.clearLogs();
 
@@ -464,7 +469,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 bulkUpdateFees(
                         tokenGenerator,
                         entry.getListId(),
-                        validBulkFeesUpdateDto(entryIdsIncluding(entry.getId(), 1051)));
+                        validBulkFeesUpdateDto(
+                                entryIdsIncluding(entry.getId(), 1051), JsonNullable.undefined()));
 
         response.then().statusCode(400);
         assertNoBulkFeeAuditWritten();
@@ -541,16 +547,19 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         return response.as(EntryGetDetailDto.class);
     }
 
-    private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
-        return new BulkFeesUpdateDto()
-                .entryIds(entryIds)
-                .feeDetails(
-                        List.of(
-                                feeDetails(
-                                        PaymentStatus.REMITTED,
-                                        UPDATED_STATUS_DATE,
-                                        UPDATED_PAYMENT_REFERENCE,
-                                        true)));
+    private BulkFeesUpdateDto validBulkFeesUpdateDto(
+            Set<UUID> entryIds, JsonNullable<Boolean> hasoffsiteFee) {
+        val dto =
+                new BulkFeesUpdateDto()
+                        .entryIds(entryIds)
+                        .feeDetails(
+                                List.of(
+                                        feeDetails(
+                                                PaymentStatus.REMITTED,
+                                                UPDATED_STATUS_DATE,
+                                                UPDATED_PAYMENT_REFERENCE)));
+        dto.setHasOffsiteFee(hasoffsiteFee);
+        return dto;
     }
 
     private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
@@ -565,15 +574,11 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
     }
 
     private BulkFeeDetailsDto feeDetails(
-            PaymentStatus paymentStatus,
-            LocalDate statusDate,
-            String paymentReference,
-            boolean hasOffsiteFee) {
+            PaymentStatus paymentStatus, LocalDate statusDate, String paymentReference) {
         return new BulkFeeDetailsDto()
                 .paymentStatus(paymentStatus)
                 .statusDate(statusDate)
-                .paymentReference(paymentReference)
-                .hasOffsiteFee(hasOffsiteFee);
+                .paymentReference(paymentReference);
     }
 
     private FeeStatus feeStatus(

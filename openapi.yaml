@@ -7095,7 +7095,8 @@ components:
         hasOffsiteFee:
           default: false
           description: |
-            If true, ensures that all selected entries have an off-site fee mapping. If false, does not remove any existing off-site fee mapping.
+            If true, ensures that all selected entries have an off-site fee mapping. If false, it will remove the offsite fee. If not provided, the offsite fee will not be changed.
+          nullable: true
           type: boolean
       required:
       - entryIds
@@ -8236,11 +8237,6 @@ components:
           maxLength: 100
           minLength: 1
           type: string
-        hasOffsiteFee:
-          description: |
-            When true on any supplied fee detail, ensures the selected entries have an off-site fee mapping. False does not remove an existing off-site fee mapping.
-          example: true
-          type: boolean
       required:
       - hasOffsiteFee
       - paymentStatus

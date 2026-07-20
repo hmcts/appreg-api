@@ -164,11 +164,6 @@ public class BulkUpdateFeesValidator
             throw new AppRegistryException(
                     AppListEntryError.FEE_STATUS_DATE_REQUIRED, "statusDate must be provided");
         }
-
-        if (missingFields.contains("hasOffsiteFee")) {
-            throw new AppRegistryException(
-                    AppListEntryError.OFFSITE_FEE_REQUIRED, "hasOffsiteFee must be provided");
-        }
     }
 
     private void validateAllEntriesBelongToList(

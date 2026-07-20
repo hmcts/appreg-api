@@ -32,6 +32,7 @@ properties:
   hasOffsiteFee:
     type: boolean
     description: >
-      If true, ensures that all selected entries have an off-site fee mapping. If false, does not
-      remove any existing off-site fee mapping.
+      If true, ensures that all selected entries have an off-site fee mapping. If false, it will remove the offsite fee.
+      If not provided, the offsite fee will not be changed.
     default: false
+    nullable: true

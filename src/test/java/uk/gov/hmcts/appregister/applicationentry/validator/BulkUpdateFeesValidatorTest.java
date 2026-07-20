@@ -179,16 +179,6 @@ class BulkUpdateFeesValidatorTest {
     }
 
     @Test
-    void validate_whenHasOffsiteFeeIsMissing_thenThrowsOffsiteFeeRequired() {
-        BulkFeeDetailsDto feeDetails = validFeeDetails();
-        feeDetails.setHasOffsiteFee(null);
-
-        AppRegistryException exception = validateAndCapture(validPayload(entryId, feeDetails));
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFSITE_FEE_REQUIRED);
-    }
-
-    @Test
     void validate_whenSomeEntriesAreNotInSourceList_thenThrowsEntryNotInSourceList() {
         UUID missingEntryId = UUID.randomUUID();
         when(applicationListEntryRepository.findByUuidsInSourceList(
@@ -267,7 +257,6 @@ class BulkUpdateFeesValidatorTest {
         return new BulkFeeDetailsDto()
                 .paymentStatus(PaymentStatus.PAID)
                 .statusDate(TODAY)
-                .paymentReference("PAY-001")
-                .hasOffsiteFee(false);
+                .paymentReference("PAY-001");
     }
 }
