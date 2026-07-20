@@ -39,6 +39,7 @@ properties:
 
   numberOfRespondents:
     type: integer
+    nullable: true
     description: Number of respondents required by the Application.
     example: 0
 
