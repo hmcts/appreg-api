@@ -242,7 +242,7 @@ tasks.register('bootRunLocalDev', BootRun) {
 
   def activeProfiles = providers.gradleProperty('springProfiles')
     .orElse(providers.systemProperty('spring.profiles.active'))
-    .orElse('nosecurity')
+    .orElse('nosecurity,p6spy')
 
   systemProperty 'spring.profiles.active', activeProfiles.get()
   systemProperty 'logging.level.root', 'INFO'

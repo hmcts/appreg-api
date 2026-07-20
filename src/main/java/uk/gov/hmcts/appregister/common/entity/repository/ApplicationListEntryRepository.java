@@ -773,6 +773,23 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntry> findByUuidsInSourceList(UUID sourceListUuid, Set<UUID> requestedIds);
 
     /**
+     * Finds all non-deleted entries matching the supplied UUIDs, excluding rows whose parent lists
+     * are deleted.
+     *
+     * @param entryIds the entry UUIDs
+     * @return matching entries
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid IN :entryIds
+        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> 'Y')
+        """)
+    List<ApplicationListEntry> findActiveByUuids(List<UUID> entryIds);
+
+    /**
      * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
      * rows updated.
      *

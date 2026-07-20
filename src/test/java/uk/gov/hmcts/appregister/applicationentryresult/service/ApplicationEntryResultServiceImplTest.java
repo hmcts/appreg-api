@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence.with;
@@ -29,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
@@ -42,6 +45,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntr
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultValidatedItem;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultCreateValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
@@ -131,7 +135,10 @@ class ApplicationEntryResultServiceImplTest {
     @Spy
     private DummyBulkApplicationEntryResultGetValidator bulkResultEntry =
             new DummyBulkApplicationEntryResultGetValidator(
-                    applicationListRepository, applicationListEntryRepository);
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository,
+                    businessDateProvider);
 
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -200,6 +207,11 @@ class ApplicationEntryResultServiceImplTest {
         AppListEntryResolution entryToSave = new AppListEntryResolution();
         entryToSave.setId(23232L);
         entryToSave.setVersion(2L);
+        entryToSave.setUuid(UUID.randomUUID());
+        entryToSave.setApplicationList(applicationListEntry);
+        entryToSave.setResolutionCode(resolutionCode);
+        entryToSave.setResolutionWording("This is a template {My Substituted Value}");
+        entryToSave.setResolutionOfficer("myemail@domain.com");
 
         when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
                         resultCreateDto,
@@ -213,7 +225,8 @@ class ApplicationEntryResultServiceImplTest {
                 new PayloadForCreateEntryResult<>(
                         UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
 
-        when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
+        when(appListEntryResolutionRepository.save(any(AppListEntryResolution.class)))
+                .thenReturn(entryToSave);
 
         // setup the response of the call
         ResultGetDto resultGetDto =
@@ -382,6 +395,11 @@ class ApplicationEntryResultServiceImplTest {
         AppListEntryResolution entryToSave = new AppListEntryResolution();
         entryToSave.setId(23232L);
         entryToSave.setVersion(2L);
+        entryToSave.setUuid(UUID.randomUUID());
+        entryToSave.setApplicationList(applicationListEntry);
+        entryToSave.setResolutionCode(resolutionCode);
+        entryToSave.setResolutionWording("This is a template {My Substituted Value}");
+        entryToSave.setResolutionOfficer("myemail@domain.com");
 
         when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
                         resultCreateDto,
@@ -395,7 +413,10 @@ class ApplicationEntryResultServiceImplTest {
                 new PayloadForCreateEntryResult<>(
                         UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
 
-        when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
+        when(appListEntryResolutionRepository.saveAll(List.of(entryToSave)))
+                .thenReturn(List.of(entryToSave));
+        when(appListEntryResolutionRepository.findAllById(List.of(entryToSave.getId())))
+                .thenReturn(List.of(entryToSave));
 
         // setup the response of the call
         ResultGetDto resultGetDto =
@@ -404,15 +425,28 @@ class ApplicationEntryResultServiceImplTest {
 
         BulkApplicationEntryResultCreationSuccess bulkApplicationEntryResultCreationSuccess =
                 new BulkApplicationEntryResultCreationSuccess();
-        bulkApplicationEntryResultCreationSuccess.getResults().add(payload);
+        bulkApplicationEntryResultCreationSuccess
+                .getResults()
+                .add(new BulkApplicationEntryResultValidatedItem(payload, success));
 
         bulkResultEntry.setSuccess(bulkApplicationEntryResultCreationSuccess);
 
         // make the call
         List<ResultGetDto> createdResults =
-                service.bulkCreate(PayloadForCreateResults.<BulkResultDto>builder().build());
+                service.bulkCreate(
+                        PayloadForCreateResults.<BulkResultDto>builder()
+                                .payload(new BulkResultDto().result(resultCreateDto))
+                                .build());
 
         Assertions.assertEquals(List.of(resultGetDto), createdResults);
+        verify(appListEntryResolutionRepository).saveAll(List.of(entryToSave));
+        verify(appListEntryResolutionRepository).findAllById(List.of(entryToSave.getId()));
+        verify(entityManager).flush();
+        verify(auditOperationService)
+                .processAudit(
+                        eq(AppListEntryResultAuditOperation.BULK_CREATE_APP_LIST_ENTRY_RESULT),
+                        any());
+        verify(appListEntryResolutionRepository, never()).save(any(AppListEntryResolution.class));
     }
 
     @Setter
@@ -562,9 +596,15 @@ class ApplicationEntryResultServiceImplTest {
 
         public DummyBulkApplicationEntryResultGetValidator(
                 ApplicationListRepository applicationListRepository,
-                ApplicationListEntryRepository applicationListEntryRepository) {
+                ApplicationListEntryRepository applicationListEntryRepository,
+                ResolutionCodeRepository resolutionCodeRepository,
+                BusinessDateProvider businessDateProvider) {
 
-            super(applicationListRepository, applicationListEntryRepository);
+            super(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository,
+                    businessDateProvider);
         }
 
         @Override

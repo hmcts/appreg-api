@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.ApplicationListEntryResultAudit;
+import uk.gov.hmcts.appregister.applicationentryresult.audit.BulkCreateApplicationEntryResultAudit;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
@@ -319,16 +321,83 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
         return bulkApplicationEntryResultCreationValidator.validate(
                 bulkResultDto,
                 (validate, success) -> {
-                    List<ResultGetDto> createdResults = new ArrayList<>();
+                    var resultPayload = validate.getPayload().getResult();
+                    var userEmail = userProvider.getEmail();
+                    var entitiesToCreate =
+                            new ArrayList<AppListEntryResolution>(success.getResults().size());
 
-                    // loop through each successful validation result and create the entry result
-                    for (PayloadForCreateEntryResult<ResultCreateDto> createValidationSuccesses :
-                            success.getResults()) {
-                        createdResults.add(
-                                getSelfService().create(createValidationSuccesses).getPayload());
+                    for (var validatedItem : success.getResults()) {
+                        var payload = validatedItem.payload();
+                        var createSuccess = validatedItem.validationSuccess();
+                        var entity =
+                                applicationListEntryResultEntityMapper.toApplicationListEntryResult(
+                                        payload.getData(),
+                                        createSuccess
+                                                .getWordingSentence()
+                                                .substitute(payload.getData().getWordingFields())
+                                                .getSubstitutedString(),
+                                        createSuccess.getResolutionCode(),
+                                        createSuccess.getApplicationListEntry(),
+                                        userEmail);
+                        entity.setResolutionOfficer(userEmail);
+                        entitiesToCreate.add(entity);
                     }
 
-                    return createdResults;
+                    return auditService.processAudit(
+                                    AppListEntryResultAuditOperation
+                                            .BULK_CREATE_APP_LIST_ENTRY_RESULT,
+                                    ignored -> {
+                                        repository.saveAll(entitiesToCreate);
+                                        entityManager.flush();
+
+                                        var reloadedEntities =
+                                                new ArrayList<>(
+                                                        repository.findAllById(
+                                                                entitiesToCreate.stream()
+                                                                        .map(
+                                                                                AppListEntryResolution
+                                                                                        ::getId)
+                                                                        .toList()));
+                                        reloadedEntities.sort(
+                                                Comparator.comparing(
+                                                        AppListEntryResolution::getId));
+
+                                        var bulkAudit =
+                                                new BulkCreateApplicationEntryResultAudit(
+                                                        reloadedEntities.isEmpty()
+                                                                ? null
+                                                                : reloadedEntities
+                                                                        .getFirst()
+                                                                        .getId(),
+                                                        validate.getListId(),
+                                                        success.getResults().stream()
+                                                                .map(
+                                                                        item ->
+                                                                                item.payload()
+                                                                                        .getEntryId())
+                                                                .toList(),
+                                                        reloadedEntities.size(),
+                                                        resultPayload.getResultCode(),
+                                                        BulkCreateApplicationEntryResultAudit
+                                                                .formatWordingFields(
+                                                                        resultPayload
+                                                                                .getWordingFields()),
+                                                        BulkCreateApplicationEntryResultAudit
+                                                                .formatCreatedResults(
+                                                                        reloadedEntities));
+
+                                        var resultDtos =
+                                                reloadedEntities.stream()
+                                                        .map(
+                                                                applicationListEntryResultMapper
+                                                                        ::toResultGetDto)
+                                                        .toList();
+
+                                        return Optional.of(
+                                                new AuditableResult<>(resultDtos, bulkAudit));
+                                    })
+                            .stream()
+                            .toList();
                 });
     }
 
