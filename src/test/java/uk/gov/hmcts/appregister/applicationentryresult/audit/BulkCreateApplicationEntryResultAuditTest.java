@@ -38,7 +38,8 @@ class BulkCreateApplicationEntryResultAuditTest {
                 .isEqualTo(
                         "[{\"resultId\":\"11111111-1111-1111-1111-111111111111\","
                                 + "\"entryId\":\"22222222-2222-2222-2222-222222222222\","
-                                + "\"sequenceNumber\":7,\"resultCode\":\"CODE\\\\\\\"1\","
+                                + "\"sequenceNumber\":7,\n"
+                                + "\"resultCode\":\"CODE\\\\\\\"1\","
                                 + "\"wording\":\"Wording\\\\\\\"1\","
                                 + "\"officer\":\"Officer\\\\\\\"1\"}]");
     }
