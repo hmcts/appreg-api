@@ -17,7 +17,7 @@ def component = "api"
 import uk.gov.hmcts.contino.GradleBuilder
 import uk.gov.hmcts.contino.GithubAPI
 
-def branchesToSync = ['demo', 'ithc']
+def branchesToSync = ['demo']
 
 def secrets = [
         'appreg-${env}': [

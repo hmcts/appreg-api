@@ -580,7 +580,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 validatable, bulkRespondentAllowed, hasRespondent, hasNumberOfRespondents);
         validateMissingBulkRespondent(
                 validatable, respondentRequired, hasRespondent, hasZeroRespondents(validatable));
-        validateBulkRespondentPresence(
+        validateBulkRespondentMutualExclusion(
                 validatable,
                 bulkRespondentAllowed,
                 respondentRequired,
@@ -635,26 +635,21 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
     }
 
-    private void validateBulkRespondentPresence(
+    private void validateBulkRespondentMutualExclusion(
             T validatable,
             boolean bulkRespondentAllowed,
             boolean respondentRequired,
             boolean hasNumberOfRespondents,
             boolean hasRespondent) {
-        if (bulkRespondentAllowed && !respondentRequired) {
-            if (!hasNumberOfRespondents && !hasRespondent) {
-                throw new AppRegistryException(
-                        AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
-                        "Either respondent details or number of respondents must be provided");
-            }
-
-            if (hasNumberOfRespondents && hasRespondent) {
-                var dto = getApplicationCode(validatable);
-                throw new AppRegistryException(
-                        AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
-                        "The number of respondents and respondent details are mutually exclusive for code %s"
-                                .formatted(dto));
-            }
+        if (bulkRespondentAllowed
+                && !respondentRequired
+                && hasNumberOfRespondents
+                && hasRespondent) {
+            var dto = getApplicationCode(validatable);
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                    "The number of respondents and respondent details are mutually exclusive for code %s"
+                            .formatted(dto));
         }
     }
 
