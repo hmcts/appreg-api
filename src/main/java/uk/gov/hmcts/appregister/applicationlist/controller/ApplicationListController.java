@@ -17,7 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummarySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
@@ -34,7 +33,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
-import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 
 /**
  * REST controller for managing Application Lists.
@@ -59,7 +57,6 @@ public class ApplicationListController implements ApplicationListsApi {
     private static final String ACCEPT_HEADER = "Accept";
 
     private final ApplicationListService service;
-    private final ApplicationEntryService applicationEntryService;
 
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
@@ -244,11 +241,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<List<EntryGetSummaryDto>> printApplicationLists(
+    public ResponseEntity<List<ApplicationListGetPrintDto>> printApplicationLists(
             BulkGetApplicationListEntriesRequestDto bulkGetApplicationListEntriesRequestDto) {
-        List<EntryGetSummaryDto> retrieved =
-                applicationEntryService.bulkGetApplicationListEntries(
-                        bulkGetApplicationListEntriesRequestDto);
+        List<ApplicationListGetPrintDto> retrieved =
+                service.print(bulkGetApplicationListEntriesRequestDto);
 
         return ResponseEntity.status(OK)
                 .varyBy(ACCEPT_HEADER)

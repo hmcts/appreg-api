@@ -47,6 +47,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.audit.ApplicationListPrintReadAudit;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
@@ -98,6 +99,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
@@ -155,6 +157,7 @@ class ApplicationListServiceImplTest {
     @Mock private ApplicationListEntryMapper entryMapper;
 
     @Mock private EntityManager entityManager;
+    @Mock private BulkGetApplicationListEntriesValidator bulkGetApplicationListEntriesValidator;
 
     // A null match provider that returns a null etag
     private static final MatchProvider NULL_MATCH_PROVIDER =
@@ -191,6 +194,7 @@ class ApplicationListServiceImplTest {
                         updateValidator,
                         getValidator,
                         deletionValidator,
+                        bulkGetApplicationListEntriesValidator,
                         matchService,
                         entityManager,
                         auditOperationService);
@@ -942,12 +946,14 @@ class ApplicationListServiceImplTest {
         var entryProjection =
                 applicationListEntryPrintProjection()
                         .id(1L)
+                        .listId(id)
                         .sequenceNumber(1)
                         .applicantTitle(MR)
                         .applicantLastName(PERSON4_SURNAME)
                         .applicantFirstName(PERSON4_FORENAME1)
                         .build();
-        when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of(entryProjection));
+        when(aleRepository.findByApplicationListIdsForPrinting(eq(List.of(id)), eq(false), any()))
+                .thenReturn(List.of(entryProjection));
 
         // 2) Wordings (bulk)
         ApplicationListEntryResolutionPrintProjection wordingRow1 =
@@ -960,7 +966,7 @@ class ApplicationListServiceImplTest {
         when(wordingRow2.getEntryId()).thenReturn(1L);
         when(wordingRow2.getWording()).thenReturn(WORDING_2);
 
-        when(alerRepository.findByApplicationListUuidForPrinting(id))
+        when(alerRepository.findByApplicationListEntryIdsForPrinting(List.of(1L)))
                 .thenReturn(List.of(wordingRow1, wordingRow2));
 
         // 3) Officials (bulk)
@@ -968,7 +974,8 @@ class ApplicationListServiceImplTest {
                 mock(ApplicationListEntryOfficialPrintProjection.class);
         when(officialProj.getEntryId()).thenReturn(1L);
 
-        when(aleoRepository.findByApplicationListUuidForPrinting(id, PRINTABLE_OFFICIAL_TYPES))
+        when(aleoRepository.findByApplicationListEntryIdsForPrinting(
+                        List.of(1L), PRINTABLE_OFFICIAL_TYPES))
                 .thenReturn(List.of(officialProj));
 
         // Mapper stubs
@@ -996,9 +1003,11 @@ class ApplicationListServiceImplTest {
         assertEquals(List.of(WORDING_1, WORDING_2), dto.getResultWordings());
         assertEquals(List.of(officialDto), dto.getOfficials());
 
-        verify(aleRepository).findByIdForPrinting(id);
-        verify(alerRepository).findByApplicationListUuidForPrinting(id);
-        verify(aleoRepository).findByApplicationListUuidForPrinting(id, PRINTABLE_OFFICIAL_TYPES);
+        verify(aleRepository)
+                .findByApplicationListIdsForPrinting(eq(List.of(id)), eq(false), any());
+        verify(alerRepository).findByApplicationListEntryIdsForPrinting(List.of(1L));
+        verify(aleoRepository)
+                .findByApplicationListEntryIdsForPrinting(List.of(1L), PRINTABLE_OFFICIAL_TYPES);
 
         // And the per-entry mapper was invoked
         verify(entryMapper).toPrintDto(entryProjection);
@@ -1011,7 +1020,8 @@ class ApplicationListServiceImplTest {
         list.setUuid(id);
 
         when(repository.findByUuid(id)).thenReturn(Optional.of(list));
-        when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of());
+        when(aleRepository.findByApplicationListIdsForPrinting(eq(List.of(id)), eq(false), any()))
+                .thenReturn(List.of());
 
         ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
         when(mapper.toGetPrintDto(list)).thenReturn(expected);
@@ -1024,6 +1034,82 @@ class ApplicationListServiceImplTest {
                 ApplicationListPrintReadAudit.class, auditOperationService.getLastNewEntity());
         Assertions.assertNotSame(list, auditOperationService.getLastNewEntity());
         Assertions.assertEquals(-1L, auditOperationService.getLastNewEntity().getId());
+    }
+
+    @Test
+    void printBulk_returnsListDtosInListOrderAndSelectedEntryOrder() {
+        final UUID firstListId = UUID.randomUUID();
+        final UUID secondListId = UUID.randomUUID();
+        final UUID firstEntryFirstId = UUID.randomUUID();
+        final UUID firstEntrySecondId = UUID.randomUUID();
+        final UUID secondEntryId = UUID.randomUUID();
+
+        ApplicationList firstList = new ApplicationList();
+        firstList.setId(1L);
+        firstList.setUuid(firstListId);
+        ApplicationList secondList = new ApplicationList();
+        secondList.setId(2L);
+        secondList.setUuid(secondListId);
+
+        var firstProjection =
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .uuid(firstEntryFirstId)
+                        .listId(firstListId)
+                        .sequenceNumber(1)
+                        .build();
+        var secondProjection =
+                applicationListEntryPrintProjection()
+                        .id(2L)
+                        .uuid(firstEntrySecondId)
+                        .listId(firstListId)
+                        .sequenceNumber(2)
+                        .build();
+        var thirdProjection =
+                applicationListEntryPrintProjection()
+                        .id(3L)
+                        .uuid(secondEntryId)
+                        .listId(secondListId)
+                        .sequenceNumber(1)
+                        .build();
+
+        var request =
+                new BulkGetApplicationListEntriesRequestDto()
+                        .listIds(List.of(secondListId, firstListId))
+                        .entryIds(List.of(secondEntryId, firstEntrySecondId, firstEntryFirstId));
+
+        when(repository.findByUuidIn(request.getListIds()))
+                .thenReturn(List.of(firstList, secondList));
+        when(aleRepository.findByApplicationListIdsForPrinting(
+                        request.getListIds(), true, request.getEntryIds()))
+                .thenReturn(List.of(firstProjection, secondProjection, thirdProjection));
+        when(alerRepository.findByApplicationListEntryIdsForPrinting(List.of(1L, 2L, 3L)))
+                .thenReturn(List.of());
+        when(aleoRepository.findByApplicationListEntryIdsForPrinting(
+                        List.of(1L, 2L, 3L), PRINTABLE_OFFICIAL_TYPES))
+                .thenReturn(List.of());
+
+        var firstListDto = new ApplicationListGetPrintDto();
+        var secondListDto = new ApplicationListGetPrintDto();
+        when(mapper.toGetPrintDto(firstList)).thenReturn(firstListDto);
+        when(mapper.toGetPrintDto(secondList)).thenReturn(secondListDto);
+        when(entryMapper.toPrintDto(firstProjection))
+                .thenReturn(new EntryGetPrintDto().id(firstEntryFirstId));
+        when(entryMapper.toPrintDto(secondProjection))
+                .thenReturn(new EntryGetPrintDto().id(firstEntrySecondId));
+        when(entryMapper.toPrintDto(thirdProjection))
+                .thenReturn(new EntryGetPrintDto().id(secondEntryId));
+
+        List<ApplicationListGetPrintDto> response = service.print(request);
+
+        assertThat(response).containsExactly(secondListDto, firstListDto);
+        assertThat(response.get(0).getEntries())
+                .extracting(EntryGetPrintDto::getId)
+                .containsExactly(secondEntryId);
+        assertThat(response.get(1).getEntries())
+                .extracting(EntryGetPrintDto::getId)
+                .containsExactly(firstEntrySecondId, firstEntryFirstId);
+        verify(bulkGetApplicationListEntriesValidator).validate(request);
     }
 
     @Test

@@ -978,7 +978,7 @@ paths:
   /application-lists/print:
     post:
       description: |
-        Returns print-oriented entry summary rows for one or more Application Lists in a single request. Supply `listIds` to scope the search. If `entryIds` is omitted or empty, all active entries from the supplied lists are returned. If `entryIds` is supplied, only the specified active entries from the supplied lists are returned. Validation is all-or-nothing.
+        Returns print-oriented Application Lists for one or more Application Lists in a single request. Supply `listIds` to scope the search. If `entryIds` is omitted or empty, all active entries from the supplied lists are returned. If `entryIds` is supplied, only the specified active entries from the supplied lists are returned within each returned list. Validation is all-or-nothing.
       operationId: printApplicationLists
       requestBody:
         content:
@@ -992,9 +992,9 @@ paths:
             application/vnd.hmcts.appreg.v1+json:
               schema:
                 items:
-                  $ref: "#/components/schemas/entry-get-summary-dto"
+                  $ref: "#/components/schemas/application-list-get-print-dto"
                 type: array
-          description: Matching Application List Entry summary rows.
+          description: Matching print-ready Application Lists in input order.
           headers:
             Vary:
               description: Response varies by Accept for media-type versioning.
@@ -1072,7 +1072,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/problem"
           description: Unexpected server error.
-      summary: Get print-ready entry rows across Application Lists
+      summary: Get print-ready Application Lists in bulk
       tags:
       - application-lists
   /application-lists/{listId}:
@@ -6548,67 +6548,45 @@ components:
       required:
       - listIds
       type: object
-    entry-get-summary-dto:
-      description: "Lightweight DTO for Application Lists Entries, not retrieved through\
-        \ a parent list. Used in list/search views."
+    application-list-get-print-dto:
+      description: Immutable DTO representing a detailed Application List.
       properties:
-        id:
-          description: Unique identifier of the Application List Entry.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          format: uuid
-          type: string
-        applicant:
-          $ref: "#/components/schemas/applicant"
-        respondent:
-          $ref: "#/components/schemas/respondent"
-        applicationTitle:
-          description: Descriptive title of the application.
-          example: Application to Crown Court
-          type: string
-        legislation:
-          description: Legislation under which the application is made.
-          example: Application to Crown Court
-          type: string
-        isFeeRequired:
-          description: True if submitting the application incurs a charge.
-          type: boolean
-        isResulted:
-          description: True if this application list entry has been resulted.
-          type: boolean
-        listId:
-          description: Unique Identifier of the Application List to which this entry
-            belongs.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          format: uuid
-          type: string
         date:
-          description: Single date of the Application List.
-          example: 2025-10-07
+          description: The calendar date on which the Application List is scheduled.
+          example: 2025-09-17
           format: date
           type: string
-        sequenceNumber:
-          description: The sequence number of the application in the list.
-          example: 1
-          type: integer
-        resulted:
-          description: List of result codes applied to this application list entry.
-          items:
-            $ref: "#/components/schemas/result-code-get-summary-dto"
-          type: array
-        status:
-          $ref: "#/components/schemas/application-list-status"
-        accountNumber:
-          example: ACC-001
-          maxLength: 20
-          nullable: true
+        time:
+          description: "The time of day at which the Application List is scheduled,\
+            \ seconds are optional."
+          example: 10:30:00
+          format: time
           type: string
+        courtName:
+          description: Name that identifies the Court Location.
+          example: Bath Magistrates Court
+          type: string
+        cja:
+          description: The Criminal Justice Area code and description.
+          example: 52 - Avon & Somerset
+          type: string
+        otherLocationDescription:
+          description: Free-text location if not using a standard court.
+          example: Temporary Courtroom at Town Hall
+          type: string
+        duration:
+          description: The length of the hearing that heard the Application List.
+          example: "1 hour, 30 minutes"
+          type: string
+        entries:
+          description: List of entries (empty when none).
+          items:
+            $ref: "#/components/schemas/entry-get-print-dto"
+          type: array
       required:
-      - applicantName
-      - applicationTitle
-      - id
-      - isFeeRequired
-      - isResulted
-      - status
+      - date
+      - entries
+      - time
       type: object
     application-list-update-dto:
       additionalProperties: false
@@ -6669,46 +6647,6 @@ components:
       - date
       - description
       - status
-      - time
-      type: object
-    application-list-get-print-dto:
-      description: Immutable DTO representing a detailed Application List.
-      properties:
-        date:
-          description: The calendar date on which the Application List is scheduled.
-          example: 2025-09-17
-          format: date
-          type: string
-        time:
-          description: "The time of day at which the Application List is scheduled,\
-            \ seconds are optional."
-          example: 10:30:00
-          format: time
-          type: string
-        courtName:
-          description: Name that identifies the Court Location.
-          example: Bath Magistrates Court
-          type: string
-        cja:
-          description: The Criminal Justice Area code and description.
-          example: 52 - Avon & Somerset
-          type: string
-        otherLocationDescription:
-          description: Free-text location if not using a standard court.
-          example: Temporary Courtroom at Town Hall
-          type: string
-        duration:
-          description: The length of the hearing that heard the Application List.
-          example: "1 hour, 30 minutes"
-          type: string
-        entries:
-          description: List of entries (empty when none).
-          items:
-            $ref: "#/components/schemas/entry-get-print-dto"
-          type: array
-      required:
-      - date
-      - entries
       - time
       type: object
     entry-get-filter-dto:
@@ -7988,39 +7926,6 @@ components:
       - status
       - time
       type: object
-    applicant:
-      additionalProperties: false
-      description: The applicant making the application.
-      properties:
-        person:
-          $ref: "#/components/schemas/person"
-        organisation:
-          $ref: "#/components/schemas/organisation"
-      type: object
-    respondent:
-      additionalProperties: false
-      description: The respondent to the application.
-      properties:
-        person:
-          $ref: "#/components/schemas/respondent_person"
-        organisation:
-          $ref: "#/components/schemas/organisation"
-      type: object
-    result-code-get-summary-dto:
-      description: Lightweight DTO used in list/search views.
-      properties:
-        resultCode:
-          description: Code that identifies the result.
-          example: RC-001
-          type: string
-        title:
-          description: Human-readable title.
-          example: Application List Entry Fee Status
-          type: string
-      required:
-      - resultCode
-      - title
-      type: object
     entry-get-print-dto:
       description: "An application view, used specifically for printing."
       properties:
@@ -8080,6 +7985,68 @@ components:
       - applicationWording
       - id
       type: object
+    entry-get-summary-dto:
+      description: "Lightweight DTO for Application Lists Entries, not retrieved through\
+        \ a parent list. Used in list/search views."
+      properties:
+        id:
+          description: Unique identifier of the Application List Entry.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          format: uuid
+          type: string
+        applicant:
+          $ref: "#/components/schemas/applicant"
+        respondent:
+          $ref: "#/components/schemas/respondent"
+        applicationTitle:
+          description: Descriptive title of the application.
+          example: Application to Crown Court
+          type: string
+        legislation:
+          description: Legislation under which the application is made.
+          example: Application to Crown Court
+          type: string
+        isFeeRequired:
+          description: True if submitting the application incurs a charge.
+          type: boolean
+        isResulted:
+          description: True if this application list entry has been resulted.
+          type: boolean
+        listId:
+          description: Unique Identifier of the Application List to which this entry
+            belongs.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          format: uuid
+          type: string
+        date:
+          description: Single date of the Application List.
+          example: 2025-10-07
+          format: date
+          type: string
+        sequenceNumber:
+          description: The sequence number of the application in the list.
+          example: 1
+          type: integer
+        resulted:
+          description: List of result codes applied to this application list entry.
+          items:
+            $ref: "#/components/schemas/result-code-get-summary-dto"
+          type: array
+        status:
+          $ref: "#/components/schemas/application-list-status"
+        accountNumber:
+          example: ACC-001
+          maxLength: 20
+          nullable: true
+          type: string
+      required:
+      - applicantName
+      - applicationTitle
+      - id
+      - isFeeRequired
+      - isResulted
+      - status
+      type: object
     bulk-action-type:
       description: Supported bulk action types.
       enum:
@@ -8123,6 +8090,24 @@ components:
           type: array
       required:
       - selectionType
+      type: object
+    applicant:
+      additionalProperties: false
+      description: The applicant making the application.
+      properties:
+        person:
+          $ref: "#/components/schemas/person"
+        organisation:
+          $ref: "#/components/schemas/organisation"
+      type: object
+    respondent:
+      additionalProperties: false
+      description: The respondent to the application.
+      properties:
+        person:
+          $ref: "#/components/schemas/respondent_person"
+        organisation:
+          $ref: "#/components/schemas/organisation"
       type: object
     template-substitution:
       additionalProperties: false
@@ -8352,6 +8337,21 @@ components:
           type: string
       title: LegacyReportLocation
       type: object
+    result-code-get-summary-dto:
+      description: Lightweight DTO used in list/search views.
+      properties:
+        resultCode:
+          description: Code that identifies the result.
+          example: RC-001
+          type: string
+        title:
+          description: Human-readable title.
+          example: Application List Entry Fee Status
+          type: string
+      required:
+      - resultCode
+      - title
+      type: object
     standard-applicant-get-summary-dto:
       description: "Lightweight DTO for Standard Applicants, used in list/search views."
       properties:
@@ -8519,6 +8519,12 @@ components:
       - constraint
       - field
       type: object
+    bulk-action-selection-type:
+      description: How the global bulk action selection should be resolved.
+      enum:
+      - FILTER
+      - IDS
+      type: string
     person:
       additionalProperties: false
       description: "The person making, or responding to, the application."
@@ -8549,12 +8555,6 @@ components:
       - contactDetails
       - name
       type: object
-    bulk-action-selection-type:
-      description: How the global bulk action selection should be resolved.
-      enum:
-      - FILTER
-      - IDS
-      type: string
     payment-status:
       description: The Status of the Fee's Payment.
       enum:

@@ -9,6 +9,8 @@ public interface ApplicationListEntryPrintProjection {
 
     UUID getUuid();
 
+    UUID getListId();
+
     short getSequenceNumber();
 
     String getApplicantTitle();
