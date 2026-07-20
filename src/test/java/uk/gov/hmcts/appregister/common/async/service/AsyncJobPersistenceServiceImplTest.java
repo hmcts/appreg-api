@@ -71,20 +71,6 @@ class AsyncJobPersistenceServiceImplTest {
     }
 
     @Test
-    void setFailure_marksFailedAndTruncatesMessage() {
-        var jobId = JobIdRequest.builder().id(UUID.randomUUID()).userName("tester").build();
-        var asyncJob = AsyncJob.builder().uuid(jobId.getId()).userName("tester").build();
-        when(asyncJobRepository.findByJobId(jobId.getId(), "tester")).thenReturn(asyncJob);
-        var failureMessage = "x".repeat(5000);
-
-        service.setFailure(jobId, failureMessage);
-
-        assertEquals(JobStatusType.FAILED, asyncJob.getJobState());
-        assertEquals(4000, asyncJob.getFailureMessage().length());
-        verify(asyncJobRepository).save(asyncJob);
-    }
-
-    @Test
     void getJobStatus_returnsEmptyWhenJobMissing() {
         var jobId = JobIdRequest.builder().id(UUID.randomUUID()).userName("tester").build();
         when(asyncJobRepository.findByJobId(jobId.getId(), "tester")).thenReturn(null);
@@ -260,7 +246,8 @@ class AsyncJobPersistenceServiceImplTest {
         var jobId = JobIdRequest.builder().id(UUID.randomUUID()).userName("tester").build();
         var asyncJob = AsyncJob.builder().uuid(jobId.getId()).userName("tester").build();
         when(asyncJobRepository.findByJobId(jobId.getId(), "tester")).thenReturn(asyncJob);
-        // Original maxLength was 4000, so we create a failure message that is longer than that to test truncation
+        // Original maxLength was 4000, so we create a failure message that is longer than that to
+        // test truncation
         var failureMessage = "x".repeat(4000);
 
         service.setFailure(jobId, failureMessage);
