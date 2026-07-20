@@ -8,6 +8,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
@@ -304,7 +305,8 @@ public class ApplicationListEntryAssertion {
                 applicationListEntry.getApplicationList().getUuid(), response.getListId());
         Assertions.assertEquals(applicationListEntry.getUuid(), response.getId());
         Assertions.assertEquals(
-                entryCreateUpdateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
+                JsonNullable.of(entryCreateUpdateDto.getNumberOfRespondents()),
+                response.getNumberOfRespondents());
         Assertions.assertEquals(
                 entryCreateUpdateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(

@@ -7,14 +7,17 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +29,7 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
+import uk.gov.hmcts.appregister.applicationentry.audit.BulkApplicationListEntriesReadAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
@@ -37,6 +41,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -76,7 +81,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -99,6 +103,7 @@ import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
 import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -150,6 +155,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final BulkActionPreviewValidator bulkActionPreviewValidator;
 
+    private final BulkGetApplicationListEntriesValidator bulkGetApplicationListEntriesValidator;
+
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
     private final UpdateClosedApplicationEntryValidator updateClosedApplicationEntryValidator;
@@ -170,7 +177,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final NameAddressRepository nameAddressRepository;
     private final AppListEntryOfficialRepository appListEntryOfficialRepository;
     private final AppListEntryFeeRepository appListEntryFeeRepository;
-    private final StandardApplicantRepository standardApplicantRepository;
     private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
     private final AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
 
@@ -308,6 +314,38 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<EntryGetSummaryDto> bulkGetApplicationListEntries(
+            BulkGetApplicationListEntriesRequestDto request) {
+        bulkGetApplicationListEntriesValidator.validate(request);
+        var entryIds = request.getEntryIds();
+        var hasEntryIds = entryIds != null && !entryIds.isEmpty();
+
+        return auditService.processAudit(
+                null,
+                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
+                req -> {
+                    List<ApplicationListEntryGetSummaryProjection> summaries =
+                            applicationListEntryRepository.findSummariesForApplicationListIds(
+                                    request.getListIds(),
+                                    hasEntryIds,
+                                    hasEntryIds
+                                            ? entryIds
+                                            : List.of(BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID));
+
+                    List<EntryGetSummaryDto> orderedEntries =
+                            orderBulkEntrySummaries(
+                                    buildEntrySummaries(summaries), request.getListIds(), entryIds);
+
+                    return Optional.of(
+                            new AuditableResult<>(
+                                    orderedEntries,
+                                    new BulkApplicationListEntriesReadAudit(
+                                            request.getListIds(), request.getEntryIds())));
+                });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request) {
         bulkActionPreviewValidator.validate(request);
 
@@ -372,14 +410,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         int eligibleCount =
                 Math.toIntExact(
                         resolution.entries().stream()
-                                .filter(this::isResultSelectedEligible)
+                                .filter(ApplicationEntryServiceImpl::isResultSelectedEligible)
                                 .count());
 
         return new BulkActionPreviewEligibility(
                 resolution.entryIds(), resolution.entries(), eligibleCount);
     }
 
-    private boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
+    private static boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
         return entry.getStatus() == ApplicationListStatus.OPEN;
     }
 
@@ -426,7 +464,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         return new BulkActionPreviewResolution(
                 Math.toIntExact(resultPage.getTotalElements()),
-                toEntryIds(entries),
+                presentSelectedEntryIds(entries, selectedEntryIds),
                 buildEntrySummaries(entries));
     }
 
@@ -480,7 +518,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         return new BulkActionPreviewResolution(
                 Math.toIntExact(resultPage.getTotalElements()),
-                toEntryIds(entries),
+                presentSelectedEntryIds(entries, selectedEntryIds),
                 buildEntrySummaries(entries));
     }
 
@@ -567,35 +605,48 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return Math.toIntExact(selectedCount);
     }
 
-    private List<UUID> safeEntryIds(List<UUID> entryIds) {
+    private static List<UUID> safeEntryIds(List<UUID> entryIds) {
         return entryIds == null ? List.of() : List.copyOf(entryIds);
     }
 
-    private List<UUID> queryEntryIds(List<UUID> entryIds) {
+    private static List<UUID> queryEntryIds(List<UUID> entryIds) {
         return entryIds.isEmpty() ? List.of(BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID) : entryIds;
     }
 
     private List<ApplicationListEntryGetSummaryProjection> orderEntriesBySelectedIds(
             List<ApplicationListEntryGetSummaryProjection> entries, List<UUID> selectedEntryIds) {
-        Map<UUID, ApplicationListEntryGetSummaryProjection> entriesByUuid =
+        Map<String, ApplicationListEntryGetSummaryProjection> entriesByUuid =
                 entries.stream()
                         .collect(
                                 Collectors.toMap(
-                                        this::getEntryUuid,
+                                        ApplicationListEntryGetSummaryProjection::getUuid,
                                         entry -> entry,
                                         (first, second) -> first));
 
         return selectedEntryIds.stream()
+                .map(UUID::toString)
                 .map(entriesByUuid::get)
-                .filter(entry -> entry != null)
+                .filter(Objects::nonNull)
                 .toList();
     }
 
-    private List<UUID> toEntryIds(List<ApplicationListEntryGetSummaryProjection> entries) {
-        return entries.stream().map(this::getEntryUuid).toList();
+    private static List<UUID> toEntryIds(List<ApplicationListEntryGetSummaryProjection> entries) {
+        return entries.stream().map(ApplicationEntryServiceImpl::getEntryUuid).toList();
     }
 
-    private UUID getEntryUuid(ApplicationListEntryGetSummaryProjection entry) {
+    private static List<UUID> presentSelectedEntryIds(
+            List<ApplicationListEntryGetSummaryProjection> entries, List<UUID> selectedEntryIds) {
+        Set<String> returnedUuids =
+                entries.stream()
+                        .map(ApplicationListEntryGetSummaryProjection::getUuid)
+                        .collect(Collectors.toSet());
+
+        return selectedEntryIds.stream()
+                .filter(entryId -> returnedUuids.contains(entryId.toString()))
+                .toList();
+    }
+
+    private static UUID getEntryUuid(ApplicationListEntryGetSummaryProjection entry) {
         return UUID.fromString(entry.getUuid());
     }
 
@@ -879,6 +930,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return existingNotes + " " + additionalNotes;
     }
 
+    @Override
     @Transactional
     public void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
         var payload = new BulkUpdateOfficialsPayload(listId, bulkOfficialsUpdateDto);
@@ -928,18 +980,24 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                         req.data().getHasOffsiteFee());
                                 Supplier<Fee> offsiteFeeSupplier =
                                         offsiteFeeSupplier(hasOffsiteFee);
+                                Set<Long> entryIdsWithOffsiteMapping =
+                                        hasOffsiteFee
+                                                ? getEntryIdsWithOffsiteMapping(entries)
+                                                : Set.of();
 
                                 if (!feeDetails.isEmpty()) {
                                     for (ApplicationListEntry entry : entries) {
                                         appendFeeDetailsForEntry(
-                                                entry,
-                                                feeDetails,
-                                                hasOffsiteFee,
-                                                offsiteFeeSupplier);
+                                            entry,
+                                            feeDetails,
+                                            hasOffsiteFee,
+                                            offsiteFeeSupplier,
+                                            entryIdsWithOffsiteMapping
+                                        );
                                     }
                                 } else if (hasOffsiteFee) {
                                     for (ApplicationListEntry entry : entries) {
-                                        ensureOffsiteFeeMapping(entry, offsiteFeeSupplier);
+                                        ensureOffsiteFeeMapping(entry, offsiteFeeSupplier, entryIdsWithOffsiteMapping);
                                     }
                                 } else if (!hasOffsiteFee) {
                                     for (ApplicationListEntry entry : entries) {
@@ -1026,13 +1084,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             ApplicationListEntry entry,
             List<BulkFeeDetailsDto> feeDetails,
             boolean hasOffsiteFee,
-            Supplier<Fee> offsiteFeeSupplier) {
+            Supplier<Fee> offsiteFeeSupplier,
+            Set<Long> entryIdsWithOffsiteMapping) {
         for (BulkFeeDetailsDto feeDetail : feeDetails) {
             saveFeeStatus(createBulkFeeStatus(entry, feeDetail), new ArrayList<>());
         }
 
         if (hasOffsiteFee) {
-            ensureOffsiteFeeMapping(entry, offsiteFeeSupplier);
+            ensureOffsiteFeeMapping(entry, offsiteFeeSupplier, entryIdsWithOffsiteMapping);
         }
     }
 
@@ -1217,29 +1276,35 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             @Override
             public Fee get() {
                 if (offsiteFee == null) {
-                    offsiteFee = resolveActiveOffsiteFee();
+                    offsiteFee =
+                            feeRepository.findOffsite(businessDateProvider.currentUkDate()).stream()
+                                    .findFirst()
+                                    .orElseThrow(
+                                            () ->
+                                                    new AppRegistryException(
+                                                            AppListEntryError
+                                                                    .FEE_OFFSITE_NOT_SUITABLE,
+                                                            "Offsite fee does not exist"));
                 }
                 return offsiteFee;
             }
         };
     }
 
-    private Fee resolveActiveOffsiteFee() {
-        return feeRepository.findOffsite(businessDateProvider.currentUkDate()).stream()
-                .findFirst()
-                .orElseThrow(
-                        () ->
-                                new AppRegistryException(
-                                        AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
-                                        "Offsite fee does not exist"));
+    private Set<Long> getEntryIdsWithOffsiteMapping(List<ApplicationListEntry> entries) {
+        return appListEntryFeeRepository
+                .getOffsiteEntryFeesForEntries(
+                        entries.stream().map(ApplicationListEntry::getId).toList())
+                .stream()
+                .map(AppListEntryFeeId::getAppListEntryId)
+                .collect(Collectors.toSet());
     }
 
     private void ensureOffsiteFeeMapping(
-            ApplicationListEntry entry, Supplier<Fee> offsiteFeeSupplier) {
-        List<AppListEntryFeeId> existingOffsiteMappings =
-                appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId());
-
-        if (!existingOffsiteMappings.isEmpty()) {
+            ApplicationListEntry entry,
+            Supplier<Fee> offsiteFeeSupplier,
+            Set<Long> entryIdsWithOffsiteMapping) {
+        if (entryIdsWithOffsiteMapping.contains(entry.getId())) {
             return;
         }
 
@@ -1258,8 +1323,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     log.debug(
                             CREATED_OFFSITE_FEE_LOG,
                             savedOffsiteEntryFee.getFeeId(),
-                            savedOffsiteEntryFee.getAppListEntryId(),
-                            savedOffsiteEntryFee.getId());
+                            savedOffsiteEntryFee.getAppListEntryId());
 
                     return Optional.of(new AuditableResult<>(null, savedOffsiteEntryFee));
                 });
@@ -1879,7 +1943,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return normalisedFilterDto;
     }
 
-    private String normaliseStringFilter(String value) {
+    private static String normaliseStringFilter(String value) {
         if (value == null) {
             return null;
         }
@@ -2053,12 +2117,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return (short) next;
     }
 
-    private ResultCodeGetSummaryDto toResultCodeGetSummaryDto(
-            ApplicationListEntryResolutionProjection projection) {
-        return applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(
-                projection.getResolutionCode());
-    }
-
     private Map<Long, List<ResultCodeGetSummaryDto>> getCodesByEntryId(
             List<ApplicationListEntryGetSummaryProjection> entries) {
 
@@ -2077,7 +2135,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         Collectors.groupingBy(
                                 ApplicationListEntryResolutionProjection::getEntryId,
                                 Collectors.mapping(
-                                        this::toResultCodeGetSummaryDto, Collectors.toList())));
+                                        projection ->
+                                                applicationListEntryMapStructMapper
+                                                        .toResultCodeGetSummaryDto(
+                                                                projection.getResolutionCode()),
+                                        Collectors.toList())));
     }
 
     private List<EntryGetSummaryDto> buildEntrySummaries(
@@ -2102,12 +2164,39 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 .toList();
     }
 
+    private List<EntryGetSummaryDto> orderBulkEntrySummaries(
+            List<EntryGetSummaryDto> entries, List<UUID> listIds, List<UUID> entryIds) {
+        if (entryIds != null && !entryIds.isEmpty()) {
+            Map<UUID, Integer> entryOrder = buildUuidOrder(entryIds);
+            return entries.stream()
+                    .sorted(Comparator.comparing(entry -> entryOrder.get(entry.getId())))
+                    .toList();
+        }
+
+        Map<UUID, Integer> listOrder = buildUuidOrder(listIds);
+        return entries.stream()
+                .sorted(
+                        Comparator.comparing(
+                                        (EntryGetSummaryDto entry) ->
+                                                listOrder.get(entry.getListId()))
+                                .thenComparing(EntryGetSummaryDto::getSequenceNumber))
+                .toList();
+    }
+
+    private static Map<UUID, Integer> buildUuidOrder(List<UUID> ids) {
+        return IntStream.range(0, ids.size())
+                .boxed()
+                .collect(
+                        Collectors.toMap(
+                                ids::get, index -> index, (left, right) -> left, HashMap::new));
+    }
+
     private EntryPage buildEntryPage(
             Page<ApplicationListEntryGetSummaryProjection> resultPage, PagingWrapper pageable) {
 
         EntryPage entryPage = new EntryPage();
         pageMapper.toPage(resultPage, entryPage, pageable.getSortStrings());
-        entryPage.setContent(new ArrayList<>(buildEntrySummaries(resultPage.getContent())));
+        entryPage.setContent(buildEntrySummaries(resultPage.getContent()));
 
         return entryPage;
     }

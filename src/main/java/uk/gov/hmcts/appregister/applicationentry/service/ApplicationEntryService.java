@@ -14,12 +14,14 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPr
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
@@ -35,6 +37,9 @@ public interface ApplicationEntryService {
     EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable);
 
     EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
+
+    List<EntryGetSummaryDto> bulkGetApplicationListEntries(
+            BulkGetApplicationListEntriesRequestDto request);
 
     /**
      * Resolves a bulk action selection into selected entry IDs and entry summary context, applying

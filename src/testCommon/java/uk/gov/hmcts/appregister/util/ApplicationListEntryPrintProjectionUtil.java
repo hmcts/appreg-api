@@ -16,6 +16,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
     public static final class Builder {
         private Long id;
         private UUID uuid;
+        private UUID listId;
         private short sequenceNumber;
         private String applicantTitle;
         private String applicantLastName;
@@ -55,6 +56,16 @@ public final class ApplicationListEntryPrintProjectionUtil {
 
         public Builder id(Long id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder uuid(UUID uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public Builder listId(UUID listId) {
+            this.listId = listId;
             return this;
         }
 
@@ -242,6 +253,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
             return new Impl(
                     id,
                     uuid,
+                    listId,
                     sequenceNumber,
                     applicantTitle,
                     applicantLastName,
@@ -284,6 +296,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
     private static final class Impl implements ApplicationListEntryPrintProjection {
         private final Long id;
         private final UUID uuid;
+        private final UUID listId;
         private final short sequenceNumber;
         private final String applicantTitle;
         private final String applicantLastName;
@@ -324,6 +337,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
         Impl(
                 Long id,
                 UUID uuid,
+                UUID listId,
                 short sequenceNumber,
                 String applicantTitle,
                 String applicantLastName,
@@ -362,6 +376,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
                 String notes) {
             this.id = id;
             this.uuid = uuid;
+            this.listId = listId;
             this.sequenceNumber = sequenceNumber;
             this.applicantTitle = applicantTitle;
             this.applicantLastName = applicantLastName;
@@ -408,6 +423,11 @@ public final class ApplicationListEntryPrintProjectionUtil {
         @Override
         public UUID getUuid() {
             return uuid;
+        }
+
+        @Override
+        public UUID getListId() {
+            return listId;
         }
 
         @Override

@@ -65,6 +65,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -157,6 +158,7 @@ import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
 import uk.gov.hmcts.appregister.generated.model.BulkActionType;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -273,6 +275,7 @@ class ApplicationEntryServiceImplTest {
 
     private BulkUpdateFeesValidator bulkUpdateFeesValidator;
     private BulkActionPreviewValidator bulkActionPreviewValidator;
+    private BulkGetApplicationListEntriesValidator bulkGetApplicationListEntriesValidator;
     private SimpleMeterRegistry meterRegistry;
 
     @Spy
@@ -333,6 +336,9 @@ class ApplicationEntryServiceImplTest {
                         businessDateProvider,
                         Validation.buildDefaultValidatorFactory().getValidator());
         bulkActionPreviewValidator = new BulkActionPreviewValidator(applicationListEntryRepository);
+        bulkGetApplicationListEntriesValidator =
+                new BulkGetApplicationListEntriesValidator(
+                        applicationListRepository, applicationListEntryRepository);
         pageableMapper = new PageableMapper();
         pageableMapper.setDefaultPageSize(10);
         pageableMapper.setMaxPageSize(100);
@@ -350,6 +356,7 @@ class ApplicationEntryServiceImplTest {
                         pageableMapper,
                         createApplicationEntryValidator,
                         bulkActionPreviewValidator,
+                        bulkGetApplicationListEntriesValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
@@ -361,7 +368,6 @@ class ApplicationEntryServiceImplTest {
                         nameAddressRepository,
                         appListEntryOfficialRepository,
                         appListEntryFeeRepository,
-                        standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
                         asyncJobAppListEntryRepository,
                         applicationListEntryMapStructMapper,
@@ -390,6 +396,7 @@ class ApplicationEntryServiceImplTest {
                         pageableMapper,
                         createApplicationEntryValidator,
                         bulkActionPreviewValidator,
+                        bulkGetApplicationListEntriesValidator,
                         updateApplicationEntryValidator,
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
@@ -401,7 +408,6 @@ class ApplicationEntryServiceImplTest {
                         nameAddressRepository,
                         appListEntryOfficialRepository,
                         appListEntryFeeRepository,
-                        standardApplicantRepository,
                         appListEntrySequenceMappingRepository,
                         asyncJobAppListEntryRepository,
                         mapStructMapper,
@@ -1712,10 +1718,6 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(existingStatus1));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId2))
                 .thenReturn(List.of(existingStatus2));
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry1.getId()))
-                .thenReturn(List.of());
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry2.getId()))
-                .thenReturn(List.of());
         stubFeeStatusSave();
 
         final BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
@@ -1881,8 +1883,6 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(entry));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
                 .thenReturn(List.of(existingStatus));
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId()))
-                .thenReturn(List.of());
         stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
@@ -1962,8 +1962,6 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(entries);
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(any(UUID.class)))
                 .thenReturn(List.of());
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(any(Long.class)))
-                .thenReturn(List.of());
         stubFeeStatusSave();
 
         BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
@@ -1973,6 +1971,7 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(listId), anySet());
         verify(appListEntryFeeStatusRepository, times(1050)).save(any(AppListEntryFeeStatus.class));
+        verify(appListEntryFeeRepository, never()).getOffsiteEntryFeesForEntries(anyList());
         verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
 
@@ -1993,7 +1992,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(entry));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
                 .thenReturn(List.of());
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId()))
+        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntries(anyList()))
                 .thenReturn(List.of());
         when(feeRepository.findOffsite(LocalDate.of(2025, Month.OCTOBER, 7)))
                 .thenReturn(List.of(offsiteFee));
@@ -2029,7 +2028,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(entry1, entry2));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(any(UUID.class)))
                 .thenReturn(List.of());
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(any(Long.class)))
+        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntries(anyList()))
                 .thenReturn(List.of());
         when(feeRepository.findOffsite(LocalDate.of(2025, Month.OCTOBER, 7)))
                 .thenReturn(List.of(offsiteFee));
@@ -2070,14 +2069,13 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(entry));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
                 .thenReturn(List.of());
-        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId()))
-                .thenReturn(List.of(existingOffsiteMapping));
         stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
 
         verify(appListEntryFeeRepository, never()).delete(existingOffsiteMapping);
         verify(appListEntryFeeRepository, never()).flush();
+        verify(appListEntryFeeRepository, never()).getOffsiteEntryFeesForEntries(anyList());
         verify(appListEntryFeeRepository, never()).save(any(AppListEntryFeeId.class));
     }
 
@@ -2606,8 +2604,8 @@ class ApplicationEntryServiceImplTest {
                                     (BiFunction<UUID, JobSuccess, JobStatusResponse>)
                                             invocation.getArgument(1);
 
-                            val success = new JobSuccess();
-                            return validateFunction.apply(jobId, success);
+                            val jobSuccess = new JobSuccess();
+                            return validateFunction.apply(jobId, jobSuccess);
                         });
 
         when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(List.of());
@@ -2929,6 +2927,54 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(0, response.getIneligibleCount());
         Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
         Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void given_entryIds_when_bulkGetApplicationListEntries_then_preserveEntryInputOrder() {
+        UUID firstListId = UUID.randomUUID();
+        UUID secondListId = UUID.randomUUID();
+        UUID firstEntryId = UUID.randomUUID();
+        UUID secondEntryId = UUID.randomUUID();
+        var request =
+                new BulkGetApplicationListEntriesRequestDto()
+                        .listIds(List.of(firstListId, secondListId))
+                        .entryIds(List.of(secondEntryId, firstEntryId));
+
+        when(applicationListRepository.findByUuidIn(List.of(firstListId, secondListId)))
+                .thenReturn(List.of(applicationList(firstListId), applicationList(secondListId)));
+        when(applicationListEntryRepository.findApplicationListForAllEntries(
+                        List.of(secondEntryId, firstEntryId)))
+                .thenReturn(
+                        List.of(
+                                new EntryToList(secondEntryId, secondListId),
+                                new EntryToList(firstEntryId, firstListId)));
+
+        ApplicationListEntryGetSummaryProjection firstProjection =
+                bulkActionPreviewProjection(firstEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection secondProjection =
+                bulkActionPreviewProjection(secondEntryId, 2L);
+        when(applicationListEntryRepository.findSummariesForApplicationListIds(
+                        List.of(firstListId, secondListId),
+                        true,
+                        List.of(secondEntryId, firstEntryId)))
+                .thenReturn(List.of(firstProjection, secondProjection));
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        EntryGetSummaryDto firstSummary =
+                new EntryGetSummaryDto().id(firstEntryId).listId(firstListId).sequenceNumber(1);
+        EntryGetSummaryDto secondSummary =
+                new EntryGetSummaryDto().id(secondEntryId).listId(secondListId).sequenceNumber(2);
+        when(applicationListEntryMapStructMapper.toEntrySummary(firstProjection))
+                .thenReturn(firstSummary);
+        when(applicationListEntryMapStructMapper.toEntrySummary(secondProjection))
+                .thenReturn(secondSummary);
+
+        List<EntryGetSummaryDto> response = service.bulkGetApplicationListEntries(request);
+
+        Assertions.assertEquals(
+                List.of(secondEntryId, firstEntryId),
+                response.stream().map(EntryGetSummaryDto::getId).toList());
     }
 
     @Test
@@ -3354,6 +3400,12 @@ class ApplicationEntryServiceImplTest {
         when(projection.getUuid()).thenReturn(entryId.toString());
         when(projection.getId()).thenReturn(id);
         return projection;
+    }
+
+    private ApplicationList applicationList(UUID listId) {
+        var applicationList = new ApplicationList();
+        applicationList.setUuid(listId);
+        return applicationList;
     }
 
     private EntryGetSummaryDto stubEntrySummary(
