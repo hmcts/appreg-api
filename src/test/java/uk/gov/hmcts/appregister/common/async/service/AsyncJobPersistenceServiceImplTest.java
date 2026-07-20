@@ -254,4 +254,18 @@ class AsyncJobPersistenceServiceImplTest {
 
         assertNull(service.readClob(jobId));
     }
+
+    @Test
+    void setFailure_noTruncationWhenMessageIsLongerThanMaxLength() {
+        var jobId = JobIdRequest.builder().id(UUID.randomUUID()).userName("tester").build();
+        var asyncJob = AsyncJob.builder().uuid(jobId.getId()).userName("tester").build();
+        when(asyncJobRepository.findByJobId(jobId.getId(), "tester")).thenReturn(asyncJob);
+        var failureMessage = "x".repeat(4000);
+
+        service.setFailure(jobId, failureMessage);
+
+        assertEquals(JobStatusType.FAILED, asyncJob.getJobState());
+        assertEquals(4000, asyncJob.getFailureMessage().length());
+        verify(asyncJobRepository).save(asyncJob);
+    }
 }
