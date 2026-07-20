@@ -343,7 +343,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                         entitiesToCreate.add(entity);
                     }
 
-                    return auditService.processAudit(
+                    return auditService
+                            .processAudit(
                                     AppListEntryResultAuditOperation
                                             .BULK_CREATE_APP_LIST_ENTRY_RESULT,
                                     ignored -> {

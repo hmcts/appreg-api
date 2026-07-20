@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -60,4 +61,20 @@ public interface AppListEntryFeeRepository extends JpaRepository<AppListEntryFee
         AND fee.isOffsite = true
         """)
     List<AppListEntryFeeId> getOffsiteEntryFeesForEntry(Long entryId);
+
+    /**
+     * Gets offsite fee mappings for multiple application list entries.
+     *
+     * @param entryIds the application list entry database ids
+     * @return offsite fee mappings for the entries
+     */
+    @Query(
+            """
+        SELECT entryFee
+        FROM AppListEntryFeeId entryFee
+        JOIN Fee fee ON entryFee.feeId = fee.id
+        WHERE entryFee.appListEntryId IN :entryIds
+        AND fee.isOffsite = true
+        """)
+    List<AppListEntryFeeId> getOffsiteEntryFeesForEntries(Collection<Long> entryIds);
 }

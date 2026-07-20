@@ -650,6 +650,74 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntryResolutionProjection> findResolutionCodesByEntryIds(
             @Param("entryIds") Collection<Long> entryIds);
 
+    @Query(
+            """
+             SELECT
+                    al.date  AS date,
+                    ale.uuid AS uuid,
+                    ale.id AS id,
+                    al.courtCode  AS courtCode,
+                    ac.legislation as legislation,
+                    ac.feeDue as feeRequired,
+                    aler.id as result,
+                    cja.code AS cjaCode,
+                    al.otherLocation AS otherLocationDescription,
+                    ana as anameAddress,
+                    sa.applicantCode AS standardApplicantCode,
+                    rna as rnameAddress,
+                    ac.title as title,
+                    al.status AS status,
+                    al.date as dateOfAl,
+                    ana.name as applicationorganisation,
+                    ana.lastName as applicantSurname,
+                    CASE WHEN ana.name IS NOT NULL THEN
+                         ana.name
+                    WHEN ana.lastName IS NOT NULL OR ana.firstName IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)
+                    WHEN sa.name IS NOT NULL THEN
+                         sa.name
+                    WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname)
+                    END as applicantName,
+                    CASE WHEN rna.name IS NOT NULL THEN
+                         rna.name
+                    WHEN rna.lastName IS NOT NULL OR rna.firstName IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)
+                    END as respondentName,
+                    rna.name as respondentOrganisation,
+                    rna.lastName as respondentSurname,
+                    rna.postcode as respondentPostcode,
+                    ale.accountNumber as  accountReference,
+                    sa as standardApplicant,
+                    al.uuid as listId,
+                    ac.title AS applicationTitle,
+                    ale.sequenceNumber as sequenceNumber,
+                    rc.resultCode as resulted,
+                    CASE WHEN aler.id IS NULL THEN false ELSE true END as isResulted
+                from ApplicationListEntry ale
+                LEFT JOIN ale.anamedaddress ana
+                LEFT JOIN ale.standardApplicant sa
+                LEFT JOIN ale.rnameaddress rna
+                LEFT JOIN ale.applicationCode ac
+                LEFT JOIN ale.applicationList al
+                LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
+                LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+                    AND aler.id = (
+                        SELECT MAX(sub.id)
+                        FROM AppListEntryResolution sub
+                        WHERE sub.applicationList = ale
+                    )
+                LEFT JOIN aler.resolutionCode rc
+            WHERE al.uuid IN :applicationListIds
+                    AND (:hasEntryIds = false OR ale.uuid IN :entryIds)
+                    AND (al.deleted IS NULL OR al.deleted <> 'Y')
+                    AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+            """)
+    List<ApplicationListEntryGetSummaryProjection> findSummariesForApplicationListIds(
+            @Param("applicationListIds") Collection<UUID> applicationListIds,
+            @Param("hasEntryIds") boolean hasEntryIds,
+            @Param("entryIds") Collection<UUID> entryIds);
+
     /**
      * Retrieves list of entries for a given application list.
      *
@@ -661,6 +729,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         SELECT
             ale.id AS id,
             ale.uuid AS uuid,
+            ale.applicationList.uuid AS listId,
             ale.sequenceNumber AS sequenceNumber,
             COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
             COALESCE(ana.lastName, sa.applicantSurname) AS applicantLastName,
@@ -710,6 +779,66 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
+
+    @Query(
+            """
+        SELECT
+            ale.id AS id,
+            ale.uuid AS uuid,
+            ale.applicationList.uuid AS listId,
+            ale.sequenceNumber AS sequenceNumber,
+            COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
+            COALESCE(ana.lastName, sa.applicantSurname) AS applicantLastName,
+            COALESCE(ana.firstName, sa.applicantForename1) AS applicantFirstName,
+            CASE
+                WHEN ana.id IS NOT NULL THEN ana.middleName
+                ELSE FUNCTION('concat_ws', ' ', sa.applicantForename2, sa.applicantForename3)
+            END AS applicantMiddleName,
+            COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
+            COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
+            COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
+            COALESCE(ana.address4, sa.addressLine4) AS applicantAddressLine4,
+            COALESCE(ana.address5, sa.addressLine5) AS applicantAddressLine5,
+            COALESCE(ana.postcode, sa.postcode) AS applicantPostcode,
+            COALESCE(ana.telephoneNumber, sa.telephoneNumber) AS applicantPhone,
+            COALESCE(ana.mobileNumber, sa.mobileNumber) AS applicantMobile,
+            COALESCE(ana.emailAddress, sa.emailAddress) AS applicantEmail,
+            COALESCE(ana.name, sa.name) AS applicantName,
+            rna.title AS respondentTitle,
+            rna.lastName AS respondentLastName,
+            rna.firstName AS respondentFirstName,
+            rna.middleName AS respondentMiddleName,
+            rna.address1 AS respondentAddressLine1,
+            rna.address2 AS respondentAddressLine2,
+            rna.address3 AS respondentAddressLine3,
+            rna.address4 AS respondentAddressLine4,
+            rna.address5 AS respondentAddressLine5,
+            rna.postcode AS respondentPostcode,
+            rna.telephoneNumber AS respondentPhone,
+            rna.mobileNumber AS respondentMobile,
+            rna.emailAddress AS respondentEmail,
+            rna.dateOfBirth AS respondentDateOfBirth,
+            rna.name AS respondentName,
+            ac.code AS applicationCode,
+            ac.title AS applicationTitle,
+            ale.applicationListEntryWording AS applicationWording,
+            ale.caseReference AS caseReference,
+            ale.accountNumber AS accountReference,
+            ale.notes AS notes
+        FROM ApplicationListEntry ale
+        LEFT JOIN ale.anamedaddress ana
+        LEFT JOIN ale.standardApplicant sa
+        LEFT JOIN ale.rnameaddress rna
+        LEFT JOIN ale.applicationCode ac
+        WHERE ale.applicationList.uuid IN :listIds
+        AND (:hasEntryIds = false OR ale.uuid IN :entryIds)
+        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        ORDER BY ale.applicationList.uuid, ale.sequenceNumber
+        """)
+    List<ApplicationListEntryPrintProjection> findByApplicationListIdsForPrinting(
+            @Param("listIds") List<UUID> listIds,
+            @Param("hasEntryIds") boolean hasEntryIds,
+            @Param("entryIds") List<UUID> entryIds);
 
     /**
      * Finds an entry for Uuid.

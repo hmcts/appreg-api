@@ -31,6 +31,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 @RequiredArgsConstructor
 public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
+    private static final int VARCHAR_AUDIT_LIMIT = 4000;
+
     /** Represents a null value. We default to a null string. */
     public static final String EMPTY_VALUE = "";
 
@@ -330,12 +332,12 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     /**
      * The default keyable long with a default.
      *
-     * @param l The long or a default value if null
+     * @param keyable The long or a default value if null
      * @return The long or -1 if null
      */
-    private static Long defaultKeyableId(Keyable l) {
-        if (l != null && l.getId() != null) {
-            return l.getId();
+    private static Long defaultKeyableId(Keyable keyable) {
+        if (keyable != null && keyable.getId() != null) {
+            return keyable.getId();
         }
 
         return -1L;

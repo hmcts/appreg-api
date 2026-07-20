@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 
 class ApplicationListControllerTest {
     private final ApplicationListService service = mock(ApplicationListService.class);
@@ -148,6 +149,20 @@ class ApplicationListControllerTest {
         ResponseEntity<ApplicationListGetPrintDto> actual = controller.printApplicationList(id);
 
         verify(service).print(id);
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(actual.getBody()).isSameAs(body);
+    }
+
+    @Test
+    void printApplicationLists_delegatesAndReturnsOk() {
+        var request = new BulkGetApplicationListEntriesRequestDto();
+        var body = List.of(new ApplicationListGetPrintDto());
+        when(service.print(request)).thenReturn(body);
+
+        ResponseEntity<List<ApplicationListGetPrintDto>> actual =
+                controller.printApplicationLists(request);
+
+        verify(service).print(request);
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(actual.getBody()).isSameAs(body);
     }
