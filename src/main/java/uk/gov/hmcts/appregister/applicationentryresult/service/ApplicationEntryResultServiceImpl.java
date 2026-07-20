@@ -348,26 +348,19 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                     AppListEntryResultAuditOperation
                                             .BULK_CREATE_APP_LIST_ENTRY_RESULT,
                                     ignored -> {
-                                        repository.saveAll(entitiesToCreate);
-                                        entityManager.flush();
-
-                                        var reloadedEntities =
+                                        var persistedEntities =
                                                 new ArrayList<>(
-                                                        repository.findAllById(
-                                                                entitiesToCreate.stream()
-                                                                        .map(
-                                                                                AppListEntryResolution
-                                                                                        ::getId)
-                                                                        .toList()));
-                                        reloadedEntities.sort(
+                                                        repository.saveAll(entitiesToCreate));
+                                        entityManager.flush();
+                                        persistedEntities.sort(
                                                 Comparator.comparing(
                                                         AppListEntryResolution::getId));
 
                                         var bulkAudit =
                                                 new BulkCreateApplicationEntryResultAudit(
-                                                        reloadedEntities.isEmpty()
+                                                        persistedEntities.isEmpty()
                                                                 ? null
-                                                                : reloadedEntities
+                                                                : persistedEntities
                                                                         .getFirst()
                                                                         .getId(),
                                                         validate.getListId(),
@@ -377,7 +370,7 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                                                 item.payload()
                                                                                         .getEntryId())
                                                                 .toList(),
-                                                        reloadedEntities.size(),
+                                                        persistedEntities.size(),
                                                         resultPayload.getResultCode(),
                                                         BulkCreateApplicationEntryResultAudit
                                                                 .formatWordingFields(
@@ -385,10 +378,10 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                                                 .getWordingFields()),
                                                         BulkCreateApplicationEntryResultAudit
                                                                 .formatCreatedResults(
-                                                                        reloadedEntities));
+                                                                        persistedEntities));
 
                                         var resultDtos =
-                                                reloadedEntities.stream()
+                                                persistedEntities.stream()
                                                         .map(
                                                                 applicationListEntryResultMapper
                                                                         ::toResultGetDto)

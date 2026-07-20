@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.audit.listener.diff.BulkAuditFormatting;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
@@ -30,7 +31,10 @@ public record BulkUpdateOfficialsAudit(
     public List<AuditableData> extractAuditData(CrudEnum crudEnum) {
         return List.of(
                 new AuditableData(TABLE_NAME, LIST_UUID_FIELD, listUuid.toString()),
-                new AuditableData(TABLE_NAME, ENTRY_IDS_FIELD, formatEntryIds(entryIds)),
+                new AuditableData(
+                        TABLE_NAME,
+                        ENTRY_IDS_FIELD,
+                        BulkAuditFormatting.formatSortedUuidArray(entryIds)),
                 new AuditableData(TABLE_NAME, ENTRY_COUNT_FIELD, Integer.toString(entryCount)),
                 new AuditableData(TABLE_NAME, OFFICIALS_FIELD, officials));
     }
@@ -53,9 +57,9 @@ public record BulkUpdateOfficialsAudit(
                                                 official.getAppListEntry().getUuid(),
                                                 official.getAppListEntry().getSequenceNumber(),
                                                 official.getOfficialType(),
-                                                escape(official.getTitle()),
-                                                escape(official.getForename()),
-                                                escape(official.getSurname())))
+                                                BulkAuditFormatting.escape(official.getTitle()),
+                                                BulkAuditFormatting.escape(official.getForename()),
+                                                BulkAuditFormatting.escape(official.getSurname())))
                 .collect(Collectors.joining(",", "[", "]"));
     }
 
@@ -66,24 +70,9 @@ public record BulkUpdateOfficialsAudit(
                                 "{\"type\":\"%s\",\"title\":\"%s\",\"forename\":\"%s\",\"surname\":\"%s\"}"
                                         .formatted(
                                                 official.getType(),
-                                                escape(official.getTitle()),
-                                                escape(official.getForename()),
-                                                escape(official.getSurname())))
+                                                BulkAuditFormatting.escape(official.getTitle()),
+                                                BulkAuditFormatting.escape(official.getForename()),
+                                                BulkAuditFormatting.escape(official.getSurname())))
                 .collect(Collectors.joining(",", "[", "]"));
-    }
-
-    private static String formatEntryIds(List<UUID> entryIds) {
-        return entryIds.stream()
-                .sorted()
-                .map("\"%s\""::formatted)
-                .collect(Collectors.joining(",", "[", "]"));
-    }
-
-    private static String escape(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

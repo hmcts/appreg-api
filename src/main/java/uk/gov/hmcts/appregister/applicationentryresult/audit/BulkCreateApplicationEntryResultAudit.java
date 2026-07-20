@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.audit.listener.diff.BulkAuditFormatting;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
@@ -41,7 +42,9 @@ public record BulkCreateApplicationEntryResultAudit(
                 new ArrayList<>(
                         List.of(
                                 new AuditableData(
-                                        TABLE_NAME, ENTRY_IDS_FIELD, formatEntryIds(entryIds)),
+                                        TABLE_NAME,
+                                        ENTRY_IDS_FIELD,
+                                        BulkAuditFormatting.formatSortedUuidArray(entryIds)),
                                 new AuditableData(
                                         TABLE_NAME,
                                         ENTRY_COUNT_FIELD,
@@ -68,8 +71,9 @@ public record BulkCreateApplicationEntryResultAudit(
                         substitution ->
                                 "{\"key\":\"%s\",\"value\":\"%s\"}"
                                         .formatted(
-                                                escape(substitution.getKey()),
-                                                escape(substitution.getValue())))
+                                                BulkAuditFormatting.escape(substitution.getKey()),
+                                                BulkAuditFormatting.escape(
+                                                        substitution.getValue())))
                 .collect(Collectors.joining(",", "[", "]"));
     }
 
@@ -93,27 +97,14 @@ public record BulkCreateApplicationEntryResultAudit(
                                                 resolution.getUuid(),
                                                 resolution.getApplicationList().getUuid(),
                                                 resolution.getApplicationList().getSequenceNumber(),
-                                                escape(
+                                                BulkAuditFormatting.escape(
                                                         resolution
                                                                 .getResolutionCode()
                                                                 .getResultCode()),
-                                                escape(resolution.getResolutionWording()),
-                                                escape(resolution.getResolutionOfficer())))
+                                                BulkAuditFormatting.escape(
+                                                        resolution.getResolutionWording()),
+                                                BulkAuditFormatting.escape(
+                                                        resolution.getResolutionOfficer())))
                 .collect(Collectors.joining(",", "[", "]"));
-    }
-
-    private static String formatEntryIds(List<UUID> entryIds) {
-        return entryIds.stream()
-                .sorted()
-                .map("\"%s\""::formatted)
-                .collect(Collectors.joining(",", "[", "]"));
-    }
-
-    private static String escape(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

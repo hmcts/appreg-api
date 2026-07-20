@@ -415,8 +415,6 @@ class ApplicationEntryResultServiceImplTest {
 
         when(appListEntryResolutionRepository.saveAll(List.of(entryToSave)))
                 .thenReturn(List.of(entryToSave));
-        when(appListEntryResolutionRepository.findAllById(List.of(entryToSave.getId())))
-                .thenReturn(List.of(entryToSave));
 
         // setup the response of the call
         ResultGetDto resultGetDto =
@@ -440,7 +438,7 @@ class ApplicationEntryResultServiceImplTest {
 
         Assertions.assertEquals(List.of(resultGetDto), createdResults);
         verify(appListEntryResolutionRepository).saveAll(List.of(entryToSave));
-        verify(appListEntryResolutionRepository).findAllById(List.of(entryToSave.getId()));
+        verify(appListEntryResolutionRepository, never()).findAllById(any());
         verify(entityManager).flush();
         verify(auditOperationService)
                 .processAudit(
