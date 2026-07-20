@@ -26,5 +26,9 @@ java:
           alias: azure-client-secret
         - name: azure-app-id
           alias: AZURE_AUDIENCE_ID
+        - name: CSDS-BASE-URL
+          alias: CSDS_BASE_URL
         - name: CSDS-KEY-1
           alias: CSDS_KEY_1
+        - name: CSDS-KEY-2
+          alias: CSDS_KEY_2
