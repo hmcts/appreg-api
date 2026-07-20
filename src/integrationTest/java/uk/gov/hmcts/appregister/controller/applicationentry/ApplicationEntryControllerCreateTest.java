@@ -2347,7 +2347,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         val createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
         Assertions.assertEquals("Create audit notes", createdDto.getNotes());
-        Assertions.assertEquals(5, createdDto.getNumberOfRespondents());
+        Assertions.assertEquals(JsonNullable.of(5), createdDto.getNumberOfRespondents());
         Assertions.assertEquals("CT99001", createdDto.getApplicationCode());
         Assertions.assertEquals("CASE-CRT-001", createdDto.getCaseReference());
 
@@ -2613,9 +2613,8 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
-                    throws Exception {
+    void givenACNotRequireRespondent_BulkRespondentAllowed_NoRespondentAndNoNumber_thenReturn201()
+            throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
@@ -2641,16 +2640,10 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
 
-        // assert the response
-        responseSpecCreate
-                .then()
-                .statusCode(400)
-                .body(
-                        "type",
-                        Matchers.equalTo(
-                                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
-                                        .getCode()
-                                        .getAppCode()));
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertEquals(
+                JsonNullable.of(null),
+                responseSpecCreate.as(EntryGetDetailDto.class).getNumberOfRespondents());
     }
 
     @Test

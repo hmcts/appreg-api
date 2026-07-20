@@ -699,7 +699,7 @@ class CreateApplicationEntryValidatorTest {
     }
 
     @Test
-    void bulkRespondentAllowed_NoACRespondent_NoBulkRespondentNumber_Failure() {
+    void bulkRespondentAllowed_NoACRespondent_NoBulkRespondentNumber_NoRespondent_Success() {
 
         ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
         applicationCode = applicationCodeTestData.someComplete();
@@ -723,13 +723,7 @@ class CreateApplicationEntryValidatorTest {
                         .data(entryCreateDto)
                         .build();
 
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> createApplicationEntryValidator.validate(payload));
-        Assertions.assertEquals(
-                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
-                appRegistryException.getCode());
+        Assertions.assertDoesNotThrow(() -> createApplicationEntryValidator.validate(payload));
     }
 
     @Test

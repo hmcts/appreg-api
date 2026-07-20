@@ -31,6 +31,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 @RequiredArgsConstructor
 public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
+    private static final int VARCHAR_AUDIT_LIMIT = 4000;
+
     /** Represents a null value. We default to a null string. */
     public static final String EMPTY_VALUE = "";
 
@@ -256,23 +258,45 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             Long newRelatedKey) {
         if (primaryOld && secondaryDiff == null) {
             audit.setRelatedKey(oldRelatedKey);
-            audit.setNewValue(EMPTY_VALUE);
-            audit.setOldValue(primaryDiff.getValue());
+            setNewAuditValue(audit, EMPTY_VALUE);
+            setOldAuditValue(audit, primaryDiff.getValue());
         } else if (!primaryOld && secondaryDiff == null) {
             audit.setRelatedKey(newRelatedKey);
-            audit.setNewValue(primaryDiff.getValue());
-            audit.setOldValue(EMPTY_VALUE);
+            setNewAuditValue(audit, primaryDiff.getValue());
+            setOldAuditValue(audit, EMPTY_VALUE);
         } else {
             audit.setRelatedKey(newRelatedKey);
 
             if (primaryOld) {
-                audit.setOldValue(primaryDiff.getValue());
-                audit.setNewValue(secondaryDiff.getValue());
+                setOldAuditValue(audit, primaryDiff.getValue());
+                setNewAuditValue(audit, secondaryDiff.getValue());
             } else {
-                audit.setOldValue(secondaryDiff.getValue());
-                audit.setNewValue(primaryDiff.getValue());
+                setOldAuditValue(audit, secondaryDiff.getValue());
+                setNewAuditValue(audit, primaryDiff.getValue());
             }
         }
+    }
+
+    private static void setOldAuditValue(DataAudit audit, String value) {
+        if (value != null && value.length() > VARCHAR_AUDIT_LIMIT) {
+            audit.setOldValue(null);
+            audit.setOldClobValue(value);
+            return;
+        }
+
+        audit.setOldValue(value);
+        audit.setOldClobValue(null);
+    }
+
+    private static void setNewAuditValue(DataAudit audit, String value) {
+        if (value != null && value.length() > VARCHAR_AUDIT_LIMIT) {
+            audit.setNewValue(null);
+            audit.setNewClobValue(value);
+            return;
+        }
+
+        audit.setNewValue(value);
+        audit.setNewClobValue(null);
     }
 
     private static void logAuditValues(
@@ -302,12 +326,12 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     /**
      * The default keyable long with a default.
      *
-     * @param l The long or a default value if null
+     * @param keyable The long or a default value if null
      * @return The long or -1 if null
      */
-    private static Long defaultKeyableId(Keyable l) {
-        if (l != null && l.getId() != null) {
-            return l.getId();
+    private static Long defaultKeyableId(Keyable keyable) {
+        if (keyable != null && keyable.getId() != null) {
+            return keyable.getId();
         }
 
         return -1L;

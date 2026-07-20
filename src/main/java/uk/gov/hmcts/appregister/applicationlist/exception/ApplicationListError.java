@@ -86,7 +86,18 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     "AL-20")),
     ENTRY_IDS_MUST_BE_UNIQUE(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "'entryIds' must not contain duplicates", "AL-21"));
+                    HttpStatus.BAD_REQUEST, "'entryIds' must not contain duplicates", "AL-21")),
+    LIST_IDS_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "'listIds' must be provided and non-empty", "AL-22")),
+    LIST_IDS_MUST_BE_UNIQUE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "'listIds' must not contain duplicates", "AL-23")),
+    LIST_IDS_LIMIT_EXCEEDED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "'listIds' must contain no more than 2000 items",
+                    "AL-24"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

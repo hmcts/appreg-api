@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -11,6 +12,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 
 /**
  * Service interface for managing Application Lists.
@@ -122,4 +124,16 @@ public interface ApplicationListService {
      * @return a detailed DTO representing the retrieved application list
      */
     ApplicationListGetPrintDto print(UUID id);
+
+    /**
+     * Gets one or more Application Lists with matching print entries.
+     *
+     * <p>When {@code entryIds} is omitted or empty, each returned list contains all active print
+     * entries. When {@code entryIds} is supplied, each returned list contains only matching active
+     * entries for that list.
+     *
+     * @param request the selected lists and optional selected entries
+     * @return print DTOs in input list order
+     */
+    List<ApplicationListGetPrintDto> print(BulkGetApplicationListEntriesRequestDto request);
 }
