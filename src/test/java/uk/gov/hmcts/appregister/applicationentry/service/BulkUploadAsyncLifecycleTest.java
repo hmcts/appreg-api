@@ -698,7 +698,54 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(writtenCsv.toString())
                 .contains("HEADER|")
-                .contains("row-two|must match")
+                .contains("row-two|")
+                .contains("respondent.organisation.contactDetails.postcode")
+                .contains(row.getRespondentPostcode())
+                .contains("Field has been rejected")
+                .contains("row-three|");
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+    }
+
+    @Test
+    void whenValidating_csvFileIsSet_thenWritesClobSuccessfully_multipleRowErrorsForSingleRow()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+
+        StringBuilder writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+        row.setRespondentEmail("testtest.com");
+
+        JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(writtenCsv.toString())
+                .contains("HEADER|")
+                .contains("row-two|")
+                .contains("respondent.organisation.contactDetails.email")
+                .contains("testtest.com")
+                .contains("Field has been rejected|")
+                .contains("respondent.organisation.contactDetails.postcode")
+                .contains(row.getRespondentPostcode())
+                .contains("Field has been rejected")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());

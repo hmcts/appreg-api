@@ -150,7 +150,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             rowErrors.addAll(validateMappedDto(rowNumber, dto));
             rowErrors.addAll(validateBusinessRules(rowNumber, dto));
 
-
             allErrors.addAll(rowErrors);
             rowNumber++;
         }
@@ -498,15 +497,22 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
-                    if(Objects.nonNull(error.getRejectedValue()) && !error.getRejectedValue().isBlank()) {
+                    if (Objects.nonNull(error.getRejectedValue())
+                            && !error.getRejectedValue().isBlank()) {
                         builder.append("|")
-                            .append("%s - %s: %s".formatted(error.getLocation(),
-                                                            error.getRejectedValue(),
-                                                            "Field has been rejected as it's invalid"));
+                                .append(
+                                        "%s - %s: %s"
+                                                .formatted(
+                                                        error.getLocation(),
+                                                        error.getRejectedValue(),
+                                                        "Field has been rejected"));
 
                     } else {
                         builder.append("|")
-                            .append("%s: %s".formatted(error.getLocation(), error.getMessage()));
+                                .append(
+                                        "%s: %s"
+                                                .formatted(
+                                                        error.getLocation(), error.getMessage()));
                     }
                 }
                 builder.append("\n");
