@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.assertj.core.util.Lists;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -1625,25 +1627,32 @@ class ApplicationEntryServiceImplTest {
         when(appListEntrySequenceMappingRepository.findByAlIdForUpdate(targetList.getId()))
                 .thenReturn(Optional.of(mapping));
 
-        when(applicationListEntryRepository.save(any(ApplicationListEntry.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0, ApplicationListEntry.class));
-
-        ArgumentCaptor<ApplicationListEntry> savedEntryCaptor =
-                ArgumentCaptor.forClass(ApplicationListEntry.class);
+        when(applicationListEntryRepository.saveAll(anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
         service.move(sourceListId, dto);
 
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
-        verify(applicationListEntryRepository, times(2)).save(savedEntryCaptor.capture());
-
-        List<ApplicationListEntry> savedEntries = savedEntryCaptor.getAllValues();
-        Assertions.assertEquals(2, savedEntries.size());
-        Assertions.assertSame(entry2, savedEntries.get(0));
-        Assertions.assertSame(entry1, savedEntries.get(1));
-        Assertions.assertSame(targetList, savedEntries.get(0).getApplicationList());
-        Assertions.assertSame(targetList, savedEntries.get(1).getApplicationList());
-        Assertions.assertEquals((short) 3, savedEntries.get(0).getSequenceNumber());
-        Assertions.assertEquals((short) 4, savedEntries.get(1).getSequenceNumber());
+        verify(applicationListEntryRepository)
+                .saveAll(
+                        argThat(
+                                savedEntries -> {
+                                    var savedEntriesList = Lists.newArrayList(savedEntries);
+                                    Assertions.assertEquals(2, savedEntriesList.size());
+                                    Assertions.assertSame(entry2, savedEntriesList.get(0));
+                                    Assertions.assertSame(entry1, savedEntriesList.get(1));
+                                    Assertions.assertSame(
+                                            targetList,
+                                            savedEntriesList.get(0).getApplicationList());
+                                    Assertions.assertSame(
+                                            targetList,
+                                            savedEntriesList.get(1).getApplicationList());
+                                    Assertions.assertEquals(
+                                            (short) 3, savedEntriesList.get(0).getSequenceNumber());
+                                    Assertions.assertEquals(
+                                            (short) 4, savedEntriesList.get(1).getSequenceNumber());
+                                    return true;
+                                }));
         Assertions.assertEquals(4, mapping.getAleLastSequence());
     }
 
@@ -1688,7 +1697,7 @@ class ApplicationEntryServiceImplTest {
                         });
 
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
-        verify(applicationListEntryRepository, never()).save(any(ApplicationListEntry.class));
+        verify(applicationListEntryRepository, never()).saveAll(anyList());
     }
 
     @Test

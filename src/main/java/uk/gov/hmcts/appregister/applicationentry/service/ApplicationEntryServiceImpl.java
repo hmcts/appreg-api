@@ -27,9 +27,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
-import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.BulkApplicationListEntriesReadAudit;
+import uk.gov.hmcts.appregister.applicationentry.audit.BulkMoveApplicationListEntriesAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.BulkUpdateOfficialsAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
@@ -1998,24 +1998,41 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         List<ApplicationListEntry> orderedEntriesToMove = new ArrayList<>(entriesToMove);
         orderedEntriesToMove.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+        var oldAudit =
+                BulkMoveApplicationListEntriesAudit.forState(
+                        orderedEntriesToMove.getFirst().getApplicationList().getId(),
+                        sourceListId,
+                        targetList.getId(),
+                        targetList.getUuid(),
+                        orderedEntriesToMove);
 
-        for (ApplicationListEntry entryToMove : orderedEntriesToMove) {
-            auditService.processAudit(
-                    ApplicationListEntryMoveAudit.from(entryToMove),
-                    AppListEntryAuditOperation.MOVE_APP_ENTRY,
-                    req -> {
+        auditService.processAudit(
+                oldAudit,
+                AppListEntryAuditOperation.BULK_MOVE_APP_ENTRIES,
+                req -> {
+                    short nextSequence =
+                            allocateNextSequence(targetList.getId(), orderedEntriesToMove.size());
+                    short startingSequence =
+                            (short) (nextSequence - orderedEntriesToMove.size() + 1);
+
+                    for (int i = 0; i < orderedEntriesToMove.size(); i++) {
+                        var entryToMove = orderedEntriesToMove.get(i);
                         entryToMove.setApplicationList(targetList);
-                        entryToMove.setSequenceNumber(allocateNextSequence(targetList.getId()));
+                        entryToMove.setSequenceNumber((short) (startingSequence + i));
+                    }
 
-                        var movedEntry =
-                                refreshEntity(applicationListEntryRepository.save(entryToMove));
+                    applicationListEntryRepository.saveAll(orderedEntriesToMove);
 
-                        return Optional.of(
-                                new AuditableResult<>(
-                                        movedEntry.getUuid(),
-                                        ApplicationListEntryMoveAudit.from(movedEntry)));
-                    });
-        }
+                    var newAudit =
+                            BulkMoveApplicationListEntriesAudit.forState(
+                                    oldAudit.sourceListId(),
+                                    sourceListId,
+                                    targetList.getId(),
+                                    targetList.getUuid(),
+                                    orderedEntriesToMove);
+
+                    return Optional.of(new AuditableResult<>(null, newAudit));
+                });
 
         log.info(
                 "Completed bulk move for {} entries from list {}",
@@ -2102,18 +2119,26 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private short allocateNextSequence(Long alId) {
+        return allocateNextSequence(alId, 1);
+    }
+
+    private short allocateNextSequence(Long alId, int requiredCount) {
 
         AppListEntrySequenceMapping mapping =
                 appListEntrySequenceMappingRepository.findByAlIdForUpdate(alId).orElse(null);
 
         if (mapping == null) {
-            mapping = AppListEntrySequenceMapping.builder().alId(alId).aleLastSequence(1).build();
+            mapping =
+                    AppListEntrySequenceMapping.builder()
+                            .alId(alId)
+                            .aleLastSequence(requiredCount)
+                            .build();
 
             appListEntrySequenceMappingRepository.save(mapping);
-            return (short) 1;
+            return (short) requiredCount;
         }
 
-        int next = mapping.getAleLastSequence() + 1;
+        int next = mapping.getAleLastSequence() + requiredCount;
         mapping.setAleLastSequence(next);
 
         return (short) next;
