@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +41,17 @@ public interface AppListEntryResolutionRepository
             """)
     List<ApplicationListEntryResolutionPrintProjection> findByApplicationListUuidForPrinting(
             UUID listUuid);
+
+    @Query(
+            """
+            SELECT
+                aler.applicationList.id AS entryId,
+                aler.resolutionWording AS wording
+            FROM AppListEntryResolution aler
+            WHERE aler.applicationList.id IN :entryIds
+            """)
+    List<ApplicationListEntryResolutionPrintProjection> findByApplicationListEntryIdsForPrinting(
+            Collection<Long> entryIds);
 
     /**
      * Finds an AppListEntryResolution by its unique identifier and the UUID of the associated
