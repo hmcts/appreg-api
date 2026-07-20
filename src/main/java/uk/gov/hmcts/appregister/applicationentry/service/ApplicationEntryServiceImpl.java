@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -26,6 +27,7 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
+import uk.gov.hmcts.appregister.applicationentry.audit.BulkUpdateOfficialsAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
@@ -585,10 +587,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         entry -> entry,
                                         (first, second) -> first));
 
-        return selectedEntryIds.stream()
-                .map(entriesByUuid::get)
-                .filter(entry -> entry != null)
-                .toList();
+        return selectedEntryIds.stream().map(entriesByUuid::get).filter(Objects::nonNull).toList();
     }
 
     private List<UUID> toEntryIds(List<ApplicationListEntryGetSummaryProjection> entries) {
@@ -879,6 +878,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return existingNotes + " " + additionalNotes;
     }
 
+    @Override
+    @NestedAudit
     @Transactional
     public void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
         var payload = new BulkUpdateOfficialsPayload(listId, bulkOfficialsUpdateDto);
@@ -888,10 +889,62 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 (req, success) -> {
                     List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
                     entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+                    List<Official> replacementOfficials = req.data().getOfficials();
+                    var applicationList =
+                            entries.isEmpty() ? null : entries.getFirst().getApplicationList();
+
+                    List<UUID> entryUuids =
+                            entries.stream().map(ApplicationListEntry::getUuid).toList();
+                    Map<UUID, List<AppListEntryOfficial>> existingOfficialsByEntryUuid =
+                            appListEntryOfficialRepository
+                                    .findByAppListEntry_UuidIn(entryUuids)
+                                    .stream()
+                                    .collect(
+                                            Collectors.groupingBy(
+                                                    official ->
+                                                            official.getAppListEntry().getUuid()));
+
+                    List<Long> entryIds =
+                            entries.stream().map(ApplicationListEntry::getId).toList();
+                    List<AppListEntryOfficial> officialsToCreate =
+                            new ArrayList<>(entries.size() * replacementOfficials.size());
+                    List<AppListEntryOfficial> deletedOfficials =
+                            existingOfficialsByEntryUuid.values().stream()
+                                    .flatMap(List::stream)
+                                    .toList();
+                    var deletedOfficialsAudit =
+                            new BulkUpdateOfficialsAudit(
+                                    applicationList != null ? applicationList.getId() : null,
+                                    listId,
+                                    entryUuids,
+                                    entries.size(),
+                                    BulkUpdateOfficialsAudit.formatDeletedOfficials(
+                                            deletedOfficials));
+                    var replacementOfficialsAudit =
+                            new BulkUpdateOfficialsAudit(
+                                    applicationList != null ? applicationList.getId() : null,
+                                    listId,
+                                    entryUuids,
+                                    entries.size(),
+                                    BulkUpdateOfficialsAudit.formatReplacementOfficials(
+                                            replacementOfficials));
 
                     for (ApplicationListEntry entry : entries) {
-                        replaceOfficialsForEntry(entry, req.data().getOfficials());
+                        addOfficialsForEntry(officialsToCreate, entry, replacementOfficials);
                     }
+
+                    auditService.processAudit(
+                            deletedOfficialsAudit,
+                            AppListEntryAuditOperation.BULK_UPDATE_OFFICIALS,
+                            ignored -> {
+                                if (!entryIds.isEmpty()) {
+                                    appListEntryOfficialRepository.deleteAllForEntryIds(entryIds);
+                                }
+
+                                appListEntryOfficialRepository.saveAll(officialsToCreate);
+                                return Optional.of(
+                                        new AuditableResult<>(null, replacementOfficialsAudit));
+                            });
 
                     log.info(
                             "Completed bulk officials replacement for {} entries in list {}",
@@ -1638,31 +1691,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return officialList;
     }
 
-    private void replaceOfficialsForEntry(
-            ApplicationListEntry entry, List<Official> replacementOfficials) {
-        List<AppListEntryOfficial> existingOfficials =
-                appListEntryOfficialRepository.getOfficialByEntryUuid(entry.getUuid());
-
-        for (AppListEntryOfficial existingOfficial : existingOfficials) {
-            auditService.processAudit(
-                    existingOfficial,
-                    AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY,
-                    req -> {
-                        appListEntryOfficialRepository.delete(existingOfficial);
-                        return Optional.empty();
-                    });
-        }
-
+    private void addOfficialsForEntry(
+            List<AppListEntryOfficial> officialsToCreate,
+            ApplicationListEntry entry,
+            List<Official> replacementOfficials) {
         for (Official official : replacementOfficials) {
-            auditService.processAudit(
-                    AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY,
-                    req -> {
-                        AppListEntryOfficial createdOfficial =
-                                appListEntryOfficialRepository.save(
-                                        applicationListEntryEntityMapper.toOfficial(
-                                                official, entry));
-                        return Optional.of(new AuditableResult<>(null, createdOfficial));
-                    });
+            officialsToCreate.add(applicationListEntryEntityMapper.toOfficial(official, entry));
         }
     }
 

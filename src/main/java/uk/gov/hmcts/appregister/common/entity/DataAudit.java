@@ -83,6 +83,9 @@ public class DataAudit implements Changeable, Accountable {
     @Column(name = "old_clob_value")
     private String oldClobValue;
 
+    @Column(name = "new_clob_value")
+    private String newClobValue;
+
     @Column(name = "related_key")
     private Long relatedKey;
 

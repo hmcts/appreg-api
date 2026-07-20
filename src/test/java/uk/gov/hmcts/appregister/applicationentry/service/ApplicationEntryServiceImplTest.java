@@ -53,6 +53,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
@@ -447,8 +448,7 @@ class ApplicationEntryServiceImplTest {
         when(mockPage.getPageNumber()).thenReturn(1);
 
         Page<ApplicationListEntryGetSummaryProjection> page =
-                new PageImpl<ApplicationListEntryGetSummaryProjection>(
-                        List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
+                new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1L);
 
         when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
                 .thenReturn(Status.OPEN);
@@ -2082,10 +2082,8 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry1, entry2));
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(entryId1))
-                .thenReturn(List.of(existingOfficial1));
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(entryId2))
-                .thenReturn(List.of(existingOfficial2));
+        when(appListEntryOfficialRepository.findByAppListEntry_UuidIn(List.of(entryId2, entryId1)))
+                .thenReturn(List.of(existingOfficial1, existingOfficial2));
         when(applicationListEntryEntityMapper.toOfficial(any(Official.class), any()))
                 .thenAnswer(
                         invocation -> {
@@ -2093,12 +2091,22 @@ class ApplicationEntryServiceImplTest {
                             entity.setAppListEntry(invocation.getArgument(1));
                             return entity;
                         });
+        when(appListEntryOfficialRepository.saveAll(anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.replaceOfficials(listId, dto);
 
-        verify(appListEntryOfficialRepository).delete(existingOfficial1);
-        verify(appListEntryOfficialRepository).delete(existingOfficial2);
-        verify(appListEntryOfficialRepository, times(2)).save(any(AppListEntryOfficial.class));
+        verify(auditOperationService)
+                .processAudit(any(), eq(AppListEntryAuditOperation.BULK_UPDATE_OFFICIALS), any());
+        verify(auditOperationService, never())
+                .processAudit(eq(AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY), any());
+        verify(auditOperationService, never())
+                .processAudit(
+                        any(AppListEntryOfficial.class),
+                        eq(AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY),
+                        any());
+        verify(appListEntryOfficialRepository).deleteAllForEntryIds(List.of(102L, 101L));
+        verify(appListEntryOfficialRepository).saveAll(anyList());
     }
 
     @Test
@@ -2142,8 +2150,8 @@ class ApplicationEntryServiceImplTest {
                                     ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST, appEx.getCode());
                         });
 
-        verify(appListEntryOfficialRepository, never()).delete(any(AppListEntryOfficial.class));
-        verify(appListEntryOfficialRepository, never()).save(any(AppListEntryOfficial.class));
+        verify(appListEntryOfficialRepository, never()).deleteAllForEntryIds(anyList());
+        verify(appListEntryOfficialRepository, never()).saveAll(anyList());
     }
 
     @Test
@@ -2513,8 +2521,7 @@ class ApplicationEntryServiceImplTest {
                                     (BiFunction<UUID, JobSuccess, JobStatusResponse>)
                                             invocation.getArgument(1);
 
-                            val success = new JobSuccess();
-                            return validateFunction.apply(jobId, success);
+                            return validateFunction.apply(jobId, new JobSuccess());
                         });
 
         when(asyncJobAppListEntryRepository.findByAsyncJobId(jobId)).thenReturn(List.of());

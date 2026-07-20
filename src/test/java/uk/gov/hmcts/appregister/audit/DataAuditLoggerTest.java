@@ -262,6 +262,41 @@ class DataAuditLoggerTest {
     }
 
     @Test
+    void testUpdateAuditUsesClobColumnsWhenValuesExceedLimit() {
+        val oldValue = "a".repeat(4001);
+        val newValue = "b".repeat(4001);
+        var oldEntity = Mockito.mock(Keyable.class);
+        var newEntity = Mockito.mock(Keyable.class);
+        when(oldEntity.getId()).thenReturn(123L);
+        when(newEntity.getId()).thenReturn(123L);
+
+        StartEvent startEvent =
+                new StartEvent(AppListAuditOperation.UPDATE_APP_LIST, "ID", oldEntity);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newEntity);
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, oldEntity))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_LISTS, "field", oldValue)));
+        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, newEntity))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_LISTS, "field", newValue)));
+
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
+
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
+        var audit = auditListCaptor.getValue().getFirst();
+        Assertions.assertNull(audit.getOldValue());
+        Assertions.assertNull(audit.getNewValue());
+        Assertions.assertEquals(oldValue, audit.getOldClobValue());
+        Assertions.assertEquals(newValue, audit.getNewClobValue());
+    }
+
+    @Test
     void testAuditSaveFailureDoesNotEscapeOnCompleteEvent() {
         val testData = new ApplicationCodeTestData();
         val newCode = testData.someComplete();

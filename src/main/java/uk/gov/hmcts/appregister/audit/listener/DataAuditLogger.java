@@ -34,6 +34,8 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     /** Represents a null value. We default to a null string. */
     public static final String EMPTY_VALUE = "";
 
+    private static final int AUDIT_VARCHAR_LIMIT = 4000;
+
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schemaName;
 
@@ -256,23 +258,49 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             Long newRelatedKey) {
         if (primaryOld && secondaryDiff == null) {
             audit.setRelatedKey(oldRelatedKey);
-            audit.setNewValue(EMPTY_VALUE);
-            audit.setOldValue(primaryDiff.getValue());
+            setNewAuditValue(audit, EMPTY_VALUE);
+            setOldAuditValue(audit, primaryDiff.getValue());
         } else if (!primaryOld && secondaryDiff == null) {
             audit.setRelatedKey(newRelatedKey);
-            audit.setNewValue(primaryDiff.getValue());
-            audit.setOldValue(EMPTY_VALUE);
+            setNewAuditValue(audit, primaryDiff.getValue());
+            setOldAuditValue(audit, EMPTY_VALUE);
         } else {
             audit.setRelatedKey(newRelatedKey);
 
             if (primaryOld) {
-                audit.setOldValue(primaryDiff.getValue());
-                audit.setNewValue(secondaryDiff.getValue());
+                setOldAuditValue(audit, primaryDiff.getValue());
+                setNewAuditValue(audit, secondaryDiff.getValue());
             } else {
-                audit.setOldValue(secondaryDiff.getValue());
-                audit.setNewValue(primaryDiff.getValue());
+                setOldAuditValue(audit, secondaryDiff.getValue());
+                setNewAuditValue(audit, primaryDiff.getValue());
             }
         }
+    }
+
+    private static void setOldAuditValue(DataAudit audit, String value) {
+        if (shouldUseClob(value)) {
+            audit.setOldValue(null);
+            audit.setOldClobValue(value);
+            return;
+        }
+
+        audit.setOldValue(value);
+        audit.setOldClobValue(null);
+    }
+
+    private static void setNewAuditValue(DataAudit audit, String value) {
+        if (shouldUseClob(value)) {
+            audit.setNewValue(null);
+            audit.setNewClobValue(value);
+            return;
+        }
+
+        audit.setNewValue(value);
+        audit.setNewClobValue(null);
+    }
+
+    private static boolean shouldUseClob(String value) {
+        return value != null && value.length() > AUDIT_VARCHAR_LIMIT;
     }
 
     private static void logAuditValues(
