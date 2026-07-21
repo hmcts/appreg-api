@@ -7100,7 +7100,6 @@ components:
           type: boolean
       required:
       - entryIds
-      - feeDetails
       type: object
     bulk-update-response-dto:
       description: Result of a bulk update operation.

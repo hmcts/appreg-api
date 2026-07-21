@@ -3,7 +3,6 @@ description: Append fee-status rows for multiple Application List Entries in one
 additionalProperties: false
 required:
   - entryIds
-  - feeDetails
 
 properties:
 
@@ -29,6 +28,7 @@ properties:
     items:
       $ref: "./bulk-fee-details-dto.yaml"
     nullable: true
+
   hasOffsiteFee:
     type: boolean
     description: >
