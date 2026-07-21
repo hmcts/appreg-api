@@ -972,8 +972,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 entries.sort(
                                         Comparator.comparing(
                                                 ApplicationListEntry::getSequenceNumber));
-                                List<BulkFeeDetailsDto> feeDetails = req.data().getFeeDetails();
-                                boolean hasOffsiteFee = hasOffsiteFee(feeDetails);
+                                List<BulkFeeDetailsDto> feeDetails =
+                                        req.data().getFeeDetails().orElse(List.of());
+                                boolean hasOffsiteFee =
+                                        Boolean.TRUE.equals(
+                                                req.data()
+                                                        .getHasOffsiteFee()
+                                                        .orElse(Boolean.FALSE));
                                 Supplier<Fee> offsiteFeeSupplier =
                                         offsiteFeeSupplier(hasOffsiteFee);
                                 Set<Long> entryIdsWithOffsiteMapping =
@@ -981,13 +986,26 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 ? getEntryIdsWithOffsiteMapping(entries)
                                                 : Set.of();
 
-                                for (ApplicationListEntry entry : entries) {
-                                    appendFeeDetailsForEntry(
-                                            entry,
-                                            feeDetails,
-                                            hasOffsiteFee,
-                                            offsiteFeeSupplier,
-                                            entryIdsWithOffsiteMapping);
+                                if (!feeDetails.isEmpty()) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        appendFeeDetailsForEntry(
+                                                entry,
+                                                feeDetails,
+                                                hasOffsiteFee,
+                                                offsiteFeeSupplier,
+                                                entryIdsWithOffsiteMapping);
+                                    }
+                                } else if (hasOffsiteFee) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        ensureOffsiteFeeMapping(
+                                                entry,
+                                                offsiteFeeSupplier,
+                                                entryIdsWithOffsiteMapping);
+                                    }
+                                } else if (!hasOffsiteFee) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        deleteOffsiteFeeForEntry(entry);
+                                    }
                                 }
 
                                 int updatedCount = entries.size();
@@ -1078,11 +1096,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         if (hasOffsiteFee) {
             ensureOffsiteFeeMapping(entry, offsiteFeeSupplier, entryIdsWithOffsiteMapping);
         }
-    }
-
-    private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
-        return feeDetails.stream()
-                .anyMatch(feeDetail -> Boolean.TRUE.equals(feeDetail.getHasOffsiteFee()));
     }
 
     /**
@@ -2032,6 +2045,23 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             }
         }
         return false;
+    }
+
+    private void deleteOffsiteFeeForEntry(ApplicationListEntry entry) {
+        List<AppListEntryFeeId> appListEntryFeeIdList =
+                appListEntryFeeRepository.getEntryFeesForEntry(entry.getId());
+        for (AppListEntryFeeId feeId : appListEntryFeeIdList) {
+            Optional<Fee> fee = feeRepository.findById(feeId.getFeeId());
+            if (fee.isPresent() && fee.get().isOffsite()) {
+                auditService.processAudit(
+                        feeId,
+                        AppListEntryAuditOperation.DELETE_FEE_ENTRY,
+                        req -> {
+                            appListEntryFeeRepository.delete(feeId);
+                            return Optional.empty();
+                        });
+            }
+        }
     }
 
     /**
