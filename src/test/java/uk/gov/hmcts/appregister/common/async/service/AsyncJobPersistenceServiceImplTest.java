@@ -248,12 +248,12 @@ class AsyncJobPersistenceServiceImplTest {
         when(asyncJobRepository.findByJobId(jobId.getId(), "tester")).thenReturn(asyncJob);
         // Original maxLength was 4000, so we create a failure message that is longer than that to
         // test truncation
-        var failureMessage = "x".repeat(4000);
+        var failureMessage = "x".repeat(5000);
 
         service.setFailure(jobId, failureMessage);
 
         assertEquals(JobStatusType.FAILED, asyncJob.getJobState());
-        assertEquals(4000, asyncJob.getFailureMessage().length());
+        assertEquals(5000, asyncJob.getFailureMessage().length());
         verify(asyncJobRepository).save(asyncJob);
     }
 }
