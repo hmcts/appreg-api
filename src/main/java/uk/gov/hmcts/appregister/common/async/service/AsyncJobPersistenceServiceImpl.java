@@ -75,7 +75,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
         AsyncJob asyncJob = asyncJobRepository.findByJobId(jobType.getId(), jobType.getUserName());
 
         asyncJob.setJobState(JobStatusType.FAILED);
-        
+
         asyncJob.setFailureMessage(reasonFailed);
         asyncJobRepository.save(asyncJob);
     }
