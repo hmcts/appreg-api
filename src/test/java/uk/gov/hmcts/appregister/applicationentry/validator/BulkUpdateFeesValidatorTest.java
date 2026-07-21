@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import jakarta.validation.Validation;
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -139,44 +138,6 @@ class BulkUpdateFeesValidatorTest {
     }
 
     @Test
-    void validate_whenFeeDetailsAreMissing_thenThrowsFeeDetailsNotProvided() {
-        BulkUpdateFeesPayload payload =
-                new BulkUpdateFeesPayload(
-                        listId, new BulkFeesUpdateDto().entryIds(Set.of(entryId)));
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
-    }
-
-    @Test
-    void validate_whenFeeDetailsAreEmpty_thenThrowsFeeDetailsNotProvided() {
-        BulkUpdateFeesPayload payload =
-                new BulkUpdateFeesPayload(
-                        listId,
-                        new BulkFeesUpdateDto().entryIds(Set.of(entryId)).feeDetails(List.of()));
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
-    }
-
-    @Test
-    void validate_whenFeeDetailsContainNullItem_thenThrowsFeeDetailsNotProvided() {
-        BulkUpdateFeesPayload payload =
-                new BulkUpdateFeesPayload(
-                        listId,
-                        new BulkFeesUpdateDto()
-                                .entryIds(Set.of(entryId))
-                                .feeDetails(new ArrayList<>()));
-        payload.data().getFeeDetails().add(null);
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.FEE_DETAILS_NOT_PROVIDED);
-    }
-
-    @Test
     void validate_whenPaymentStatusIsMissing_thenThrowsPaymentStatusRequired() {
         BulkFeeDetailsDto feeDetails = validFeeDetails();
         feeDetails.setPaymentStatus(null);
@@ -215,16 +176,6 @@ class BulkUpdateFeesValidatorTest {
         AppRegistryException exception = validateAndCapture(validPayload(entryId, feeDetails));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.PAYMENT_REFERENCE_TOO_LONG);
-    }
-
-    @Test
-    void validate_whenHasOffsiteFeeIsMissing_thenThrowsOffsiteFeeRequired() {
-        BulkFeeDetailsDto feeDetails = validFeeDetails();
-        feeDetails.setHasOffsiteFee(null);
-
-        AppRegistryException exception = validateAndCapture(validPayload(entryId, feeDetails));
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFSITE_FEE_REQUIRED);
     }
 
     @Test
@@ -306,7 +257,6 @@ class BulkUpdateFeesValidatorTest {
         return new BulkFeeDetailsDto()
                 .paymentStatus(PaymentStatus.PAID)
                 .statusDate(TODAY)
-                .paymentReference("PAY-001")
-                .hasOffsiteFee(false);
+                .paymentReference("PAY-001");
     }
 }

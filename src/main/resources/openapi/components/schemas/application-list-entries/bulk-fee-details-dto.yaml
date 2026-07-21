@@ -4,7 +4,6 @@ additionalProperties: false
 required:
   - paymentStatus
   - statusDate
-  - hasOffsiteFee
 
 properties:
 
@@ -23,10 +22,3 @@ properties:
     example: "PAY-001"
     maxLength: 100
     minLength: 1
-
-  hasOffsiteFee:
-    type: boolean
-    description: >
-      When true on any supplied fee detail, ensures the selected entries have an off-site fee
-      mapping. False does not remove an existing off-site fee mapping.
-    example: true
