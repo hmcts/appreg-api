@@ -74,6 +74,14 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
         SELECT al
         FROM ApplicationList al
         WHERE al.uuid IN :ids
+        """)
+    List<ApplicationList> findByUuidIncludingDeleteIn(@Param("ids") Collection<UUID> ids);
+
+    @Query(
+            """
+        SELECT al
+        FROM ApplicationList al
+        WHERE al.uuid IN :ids
           AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
     List<ApplicationList> findByUuidIn(@Param("ids") Collection<UUID> ids);

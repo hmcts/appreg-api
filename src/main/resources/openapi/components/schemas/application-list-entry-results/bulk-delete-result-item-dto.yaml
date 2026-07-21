@@ -1,0 +1,22 @@
+type: object
+additionalProperties: false
+required:
+  - listId
+  - entryId
+  - resultId
+properties:
+  listId:
+    type: string
+    format: uuid
+    description: Public identifier of the Application List.
+    example: "123e4567-e89b-12d3-a456-426655440000"
+  entryId:
+    type: string
+    format: uuid
+    description: Public identifier of the Application List Entry.
+    example: "123e4567-e89b-12d3-a456-426655440100"
+  resultId:
+    type: string
+    format: uuid
+    description: Public identifier of the Application List Entry Result.
+    example: "123e4567-e89b-12d3-a456-426655440200"

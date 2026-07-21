@@ -366,6 +366,15 @@ public class RestAssuredClient {
                 .andReturn();
     }
 
+    public Response executeDeleteRequest(URL url, TokenAndJwksKey token, Object object) {
+        return given().body(object)
+                .header("Authorization", "Bearer " + token.getToken())
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .header("traceparent", DEFAULT_TRACE_ID)
+                .delete(url)
+                .andReturn();
+    }
+
     /**
      * deletes a request builder that can be used to make requests against the application with an
      * If-Match header.

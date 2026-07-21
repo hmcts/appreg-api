@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.ApplicationListEntryResultAudit;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.BulkCreateApplicationEntryResultAudit;
+import uk.gov.hmcts.appregister.applicationentryresult.audit.BulkDeleteApplicationEntryResultAudit;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
@@ -26,6 +27,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntr
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultGetValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultDeletionValidator;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -40,6 +42,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWith
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
@@ -60,6 +63,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     private final ApplicationEntryResultCreationValidator creationValidator;
     private final ApplicationEntryResultUpdateValidator updateValidator;
     private final ApplicationEntryResultGetValidator applicationListGetValidator;
+    private final BulkApplicationEntryResultDeletionValidator
+            bulkApplicationEntryResultDeletionValidator;
     private final BulkApplicationEntryResultCreationValidator
             bulkApplicationEntryResultCreationValidator;
 
@@ -110,6 +115,67 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                             AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT,
                             ev -> Optional.empty());
 
+                    return null;
+                });
+    }
+
+    @Override
+    @Transactional
+    public void bulkDelete(BulkDeleteResultsDto bulkDeleteResultsDto) {
+        bulkApplicationEntryResultDeletionValidator.validate(
+                bulkDeleteResultsDto,
+                (request, success) -> {
+                    var deletedResults =
+                            success.getResults().stream()
+                                    .map(
+                                            item ->
+                                                    BeanUtil.copyBean(
+                                                            item.validationSuccess()
+                                                                    .getAppListEntryResult()))
+                                    .toList();
+                    var bulkAuditRequest =
+                            new BulkDeleteApplicationEntryResultAudit(
+                                    deletedResults.isEmpty()
+                                            ? null
+                                            : deletedResults.getFirst().getId(),
+                                    success.getResults().stream()
+                                            .map(item -> item.args().listId())
+                                            .toList(),
+                                    success.getResults().stream()
+                                            .map(item -> item.args().entryId())
+                                            .toList(),
+                                    deletedResults.size(),
+                                    BulkDeleteApplicationEntryResultAudit.formatRequestedResults(
+                                            request.getResults()));
+                    var bulkAuditResult =
+                            new BulkDeleteApplicationEntryResultAudit(
+                                    deletedResults.isEmpty()
+                                            ? null
+                                            : deletedResults.getFirst().getId(),
+                                    success.getResults().stream()
+                                            .map(item -> item.args().listId())
+                                            .toList(),
+                                    success.getResults().stream()
+                                            .map(item -> item.args().entryId())
+                                            .toList(),
+                                    deletedResults.size(),
+                                    BulkDeleteApplicationEntryResultAudit.formatDeletedResults(
+                                            deletedResults));
+
+                    auditService.processAudit(
+                            bulkAuditRequest,
+                            AppListEntryResultAuditOperation.BULK_DELETE_APP_LIST_ENTRY_RESULT,
+                            ignored -> {
+                                repository.deleteAllInBatch(
+                                        success.getResults().stream()
+                                                .map(
+                                                        item ->
+                                                                item.validationSuccess()
+                                                                        .getAppListEntryResult())
+                                                .toList());
+                                entityManager.flush();
+                                return Optional.of(new AuditableResult<>(null, bulkAuditResult));
+                            });
                     return null;
                 });
     }

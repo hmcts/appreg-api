@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 public class BulkUpdateFeesValidator
         implements Validator<BulkUpdateFeesPayload, BulkUpdateFeesValidationSuccess> {
 
-    private static final int PAYMENT_REFERENCE_MAX_LENGTH = 100;
+    private static final int PAYMENT_REFERENCE_MAX_LENGTH = 15;
 
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationListEntryRepository applicationListEntryRepository;

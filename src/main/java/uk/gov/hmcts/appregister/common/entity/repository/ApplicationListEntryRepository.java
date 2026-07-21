@@ -868,6 +868,15 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         """)
     Optional<ApplicationListEntry> findByUuidIncludingDelete(UUID entryId);
 
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid IN :entryIds
+        """)
+    List<ApplicationListEntry> findByUuidIncludingDeleteIn(
+            @Param("entryIds") Collection<UUID> entryIds);
+
     /**
      * Finds all entities with the given IDs, within the associated list.
      *
@@ -965,6 +974,19 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         """)
     Optional<ApplicationListEntry> findActiveByUuidAndApplicationListUuid(
             @Param("entryUuid") UUID entryUuid, @Param("listUuid") UUID listUuid);
+
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid IN :entryUuids
+          AND ale.applicationList.uuid IN :listUuids
+          AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+          AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> 'Y')
+        """)
+    List<ApplicationListEntry> findActiveByUuidsAndApplicationListUuids(
+            @Param("entryUuids") Collection<UUID> entryUuids,
+            @Param("listUuids") Collection<UUID> listUuids);
 
     /**
      * Soft-deletes an application list entry by UUID.
