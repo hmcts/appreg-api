@@ -8238,7 +8238,6 @@ components:
           minLength: 1
           type: string
       required:
-      - hasOffsiteFee
       - paymentStatus
       - statusDate
       type: object
