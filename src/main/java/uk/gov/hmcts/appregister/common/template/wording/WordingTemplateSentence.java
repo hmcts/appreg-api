@@ -454,7 +454,9 @@ public class WordingTemplateSentence implements TemplateableSentence {
             if (value.length() > this.getDetail().getConstraint().getLength()) {
                 throw new AppRegistryException(
                         CommonAppError.WORDING_LENGTH_FAILURE,
-                        "Invalid length type in template",
+                        "Invalid length type in template: expected %d but got %d"
+                                .formatted(
+                                        this.getDetail().getConstraint().getLength(), value.length()),
                         Map.of(this.getDetail().getKey(), value));
             }
         }
