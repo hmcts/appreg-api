@@ -1008,6 +1008,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @NestedAudit
     @Transactional
     public BulkUpdateResponseDto bulkUpdateFees(UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto) {
         var payload = new BulkUpdateFeesPayload(listId, bulkFeesUpdateDto);
@@ -1026,8 +1027,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 entries.sort(
                                         Comparator.comparing(
                                                 ApplicationListEntry::getSequenceNumber));
-                                List<BulkFeeDetailsDto> feeDetails = req.data().getFeeDetails();
-                                boolean hasOffsiteFee = hasOffsiteFee(feeDetails);
+                                List<BulkFeeDetailsDto> feeDetails =
+                                        req.data().getFeeDetails().orElse(List.of());
+                                boolean hasOffsiteFee =
+                                        Boolean.TRUE.equals(
+                                                req.data()
+                                                        .getHasOffsiteFee()
+                                                        .orElse(Boolean.FALSE));
                                 Supplier<Fee> offsiteFeeSupplier =
                                         offsiteFeeSupplier(hasOffsiteFee);
                                 List<UUID> entryUuids =
@@ -1052,15 +1058,29 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 List<AppListEntryFeeId> offsiteFeeMappingsToCreate =
                                         new ArrayList<>();
 
-                                for (ApplicationListEntry entry : entries) {
-                                    appendFeeDetailsForEntry(
-                                            entry,
-                                            feeDetails,
-                                            hasOffsiteFee,
-                                            offsiteFeeSupplier,
-                                            entryIdsWithOffsiteMapping,
-                                            feeStatusesToCreate,
-                                            offsiteFeeMappingsToCreate);
+                                if (!feeDetails.isEmpty()) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        appendFeeDetailsForEntry(
+                                                entry,
+                                                feeDetails,
+                                                hasOffsiteFee,
+                                                offsiteFeeSupplier,
+                                                entryIdsWithOffsiteMapping,
+                                                feeStatusesToCreate,
+                                                offsiteFeeMappingsToCreate);
+                                    }
+                                } else if (hasOffsiteFee) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        ensureOffsiteFeeMapping(
+                                                entry,
+                                                offsiteFeeSupplier,
+                                                entryIdsWithOffsiteMapping,
+                                                offsiteFeeMappingsToCreate);
+                                    }
+                                } else if (!hasOffsiteFee) {
+                                    for (ApplicationListEntry entry : entries) {
+                                        deleteOffsiteFeeForEntry(entry);
+                                    }
                                 }
 
                                 var oldAudit =
@@ -1088,7 +1108,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 entryUuids,
                                                 entries.size(),
                                                 BulkUpdateFeesAudit.formatRequestedFeeDetails(
-                                                        feeDetails),
+                                                        feeDetails,
+                                                        req.data()
+                                                                .getHasOffsiteFee()
+                                                                .orElse(Boolean.FALSE)),
                                                 BulkUpdateFeesAudit.formatOffsiteEntryIds(
                                                         updatedOffsiteEntryIds, entryUuidsById));
 
@@ -1207,11 +1230,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     entryIdsWithOffsiteMapping,
                     offsiteFeeMappingsToCreate);
         }
-    }
-
-    private boolean hasOffsiteFee(List<BulkFeeDetailsDto> feeDetails) {
-        return feeDetails.stream()
-                .anyMatch(feeDetail -> Boolean.TRUE.equals(feeDetail.getHasOffsiteFee()));
     }
 
     /**
@@ -2154,6 +2172,23 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             }
         }
         return false;
+    }
+
+    private void deleteOffsiteFeeForEntry(ApplicationListEntry entry) {
+        List<AppListEntryFeeId> appListEntryFeeIdList =
+                appListEntryFeeRepository.getEntryFeesForEntry(entry.getId());
+        for (AppListEntryFeeId feeId : appListEntryFeeIdList) {
+            Optional<Fee> fee = feeRepository.findById(feeId.getFeeId());
+            if (fee.isPresent() && fee.get().isOffsite()) {
+                auditService.processAudit(
+                        feeId,
+                        AppListEntryAuditOperation.DELETE_FEE_ENTRY,
+                        req -> {
+                            appListEntryFeeRepository.delete(feeId);
+                            return Optional.empty();
+                        });
+            }
+        }
     }
 
     /**

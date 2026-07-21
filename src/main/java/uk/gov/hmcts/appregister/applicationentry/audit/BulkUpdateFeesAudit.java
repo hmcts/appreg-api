@@ -70,7 +70,8 @@ public record BulkUpdateFeesAudit(
                 .collect(Collectors.joining(",", "[", "]"));
     }
 
-    public static String formatRequestedFeeDetails(List<BulkFeeDetailsDto> feeDetails) {
+    public static String formatRequestedFeeDetails(
+            List<BulkFeeDetailsDto> feeDetails, Boolean hasOffsiteFee) {
         return feeDetails.stream()
                 .map(
                         feeDetail ->
@@ -81,7 +82,7 @@ public record BulkUpdateFeesAudit(
                                                 feeDetail.getStatusDate(),
                                                 BulkAuditFormatting.escape(
                                                         feeDetail.getPaymentReference()),
-                                                Boolean.TRUE.equals(feeDetail.getHasOffsiteFee())))
+                                                Boolean.TRUE.equals(hasOffsiteFee)))
                 .collect(Collectors.joining(",", "[", "]"));
     }
 

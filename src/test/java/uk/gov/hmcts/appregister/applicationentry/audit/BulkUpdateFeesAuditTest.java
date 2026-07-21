@@ -78,8 +78,7 @@ class BulkUpdateFeesAuditTest {
                 new BulkFeeDetailsDto()
                         .paymentStatus(PaymentStatus.PAID)
                         .statusDate(LocalDate.of(2026, 7, 20))
-                        .paymentReference("PAY-002")
-                        .hasOffsiteFee(true);
+                        .paymentReference("PAY-002");
 
         Assertions.assertEquals(
                 ("[{\"entryId\":\"%s\",\"status\":\"REMITTED\",\"statusDate\":\"2026-07-20\","
@@ -89,7 +88,7 @@ class BulkUpdateFeesAuditTest {
         Assertions.assertEquals(
                 "[{\"paymentStatus\":\"PAID\",\"statusDate\":\"2026-07-20\","
                         + "\"paymentReference\":\"PAY-002\",\"hasOffsiteFee\":true}]",
-                BulkUpdateFeesAudit.formatRequestedFeeDetails(List.of(requestedFeeDetails)));
+                BulkUpdateFeesAudit.formatRequestedFeeDetails(List.of(requestedFeeDetails), true));
         Assertions.assertEquals(
                 "[\"" + entry.getUuid() + "\"]",
                 BulkUpdateFeesAudit.formatOffsiteEntryIds(

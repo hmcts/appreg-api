@@ -182,8 +182,7 @@ class ApplicationEntryDtoTest {
                                 new BulkFeeDetailsDto()
                                         .paymentStatus(PaymentStatus.PAID)
                                         .statusDate(LocalDate.of(2025, Month.OCTOBER, 7))
-                                        .paymentReference("PAY-001")
-                                        .hasOffsiteFee(false)));
+                                        .paymentReference("PAY-001")));
     }
 
     private Set<UUID> entryIds(int totalCount) {
