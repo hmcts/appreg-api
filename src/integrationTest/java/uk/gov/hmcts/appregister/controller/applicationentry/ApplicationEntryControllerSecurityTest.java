@@ -188,8 +188,7 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
                                 new BulkFeeDetailsDto()
                                         .paymentStatus(PaymentStatus.PAID)
                                         .statusDate(LocalDate.now(java.time.ZoneOffset.UTC))
-                                        .paymentReference("PAY-001")
-                                        .hasOffsiteFee(false)));
+                                        .paymentReference("PAY-001")));
     }
 
     private UUID[] getValidEntryForList() {

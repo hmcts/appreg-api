@@ -1,7 +1,7 @@
 {
   "connectionString": "${file:/mnt/secrets/appreg/app-insights-connection-string}",
   "role": {
-    "name": "appreg-demo"
+    "name": "appreg-api"
   },
   "sampling": {
     "overrides": [

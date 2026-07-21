@@ -61,7 +61,10 @@ public class BulkUpdateFeesValidator
             BiFunction<BulkUpdateFeesPayload, BulkUpdateFeesValidationSuccess, R> validateSuccess) {
         validateApplicationList(payload.listId());
         Set<UUID> requestedIds = validateEntryIds(payload);
-        validateFeeDetails(payload);
+
+        if (payload.data().getFeeDetails().isPresent()) {
+            validateFeeDetails(payload);
+        }
 
         List<ApplicationListEntry> entries =
                 applicationListEntryRepository.findByUuidsInSourceList(
@@ -103,12 +106,12 @@ public class BulkUpdateFeesValidator
     }
 
     private void validateFeeDetails(BulkUpdateFeesPayload payload) {
-        if (payload.data() == null || isNullOrEmpty(payload.data().getFeeDetails())) {
+        if (payload.data() == null || isNullOrEmpty(payload.data().getFeeDetails().get())) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_DETAILS_NOT_PROVIDED, "No fee details provided");
         }
 
-        for (BulkFeeDetailsDto feeDetails : payload.data().getFeeDetails()) {
+        for (BulkFeeDetailsDto feeDetails : payload.data().getFeeDetails().get()) {
             validateFeeDetail(feeDetails);
         }
     }
@@ -160,11 +163,6 @@ public class BulkUpdateFeesValidator
         if (missingFields.contains("statusDate")) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_STATUS_DATE_REQUIRED, "statusDate must be provided");
-        }
-
-        if (missingFields.contains("hasOffsiteFee")) {
-            throw new AppRegistryException(
-                    AppListEntryError.OFFSITE_FEE_REQUIRED, "hasOffsiteFee must be provided");
         }
     }
 
