@@ -7087,7 +7087,7 @@ components:
           uniqueItems: true
         feeDetails:
           description: |
-            Array of fee-status rows to append to every selected Application List Entry. At least one fee-status row must be provided.
+            Array of fee-status rows to append to every selected Application List Entry. Fee details is optional, but if provided, there must be at least a row.
           items:
             $ref: "#/components/schemas/bulk-fee-details-dto"
           nullable: true
