@@ -372,6 +372,58 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenMissingRequiredFields_whenValidatingBusinessRules_thenLogsRowFailure() throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setApplicationCode(null);
+        row.setApplicantCode(null);
+        JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        ObjectMapper mapper = new ObjectMapper();
+        BulkUploadError[] errors = mapper.readValue(context.getValidationFailureMessages().getFirst(), BulkUploadError[].class);
+            assertThat(errors).hasSize(3);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "APPLICANT_CODE",
+                                                null,
+                                                "Applicant code is required",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"),
+                                        new BulkUploadError(
+                                                2,
+                                                "APPLICATION_CODE",
+                                                null,
+                                                "Application code is required",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"),
+                                        new BulkUploadError(
+                                                2,
+                                                "applicationCode",
+                                                null,
+                                                "must not be null",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
+    }
+
+    @Test
     void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors()
             throws IOException {
         BulkUploadRow row = validOrganisationRow();
