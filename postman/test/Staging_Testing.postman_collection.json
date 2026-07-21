@@ -27963,6 +27963,1332 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "ARCPOC-387 Duration Report – Async API Test Pack",
+      "item": [
+        {
+          "name": "01 – Happy path",
+          "item": [
+            {
+              "name": "01 – Create Duration report",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                      "pm.test('Versioned JSON response', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/vnd.hmcts.appreg.v1+json'));",
+                      "const body = pm.response.json();",
+                      "pm.test('Acknowledgement has id, type and status', function () {",
+                      "  pm.expect(body.id).to.match(/^[0-9a-f-]{36}$/i);",
+                      "  pm.expect(body.type).to.eql('DURATION_REPORT');",
+                      "  pm.expect(['RECEIVED', 'VALIDATING', 'PROCESSING', 'COMPLETED']).to.include(body.status);",
+                      "});",
+                      "pm.test('Location points to job', () => pm.expect(pm.response.headers.get('Location')).to.include('/jobs/' + body.id));",
+                      "pm.collectionVariables.set('arcpoc387_job_id', body.id);",
+                      "pm.collectionVariables.set('arcpoc387_poll_retry_count', '0');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                },
+                "description": "Creates an unfiltered Duration report and stores the response id as arcpoc387_job_id. Add a location object only when testing a specific legacy location rule."
+              },
+              "response": []
+            },
+            {
+              "name": "02 – Poll Duration job until completed",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "pm.test('Same Duration job', function () {",
+                      "  pm.expect(body.id).to.eql(pm.collectionVariables.get('arcpoc387_job_id'));",
+                      "  pm.expect(body.type).to.eql('DURATION_REPORT');",
+                      "  pm.expect(['RECEIVED', 'VALIDATING', 'PROCESSING', 'FAILED', 'COMPLETED']).to.include(body.status);",
+                      "});",
+                      "pm.test('Job has not failed', () => pm.expect(body.status, body.error_description || 'job failed').not.to.eql('FAILED'));",
+                      "if (body.status !== 'COMPLETED' && pm.execution && pm.execution.setNextRequest) {",
+                      "  const retry = Number(pm.collectionVariables.get('arcpoc387_poll_retry_count') || 0) + 1;",
+                      "  pm.collectionVariables.set('arcpoc387_poll_retry_count', String(retry));",
+                      "  if (retry < Number(pm.collectionVariables.get('arcpoc387_max_poll_retries'))) {",
+                      "    setTimeout(() => pm.execution.setNextRequest('02 – Poll Duration job until completed'), 1000);",
+                      "  } else {",
+                      "    pm.test('Job completed within retry limit', () => pm.expect.fail('Last status: ' + body.status));",
+                      "  }",
+                      "} else if (body.status === 'COMPLETED') {",
+                      "  pm.collectionVariables.set('arcpoc387_poll_retry_count', '0');",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/jobs/{{arcpoc387_job_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "jobs",
+                    "{{arcpoc387_job_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "03 – Download completed Duration CSV",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "pm.test('CSV response headers', function () {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv');",
+                      "  pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment; filename=\"report.csv\"');",
+                      "  pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-cache');",
+                      "});",
+                      "pm.test('Legacy title and exact headings are present', function () {",
+                      "  const text = pm.response.text().replace(/\\r/g, '');",
+                      "  pm.expect(text).to.include('Duration Report');",
+                      "  pm.expect(text).to.include('List Date,List Court House Name,List Other Location,CJA Code,List Description,Duration Hours,Duration Minutes');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "text/csv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/reports/jobs/{{arcpoc387_job_id}}/download",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "jobs",
+                    "{{arcpoc387_job_id}}",
+                    "download"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "03 – Download completed Duration CSV",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "text/csv"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseURL}}/reports/jobs/{{arcpoc387_job_id}}/download",
+                      "host": [
+                        "{{baseURL}}"
+                      ],
+                      "path": [
+                        "reports",
+                        "jobs",
+                        "{{arcpoc387_job_id}}",
+                        "download"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Date",
+                      "value": "Fri, 17 Jul 2026 09:09:52 GMT"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "text/csv"
+                    },
+                    {
+                      "key": "Transfer-Encoding",
+                      "value": "chunked"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "keep-alive"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache"
+                    },
+                    {
+                      "key": "Content-Disposition",
+                      "value": "attachment; filename=\"report.csv\""
+                    },
+                    {
+                      "key": "Strict-Transport-Security",
+                      "value": "max-age=31536000 ; includeSubDomains"
+                    },
+                    {
+                      "key": "Vary",
+                      "value": "Accept"
+                    },
+                    {
+                      "key": "X-Content-Type-Options",
+                      "value": "nosniff"
+                    },
+                    {
+                      "key": "X-Frame-Options",
+                      "value": "DENY"
+                    },
+                    {
+                      "key": "X-Xss-Protection",
+                      "value": "0"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "Duration Report\nList Date,List Court House Name,List Other Location,CJA Code,List Description,Duration Hours,Duration Minutes\n28/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 9919,3,3\n28/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 9919,3,3\n28/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 99007,2,22\n27/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 96951,3,3\n27/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 96951,3,3\n27/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 25639,2,22\n27/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 25639,2,22\n24/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 63009,3,3\n24/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 83114,3,3\n24/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 2491,3,3\n24/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 12145,2,22\n24/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Application List Closed,5,25\n23/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 14438,3,3\n23/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 14438,3,3\n23/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 21012,2,22\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Applications to review at Test_23574,0,5\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Applications to review at Test_23574,0,5\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Applications to review at Test_23574,0,5\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 95948,2,22\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 95948,2,22\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 92925,2,22\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 92925,2,22\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 95948,2,22\n22/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 92925,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 91161,3,3\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 91161,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 30220,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 69304,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 90576,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 69304,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 46521,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 60974,3,3\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 60974,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Applications to review at Test_19231,0,5\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Applications to review at Test_19231,0,5\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Applications to review at Test_19231,0,5\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 55448,3,3\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 55448,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 53199,2,22\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 3074,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 86989,3,3\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 86989,3,3\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 59958,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 29345,2,22\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 41632,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 59085,3,3\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 59085,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 15660,2,22\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 78973,2,22\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 7957,2,22\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 39069,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 67412,3,3\n21/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 39069,2,22\n21/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 67412,3,3\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 44175,3,3\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 53809,2,22\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 44175,3,3\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 53809,2,22\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 29281,2,22\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 73339,3,3\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 73339,3,3\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 29281,2,22\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 29281,2,22\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 23168,3,3\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 23168,3,3\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 94576,2,22\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 94576,2,22\n20/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 79090,2,22\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 76668,3,3\n20/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 76668,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 82464,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 82464,3,3\n17/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 9705,2,22\n17/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 37047,2,22\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 56692,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 28460,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 56692,3,3\n17/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 69300,2,22\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 28460,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 77636,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 59658,3,3\n17/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 11061,2,22\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 59658,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 77636,3,3\n17/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 32070,2,22\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 46035,3,3\n17/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 46035,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 50959,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 23825,3,3\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 23825,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 28241,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 21621,3,3\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 21621,3,3\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 44443,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 36308,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 44443,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 36308,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 47801,3,3\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 47801,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 89680,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 86511,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 89680,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 86511,3,3\n16/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 81636,2,22\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 87035,3,3\n16/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 87035,3,3\n15/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 76727,2,22\n15/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 83908,3,3\n15/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 83908,3,3\n15/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 76727,2,22\n15/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 53585,2,22\n15/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 147,3,3\n15/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 147,3,3\n14/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 75045,2,22\n14/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 62886,3,3\n14/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 62886,3,3\n13/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 53054,2,22\n13/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 87738,3,3\n13/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 87738,3,3\n10/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 72679,2,22\n10/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 38350,3,3\n10/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 38350,3,3\n09/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 49070,2,22\n09/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 49070,2,22\n09/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 98539,3,3\n09/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 98539,3,3\n08/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 52298,3,3\n08/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 484,2,22\n08/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 52298,3,3\n08/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 68764,2,22\n08/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 68764,2,22\n08/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 39552,2,22\n08/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 39552,2,22\n08/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 28819,3,3\n08/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 28819,3,3\n08/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 43450,3,3\n08/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 71848,2,22\n08/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 43450,3,3\n07/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 40029,2,22\n07/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 51385,3,3\n07/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 51385,3,3\n02/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 69431,2,22\n02/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 68271,3,3\n02/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 68271,3,3\n02/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 6922,2,22\n02/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 82280,3,3\n02/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 82280,3,3\n02/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 13497,2,22\n02/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 91008,3,3\n02/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 91008,3,3\n01/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 5646,2,22\n01/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 5646,2,22\n01/04/2026,LCCC025 - Leeds Combined Court Centre Set 3,,,Test Applications List to Close 5646,2,22\n01/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 52319,3,3\n01/04/2026,RCJ001 - Royal Courts of Justice Set 1,,,Test 52319,3,3\n"
+                }
+              ]
+            }
+          ],
+          "description": "Run this folder to create, poll, and download one Duration report. The poll script loops only in Collection Runner; when using Send, resend it manually until COMPLETED."
+        },
+        {
+          "name": "02 – Positive filter variants",
+          "item": [
+            {
+              "name": "Court only",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \"{{arcpoc387_valid_court_code}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CJA only",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('202 Accepted – CJA alone is valid', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"cjaCode\": \"{{arcpoc387_valid_cja_code}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Other Location only",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('202 Accepted – Other Location alone is valid', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"otherLocationDescription\": \"{{arcpoc387_other_location_text}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CJA plus Other Location",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"cjaCode\": \"{{arcpoc387_valid_cja_code}}\",\n    \"otherLocationDescription\": \"{{arcpoc387_other_location_text}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reversed date range",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('202 Accepted – dates are normalised', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_to}}\",\n  \"dateTo\": \"{{arcpoc387_date_from}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": "Each request expects 202 and creates a real job. Poll and download it with the Happy path requests before running the next variant."
+        },
+        {
+          "name": "03 – Request validation",
+          "item": [
+            {
+              "name": "Missing dateFrom",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                      "pm.test('Problem JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateTo\": \"{{arcpoc387_date_to}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Missing dateTo",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                      "pm.test('Problem JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Blank date",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Court combined with CJA and Other Location",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \"{{arcpoc387_valid_court_code}}\",\n    \"cjaCode\": \"{{arcpoc387_valid_cja_code}}\",\n    \"otherLocationDescription\": \"{{arcpoc387_other_location_text}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Whitespace only court",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \" \"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Whitespace only CJA",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"cjaCode\": \" \"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Whitespace only Other Location",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"otherLocationDescription\": \" \"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Court combined with Other Location",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \"{{arcpoc387_valid_court_code}}\",\n    \"otherLocationDescription\": \"{{arcpoc387_other_location_text}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Court combined with CJA",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \"{{arcpoc387_valid_court_code}}\",\n    \"cjaCode\": \"{{arcpoc387_valid_cja_code}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unknown court code",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Court not found', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-2 problem', () => pm.expect(pm.response.text()).to.include('Court not found'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \"ZZ999\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unknown CJA code",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 CJA not found', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-1 problem', () => pm.expect(pm.response.text()).to.include('Criminal Justice Area not found'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"cjaCode\": \"QX\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unexpected property",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 unknown property', () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"unexpected\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Court exceeds max length",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"courtLocationCode\": \"ABCDEFGHIJK\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CJA exceeds max length",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"cjaCode\": \"ABC\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Other location exceeds max length",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                      "if (pm.response.code === 202) pm.collectionVariables.set('arcpoc387_job_id', pm.response.json().id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"otherLocationDescription\": \"gnwgqerxqedkatbyucdpwkghifurfpybjhvjkruenapwbtrhirndmzqwdepeetdcfqkxriaautcjatwtpyqdvnyintkdqrwmtqvvcfujwhnmpgvkidubhrpuqkddzypzqakkbaytjmnqnkxchbqumqvrmrecqxnwfqikegafytipdtxgyvemzkrtdvbgmzegdvhhbynvx\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Duplicate CJA",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('400 invalid location combination', () => pm.response.to.have.status(400));",
+                      "pm.test('RPT-4 problem', () => pm.expect(pm.response.text()).to.include('Invalid location filter combination'));"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{jsonMediaType}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{jsonMediaType}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateFrom\": \"{{arcpoc387_date_from}}\",\n  \"dateTo\": \"{{arcpoc387_date_to}}\",\n  \"location\": {\n    \"cjaCode\": \"ZZ\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseURL}}/reports/duration/jobs",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "duration",
+                    "jobs"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Manual and Collection Runner checks for the asynchronous Duration report. Import the existing staging environment and obtain tokens through the approved token collection. Run positive creation scenarios one at a time and wait for completion before creating another DURATION_REPORT job for the same user. No credentials or tokens are stored in this collection.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{access_token_user}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.variables.set('jsonMediaType', 'application/vnd.hmcts.appreg.v1+json');"
+            ]
+          }
+        }
+      ]
     }
   ],
   "event": [
@@ -28075,6 +29401,38 @@
     {
       "key": "arcpoc1247_traceparent",
       "value": ""
+    },
+    {
+      "key": "arcpoc387_job_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc387_poll_retry_count",
+      "value": "0"
+    },
+    {
+      "key": "arcpoc387_max_poll_retries",
+      "value": "30"
+    },
+    {
+      "key": "arcpoc387_date_from",
+      "value": "2026-04-01"
+    },
+    {
+      "key": "arcpoc387_date_to",
+      "value": "2026-04-28"
+    },
+    {
+      "key": "arcpoc387_valid_court_code",
+      "value": "CCC003"
+    },
+    {
+      "key": "arcpoc387_valid_cja_code",
+      "value": "CD"
+    },
+    {
+      "key": "arcpoc387_other_location_text",
+      "value": "County Hall"
     }
   ]
 }
