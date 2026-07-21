@@ -35,6 +35,7 @@ import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
@@ -127,6 +128,12 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
     protected Response createBulkResult(TokenAndJwksKey token, Object body)
             throws MalformedURLException {
         return restAssuredClient.executePostRequest(
+                getLocalUrl(WEB_CONTEXT + "/entries/results"), token, body);
+    }
+
+    protected Response deleteBulkResult(TokenAndJwksKey token, BulkDeleteResultsDto body)
+            throws MalformedURLException {
+        return restAssuredClient.executeDeleteRequest(
                 getLocalUrl(WEB_CONTEXT + "/entries/results"), token, body);
     }
 

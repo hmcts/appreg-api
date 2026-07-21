@@ -119,14 +119,8 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         val sourceList = createOpenListWithEntry(sourceEntry);
         val targetList = createOpenTargetList();
 
-        // Re-read the persisted entry so we can compare the version before and after the move.
-        val persistedBeforeMove =
-                applicationListEntryRepository.findByUuid(sourceEntry.getUuid()).orElseThrow();
-
         // Clear earlier audit rows so these assertions only inspect the move request.
         dataAuditRepository.deleteAll();
-
-        val originalVersion = persistedBeforeMove.getVersion();
         val resp = moveEntries(sourceList, targetList, Set.of(sourceEntry.getUuid()));
 
         resp.then().statusCode(HttpStatus.OK.value());
@@ -134,56 +128,65 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         val persistedAfterMove =
                 applicationListEntryRepository.findByUuid(sourceEntry.getUuid()).orElseThrow();
 
-        // The entry should now belong to the target list and have an incremented version.
+        // The entry should now belong to the target list.
         Assertions.assertEquals(
                 targetList.getId(), persistedAfterMove.getApplicationList().getId());
-        Assertions.assertTrue(persistedAfterMove.getVersion() > originalVersion);
 
-        // The move audit should capture the old and new list identifiers for the moved entry.
-        val listIdAuditRow =
-                dataAuditRepository.findAll().stream()
-                        .filter(row -> TableNames.APPLICATION_LISTS.equals(row.getTableName()))
-                        .filter(row -> "al_id".equals(row.getColumnName()))
-                        .filter(row -> sourceList.getId().toString().equals(row.getOldValue()))
-                        .filter(row -> targetList.getId().toString().equals(row.getNewValue()))
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_lists.al_id move audit row"));
-
-        Assertions.assertEquals(
-                AppListEntryAuditOperation.MOVE_APP_ENTRY.getEventName(),
-                listIdAuditRow.getEventName());
-        Assertions.assertEquals(
-                AppListEntryAuditOperation.MOVE_APP_ENTRY.getType(),
-                listIdAuditRow.getUpdateType());
-
-        // The same move request should also audit the version increment on the entry row itself.
-        val versionAuditRow =
+        // The bulk move audit should capture source and target list UUIDs plus the moved entry.
+        val moveAuditRows =
                 dataAuditRepository.findAll().stream()
                         .filter(
+                                row ->
+                                        AppListEntryAuditOperation.BULK_MOVE_APP_ENTRIES
+                                                .getEventName()
+                                                .equals(row.getEventName()))
+                        .toList();
+
+        Assertions.assertFalse(moveAuditRows.isEmpty());
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
                                 row ->
                                         TableNames.APPLICATION_LISTS_ENTRY.equals(
-                                                row.getTableName()))
-                        .filter(row -> "version".equals(row.getColumnName()))
-                        .filter(row -> Long.toString(originalVersion).equals(row.getOldValue()))
-                        .filter(
+                                                        row.getTableName())
+                                                && "bulk_move_source_list_uuid"
+                                                        .equals(row.getColumnName())
+                                                && sourceList
+                                                        .getUuid()
+                                                        .toString()
+                                                        .equals(row.getOldValue())
+                                                && sourceList
+                                                        .getUuid()
+                                                        .toString()
+                                                        .equals(row.getNewValue())));
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
                                 row ->
-                                        Long.toString(persistedAfterMove.getVersion())
-                                                .equals(row.getNewValue()))
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_list_entries.version move audit row"));
-
-        Assertions.assertEquals(
-                AppListEntryAuditOperation.MOVE_APP_ENTRY.getEventName(),
-                versionAuditRow.getEventName());
-        Assertions.assertEquals(
-                AppListEntryAuditOperation.MOVE_APP_ENTRY.getType(),
-                versionAuditRow.getUpdateType());
+                                        TableNames.APPLICATION_LISTS_ENTRY.equals(
+                                                        row.getTableName())
+                                                && "bulk_move_target_list_uuid"
+                                                        .equals(row.getColumnName())
+                                                && targetList
+                                                        .getUuid()
+                                                        .toString()
+                                                        .equals(row.getOldValue())
+                                                && targetList
+                                                        .getUuid()
+                                                        .toString()
+                                                        .equals(row.getNewValue())));
+        Assertions.assertTrue(
+                moveAuditRows.stream()
+                        .anyMatch(
+                                row ->
+                                        TableNames.APPLICATION_LISTS_ENTRY.equals(
+                                                        row.getTableName())
+                                                && "bulk_move_entries".equals(row.getColumnName())
+                                                && row.getOldValue()
+                                                        .contains(sourceEntry.getUuid().toString())
+                                                && row.getNewValue()
+                                                        .contains(
+                                                                sourceEntry.getUuid().toString())));
     }
 
     @Test
@@ -201,9 +204,8 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         // Clear earlier audit rows so we only inspect what this failing move attempted to write.
         dataAuditRepository.deleteAll();
 
-        // Fail on the second save call inside the move loop so we can prove the first move rolls
-        // back as part of the same transaction.
-        moveEntryFailureSwitch.failOnSecondSave();
+        // Fail during the batched saveAll call so we can prove the move still rolls back.
+        moveEntryFailureSwitch.failOnMoveSave();
 
         try {
             val resp =
@@ -228,39 +230,17 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         Assertions.assertEquals(sourceList.getId(), persistedFirst.getApplicationList().getId());
         Assertions.assertEquals(sourceList.getId(), persistedSecond.getApplicationList().getId());
 
-        // The business move rolls back, but the attempted move audit remains persisted in line
-        // with the legacy autonomous-audit behaviour.
+        // The business move rolls back and no completed bulk-move audit rows are persisted.
         val moveAuditRows =
                 dataAuditRepository.findAll().stream()
                         .filter(
                                 row ->
-                                        AppListEntryAuditOperation.MOVE_APP_ENTRY
+                                        AppListEntryAuditOperation.BULK_MOVE_APP_ENTRIES
                                                 .getEventName()
                                                 .equals(row.getEventName()))
                         .toList();
 
-        Assertions.assertFalse(moveAuditRows.isEmpty());
-        Assertions.assertTrue(
-                moveAuditRows.stream()
-                        .anyMatch(
-                                row ->
-                                        TableNames.APPLICATION_LISTS.equals(row.getTableName())
-                                                && "al_id".equals(row.getColumnName())
-                                                && sourceList
-                                                        .getId()
-                                                        .toString()
-                                                        .equals(row.getOldValue())
-                                                && targetList
-                                                        .getId()
-                                                        .toString()
-                                                        .equals(row.getNewValue())));
-        Assertions.assertTrue(
-                moveAuditRows.stream()
-                        .anyMatch(
-                                row ->
-                                        TableNames.APPLICATION_LISTS_ENTRY.equals(
-                                                        row.getTableName())
-                                                && "version".equals(row.getColumnName())));
+        Assertions.assertTrue(moveAuditRows.isEmpty());
     }
 
     @Test
@@ -591,10 +571,9 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
                             bean.getClass().getClassLoader(),
                             bean.getClass().getInterfaces(),
                             (proxy, method, args) -> {
-                                if ("save".equals(method.getName())
-                                        && args != null
+                                if (args != null
                                         && args.length == 1
-                                        && switcher.shouldFail(args[0])) {
+                                        && switcher.shouldFail(method.getName(), args[0])) {
                                     throw new IllegalStateException(
                                             "Simulated move save failure for rollback test");
                                 }
@@ -614,7 +593,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         private final AtomicBoolean enabled = new AtomicBoolean(false);
         private final AtomicInteger saveCount = new AtomicInteger(0);
 
-        void failOnSecondSave() {
+        void failOnMoveSave() {
             saveCount.set(0);
             enabled.set(true);
         }
@@ -624,10 +603,12 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
             saveCount.set(0);
         }
 
-        boolean shouldFail(Object candidate) {
+        boolean shouldFail(String methodName, Object candidate) {
             return enabled.get()
-                    && candidate instanceof ApplicationListEntry
-                    && saveCount.incrementAndGet() == 2;
+                    && (("saveAll".equals(methodName) && candidate instanceof Iterable<?>)
+                            || ("save".equals(methodName)
+                                    && candidate instanceof ApplicationListEntry))
+                    && saveCount.incrementAndGet() == 1;
         }
     }
 }
