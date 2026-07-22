@@ -27963,6 +27963,3401 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "ARCPOC-1461 - Standardise error responses for endpoints",
+      "description": "ARCPOC-1461 staging regression pack. Run setup first, then the numbered test requests in order. Each endpoint follows the applicable sequence: missing list, missing entry, missing result, wrong parentage, wrong state. It proves 404 for nonexistent nested path resources and 409 for existing resources under the wrong path parent or in an invalid state. Data is synthetic. Attach the Runner summary and each numbered request/response; redact bearer tokens and environment secrets.",
+      "item": [
+        {
+          "name": "00 Setup test data - run first",
+          "description": "Creates two OPEN lists, one CLOSED list, entries, and results. The CLOSED list is populated and resulted before it is closed.",
+          "item": [
+            {
+              "name": "00 Initialise run data",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseURL}}/health",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "health"
+                  ]
+                },
+                "description": "Run this folder in order. This request generates fresh nonexistent UUIDs and a run marker."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "const stamp = Date.now().toString();",
+                      "pm.collectionVariables.set('arcpoc1461_run_marker', stamp);",
+                      "pm.collectionVariables.set('arcpoc1461_today', new Date().toISOString().slice(0, 10));",
+                      "pm.collectionVariables.set('arcpoc1461_missing_list_id', pm.variables.replaceIn('{{$guid}}'));",
+                      "pm.collectionVariables.set('arcpoc1461_missing_entry_id', pm.variables.replaceIn('{{$guid}}'));",
+                      "pm.collectionVariables.set('arcpoc1461_missing_result_id', pm.variables.replaceIn('{{$guid}}'));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Health endpoint responded', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "01 Create OPEN list A",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{arcpoc1461_today}}\",\n  \"time\": \"10:30\",\n  \"description\": \"ARCPOC-1461 List A {{arcpoc1461_run_marker}}\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"ARCPOC-1461 Test Location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 1,\n  \"durationMinutes\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('List A returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'List A id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_list_a_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "02 Create entry A1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Entry A1 returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'Entry A1 id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_entry_a_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "03 Create entry A2",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461-A2\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Entry A2 returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'Entry A2 id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_entry_a2_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "04 Create result A1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_entry_a_id}}/results",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Result A1 returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'Result A1 id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_result_a_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "05 Create OPEN list B",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{arcpoc1461_today}}\",\n  \"time\": \"10:30\",\n  \"description\": \"ARCPOC-1461 List B {{arcpoc1461_run_marker}}\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"ARCPOC-1461 Test Location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 1,\n  \"durationMinutes\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('List B returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'List B id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_list_b_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "06 Create entry B1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461-B1\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Entry B1 returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'Entry B1 id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_entry_b_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "07 Create OPEN list C",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{arcpoc1461_today}}\",\n  \"time\": \"10:30\",\n  \"description\": \"ARCPOC-1461 List C {{arcpoc1461_run_marker}}\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"ARCPOC-1461 Test Location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 1,\n  \"durationMinutes\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('List C returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'List C id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_list_c_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "08 Create entry C1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461-C1\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Entry C1 returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'Entry C1 id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_entry_c_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "09 Create result C1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}/results",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}",
+                    "results"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Result C1 returned 201', function () { pm.response.to.have.status(201); });",
+                      "const body = pm.response.json();",
+                      "const id = body.id || body.uuid;",
+                      "pm.expect(id, 'Result C1 id').to.exist;",
+                      "pm.collectionVariables.set('arcpoc1461_result_c_id', id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "10 Close list C",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{arcpoc1461_today}}\",\n  \"time\": \"10:30\",\n  \"description\": \"ARCPOC-1461 List C {{arcpoc1461_run_marker}}\",\n  \"status\": \"CLOSED\",\n  \"otherLocationDescription\": \"ARCPOC-1461 Test Location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 1,\n  \"durationMinutes\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('List C closed', function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "01 POST entries",
+          "item": [
+            {
+              "name": "TS01 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-11');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS02 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-12');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "02 GET entry by ID",
+          "item": [
+            {
+              "name": "TS03 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-11');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS04 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-15');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS05 - Wrong parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-16');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS06 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-12');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "03 PUT entry by ID",
+          "item": [
+            {
+              "name": "TS07 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-11');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS08 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-15');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS09 - Wrong parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-16');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS10 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardApplicantCode\": null,\n  \"applicationCode\": \"CT99002\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Applicant\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"1 Test Street\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mx\",\n        \"firstName\": \"Arc1461\",\n        \"middleName\": \"Staging\",\n        \"lastName\": \"Respondent\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"2 Test Street\",\n        \"postcode\": \"SW1A 2AA\"\n      }\n    },\n    \"organisation\": null\n  },\n  \"numberOfRespondents\": null,\n  \"wordingFields\": [\n    {\n      \"key\": \"Reference\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1461\",\n  \"accountNumber\": \"ARC1461ACC\",\n  \"notes\": \"Synthetic ARCPOC-1461 staging test data\",\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-12');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "04 DELETE entry by ID",
+          "item": [
+            {
+              "name": "TS11 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-11');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS12 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-18');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS13 - Wrong parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-16');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS14 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-12');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "05 PUT closed entry",
+          "item": [
+            {
+              "name": "TS15 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/closed/{{arcpoc1461_entry_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "closed",
+                    "{{arcpoc1461_entry_c_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"additionalNotes\": \"ARCPOC-1461 additional notes\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-11');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS16 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/closed/{{arcpoc1461_missing_entry_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "closed",
+                    "{{arcpoc1461_missing_entry_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"additionalNotes\": \"ARCPOC-1461 additional notes\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-15');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS17 - Wrong parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/closed/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "closed",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"additionalNotes\": \"ARCPOC-1461 additional notes\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-16');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS18 - Wrong state (OPEN list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/closed/{{arcpoc1461_entry_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "closed",
+                    "{{arcpoc1461_entry_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"additionalNotes\": \"ARCPOC-1461 additional notes\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-45');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "06 POST officials",
+          "description": "Only listId is a path resource on this endpoint. Missing/wrong entryIds in the request body are outside the ARCPOC-1461 nested-path-resource behaviour.",
+          "item": [
+            {
+              "name": "TS19 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/officials",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "officials"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"entryIds\": [\n    \"{{arcpoc1461_entry_a_id}}\"\n  ],\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-11');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS20 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/officials",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "officials"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"entryIds\": [\n    \"{{arcpoc1461_entry_c_id}}\"\n  ],\n  \"officials\": [\n    {\n      \"title\": \"Mx\",\n      \"surname\": \"Official\",\n      \"forename\": \"Arc1461\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALE-12');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "07 POST entry results",
+          "item": [
+            {
+              "name": "TS21 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}/results",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-2');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS22 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}/results",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}",
+                    "results"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-4');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS23 - Wrong entry/list parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}/results",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-9');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS24 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}/results",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}",
+                    "results"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-3');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "08 GET entry results",
+          "item": [
+            {
+              "name": "TS25 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}/results?pageNumber=0&pageSize=10",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results"
+                  ],
+                  "query": [
+                    {
+                      "key": "pageNumber",
+                      "value": "0"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-2');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS26 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}/results?pageNumber=0&pageSize=10",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}",
+                    "results"
+                  ],
+                  "query": [
+                    {
+                      "key": "pageNumber",
+                      "value": "0"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-4');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS27 - Wrong entry/list parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}/results?pageNumber=0&pageSize=10",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results"
+                  ],
+                  "query": [
+                    {
+                      "key": "pageNumber",
+                      "value": "0"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-9');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS28 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}/results?pageNumber=0&pageSize=10",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}",
+                    "results"
+                  ],
+                  "query": [
+                    {
+                      "key": "pageNumber",
+                      "value": "0"
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-3');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "09 PUT result by ID",
+          "item": [
+            {
+              "name": "TS29 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-2');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS30 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-4');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS31 - Missing resultId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_entry_a_id}}/results/{{arcpoc1461_missing_result_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results",
+                    "{{arcpoc1461_missing_result_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-6');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS32 - Wrong entry/list parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-9');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS33 - Wrong result/entry parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_entry_a2_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a2_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-10');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS34 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/vnd.hmcts.appreg.v1+json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}/results/{{arcpoc1461_result_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}",
+                    "results",
+                    "{{arcpoc1461_result_c_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resultCode\": \"FRO\",\n  \"wordingFields\": [\n    {\n      \"key\": \"Reason text\",\n      \"value\": \"ARCPOC-1461 staging test\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-3');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "10 DELETE result by ID",
+          "item": [
+            {
+              "name": "TS35 - Missing listId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_missing_list_id}}/entries/{{arcpoc1461_entry_a_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_missing_list_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-2');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS36 - Missing entryId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_missing_entry_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_missing_entry_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-4');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS37 - Missing resultId",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_entry_a_id}}/results/{{arcpoc1461_missing_result_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results",
+                    "{{arcpoc1461_missing_result_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-6');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS38 - Wrong entry/list parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_b_id}}/entries/{{arcpoc1461_entry_a_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_b_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-9');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS39 - Wrong result/entry parentage",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_a_id}}/entries/{{arcpoc1461_entry_a2_id}}/results/{{arcpoc1461_result_a_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_a_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_a2_id}}",
+                    "results",
+                    "{{arcpoc1461_result_a_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-10');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "TS40 - Wrong state (CLOSED list)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token_user}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/problem+json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseURL}}/application-lists/{{arcpoc1461_list_c_id}}/entries/{{arcpoc1461_entry_c_id}}/results/{{arcpoc1461_result_c_id}}",
+                  "host": [
+                    "{{baseURL}}"
+                  ],
+                  "path": [
+                    "application-lists",
+                    "{{arcpoc1461_list_c_id}}",
+                    "entries",
+                    "{{arcpoc1461_entry_c_id}}",
+                    "results",
+                    "{{arcpoc1461_result_c_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "pm.test('Status code is 409', function () { pm.response.to.have.status(409); });",
+                      "pm.test('RFC 9457 problem details contain the expected application code', function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.status).to.eql(409);",
+                      "  pm.expect(String(body.type)).to.eql('ALER-3');",
+                      "  pm.expect(body.title).to.be.a('string').and.not.empty;",
+                      "  pm.expect(body.detail).to.be.a('string').and.not.empty;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "event": [
@@ -28074,6 +31469,62 @@
     },
     {
       "key": "arcpoc1247_traceparent",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_run_marker",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_today",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_missing_list_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_missing_entry_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_missing_result_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_list_a_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_entry_a_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_entry_a2_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_result_a_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_list_b_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_entry_b_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_list_c_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_entry_c_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1461_result_c_id",
       "value": ""
     }
   ]
