@@ -456,7 +456,8 @@ public class WordingTemplateSentence implements TemplateableSentence {
                         CommonAppError.WORDING_LENGTH_FAILURE,
                         "Invalid length type in template: expected %d but got %d"
                                 .formatted(
-                                        this.getDetail().getConstraint().getLength(), value.length()),
+                                        this.getDetail().getConstraint().getLength(),
+                                        value.length()),
                         Map.of(this.getDetail().getKey(), value));
             }
         }

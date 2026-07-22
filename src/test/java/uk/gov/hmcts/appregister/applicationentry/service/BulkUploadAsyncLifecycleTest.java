@@ -372,7 +372,8 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenMissingRequiredFields_whenValidatingBusinessRules_thenLogsRowFailure() throws IOException {
+    void givenMissingRequiredFields_whenValidatingBusinessRules_thenLogsRowFailure()
+            throws IOException {
         BulkUploadRow row = validOrganisationRow();
         row.setApplicationCode(null);
         row.setApplicantCode(null);
@@ -390,8 +391,10 @@ class BulkUploadAsyncLifecycleTest {
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
 
         ObjectMapper mapper = new ObjectMapper();
-        BulkUploadError[] errors = mapper.readValue(context.getValidationFailureMessages().getFirst(), BulkUploadError[].class);
-            assertThat(errors).hasSize(3);
+        BulkUploadError[] errors =
+                mapper.readValue(
+                        context.getValidationFailureMessages().getFirst(), BulkUploadError[].class);
+        assertThat(errors).hasSize(3);
 
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
