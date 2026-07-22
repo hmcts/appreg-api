@@ -69,9 +69,6 @@ public class DataAudit implements Changeable, Accountable {
     @Size(max = 4000)
     private String newValue;
 
-    @Column(name = "new_clob_value")
-    private String newClobValue;
-
     @Column(name = "user_id")
     @Size(max = 32)
     private String createdUser;
@@ -85,6 +82,9 @@ public class DataAudit implements Changeable, Accountable {
 
     @Column(name = "old_clob_value")
     private String oldClobValue;
+
+    @Column(name = "new_clob_value")
+    private String newClobValue;
 
     @Column(name = "related_key")
     private Long relatedKey;

@@ -20,5 +20,5 @@ properties:
     type: string
     description: Optional reference used to identify the payment.
     example: "PAY-001"
-    maxLength: 100
+    maxLength: 15
     minLength: 1

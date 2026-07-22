@@ -58,7 +58,7 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     @JoinColumn(name = "alefs_ale_id", nullable = false)
     private ApplicationListEntry appListEntry;
 
-    @Column(name = "alefs_payment_reference")
+    @Column(name = "alefs_payment_reference", length = 15)
     @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String alefsPaymentReference;
 

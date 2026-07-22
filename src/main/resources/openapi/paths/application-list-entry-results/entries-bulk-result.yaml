@@ -33,3 +33,33 @@ post:
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
     "409": { $ref: "../../components/responses/conflict-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
+delete:
+  operationId: bulkDeleteResultEntries
+  tags: [ application-list-entry-results ]
+  summary: Delete multiple Application List Entry Results.
+  description: >
+    Atomically deletes the specified Application List Entry Results. Each item is validated using
+    the same rules as the single delete endpoint. If any item cannot be deleted, no Results are
+    removed.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/application-list-entry-results/bulk-delete-results-dto.yaml"
+  responses:
+    "204":
+      description: Results deleted for all supplied items.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
