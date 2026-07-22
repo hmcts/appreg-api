@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -65,6 +66,14 @@ public interface AppListEntryResolutionRepository
             UUID resolutionUuid, UUID entryUuid);
 
     Optional<AppListEntryResolution> findByUuid(UUID resolutionUuid);
+
+    @EntityGraph(
+            attributePaths = {
+                "applicationList",
+                "applicationList.applicationList",
+                "resolutionCode"
+            })
+    List<AppListEntryResolution> findByUuidIn(Collection<UUID> resolutionUuids);
 
     /**
      * Finds an AppListEntryResolution by the UUID of the associated application list entry.
