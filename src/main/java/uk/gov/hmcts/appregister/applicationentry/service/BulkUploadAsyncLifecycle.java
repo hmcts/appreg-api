@@ -472,17 +472,17 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void handleHeader(List<BulkUploadError> errors, StringBuilder builder, String header) {
+        builder.append(header);
         if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
             for (BulkUploadError bulkUploadError : errors) {
                 if (bulkUploadError.getRowNumber() == -1) {
-                    builder.append(header)
-                            .append("|")
-                            .append(bulkUploadError.getMessage())
-                            .append("\n");
+                    builder.append("|")
+                    .append(bulkUploadError.getMessage())
+                    .append("\n");
                 }
             }
         } else {
-            builder.append(header).append("|").append("\n");
+            builder.append("|").append("\n");
         }
     }
 
