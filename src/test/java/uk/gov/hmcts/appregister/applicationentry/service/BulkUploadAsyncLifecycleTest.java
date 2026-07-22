@@ -839,7 +839,7 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(writtenCsv.toString())
                 .contains("HEADER|HEADER_ERROR:4|HEADER_ERROR:3|HEADER_ERROR:2|HEADER_ERROR:1")
-                .contains("row-two|must match")
+                .contains("row-two|respondent.organisation.contactDetails.postcode - invalid: Field has been rejected")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
