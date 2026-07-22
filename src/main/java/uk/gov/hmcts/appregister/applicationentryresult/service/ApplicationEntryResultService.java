@@ -8,6 +8,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEnt
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
@@ -18,6 +19,8 @@ import uk.gov.hmcts.appregister.generated.model.ResultPage;
  */
 public interface ApplicationEntryResultService {
     void delete(ListEntryResultDeleteArgs args);
+
+    void bulkDelete(BulkDeleteResultsDto bulkDeleteResultsDto);
 
     /**
      * Creates a new application list entry result.

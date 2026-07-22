@@ -43,4 +43,18 @@ public interface AppListEntryOfficialRepository extends JpaRepository<AppListEnt
         WHERE off.appListEntry.id = :entryId
         """)
     void deleteAllForEntryId(Long entryId);
+
+    /**
+     * Deletes all official records for the supplied application list entry ids.
+     *
+     * @param entryIds the application list entry ids that the officials map to
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+            """
+        DELETE
+        FROM AppListEntryOfficial off
+        WHERE off.appListEntry.id in :entryIds
+        """)
+    void deleteAllForEntryIds(List<Long> entryIds);
 }

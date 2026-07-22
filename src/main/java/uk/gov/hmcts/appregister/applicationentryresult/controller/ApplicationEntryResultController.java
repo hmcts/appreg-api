@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntryResultsApi;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
@@ -76,6 +77,13 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(createdResults);
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> bulkDeleteResultEntries(BulkDeleteResultsDto bulkDeleteResultsDto) {
+        service.bulkDelete(bulkDeleteResultsDto);
+        return ResponseEntity.noContent().build();
     }
 
     /**
