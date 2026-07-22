@@ -62,7 +62,8 @@ public class BulkUpdateFeesValidator
         validateApplicationList(payload.listId());
         Set<UUID> requestedIds = validateEntryIds(payload);
 
-        if (payload.data().getFeeDetails().isPresent() && !payload.data().getFeeDetails().get().isEmpty()) {
+        if (payload.data().getFeeDetails().isPresent()
+                && !payload.data().getFeeDetails().get().isEmpty()) {
             validateFeeDetails(payload);
         }
 
