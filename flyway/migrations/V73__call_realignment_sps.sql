@@ -14,3 +14,6 @@ call ${flyway:defaultSchema}.realign_fees();
 
 call ${flyway:defaultSchema}.realign_standard_applicants();
 
+update ${flyway:defaultSchema}.fee set is_offsite = true where fee_reference = 'CO1.1';
+
+update ${flyway:defaultSchema}.fee set is_offsite = false where fee_reference <> 'CO1.1';
