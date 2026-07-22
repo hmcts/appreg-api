@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,10 +149,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             rowErrors.addAll(validator.validateRow(rowNumber, row));
             rowErrors.addAll(validateMappedDto(rowNumber, dto));
-
-            if (rowErrors.isEmpty()) {
-                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
-            }
+            rowErrors.addAll(validateBusinessRules(rowNumber, dto));
 
             allErrors.addAll(rowErrors);
             rowNumber++;
@@ -498,7 +496,23 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
-                    builder.append("|").append(error.getMessage());
+                    if (Objects.nonNull(error.getRejectedValue())
+                            && !error.getRejectedValue().isBlank()) {
+                        builder.append("|")
+                                .append(
+                                        "%s - %s: %s"
+                                                .formatted(
+                                                        error.getLocation(),
+                                                        error.getRejectedValue(),
+                                                        "Field has been rejected"));
+
+                    } else {
+                        builder.append("|")
+                                .append(
+                                        "%s: %s"
+                                                .formatted(
+                                                        error.getLocation(), error.getMessage()));
+                    }
                 }
                 builder.append("\n");
             } else {
