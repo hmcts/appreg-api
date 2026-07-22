@@ -476,9 +476,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
             for (BulkUploadError bulkUploadError : errors) {
                 if (bulkUploadError.getRowNumber() == -1) {
-                    builder.append("|").append(bulkUploadError.getMessage()).append("\n");
+                    builder.append("|").append(bulkUploadError.getMessage());
                 }
             }
+            builder.append("\n");
         } else {
             builder.append("|").append("\n");
         }

@@ -705,6 +705,43 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void whenValidating_csvFileIsSet_containsHeaderErrors_thenWritesClobSuccessfully() throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+
+        StringBuilder writtenCsv = new StringBuilder();
+        doAnswer(
+            invocation -> {
+                ByteArrayInputStream inputStream = invocation.getArgument(1);
+                writtenCsv.append(new String(inputStream.readAllBytes()));
+                return null;
+            })
+            .when(persistenceService)
+            .writeClob(any(), any());
+
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+
+        JobContext context = new JobContext();
+        context.setValidationFailureMessages(List.of("HEADER_ERROR:1","HEADER_ERROR:2","HEADER_ERROR:3","HEADER_ERROR:4"));
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+            assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+            .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(writtenCsv.toString())
+            .contains("HEADER|HEADER_ERROR:4|HEADER_ERROR:3|HEADER_ERROR:2|HEADER_ERROR:1")
+            .contains("row-two|must match")
+            .contains("row-three|");
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+    }
+
+    @Test
     void whenValidating_csvFileNotSet_throwsException() throws IOException {
         JobContext context = new JobContext();
         context.logFieldCountMismatch("HEADER MISMATCH");
