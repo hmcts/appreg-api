@@ -141,6 +141,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = nextRowNumber;
 
         List<BulkUploadError> allErrors = new ArrayList<>();
+        addHeaderErrors(context, allErrors);
 
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
@@ -214,7 +215,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     new BulkUploadError(
                             -1, BULK_UPLOAD_ROW, null, message, null, null, "HEADER_ERROR"));
         }
-
         context.setValidationFailureMessages(new ArrayList<>());
     }
 
@@ -470,17 +470,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void handleHeader(List<BulkUploadError> errors, StringBuilder builder, String header) {
+        builder.append(header);
         if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
             for (BulkUploadError bulkUploadError : errors) {
                 if (bulkUploadError.getRowNumber() == -1) {
-                    builder.append(header)
-                            .append("|")
-                            .append(bulkUploadError.getMessage())
-                            .append("\n");
+                    builder.append("|").append(bulkUploadError.getMessage());
                 }
             }
+            builder.append("\n");
         } else {
-            builder.append(header).append("|").append("\n");
+            builder.append("|").append("\n");
         }
     }
 
