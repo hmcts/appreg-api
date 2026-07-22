@@ -41,6 +41,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
@@ -139,6 +140,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = nextRowNumber;
 
         List<BulkUploadError> allErrors = new ArrayList<>();
+        addHeaderErrors(context, allErrors);
 
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
@@ -198,13 +200,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     public void setCSVFile(MultipartFile file) throws IOException {
-        Path tempcsvPath = File.createTempFile(UUID.randomUUID().toString(), ".csv").toPath();
+        Path tempcsvPath = AppRegTempFileUtil.generateTempFile("bulk-upload").toPath();
         byte[] fileBytes = file.getBytes();
         Charset charset = guessCharset(fileBytes);
 
         // We're copying the file over to a temp file.
         try (BufferedWriter writer = Files.newBufferedWriter(tempcsvPath, charset)) {
-            writer.write(new String(file.getBytes(), charset));
+            writer.write(new String(fileBytes, charset));
             csvFile = new File(tempcsvPath.toString());
         }
     }
@@ -215,7 +217,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     new BulkUploadError(
                             -1, BULK_UPLOAD_ROW, null, message, null, null, "HEADER_ERROR"));
         }
-
         context.setValidationFailureMessages(new ArrayList<>());
     }
 
@@ -471,17 +472,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void handleHeader(List<BulkUploadError> errors, StringBuilder builder, String header) {
+        builder.append(header);
         if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
             for (BulkUploadError bulkUploadError : errors) {
                 if (bulkUploadError.getRowNumber() == -1) {
-                    builder.append(header)
-                            .append("|")
-                            .append(bulkUploadError.getMessage())
-                            .append("\n");
+                    builder.append("|").append(bulkUploadError.getMessage());
                 }
             }
+            builder.append("\n");
         } else {
-            builder.append(header).append("|").append("\n");
+            builder.append("|").append("\n");
         }
     }
 

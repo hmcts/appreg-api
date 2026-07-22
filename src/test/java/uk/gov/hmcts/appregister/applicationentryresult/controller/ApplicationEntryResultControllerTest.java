@@ -23,6 +23,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.service.ApplicationEntryR
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
@@ -72,6 +73,17 @@ class ApplicationEntryResultControllerTest {
         verify(service).bulkCreate(any());
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(actual.getBody()).isSameAs(body);
+    }
+
+    @Test
+    void bulkDeleteResultEntries_delegatesAndReturnsNoContent() {
+        var request = new BulkDeleteResultsDto();
+        doNothing().when(service).bulkDelete(any());
+
+        ResponseEntity<Void> actual = controller.bulkDeleteResultEntries(request);
+
+        verify(service).bulkDelete(any());
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
 
     @Test

@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 
 /**
  * REST controller for managing Application Lists.
@@ -231,6 +232,19 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListGetPrintDto> printApplicationList(UUID id) {
 
         ApplicationListGetPrintDto retrieved = service.print(id);
+
+        return ResponseEntity.status(OK)
+                .varyBy(ACCEPT_HEADER)
+                .contentType(VND_JSON_V1)
+                .body(retrieved);
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<List<ApplicationListGetPrintDto>> printApplicationLists(
+            BulkGetApplicationListEntriesRequestDto bulkGetApplicationListEntriesRequestDto) {
+        List<ApplicationListGetPrintDto> retrieved =
+                service.print(bulkGetApplicationListEntriesRequestDto);
 
         return ResponseEntity.status(OK)
                 .varyBy(ACCEPT_HEADER)

@@ -9,6 +9,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,6 +22,9 @@ import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
@@ -48,8 +52,13 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Autowired private CsdsIngressProcessor csdsIngressProcessor;
+    @Autowired private ApplicationCodeDataIngressProcessor applicationCodeDataIngressProcessor;
     @Autowired private DatabaseJobRepository databaseJobRepository;
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
+    @Autowired private NamedParameterJdbcTemplate jdbcTemplate;
+
+    @Value("${spring.jpa.properties.hibernate.default_schema}")
+    private String schema;
 
     private LogCaptor applicationCodeDiffReportingLogs;
     private LogCaptor pagedProcessorLogs;
@@ -77,6 +86,8 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         applicationCodeDiffReportingLogs.clearLogs();
         pagedProcessorLogs = LogCaptor.forClass(AbstractPagedCsdsIngressProcessor.class);
         pagedProcessorLogs.clearLogs();
+        jdbcTemplate.update(
+                "DELETE FROM %s.csds_audit".formatted(schema), new MapSqlParameterSource());
     }
 
     @Test
@@ -161,6 +172,89 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         }
     }
 
+    @Test
+    void given_debugAuditLevel_when_manualIngestSucceeds_then_batchesSuccessAudits() {
+        setAuditLevel("DEBUG");
+
+        var insertedId =
+                applicationCodeRepository.findAll().stream()
+                                .map(ApplicationCode::getId)
+                                .max(Long::compareTo)
+                                .orElseThrow()
+                        + 1000;
+
+        var response =
+                applicationCodeDataIngressProcessor.ingest(
+                        List.of(page(createInsertedRecord(insertedId))));
+
+        assertThat(response.getInserted()).isEqualTo(1);
+        assertThat(response.getUpdated()).isZero();
+
+        var audits =
+                jdbcTemplate.queryForList(
+                        """
+                        SELECT appreg_table_name, appreg_action, appreg_key, csds_json, error
+                        FROM %s.csds_audit
+                        ORDER BY ca_id
+                        """
+                                .formatted(schema),
+                        new MapSqlParameterSource());
+
+        assertThat(audits).hasSize(1);
+        assertThat(audits.getFirst())
+                .containsEntry("appreg_table_name", "APPLICATION_CODES")
+                .containsEntry("appreg_action", "INSERT")
+                .containsEntry("error", null);
+        assertThat(((Number) audits.getFirst().get("appreg_key")).longValue())
+                .isEqualTo(insertedId + 100000L);
+        assertThat((String) audits.getFirst().get("csds_json"))
+                .contains("\"ApplicationCodeID\":%d".formatted(insertedId));
+    }
+
+    @Test
+    void given_errorAuditLevel_when_batchUpsertFails_then_persistsOnlyFailingRowAudit() {
+        setAuditLevel("ERROR");
+
+        var insertedId =
+                applicationCodeRepository.findAll().stream()
+                                .map(ApplicationCode::getId)
+                                .max(Long::compareTo)
+                                .orElseThrow()
+                        + 2000;
+        var validInsertedRecord = createInsertedRecord(insertedId);
+        var failingInsertedRecord = createInsertedRecord(insertedId + 1);
+        failingInsertedRecord.put("ApplicationTitle", "X".repeat(501));
+
+        assertThatThrownBy(
+                        () ->
+                                applicationCodeDataIngressProcessor.ingest(
+                                        List.of(page(validInsertedRecord, failingInsertedRecord))))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("CSDS batch upsert failed");
+
+        var audits =
+                jdbcTemplate.queryForList(
+                        """
+                        SELECT appreg_table_name, appreg_action, appreg_key, csds_json, error
+                        FROM %s.csds_audit
+                        ORDER BY ca_id
+                        """
+                                .formatted(schema),
+                        new MapSqlParameterSource());
+
+        assertThat(audits).hasSize(1);
+        assertThat(audits.getFirst())
+                .containsEntry("appreg_table_name", "APPLICATION_CODES")
+                .containsEntry("appreg_action", "INSERT");
+        assertThat(((Number) audits.getFirst().get("appreg_key")).longValue())
+                .isEqualTo(insertedId + 100001L);
+        assertThat((String) audits.getFirst().get("csds_json"))
+                .contains("\"ApplicationCodeID\":%d".formatted(insertedId + 1));
+        assertThat((String) audits.getFirst().get("error")).containsIgnoringCase("value too long");
+        assertThat(applicationCodeRepository.findById(insertedId + 100000L)).isEmpty();
+        assertThat(applicationCodeRepository.findById(insertedId + 100001L)).isEmpty();
+    }
+
     private ObjectNode toSourceRecordWithPssacid(
             ApplicationCode applicationCode, Long applicationCodeId) {
         var node =
@@ -230,6 +324,26 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                 .put("FID_ApplicationRegisterHeader", 11263L)
                 .putNull("FID_ReleasePackage")
                 .put("Updator", "migration");
+    }
+
+    private ObjectNode page(ObjectNode... records) {
+        var page = OBJECT_MAPPER.createObjectNode();
+        var array = page.putArray("records");
+        for (var record : records) {
+            array.add(record);
+        }
+        return page;
+    }
+
+    private void setAuditLevel(String level) {
+        jdbcTemplate.update(
+                """
+                UPDATE %s.configuration_parameters
+                SET parameter_value = :parameterValue
+                WHERE parameter_name = 'AUDIT_CSDS'
+                """
+                        .formatted(schema),
+                new MapSqlParameterSource("parameterValue", level));
     }
 
     private void putNullableDate(ObjectNode node, String fieldName, LocalDate value) {

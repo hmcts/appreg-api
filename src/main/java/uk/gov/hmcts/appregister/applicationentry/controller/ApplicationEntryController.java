@@ -43,6 +43,7 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewResponseDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
@@ -118,6 +119,21 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
             BulkActionPreviewRequestDto bulkActionPreviewRequestDto) {
         BulkActionPreviewResponseDto response =
                 applicationEntryService.bulkActionPreview(bulkActionPreviewRequestDto);
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(response);
+    }
+
+    @Override
+    public ResponseEntity<BulkActionPreviewResponseDto> applicationListEntryBulkActionPreview(
+            UUID listId,
+            ApplicationListEntryBulkActionPreviewRequestDto
+                    applicationListEntryBulkActionPreviewRequestDto) {
+        BulkActionPreviewResponseDto response =
+                applicationEntryService.bulkActionPreview(
+                        listId, applicationListEntryBulkActionPreviewRequestDto);
 
         return ResponseEntity.ok()
                 .varyBy(HttpHeaders.ACCEPT)

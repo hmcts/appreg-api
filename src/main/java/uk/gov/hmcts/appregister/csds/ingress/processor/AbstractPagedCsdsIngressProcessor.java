@@ -10,6 +10,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.ToLongFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -20,6 +24,12 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
+import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,6 +41,8 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     private final CsdsIngressProperties properties;
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
+    private final CsdsAuditService csdsAuditService;
+    private final CsdsIngressTransactionRunner csdsIngressTransactionRunner;
 
     @Override
     public final boolean enabled() {
@@ -332,14 +344,36 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     @Override
-    public void apply(T processedData) {
-        val diff = diff(processedData);
-        logDiffSummary(diff);
-        report(processedData, diff);
-        applyDiff(diff);
+    public final void apply(T processedData) {
+        applyWithAuditing(processedData);
+    }
+
+    protected final DiffT applyWithAuditing(T processedData) {
+        return csdsIngressTransactionRunner.execute(
+                () -> {
+                    val diff = diff(processedData);
+                    logDiffSummary(diff);
+                    report(processedData, diff);
+                    var level = csdsAuditService.auditLevel();
+                    try {
+                        applyDiff(diff);
+                        csdsAuditService.persistSuccessAudits(
+                                level, buildSuccessAudits(processedData, diff));
+                        return diff;
+                    } catch (CsdsBatchUpsertException ex) {
+                        csdsAuditService.persistFailureAudits(
+                                level, buildFailureAudits(processedData, diff, ex));
+                        throw ex;
+                    }
+                });
     }
 
     protected abstract DiffT diff(T processedData);
+
+    protected abstract List<CsdsAuditEntry> buildSuccessAudits(T processedData, DiffT diff);
+
+    protected abstract List<CsdsAuditEntry> buildFailureAudits(
+            T processedData, DiffT diff, CsdsBatchUpsertException ex);
 
     protected void logDiffSummary(DiffT diff) {
         // Diff summary logging is optional per processor.
@@ -404,5 +438,80 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                     ex);
             return null;
         }
+    }
+
+    protected final Map<Long, JsonNode> indexSourceRecords(
+            List<JsonNode> processedData, Function<JsonNode, Long> idExtractor) {
+        return processedData.stream()
+                .flatMap(page -> extractRecords(page).stream())
+                .filter(node -> idExtractor.apply(node) != null)
+                .collect(
+                        java.util.stream.Collectors.toMap(
+                                idExtractor,
+                                Function.identity(),
+                                (first, second) -> second,
+                                java.util.LinkedHashMap::new));
+    }
+
+    protected final <R> List<CsdsAuditEntry> buildSuccessAuditEntries(
+            List<IngressDiffRecord<R, R, R>> diffRecords,
+            Map<Long, JsonNode> sourceById,
+            ToLongFunction<R> idExtractor) {
+        return diffRecords.stream()
+                .map(item -> toSuccessAuditEntry(item, sourceById, idExtractor))
+                .toList();
+    }
+
+    protected final <R> List<CsdsAuditEntry> buildFailureAuditEntries(
+            List<IngressDiffRecord<R, R, R>> diffRecords,
+            Map<Long, JsonNode> sourceById,
+            ToLongFunction<R> idExtractor,
+            Class<R> recordType,
+            CsdsBatchUpsertException ex) {
+        var actionsById =
+                diffRecords.stream()
+                        .collect(
+                                java.util.stream.Collectors.toMap(
+                                        item -> idExtractor.applyAsLong(item.intended()),
+                                        item -> item.operation().name(),
+                                        (first, second) -> first,
+                                        java.util.LinkedHashMap::new));
+        return ex.failures().stream()
+                .filter(item -> recordType.isInstance(item.item()))
+                .map(
+                        item ->
+                                toFailureAuditEntry(
+                                        item, sourceById, idExtractor, recordType, actionsById))
+                .toList();
+    }
+
+    private <R> CsdsAuditEntry toFailureAuditEntry(
+            FailedUpsertRecord<?> failure,
+            Map<Long, JsonNode> sourceById,
+            ToLongFunction<R> idExtractor,
+            Class<R> recordType,
+            Map<Long, String> actionsById) {
+        var typedRecord = recordType.cast(failure.item());
+        var key = idExtractor.applyAsLong(typedRecord);
+        return createAuditEntry(
+                actionsById.get(key), key, sourceById.get(key), failure.errorMessage());
+    }
+
+    private <R> CsdsAuditEntry toSuccessAuditEntry(
+            IngressDiffRecord<R, R, R> item,
+            Map<Long, JsonNode> sourceById,
+            ToLongFunction<R> idExtractor) {
+        var key = idExtractor.applyAsLong(item.intended());
+        return createAuditEntry(item.operation().name(), key, sourceById.get(key), null);
+    }
+
+    private CsdsAuditEntry createAuditEntry(
+            String action, Long key, JsonNode sourceRecord, String error) {
+        return new CsdsAuditEntry(
+                processorName().toUpperCase(Locale.ROOT),
+                action,
+                key,
+                sourceRecord == null ? null : sourceRecord.toString(),
+                error);
     }
 }

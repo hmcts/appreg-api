@@ -281,7 +281,11 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         }
 
         private void processError(Throwable t) {
-            log.error("Error processing job", t);
+            if (t instanceof JobException) {
+                log.warn("Error processing job: {}", t.getMessage());
+            } else {
+                log.error("Error processing job", t);
+            }
 
             try {
                 fireEventAndChangeState(

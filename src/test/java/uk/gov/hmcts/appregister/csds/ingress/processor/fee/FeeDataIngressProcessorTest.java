@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -29,10 +30,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.FeeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
 class FeeDataIngressProcessorTest {
@@ -41,6 +45,7 @@ class FeeDataIngressProcessorTest {
     @Mock private CsdsIngressClient ingressClient;
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
+    @Mock private CsdsAuditService csdsAuditService;
 
     @TempDir Path tempDir;
 
@@ -55,16 +60,28 @@ class FeeDataIngressProcessorTest {
         properties = new CsdsIngressProperties();
         properties.setPageSize(2);
         properties.getProcessors().getFee().setReportingDir(tempDir.toString());
+        lenient().when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.NONE);
         rowMapper = new FeeIngressDatabaseRowMapper();
         diffService = new FeeDiffService(tableReadService, rowMapper);
         diffReportingService = new FeeDiffReportingService(properties);
         processor =
                 new FeeDataIngressProcessor(
                         properties,
+                        csdsAuditService,
+                        passthroughTransactionRunner(),
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
                         rowMapper);
+    }
+
+    private CsdsIngressTransactionRunner passthroughTransactionRunner() {
+        return new CsdsIngressTransactionRunner() {
+            @Override
+            public <T> T execute(java.util.function.Supplier<T> supplier) {
+                return supplier.get();
+            }
+        };
     }
 
     @Test
@@ -434,7 +451,8 @@ class FeeDataIngressProcessorTest {
                                         rows.size() == 1
                                                 && Long.valueOf(1L)
                                                         .equals(rows.getFirst().version())),
-                        same(rowMapper));
+                        same(rowMapper),
+                        org.mockito.ArgumentMatchers.any());
     }
 
     @Test

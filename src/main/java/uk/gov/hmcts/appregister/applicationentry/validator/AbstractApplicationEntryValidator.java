@@ -474,7 +474,9 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
         }
-        if (!isFeeStatusRequired(applicationCode) && !feeStatuses.isEmpty()) {
+        if (!isFeeStatusRequired(applicationCode)
+                && !feeStatuses.isEmpty()
+                && !isRetainedFeeStatusAllowed(applicationCode, validatable, feeStatuses)) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_NOT_REQUIRED,
                     "Fee not required for code %s".formatted(getApplicationCode(validatable)));
@@ -501,6 +503,11 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
     protected boolean isFeeStatusRequired(ApplicationCode applicationCode) {
         return applicationCode.getFeeDue() == YesOrNo.YES;
+    }
+
+    protected boolean isRetainedFeeStatusAllowed(
+            ApplicationCode applicationCode, T validatable, List<FeeStatus> feeStatuses) {
+        return false;
     }
 
     protected LocalDate currentBusinessDate() {
@@ -573,7 +580,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                 validatable, bulkRespondentAllowed, hasRespondent, hasNumberOfRespondents);
         validateMissingBulkRespondent(
                 validatable, respondentRequired, hasRespondent, hasZeroRespondents(validatable));
-        validateBulkRespondentPresence(
+        validateBulkRespondentMutualExclusion(
                 validatable,
                 bulkRespondentAllowed,
                 respondentRequired,
@@ -628,26 +635,21 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
     }
 
-    private void validateBulkRespondentPresence(
+    private void validateBulkRespondentMutualExclusion(
             T validatable,
             boolean bulkRespondentAllowed,
             boolean respondentRequired,
             boolean hasNumberOfRespondents,
             boolean hasRespondent) {
-        if (bulkRespondentAllowed && !respondentRequired) {
-            if (!hasNumberOfRespondents && !hasRespondent) {
-                throw new AppRegistryException(
-                        AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
-                        "Either respondent details or number of respondents must be provided");
-            }
-
-            if (hasNumberOfRespondents && hasRespondent) {
-                var dto = getApplicationCode(validatable);
-                throw new AppRegistryException(
-                        AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
-                        "The number of respondents and respondent details are mutually exclusive for code %s"
-                                .formatted(dto));
-            }
+        if (bulkRespondentAllowed
+                && !respondentRequired
+                && hasNumberOfRespondents
+                && hasRespondent) {
+            var dto = getApplicationCode(validatable);
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                    "The number of respondents and respondent details are mutually exclusive for code %s"
+                            .formatted(dto));
         }
     }
 

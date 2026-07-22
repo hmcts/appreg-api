@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -66,6 +68,23 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
         WHERE al.uuid = :id
         """)
     Optional<ApplicationList> findByUuidIncludingDelete(UUID id);
+
+    @Query(
+            """
+        SELECT al
+        FROM ApplicationList al
+        WHERE al.uuid IN :ids
+        """)
+    List<ApplicationList> findByUuidIncludingDeleteIn(@Param("ids") Collection<UUID> ids);
+
+    @Query(
+            """
+        SELECT al
+        FROM ApplicationList al
+        WHERE al.uuid IN :ids
+          AND (al.deleted IS NULL OR al.deleted <> 'Y')
+        """)
+    List<ApplicationList> findByUuidIn(@Param("ids") Collection<UUID> ids);
 
     /**
      * Retrieves a paginated list of {@link ApplicationList} entities filtered by the specified

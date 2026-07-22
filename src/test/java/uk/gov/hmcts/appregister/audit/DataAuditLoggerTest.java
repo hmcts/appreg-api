@@ -241,6 +241,34 @@ class DataAuditLoggerTest {
     }
 
     @Test
+    void testReadAuditPersistsOversizedNewValueInClob() {
+        ApplicationCodeTestData testData = new ApplicationCodeTestData();
+        ApplicationCode newCode = testData.someComplete();
+        newCode.setId(123L);
+        var oversizedValue = "x".repeat(4001);
+
+        StartEvent startEvent =
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.READ, newCode))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_CODES, "field", oversizedValue)));
+
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
+
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
+        Assertions.assertNull(auditListCaptor.getValue().getFirst().getNewValue());
+        Assertions.assertEquals(
+                oversizedValue, auditListCaptor.getValue().getFirst().getNewClobValue());
+        Assertions.assertEquals(
+                CrudEnum.READ, auditListCaptor.getValue().getFirst().getUpdateType());
+    }
+
+    @Test
     void testCreateAuditStillPersistsEmptyStringNewValue() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
@@ -259,6 +287,41 @@ class DataAuditLoggerTest {
         Assertions.assertEquals("", auditListCaptor.getValue().getFirst().getNewValue());
         Assertions.assertEquals(
                 CrudEnum.CREATE, auditListCaptor.getValue().getFirst().getUpdateType());
+    }
+
+    @Test
+    void testUpdateAuditUsesClobColumnsWhenValuesExceedLimit() {
+        val oldValue = "a".repeat(4001);
+        val newValue = "b".repeat(4001);
+        var oldEntity = Mockito.mock(Keyable.class);
+        var newEntity = Mockito.mock(Keyable.class);
+        when(oldEntity.getId()).thenReturn(123L);
+        when(newEntity.getId()).thenReturn(123L);
+
+        StartEvent startEvent =
+                new StartEvent(AppListAuditOperation.UPDATE_APP_LIST, "ID", oldEntity);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newEntity);
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, oldEntity))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_LISTS, "field", oldValue)));
+        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, newEntity))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_LISTS, "field", newValue)));
+
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
+
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
+        var audit = auditListCaptor.getValue().getFirst();
+        Assertions.assertNull(audit.getOldValue());
+        Assertions.assertNull(audit.getNewValue());
+        Assertions.assertEquals(oldValue, audit.getOldClobValue());
+        Assertions.assertEquals(newValue, audit.getNewClobValue());
     }
 
     @Test
@@ -403,6 +466,46 @@ class DataAuditLoggerTest {
         Assertions.assertEquals("", dataAudit3.getOldValue());
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit3.getTableName());
         Assertions.assertEquals(CrudEnum.UPDATE, dataAudit3.getUpdateType());
+    }
+
+    @Test
+    void testUpdateAuditPersistsOversizedOldAndNewValuesInClobs() {
+        ApplicationCodeTestData testData = new ApplicationCodeTestData();
+        ApplicationCode newCode = testData.someComplete();
+        ApplicationCode oldCode = testData.someComplete();
+
+        Long id = 123L;
+        newCode.setId(id);
+        oldCode.setId(id);
+
+        StartEvent startEvent = new StartEvent(TestAuditOperation.UPDATE, "ID", oldCode);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
+
+        when(auditDifferentiator.extractAuditData(eq(CrudEnum.UPDATE), refEq(newCode)))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_CODES, "field", "n".repeat(4001))));
+
+        when(auditDifferentiator.extractAuditData(eq(CrudEnum.UPDATE), refEq(oldCode)))
+                .thenReturn(
+                        List.of(
+                                new AuditableData(
+                                        TableNames.APPLICATION_CODES, "field", "o".repeat(4001))));
+
+        new DataAuditLogger(auditDifferentiator, nestedAuditPersistenceManager)
+                .eventPerformed(auditRequest);
+
+        verify(nestedAuditPersistenceManager).persistOrBuffer(auditListCaptor.capture());
+
+        DataAudit dataAudit = auditListCaptor.getValue().getFirst();
+        Assertions.assertEquals(id, dataAudit.getRelatedKey());
+        Assertions.assertNull(dataAudit.getOldValue());
+        Assertions.assertEquals("o".repeat(4001), dataAudit.getOldClobValue());
+        Assertions.assertNull(dataAudit.getNewValue());
+        Assertions.assertEquals("n".repeat(4001), dataAudit.getNewClobValue());
+        Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit.getTableName());
+        Assertions.assertEquals(CrudEnum.UPDATE, dataAudit.getUpdateType());
     }
 
     @Test

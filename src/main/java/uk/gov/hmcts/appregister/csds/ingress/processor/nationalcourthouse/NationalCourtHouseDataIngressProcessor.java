@@ -3,16 +3,21 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
@@ -39,11 +44,17 @@ public class NationalCourtHouseDataIngressProcessor
 
     public NationalCourtHouseDataIngressProcessor(
             CsdsIngressProperties properties,
+            CsdsAuditService csdsAuditService,
+            CsdsIngressTransactionRunner csdsIngressTransactionRunner,
             NationalCourtHouseDiffService diffService,
             NationalCourtHouseDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
             NationalCourtHouseIngressDatabaseRowMapper rowMapper) {
-        super(properties, properties.getProcessors().getNationalCourtHouses());
+        super(
+                properties,
+                properties.getProcessors().getNationalCourtHouses(),
+                csdsAuditService,
+                csdsIngressTransactionRunner);
         nationalCourtHouseProperties = properties.getProcessors().getNationalCourtHouses();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -113,7 +124,34 @@ public class NationalCourtHouseDataIngressProcessor
     @Override
     protected void applyDiff(NationalCourtHouseDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
-        bulkUpsertService.upsertBatch(targetTable(), targetKeyField(), rows, rowMapper);
+        bulkUpsertService.upsertBatch(
+                targetTable(),
+                targetKeyField(),
+                rows,
+                rowMapper,
+                NationalCourtHouseIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildSuccessAudits(
+            List<JsonNode> processedData, NationalCourtHouseDiffResult diff) {
+        return buildSuccessAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                NationalCourtHouseIngressRecord::id);
+    }
+
+    @Override
+    protected List<CsdsAuditEntry> buildFailureAudits(
+            List<JsonNode> processedData,
+            NationalCourtHouseDiffResult diff,
+            CsdsBatchUpsertException ex) {
+        return buildFailureAuditEntries(
+                diff.diffRecords(),
+                sourceRecordsById(processedData),
+                NationalCourtHouseIngressRecord::id,
+                NationalCourtHouseIngressRecord.class,
+                ex);
     }
 
     @Override
@@ -124,10 +162,7 @@ public class NationalCourtHouseDataIngressProcessor
     @Override
     public CsdsIngestResponse ingest(List<JsonNode> rawJson) {
         val processedData = preProcess(rawJson);
-        val diff = diff(processedData);
-        logDiffSummary(diff);
-        report(processedData, diff);
-        applyDiff(diff);
+        val diff = applyWithAuditing(processedData);
         return new CsdsIngestResponse()
                 .inserted(countByOperation(diff, IngressOperation.INSERT))
                 .updated(countByOperation(diff, IngressOperation.UPDATE));
@@ -156,5 +191,9 @@ public class NationalCourtHouseDataIngressProcessor
         val copiedRecord = objectNode.deepCopy();
         copiedRecord.put(NCH_ID, NationalCourtHouseIngressRecord.resolveId(copiedRecord));
         return copiedRecord;
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, NCH_ID));
     }
 }

@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -41,6 +43,17 @@ public interface AppListEntryResolutionRepository
     List<ApplicationListEntryResolutionPrintProjection> findByApplicationListUuidForPrinting(
             UUID listUuid);
 
+    @Query(
+            """
+            SELECT
+                aler.applicationList.id AS entryId,
+                aler.resolutionWording AS wording
+            FROM AppListEntryResolution aler
+            WHERE aler.applicationList.id IN :entryIds
+            """)
+    List<ApplicationListEntryResolutionPrintProjection> findByApplicationListEntryIdsForPrinting(
+            Collection<Long> entryIds);
+
     /**
      * Finds an AppListEntryResolution by its unique identifier and the UUID of the associated
      * application list entry.
@@ -53,6 +66,14 @@ public interface AppListEntryResolutionRepository
             UUID resolutionUuid, UUID entryUuid);
 
     Optional<AppListEntryResolution> findByUuid(UUID resolutionUuid);
+
+    @EntityGraph(
+            attributePaths = {
+                "applicationList",
+                "applicationList.applicationList",
+                "resolutionCode"
+            })
+    List<AppListEntryResolution> findByUuidIn(Collection<UUID> resolutionUuids);
 
     /**
      * Finds an AppListEntryResolution by the UUID of the associated application list entry.

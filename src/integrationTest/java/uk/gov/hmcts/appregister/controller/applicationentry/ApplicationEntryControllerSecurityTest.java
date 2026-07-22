@@ -16,6 +16,8 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionDto;
 import uk.gov.hmcts.appregister.generated.model.BulkActionSelectionType;
@@ -76,6 +78,18 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
                         .url(getLocalUrl(WEB_CONTEXT + "/bulk-action-preview"))
                         .method(HttpMethod.POST)
                         .payload(validBulkActionPreviewRequest(entryId))
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + listId
+                                                + "/entries/bulk-action-preview"))
+                        .method(HttpMethod.POST)
+                        .payload(validApplicationListBulkActionPreviewRequest(entryId))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
@@ -156,6 +170,16 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
                                 .entryIds(List.of(entryId)));
     }
 
+    private ApplicationListEntryBulkActionPreviewRequestDto
+            validApplicationListBulkActionPreviewRequest(UUID entryId) {
+        return new ApplicationListEntryBulkActionPreviewRequestDto()
+                .action(BulkActionType.UPDATE_FEE_DETAILS)
+                .selection(
+                        new ApplicationListEntryBulkActionSelectionDto()
+                                .selectionType(BulkActionSelectionType.IDS)
+                                .entryIds(List.of(entryId)));
+    }
+
     private BulkFeesUpdateDto validBulkFeesUpdateDto() {
         return new BulkFeesUpdateDto()
                 .entryIds(Set.of(UUID.randomUUID()))
@@ -164,8 +188,7 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
                                 new BulkFeeDetailsDto()
                                         .paymentStatus(PaymentStatus.PAID)
                                         .statusDate(LocalDate.now(java.time.ZoneOffset.UTC))
-                                        .paymentReference("PAY-001")
-                                        .hasOffsiteFee(false)));
+                                        .paymentReference("PAY-001")));
     }
 
     private UUID[] getValidEntryForList() {

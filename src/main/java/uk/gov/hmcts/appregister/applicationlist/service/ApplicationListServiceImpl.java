@@ -3,6 +3,8 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 import jakarta.persistence.EntityManager;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,8 +17,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationentry.audit.BulkApplicationListEntriesReadAudit;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
+import uk.gov.hmcts.appregister.applicationlist.audit.ApplicationListPrintReadAudit;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
@@ -53,6 +58,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 
@@ -73,6 +79,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
     private static final long ZERO_ENTITIES = 0L;
+    private static final UUID PRINT_PLACEHOLDER_ENTRY_ID = new UUID(0L, 0L);
     private static final List<OfficialType> PRINTABLE_OFFICIAL_TYPES =
             List.of(OfficialType.MAGISTRATE, OfficialType.CLERK);
 
@@ -94,6 +101,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationUpdateListLocationValidator applicationUpdateListLocationValidator;
     private final ApplicationListGetValidator applicationListGetValidator;
     private final ApplicationListDeletionValidator deletionValidator;
+    private final BulkGetApplicationListEntriesValidator bulkGetApplicationListEntriesValidator;
 
     // Services
     private final MatchService matchService;
@@ -104,7 +112,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     // Audit
     private final AuditOperationService auditService;
 
-    public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
+    private record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
 
     /**
      * The default internal application entry summary page. This guarantees a stable set of
@@ -420,79 +428,146 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.PRINT_APP_LIST,
-                req -> {
-                    ApplicationList list =
-                            repository
-                                    .findByUuid(id)
-                                    .orElseThrow(
-                                            () ->
-                                                    new AppRegistryException(
-                                                            ApplicationListError.LIST_NOT_FOUND,
-                                                            "No application list found for UUID '%s'"
-                                                                    .formatted(id)));
+                req ->
+                        Optional.of(
+                                new AuditableResult<>(
+                                        buildGetPrintDtos(
+                                                        List.of(findApplicationListOrThrow(id)),
+                                                        List.of(id),
+                                                        List.of())
+                                                .get(0),
+                                        new ApplicationListPrintReadAudit(id))));
+    }
 
-                    // 1) Fetch all entry projections for the list
-                    List<ApplicationListEntryPrintProjection> entryProjections =
-                            aleRepository.findByIdForPrinting(id);
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplicationListGetPrintDto> print(BulkGetApplicationListEntriesRequestDto request) {
+        bulkGetApplicationListEntriesValidator.validate(request);
 
-                    // Short-circuit if there are no entries
-                    if (entryProjections.isEmpty()) {
-                        var printDto = buildGetPrintDto(list, List.of());
-                        AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                                new AuditableResult<>(printDto, mapper.toEntity(id));
+        return auditService.processAudit(
+                null,
+                AppListAuditOperation.PRINT_APP_LIST,
+                req ->
+                        Optional.of(
+                                new AuditableResult<>(
+                                        buildGetPrintDtos(
+                                                repository.findByUuidIn(request.getListIds()),
+                                                request.getListIds(),
+                                                request.getEntryIds()),
+                                        new BulkApplicationListEntriesReadAudit(
+                                                request.getListIds(), request.getEntryIds()))));
+    }
 
-                        return Optional.of(result);
-                    }
+    private List<ApplicationListGetPrintDto> buildGetPrintDtos(
+            List<ApplicationList> lists, List<UUID> listIds, List<UUID> entryIds) {
+        var hasEntryIds = entryIds != null && !entryIds.isEmpty();
+        var entryProjections =
+                aleRepository.findByApplicationListIdsForPrinting(
+                        listIds,
+                        hasEntryIds,
+                        hasEntryIds ? entryIds : List.of(PRINT_PLACEHOLDER_ENTRY_ID));
 
-                    // 2) Bulk fetch wordings for this list
-                    List<ApplicationListEntryResolutionPrintProjection>
-                            applicationListEntryResolutionPrintProjections =
-                                    alerRepository.findByApplicationListUuidForPrinting(id);
-                    Map<Long, List<String>> wordingsByEntryId =
-                            applicationListEntryResolutionPrintProjections.stream()
-                                    .collect(
-                                            Collectors.groupingBy(
+        Map<Long, List<String>> resolvedWordingsByEntryId = Map.of();
+        Map<Long, List<Official>> resolvedOfficialsByEntryId = Map.of();
+
+        if (!entryProjections.isEmpty()) {
+            var entryIdsForLookup =
+                    entryProjections.stream()
+                            .map(ApplicationListEntryPrintProjection::getId)
+                            .toList();
+            resolvedWordingsByEntryId =
+                    alerRepository
+                            .findByApplicationListEntryIdsForPrinting(entryIdsForLookup)
+                            .stream()
+                            .collect(
+                                    Collectors.groupingBy(
+                                            ApplicationListEntryResolutionPrintProjection
+                                                    ::getEntryId,
+                                            Collectors.mapping(
                                                     ApplicationListEntryResolutionPrintProjection
-                                                            ::getEntryId,
-                                                    Collectors.mapping(
-                                                            ApplicationListEntryResolutionPrintProjection
-                                                                    ::getWording,
-                                                            Collectors.toList())));
+                                                            ::getWording,
+                                                    Collectors.toList())));
+            resolvedOfficialsByEntryId =
+                    aleoRepository
+                            .findByApplicationListEntryIdsForPrinting(
+                                    entryIdsForLookup, PRINTABLE_OFFICIAL_TYPES)
+                            .stream()
+                            .collect(
+                                    Collectors.groupingBy(
+                                            ApplicationListEntryOfficialPrintProjection::getEntryId,
+                                            Collectors.mapping(
+                                                    officalMapper::toOfficialDto,
+                                                    Collectors.toList())));
+        }
 
-                    // 3) Bulk fetch officials for this list
-                    List<ApplicationListEntryOfficialPrintProjection>
-                            applicationListEntryOfficialPrintProjection =
-                                    aleoRepository.findByApplicationListUuidForPrinting(
-                                            id, PRINTABLE_OFFICIAL_TYPES);
+        var wordingsByEntryId = resolvedWordingsByEntryId;
+        var officialsByEntryId = resolvedOfficialsByEntryId;
 
-                    // map directly to DTOs while grouping
-                    Map<Long, List<Official>> officialsByEntryId =
-                            applicationListEntryOfficialPrintProjection.stream()
-                                    .collect(
-                                            Collectors.groupingBy(
-                                                    ApplicationListEntryOfficialPrintProjection
-                                                            ::getEntryId,
-                                                    Collectors.mapping(
-                                                            officalMapper::toOfficialDto,
-                                                            Collectors.toList())));
+        var listById =
+                lists.stream().collect(Collectors.toMap(ApplicationList::getUuid, list -> list));
+        var entryProjectionsByListId =
+                entryProjections.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        ApplicationListEntryPrintProjection::getListId,
+                                        Collectors.toList()));
+        var entryOrder = hasEntryIds ? buildUuidOrder(entryIds) : Map.<UUID, Integer>of();
 
-                    // Assemble DTOs locally (no further DB hits)
-                    List<EntryGetPrintDto> dtos = new ArrayList<>(entryProjections.size());
-                    for (ApplicationListEntryPrintProjection entry : entryProjections) {
-                        Long entryId = entry.getId();
-                        EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
+        return listIds.stream()
+                .map(
+                        listId ->
+                                buildGetPrintDto(
+                                        listById.get(listId),
+                                        buildEntryPrintDtos(
+                                                entryProjectionsByListId.getOrDefault(
+                                                        listId, List.of()),
+                                                entryOrder,
+                                                wordingsByEntryId,
+                                                officialsByEntryId)))
+                .toList();
+    }
 
-                        dto.setResultWordings(wordingsByEntryId.getOrDefault(entryId, List.of()));
-                        dto.setOfficials(officialsByEntryId.getOrDefault(entryId, List.of()));
-                        dtos.add(dto);
-                    }
+    private List<EntryGetPrintDto> buildEntryPrintDtos(
+            List<ApplicationListEntryPrintProjection> entryProjections,
+            Map<UUID, Integer> entryOrder,
+            Map<Long, List<String>> wordingsByEntryId,
+            Map<Long, List<Official>> officialsByEntryId) {
+        return entryProjections.stream()
+                .sorted(printEntryComparator(entryOrder))
+                .map(
+                        entryProjection ->
+                                buildEntryPrintDto(
+                                        entryProjection, wordingsByEntryId, officialsByEntryId))
+                .toList();
+    }
 
-                    var printDto = buildGetPrintDto(list, dtos);
-                    AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                            new AuditableResult<>(printDto, mapper.toEntity(id));
+    private EntryGetPrintDto buildEntryPrintDto(
+            ApplicationListEntryPrintProjection entryProjection,
+            Map<Long, List<String>> wordingsByEntryId,
+            Map<Long, List<Official>> officialsByEntryId) {
+        var entryId = entryProjection.getId();
+        var dto = entryMapper.toPrintDto(entryProjection);
+        dto.setResultWordings(wordingsByEntryId.getOrDefault(entryId, List.of()));
+        dto.setOfficials(officialsByEntryId.getOrDefault(entryId, List.of()));
+        return dto;
+    }
 
-                    return Optional.of(result);
-                });
+    private static Comparator<ApplicationListEntryPrintProjection> printEntryComparator(
+            Map<UUID, Integer> entryOrder) {
+        if (entryOrder.isEmpty()) {
+            return Comparator.comparingInt(ApplicationListEntryPrintProjection::getSequenceNumber);
+        }
+
+        return Comparator.comparingInt(
+                entryProjection -> entryOrder.get(entryProjection.getUuid()));
+    }
+
+    private static Map<UUID, Integer> buildUuidOrder(List<UUID> ids) {
+        var order = new HashMap<UUID, Integer>();
+        for (int index = 0; index < ids.size(); index++) {
+            order.put(ids.get(index), index);
+        }
+        return order;
     }
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {
@@ -522,7 +597,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return responsePage;
     }
 
-    private String deriveLocation(ApplicationListSummaryProjection al) {
+    private static String deriveLocation(ApplicationListSummaryProjection al) {
         if (al.getCourtName() != null) {
             return al.getCourtName();
         }
@@ -536,10 +611,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     The repository uses [start, end] to match all seconds within that minute.
     When the computed end value wraps to midnight (e.g., 23:59 -> 00:00),
     we record this so the repository can handle the boundary correctly. */
-    private TimeWindow computeTimeWindow(ApplicationListGetFilterDto dto) {
+    private static TimeWindow computeTimeWindow(ApplicationListGetFilterDto dto) {
         if (dto.getTime() != null) {
             LocalTime start = dto.getTime().withSecond(0).withNano(0);
-            LocalTime end = start.plusMinutes(1);
+            LocalTime end = start.plusMinutes(1L);
             boolean wrapsMidnight = end.equals(LocalTime.MIDNIGHT);
 
             return new TimeWindow(start, end, wrapsMidnight);

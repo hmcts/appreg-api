@@ -8,13 +8,14 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -47,6 +48,14 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
     @InjectMocks private AsyncJobServiceImpl asyncJobServiceImpl;
 
+    private LogCaptor logCaptor;
+
+    @BeforeEach
+    void beforeEach() {
+        logCaptor = LogCaptor.forClass(AsyncJobServiceImpl.class);
+        logCaptor.clearLogs();
+    }
+
     @Test
     void testAsyncStart() throws Exception {
         // set the page size
@@ -60,9 +69,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person.csv");
 
         MDC.put("traceId", "bulk-import-trace");
         CsvReader<PersonCsvPojo> csvReader = new CsvReader<>(fileToLoad, PersonCsvPojo.class);
@@ -176,7 +183,6 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
         when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
 
-        var resource = Thread.currentThread().getContextClassLoader().getResource("person.csv");
         var lifecycle = mockLifecycle();
         var jobRequest =
                 JobTypeRequest.builder()
@@ -185,7 +191,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .build();
 
         try (var csvReader =
-                new CsvReader<PersonCsvPojo>(new File(resource.getFile()), PersonCsvPojo.class)) {
+                new CsvReader<PersonCsvPojo>(testResourceFile("person.csv"), PersonCsvPojo.class)) {
             asyncJobServiceImpl
                     .startValidationFirstJob(jobRequest, csvReader, lifecycle, 1)
                     .getFuture()
@@ -208,7 +214,6 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
         when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
 
-        var resource = Thread.currentThread().getContextClassLoader().getResource("person.csv");
         var lifecycle = mockLifecycle();
         Mockito.doAnswer(
                         invocation -> {
@@ -227,7 +232,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .build();
 
         try (var csvReader =
-                new CsvReader<PersonCsvPojo>(new File(resource.getFile()), PersonCsvPojo.class)) {
+                new CsvReader<PersonCsvPojo>(testResourceFile("person.csv"), PersonCsvPojo.class)) {
             var outcome =
                     asyncJobServiceImpl.startValidationFirstJob(
                             jobRequest, csvReader, lifecycle, 1);
@@ -436,6 +441,13 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + ", "
                                 + "Failed to process job: "
                                 + jobIdRequest.getId().toString());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "Error processing job: Failed to process job: "
+                                                        + jobIdRequest.getId())));
     }
 
     @Test
@@ -466,6 +478,14 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + jobIdRequest.getId()
                                 + ". Forced termination");
         verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "Error processing job: Job failed during VALIDATING for job "
+                                                        + jobIdRequest.getId()
+                                                        + ". Forced termination")));
     }
 
     @Test
@@ -548,9 +568,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person_failformat.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person_failformat.csv");
 
         List<PersonCsvPojo> output = new ArrayList<>();
         CsvReader<PersonCsvPojo> csvReader = new CsvReader<>(fileToLoad, PersonCsvPojo.class);
@@ -577,7 +595,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .getFuture()
                         .get();
             } catch (Exception e) {
-                log.error("Error", e);
+                Assertions.assertTrue(
+                        e instanceof ExecutionException
+                                || e.getCause() instanceof ExecutionException);
             }
 
             Assertions.assertEquals(2, output.size());
@@ -594,9 +614,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
             throws Exception {
         asyncJobServiceImpl.setPageSize(1);
 
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resource = classLoader.getResource("person.csv");
-        File fileToLoad = new File(resource.getFile());
+        File fileToLoad = testResourceFile("person.csv");
 
         String userId = "userId";
 
@@ -614,8 +632,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                         .getFuture()
                         .get();
             } catch (Exception e) {
-                // we expect an error to be propagated so catch it
-                log.error("Failed", e);
+                Assertions.assertTrue(
+                        e instanceof ExecutionException
+                                || e.getCause() instanceof ExecutionException);
             }
         }
         return reader;

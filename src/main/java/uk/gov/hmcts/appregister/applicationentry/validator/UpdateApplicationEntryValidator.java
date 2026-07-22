@@ -2,14 +2,18 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -20,6 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
@@ -27,6 +32,7 @@ import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 /**
@@ -110,7 +116,7 @@ public class UpdateApplicationEntryValidator
         }
 
         List<FeeStatus> requestedFeeStatuses = validatable.getData().getFeeStatuses();
-        if (requestedFeeStatuses != null && !requestedFeeStatuses.isEmpty()) {
+        if (requestedFeeStatuses == null || !requestedFeeStatuses.isEmpty()) {
             return;
         }
 
@@ -125,6 +131,73 @@ public class UpdateApplicationEntryValidator
                     "Fee not required for code %s".formatted(getApplicationCode(validatable)));
         }
     }
+
+    @Override
+    protected boolean isRetainedFeeStatusAllowed(
+            ApplicationCode applicationCode,
+            PayloadForUpdateEntry validatable,
+            List<FeeStatus> requestedFeeStatuses) {
+        if (applicationCode.getFeeDue() == YesOrNo.YES
+                || requestedFeeStatuses.stream().anyMatch(Objects::isNull)) {
+            return false;
+        }
+
+        List<AppListEntryFeeStatus> persistedFeeStatuses =
+                appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(validatable.getEntryId());
+        if (persistedFeeStatuses.isEmpty()) {
+            return false;
+        }
+
+        return toRequestedFeeStatusCounts(requestedFeeStatuses)
+                .equals(toPersistedFeeStatusCounts(persistedFeeStatuses));
+    }
+
+    private Map<FeeStatusSnapshot, Long> toRequestedFeeStatusCounts(List<FeeStatus> feeStatuses) {
+        return feeStatuses.stream()
+                .map(
+                        feeStatus ->
+                                new FeeStatusSnapshot(
+                                        feeStatus.getPaymentStatus(),
+                                        feeStatus.getStatusDate(),
+                                        normalisePaymentReference(feeStatus.getPaymentReference())))
+                .collect(Collectors.groupingBy(snapshot -> snapshot, Collectors.counting()));
+    }
+
+    private Map<FeeStatusSnapshot, Long> toPersistedFeeStatusCounts(
+            List<AppListEntryFeeStatus> feeStatuses) {
+        return feeStatuses.stream()
+                .map(
+                        feeStatus ->
+                                new FeeStatusSnapshot(
+                                        toPaymentStatus(feeStatus.getAlefsFeeStatus()),
+                                        feeStatus.getAlefsFeeStatusDate(),
+                                        normalisePaymentReference(
+                                                feeStatus.getAlefsPaymentReference())))
+                .collect(Collectors.groupingBy(snapshot -> snapshot, Collectors.counting()));
+    }
+
+    private String normalisePaymentReference(String paymentReference) {
+        if (paymentReference == null || paymentReference.isBlank()) {
+            return null;
+        }
+        return paymentReference;
+    }
+
+    private PaymentStatus toPaymentStatus(FeeStatusType feeStatus) {
+        if (feeStatus == null) {
+            return null;
+        }
+
+        return switch (feeStatus) {
+            case DUE -> PaymentStatus.DUE;
+            case PAID -> PaymentStatus.PAID;
+            case REMITTED -> PaymentStatus.REMITTED;
+            case UNDERTAKING -> PaymentStatus.UNDERTAKEN;
+        };
+    }
+
+    private record FeeStatusSnapshot(
+            PaymentStatus paymentStatus, LocalDate statusDate, String paymentReference) {}
 
     @Override
     protected UpdateApplicationEntryValidationSuccess getResult(
