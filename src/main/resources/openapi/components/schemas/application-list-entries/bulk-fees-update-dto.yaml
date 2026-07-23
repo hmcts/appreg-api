@@ -3,7 +3,6 @@ description: Append fee-status rows for multiple Application List Entries in one
 additionalProperties: false
 required:
   - entryIds
-  - feeDetails
 
 properties:
 
@@ -25,7 +24,15 @@ properties:
     type: array
     description: >
       Array of fee-status rows to append to every selected Application List Entry.
-      At least one fee-status row must be provided.
-    minItems: 1
+      Fee details is optional, but if provided, there must be at least a row.
     items:
       $ref: "./bulk-fee-details-dto.yaml"
+    nullable: true
+
+  hasOffsiteFee:
+    type: boolean
+    description: >
+      If true, ensures that all selected entries have an off-site fee mapping. If false, it will remove the offsite fee.
+      If not provided, the offsite fee will not be changed.
+    default: false
+    nullable: true

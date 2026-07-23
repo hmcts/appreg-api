@@ -76,8 +76,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
 
         asyncJob.setJobState(JobStatusType.FAILED);
 
-        // set the failure message. Truncate to 4000 characters.
-        asyncJob.setFailureMessage(truncate(reasonFailed, 4000));
+        asyncJob.setFailureMessage(reasonFailed);
         asyncJobRepository.save(asyncJob);
     }
 
@@ -207,13 +206,5 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
         entityManager.flush();
         entityManager.refresh(entity);
         return entity;
-    }
-
-    private static String truncate(String str, int maxLength) {
-        if (str == null) {
-            return null;
-        }
-
-        return str.length() <= maxLength ? str : str.substring(0, maxLength);
     }
 }

@@ -21,6 +21,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultA
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
@@ -369,6 +370,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                         new TemplateSubstitution("Date", "Date"),
                         new TemplateSubstitution("Courthouse", "ch")));
         bulkResultDto.setResult(createDto);
+        dataAuditRepository.deleteAll();
 
         val token = getToken();
 
@@ -462,127 +464,21 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                                         new AssertionError(
                                                 "Created AppListEntryResolution could not be reloaded"));
 
-        // The resolution row itself should record its generated identifier on create.
-        val resultIdAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                                "aler_id",
-                                createdResolution.getId().toString())
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an app_list_entry_resolutions.aler_id create audit row"));
+        val bulkAuditRow =
+                awaitBulkResultAuditRow(
+                        entry.getUuid(),
+                        entry2.getUuid(),
+                        createdResolution.getUuid(),
+                        createdResolution1.getUuid());
         Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resultIdAuditRow.getEventName());
-
-        dataAuditRepository
-                .findDataAuditForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "aler_id",
-                        createdResolution1.getId().toString())
-                .orElseThrow(
-                        () ->
-                                new AssertionError(
-                                        "Expected an app_list_entry_resolutions.aler_id create audit row"));
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resultIdAuditRow.getEventName());
-
-        // The owning entry id is stored through the foreign key column ale_ale_id.
-        val entryIdAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                                "ale_ale_id",
-                                createdResolution.getApplicationList().getId().toString())
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                entryIdAuditRow.getEventName());
-
-        // The owning entry id is stored through the foreign key column ale_ale_id.
-        dataAuditRepository
-                .findDataAuditForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "ale_ale_id",
-                        createdResolution1.getApplicationList().getId().toString())
-                .orElseThrow(
-                        () ->
-                                new AssertionError(
-                                        "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                entryIdAuditRow.getEventName());
-
-        // The selected resolution code should be recorded via the rc_rc_id join column.
-        val resolutionCodeAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "rc_rc_id",
-                        createdResolution.getResolutionCode().getId().toString());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow.get(1).getEventName());
-
-        val resolutionCodeAuditRow1 =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "rc_rc_id",
-                        createdResolution1.getResolutionCode().getId().toString());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow1.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow1.get(1).getEventName());
-
-        // The substituted wording is stored directly on the resolution row.
-        val wordingAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "al_entry_resolution_wording",
-                        createdResolution.getResolutionWording());
-
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                wordingAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                wordingAuditRow.get(1).getEventName());
-
-        // The service stamps the acting user into the officer column on create.
-        val officerAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "al_entry_resolution_officer",
-                        "email");
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                officerAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                officerAuditRow.get(1).getEventName());
-
-        // Version is database-backed and should be written alongside the other create audit rows.
-        val versionAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "version",
-                        createdResolution.getVersion().toString());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                versionAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                versionAuditRow.get(1).getEventName());
+                AppListEntryResultAuditOperation.BULK_CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                bulkAuditRow.getEventName());
+        Assertions.assertTrue(
+                valueOrClob(bulkAuditRow.getNewValue(), bulkAuditRow.getNewClobValue())
+                        .contains(createdResolution.getResolutionWording()));
+        Assertions.assertTrue(
+                noPerResultCreateAuditRows(),
+                "Expected the bulk path to avoid per-result create audit rows");
     }
 
     @Test
@@ -604,6 +500,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                         new TemplateSubstitution("Date", "Date"),
                         new TemplateSubstitution("Courthouse", "ch")));
         bulkResultDto.setResult(createDto);
+        dataAuditRepository.deleteAll();
 
         Response resp = createBulkResult(list.getUuid(), getToken(), bulkResultDto);
 
@@ -861,127 +758,64 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                                         new AssertionError(
                                                 "Created AppListEntryResolution could not be reloaded"));
 
-        // The resolution row itself should record its generated identifier on create.
-        val resultIdAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                                "aler_id",
-                                createdResolution.getId().toString())
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an app_list_entry_resolutions.aler_id create audit row"));
+        val bulkAuditRow =
+                awaitBulkResultAuditRow(
+                        entry.getUuid(),
+                        entry2.getUuid(),
+                        createdResolution.getUuid(),
+                        createdResolution1.getUuid());
         Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resultIdAuditRow.getEventName());
+                AppListEntryResultAuditOperation.BULK_CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                bulkAuditRow.getEventName());
+        Assertions.assertTrue(
+                valueOrClob(bulkAuditRow.getNewValue(), bulkAuditRow.getNewClobValue())
+                        .contains(createdResolution.getResolutionWording()));
+        Assertions.assertTrue(
+                noPerResultCreateAuditRows(),
+                "Expected the bulk path to avoid per-result create audit rows");
+    }
 
-        dataAuditRepository
-                .findDataAuditForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "aler_id",
-                        createdResolution1.getId().toString())
-                .orElseThrow(
-                        () ->
-                                new AssertionError(
-                                        "Expected an app_list_entry_resolutions.aler_id create audit row"));
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resultIdAuditRow.getEventName());
+    private DataAudit awaitBulkResultAuditRow(
+            UUID entryId, UUID entryId1, UUID resultId, UUID resultId1) {
+        for (int attempt = 0; attempt < 20; attempt++) {
+            for (var auditRow : dataAuditRepository.findAll()) {
+                if (!AppListEntryResultAuditOperation.BULK_CREATE_APP_LIST_ENTRY_RESULT
+                        .getEventName()
+                        .equals(auditRow.getEventName())) {
+                    continue;
+                }
 
-        // The owning entry id is stored through the foreign key column ale_ale_id.
-        val entryIdAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                                "ale_ale_id",
-                                createdResolution.getApplicationList().getId().toString())
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                entryIdAuditRow.getEventName());
+                if (!TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS.equals(auditRow.getTableName())
+                        || !"bulk_results_created".equals(auditRow.getColumnName())) {
+                    continue;
+                }
 
-        // The owning entry id is stored through the foreign key column ale_ale_id.
-        dataAuditRepository
-                .findDataAuditForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "ale_ale_id",
-                        createdResolution1.getApplicationList().getId().toString())
-                .orElseThrow(
-                        () ->
-                                new AssertionError(
-                                        "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                entryIdAuditRow.getEventName());
+                var auditValue = valueOrClob(auditRow.getNewValue(), auditRow.getNewClobValue());
+                if (auditValue.contains(entryId.toString())
+                        && auditValue.contains(entryId1.toString())
+                        && auditValue.contains(resultId.toString())
+                        && auditValue.contains(resultId1.toString())) {
+                    return auditRow;
+                }
+            }
+        }
 
-        // The selected resolution code should be recorded via the rc_rc_id join column.
-        val resolutionCodeAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "rc_rc_id",
-                        createdResolution.getResolutionCode().getId().toString());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow.get(1).getEventName());
+        throw new AssertionError("Expected a bulk result audit row with created result details");
+    }
 
-        val resolutionCodeAuditRow1 =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "rc_rc_id",
-                        createdResolution1.getResolutionCode().getId().toString());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow1.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                resolutionCodeAuditRow1.get(1).getEventName());
+    private boolean noPerResultCreateAuditRows() {
+        return dataAuditRepository.findAll().stream()
+                .noneMatch(
+                        auditRow ->
+                                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
+                                                .getEventName()
+                                                .equals(auditRow.getEventName())
+                                        && TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS.equals(
+                                                auditRow.getTableName()));
+    }
 
-        // The substituted wording is stored directly on the resolution row.
-        val wordingAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "al_entry_resolution_wording",
-                        createdResolution.getResolutionWording());
-
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                wordingAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                wordingAuditRow.get(1).getEventName());
-
-        // The service stamps the acting user into the officer column on create.
-        val officerAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "al_entry_resolution_officer",
-                        "email");
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                officerAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                officerAuditRow.get(1).getEventName());
-
-        // Version is database-backed and should be written alongside the other create audit rows.
-        val versionAuditRow =
-                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "version",
-                        createdResolution.getVersion().toString());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                versionAuditRow.get(0).getEventName());
-        Assertions.assertEquals(
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
-                versionAuditRow.get(1).getEventName());
+    private String valueOrClob(String value, String clobValue) {
+        return value != null ? value : clobValue;
     }
 
     @Test

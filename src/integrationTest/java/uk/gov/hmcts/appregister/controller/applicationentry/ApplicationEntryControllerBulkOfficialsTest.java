@@ -2,13 +2,23 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.DataAudit;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
@@ -17,6 +27,8 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEntryCrudTest {
+
+    @Autowired private DataAuditRepository dataAuditRepository;
 
     @Test
     void givenValidEntries_whenReplaceOfficials_thenOfficialsAreReplacedForEveryEntry()
@@ -47,6 +59,81 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                 .containsExactlyElementsOf(replacementOfficials);
         assertThat(getEntry(tokenGenerator, listId, secondEntry.getId()).getOfficials())
                 .containsExactlyElementsOf(replacementOfficials);
+    }
+
+    @Test
+    void givenValidEntries_whenReplaceOfficials_thenBulkAuditRowIsPersisted() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto firstEntry =
+                createEntry(List.of(official("Mr", "Original", "One", OfficialType.CLERK)));
+        EntryGetDetailDto secondEntry =
+                createEntry(List.of(official("Mrs", "Original", "Two", OfficialType.MAGISTRATE)));
+
+        replaceOfficials(
+                        tokenGenerator,
+                        firstEntry.getListId(),
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(firstEntry.getId(), secondEntry.getId()))
+                                .officials(
+                                        List.of(
+                                                official(
+                                                        "Ms",
+                                                        "Ada",
+                                                        "Bench",
+                                                        OfficialType.MAGISTRATE),
+                                                official(
+                                                        "Mr",
+                                                        "Clive",
+                                                        "Court",
+                                                        OfficialType.CLERK))))
+                .then()
+                .statusCode(204);
+
+        var bulkAuditRow = awaitBulkOfficialsAuditRow();
+        Assertions.assertEquals(
+                AppListEntryAuditOperation.BULK_UPDATE_OFFICIALS.getEventName(),
+                bulkAuditRow.getEventName());
+        assertThat(bulkAuditRow.getOldValue()).contains(firstEntry.getId().toString(), "Original");
+        assertThat(bulkAuditRow.getOldValue()).contains(secondEntry.getId().toString(), "Two");
+        assertThat(bulkAuditRow.getNewValue()).contains("Ada", "Bench", "Clive", "Court");
+        assertThat(
+                        dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, "surname", "One"))
+                .isEmpty();
+        assertThat(
+                        dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, "surname", "Bench"))
+                .isEmpty();
+    }
+
+    private DataAudit awaitBulkOfficialsAuditRow() {
+        for (int attempt = 0; attempt < 10; attempt++) {
+            Optional<DataAudit> auditRow =
+                    dataAuditRepository.findAll().stream()
+                            .filter(
+                                    audit ->
+                                            TableNames.APPLICATION_LISTS_ENTRY.equals(
+                                                            audit.getTableName())
+                                                    && "bulk_officials_officials"
+                                                            .equals(audit.getColumnName())
+                                                    && AppListEntryAuditOperation
+                                                            .BULK_UPDATE_OFFICIALS
+                                                            .getEventName()
+                                                            .equals(audit.getEventName()))
+                            .findFirst();
+            if (auditRow.isPresent()) {
+                return auditRow.get();
+            }
+
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException interruptedException) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        throw new AssertionError("Expected a bulk officials audit row with old and new values");
     }
 
     @Test
@@ -85,7 +172,8 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
     }
 
     @Test
-    void givenMissingApplicationList_whenReplaceOfficials_thenReturns404() throws Exception {
+    void givenMissingApplicationList_whenReplaceOfficials_thenReturns404()
+            throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator = createAdminToken();
         UUID missingListId = UUID.randomUUID();
 
@@ -101,7 +189,8 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
     }
 
     @Test
-    void givenClosedApplicationList_whenReplaceOfficials_thenReturns409() throws Exception {
+    void givenClosedApplicationList_whenReplaceOfficials_thenReturns409()
+            throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator = createAdminToken();
         UUID closedListId = getClosedApplicationListId();
 
@@ -117,7 +206,8 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
     }
 
     @Test
-    void givenEmptyEntryIds_whenReplaceOfficials_thenReturns400() throws Exception {
+    void givenEmptyEntryIds_whenReplaceOfficials_thenReturns400()
+            throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator = createAdminToken();
 
         Response response =
@@ -306,7 +396,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
 
     private Response replaceOfficials(
             TokenGenerator tokenGenerator, UUID listId, BulkOfficialsUpdateDto dto)
-            throws Exception {
+            throws MalformedURLException, JOSEException {
         return restAssuredClient.executePostRequest(
                 getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/officials"),
                 tokenGenerator.fetchTokenForRole(),
@@ -314,7 +404,7 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
     }
 
     private EntryGetDetailDto getEntry(TokenGenerator tokenGenerator, UUID listId, UUID entryId)
-            throws Exception {
+            throws URISyntaxException, MalformedURLException, JOSEException {
         Response response =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/" + entryId),

@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,10 +22,13 @@ import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationList
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.model.EntryToList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
@@ -38,6 +40,10 @@ class BulkApplicationEntryResultCreationValidatorTest {
 
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
+    @Mock private ResolutionCodeRepository resolutionCodeRepository;
+
+    @Mock private BusinessDateProvider businessDateProvider;
+
     @InjectMocks private BulkApplicationEntryResultCreationValidator validator;
 
     @Test
@@ -45,28 +51,30 @@ class BulkApplicationEntryResultCreationValidatorTest {
         UUID appList = UUID.randomUUID();
 
         // setup 3 of the entries to belong to the list
-        UUID appEntry = UUID.randomUUID();
-        UUID appEntry2 = UUID.randomUUID();
-        UUID appEntry3 = UUID.randomUUID();
+        final UUID appEntry = UUID.randomUUID();
+        final UUID appEntry2 = UUID.randomUUID();
+        final UUID appEntry3 = UUID.randomUUID();
 
-        when(applicationListRepository.findByUuid(appList))
-                .thenReturn(Optional.of(new ApplicationList()));
-
-        OrderIndependantUuidMatcher uuidMatcher =
-                new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2, appEntry3));
-        when(applicationListEntryRepository.doesApplicationEntryBelongToApplicationList(
-                        argThat(uuidMatcher), eq(appList)))
-                .thenReturn(true);
+        var list = new ApplicationList();
+        list.setUuid(appList);
+        list.setStatus(Status.OPEN);
+        when(applicationListRepository.findByUuid(appList)).thenReturn(Optional.of(list));
 
         ResultCreateDto resultCreateDto = new ResultCreateDto();
-        resultCreateDto.setResultCode("code");
         resultCreateDto.setWordingFields(List.of(new TemplateSubstitution()));
 
         BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
-        bulkResultDto.setResult(new ResultCreateDto());
+        when(applicationListEntryRepository.findByUuidsInSourceList(
+                        eq(appList),
+                        argThat(set -> set.containsAll(List.of(appEntry, appEntry2, appEntry3)))))
+                .thenReturn(
+                        List.of(
+                                entry(appEntry, list),
+                                entry(appEntry2, list),
+                                entry(appEntry3, list)));
 
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
                 PayloadForCreateResults.<BulkResultDto>builder()
@@ -80,20 +88,26 @@ class BulkApplicationEntryResultCreationValidatorTest {
                         payloadForCreateEntryResult,
                         (v, r) -> {
                             Assertions.assertEquals(3, r.getResults().size());
-                            Assertions.assertEquals(appList, r.getResults().get(0).getListId());
-                            Assertions.assertEquals(appList, r.getResults().get(1).getListId());
-                            Assertions.assertEquals(appList, r.getResults().get(2).getListId());
+                            Assertions.assertEquals(
+                                    appList, r.getResults().get(0).payload().getListId());
+                            Assertions.assertEquals(
+                                    appList, r.getResults().get(1).payload().getListId());
+                            Assertions.assertEquals(
+                                    appList, r.getResults().get(2).payload().getListId());
 
                             // ensure that the entries are one of the ones we expect
                             Assertions.assertTrue(
                                     Set.of(appEntry, appEntry2, appEntry3)
-                                            .contains(r.getResults().get(0).getEntryId()));
+                                            .contains(
+                                                    r.getResults().get(0).payload().getEntryId()));
                             Assertions.assertTrue(
                                     Set.of(appEntry, appEntry2, appEntry3)
-                                            .contains(r.getResults().get(1).getEntryId()));
+                                            .contains(
+                                                    r.getResults().get(1).payload().getEntryId()));
                             Assertions.assertTrue(
                                     Set.of(appEntry, appEntry2, appEntry3)
-                                            .contains(r.getResults().get(2).getEntryId()));
+                                            .contains(
+                                                    r.getResults().get(2).payload().getEntryId()));
                             return true;
                         });
 
@@ -106,36 +120,32 @@ class BulkApplicationEntryResultCreationValidatorTest {
         UUID appList2 = UUID.randomUUID();
 
         // setup 3 of the entries to belong to the list
-        UUID appEntry = UUID.randomUUID();
-        UUID appEntry2 = UUID.randomUUID();
-        UUID appEntry3 = UUID.randomUUID();
+        final UUID appEntry = UUID.randomUUID();
+        final UUID appEntry2 = UUID.randomUUID();
+        final UUID appEntry3 = UUID.randomUUID();
 
-        List<EntryToList> entryToLists = new ArrayList<>();
-
-        // these are the entry to lists that we expect to be returned from the db
-        EntryToList entryToList = new EntryToList(appEntry, appList);
-        EntryToList entryToList2 = new EntryToList(appEntry2, appList2);
-        EntryToList entryToList3 = new EntryToList(appEntry3, appList2);
-
-        entryToLists.add(entryToList);
-        entryToLists.add(entryToList2);
-        entryToLists.add(entryToList3);
-
-        OrderIndependantUuidMatcher uuidMatcher =
-                new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2, appEntry3));
-
-        when(applicationListEntryRepository.findApplicationListForAllEntries(argThat(uuidMatcher)))
-                .thenReturn(entryToLists);
+        var list = new ApplicationList();
+        list.setUuid(appList);
+        list.setStatus(Status.OPEN);
+        var list2 = new ApplicationList();
+        list2.setUuid(appList2);
+        list2.setStatus(Status.OPEN);
 
         ResultCreateDto resultCreateDto = new ResultCreateDto();
-        resultCreateDto.setResultCode("code");
         resultCreateDto.setWordingFields(List.of(new TemplateSubstitution()));
 
         BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
         bulkResultDto.setResult(resultCreateDto);
 
-        bulkResultDto.setEntryIds(List.of(appEntry, appEntry2, appEntry3));
-        bulkResultDto.setResult(new ResultCreateDto());
+        OrderIndependantUuidMatcher uuidMatcher =
+                new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2, appEntry3));
+        when(applicationListEntryRepository.findActiveByUuids(argThat(uuidMatcher)))
+                .thenReturn(
+                        List.of(
+                                entry(appEntry, list),
+                                entry(appEntry2, list2),
+                                entry(appEntry3, list2)));
 
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
                 PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build();
@@ -146,12 +156,18 @@ class BulkApplicationEntryResultCreationValidatorTest {
                         payloadForCreateEntryResult,
                         (v, r) -> {
                             Assertions.assertEquals(3, r.getResults().size());
-                            Assertions.assertEquals(appList, r.getResults().get(0).getListId());
-                            Assertions.assertEquals(appList2, r.getResults().get(1).getListId());
-                            Assertions.assertEquals(appList2, r.getResults().get(2).getListId());
-                            Assertions.assertEquals(appEntry, r.getResults().get(0).getEntryId());
-                            Assertions.assertEquals(appEntry2, r.getResults().get(1).getEntryId());
-                            Assertions.assertEquals(appEntry3, r.getResults().get(2).getEntryId());
+                            Assertions.assertEquals(
+                                    appList, r.getResults().get(0).payload().getListId());
+                            Assertions.assertEquals(
+                                    appList2, r.getResults().get(1).payload().getListId());
+                            Assertions.assertEquals(
+                                    appList2, r.getResults().get(2).payload().getListId());
+                            Assertions.assertEquals(
+                                    appEntry, r.getResults().get(0).payload().getEntryId());
+                            Assertions.assertEquals(
+                                    appEntry2, r.getResults().get(1).payload().getEntryId());
+                            Assertions.assertEquals(
+                                    appEntry3, r.getResults().get(2).payload().getEntryId());
 
                             return true;
                         });
@@ -196,14 +212,17 @@ class BulkApplicationEntryResultCreationValidatorTest {
 
         payloadForCreateEntryResult.getPayload().setEntryIds(List.of(appEntry, appEntry2));
 
-        when(applicationListRepository.findByUuid(appList))
-                .thenReturn(Optional.of(new ApplicationList()));
-
+        var list = new ApplicationList();
+        list.setUuid(appList);
+        list.setStatus(Status.OPEN);
+        when(applicationListRepository.findByUuid(appList)).thenReturn(Optional.of(list));
+        when(applicationListEntryRepository.findByUuidsInSourceList(
+                        eq(appList), argThat(set -> set.containsAll(List.of(appEntry, appEntry2)))))
+                .thenReturn(List.of(entry(appEntry, list)));
         OrderIndependantUuidMatcher uuidMatcher =
                 new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2));
-        when(applicationListEntryRepository.doesApplicationEntryBelongToApplicationList(
-                        argThat(uuidMatcher), eq(appList)))
-                .thenReturn(false);
+        when(applicationListEntryRepository.findActiveByUuids(argThat(uuidMatcher)))
+                .thenReturn(List.of(entry(appEntry, list), entry(appEntry2, list)));
 
         // run the validation
         AppRegistryException exception =
@@ -224,6 +243,49 @@ class BulkApplicationEntryResultCreationValidatorTest {
     }
 
     @Test
+    void testMissingEntryForListReturnsEntryDoesNotExist() {
+        UUID appList = UUID.randomUUID();
+
+        var payloadForCreateEntryResult =
+                PayloadForCreateResults.<BulkResultDto>builder()
+                        .payload(new BulkResultDto())
+                        .listId(appList)
+                        .build();
+
+        UUID appEntry = UUID.randomUUID();
+        UUID missingEntry = UUID.randomUUID();
+
+        payloadForCreateEntryResult.getPayload().setEntryIds(List.of(appEntry, missingEntry));
+
+        var list = new ApplicationList();
+        list.setUuid(appList);
+        list.setStatus(Status.OPEN);
+        when(applicationListRepository.findByUuid(appList)).thenReturn(Optional.of(list));
+        when(applicationListEntryRepository.findByUuidsInSourceList(
+                        eq(appList),
+                        argThat(set -> set.containsAll(List.of(appEntry, missingEntry)))))
+                .thenReturn(List.of(entry(appEntry, list)));
+        OrderIndependantUuidMatcher uuidMatcher =
+                new OrderIndependantUuidMatcher(List.of(appEntry, missingEntry));
+        when(applicationListEntryRepository.findActiveByUuids(argThat(uuidMatcher)))
+                .thenReturn(List.of(entry(appEntry, list)));
+
+        var exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                validator.validate(
+                                        payloadForCreateEntryResult,
+                                        (v, r) -> {
+                                            return true;
+                                        }));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
+                exception.getCode().getCode());
+    }
+
+    @Test
     void testNoListFoundForAllEntries() {
         PayloadForCreateResults<BulkResultDto> payloadForCreateEntryResult =
                 PayloadForCreateResults.<BulkResultDto>builder()
@@ -237,9 +299,11 @@ class BulkApplicationEntryResultCreationValidatorTest {
         OrderIndependantUuidMatcher uuidMatcher =
                 new OrderIndependantUuidMatcher(List.of(appEntry, appEntry2));
 
-        // return only one entry so we error
-        when(applicationListEntryRepository.findApplicationListForAllEntries(argThat(uuidMatcher)))
-                .thenReturn(List.of(new EntryToList(UUID.randomUUID(), UUID.randomUUID())));
+        var list = new ApplicationList();
+        list.setUuid(UUID.randomUUID());
+        list.setStatus(Status.OPEN);
+        when(applicationListEntryRepository.findActiveByUuids(argThat(uuidMatcher)))
+                .thenReturn(List.of(entry(UUID.randomUUID(), list)));
 
         // run the validation
         AppRegistryException exception =
@@ -326,5 +390,12 @@ class BulkApplicationEntryResultCreationValidatorTest {
             }
             return true;
         }
+    }
+
+    private ApplicationListEntry entry(UUID entryId, ApplicationList list) {
+        var entry = new ApplicationListEntry();
+        entry.setUuid(entryId);
+        entry.setApplicationList(list);
+        return entry;
     }
 }

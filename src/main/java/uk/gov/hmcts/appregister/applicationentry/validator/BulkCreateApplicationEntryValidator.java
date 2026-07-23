@@ -182,7 +182,7 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
     }
 
     private static String normalise(String value) {
-        return StringUtils.lowerCase(value, Locale.ROOT);
+        return StringUtils.lowerCase(value, Locale.ROOT).trim();
     }
 
     /** Job-scoped validation state. A session is confined to one async lifecycle. */

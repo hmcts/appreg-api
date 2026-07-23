@@ -24,7 +24,7 @@ public class BulkUploadRow implements CsvPojo {
 
     // --- APPLICANT ---
 
-    @CsvBindByName(column = "APPLICANT_CODE", required = true)
+    @CsvBindByName(column = "APPLICANT_CODE")
     private String applicantCode;
 
     // --- RESPONDENT DETAILS ---
@@ -90,7 +90,7 @@ public class BulkUploadRow implements CsvPojo {
 
     // --- APPLICATION ---
 
-    @CsvBindByName(column = "APPLICATION_CODE", required = true)
+    @CsvBindByName(column = "APPLICATION_CODE")
     private String applicationCode;
 
     // --- WORDING FIELDS ---

@@ -1,9 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence.with;
@@ -29,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
@@ -42,6 +46,10 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntr
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultDeletionSuccess;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultDeletionValidatedItem;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultDeletionValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultValidatedItem;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultCreateValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
@@ -72,6 +80,8 @@ import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultItemDto;
+import uk.gov.hmcts.appregister.generated.model.BulkDeleteResultsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
@@ -128,10 +138,15 @@ class ApplicationEntryResultServiceImplTest {
                     resolutionCodeRepository,
                     businessDateProvider);
 
+    @Mock private BulkApplicationEntryResultDeletionValidator bulkDeleteResultEntry;
+
     @Spy
     private DummyBulkApplicationEntryResultGetValidator bulkResultEntry =
             new DummyBulkApplicationEntryResultGetValidator(
-                    applicationListRepository, applicationListEntryRepository);
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository,
+                    businessDateProvider);
 
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -152,6 +167,7 @@ class ApplicationEntryResultServiceImplTest {
                         creationValidator,
                         updateValidator,
                         getValidator,
+                        bulkDeleteResultEntry,
                         bulkResultEntry,
                         matchService,
                         auditOperationService,
@@ -200,6 +216,11 @@ class ApplicationEntryResultServiceImplTest {
         AppListEntryResolution entryToSave = new AppListEntryResolution();
         entryToSave.setId(23232L);
         entryToSave.setVersion(2L);
+        entryToSave.setUuid(UUID.randomUUID());
+        entryToSave.setApplicationList(applicationListEntry);
+        entryToSave.setResolutionCode(resolutionCode);
+        entryToSave.setResolutionWording("This is a template {My Substituted Value}");
+        entryToSave.setResolutionOfficer("myemail@domain.com");
 
         when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
                         resultCreateDto,
@@ -213,7 +234,8 @@ class ApplicationEntryResultServiceImplTest {
                 new PayloadForCreateEntryResult<>(
                         UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
 
-        when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
+        when(appListEntryResolutionRepository.save(any(AppListEntryResolution.class)))
+                .thenReturn(entryToSave);
 
         // setup the response of the call
         ResultGetDto resultGetDto =
@@ -258,6 +280,93 @@ class ApplicationEntryResultServiceImplTest {
 
         verify(deletionValidator).validate(any(ListEntryResultDeleteArgs.class), notNull());
         verify(appListEntryResolutionRepository).delete(any(AppListEntryResolution.class));
+    }
+
+    @Test
+    void bulkDelete_validArgs_deletesEntryResultsInBatch() {
+        var firstResult = createResolution(11L, 101L, 1001L, "CODE1", "wording1", "officer1");
+        var secondResult = createResolution(12L, 102L, 1002L, "CODE2", "wording2", "officer2");
+
+        var bulkDeleteSuccess = new BulkApplicationEntryResultDeletionSuccess();
+        bulkDeleteSuccess
+                .getResults()
+                .add(
+                        new BulkApplicationEntryResultDeletionValidatedItem(
+                                new ListEntryResultDeleteArgs(
+                                        firstResult
+                                                .getApplicationList()
+                                                .getApplicationList()
+                                                .getUuid(),
+                                        firstResult.getApplicationList().getUuid(),
+                                        firstResult.getUuid()),
+                                new ListEntryResultDeleteValidationSuccess(
+                                        with(""),
+                                        firstResult.getResolutionCode(),
+                                        firstResult.getApplicationList().getApplicationList(),
+                                        firstResult.getApplicationList(),
+                                        firstResult)));
+        bulkDeleteSuccess
+                .getResults()
+                .add(
+                        new BulkApplicationEntryResultDeletionValidatedItem(
+                                new ListEntryResultDeleteArgs(
+                                        secondResult
+                                                .getApplicationList()
+                                                .getApplicationList()
+                                                .getUuid(),
+                                        secondResult.getApplicationList().getUuid(),
+                                        secondResult.getUuid()),
+                                new ListEntryResultDeleteValidationSuccess(
+                                        with(""),
+                                        secondResult.getResolutionCode(),
+                                        secondResult.getApplicationList().getApplicationList(),
+                                        secondResult.getApplicationList(),
+                                        secondResult)));
+        doAnswer(
+                        invocation -> {
+                            BiFunction<
+                                            BulkDeleteResultsDto,
+                                            BulkApplicationEntryResultDeletionSuccess,
+                                            Object>
+                                    validateSuccess = invocation.getArgument(1);
+                            return validateSuccess.apply(
+                                    invocation.getArgument(0), bulkDeleteSuccess);
+                        })
+                .when(bulkDeleteResultEntry)
+                .validate(any(BulkDeleteResultsDto.class), any());
+
+        var request =
+                new BulkDeleteResultsDto()
+                        .results(
+                                List.of(
+                                        new BulkDeleteResultItemDto()
+                                                .listId(
+                                                        firstResult
+                                                                .getApplicationList()
+                                                                .getApplicationList()
+                                                                .getUuid())
+                                                .entryId(firstResult.getApplicationList().getUuid())
+                                                .resultId(firstResult.getUuid()),
+                                        new BulkDeleteResultItemDto()
+                                                .listId(
+                                                        secondResult
+                                                                .getApplicationList()
+                                                                .getApplicationList()
+                                                                .getUuid())
+                                                .entryId(
+                                                        secondResult.getApplicationList().getUuid())
+                                                .resultId(secondResult.getUuid())));
+
+        service.bulkDelete(request);
+
+        verify(appListEntryResolutionRepository)
+                .deleteAllInBatch(List.of(firstResult, secondResult));
+        verify(entityManager).flush();
+        verify(auditOperationService)
+                .processAudit(
+                        any(),
+                        eq(AppListEntryResultAuditOperation.BULK_DELETE_APP_LIST_ENTRY_RESULT),
+                        any());
     }
 
     @Test
@@ -382,6 +491,11 @@ class ApplicationEntryResultServiceImplTest {
         AppListEntryResolution entryToSave = new AppListEntryResolution();
         entryToSave.setId(23232L);
         entryToSave.setVersion(2L);
+        entryToSave.setUuid(UUID.randomUUID());
+        entryToSave.setApplicationList(applicationListEntry);
+        entryToSave.setResolutionCode(resolutionCode);
+        entryToSave.setResolutionWording("This is a template {My Substituted Value}");
+        entryToSave.setResolutionOfficer("myemail@domain.com");
 
         when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
                         resultCreateDto,
@@ -395,7 +509,8 @@ class ApplicationEntryResultServiceImplTest {
                 new PayloadForCreateEntryResult<>(
                         UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
 
-        when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
+        when(appListEntryResolutionRepository.saveAll(List.of(entryToSave)))
+                .thenReturn(List.of(entryToSave));
 
         // setup the response of the call
         ResultGetDto resultGetDto =
@@ -404,15 +519,28 @@ class ApplicationEntryResultServiceImplTest {
 
         BulkApplicationEntryResultCreationSuccess bulkApplicationEntryResultCreationSuccess =
                 new BulkApplicationEntryResultCreationSuccess();
-        bulkApplicationEntryResultCreationSuccess.getResults().add(payload);
+        bulkApplicationEntryResultCreationSuccess
+                .getResults()
+                .add(new BulkApplicationEntryResultValidatedItem(payload, success));
 
         bulkResultEntry.setSuccess(bulkApplicationEntryResultCreationSuccess);
 
         // make the call
         List<ResultGetDto> createdResults =
-                service.bulkCreate(PayloadForCreateResults.<BulkResultDto>builder().build());
+                service.bulkCreate(
+                        PayloadForCreateResults.<BulkResultDto>builder()
+                                .payload(new BulkResultDto().result(resultCreateDto))
+                                .build());
 
         Assertions.assertEquals(List.of(resultGetDto), createdResults);
+        verify(appListEntryResolutionRepository).saveAll(List.of(entryToSave));
+        verify(appListEntryResolutionRepository, never()).findAllById(any());
+        verify(entityManager).flush();
+        verify(auditOperationService)
+                .processAudit(
+                        eq(AppListEntryResultAuditOperation.BULK_CREATE_APP_LIST_ENTRY_RESULT),
+                        any());
+        verify(appListEntryResolutionRepository, never()).save(any(AppListEntryResolution.class));
     }
 
     @Setter
@@ -562,9 +690,15 @@ class ApplicationEntryResultServiceImplTest {
 
         public DummyBulkApplicationEntryResultGetValidator(
                 ApplicationListRepository applicationListRepository,
-                ApplicationListEntryRepository applicationListEntryRepository) {
+                ApplicationListEntryRepository applicationListEntryRepository,
+                ResolutionCodeRepository resolutionCodeRepository,
+                BusinessDateProvider businessDateProvider) {
 
-            super(applicationListRepository, applicationListEntryRepository);
+            super(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository,
+                    businessDateProvider);
         }
 
         @Override
@@ -638,5 +772,36 @@ class ApplicationEntryResultServiceImplTest {
         verify(appListEntryResolutionRepository).save(existing);
         verify(entityManager).flush();
         verify(entityManager).refresh(existing);
+    }
+
+    private AppListEntryResolution createResolution(
+            Long resultId,
+            Long entryId,
+            Long listId,
+            String resultCode,
+            String wording,
+            String officer) {
+        var list = new ApplicationList();
+        list.setId(listId);
+        list.setUuid(UUID.randomUUID());
+
+        var entry = new ApplicationListEntry();
+        entry.setId(entryId);
+        entry.setUuid(UUID.randomUUID());
+        entry.setSequenceNumber(entryId.shortValue());
+        entry.setApplicationList(list);
+
+        var code = new ResolutionCode();
+        code.setResultCode(resultCode);
+
+        var resolution = new AppListEntryResolution();
+        resolution.setId(resultId);
+        resolution.setVersion(1L);
+        resolution.setUuid(UUID.randomUUID());
+        resolution.setApplicationList(entry);
+        resolution.setResolutionCode(code);
+        resolution.setResolutionWording(wording);
+        resolution.setResolutionOfficer(officer);
+        return resolution;
     }
 }

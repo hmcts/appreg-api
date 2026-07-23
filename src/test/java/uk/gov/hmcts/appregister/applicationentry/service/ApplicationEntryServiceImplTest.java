@@ -4,7 +4,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.assertj.core.util.Lists;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -48,11 +51,13 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
@@ -453,8 +458,7 @@ class ApplicationEntryServiceImplTest {
         when(mockPage.getPageNumber()).thenReturn(1);
 
         Page<ApplicationListEntryGetSummaryProjection> page =
-                new PageImpl<ApplicationListEntryGetSummaryProjection>(
-                        List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
+                new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1L);
 
         when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
                 .thenReturn(Status.OPEN);
@@ -1625,25 +1629,32 @@ class ApplicationEntryServiceImplTest {
         when(appListEntrySequenceMappingRepository.findByAlIdForUpdate(targetList.getId()))
                 .thenReturn(Optional.of(mapping));
 
-        when(applicationListEntryRepository.save(any(ApplicationListEntry.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0, ApplicationListEntry.class));
-
-        ArgumentCaptor<ApplicationListEntry> savedEntryCaptor =
-                ArgumentCaptor.forClass(ApplicationListEntry.class);
+        when(applicationListEntryRepository.saveAll(anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
         service.move(sourceListId, dto);
 
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
-        verify(applicationListEntryRepository, times(2)).save(savedEntryCaptor.capture());
-
-        List<ApplicationListEntry> savedEntries = savedEntryCaptor.getAllValues();
-        Assertions.assertEquals(2, savedEntries.size());
-        Assertions.assertSame(entry2, savedEntries.get(0));
-        Assertions.assertSame(entry1, savedEntries.get(1));
-        Assertions.assertSame(targetList, savedEntries.get(0).getApplicationList());
-        Assertions.assertSame(targetList, savedEntries.get(1).getApplicationList());
-        Assertions.assertEquals((short) 3, savedEntries.get(0).getSequenceNumber());
-        Assertions.assertEquals((short) 4, savedEntries.get(1).getSequenceNumber());
+        verify(applicationListEntryRepository)
+                .saveAll(
+                        argThat(
+                                savedEntries -> {
+                                    var savedEntriesList = Lists.newArrayList(savedEntries);
+                                    Assertions.assertEquals(2, savedEntriesList.size());
+                                    Assertions.assertSame(entry2, savedEntriesList.get(0));
+                                    Assertions.assertSame(entry1, savedEntriesList.get(1));
+                                    Assertions.assertSame(
+                                            targetList,
+                                            savedEntriesList.get(0).getApplicationList());
+                                    Assertions.assertSame(
+                                            targetList,
+                                            savedEntriesList.get(1).getApplicationList());
+                                    Assertions.assertEquals(
+                                            (short) 3, savedEntriesList.get(0).getSequenceNumber());
+                                    Assertions.assertEquals(
+                                            (short) 4, savedEntriesList.get(1).getSequenceNumber());
+                                    return true;
+                                }));
         Assertions.assertEquals(4, mapping.getAleLastSequence());
     }
 
@@ -1688,7 +1699,7 @@ class ApplicationEntryServiceImplTest {
                         });
 
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
-        verify(applicationListEntryRepository, never()).save(any(ApplicationListEntry.class));
+        verify(applicationListEntryRepository, never()).saveAll(anyList());
     }
 
     @Test
@@ -1700,33 +1711,41 @@ class ApplicationEntryServiceImplTest {
         final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
         val existingStatus1 = new AppListEntryFeeStatus();
         existingStatus1.setId(201L);
+        existingStatus1.setAppListEntry(entry1);
 
         val entryId2 = UUID.randomUUID();
         val entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
         val existingStatus2 = new AppListEntryFeeStatus();
         existingStatus2.setId(202L);
+        existingStatus2.setAppListEntry(entry2);
 
-        final var dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, false);
+        final var dto =
+                bulkFeesUpdateDto(
+                        Set.of(entryId1, entryId2), PaymentStatus.PAID, JsonNullable.of(false));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry1, entry2));
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId1))
-                .thenReturn(List.of(existingStatus1));
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId2))
-                .thenReturn(List.of(existingStatus2));
-        stubFeeStatusSave();
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(List.of(entryId2, entryId1)))
+                .thenReturn(List.of(existingStatus1, existingStatus2));
 
         final BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
-        verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<AppListEntryFeeStatus>> statusCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(auditOperationService)
+                .processAudit(any(), eq(AppListEntryAuditOperation.BULK_UPDATE_FEES), any());
+        verify(auditOperationService, never())
+                .processAudit(eq(AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY), any());
+        verify(auditOperationService, never())
+                .processAudit(eq(AppListEntryAuditOperation.CREATE_FEE_ENTRY), any());
+        verify(appListEntryFeeStatusRepository).saveAll(statusCaptor.capture());
 
-        List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
+        List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getValue();
         Assertions.assertEquals(
                 List.of(102L, 101L),
                 savedStatuses.stream().map(status -> status.getAppListEntry().getId()).toList());
@@ -1779,6 +1798,87 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void bulkUpdateFees_setOffsiteToAllFees() {
+        val listId = UUID.randomUUID();
+        val applicationList = openApplicationList(listId);
+
+        val entryId1 = UUID.randomUUID();
+        final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
+        val existingStatus1 = new AppListEntryFeeStatus();
+        existingStatus1.setId(201L);
+
+        val entryId2 = UUID.randomUUID();
+        val entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
+        val existingStatus2 = new AppListEntryFeeStatus();
+        existingStatus2.setId(202L);
+
+        final var dto = bulkFeeDetailsDtoWithNoFeeDetails(Set.of(entryId1, entryId2));
+
+        when(applicationListRepository.findByUuidIncludingDelete(listId))
+                .thenReturn(Optional.of(applicationList));
+        when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
+                .thenReturn(List.of(entry1, entry2));
+        when(appListEntryFeeRepository.getEntryFeesForEntry(entry1.getId()))
+                .thenReturn(List.of(new AppListEntryFeeId(entry1.getId(), 2L, 1L, "test")));
+        when(appListEntryFeeRepository.getEntryFeesForEntry(entry2.getId()))
+                .thenReturn(List.of(new AppListEntryFeeId(entry2.getId(), 3L, 1L, "test")));
+        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry1.getId()))
+                .thenReturn(List.of());
+        when(appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry2.getId()))
+                .thenReturn(List.of());
+        when(feeRepository.findOffsite(any())).thenReturn(List.of(new Fee()));
+        when(appListEntryFeeRepository.saveAll(anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.bulkUpdateFees(listId, dto);
+
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
+        verify(appListEntryFeeRepository).saveAll(anyList());
+        verify(appListEntryFeeStatusRepository, times(0)).save(any());
+    }
+
+    @Test
+    void bulkUpdateFees_removeOffsiteToAllFees() {
+        val listId = UUID.randomUUID();
+        val applicationList = openApplicationList(listId);
+
+        val entryId1 = UUID.randomUUID();
+        final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
+        val existingStatus1 = new AppListEntryFeeStatus();
+        existingStatus1.setId(201L);
+
+        val entryId2 = UUID.randomUUID();
+        final var entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
+        val existingStatus2 = new AppListEntryFeeStatus();
+        existingStatus2.setId(202L);
+
+        final var dto = bulkFeeDetailsDtoWithNoFeeDetails(Set.of(entryId1, entryId2));
+        dto.setHasOffsiteFee(JsonNullable.of(false));
+
+        when(applicationListRepository.findByUuidIncludingDelete(listId))
+                .thenReturn(Optional.of(applicationList));
+        when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
+                .thenReturn(List.of(entry1, entry2));
+        when(appListEntryFeeRepository.getEntryFeesForEntry(entry1.getId()))
+                .thenReturn(List.of(new AppListEntryFeeId(entry1.getId(), 3L, 1L, "test")));
+        when(appListEntryFeeRepository.getEntryFeesForEntry(entry2.getId()))
+                .thenReturn(List.of(new AppListEntryFeeId(entry2.getId(), 3L, 1L, "test")));
+        when(feeRepository.findOffsite(any())).thenReturn(List.of(new Fee()));
+        val offsiteFee = new Fee();
+        offsiteFee.setOffsite(true);
+        when(feeRepository.findById(3L)).thenReturn(Optional.of(offsiteFee));
+
+        service.bulkUpdateFees(listId, dto);
+
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
+        verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
+        verify(appListEntryFeeRepository, times(2)).getEntryFeesForEntry(anyLong());
+        verify(appListEntryFeeRepository, times(2)).delete(any());
+        verify(appListEntryFeeStatusRepository, never()).save(any());
+    }
+
+    @Test
     void bulkUpdateFees_appendsAllProvidedFeeDetails() {
         val entryId = UUID.randomUUID();
         val existingStatus = new AppListEntryFeeStatus();
@@ -1786,29 +1886,31 @@ class ApplicationEntryServiceImplTest {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(Set.of(entryId));
         dto.setFeeDetails(
-                List.of(
-                        bulkFeeDetails(PaymentStatus.PAID, "PAY-001", false),
-                        bulkFeeDetails(PaymentStatus.REMITTED, "PAY-002", false)));
+                JsonNullable.of(
+                        List.of(
+                                bulkFeeDetails(PaymentStatus.PAID, "PAY-001"),
+                                bulkFeeDetails(PaymentStatus.REMITTED, "PAY-002"))));
 
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
+        existingStatus.setAppListEntry(entry);
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry));
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(List.of(entryId)))
                 .thenReturn(List.of(existingStatus));
-        stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus);
-        verify(appListEntryFeeStatusRepository, times(2)).save(statusCaptor.capture());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<AppListEntryFeeStatus>> statusCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(appListEntryFeeStatusRepository).saveAll(statusCaptor.capture());
 
-        List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getAllValues();
+        List<AppListEntryFeeStatus> savedStatuses = statusCaptor.getValue();
         Assertions.assertEquals(
                 List.of(FeeStatusType.PAID, FeeStatusType.REMITTED),
                 savedStatuses.stream().map(AppListEntryFeeStatus::getAlefsFeeStatus).toList());
@@ -1824,7 +1926,9 @@ class ApplicationEntryServiceImplTest {
     @Test
     void bulkUpdateFees_recordsFailedMetricWhenValidationFails() {
         val listId = UUID.randomUUID();
-        val dto = bulkFeesUpdateDto(Set.of(UUID.randomUUID()), PaymentStatus.PAID, false);
+        val dto =
+                bulkFeesUpdateDto(
+                        Set.of(UUID.randomUUID()), PaymentStatus.PAID, JsonNullable.undefined());
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.empty());
@@ -1851,7 +1955,7 @@ class ApplicationEntryServiceImplTest {
                         .find(BULK_FEE_UPDATE_ENTRIES_METRIC)
                         .tag(METRIC_STATUS_TAG, "failed")
                         .summary());
-        verify(appListEntryFeeStatusRepository, never()).save(any(AppListEntryFeeStatus.class));
+        verify(appListEntryFeeStatusRepository, never()).saveAll(anyList());
     }
 
     @Test
@@ -1870,15 +1974,14 @@ class ApplicationEntryServiceImplTest {
                         .toList();
         Set<UUID> entryIds =
                 entries.stream().map(ApplicationListEntry::getUuid).collect(Collectors.toSet());
-        final var dto = bulkFeesUpdateDto(entryIds, PaymentStatus.PAID, false);
+        final var dto = bulkFeesUpdateDto(entryIds, PaymentStatus.PAID, JsonNullable.of(false));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(entries);
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(any(UUID.class)))
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(anyList()))
                 .thenReturn(List.of());
-        stubFeeStatusSave();
 
         BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
 
@@ -1886,7 +1989,7 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(1050, response.getUpdatedCount());
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(listId), anySet());
-        verify(appListEntryFeeStatusRepository, times(1050)).save(any(AppListEntryFeeStatus.class));
+        verify(appListEntryFeeStatusRepository).saveAll(anyList());
         verify(appListEntryFeeRepository, never()).getOffsiteEntryFeesForEntries(anyList());
         verify(feeRepository, never()).findOffsite(any(LocalDate.class));
     }
@@ -1897,7 +2000,8 @@ class ApplicationEntryServiceImplTest {
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
         final var entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
-        final var dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, true);
+        final var dto =
+                bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, JsonNullable.of(true));
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
         offsiteFee.setOffsite(true);
@@ -1906,23 +2010,25 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry));
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(List.of(entryId)))
                 .thenReturn(List.of());
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntries(anyList()))
                 .thenReturn(List.of());
         when(feeRepository.findOffsite(LocalDate.of(2025, Month.OCTOBER, 7)))
                 .thenReturn(List.of(offsiteFee));
-        when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
+        when(appListEntryFeeRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeId> feeMappingCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeId.class);
-        verify(appListEntryFeeRepository).save(feeMappingCaptor.capture());
-        Assertions.assertEquals(entry.getId(), feeMappingCaptor.getValue().getAppListEntryId());
-        Assertions.assertEquals(offsiteFee.getId(), feeMappingCaptor.getValue().getFeeId());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<AppListEntryFeeId>> feeMappingCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(appListEntryFeeRepository).saveAll(feeMappingCaptor.capture());
+        Assertions.assertEquals(
+                entry.getId(), feeMappingCaptor.getValue().getFirst().getAppListEntryId());
+        Assertions.assertEquals(
+                offsiteFee.getId(), feeMappingCaptor.getValue().getFirst().getFeeId());
     }
 
     @Test
@@ -1933,7 +2039,9 @@ class ApplicationEntryServiceImplTest {
         final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
         val entryId2 = UUID.randomUUID();
         final var entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
-        final var dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, true);
+        final var dto =
+                bulkFeesUpdateDto(
+                        Set.of(entryId1, entryId2), PaymentStatus.PAID, JsonNullable.of(true));
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
         offsiteFee.setOffsite(true);
@@ -1942,29 +2050,29 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry1, entry2));
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(any(UUID.class)))
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(anyList()))
                 .thenReturn(List.of());
         when(appListEntryFeeRepository.getOffsiteEntryFeesForEntries(anyList()))
                 .thenReturn(List.of());
         when(feeRepository.findOffsite(LocalDate.of(2025, Month.OCTOBER, 7)))
                 .thenReturn(List.of(offsiteFee));
-        when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
+        when(appListEntryFeeRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
 
-        ArgumentCaptor<AppListEntryFeeId> feeMappingCaptor =
-                ArgumentCaptor.forClass(AppListEntryFeeId.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<AppListEntryFeeId>> feeMappingCaptor =
+                ArgumentCaptor.forClass(List.class);
         verify(feeRepository).findOffsite(LocalDate.of(2025, Month.OCTOBER, 7));
-        verify(appListEntryFeeRepository, times(2)).save(feeMappingCaptor.capture());
+        verify(appListEntryFeeRepository).saveAll(feeMappingCaptor.capture());
         Assertions.assertEquals(
                 Set.of(entry1.getId(), entry2.getId()),
-                feeMappingCaptor.getAllValues().stream()
+                feeMappingCaptor.getValue().stream()
                         .map(AppListEntryFeeId::getAppListEntryId)
                         .collect(Collectors.toSet()));
         Assertions.assertTrue(
-                feeMappingCaptor.getAllValues().stream()
+                feeMappingCaptor.getValue().stream()
                         .allMatch(mapping -> offsiteFee.getId().equals(mapping.getFeeId())));
     }
 
@@ -1974,7 +2082,8 @@ class ApplicationEntryServiceImplTest {
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
-        final var dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, false);
+        final var dto =
+                bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, JsonNullable.undefined());
         val existingOffsiteMapping = new AppListEntryFeeId();
         existingOffsiteMapping.setAppListEntryId(entry.getId());
         existingOffsiteMapping.setFeeId(301L);
@@ -1983,16 +2092,15 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry));
-        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
+        when(appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(List.of(entryId)))
                 .thenReturn(List.of());
-        stubFeeStatusSave();
 
         service.bulkUpdateFees(listId, dto);
 
         verify(appListEntryFeeRepository, never()).delete(existingOffsiteMapping);
         verify(appListEntryFeeRepository, never()).flush();
         verify(appListEntryFeeRepository, never()).getOffsiteEntryFeesForEntries(anyList());
-        verify(appListEntryFeeRepository, never()).save(any(AppListEntryFeeId.class));
+        verify(appListEntryFeeRepository, never()).saveAll(anyList());
     }
 
     private ApplicationList openApplicationList(UUID listId) {
@@ -2014,20 +2122,27 @@ class ApplicationEntryServiceImplTest {
     }
 
     private BulkFeesUpdateDto bulkFeesUpdateDto(
-            Set<UUID> entryIds, PaymentStatus paymentStatus, boolean hasOffsiteFee) {
+            Set<UUID> entryIds, PaymentStatus paymentStatus, JsonNullable<Boolean> hasOffsiteFee) {
         val dto = new BulkFeesUpdateDto();
         dto.setEntryIds(entryIds);
-        dto.setFeeDetails(List.of(bulkFeeDetails(paymentStatus, "PAY-001", hasOffsiteFee)));
+        dto.setFeeDetails(JsonNullable.of(List.of(bulkFeeDetails(paymentStatus, "PAY-001"))));
+        dto.setHasOffsiteFee(hasOffsiteFee);
         return dto;
     }
 
-    private BulkFeeDetailsDto bulkFeeDetails(
-            PaymentStatus paymentStatus, String paymentReference, boolean hasOffsiteFee) {
+    private BulkFeesUpdateDto bulkFeeDetailsDtoWithNoFeeDetails(Set<UUID> entryIds) {
+        val dto = new BulkFeesUpdateDto();
+        dto.setEntryIds(entryIds);
+        dto.setHasOffsiteFee(JsonNullable.of(true));
+        dto.setFeeDetails(JsonNullable.undefined());
+        return dto;
+    }
+
+    private BulkFeeDetailsDto bulkFeeDetails(PaymentStatus paymentStatus, String paymentReference) {
         val feeDetails = new BulkFeeDetailsDto();
         feeDetails.setPaymentStatus(paymentStatus);
         feeDetails.setStatusDate(LocalDate.of(2025, Month.OCTOBER, 7));
         feeDetails.setPaymentReference(paymentReference);
-        feeDetails.setHasOffsiteFee(hasOffsiteFee);
         return feeDetails;
     }
 
@@ -2080,10 +2195,8 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
                 .thenReturn(List.of(entry1, entry2));
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(entryId1))
-                .thenReturn(List.of(existingOfficial1));
-        when(appListEntryOfficialRepository.getOfficialByEntryUuid(entryId2))
-                .thenReturn(List.of(existingOfficial2));
+        when(appListEntryOfficialRepository.findByAppListEntry_UuidIn(List.of(entryId2, entryId1)))
+                .thenReturn(List.of(existingOfficial1, existingOfficial2));
         when(applicationListEntryEntityMapper.toOfficial(any(Official.class), any()))
                 .thenAnswer(
                         invocation -> {
@@ -2091,12 +2204,22 @@ class ApplicationEntryServiceImplTest {
                             entity.setAppListEntry(invocation.getArgument(1));
                             return entity;
                         });
+        when(appListEntryOfficialRepository.saveAll(anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.replaceOfficials(listId, dto);
 
-        verify(appListEntryOfficialRepository).delete(existingOfficial1);
-        verify(appListEntryOfficialRepository).delete(existingOfficial2);
-        verify(appListEntryOfficialRepository, times(2)).save(any(AppListEntryOfficial.class));
+        verify(auditOperationService)
+                .processAudit(any(), eq(AppListEntryAuditOperation.BULK_UPDATE_OFFICIALS), any());
+        verify(auditOperationService, never())
+                .processAudit(eq(AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY), any());
+        verify(auditOperationService, never())
+                .processAudit(
+                        any(AppListEntryOfficial.class),
+                        eq(AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY),
+                        any());
+        verify(appListEntryOfficialRepository).deleteAllForEntryIds(List.of(102L, 101L));
+        verify(appListEntryOfficialRepository).saveAll(anyList());
     }
 
     @Test
@@ -2140,8 +2263,8 @@ class ApplicationEntryServiceImplTest {
                                     ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST, appEx.getCode());
                         });
 
-        verify(appListEntryOfficialRepository, never()).delete(any(AppListEntryOfficial.class));
-        verify(appListEntryOfficialRepository, never()).save(any(AppListEntryOfficial.class));
+        verify(appListEntryOfficialRepository, never()).deleteAllForEntryIds(anyList());
+        verify(appListEntryOfficialRepository, never()).saveAll(anyList());
     }
 
     @Test

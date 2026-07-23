@@ -38,6 +38,7 @@ properties:
       respondents to be created and linked.
   feeReference:
     type: string
+    maxLength: 12
     nullable: true
     description: A short reference code that identifies a Fee.
     example: "CO5.2"
@@ -70,6 +71,7 @@ properties:
 
   offsiteFeeReference:
     type: string
+    maxLength: 12
     nullable: true
     description: A short reference code that identifies a offsite Fee.
     example: "CO5.2"

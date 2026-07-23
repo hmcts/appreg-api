@@ -199,12 +199,8 @@ public enum AppListEntryError implements ErrorCodeEnum {
     PAYMENT_REFERENCE_TOO_LONG(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "paymentReference must not be longer than 100 characters",
+                    "paymentReference must not be longer than 15 characters",
                     "ALE-40")),
-
-    OFFSITE_FEE_REQUIRED(
-            DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "hasOffsiteFee must be provided", "ALE-41")),
 
     OFFICIAL_TITLE_REQUIRED(
             DefaultErrorDetail.create(

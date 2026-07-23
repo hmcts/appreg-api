@@ -36,6 +36,8 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     /** Represents a null value. We default to a null string. */
     public static final String EMPTY_VALUE = "";
 
+    private static final int AUDIT_VARCHAR_LIMIT = 4000;
+
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schemaName;
 
@@ -278,7 +280,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     }
 
     private static void setOldAuditValue(DataAudit audit, String value) {
-        if (value != null && value.length() > VARCHAR_AUDIT_LIMIT) {
+        if (shouldUseClob(value)) {
             audit.setOldValue(null);
             audit.setOldClobValue(value);
             return;
@@ -289,7 +291,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     }
 
     private static void setNewAuditValue(DataAudit audit, String value) {
-        if (value != null && value.length() > VARCHAR_AUDIT_LIMIT) {
+        if (shouldUseClob(value)) {
             audit.setNewValue(null);
             audit.setNewClobValue(value);
             return;
@@ -297,6 +299,10 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
         audit.setNewValue(value);
         audit.setNewClobValue(null);
+    }
+
+    private static boolean shouldUseClob(String value) {
+        return value != null && value.length() > AUDIT_VARCHAR_LIMIT;
     }
 
     private static void logAuditValues(
