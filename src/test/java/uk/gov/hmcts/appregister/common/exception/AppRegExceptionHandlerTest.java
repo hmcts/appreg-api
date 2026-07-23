@@ -778,11 +778,14 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void givenHttpMessageNotReadable_WhenControllerHasLogPayloadButResponseIsPopulated_thenDoNotLogRequest() throws Exception {
+    void
+            givenHttpMessageNotReadable_WhenControllerHasLogPayloadButResponseIsPopulated_thenDoNotLogRequest()
+                    throws Exception {
         NativeWebRequest nativeWebRequest = Mockito.mock(NativeWebRequest.class);
 
         Method method =
-                AppRegExceptionHandlerTest.class.getDeclaredMethod("sampleLogResponsePayloadsEndpoint");
+                AppRegExceptionHandlerTest.class.getDeclaredMethod(
+                        "sampleLogResponsePayloadsEndpoint");
         HandlerMethod handlerMethod = new HandlerMethod(this, method);
 
         Mockito.when(
@@ -799,8 +802,7 @@ class AppRegExceptionHandlerTest {
         exceptionHandler.handleHttpMessageNotReadable(
                 exception, HEADERS, BAD_REQUEST, nativeWebRequest);
 
-        assertThat(logCaptor.getLogs())
-                .noneMatch(log -> log.contains("Test request payload:"));
+        assertThat(logCaptor.getLogs()).noneMatch(log -> log.contains("Test request payload:"));
     }
 
     @Test
