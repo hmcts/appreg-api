@@ -10,16 +10,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /**
- * Logs a narrow startup diagnostic for secret-backed configuration values that are useful when
- * debugging config tree mounts in non-production environments.
+ * Logs a narrow startup diagnostic for secret-backed configuration values that are useful.
  */
 @Component
 @Slf4j
 public class StartupSecretDiagnosticsLogger implements ApplicationRunner {
-    static final String POSTGRES_DATABASE = "POSTGRES_DATABASE";
-    static final String POSTGRES_DATABASE_DEFAULT = "appreg-db";
     static final String CSDS_BASE_URL = "CSDS_BASE_URL";
-    static final String CSDS_BASE_URL_DEFAULT = "http://noop";
+    private static final String CSDS_BASE_URL_DEFAULT = "http://noop";
 
     private final Environment environment;
     private final Path mountedSecretsPath;
@@ -34,11 +31,10 @@ public class StartupSecretDiagnosticsLogger implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        logDiagnostic(inspect(POSTGRES_DATABASE, POSTGRES_DATABASE_DEFAULT));
         logDiagnostic(inspect(CSDS_BASE_URL, CSDS_BASE_URL_DEFAULT));
     }
 
-    StartupSecretDiagnostic inspect(String propertyName, String defaultValue) {
+    private StartupSecretDiagnostic inspect(String propertyName, String defaultValue) {
         var resolvedValue = environment.getProperty(propertyName, defaultValue);
         var mountedSecretPath = mountedSecretsPath.resolve(propertyName);
 
