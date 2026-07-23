@@ -10,8 +10,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.TokenStub;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -28,6 +30,8 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     @Autowired protected TokenStub tokenStub;
 
     @Autowired protected RestAssuredClient restAssuredClient;
+
+    @MockitoBean protected CsdsIngestService csdsIngestService;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     protected String issuer;

@@ -76,7 +76,7 @@ spotless {
   java {
     // files to format
     target 'src/**/*.java'
-    googleJavaFormat('1.22.0').aosp()
+    googleJavaFormat('1.35.0').aosp()
     trimTrailingWhitespace()
     endWithNewline()
 
@@ -112,7 +112,7 @@ tasks.withType(Test).configureEach {
   enabled = true
   useJUnitPlatform()
   failFast = true
-  maxHeapSize = '1024m'
+  maxHeapSize = '2048m'
 
   testLogging {
     exceptionFormat = 'full'
