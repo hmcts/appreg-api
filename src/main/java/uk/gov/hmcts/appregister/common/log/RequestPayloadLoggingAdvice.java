@@ -1,11 +1,6 @@
 package uk.gov.hmcts.appregister.common.log;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.nio.CharBuffer;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
