@@ -52,6 +52,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.LogPayloads;
+import uk.gov.hmcts.appregister.common.log.PayloadLogDirection;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
@@ -777,6 +778,32 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void givenHttpMessageNotReadable_WhenControllerHasLogPayloadButResponseIsPopulated_thenDoNotLogRequest() throws Exception {
+        NativeWebRequest nativeWebRequest = Mockito.mock(NativeWebRequest.class);
+
+        Method method =
+                AppRegExceptionHandlerTest.class.getDeclaredMethod("sampleLogResponsePayloadsEndpoint");
+        HandlerMethod handlerMethod = new HandlerMethod(this, method);
+
+        Mockito.when(
+                        nativeWebRequest.getAttribute(
+                                HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE,
+                                RequestAttributes.SCOPE_REQUEST))
+                .thenReturn(handlerMethod);
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(
+                        "Type conversion problem. Something in the payload is not correct",
+                        (HttpInputMessage) null);
+
+        exceptionHandler.handleHttpMessageNotReadable(
+                exception, HEADERS, BAD_REQUEST, nativeWebRequest);
+
+        assertThat(logCaptor.getLogs())
+                .noneMatch(log -> log.contains("Test request payload:"));
+    }
+
+    @Test
     void givenMissingRequestParameter_whenHandled_thenWarnIsLoggedWithoutError() {
         MissingServletRequestParameterException exception =
                 new MissingServletRequestParameterException("date", "LocalDate");
@@ -1065,6 +1092,17 @@ class AppRegExceptionHandlerTest {
     @SuppressWarnings("unused")
     private void sampleLogPayloadsEndpoint() {
         // used to provide a HandlerMethod annotated with @LogPayloads
+    }
+
+    @LogPayloads(direction = PayloadLogDirection.RESPONSE, responsePrefix = "Test response payload")
+    @SuppressWarnings("unused")
+    private void sampleLogResponsePayloadsEndpoint() {
+        // used to provide a HandlerMethod annotated with @LogPayloads for response payload logging
+    }
+
+    @SuppressWarnings("unused")
+    private void sampleNoLogPayloadsEndpoint() {
+        // used to provide a HandlerMethod without @LogPayloads
     }
 
     private static Path path(String value) {
