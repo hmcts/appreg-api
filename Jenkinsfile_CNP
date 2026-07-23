@@ -85,27 +85,27 @@ withPipeline(type, product, component) {
 
 
   before('dbmigrate:demo') {
-    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+    sh("./gradlew --no-daemon --refresh-dependencies --init-script init.gradle assemble")
   }
 
   before('dbmigrate:test') {
-    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+    sh("./gradlew --no-daemon --refresh-dependencies --init-script init.gradle assemble")
   }
 
   before('dbmigrate:ithc') {
-    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+    sh("./gradlew --no-daemon --refresh-dependencies --init-script init.gradle assemble")
   }
 
   before('dbmigrate:demo') {
-    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+    sh("./gradlew --no-daemon --refresh-dependencies --init-script init.gradle assemble")
   }
 
   before('dbmigrate:test') {
-    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+    sh("./gradlew --no-daemon --refresh-dependencies --init-script init.gradle assemble")
   }
 
   before('dbmigrate:ithc') {
-    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+    sh("./gradlew --no-daemon --refresh-dependencies --init-script init.gradle assemble")
   }
 
   before('akschartsinstall') {
