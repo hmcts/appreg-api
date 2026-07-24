@@ -459,7 +459,7 @@ class DataConstraintControllerTest extends BaseIntegration {
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setPhone(JsonNullable.of("TESTPHONE"));
+                .setPhone(JsonNullable.of("TESTPHONEASDF"));
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -577,7 +577,7 @@ class DataConstraintControllerTest extends BaseIntegration {
                 .getRespondent()
                 .getPerson()
                 .getContactDetails()
-                .setPhone(JsonNullable.of("TESTPHONE"));
+                .setPhone(JsonNullable.of("TESTPHONEASDFG"));
         entryCreateDto
                 .getRespondent()
                 .getPerson()
