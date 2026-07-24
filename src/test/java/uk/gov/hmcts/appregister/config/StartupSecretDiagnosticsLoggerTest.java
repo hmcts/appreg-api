@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import nl.altindag.log.LogCaptor;
@@ -14,16 +15,13 @@ class StartupSecretDiagnosticsLoggerTest {
 
     @Test
     void givenMountedSecretsAndResolvedValues_whenRun_thenLogsMountedAndResolvedState()
-            throws Exception {
-        Files.writeString(
-                tempDir.resolve(StartupSecretDiagnosticsLogger.POSTGRES_DATABASE), "appreg-db");
+            throws IOException {
         Files.writeString(
                 tempDir.resolve(StartupSecretDiagnosticsLogger.CSDS_BASE_URL),
                 "https://csds.dev.apps.hmcts.net/api/rest");
 
         var environment =
                 new MockEnvironment()
-                        .withProperty(StartupSecretDiagnosticsLogger.POSTGRES_DATABASE, "appreg-db")
                         .withProperty(
                                 StartupSecretDiagnosticsLogger.CSDS_BASE_URL,
                                 "https://csds.dev.apps.hmcts.net/api/rest");
@@ -35,19 +33,13 @@ class StartupSecretDiagnosticsLoggerTest {
 
         assertThat(logCaptor.getInfoLogs())
                 .contains(
-                        "Startup secret diagnostic: property=POSTGRES_DATABASE resolvedValue=appreg-db "
-                                + "usingDefault=true mountedFilePresent=true mountedFileReadable=true",
                         "Startup secret diagnostic: property=CSDS_BASE_URL "
                                 + "resolvedValue=https://csds.dev.apps.hmcts.net/api/rest "
                                 + "usingDefault=false mountedFilePresent=true mountedFileReadable=true");
     }
 
     @Test
-    void givenMissingCsdsFileAndFallbackValue_whenRun_thenLogsDefaultAndMissingFile()
-            throws Exception {
-        Files.writeString(
-                tempDir.resolve(StartupSecretDiagnosticsLogger.POSTGRES_DATABASE), "appreg-db");
-
+    void givenMissingCsdsFileAndFallbackValue_whenRun_thenLogsDefaultAndMissingFile() {
         var environment = new MockEnvironment();
         var logger = new StartupSecretDiagnosticsLogger(environment, tempDir.toString());
         var logCaptor = LogCaptor.forClass(StartupSecretDiagnosticsLogger.class);
