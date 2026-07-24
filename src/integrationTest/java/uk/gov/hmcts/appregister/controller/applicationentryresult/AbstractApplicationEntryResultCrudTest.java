@@ -81,36 +81,6 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
     }
 
     // ---- HTTP helpers ----
-    protected Response deleteResult(UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token)
-            throws MalformedURLException {
-        return restAssuredClient.executeDeleteRequest(
-                getLocalUrl(
-                        WEB_CONTEXT
-                                + "/"
-                                + listId
-                                + "/entries/"
-                                + entryId
-                                + "/results/"
-                                + resultId),
-                token);
-    }
-
-    protected Response deleteResult(
-            UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token, String ifMatch)
-            throws MalformedURLException {
-        return restAssuredClient.executeDeleteRequest(
-                getLocalUrl(
-                        WEB_CONTEXT
-                                + "/"
-                                + listId
-                                + "/entries/"
-                                + entryId
-                                + "/results/"
-                                + resultId),
-                token,
-                ifMatch);
-    }
-
     protected Response createResult(UUID listId, UUID entryId, TokenAndJwksKey token, Object body)
             throws MalformedURLException {
         return restAssuredClient.executePostRequest(

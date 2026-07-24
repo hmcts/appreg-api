@@ -57,7 +57,6 @@ class BulkUploadAsyncLifecycleTest {
 
     private BulkUploadAsyncLifecycle lifecycle;
     private BulkImportService bulkImportService;
-    private BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
     private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
     private BulkCreateApplicationEntryValidator.Session validationSession;
     private ApplicationList applicationList;
@@ -74,7 +73,6 @@ class BulkUploadAsyncLifecycleTest {
 
         bulkImportService = mock(BulkImportService.class);
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
-        bulkUploadApplicationEntryValidator = mock(BulkUploadApplicationEntryValidator.class);
         validationSession = mock(BulkCreateApplicationEntryValidator.Session.class);
         applicationList = new ApplicationList();
         listId = UUID.randomUUID();
@@ -372,6 +370,61 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenMissingRequiredFields_whenValidatingBusinessRules_thenLogsRowFailure()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setApplicationCode(null);
+        row.setApplicantCode(null);
+        JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        ObjectMapper mapper = new ObjectMapper();
+        BulkUploadError[] errors =
+                mapper.readValue(
+                        context.getValidationFailureMessages().getFirst(), BulkUploadError[].class);
+        assertThat(errors).hasSize(3);
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "APPLICANT_CODE",
+                                                null,
+                                                "Applicant code is required",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"),
+                                        new BulkUploadError(
+                                                2,
+                                                "APPLICATION_CODE",
+                                                null,
+                                                "Application code is required",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"),
+                                        new BulkUploadError(
+                                                2,
+                                                "applicationCode",
+                                                null,
+                                                "must not be null",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
+    }
+
+    @Test
     void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors()
             throws IOException {
         BulkUploadRow row = validOrganisationRow();
@@ -437,11 +490,6 @@ class BulkUploadAsyncLifecycleTest {
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
-
-        String name =
-                row.getRespondentOrganisationName() != null
-                        ? row.getRespondentOrganisationName()
-                        : row.getRespondentForename1() + " " + row.getRespondentSurname();
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -594,7 +642,7 @@ class BulkUploadAsyncLifecycleTest {
         JobContext context = new JobContext();
         lifecycle.setCSVFile(csvFile);
 
-        try (MockedConstruction<ObjectMapper> ignored =
+        try (MockedConstruction<ObjectMapper> mockedObjectMappers =
                 mockConstruction(
                         ObjectMapper.class,
                         (mock, constructionContext) ->
@@ -605,6 +653,7 @@ class BulkUploadAsyncLifecycleTest {
                     assertThrows(
                             AppRegistryException.class,
                             () -> lifecycle.validating(event(row, context)));
+            assertThat(mockedObjectMappers.constructed()).hasSize(1);
 
             assertThat(exception.getCode())
                     .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -698,7 +747,94 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(writtenCsv.toString())
                 .contains("HEADER|")
-                .contains("row-two|must match")
+                .contains("row-two|")
+                .contains("respondent.organisation.contactDetails.postcode")
+                .contains(row.getRespondentPostcode())
+                .contains("Field has been rejected")
+                .contains("row-three|");
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+    }
+
+    @Test
+    void whenValidating_csvFileIsSet_thenWritesClobSuccessfully_multipleRowErrorsForSingleRow()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+
+        StringBuilder writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+        row.setRespondentEmail("testtest.com");
+
+        JobContext context = new JobContext();
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(writtenCsv.toString())
+                .contains("HEADER|")
+                .contains("row-two|")
+                .contains("respondent.organisation.contactDetails.email")
+                .contains("testtest.com")
+                .contains("Field has been rejected|")
+                .contains("respondent.organisation.contactDetails.postcode")
+                .contains(row.getRespondentPostcode())
+                .contains("Field has been rejected")
+                .contains("row-three|");
+
+        verify(persistenceService, times(1)).writeClob(any(), any());
+    }
+
+    @Test
+    void whenValidating_csvFileIsSet_containsHeaderErrors_thenWritesClobSuccessfully()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+
+        StringBuilder writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("invalid");
+
+        JobContext context = new JobContext();
+        context.setValidationFailureMessages(
+                List.of("HEADER_ERROR:1", "HEADER_ERROR:2", "HEADER_ERROR:3", "HEADER_ERROR:4"));
+        AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
+
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        assertThat(writtenCsv.toString())
+                .contains("HEADER|HEADER_ERROR:4|HEADER_ERROR:3|HEADER_ERROR:2|HEADER_ERROR:1")
+                .contains(
+                        "row-two|respondent.organisation.contactDetails.postcode - invalid: Field has been rejected")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());

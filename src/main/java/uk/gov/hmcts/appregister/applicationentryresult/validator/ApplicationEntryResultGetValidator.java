@@ -63,9 +63,4 @@ public class ApplicationEntryResultGetValidator
     protected UUID getApplicationListEntryUuid(PayloadGetEntryResultInList validatable) {
         return validatable.getEntryId();
     }
-
-    @Override
-    protected void validateParentApplicationListIsOpen(ApplicationList validatable) {
-        // Do not fail if the list is closed
-    }
 }

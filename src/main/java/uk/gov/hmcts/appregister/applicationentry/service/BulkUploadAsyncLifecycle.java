@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -140,6 +141,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = nextRowNumber;
 
         List<BulkUploadError> allErrors = new ArrayList<>();
+        addHeaderErrors(context, allErrors);
 
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
@@ -147,10 +149,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             rowErrors.addAll(validator.validateRow(rowNumber, row));
             rowErrors.addAll(validateMappedDto(rowNumber, dto));
-
-            if (rowErrors.isEmpty()) {
-                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
-            }
+            rowErrors.addAll(validateBusinessRules(rowNumber, dto));
 
             allErrors.addAll(rowErrors);
             rowNumber++;
@@ -216,7 +215,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     new BulkUploadError(
                             -1, BULK_UPLOAD_ROW, null, message, null, null, "HEADER_ERROR"));
         }
-
         context.setValidationFailureMessages(new ArrayList<>());
     }
 
@@ -472,17 +470,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void handleHeader(List<BulkUploadError> errors, StringBuilder builder, String header) {
+        builder.append(header);
         if (errors.getFirst().getErrorType().equals("HEADER_ERROR")) {
             for (BulkUploadError bulkUploadError : errors) {
                 if (bulkUploadError.getRowNumber() == -1) {
-                    builder.append(header)
-                            .append("|")
-                            .append(bulkUploadError.getMessage())
-                            .append("\n");
+                    builder.append("|").append(bulkUploadError.getMessage());
                 }
             }
+            builder.append("\n");
         } else {
-            builder.append(header).append("|").append("\n");
+            builder.append("|").append("\n");
         }
     }
 
@@ -499,7 +496,23 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
-                    builder.append("|").append(error.getMessage());
+                    if (Objects.nonNull(error.getRejectedValue())
+                            && !error.getRejectedValue().isBlank()) {
+                        builder.append("|")
+                                .append(
+                                        "%s - %s: %s"
+                                                .formatted(
+                                                        error.getLocation(),
+                                                        error.getRejectedValue(),
+                                                        "Field has been rejected"));
+
+                    } else {
+                        builder.append("|")
+                                .append(
+                                        "%s: %s"
+                                                .formatted(
+                                                        error.getLocation(), error.getMessage()));
+                    }
                 }
                 builder.append("\n");
             } else {

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 class CsdsIngressScheduler {
-    private static final String NIGHTLY_INGRESS_CRON = "0 0 20 * * *";
+    private static final String NIGHTLY_INGRESS_CRON = "0 0 3 * * *";
     private static final String LONDON_TIME_ZONE = "Europe/London";
 
     private final CsdsIngressProcessor csdsIngressProcessor;
