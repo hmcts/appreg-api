@@ -5,10 +5,15 @@ info:
     REST API for managing Administrative Tasks, Applications Lists, Application List Entries and getting important,
     reference data including Application Codes, Result Codes, Fees, Court Locations, Criminal Justice Areas
     and Standard Applicants.
+  contact:
+    name: HMCTS AppReg Team
+    url: https://github.com/hmcts/appreg-api
   # We use @version@ here so Gradle can inject the project version at build time.
   # DO NOT change this to $version — Groovy template expansion conflicts with $ref
   # entries elsewhere in the file and will break the build.
   version: "@version@"
+servers:
+  - url: /
 tags:
   - name: admin
     description:
@@ -64,7 +69,6 @@ paths:
   /application-lists:                                               { $ref: './paths/application-lists/application-lists.yaml' }
   /application-lists/print:                                         { $ref: './paths/application-lists/printable-application-lists-bulk.yaml' }
   /application-lists/{listId}:                                      { $ref: './paths/application-lists/application-lists-by-id.yaml' }
-  /application-lists/{listId}/print:                                { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
   # APPLICATION LIST ENTRIES
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
   /application-list-entries/ids:                                    { $ref: './paths/application-list-entries/entry-ids.yaml' }
@@ -111,8 +115,3 @@ paths:
   /standard-applicants/reports/print:                               { $ref: './paths/standard-applicants/standard-applicants-print.yaml' }
   /standard-applicants/{code}:                                      { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
   /standard-applicants/export:                                      { $ref: './paths/standard-applicants/standard-applicants-export.yaml' }
-
-components:
-  schemas:
-    # APPLICATION CODES
-    application-code-get-summary-dto:     { $ref: './components/schemas/application-codes/application-code-get-summary-dto.yaml' }

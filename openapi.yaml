@@ -1,5 +1,8 @@
 openapi: 3.0.4
 info:
+  contact:
+    name: HMCTS AppReg Team
+    url: https://github.com/hmcts/appreg-api
   description: "REST API for managing Administrative Tasks, Applications Lists, Application\
     \ List Entries and getting important, reference data including Application Codes,\
     \ Result Codes, Fees, Court Locations, Criminal Justice Areas and Standard Applicants."
@@ -1392,94 +1395,6 @@ paths:
                 $ref: "#/components/schemas/problem"
           description: Unexpected server error.
       summary: Update an Application List
-      tags:
-      - application-lists
-  /application-lists/{listId}/print:
-    get:
-      description: |
-        Returns all data required for printing the specified Application List as a single, "print-ready" JSON document.
-      operationId: printApplicationList
-      parameters:
-      - description: Public identifier of the Application List.
-        example: 9f7b2a35-57ac-4a1c-9c41-83b6c8157af4
-        in: path
-        name: listId
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/vnd.hmcts.appreg.v1+json:
-              schema:
-                $ref: "#/components/schemas/application-list-get-print-dto"
-          description: Page of Application Lists
-          headers:
-            Vary:
-              description: Print-ready JSON payload for the Application List
-              schema:
-                example: Accept
-                type: string
-        "400":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Invalid request parameters.
-        "401":
-          content:
-            application/problem+json:
-              examples:
-                unauthenticated:
-                  value:
-                    type: https://errors.hmcts.net/common/unauthorized
-                    title: Unauthorized
-                    status: 401
-                    detail: Missing or invalid credentials
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Authentication required or token invalid.
-        "403":
-          content:
-            application/problem+json:
-              examples:
-                forbidden:
-                  value:
-                    type: https://errors.hmcts.net/common/forbidden
-                    title: Forbidden
-                    status: 403
-                    detail: You do not have permission to access this resource
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Authenticated but not permitted to perform this action.
-        "404":
-          content:
-            application/problem+json:
-              examples:
-                missing:
-                  value:
-                    type: https://errors.hmcts.net/appreg/not-found
-                    title: Not Found
-                    status: 404
-                    detail: Result code with id=123 was not found
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: The requested resource was not found.
-        "500":
-          content:
-            application/problem+json:
-              examples:
-                generic:
-                  value:
-                    type: https://errors.hmcts.net/common/internal-error
-                    title: Internal Server Error
-                    status: 500
-                    detail: An unexpected error occurred
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Unexpected server error.
-      summary: Get a print-ready JSON payload for an Application List
       tags:
       - application-lists
   /application-list-entries:
@@ -3923,119 +3838,6 @@ paths:
       tags:
       - application-list-entry-results
   /application-lists/{listId}/entries/{entryId}/results/{resultId}:
-    delete:
-      description: Permanently deletes the Application List Entry Result identified
-        by `resultId`.
-      operationId: deleteApplicationListEntryResult
-      parameters:
-      - description: Public identifier of the Application List.
-        example: 123e4567-e89b-12d3-a456-426655440000
-        in: path
-        name: listId
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Public identifier of the Application List Entry.
-        example: 123e4567-e89b-12d3-a456-426655440000
-        in: path
-        name: entryId
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Public identifier of the Application List Entry Result.
-        example: 123e4567-e89b-12d3-a456-426655440000
-        in: path
-        name: resultId
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "204":
-          description: Application List Entry Result deleted (no content returned)
-          headers:
-            Vary:
-              description: Response varies by Accept for media-type versioning.
-              schema:
-                example: Accept
-                type: string
-        "400":
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Invalid request parameters.
-        "401":
-          content:
-            application/problem+json:
-              examples:
-                unauthenticated:
-                  value:
-                    type: https://errors.hmcts.net/common/unauthorized
-                    title: Unauthorized
-                    status: 401
-                    detail: Missing or invalid credentials
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Authentication required or token invalid.
-        "403":
-          content:
-            application/problem+json:
-              examples:
-                forbidden:
-                  value:
-                    type: https://errors.hmcts.net/common/forbidden
-                    title: Forbidden
-                    status: 403
-                    detail: You do not have permission to access this resource
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Authenticated but not permitted to perform this action.
-        "404":
-          content:
-            application/problem+json:
-              examples:
-                missing:
-                  value:
-                    type: https://errors.hmcts.net/appreg/not-found
-                    title: Not Found
-                    status: 404
-                    detail: Result code with id=123 was not found
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: The requested resource was not found.
-        "409":
-          content:
-            application/problem+json:
-              examples:
-                generic:
-                  value:
-                    type: https://errors.hmcts.net/common/conflict
-                    title: Conflict
-                    status: 409
-                    detail: The Application List could not be modified due to a conflict
-                      with its current state
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Conflict with the current state of the resource.
-        "500":
-          content:
-            application/problem+json:
-              examples:
-                generic:
-                  value:
-                    type: https://errors.hmcts.net/common/internal-error
-                    title: Internal Server Error
-                    status: 500
-                    detail: An unexpected error occurred
-              schema:
-                $ref: "#/components/schemas/problem"
-          description: Unexpected server error.
-      summary: Delete an Application List Entry Result
-      tags:
-      - application-list-entry-results
     put:
       description: |
         Full replacement (PUT) of an existing Application List Entry Result.
@@ -6223,64 +6025,6 @@ components:
             $ref: "#/components/schemas/problem"
       description: Requested media type/version not acceptable.
   schemas:
-    application-code-get-summary-dto:
-      description: "Lightweight DTO for Application Codes, used in list/search views."
-      properties:
-        applicationCode:
-          description: Code that identifies the application.
-          example: AD99003
-          type: string
-        title:
-          description: Human-readable title.
-          type: string
-        wording:
-          $ref: "#/components/schemas/template-detail"
-        isFeeDue:
-          description: |
-            True if Application List Entries using this Application Code require an Application List Entry Fee Status to be created and linked.
-          type: boolean
-        requiresRespondent:
-          description: |
-            True if Application List Entries using this Application Code require a respondent to be created and linked.
-          type: boolean
-        bulkRespondentAllowed:
-          description: |
-            True if Application List Entries using this Application Code allow multiple respondents to be created and linked.
-          type: boolean
-        feeReference:
-          description: A short reference code that identifies a Fee.
-          example: CO5.2
-          maxLength: 12
-          nullable: true
-          type: string
-        feeAmount:
-          $ref: "#/components/schemas/application_code_get_summary_dto_feeAmount"
-        feeDescription:
-          description: Descriptive text for the fee.
-          nullable: true
-          type: string
-        offsiteFeeReference:
-          description: A short reference code that identifies a offsite Fee.
-          example: CO1.1
-          maxLength: 12
-          nullable: true
-          type: string
-        offsiteFeeAmount:
-          $ref: "#/components/schemas/application_code_get_summary_dto_offsiteFeeAmount"
-        offsiteFeeDescription:
-          description: |
-            Descriptive text for the offsite fee.
-          example: Offsite Fee for application to Crown Court
-          nullable: true
-          type: string
-      required:
-      - applicationCode
-      - bulkRespondentAllowed
-      - isFeeDue
-      - requiresRespondent
-      - title
-      - wording
-      type: object
     admin-job-type:
       description: The type of the administrative background job
       enum:
@@ -6405,7 +6149,7 @@ components:
           nullable: true
           type: string
         feeAmount:
-          $ref: "#/components/schemas/application_code_get_summary_dto_feeAmount"
+          $ref: "#/components/schemas/application_code_get_detail_dto_feeAmount"
         feeDescription:
           description: Descriptive text for the fee.
           example: Fee for application to Crown Court
@@ -6418,7 +6162,7 @@ components:
           nullable: true
           type: string
         offsiteFeeAmount:
-          $ref: "#/components/schemas/application_code_get_summary_dto_offsiteFeeAmount"
+          $ref: "#/components/schemas/application_code_get_detail_dto_offsiteFeeAmount"
         offsiteFeeDescription:
           description: Descriptive text for the offsite fee.
           example: Offsite Fee for application to Crown Court
@@ -7977,6 +7721,64 @@ components:
       - pageSize
       - totalElements
       type: object
+    application-code-get-summary-dto:
+      description: "Lightweight DTO for Application Codes, used in list/search views."
+      properties:
+        applicationCode:
+          description: Code that identifies the application.
+          example: AD99003
+          type: string
+        title:
+          description: Human-readable title.
+          type: string
+        wording:
+          $ref: "#/components/schemas/template-detail"
+        isFeeDue:
+          description: |
+            True if Application List Entries using this Application Code require an Application List Entry Fee Status to be created and linked.
+          type: boolean
+        requiresRespondent:
+          description: |
+            True if Application List Entries using this Application Code require a respondent to be created and linked.
+          type: boolean
+        bulkRespondentAllowed:
+          description: |
+            True if Application List Entries using this Application Code allow multiple respondents to be created and linked.
+          type: boolean
+        feeReference:
+          description: A short reference code that identifies a Fee.
+          example: CO5.2
+          maxLength: 12
+          nullable: true
+          type: string
+        feeAmount:
+          $ref: "#/components/schemas/application_code_get_detail_dto_feeAmount"
+        feeDescription:
+          description: Descriptive text for the fee.
+          nullable: true
+          type: string
+        offsiteFeeReference:
+          description: A short reference code that identifies a offsite Fee.
+          example: CO1.1
+          maxLength: 12
+          nullable: true
+          type: string
+        offsiteFeeAmount:
+          $ref: "#/components/schemas/application_code_get_detail_dto_offsiteFeeAmount"
+        offsiteFeeDescription:
+          description: |
+            Descriptive text for the offsite fee.
+          example: Offsite Fee for application to Crown Court
+          nullable: true
+          type: string
+      required:
+      - applicationCode
+      - bulkRespondentAllowed
+      - isFeeDue
+      - requiresRespondent
+      - title
+      - wording
+      type: object
     template-detail:
       description: The wording details
       properties:
@@ -8858,7 +8660,7 @@ components:
           format: binary
           type: string
       type: object
-    application_code_get_summary_dto_feeAmount:
+    application_code_get_detail_dto_feeAmount:
       description: |
         Fee amount for this Application Code, expressed in pence (GBP minor units). Always use integer values; 1 GBP = 100 pence.
       nullable: true
@@ -8879,7 +8681,7 @@ components:
       required:
       - value
       type: object
-    application_code_get_summary_dto_offsiteFeeAmount:
+    application_code_get_detail_dto_offsiteFeeAmount:
       description: |
         Offsite Fee amount for this Application Code, expressed in pence (GBP minor units). Always use integer values; 1 GBP = 100 pence.
       nullable: true

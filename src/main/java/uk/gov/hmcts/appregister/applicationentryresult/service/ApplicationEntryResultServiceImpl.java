@@ -17,13 +17,11 @@ import uk.gov.hmcts.appregister.applicationentryresult.audit.BulkCreateApplicati
 import uk.gov.hmcts.appregister.applicationentryresult.audit.BulkDeleteApplicationEntryResultAudit;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
-import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultCreationValidator;
-import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultDeletionValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultGetValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
@@ -59,7 +57,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     private final AppListEntryResolutionRepository repository;
 
     // Validators
-    private final ApplicationEntryResultDeletionValidator deletionValidator;
     private final ApplicationEntryResultCreationValidator creationValidator;
     private final ApplicationEntryResultUpdateValidator updateValidator;
     private final ApplicationEntryResultGetValidator applicationListGetValidator;
@@ -83,41 +80,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     private final ObjectProvider<ApplicationEntryResultService> selfProvider;
     private final EntityManager entityManager;
     private final UserProvider userProvider;
-
-    @Override
-    @Transactional
-    public void delete(ListEntryResultDeleteArgs args) {
-        deletionValidator.validate(
-                args,
-                (id, success) -> {
-                    var entity = success.getAppListEntryResult();
-
-                    // Perform an etag match as part of the request. If the client's etag doesn't
-                    // match
-                    // the current server state, matchService.matchOnRequest(...) should fail/throw
-                    // and
-                    // the delete will not be applied.
-                    matchService.matchOnRequest(
-                            () -> {
-                                // actual delete happens here (inside supplier)
-                                repository.delete(entity);
-                                // return a MatchResponse indicating there is no 'new' object
-                                // (deleted)
-                                // but include the pre-change entity for etag calculation/matching.
-                                return MatchResponse.of(null, List.of(entity));
-                            },
-                            // list of resources to be used for ETag calculation / checking
-                            List.of(entity));
-
-                    // Only audit after matchService returned successfully (i.e. match succeeded)
-                    auditService.processAudit(
-                            ApplicationListEntryResultAudit.from(BeanUtil.copyBean(entity)),
-                            AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT,
-                            ev -> Optional.empty());
-
-                    return null;
-                });
-    }
 
     @Override
     @Transactional
@@ -459,11 +421,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                             .stream()
                             .toList();
                 });
-    }
-
-    private ApplicationEntryResultService getSelfService() {
-        var selfService = selfProvider.getIfAvailable();
-        return selfService != null ? selfService : this;
     }
 
     /**

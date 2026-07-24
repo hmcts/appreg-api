@@ -173,7 +173,7 @@ class ReportServiceImplTest {
     }
 
     @Test
-    void givenJobHasFailed_whenDownloadingReport_thenFails() throws IOException {
+    void givenJobHasFailed_whenDownloadingReport_thenFails() {
         UUID jobId = UUID.randomUUID();
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
 

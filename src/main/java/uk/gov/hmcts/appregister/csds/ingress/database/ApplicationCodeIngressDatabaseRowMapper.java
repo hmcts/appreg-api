@@ -16,43 +16,60 @@ public class ApplicationCodeIngressDatabaseRowMapper
         implements IngressDatabaseRowMapper<ApplicationCodeIngressRecord>,
                 RowMapper<ApplicationCodeIngressRecord> {
     private static final String TECHNICAL_USERNAME = "CSDS_INGRESS";
+    private static final String AC_ID = "ac_id";
+    private static final String APPLICATION_CODE = "application_code";
+    private static final String APPLICATION_CODE_TITLE = "application_code_title";
+    private static final String APPLICATION_CODE_WORDING = "application_code_wording";
+    private static final String APPLICATION_LEGISLATION = "application_legislation";
+    private static final String FEE_DUE = "fee_due";
+    private static final String APPLICATION_CODE_RESPONDENT = "application_code_respondent";
+    private static final String DESTINATION_EMAIL_ADDRESS_1 = "ac_destination_email_address_1";
+    private static final String DESTINATION_EMAIL_ADDRESS_2 = "ac_destination_email_address_2";
+    private static final String APPLICATION_CODE_START_DATE = "application_code_start_date";
+    private static final String APPLICATION_CODE_END_DATE = "application_code_end_date";
+    private static final String BULK_RESPONDENT_ALLOWED = "bulk_respondent_allowed";
+    private static final String VERSION = "version";
+    private static final String CHANGED_BY = "changed_by";
+    private static final String CHANGED_DATE = "changed_date";
+    private static final String USER_NAME = "user_name";
+    private static final String AC_FEE_REFERENCE = "ac_fee_reference";
     private static final List<String> COLUMNS =
             List.of(
-                    "ac_id",
-                    "application_code",
-                    "application_code_title",
-                    "application_code_wording",
-                    "application_legislation",
-                    "fee_due",
-                    "application_code_respondent",
-                    "ac_destination_email_address_1",
-                    "ac_destination_email_address_2",
-                    "application_code_start_date",
-                    "application_code_end_date",
-                    "bulk_respondent_allowed",
-                    "version",
-                    "changed_by",
-                    "changed_date",
-                    "user_name",
-                    "ac_fee_reference");
+                    AC_ID,
+                    APPLICATION_CODE,
+                    APPLICATION_CODE_TITLE,
+                    APPLICATION_CODE_WORDING,
+                    APPLICATION_LEGISLATION,
+                    FEE_DUE,
+                    APPLICATION_CODE_RESPONDENT,
+                    DESTINATION_EMAIL_ADDRESS_1,
+                    DESTINATION_EMAIL_ADDRESS_2,
+                    APPLICATION_CODE_START_DATE,
+                    APPLICATION_CODE_END_DATE,
+                    BULK_RESPONDENT_ALLOWED,
+                    VERSION,
+                    CHANGED_BY,
+                    CHANGED_DATE,
+                    USER_NAME,
+                    AC_FEE_REFERENCE);
     private static final List<String> UPDATABLE_COLUMNS =
             List.of(
-                    "application_code",
-                    "application_code_title",
-                    "application_code_wording",
-                    "application_legislation",
-                    "fee_due",
-                    "application_code_respondent",
-                    "ac_destination_email_address_1",
-                    "ac_destination_email_address_2",
-                    "application_code_start_date",
-                    "application_code_end_date",
-                    "bulk_respondent_allowed",
-                    "version",
-                    "changed_by",
-                    "changed_date",
-                    "user_name",
-                    "ac_fee_reference");
+                    APPLICATION_CODE,
+                    APPLICATION_CODE_TITLE,
+                    APPLICATION_CODE_WORDING,
+                    APPLICATION_LEGISLATION,
+                    FEE_DUE,
+                    APPLICATION_CODE_RESPONDENT,
+                    DESTINATION_EMAIL_ADDRESS_1,
+                    DESTINATION_EMAIL_ADDRESS_2,
+                    APPLICATION_CODE_START_DATE,
+                    APPLICATION_CODE_END_DATE,
+                    BULK_RESPONDENT_ALLOWED,
+                    VERSION,
+                    CHANGED_BY,
+                    CHANGED_DATE,
+                    USER_NAME,
+                    AC_FEE_REFERENCE);
 
     @Override
     public List<String> columns() {
@@ -66,51 +83,51 @@ public class ApplicationCodeIngressDatabaseRowMapper
 
     @Override
     public Map<String, String> insertExpressions() {
-        return Map.of("changed_date", "current_timestamp");
+        return Map.of(CHANGED_DATE, "current_timestamp");
     }
 
     @Override
     public Map<String, String> updateExpressions() {
-        return Map.of("changed_date", "current_timestamp");
+        return Map.of(CHANGED_DATE, "current_timestamp");
     }
 
     @Override
     public Map<String, Object> toRow(ApplicationCodeIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
-        row.put("ac_id", item.id());
-        row.put("application_code", item.code());
-        row.put("application_code_title", item.title());
-        row.put("application_code_wording", item.wording());
-        row.put("application_legislation", item.legislation());
-        row.put("fee_due", item.feeDue().getValue());
-        row.put("application_code_respondent", item.requiresRespondent().getValue());
-        row.put("ac_destination_email_address_1", null);
-        row.put("ac_destination_email_address_2", null);
-        row.put("application_code_start_date", item.startDate());
-        row.put("application_code_end_date", item.endDate());
-        row.put("bulk_respondent_allowed", item.bulkRespondentAllowed().getValue());
-        row.put("version", item.version());
-        row.put("changed_by", 0L);
-        row.put("changed_date", null); // ...updated upon handling.
-        row.put("user_name", TECHNICAL_USERNAME);
-        row.put("ac_fee_reference", item.feeReference());
+        row.put(AC_ID, item.id());
+        row.put(APPLICATION_CODE, item.code());
+        row.put(APPLICATION_CODE_TITLE, item.title());
+        row.put(APPLICATION_CODE_WORDING, item.wording());
+        row.put(APPLICATION_LEGISLATION, item.legislation());
+        row.put(FEE_DUE, item.feeDue().getValue());
+        row.put(APPLICATION_CODE_RESPONDENT, item.requiresRespondent().getValue());
+        row.put(DESTINATION_EMAIL_ADDRESS_1, null);
+        row.put(DESTINATION_EMAIL_ADDRESS_2, null);
+        row.put(APPLICATION_CODE_START_DATE, item.startDate());
+        row.put(APPLICATION_CODE_END_DATE, item.endDate());
+        row.put(BULK_RESPONDENT_ALLOWED, item.bulkRespondentAllowed().getValue());
+        row.put(VERSION, item.version());
+        row.put(CHANGED_BY, 0L);
+        row.put(CHANGED_DATE, null); // ...updated upon handling.
+        row.put(USER_NAME, TECHNICAL_USERNAME);
+        row.put(AC_FEE_REFERENCE, item.feeReference());
         return row;
     }
 
     @Override
     public ApplicationCodeIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
         return new ApplicationCodeIngressRecord(
-                rs.getLong("ac_id"),
-                rs.getString("application_code"),
-                rs.getString("application_code_title"),
-                rs.getString("application_code_wording"),
-                rs.getString("application_legislation"),
-                YesOrNo.fromValue(rs.getString("fee_due")),
-                YesOrNo.fromValue(rs.getString("application_code_respondent")),
-                rs.getObject("application_code_start_date", LocalDate.class),
-                rs.getObject("application_code_end_date", LocalDate.class),
-                YesOrNo.fromValue(rs.getString("bulk_respondent_allowed")),
-                rs.getLong("version"),
-                rs.getString("ac_fee_reference"));
+                rs.getLong(AC_ID),
+                rs.getString(APPLICATION_CODE),
+                rs.getString(APPLICATION_CODE_TITLE),
+                rs.getString(APPLICATION_CODE_WORDING),
+                rs.getString(APPLICATION_LEGISLATION),
+                YesOrNo.fromValue(rs.getString(FEE_DUE)),
+                YesOrNo.fromValue(rs.getString(APPLICATION_CODE_RESPONDENT)),
+                rs.getObject(APPLICATION_CODE_START_DATE, LocalDate.class),
+                rs.getObject(APPLICATION_CODE_END_DATE, LocalDate.class),
+                YesOrNo.fromValue(rs.getString(BULK_RESPONDENT_ALLOWED)),
+                rs.getLong(VERSION),
+                rs.getString(AC_FEE_REFERENCE));
     }
 }

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -105,15 +104,6 @@ class ApplicationEntryResultServiceImplTest {
     @Mock private ObjectProvider<ApplicationEntryResultService> selfProvider;
 
     @Spy
-    private DummyApplicationEntryResultDeletionValidator deletionValidator =
-            new DummyApplicationEntryResultDeletionValidator(
-                    applicationListRepository,
-                    applicationListEntryRepository,
-                    resolutionCodeRepository,
-                    businessDateProvider,
-                    appListEntryResolutionRepository);
-
-    @Spy
     private DummyApplicationEntryResultCreationValidator creationValidator =
             new DummyApplicationEntryResultCreationValidator(
                     applicationListRepository,
@@ -163,7 +153,6 @@ class ApplicationEntryResultServiceImplTest {
         service =
                 new ApplicationEntryResultServiceImpl(
                         appListEntryResolutionRepository,
-                        deletionValidator,
                         creationValidator,
                         updateValidator,
                         getValidator,
@@ -249,37 +238,6 @@ class ApplicationEntryResultServiceImplTest {
         Assertions.assertNotNull(matchResponse);
         Assertions.assertNotNull(matchResponse.getEtag());
         Assertions.assertEquals(resultGetDto, matchResponse.getPayload());
-    }
-
-    @Test
-    void delete_validArgs_deletesEntryResult() {
-        AppListEntryResolution appListEntryResolution = new AppListEntryResolution();
-        appListEntryResolution.setId(1L);
-        appListEntryResolution.setVersion(1L);
-
-        var code = mock(ResolutionCode.class);
-        var applicationList = mock(ApplicationList.class);
-        var applicationListEntry = mock(ApplicationListEntry.class);
-
-        ListEntryResultDeleteValidationSuccess success =
-                new ListEntryResultDeleteValidationSuccess(
-                        with(""),
-                        code,
-                        applicationList,
-                        applicationListEntry,
-                        appListEntryResolution);
-
-        deletionValidator.setSuccess(success);
-
-        UUID listId = UUID.randomUUID();
-        UUID entryId = UUID.randomUUID();
-        UUID resultId = UUID.randomUUID();
-        ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
-
-        service.delete(args);
-
-        verify(deletionValidator).validate(any(ListEntryResultDeleteArgs.class), notNull());
-        verify(appListEntryResolutionRepository).delete(any(AppListEntryResolution.class));
     }
 
     @Test

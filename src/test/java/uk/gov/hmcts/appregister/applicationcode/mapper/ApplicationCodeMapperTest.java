@@ -10,9 +10,9 @@ import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 class ApplicationCodeMapperTest {
@@ -94,11 +94,11 @@ class ApplicationCodeMapperTest {
         Assertions.assertEquals("appcode", summaryDto.getApplicationCode());
         Assertions.assertEquals(23234L, summaryDto.getFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetDetailDtoFeeAmount.CurrencyEnum.GBP,
                 summaryDto.getFeeAmount().get().getCurrency());
         Assertions.assertEquals(2366634, summaryDto.getOffsiteFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetDetailDtoOffsiteFeeAmount.CurrencyEnum.GBP,
                 summaryDto.getOffsiteFeeAmount().get().getCurrency());
 
         Assertions.assertEquals("reference", summaryDto.getFeeReference().get());
@@ -169,11 +169,11 @@ class ApplicationCodeMapperTest {
         Assertions.assertEquals("appcode", getDetailDto.getApplicationCode());
         Assertions.assertEquals(23234L, getDetailDto.getFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetDetailDtoFeeAmount.CurrencyEnum.GBP,
                 getDetailDto.getFeeAmount().get().getCurrency());
         Assertions.assertEquals(2366634, getDetailDto.getOffsiteFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetDetailDtoOffsiteFeeAmount.CurrencyEnum.GBP,
                 getDetailDto.getOffsiteFeeAmount().get().getCurrency());
         Assertions.assertEquals("reference", getDetailDto.getFeeReference().get());
         Assertions.assertEquals("offsite fee", getDetailDto.getOffsiteFeeReference().get());
