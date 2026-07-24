@@ -158,7 +158,7 @@ appreg:
           source-entity-name: DA_GetStandardApplicant
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json
-          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
+#          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
         national-court-houses:
           enabled: true
           backup-source: national_court_houses
