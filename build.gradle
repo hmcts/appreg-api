@@ -55,7 +55,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.29.0'
+    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.30.0'
   }
 }
 
