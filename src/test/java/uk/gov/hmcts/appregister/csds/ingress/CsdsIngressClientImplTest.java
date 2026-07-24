@@ -62,10 +62,10 @@ class CsdsIngressClientImplTest {
         var restClient = mock(RestClient.class);
         var requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
         var requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
-        var responseSpec = mock(RestClient.ResponseSpec.class);
         var logCaptor = LogCaptor.forClass(CsdsIngressClientImpl.class);
         logCaptor.clearLogs();
 
+        var responseSpec = mock(RestClient.ResponseSpec.class);
         when(restClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.uri(any(URI.class))).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.header(eq("Api-Key"), any())).thenReturn(requestHeadersSpec);
