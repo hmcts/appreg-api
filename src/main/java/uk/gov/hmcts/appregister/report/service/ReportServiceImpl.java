@@ -50,7 +50,6 @@ public class ReportServiceImpl implements ReportService {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final AuditOperationService auditService;
     private final ReportJobAuditService reportJobAuditService;
-    private final ReportFilterNormaliser reportFilterNormaliser;
     private final ReportLocationValidator reportLocationValidator;
     private final String schema;
     private final int reportPageSize;
@@ -63,7 +62,6 @@ public class ReportServiceImpl implements ReportService {
             NamedParameterJdbcTemplate jdbcTemplate,
             AuditOperationService auditService,
             ReportJobAuditService reportJobAuditService,
-            ReportFilterNormaliser reportFilterNormaliser,
             ReportLocationValidator reportLocationValidator,
             @Value("${spring.jpa.properties.hibernate.default_schema}") String schema,
             @Value("${appreg.report.page-size}") int reportPageSize) {
@@ -74,7 +72,6 @@ public class ReportServiceImpl implements ReportService {
         this.jdbcTemplate = jdbcTemplate;
         this.auditService = auditService;
         this.reportJobAuditService = reportJobAuditService;
-        this.reportFilterNormaliser = reportFilterNormaliser;
         this.reportLocationValidator = reportLocationValidator;
         this.schema = schema;
         this.reportPageSize = reportPageSize;
@@ -86,7 +83,7 @@ public class ReportServiceImpl implements ReportService {
                 ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
                 () -> {
                     ActivityAuditFilterDto normalisedFilter =
-                            reportFilterNormaliser.normalise(filter);
+                            ReportFilterNormaliser.normalise(filter);
                     ActivityAuditReportLifecycle lifecycle;
                     try {
                         lifecycle = new ActivityAuditReportLifecycle();
@@ -117,7 +114,7 @@ public class ReportServiceImpl implements ReportService {
         return auditCreate(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
                 () -> {
-                    FeesReportFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+                    FeesReportFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
                     reportLocationValidator.validate(normalisedFilter.getLocation());
                     FeesReportLifecycle lifecycle;
                     try {
@@ -149,7 +146,7 @@ public class ReportServiceImpl implements ReportService {
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
                 () -> {
                     SearchWarrantsReportFilterDto normalisedFilter =
-                            reportFilterNormaliser.normalise(filter);
+                            ReportFilterNormaliser.normalise(filter);
                     reportLocationValidator.validate(normalisedFilter.getLocation());
                     SearchWarrantsReportLifecycle lifecycle;
 
@@ -182,7 +179,7 @@ public class ReportServiceImpl implements ReportService {
         return auditCreate(
                 ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
                 () -> {
-                    DurationFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+                    DurationFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
                     reportLocationValidator.validate(normalisedFilter.getLocation());
                     DurationReportLifecycle lifecycle;
                     try {
@@ -213,7 +210,7 @@ public class ReportServiceImpl implements ReportService {
         return auditCreate(
                 ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT,
                 () -> {
-                    WorkloadFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+                    WorkloadFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
                     reportLocationValidator.validate(normalisedFilter.getLocation());
                     WorkloadReportLifecycle lifecycle;
                     try {
@@ -245,7 +242,7 @@ public class ReportServiceImpl implements ReportService {
                 ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
                 () -> {
                     ListMaintenanceFilterDto normalisedFilter =
-                            reportFilterNormaliser.normalise(filter);
+                            ReportFilterNormaliser.normalise(filter);
                     reportLocationValidator.validate(normalisedFilter.getLocation());
                     ListMaintenanceReportLifecycle lifecycle;
                     try {
@@ -279,7 +276,7 @@ public class ReportServiceImpl implements ReportService {
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 () -> {
                     PrivateProsecutorsIndexFilterDto normalisedFilter =
-                            reportFilterNormaliser.normalise(filter);
+                            ReportFilterNormaliser.normalise(filter);
                     reportLocationValidator.validate(normalisedFilter.getLocation());
                     PrivateProsecutorsIndexReportLifecycle lifecycle;
                     try {

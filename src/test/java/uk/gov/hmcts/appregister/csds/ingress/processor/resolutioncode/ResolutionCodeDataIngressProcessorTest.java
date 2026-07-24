@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
@@ -43,6 +44,7 @@ class ResolutionCodeDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     @TempDir Path tempDir;
 
@@ -66,6 +68,7 @@ class ResolutionCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
@@ -632,6 +635,7 @@ class ResolutionCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,

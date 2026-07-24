@@ -60,7 +60,7 @@ class CsdsIngressPropertiesTest {
         var properties = baseProperties();
         properties.getProcessors().getFee().setEnabled(true);
         properties.getProcessors().getFee().setMock("csds/fee.json");
-        properties.getProcessors().getFee().setTableName(null);
+        properties.getProcessors().getFee().setIngressTarget(null);
 
         assertThat(properties.isConfigurationValid()).isFalse();
     }
@@ -69,16 +69,42 @@ class CsdsIngressPropertiesTest {
     void given_standardApplicantsProcessorDefaults_when_validate_then_usesStagingTable() {
         var properties = baseProperties();
 
-        assertThat(properties.getProcessors().getStandardApplicants().getTableName())
+        assertThat(properties.getProcessors().getStandardApplicants().getIngressTarget())
                 .isEqualTo("standard_applicants_staging");
+    }
+
+    @Test
+    void given_applicationCodesProcessorDefaults_when_validate_then_usesStagingTable() {
+        var properties = baseProperties();
+
+        assertThat(properties.getProcessors().getApplicationCodes().getIngressTarget())
+                .isEqualTo("application_codes_staging");
     }
 
     @Test
     void given_nationalCourtHousesProcessorDefaults_when_validate_then_usesStagingTable() {
         var properties = baseProperties();
 
-        assertThat(properties.getProcessors().getNationalCourtHouses().getTableName())
+        assertThat(properties.getProcessors().getNationalCourtHouses().getIngressTarget())
                 .isEqualTo("national_court_houses_staging");
+    }
+
+    @Test
+    void given_scheduleDefaults_when_read_then_usesThreeAmCron() {
+        var properties = baseProperties();
+
+        assertThat(properties.getSchedule().getHour()).isEqualTo(3);
+        assertThat(properties.getSchedule().getMinute()).isZero();
+        assertThat(properties.getNightlyCron()).isEqualTo("0 0 3 * * *");
+    }
+
+    @Test
+    void given_customSchedule_when_read_then_buildsCronFromConfig() {
+        var properties = baseProperties();
+        properties.getSchedule().setHour(4);
+        properties.getSchedule().setMinute(15);
+
+        assertThat(properties.getNightlyCron()).isEqualTo("0 15 4 * * *");
     }
 
     private CsdsIngressProperties baseProperties() {

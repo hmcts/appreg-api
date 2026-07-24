@@ -64,7 +64,13 @@ public class CsdsIngressProcessor {
                 runProcessor(processor);
             } catch (RuntimeException ex) {
                 log.error(
-                        "Skipping CSDS ingress processor {} for target {}.{} after failure",
+                        "Skipping CSDS ingress processor {} for target {}.{} after failure: {}",
+                        processor.datasetName(),
+                        processor.targetTable(),
+                        processor.targetKeyField(),
+                        summarizeFailure(ex));
+                log.debug(
+                        "CSDS ingress processor {} failed for target {}.{}",
                         processor.datasetName(),
                         processor.targetTable(),
                         processor.targetKeyField(),
@@ -76,8 +82,14 @@ public class CsdsIngressProcessor {
         }
     }
 
+    private String summarizeFailure(RuntimeException ex) {
+        if (ex.getCause() == null || ex.getCause().getMessage() == null || ex.getCause().getMessage().isBlank()) {
+            return ex.getMessage();
+        }
+        return "%s (cause: %s)".formatted(ex.getMessage(), ex.getCause().getMessage());
+    }
+
     private <T> void runProcessor(IDataIngressProcessor<T> processor) {
-        val startedAt = Instant.now();
         log.info(
                 "Starting CSDS ingress processor {} for target {}.{}",
                 processor.datasetName(),
@@ -85,9 +97,18 @@ public class CsdsIngressProcessor {
                 processor.targetKeyField());
 
         val rawJson = processor.retrieve(ingressClient);
+        try {
+            processor.backup();
+        } catch (RuntimeException ex) {
+            log.error(
+                    "Failed CSDS backup step for processor {}. Continuing ingress.",
+                    processor.datasetName(),
+                    ex);
+        }
         val processedData = processor.preProcess(rawJson);
         processor.apply(processedData);
 
+        val startedAt = Instant.now();
         val duration = Duration.between(startedAt, Instant.now());
         log.info(
                 "Completed CSDS ingress processor {} for target {}.{} in {} ms",
