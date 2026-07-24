@@ -14,6 +14,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FeeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
@@ -47,6 +48,7 @@ public class FeeDataIngressProcessor
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
+            JdbcIngressBackupService ingressBackupService,
             FeeDiffService diffService,
             FeeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
@@ -55,7 +57,8 @@ public class FeeDataIngressProcessor
                 properties,
                 properties.getProcessors().getFee(),
                 csdsAuditService,
-                csdsIngressTransactionRunner);
+                csdsIngressTransactionRunner,
+                ingressBackupService);
         this.feeProperties = properties.getProcessors().getFee();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;

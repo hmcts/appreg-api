@@ -2,15 +2,14 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsSqlIdentifierValidator;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.StandardApplicantIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
@@ -20,7 +19,6 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 @SuppressWarnings("java:S2077") // SQL identifiers are restricted to lowercase letters, digits and
 // underscores.
 public class StandardApplicantIngressApplyService {
-    private static final Pattern SQL_IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final JdbcBulkUpsertService bulkUpsertService;
     private final StandardApplicantIngressDatabaseRowMapper rowMapper;
@@ -32,8 +30,9 @@ public class StandardApplicantIngressApplyService {
     @Transactional
     public void reconcileAndUpsert(
             String targetTable, String targetKeyField, StandardApplicantDiffResult diff) {
-        val validatedTableName = requireSqlIdentifier(targetTable, "tableName");
-        val validatedPrimaryKey = requireSqlIdentifier(targetKeyField, "primaryKey");
+        val validatedTableName = CsdsSqlIdentifierValidator.requireValid(targetTable, "tableName");
+        val validatedPrimaryKey =
+                CsdsSqlIdentifierValidator.requireValid(targetKeyField, "primaryKey");
         endDateMissingApplicants(validatedTableName, validatedPrimaryKey, diff.incomingById());
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
@@ -48,7 +47,7 @@ public class StandardApplicantIngressApplyService {
             String targetTable,
             String targetKeyField,
             Map<Long, StandardApplicantIngressRecord> incomingById) {
-        val validatedSchema = requireSqlIdentifier(schema, "schema");
+        val validatedSchema = CsdsSqlIdentifierValidator.requireValid(schema, "schema");
         var sql =
                 """
                 UPDATE %s.%s
@@ -69,12 +68,5 @@ public class StandardApplicantIngressApplyService {
             parameters.put("incomingIds", incomingById.keySet());
         }
         jdbcTemplate.update(sql, parameters);
-    }
-
-    private String requireSqlIdentifier(String value, String description) {
-        if (!StringUtils.hasText(value) || !SQL_IDENTIFIER.matcher(value).matches()) {
-            throw new IllegalArgumentException("Invalid SQL " + description + ": " + value);
-        }
-        return value;
     }
 }

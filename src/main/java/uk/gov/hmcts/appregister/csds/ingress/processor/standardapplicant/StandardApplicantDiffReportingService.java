@@ -20,7 +20,7 @@ public class StandardApplicantDiffReportingService
     private static final String CODE = "Code";
     private static final String NAME = "OrganisationName";
     private static final String START_DATE = "StartDate";
-    private static final String END_DATE = "Enddate";
+    private static final String END_DATE = "EndDate";
     private static final String VERSION = "RevisionNumber";
     private static final String CSV_HEADER =
             "psssaId,applicantId,saId,code,name,startDate,endDate,version\n";

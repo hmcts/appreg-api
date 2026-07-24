@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
@@ -42,6 +43,7 @@ class NationalCourtHouseDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     @TempDir Path tempDir;
 
@@ -62,6 +64,7 @@ class NationalCourtHouseDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         new NationalCourtHouseDiffReportingService(properties),
                         bulkUpsertService,

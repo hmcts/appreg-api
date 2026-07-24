@@ -29,8 +29,10 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
         validatePath(path);
 
         RestClientException lastException = null;
+        var accessKeys = properties.getAccessKeys();
 
-        for (val accessKey : properties.getAccessKeys()) {
+        for (var index = 0; index < accessKeys.size(); index++) {
+            val accessKey = accessKeys.get(index);
             try {
                 val response =
                         csdsIngressRestClient
@@ -51,7 +53,8 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
             } catch (RestClientException ex) {
                 lastException = ex;
                 log.warn(
-                        "Failed to retrieve CSDS JSON for path {} using one configured access key: {}",
+                        "Failed to retrieve CSDS JSON, using {}, for path {}: {}",
+                        "Key " + (index + 1),
                         path,
                         ex.getMessage());
                 log.debug("CSDS request failed for path {}", path, ex);

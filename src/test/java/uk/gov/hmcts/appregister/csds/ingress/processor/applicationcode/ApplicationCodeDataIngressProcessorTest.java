@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -32,6 +33,8 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService.BackupResult;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
@@ -45,6 +48,7 @@ class ApplicationCodeDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     @TempDir Path tempDir;
 
@@ -68,6 +72,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
@@ -238,7 +243,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null);
-        when(tableReadService.loadAll("application_codes", rowMapper))
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
                 .thenReturn(
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
@@ -287,7 +294,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null);
-        when(tableReadService.loadAll("application_codes", rowMapper))
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
                 .thenReturn(
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
@@ -307,6 +316,51 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_backupConfigured_when_backup_then_copySourceIntoTarget() {
+        properties.getProcessors().getApplicationCodes().setBackupSource("application_codes");
+        properties
+                .getProcessors()
+                .getApplicationCodes()
+                .setBackupTarget("application_codes_staging");
+        when(ingressBackupService.backup("application_codes", "application_codes_staging"))
+                .thenReturn(new BackupResult(2, 3));
+        var logCaptor = LogCaptor.forClass(AbstractPagedCsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        processor.backup();
+
+        verify(ingressBackupService).backup("application_codes", "application_codes_staging");
+        assertThat(logCaptor.getInfoLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Completed CSDS backup for application_codes")
+                                        && log.contains("deleted=2")
+                                        && log.contains("inserted=3"));
+    }
+
+    @Test
+    void given_backupFails_when_backup_then_logAndContinue() {
+        properties.getProcessors().getApplicationCodes().setBackupSource("application_codes");
+        properties
+                .getProcessors()
+                .getApplicationCodes()
+                .setBackupTarget("application_codes_staging");
+        doThrow(new IllegalStateException("backup boom"))
+                .when(ingressBackupService)
+                .backup("application_codes", "application_codes_staging");
+        var logCaptor = LogCaptor.forClass(AbstractPagedCsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        processor.backup();
+
+        assertThat(logCaptor.getErrorLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Failed CSDS backup for application_codes")
+                                        && log.contains("Continuing ingress"));
+    }
+
+    @Test
     void given_reportingDirConfigured_when_apply_then_writesCsvFiles() throws Exception {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
@@ -316,6 +370,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
@@ -339,7 +394,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         LocalDate.now().minusDays(1));
-        when(tableReadService.loadAll("application_codes", rowMapper))
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
                 .thenReturn(
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
@@ -508,7 +565,10 @@ class ApplicationCodeDataIngressProcessorTest {
 
     @Test
     void given_pssacidPresent_when_apply_then_useItAsTheResolvedKey() {
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
         logCaptor.clearLogs();
@@ -526,7 +586,10 @@ class ApplicationCodeDataIngressProcessorTest {
 
     @Test
     void given_pssacidMissing_when_apply_then_useApplicationCodeIdOffsetKey() {
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
         logCaptor.clearLogs();
@@ -544,7 +607,10 @@ class ApplicationCodeDataIngressProcessorTest {
 
     @Test
     void given_revisionNumberPresent_when_apply_then_acceptLiveCsdsFieldName() {
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
         var sourceRecord = createSourceRecord(345L, "A3", "Title 3", "Wording 3", 7L);
 
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
@@ -681,11 +747,15 @@ class ApplicationCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
                         rowMapper);
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
 
         processor.apply(
                 processor.preProcess(
@@ -694,7 +764,10 @@ class ApplicationCodeDataIngressProcessorTest {
                                         createSourceRecord(
                                                 1L, "A1", "Title 1", "Wording 1", 1L)))));
 
-        verify(tableReadService).loadAll("application_codes", rowMapper);
+        verify(tableReadService)
+                .loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper);
     }
 
     private ApplicationCode createApplicationCode(

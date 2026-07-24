@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -61,7 +62,11 @@ class CsdsIngressProcessorTest {
         var executed = processor.runIngress();
 
         assertThat(executed).isTrue();
-        verify(dataIngressProcessor).apply("processed");
+        var inOrder = inOrder(distributedJobLockService, dataIngressProcessor, ingressClient);
+        inOrder.verify(dataIngressProcessor).retrieve(ingressClient);
+        inOrder.verify(dataIngressProcessor).backup();
+        inOrder.verify(dataIngressProcessor).preProcess(rawJson);
+        inOrder.verify(dataIngressProcessor).apply("processed");
         verify(distributedJobLockService).release(lock);
         assertThat(logCaptor.getInfoLogs())
                 .anyMatch(log -> log.contains("Starting CSDS ingress processor test-dataset"))
@@ -226,6 +231,87 @@ class CsdsIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains("Skipping CSDS ingress processor test-dataset-1")
-                                        && log.contains("after failure"));
+                                        && log.contains("after failure: boom"));
+    }
+
+    @Test
+    void given_processorFailsWithCause_when_runIngress_then_logIncludesCauseMessage() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+
+        List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
+        when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
+        when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
+        doThrow(new IllegalStateException("boom", new RuntimeException("404 Not Found")))
+                .when(dataIngressProcessor)
+                .apply("processed");
+
+        var executed = processor.runIngress();
+
+        assertThat(executed).isTrue();
+        assertThat(logCaptor.getErrorLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Skipping CSDS ingress processor test-dataset")
+                                        && log.contains(
+                                                "after failure: boom (cause: 404 Not Found)"));
+    }
+
+    @Test
+    void given_backupFails_when_runIngress_then_continueProcessing() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        var logCaptor = LogCaptor.forClass(CsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+        List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
+        when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
+        when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        doThrow(new IllegalStateException("backup boom")).when(dataIngressProcessor).backup();
+        when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
+
+        var executed = processor.runIngress();
+
+        assertThat(executed).isTrue();
+        verify(dataIngressProcessor).apply("processed");
+        assertThat(logCaptor.getErrorLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Failed CSDS backup step for processor test-dataset")
+                                        && log.contains("Continuing ingress"));
     }
 }

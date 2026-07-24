@@ -88,7 +88,6 @@ class ReportServiceImplTest {
                 jdbcTemplate,
                 auditService,
                 reportJobAuditService,
-                new ReportFilterNormaliser(),
                 reportLocationValidator,
                 "appreg",
                 500);
