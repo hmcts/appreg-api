@@ -141,7 +141,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = nextRowNumber;
 
         List<BulkUploadError> allErrors = new ArrayList<>();
-        addHeaderErrors(context, allErrors);
 
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
