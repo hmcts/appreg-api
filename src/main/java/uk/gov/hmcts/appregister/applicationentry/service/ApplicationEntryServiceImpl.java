@@ -404,7 +404,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private BulkActionPreviewEligibility resolveBulkActionPreviewEligibility(
             BulkActionType action, BulkActionPreviewResolution resolution) {
-        if (action != BulkActionType.RESULT_SELECTED) {
+        if (action != BulkActionType.RESULT_SELECTED
+                && action != BulkActionType.UPDATE_FEE_DETAILS) {
             return new BulkActionPreviewEligibility(
                     resolution.entryIds(), resolution.entries(), resolution.entryIds().size());
         }
@@ -412,11 +413,19 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         int eligibleCount =
                 Math.toIntExact(
                         resolution.entries().stream()
-                                .filter(ApplicationEntryServiceImpl::isResultSelectedEligible)
+                                .filter(entry -> isBulkActionEligible(action, entry))
                                 .count());
 
         return new BulkActionPreviewEligibility(
                 resolution.entryIds(), resolution.entries(), eligibleCount);
+    }
+
+    private static boolean isBulkActionEligible(BulkActionType action, EntryGetSummaryDto entry) {
+        return switch (action) {
+            case RESULT_SELECTED -> isResultSelectedEligible(entry);
+            case UPDATE_FEE_DETAILS -> Boolean.TRUE.equals(entry.getIsFeeRequired());
+            default -> true;
+        };
     }
 
     private static boolean isResultSelectedEligible(EntryGetSummaryDto entry) {
@@ -868,6 +877,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional
     public MatchResponse<Void> updateClosedEntry(PayloadForUpdateClosedEntry updateEntry) {
 
         return updateClosedApplicationEntryValidator.validate(
@@ -1869,6 +1879,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetailFromClosedList(
             PayloadGetEntryInList entry) {
         log.debug(

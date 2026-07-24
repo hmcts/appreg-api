@@ -57,7 +57,6 @@ class BulkUploadAsyncLifecycleTest {
 
     private BulkUploadAsyncLifecycle lifecycle;
     private BulkImportService bulkImportService;
-    private BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
     private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
     private BulkCreateApplicationEntryValidator.Session validationSession;
     private ApplicationList applicationList;
@@ -74,7 +73,6 @@ class BulkUploadAsyncLifecycleTest {
 
         bulkImportService = mock(BulkImportService.class);
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
-        bulkUploadApplicationEntryValidator = mock(BulkUploadApplicationEntryValidator.class);
         validationSession = mock(BulkCreateApplicationEntryValidator.Session.class);
         applicationList = new ApplicationList();
         listId = UUID.randomUUID();
@@ -493,11 +491,6 @@ class BulkUploadAsyncLifecycleTest {
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
-        String name =
-                row.getRespondentOrganisationName() != null
-                        ? row.getRespondentOrganisationName()
-                        : row.getRespondentForename1() + " " + row.getRespondentSurname();
-
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages())
@@ -649,7 +642,7 @@ class BulkUploadAsyncLifecycleTest {
         JobContext context = new JobContext();
         lifecycle.setCSVFile(csvFile);
 
-        try (MockedConstruction<ObjectMapper> ignored =
+        try (MockedConstruction<ObjectMapper> mockedObjectMappers =
                 mockConstruction(
                         ObjectMapper.class,
                         (mock, constructionContext) ->
@@ -660,6 +653,7 @@ class BulkUploadAsyncLifecycleTest {
                     assertThrows(
                             AppRegistryException.class,
                             () -> lifecycle.validating(event(row, context)));
+            assertThat(mockedObjectMappers.constructed()).hasSize(1);
 
             assertThat(exception.getCode())
                     .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);

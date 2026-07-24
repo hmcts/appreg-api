@@ -160,8 +160,7 @@ class CsdsIngestServiceTest {
     }
 
     @Test
-    void given_knownButDisabledFeeProcessor_when_ingest_then_throwsDisabledError()
-            throws Exception {
+    void given_knownButDisabledFeeProcessor_when_ingest_then_throwsDisabledError() {
         var file = mock(MultipartFile.class);
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());

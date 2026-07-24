@@ -14,6 +14,7 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 @Component
 public class FeeDiffReportingService extends AbstractIngressDiffReportingService<FeeIngressRecord> {
     private static final long DEFAULT_FEE_VERSION = 1L;
+    private static final String FEE_ID = "FEE_ID";
     private final String reportingDir;
 
     public FeeDiffReportingService(CsdsIngressProperties properties) {
@@ -53,10 +54,10 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
         var incomingRecordsByFeeId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, "FEE_ID") != null)
+                        .filter(item -> nullableLong(item, FEE_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, "FEE_ID"),
+                                        item -> nullableLong(item, FEE_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -109,7 +110,7 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
                         ",",
                         csvValue(nullableLong(node, "PSSFixedListID")),
                         csvValue(nullableLong(node, "CivilFeeID")),
-                        csvValue(nullableLong(node, "FEE_ID")),
+                        csvValue(nullableLong(node, FEE_ID)),
                         csvValue(nullableText(node, "FeeReference")),
                         csvValue(nullableText(node, "Description")),
                         csvValue(nullableText(node, "FeeValue")),

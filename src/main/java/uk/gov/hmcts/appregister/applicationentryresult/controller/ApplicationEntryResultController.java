@@ -14,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentryresult.api.ApplicationEntryResultSortFieldEnum;
-import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
@@ -83,30 +82,6 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> bulkDeleteResultEntries(BulkDeleteResultsDto bulkDeleteResultsDto) {
         service.bulkDelete(bulkDeleteResultsDto);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Deletes an Application List Entry Result.
-     *
-     * <p>This endpoint deletes the provided result id and returns a 204 response
-     *
-     * <ul>
-     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
-     * </ul>
-     *
-     * @param listId Public identifier of the Application List. (required)
-     * @param entryId Public identifier of the Application List Entry. (required)
-     * @param resultId Public identifier of the Application List Entry Result. (required)
-     * @return {@link ResponseEntity} The 204 response
-     */
-    @Override
-    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<Void> deleteApplicationListEntryResult(
-            UUID listId, UUID entryId, UUID resultId) {
-        ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
-        service.delete(args);
-        log.info("Deleted Application List Entry Result with id: {}", resultId);
         return ResponseEntity.noContent().build();
     }
 

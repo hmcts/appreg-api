@@ -2146,11 +2146,6 @@ class ApplicationEntryServiceImplTest {
         return feeDetails;
     }
 
-    private void stubFeeStatusSave() {
-        when(appListEntryFeeStatusRepository.save(any(AppListEntryFeeStatus.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-    }
-
     @Test
     void replaceOfficials_replacesOfficialsForAllEntries() {
         val listId = UUID.randomUUID();
@@ -3055,6 +3050,48 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(2, response.getSelectedCount());
         Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
         Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void
+            given_updateFeeDetailsSelection_when_bulkActionPreview_then_onlyFeeRequiredEntriesAreEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewSingleListLimit", 2);
+        UUID listId = UUID.randomUUID();
+        UUID feeRequiredEntryId = UUID.randomUUID();
+        UUID feeNotRequiredEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection feeRequiredProjection =
+                bulkActionPreviewProjection(feeRequiredEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection feeNotRequiredProjection =
+                bulkActionPreviewProjection(feeNotRequiredEntryId, 2L);
+        EntryGetSummaryDto feeRequiredSummary =
+                stubEntrySummary(feeRequiredProjection, feeRequiredEntryId);
+        feeRequiredSummary.setIsFeeRequired(true);
+        EntryGetSummaryDto feeNotRequiredSummary =
+                stubEntrySummary(feeNotRequiredProjection, feeNotRequiredEntryId);
+        feeNotRequiredSummary.setIsFeeRequired(false);
+
+        when(applicationListEntryRepository.findApplicationListForAllEntries(anyList()))
+                .thenReturn(
+                        List.of(
+                                new EntryToList(feeRequiredEntryId, listId),
+                                new EntryToList(feeNotRequiredEntryId, listId)));
+        stubBulkActionPreviewSummaryPage(2, feeRequiredProjection, feeNotRequiredProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        listId,
+                        applicationListBulkActionPreviewRequest(
+                                feeRequiredEntryId, feeNotRequiredEntryId));
+
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(
+                List.of(feeRequiredEntryId, feeNotRequiredEntryId), response.getEntryIds());
+        Assertions.assertEquals(
+                List.of(feeRequiredSummary, feeNotRequiredSummary), response.getEntries());
     }
 
     @Test

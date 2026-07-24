@@ -28,6 +28,10 @@ public interface IDataIngressProcessor<T> {
         return sourcePaths().stream().map(ingressClient::retrieveJson).toList();
     }
 
+    default void backup() {
+        // Optional hook for processors that want to snapshot a source table before apply.
+    }
+
     T preProcess(List<JsonNode> rawJson);
 
     void apply(T processedData);

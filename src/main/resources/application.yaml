@@ -50,6 +50,7 @@ spring:
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
       naming:
@@ -113,10 +114,16 @@ appreg:
       connect-timeout: PT10S
       read-timeout: PT30S
       page-size: 100
+      schedule:
+        enabled: true
+        hour: 7
+        minute: 0
       processors:
         application-codes:
           enabled: true
-          table-name: application_codes_staging
+          backup-source: application_codes
+          backup-target: application_codes_staging
+          ingress-target: application_codes_staging
           primary-key: ac_id
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicationCodeID
@@ -124,7 +131,9 @@ appreg:
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
           enabled: true
-          table-name: resolution_codes_staging
+          backup-source: resolution_codes
+          backup-target: resolution_codes_staging
+          ingress-target: resolution_codes_staging
           primary-key: rc_id
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ResolutionCodeID
@@ -132,7 +141,9 @@ appreg:
 #          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
         fee:
           enabled: true
-          table-name: fee_staging
+          backup-source: fee
+          backup-target: fee_staging
+          ingress-target: fee_staging
           primary-key: fee_id
           source-entity-name: CivilFee
           parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
@@ -140,7 +151,9 @@ appreg:
 #          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
         standard-applicants:
           enabled: true
-          table-name: standard_applicants_staging
+          backup-source: standard_applicants
+          backup-target: standard_applicants_staging
+          ingress-target: standard_applicants_staging
           primary-key: sa_id
           source-entity-name: DA_GetStandardApplicant
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
@@ -148,7 +161,9 @@ appreg:
 #          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
         national-court-houses:
           enabled: true
-          table-name: national_court_houses_staging
+          backup-source: national_court_houses
+          backup-target: national_court_houses_staging
+          ingress-target: national_court_houses_staging
           primary-key: nch_id
           source-entity-name: Court
           parameters: ?%24expr=Updator&%24f=CourtHearingOperationAreaIndicator='true'%20AND%20PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24orderBy=CourtID

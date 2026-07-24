@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
@@ -46,6 +47,7 @@ public class NationalCourtHouseDataIngressProcessor
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
+            JdbcIngressBackupService ingressBackupService,
             NationalCourtHouseDiffService diffService,
             NationalCourtHouseDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
@@ -54,7 +56,8 @@ public class NationalCourtHouseDataIngressProcessor
                 properties,
                 properties.getProcessors().getNationalCourtHouses(),
                 csdsAuditService,
-                csdsIngressTransactionRunner);
+                csdsIngressTransactionRunner,
+                ingressBackupService);
         nationalCourtHouseProperties = properties.getProcessors().getNationalCourtHouses();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;

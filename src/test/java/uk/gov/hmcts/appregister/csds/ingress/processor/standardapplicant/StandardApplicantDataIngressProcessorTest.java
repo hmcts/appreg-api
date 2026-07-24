@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.StandardApplicantIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
@@ -36,6 +37,7 @@ class StandardApplicantDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private StandardApplicantIngressApplyService applyService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     private CsdsIngressProperties properties;
     private StandardApplicantDataIngressProcessor processor;
@@ -51,6 +53,7 @@ class StandardApplicantDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
                         new StandardApplicantDiffReportingService(properties),
@@ -118,6 +121,7 @@ class StandardApplicantDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
                         new StandardApplicantDiffReportingService(properties),
@@ -145,7 +149,7 @@ class StandardApplicantDataIngressProcessorTest {
                         .put("Code", "DCCMH")
                         .put("OrganisationName", organisationName)
                         .put("StartDate", "2018-08-01")
-                        .putNull("Enddate")
+                        .putNull("EndDate")
                         .put("RevisionNumber", 2);
         if (psssaId == null) {
             record.putNull("PSSSAID");
