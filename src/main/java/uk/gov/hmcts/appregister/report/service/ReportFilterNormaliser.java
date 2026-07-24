@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.report.service;
 import java.time.LocalDate;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
@@ -12,9 +11,12 @@ import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 
-@Component
-public class ReportFilterNormaliser {
-    public ActivityAuditFilterDto normalise(ActivityAuditFilterDto filter) {
+public final class ReportFilterNormaliser {
+    private ReportFilterNormaliser() {
+        // Utility class.
+    }
+
+    public static ActivityAuditFilterDto normalise(ActivityAuditFilterDto filter) {
         return normalise(
                 filter,
                 ActivityAuditFilterDto::getDateFrom,
@@ -23,7 +25,7 @@ public class ReportFilterNormaliser {
                 ActivityAuditFilterDto::setDateTo);
     }
 
-    public FeesReportFilterDto normalise(FeesReportFilterDto filter) {
+    public static FeesReportFilterDto normalise(FeesReportFilterDto filter) {
         return normalise(
                 filter,
                 FeesReportFilterDto::getDateFrom,
@@ -32,7 +34,7 @@ public class ReportFilterNormaliser {
                 FeesReportFilterDto::setDateTo);
     }
 
-    public SearchWarrantsReportFilterDto normalise(SearchWarrantsReportFilterDto filter) {
+    public static SearchWarrantsReportFilterDto normalise(SearchWarrantsReportFilterDto filter) {
         return normalise(
                 filter,
                 SearchWarrantsReportFilterDto::getDateFrom,
@@ -41,7 +43,7 @@ public class ReportFilterNormaliser {
                 SearchWarrantsReportFilterDto::setDateTo);
     }
 
-    public DurationFilterDto normalise(DurationFilterDto filter) {
+    public static DurationFilterDto normalise(DurationFilterDto filter) {
         return normalise(
                 filter,
                 DurationFilterDto::getDateFrom,
@@ -50,7 +52,7 @@ public class ReportFilterNormaliser {
                 DurationFilterDto::setDateTo);
     }
 
-    public ListMaintenanceFilterDto normalise(ListMaintenanceFilterDto filter) {
+    public static ListMaintenanceFilterDto normalise(ListMaintenanceFilterDto filter) {
         return normalise(
                 filter,
                 ListMaintenanceFilterDto::getDateFrom,
@@ -59,7 +61,8 @@ public class ReportFilterNormaliser {
                 ListMaintenanceFilterDto::setDateTo);
     }
 
-    public PrivateProsecutorsIndexFilterDto normalise(PrivateProsecutorsIndexFilterDto filter) {
+    public static PrivateProsecutorsIndexFilterDto normalise(
+            PrivateProsecutorsIndexFilterDto filter) {
         return normalise(
                 filter,
                 PrivateProsecutorsIndexFilterDto::getDateFrom,
@@ -68,7 +71,7 @@ public class ReportFilterNormaliser {
                 PrivateProsecutorsIndexFilterDto::setDateTo);
     }
 
-    public WorkloadFilterDto normalise(WorkloadFilterDto filter) {
+    public static WorkloadFilterDto normalise(WorkloadFilterDto filter) {
         return normalise(
                 filter,
                 WorkloadFilterDto::getDateFrom,
@@ -77,7 +80,7 @@ public class ReportFilterNormaliser {
                 WorkloadFilterDto::setDateTo);
     }
 
-    private <T> T normalise(
+    private static <T> T normalise(
             T filter,
             Function<T, LocalDate> getDateFrom,
             Function<T, LocalDate> getDateTo,

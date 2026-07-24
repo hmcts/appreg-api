@@ -26,6 +26,7 @@ class IDataIngressProcessorTest {
         assertThat(processor.datasetName()).isEqualTo("test_processor");
         assertThat(processor.sourcePaths()).containsExactly("/first", "/second");
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);
+        processor.backup();
     }
 
     private static final class TestProcessor implements IDataIngressProcessor<List<JsonNode>> {

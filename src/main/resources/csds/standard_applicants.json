@@ -5,7 +5,7 @@
     "Code" : "MHA",
     "OrganisationName" : "Devon County Council",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -26,7 +26,7 @@
     "Code" : "EDDC",
     "OrganisationName" : "EAST DEVON DISTRICT COUNCIL",
     "StartDate" : "2016-07-11",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -47,7 +47,7 @@
     "Code" : "OVO",
     "OrganisationName" : "OVO Energy",
     "StartDate" : "2016-08-30",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -68,7 +68,7 @@
     "Code" : "DCH",
     "OrganisationName" : "Devon and Cornwall Housing Ltd",
     "StartDate" : "2016-10-31",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -92,7 +92,7 @@
     "Code" : "UTIL",
     "OrganisationName" : "Face2Face (Utility Warehouse)",
     "StartDate" : "2016-11-21",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -113,7 +113,7 @@
     "Code" : "TEUW",
     "OrganisationName" : "Telecom Plus t/as Utility Warehouse",
     "StartDate" : "2016-11-24",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -134,7 +134,7 @@
     "Code" : "GROSUW",
     "OrganisationName" : "Grosvenor Services Group Ltd (The Utility Warehouse)",
     "StartDate" : "2016-11-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -161,7 +161,7 @@
     "Code" : "GAZPROM",
     "OrganisationName" : "GAZPROM ENERGY",
     "StartDate" : "2016-12-10",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -182,7 +182,7 @@
     "Code" : "DMBC",
     "OrganisationName" : "Doncaster Metropolitan Borough Council",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -206,7 +206,7 @@
     "Code" : "OPUS",
     "OrganisationName" : "OPUS ENERGY LIMITED",
     "StartDate" : "2016-07-11",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -233,7 +233,7 @@
     "Code" : "BMBC",
     "OrganisationName" : "Barnsley Metropolitan Borough Council",
     "StartDate" : "2016-09-29",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -254,7 +254,7 @@
     "Code" : "SPAR",
     "OrganisationName" : "Spark Energy Supply Ltd (Engage)",
     "StartDate" : "2016-11-21",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -275,7 +275,7 @@
     "Code" : "EXTR",
     "OrganisationName" : "Extra Energy Ltd",
     "StartDate" : "2016-11-23",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -296,7 +296,7 @@
     "Code" : "GRLEDF",
     "OrganisationName" : "Grosvenor Services Group Ltd (EDF)",
     "StartDate" : "2016-11-23",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -323,7 +323,7 @@
     "Code" : "BES",
     "OrganisationName" : "BUSINESS ENERGY SOLUTIONS LTD",
     "StartDate" : "2016-12-10",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -344,7 +344,7 @@
     "Code" : "NORTHUMBRI",
     "OrganisationName" : "Northumbrian Water",
     "StartDate" : "2017-01-24",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -365,7 +365,7 @@
     "Code" : "NELC",
     "OrganisationName" : "North East Lincolnshire City Council",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -389,7 +389,7 @@
     "Code" : "POLC",
     "OrganisationName" : "Cambridgeshire Police",
     "StartDate" : "2017-03-15",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -410,7 +410,7 @@
     "Code" : "SWPOLBRIDG",
     "OrganisationName" : "South Wales Police HQ",
     "StartDate" : "2017-05-10",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -434,7 +434,7 @@
     "Code" : "ENW",
     "OrganisationName" : "Electricity North West",
     "StartDate" : "2017-05-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -461,7 +461,7 @@
     "Code" : "GAD",
     "OrganisationName" : "GREGORY ABRAMS DAVIDSON SOLICITORS",
     "StartDate" : "2017-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -488,7 +488,7 @@
     "Code" : "TVLO",
     "OrganisationName" : "TV Licensing",
     "StartDate" : "2017-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -515,7 +515,7 @@
     "Code" : "HASTE",
     "OrganisationName" : "Haste Ltd",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -542,7 +542,7 @@
     "Code" : "ICEBD",
     "OrganisationName" : "East of England ICE Team (Bedford)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -563,7 +563,7 @@
     "Code" : "SPWR",
     "OrganisationName" : "Scottish Power Energy Retail Ltd",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -584,7 +584,7 @@
     "Code" : "ENGASPEN",
     "OrganisationName" : "ENGAGE (SPARKS ENERGY)",
     "StartDate" : "2016-08-11",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -608,7 +608,7 @@
     "Code" : "Total",
     "OrganisationName" : "Total Gas and Power",
     "StartDate" : "2016-10-31",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -632,7 +632,7 @@
     "Code" : "SCP",
     "OrganisationName" : "Scottish Power Energy (Richburns)",
     "StartDate" : "2016-11-07",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -653,7 +653,7 @@
     "Code" : "XtraEnergy",
     "OrganisationName" : "Face2Face (Extra Energy Ltd)",
     "StartDate" : "2016-11-02",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -674,7 +674,7 @@
     "Code" : "GRLNP",
     "OrganisationName" : "Grosvenor Services Group Ltd (NPower)",
     "StartDate" : "2016-11-23",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 4,
     "Address" : [ {
@@ -701,7 +701,7 @@
     "Code" : "ARVEDF",
     "OrganisationName" : "Arvato Financial Solutions Limited (EDF)",
     "StartDate" : "2016-12-10",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -728,7 +728,7 @@
     "Code" : "SYPOLICE",
     "OrganisationName" : "South Yorkshire Police",
     "StartDate" : "2017-02-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -752,7 +752,7 @@
     "Code" : "KENTPOL",
     "OrganisationName" : "Kent Police HQ",
     "StartDate" : "2017-02-26",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -773,7 +773,7 @@
     "Code" : "SCC",
     "OrganisationName" : "Sheffield City Council",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -797,7 +797,7 @@
     "Code" : "ESSEXPOL",
     "OrganisationName" : "Essex Police",
     "StartDate" : "2017-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -818,7 +818,7 @@
     "Code" : "OXLEMHT",
     "OrganisationName" : "Oxleas NHS Foundation Trust Headquarters",
     "StartDate" : "2017-02-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -845,7 +845,7 @@
     "Code" : "MARL",
     "OrganisationName" : "MARLOWE HOUSE STN",
     "StartDate" : "2017-05-22",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -866,7 +866,7 @@
     "Code" : "IBC01",
     "OrganisationName" : "Ipswich Borough Council",
     "StartDate" : "2017-06-09",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -887,7 +887,7 @@
     "Code" : "NPF2",
     "OrganisationName" : "Face2Face (NPower)",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -908,7 +908,7 @@
     "Code" : "NPMP",
     "OrganisationName" : "Npower Ltd, MeterPlus",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 3,
     "Address" : [ {
@@ -929,7 +929,7 @@
     "Code" : "EXCC",
     "OrganisationName" : "EXETER CITY COUNCIL",
     "StartDate" : "2016-07-11",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -950,7 +950,7 @@
     "Code" : "SEG",
     "OrganisationName" : "Southern Electric Gas",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -971,7 +971,7 @@
     "Code" : "GROSHE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Hudson Energy)",
     "StartDate" : "2016-11-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -998,7 +998,7 @@
     "Code" : "GROSO",
     "OrganisationName" : "Grosvenor Services Group Ltd (Ovo Energy)",
     "StartDate" : "2016-11-29",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -1025,7 +1025,7 @@
     "Code" : "WPD",
     "OrganisationName" : "Western Power Distribution",
     "StartDate" : "2016-11-29",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1049,7 +1049,7 @@
     "Code" : "HAVE",
     "OrganisationName" : "Haven Power (Advanced Collection Systems)",
     "StartDate" : "2016-11-29",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1070,7 +1070,7 @@
     "Code" : "COOP",
     "OrganisationName" : "Co-op Energy",
     "StartDate" : "2017-01-31",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1091,7 +1091,7 @@
     "Code" : "RBG",
     "OrganisationName" : "ROYAL BOROUGH OF GREENWICH",
     "StartDate" : "2017-04-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1115,7 +1115,7 @@
     "Code" : "ENGA",
     "OrganisationName" : "Engage Services Limited on behalf of RWE Npower",
     "StartDate" : "2017-05-03",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1136,7 +1136,7 @@
     "Code" : "BGAS",
     "OrganisationName" : "British Gas Trading Limited",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 5,
     "Address" : [ {
@@ -1157,7 +1157,7 @@
     "Code" : "EON",
     "OrganisationName" : "E.ON Energy Solutions Ltd (BCW)",
     "StartDate" : "2016-06-22",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1178,7 +1178,7 @@
     "Code" : "UTILW",
     "OrganisationName" : "The Utility Warehouse",
     "StartDate" : "2016-06-28",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1199,7 +1199,7 @@
     "Code" : "CNG",
     "OrganisationName" : "CONTRACT NATURAL GAS LIMITED",
     "StartDate" : "2016-08-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1226,7 +1226,7 @@
     "Code" : "OVOF",
     "OrganisationName" : "Face2Face (Ovo Energy)",
     "StartDate" : "2016-11-21",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1247,7 +1247,7 @@
     "Code" : "EONW",
     "OrganisationName" : "EON (Western Power Distribution)",
     "StartDate" : "2016-11-21",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1268,7 +1268,7 @@
     "Code" : "GROSSP",
     "OrganisationName" : "Grosvenor Services Group Ltd (Scottish Power)",
     "StartDate" : "2016-11-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -1295,7 +1295,7 @@
     "Code" : "HERTSPOL",
     "OrganisationName" : "Herts Police",
     "StartDate" : "2017-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1316,7 +1316,7 @@
     "Code" : "SUSSEXPOL",
     "OrganisationName" : "Sussex Police",
     "StartDate" : "2017-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1337,7 +1337,7 @@
     "Code" : "SURREYPOL",
     "OrganisationName" : "Surrey Police",
     "StartDate" : "2017-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1361,7 +1361,7 @@
     "Code" : "RCALL",
     "OrganisationName" : "Resolvecall Limited",
     "StartDate" : "2017-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1388,7 +1388,7 @@
     "Code" : "WMIDSPOL",
     "OrganisationName" : "West Midlands Police",
     "StartDate" : "2017-07-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1412,7 +1412,7 @@
     "Code" : "ICELD",
     "OrganisationName" : "Yorkshire and Humber ICE Team (Leeds)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1433,7 +1433,7 @@
     "Code" : "ICENE",
     "OrganisationName" : "North East ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1454,7 +1454,7 @@
     "Code" : "ICESA",
     "OrganisationName" : "Wales ICE Team (Swansea)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1475,7 +1475,7 @@
     "Code" : "ICESF",
     "OrganisationName" : "Yorkshire and Humber ICE Team (Sheffield)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1496,7 +1496,7 @@
     "Code" : "ICEWL",
     "OrganisationName" : "West London ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1517,7 +1517,7 @@
     "Code" : "SSE",
     "OrganisationName" : "SSE Energy Supply Limited",
     "StartDate" : "2017-10-18",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -1538,7 +1538,7 @@
     "Code" : "UTILI",
     "OrganisationName" : "Face2Face (Utilita Energy Limited)",
     "StartDate" : "2016-11-29",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1559,7 +1559,7 @@
     "Code" : "DONG",
     "OrganisationName" : "Dong Energy Sales Uk Limited (PDP)",
     "StartDate" : "2016-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1580,7 +1580,7 @@
     "Code" : "FCMFU",
     "OrganisationName" : "Fidelite Credit Management (First Utility)",
     "StartDate" : "2016-12-03",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1607,7 +1607,7 @@
     "Code" : "GROSECO",
     "OrganisationName" : "Grosvenor Services Group Ltd (Ecotricity)",
     "StartDate" : "2017-02-22",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -1634,7 +1634,7 @@
     "Code" : "RMBC",
     "OrganisationName" : "Rotherham Metropolitan Borough Council",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1658,7 +1658,7 @@
     "Code" : "EDF",
     "OrganisationName" : "EDF Energy Customers Ltd",
     "StartDate" : "2017-04-03",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1679,7 +1679,7 @@
     "Code" : "ARVATOO",
     "OrganisationName" : "Arvato Financial Solutions Limited",
     "StartDate" : "2017-04-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1703,7 +1703,7 @@
     "Code" : "SCC02",
     "OrganisationName" : "Suffolk Trading Standards",
     "StartDate" : "2017-05-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1730,7 +1730,7 @@
     "Code" : "HUMBPOL",
     "OrganisationName" : "Humberside Police",
     "StartDate" : "2017-06-09",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1751,7 +1751,7 @@
     "Code" : "RH",
     "OrganisationName" : "Riverside Housing",
     "StartDate" : "2017-07-26",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1775,7 +1775,7 @@
     "Code" : "WIBC1",
     "OrganisationName" : "Wigan Council Trading Standards",
     "StartDate" : "2017-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1799,7 +1799,7 @@
     "Code" : "ICENL",
     "OrganisationName" : "North London ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1820,7 +1820,7 @@
     "Code" : "ICESL",
     "OrganisationName" : "South London ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1841,7 +1841,7 @@
     "Code" : "ICEST",
     "OrganisationName" : "East London (Stansted) ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1862,7 +1862,7 @@
     "Code" : "ICESW",
     "OrganisationName" : "South West ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1883,7 +1883,7 @@
     "Code" : "EOS",
     "OrganisationName" : "EOS",
     "StartDate" : "2018-04-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1904,7 +1904,7 @@
     "Code" : "LEENF",
     "OrganisationName" : "NCES LEICESTERSHIRE",
     "StartDate" : "2016-10-11",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1925,7 +1925,7 @@
     "Code" : "F2F",
     "OrganisationName" : "Face2Face",
     "StartDate" : "2016-11-21",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -1946,7 +1946,7 @@
     "Code" : "FUL",
     "OrganisationName" : "First Utility Limited",
     "StartDate" : "2016-11-21",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1967,7 +1967,7 @@
     "Code" : "GRSCOTPWR",
     "OrganisationName" : "Grosvenor Services Group Scottish Power",
     "StartDate" : "2016-11-18",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -1994,7 +1994,7 @@
     "Code" : "ADVCOLL",
     "OrganisationName" : "ADVANCED COLLECTION SYSTEMS",
     "StartDate" : "2016-12-03",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2021,7 +2021,7 @@
     "Code" : "DURPOL",
     "OrganisationName" : "Durham Police",
     "StartDate" : "2017-01-19",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2042,7 +2042,7 @@
     "Code" : "HYDRONOVO",
     "OrganisationName" : "HYDRON (Ovo Energy)",
     "StartDate" : "2017-02-17",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2063,7 +2063,7 @@
     "Code" : "BEDSPOL",
     "OrganisationName" : "Bedfordshire Police",
     "StartDate" : "2017-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2087,7 +2087,7 @@
     "Code" : "WYP",
     "OrganisationName" : "West Yorkshire Police",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2111,7 +2111,7 @@
     "Code" : "NORFOLKPOL",
     "OrganisationName" : "Norfolk Police HQ",
     "StartDate" : "2017-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2132,7 +2132,7 @@
     "Code" : "WBCCADS",
     "OrganisationName" : "West Berks Council, Central Location Team, Adult Services, Social Services",
     "StartDate" : "2017-05-09",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2156,7 +2156,7 @@
     "Code" : "GROSSSE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Southern Electric)",
     "StartDate" : "2017-02-26",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -2183,7 +2183,7 @@
     "Code" : "GROSYU",
     "OrganisationName" : "Grosvenor Services Group Ltd (Yu Energy)",
     "StartDate" : "2018-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2210,7 +2210,7 @@
     "Code" : "ABMS",
     "OrganisationName" : "ABM Solutions Limited",
     "StartDate" : "2018-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2231,7 +2231,7 @@
     "Code" : "BULL",
     "OrganisationName" : "Blackthorne Utilities Ltd",
     "StartDate" : "2018-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -2261,7 +2261,7 @@
     "Code" : "HAMPOL",
     "OrganisationName" : "Hampshire Constabulary",
     "StartDate" : "2018-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2282,7 +2282,7 @@
     "Code" : "DCCMH",
     "OrganisationName" : "Derbyshire County Council Mental Health Team",
     "StartDate" : "2018-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -2303,7 +2303,7 @@
     "Code" : "NBCHE",
     "OrganisationName" : "Northampton Borough Council Housing Enforcement Team",
     "StartDate" : "2018-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2324,7 +2324,7 @@
     "Code" : "YHN",
     "OrganisationName" : "Your Homes Newcastle",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2351,7 +2351,7 @@
     "Code" : "MCHT",
     "OrganisationName" : "Manchester Community Health Team",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2375,7 +2375,7 @@
     "Code" : "ICEEL",
     "OrganisationName" : "East London ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2396,7 +2396,7 @@
     "Code" : "ICEFL",
     "OrganisationName" : "East of England ICE Team (Felixstowe)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2417,7 +2417,7 @@
     "Code" : "ICEKT",
     "OrganisationName" : "Kent and Sussex ICE Team (Kent office)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2438,7 +2438,7 @@
     "Code" : "RICHBURNS",
     "OrganisationName" : "Richburns Ltd",
     "StartDate" : "2017-02-17",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -2462,7 +2462,7 @@
     "Code" : "PDP",
     "OrganisationName" : "PDP Management Services",
     "StartDate" : "2017-01-16",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2486,7 +2486,7 @@
     "Code" : "NOTCTYCNCL",
     "OrganisationName" : "Nottingham City Council",
     "StartDate" : "2017-03-07",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2507,7 +2507,7 @@
     "Code" : "NLC",
     "OrganisationName" : "North Lincolnshire Council",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2531,7 +2531,7 @@
     "Code" : "CLPOL",
     "OrganisationName" : "Cleveland Police",
     "StartDate" : "2017-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2552,7 +2552,7 @@
     "Code" : "YOS001",
     "OrganisationName" : "Youth Offending Service",
     "StartDate" : "2017-04-26",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2579,7 +2579,7 @@
     "Code" : "ICESX",
     "OrganisationName" : "Kent and Sussex ICE Team (Sussex office)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2600,7 +2600,7 @@
     "Code" : "SSEM",
     "OrganisationName" : "SSE Metering Ltd",
     "StartDate" : "2018-02-06",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -2621,7 +2621,7 @@
     "Code" : "MPOL",
     "OrganisationName" : "MERSEYSIDE POLICE",
     "StartDate" : "2017-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2645,7 +2645,7 @@
     "Code" : "DSTS",
     "OrganisationName" : "Devon & Somerset Trading Standards Service",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2666,7 +2666,7 @@
     "Code" : "TVPOL",
     "OrganisationName" : "Thames Valley Police",
     "StartDate" : "2017-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2690,7 +2690,7 @@
     "Code" : "LBL",
     "OrganisationName" : "LONDON BOROUGH OF LEWISHAM",
     "StartDate" : "2017-04-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2714,7 +2714,7 @@
     "Code" : "SCC01",
     "OrganisationName" : "Suffolk County Council",
     "StartDate" : "2017-05-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2741,7 +2741,7 @@
     "Code" : "STAFFPOL",
     "OrganisationName" : "Staffordshire Police",
     "StartDate" : "2017-05-12",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2762,7 +2762,7 @@
     "Code" : "ICEGM",
     "OrganisationName" : "Greater Manchester and Cumbria ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2783,7 +2783,7 @@
     "Code" : "ICEWM",
     "OrganisationName" : "West Midlands ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2804,7 +2804,7 @@
     "Code" : "ICEMY",
     "OrganisationName" : "Merseyside ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2825,7 +2825,7 @@
     "Code" : "ENSE",
     "OrganisationName" : "Engage Services",
     "StartDate" : "2017-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2849,7 +2849,7 @@
     "Code" : "WDC01",
     "OrganisationName" : "Waveney District Council",
     "StartDate" : "2017-08-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2876,7 +2876,7 @@
     "Code" : "RCBC-TS",
     "OrganisationName" : "Redcar & Cleveland BC - Trading Standards",
     "StartDate" : "2017-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2897,7 +2897,7 @@
     "Code" : "WOE",
     "OrganisationName" : "Morrisons Data Services (E.ON Energy Limited)",
     "StartDate" : "2018-03-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2918,7 +2918,7 @@
     "Code" : "CHESHPOL",
     "OrganisationName" : "Cheshire Police",
     "StartDate" : "2018-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -2939,7 +2939,7 @@
     "Code" : "CHURCHILL",
     "OrganisationName" : "Churchill Recovery Solutions",
     "StartDate" : "2018-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2966,7 +2966,7 @@
     "Code" : "ICEBS",
     "OrganisationName" : "South Central ICE Team (Berks/Surrey)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -2987,7 +2987,7 @@
     "Code" : "ICECF",
     "OrganisationName" : "Wales ICE Team (Cardiff)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3008,7 +3008,7 @@
     "Code" : "ICECL",
     "OrganisationName" : "Central London ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3029,7 +3029,7 @@
     "Code" : "ICEEM",
     "OrganisationName" : "East Midlands ICE Team",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3050,7 +3050,7 @@
     "Code" : "ICEHD",
     "OrganisationName" : "South Central ICE Team (Hants/Dorset)",
     "StartDate" : "2018-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3071,7 +3071,7 @@
     "Code" : "FCMEDF",
     "OrganisationName" : "Fidelite Credit Management (EDF)",
     "StartDate" : "2016-12-03",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3098,7 +3098,7 @@
     "Code" : "NA",
     "OrganisationName" : "East Devon District Council",
     "StartDate" : "2017-02-08",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3125,7 +3125,7 @@
     "Code" : "HYDRON",
     "OrganisationName" : "Hydron (Corona Energy)",
     "StartDate" : "2017-01-31",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -3146,7 +3146,7 @@
     "Code" : "GROSIE",
     "OrganisationName" : "Grosvenor Services Group Ltd (iSupply Energy)",
     "StartDate" : "2017-02-16",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 2,
     "Address" : [ {
@@ -3173,7 +3173,7 @@
     "Code" : "FID",
     "OrganisationName" : "Fidelite",
     "StartDate" : "2017-02-22",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3194,7 +3194,7 @@
     "Code" : "UGP",
     "OrganisationName" : "United Gas and Power",
     "StartDate" : "2017-02-24",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3215,7 +3215,7 @@
     "Code" : "HCC",
     "OrganisationName" : "Hull City Council",
     "StartDate" : "2017-03-14",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3239,7 +3239,7 @@
     "Code" : "HMRCFIS",
     "OrganisationName" : "HM Revenue & Customs Fraud Investigation Service",
     "StartDate" : "2017-05-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3260,7 +3260,7 @@
     "Code" : "MOR",
     "OrganisationName" : "Morrison Data Services",
     "StartDate" : "2017-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3284,7 +3284,7 @@
     "Code" : "HYDRONECO",
     "OrganisationName" : "HYDRON (Ecotricity)",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3311,7 +3311,7 @@
     "Code" : "REGEGAS",
     "OrganisationName" : "Regent Gas Limited",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3332,7 +3332,7 @@
     "Code" : "GATESHC",
     "OrganisationName" : "Gateshead Housing Company (Gateshead Council)",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3359,7 +3359,7 @@
     "Code" : "NCTPSE",
     "OrganisationName" : "National Counter Terrorism Policing (SE)",
     "StartDate" : "2018-09-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3380,7 +3380,7 @@
     "Code" : "BBDNMHT",
     "OrganisationName" : "Blackburn with Darwen Council Mental Health Team",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3404,7 +3404,7 @@
     "Code" : "CARDCC",
     "OrganisationName" : "Cardiff County Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3428,7 +3428,7 @@
     "Code" : "GROSBG",
     "OrganisationName" : "Grosvenor Services Group Ltd (British Gas)",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3455,7 +3455,7 @@
     "Code" : "GWPHQ",
     "OrganisationName" : "Gwent Police",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3482,7 +3482,7 @@
     "Code" : "BGCBC",
     "OrganisationName" : "Blaenau Gwent County Borough Council",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3509,7 +3509,7 @@
     "Code" : "BLDC",
     "OrganisationName" : "Bassetlaw District Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3536,7 +3536,7 @@
     "Code" : "LCCTS",
     "OrganisationName" : "Lincolnshire County Council Trading Standards",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3560,7 +3560,7 @@
     "Code" : "TORFTS",
     "OrganisationName" : "Torfaen County Borough Council Trading Standards",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3587,7 +3587,7 @@
     "Code" : "BWBC",
     "OrganisationName" : "Barrow Borough Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3614,7 +3614,7 @@
     "Code" : "NORTHPOL",
     "OrganisationName" : "Northumbria Police",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3635,7 +3635,7 @@
     "Code" : "NEWCMHSW",
     "OrganisationName" : "Newcastle Community Health and Social Care Direct",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3662,7 +3662,7 @@
     "Code" : "NORTYC",
     "OrganisationName" : "North Tyneside Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3686,7 +3686,7 @@
     "Code" : "SUNDCC",
     "OrganisationName" : "Sunderland City Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3710,7 +3710,7 @@
     "Code" : "LINCPHQ",
     "OrganisationName" : "Lincolnshire Police Headquarters",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3731,7 +3731,7 @@
     "Code" : "PENBC",
     "OrganisationName" : "Pendle Borough Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3752,7 +3752,7 @@
     "Code" : "BURNBC",
     "OrganisationName" : "Burnley Borough Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3773,7 +3773,7 @@
     "Code" : "NATCA",
     "OrganisationName" : "National Crime Agency",
     "StartDate" : "2018-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3800,7 +3800,7 @@
     "Code" : "SANDBC",
     "OrganisationName" : "Sandwell Metropolitan Borough Council",
     "StartDate" : "2019-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3824,7 +3824,7 @@
     "Code" : "CLIC",
     "OrganisationName" : "City of Lincoln Council",
     "StartDate" : "2019-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3845,7 +3845,7 @@
     "Code" : "WLDC",
     "OrganisationName" : "West Lindsey District Council",
     "StartDate" : "2019-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3872,7 +3872,7 @@
     "Code" : "UTILITA",
     "OrganisationName" : "Utilita Energy",
     "StartDate" : "2019-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3896,7 +3896,7 @@
     "Code" : "HARLDC",
     "OrganisationName" : "Harlow District Council",
     "StartDate" : "2019-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3923,7 +3923,7 @@
     "Code" : "BASBC",
     "OrganisationName" : "Basildon Borough Council",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3947,7 +3947,7 @@
     "Code" : "SOSBC",
     "OrganisationName" : "Southend-on-Sea Borough Council",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3971,7 +3971,7 @@
     "Code" : "THURC",
     "OrganisationName" : "Thurrock Council",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -3995,7 +3995,7 @@
     "Code" : "HMRCPOC",
     "OrganisationName" : "HM Revenue and Customs FIS POC",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4016,7 +4016,7 @@
     "Code" : "NTSECT",
     "OrganisationName" : "National Trading Standards Regional Investigations and eCrime Team",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4040,7 +4040,7 @@
     "Code" : "LINLS",
     "OrganisationName" : "Lincolnshire County Council, Legal Services",
     "StartDate" : "2022-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4064,7 +4064,7 @@
     "Code" : "Yu",
     "OrganisationName" : "Yu Energy",
     "StartDate" : "2023-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4085,7 +4085,7 @@
     "Code" : "TLBL",
     "OrganisationName" : "The London Borough of Lambeth",
     "StartDate" : "2023-11-16",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4109,7 +4109,7 @@
     "Code" : "TRUENERGY",
     "OrganisationName" : "Tru Energy Limited",
     "StartDate" : "2024-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4136,7 +4136,7 @@
     "Code" : "GSCLTD",
     "OrganisationName" : "Global Security and Credit Agency Ltd",
     "StartDate" : "2024-10-24",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4163,7 +4163,7 @@
     "Code" : "CADENT",
     "OrganisationName" : "Cadent Gas Limited",
     "StartDate" : "2025-01-09",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4190,7 +4190,7 @@
     "Code" : "LBRED",
     "OrganisationName" : "London Borough of Redbridge",
     "StartDate" : "2025-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4214,7 +4214,7 @@
     "Code" : "UESLTD",
     "OrganisationName" : "Utility Enforcement Solutions Ltd",
     "StartDate" : "2025-12-04",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4241,7 +4241,7 @@
     "Code" : "NWSLTD",
     "OrganisationName" : "National Warrant Services Ltd",
     "StartDate" : "2025-12-04",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4268,7 +4268,7 @@
     "Code" : "ICRLTD",
     "OrganisationName" : "Interactive Contact & Resolution Limited",
     "StartDate" : "2026-03-09",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4295,7 +4295,7 @@
     "Code" : "GMP",
     "OrganisationName" : "Greater Manchester Police",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4319,7 +4319,7 @@
     "Code" : "MHTBURY",
     "OrganisationName" : "Community Mental Health Team Bury",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4343,7 +4343,7 @@
     "Code" : "LANCTS",
     "OrganisationName" : "Trading Standards Lancashire",
     "StartDate" : "2018-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4367,7 +4367,7 @@
     "Code" : "BDBC",
     "OrganisationName" : "Basingstoke and Deane Borough Council",
     "StartDate" : "2018-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4388,7 +4388,7 @@
     "Code" : "BTP01",
     "OrganisationName" : "British Transport Police Authority",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4415,7 +4415,7 @@
     "Code" : "DORAMHP",
     "OrganisationName" : "Dorset AMHP Hub",
     "StartDate" : "2019-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4439,7 +4439,7 @@
     "Code" : "MJSS",
     "OrganisationName" : "Mark Jermin Stage School",
     "StartDate" : "2019-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4463,7 +4463,7 @@
     "Code" : "LSS",
     "OrganisationName" : "License Services (Swansea)",
     "StartDate" : "2019-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4484,7 +4484,7 @@
     "Code" : "PCCTST",
     "OrganisationName" : "Portsmouth City Council Trading Standards Team",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4505,7 +4505,7 @@
     "Code" : "NERART",
     "OrganisationName" : "North East Region Asset Recovery Team",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4526,7 +4526,7 @@
     "Code" : "INSCIT",
     "OrganisationName" : "Insolvency Service - Criminal Investigations Team",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4547,7 +4547,7 @@
     "Code" : "EANEWC",
     "OrganisationName" : "The Environment Agency Newcastle",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4568,7 +4568,7 @@
     "Code" : "COSO",
     "OrganisationName" : "Customer outreach solutions office",
     "StartDate" : "2023-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4589,7 +4589,7 @@
     "Code" : "TELFWRE",
     "OrganisationName" : "Telford and Wrekin Council",
     "StartDate" : "2020-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4613,7 +4613,7 @@
     "Code" : "DVSA",
     "OrganisationName" : "Driver and Vehicle Standards Agency",
     "StartDate" : "2020-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4640,7 +4640,7 @@
     "Code" : "CMSBRISTOL",
     "OrganisationName" : "CMS Cameron McKenna Nabarro Olswang LLP",
     "StartDate" : "2021-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4664,7 +4664,7 @@
     "Code" : "STHO",
     "OrganisationName" : "South Tyneside Homes",
     "StartDate" : "2021-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4685,7 +4685,7 @@
     "Code" : "CFTLINC",
     "OrganisationName" : "Community Forensic Team Lincolnshire",
     "StartDate" : "2021-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4712,7 +4712,7 @@
     "Code" : "UCOLTD",
     "OrganisationName" : "Utility Collections Limited",
     "StartDate" : "2023-08-22",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4733,7 +4733,7 @@
     "Code" : "LBC",
     "OrganisationName" : "London Borough of Camden",
     "StartDate" : "2023-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4757,7 +4757,7 @@
     "Code" : "FINU",
     "OrganisationName" : "Financial Investigations Unit",
     "StartDate" : "2024-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4778,7 +4778,7 @@
     "Code" : "NERECU",
     "OrganisationName" : "North East Regional Economic Crime Unit",
     "StartDate" : "2025-03-17",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4799,7 +4799,7 @@
     "Code" : "ENSLTD",
     "OrganisationName" : "Engage Services (ESL) Limited",
     "StartDate" : "2025-10-03",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4826,7 +4826,7 @@
     "Code" : "OMHT",
     "OrganisationName" : "Olympus Care Mental Health Team",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4850,7 +4850,7 @@
     "Code" : "NORPOL",
     "OrganisationName" : "Northamptonshire Police",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4871,7 +4871,7 @@
     "Code" : "FORHOUS",
     "OrganisationName" : "ForHousing",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4898,7 +4898,7 @@
     "Code" : "ECICMHT",
     "OrganisationName" : "East Cornwall Integrated Community Mental Health Team",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4925,7 +4925,7 @@
     "Code" : "LDYWMHT",
     "OrganisationName" : "Ladywell Inpatient Mental Health Services",
     "StartDate" : "2017-02-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4949,7 +4949,7 @@
     "Code" : "BEXSOCS",
     "OrganisationName" : "BEXLEY SOCIAL SERVICES",
     "StartDate" : "2017-02-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -4976,7 +4976,7 @@
     "Code" : "GROSTEL",
     "OrganisationName" : "Grosvenor Services Group Ltd (Telecom Plus PLC)",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5003,7 +5003,7 @@
     "Code" : "WBC",
     "OrganisationName" : "Warrington Borough Council",
     "StartDate" : "2018-05-10",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5030,7 +5030,7 @@
     "Code" : "TRAFFC",
     "OrganisationName" : "Trafford Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5057,7 +5057,7 @@
     "Code" : "RCHDC",
     "OrganisationName" : "Rochdale Metropolitan Borough Council",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5078,7 +5078,7 @@
     "Code" : "AVSOMPOL",
     "OrganisationName" : "Avon & Somerset Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5102,7 +5102,7 @@
     "Code" : "CBPOL",
     "OrganisationName" : "Cumbria Constabulary",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5126,7 +5126,7 @@
     "Code" : "DRBYPOL",
     "OrganisationName" : "Derbyshire Constabulary",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5150,7 +5150,7 @@
     "Code" : "DYFPOL",
     "OrganisationName" : "Dyfed-Powys Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5174,7 +5174,7 @@
     "Code" : "GLOSPOL",
     "OrganisationName" : "Gloucestershire Constabulary",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5198,7 +5198,7 @@
     "Code" : "LANCSPOL",
     "OrganisationName" : "Lancashire Constabulary",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5222,7 +5222,7 @@
     "Code" : "LEICSPOL",
     "OrganisationName" : "Leicestershire Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5249,7 +5249,7 @@
     "Code" : "METPOL",
     "OrganisationName" : "Metropolitan Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5273,7 +5273,7 @@
     "Code" : "NYRKPOL",
     "OrganisationName" : "North Yorkshire Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5300,7 +5300,7 @@
     "Code" : "SUFFPOL",
     "OrganisationName" : "Suffolk Constabulary",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5324,7 +5324,7 @@
     "Code" : "WARKSPOL",
     "OrganisationName" : "Warwickshire Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5348,7 +5348,7 @@
     "Code" : "WILTSPOL",
     "OrganisationName" : "Wiltshire Police",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5372,7 +5372,7 @@
     "Code" : "AHMPB",
     "OrganisationName" : "Birmingham Shared Lives",
     "StartDate" : "2019-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5396,7 +5396,7 @@
     "Code" : "CMHTNEW",
     "OrganisationName" : "Newington Community Mental Health Team",
     "StartDate" : "2019-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5420,7 +5420,7 @@
     "Code" : "STBC",
     "OrganisationName" : "Stockton on Tees Borough Council",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5441,7 +5441,7 @@
     "Code" : "SYMBIOE",
     "OrganisationName" : "Symbio Energy Ltd.",
     "StartDate" : "2021-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5468,7 +5468,7 @@
     "Code" : "NNCLA",
     "OrganisationName" : "North Northamptonshire Council",
     "StartDate" : "2021-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5492,7 +5492,7 @@
     "Code" : "EASPAL",
     "OrganisationName" : "Environment Agency Spalding",
     "StartDate" : "2021-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5519,7 +5519,7 @@
     "Code" : "GLAAN",
     "OrganisationName" : "Gangmasters & Labour Abuse Authority",
     "StartDate" : "2022-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5540,7 +5540,7 @@
     "Code" : "SHDC",
     "OrganisationName" : "South Holland District Council",
     "StartDate" : "2022-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5567,7 +5567,7 @@
     "Code" : "CFCE",
     "OrganisationName" : "Criminal Fines Collection and Enforcement",
     "StartDate" : "2022-10-18",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5588,7 +5588,7 @@
     "Code" : "LBBH",
     "OrganisationName" : "Barnet Homes",
     "StartDate" : "2023-11-16",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5609,7 +5609,7 @@
     "Code" : "LBHA",
     "OrganisationName" : "London Borough of Haringey",
     "StartDate" : "2023-11-16",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5636,7 +5636,7 @@
     "Code" : "CECAMHPS",
     "OrganisationName" : "Cheshire East Council AMHP Service",
     "StartDate" : "2024-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5657,7 +5657,7 @@
     "Code" : "NKDC",
     "OrganisationName" : "North Kesteven District Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5681,7 +5681,7 @@
     "Code" : "GROSBRE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Bristol Energy)",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5708,7 +5708,7 @@
     "Code" : "HYDRONFLOW",
     "OrganisationName" : "HYDRON (Flow Energy)",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5735,7 +5735,7 @@
     "Code" : "GROSENGIE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Engie)",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5762,7 +5762,7 @@
     "Code" : "SKDC",
     "OrganisationName" : "South Kesteven District Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5783,7 +5783,7 @@
     "Code" : "ANGWS",
     "OrganisationName" : "Anglian Water Services Ltd.",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5810,7 +5810,7 @@
     "Code" : "WMERPOL",
     "OrganisationName" : "West Mercia Police",
     "StartDate" : "2018-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5834,7 +5834,7 @@
     "Code" : "KASHDC",
     "OrganisationName" : "Ashfield District Council",
     "StartDate" : "2018-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5861,7 +5861,7 @@
     "Code" : "MANSDC",
     "OrganisationName" : "Mansfield District Council",
     "StartDate" : "2018-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5888,7 +5888,7 @@
     "Code" : "LIVCTX",
     "OrganisationName" : "Liverpool City Council (Taxi Licensing)",
     "StartDate" : "2019-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5909,7 +5909,7 @@
     "Code" : "LIVCLD",
     "OrganisationName" : "Liverpool City Council (Licensing Department)",
     "StartDate" : "2019-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5930,7 +5930,7 @@
     "Code" : "YRKC",
     "OrganisationName" : "City Of York Council",
     "StartDate" : "2019-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5951,7 +5951,7 @@
     "Code" : "DUDBC",
     "OrganisationName" : "Dudley Metropolitan Borough Council",
     "StartDate" : "2019-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5972,7 +5972,7 @@
     "Code" : "WALBC",
     "OrganisationName" : "Walsall Metropolitan Borough Council",
     "StartDate" : "2019-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -5993,7 +5993,7 @@
     "Code" : "TVBC",
     "OrganisationName" : "Test Valley Borough Council",
     "StartDate" : "2019-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6020,7 +6020,7 @@
     "Code" : "FYC",
     "OrganisationName" : "Farnham Youth Choir",
     "StartDate" : "2019-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6044,7 +6044,7 @@
     "Code" : "MUSL",
     "OrganisationName" : "Mercia Utility Services Ltd",
     "StartDate" : "2019-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6071,7 +6071,7 @@
     "Code" : "GROSBPG",
     "OrganisationName" : "Grosvenor Services Ltd (Business Power and Gas)",
     "StartDate" : "2019-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6098,7 +6098,7 @@
     "Code" : "LEEDSCC",
     "OrganisationName" : "Leeds City Council",
     "StartDate" : "2019-11-18",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6122,7 +6122,7 @@
     "Code" : "BWDBC",
     "OrganisationName" : "Brentwood Borough Council",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6143,7 +6143,7 @@
     "Code" : "BSKYMET",
     "OrganisationName" : "Bluesky Metering Services",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6164,7 +6164,7 @@
     "Code" : "ROYMAIL",
     "OrganisationName" : "Royal Mail",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6185,7 +6185,7 @@
     "Code" : "CFIB",
     "OrganisationName" : "Criminal & Financial Investigations Basingstoke",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6206,7 +6206,7 @@
     "Code" : "SEVTREW",
     "OrganisationName" : "Severn Trent Water",
     "StartDate" : "2020-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6230,7 +6230,7 @@
     "Code" : "CORBC",
     "OrganisationName" : "Corby Borough Council",
     "StartDate" : "2021-02-28",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6251,7 +6251,7 @@
     "Code" : "SWANCC",
     "OrganisationName" : "Swansea County Council",
     "StartDate" : "2022-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6275,7 +6275,7 @@
     "Code" : "GROSBRYT",
     "OrganisationName" : "Grosvenor Services Group Ltd (Bryt Energy)",
     "StartDate" : "2022-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6299,7 +6299,7 @@
     "Code" : "MANCC",
     "OrganisationName" : "Manchester City Council",
     "StartDate" : "2024-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6323,7 +6323,7 @@
     "Code" : "LBHAV",
     "OrganisationName" : "London Borough of Havering",
     "StartDate" : "2024-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6347,7 +6347,7 @@
     "Code" : "NRWALES",
     "OrganisationName" : "Cyfoeth Naturiol Cymru/Natural Resources Wales",
     "StartDate" : "2025-01-27",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6368,7 +6368,7 @@
     "Code" : "LBHIL",
     "OrganisationName" : "London Borough of Hillingdon",
     "StartDate" : "2025-03-17",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6395,7 +6395,7 @@
     "Code" : "HYDRONBES",
     "OrganisationName" : "HYDRON (BES Utilities)",
     "StartDate" : "2018-09-13",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6416,7 +6416,7 @@
     "Code" : "AHMPSO",
     "OrganisationName" : "Social Care Mental Health Team Southampton",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6437,7 +6437,7 @@
     "Code" : "PENDMHT",
     "OrganisationName" : "Pendle Community Mental Health Team",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6464,7 +6464,7 @@
     "Code" : "HYDRONENG",
     "OrganisationName" : "Hydron (Engie)",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6485,7 +6485,7 @@
     "Code" : "CNXUS",
     "OrganisationName" : "Conexus Recovery & Field Services Ltd",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6509,7 +6509,7 @@
     "Code" : "ASHPCC",
     "OrganisationName" : "Ashton Primary Care Centre",
     "StartDate" : "2019-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6533,7 +6533,7 @@
     "Code" : "TSWSCC",
     "OrganisationName" : "Trading Standards Office West Sussex",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6557,7 +6557,7 @@
     "Code" : "ELINDC",
     "OrganisationName" : "East Lindsey District Council",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6578,7 +6578,7 @@
     "Code" : "DCCTS",
     "OrganisationName" : "Durham County Council Trading Standards",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6602,7 +6602,7 @@
     "Code" : "CWCMHT",
     "OrganisationName" : "Cheshire West and Chester Mental Health",
     "StartDate" : "2020-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6626,7 +6626,7 @@
     "Code" : "KIRKC",
     "OrganisationName" : "Kirklees Council",
     "StartDate" : "2020-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6653,7 +6653,7 @@
     "Code" : "UNUTIL",
     "OrganisationName" : "United Utilities Group PLC",
     "StartDate" : "2021-04-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6677,7 +6677,7 @@
     "Code" : "SEEKA",
     "OrganisationName" : "Seeka Ltd",
     "StartDate" : "2022-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6701,7 +6701,7 @@
     "Code" : "EONNEXT",
     "OrganisationName" : "E.ON Field Debt Solutions part of E.ON Energy Solutions Ltd acting on behalf of E.ON Next Energy Ltd",
     "StartDate" : "2023-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6722,7 +6722,7 @@
     "Code" : "EONNP",
     "OrganisationName" : "E.ON Energy Solutions Ltd acting on behalf of Npower Commercial Gas Ltd",
     "StartDate" : "2023-03-06",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6743,7 +6743,7 @@
     "Code" : "SBC",
     "OrganisationName" : "Stockport Borough Council",
     "StartDate" : "2023-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6767,7 +6767,7 @@
     "Code" : "WBC",
     "OrganisationName" : "Wigan Borough Council",
     "StartDate" : "2023-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6791,7 +6791,7 @@
     "Code" : "RBKC",
     "OrganisationName" : "The Royal Borough of Kensington and Chelsea",
     "StartDate" : "2023-10-02",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6812,7 +6812,7 @@
     "Code" : "BRENTC",
     "OrganisationName" : "Brent Council",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6836,7 +6836,7 @@
     "Code" : "COLPOL",
     "OrganisationName" : "City of London Police",
     "StartDate" : "2025-11-06",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6857,7 +6857,7 @@
     "Code" : "EMSOU",
     "OrganisationName" : "East Midlands Special Operations Unit",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6878,7 +6878,7 @@
     "Code" : "SALFPL",
     "OrganisationName" : "Salford City Council (Place Directorate)",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6902,7 +6902,7 @@
     "Code" : "NOTPOL",
     "OrganisationName" : "Nottinghamshire Constabulary",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6923,7 +6923,7 @@
     "Code" : "NOTTCC",
     "OrganisationName" : "Nottinghamshire County Council",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6947,7 +6947,7 @@
     "Code" : "HALBC",
     "OrganisationName" : "Halton Borough Council",
     "StartDate" : "2018-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -6974,7 +6974,7 @@
     "Code" : "GCTSS",
     "OrganisationName" : "Gateshead Council Trading Standards Service",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7001,7 +7001,7 @@
     "Code" : "BURBC",
     "OrganisationName" : "Bury Metropolitan Borough Council",
     "StartDate" : "2018-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7025,7 +7025,7 @@
     "Code" : "POLEXE",
     "OrganisationName" : "Devon and Cornwall Police",
     "StartDate" : "2016-06-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7049,7 +7049,7 @@
     "Code" : "SLAM",
     "OrganisationName" : "South London and Maudsley NHS Foundation Trust",
     "StartDate" : "2017-04-05",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7073,7 +7073,7 @@
     "Code" : "DORSPOL",
     "OrganisationName" : "Dorset Police HQ",
     "StartDate" : "2017-08-08",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7094,7 +7094,7 @@
     "Code" : "WVCC",
     "OrganisationName" : "Wolverhampton City Council",
     "StartDate" : "2019-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7118,7 +7118,7 @@
     "Code" : "REDBC",
     "OrganisationName" : "Redditch Borough Council",
     "StartDate" : "2019-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7142,7 +7142,7 @@
     "Code" : "HMRC-SCC",
     "OrganisationName" : "Her Majesty's Revenue and Customs - Scottish Crime Campus",
     "StartDate" : "2019-08-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7163,7 +7163,7 @@
     "Code" : "GROSEON",
     "OrganisationName" : "Grosvenor Services Group Ltd (E.ON)",
     "StartDate" : "2019-09-11",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7190,7 +7190,7 @@
     "Code" : "WINCMHT",
     "OrganisationName" : "Winchester Community Mental Health Team",
     "StartDate" : "2019-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7214,7 +7214,7 @@
     "Code" : "SCOTPHQ",
     "OrganisationName" : "Scottish Power Energy Retail Ltd - HQ",
     "StartDate" : "2019-09-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7238,7 +7238,7 @@
     "Code" : "RBBC",
     "OrganisationName" : "Reigate and Banstead Borough Council",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7262,7 +7262,7 @@
     "Code" : "INSOLV",
     "OrganisationName" : "Insolvency Service - Legal Services Directorate",
     "StartDate" : "2019-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7286,7 +7286,7 @@
     "Code" : "MHRA",
     "OrganisationName" : "Medical Healthcare Products Regulatory Agency",
     "StartDate" : "2020-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7307,7 +7307,7 @@
     "Code" : "ENSL",
     "OrganisationName" : "Enstroga Limited",
     "StartDate" : "2020-06-24",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7331,7 +7331,7 @@
     "Code" : "HOIMEC",
     "OrganisationName" : "Home Office Immigration Enforcement Cardiff",
     "StartDate" : "2020-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7352,7 +7352,7 @@
     "Code" : "LPFTJCH",
     "OrganisationName" : "Spalding Community Mental Health Team",
     "StartDate" : "2021-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7373,7 +7373,7 @@
     "Code" : "MPAAS",
     "OrganisationName" : "Meter Point Administration And Solutions (MPAAS)",
     "StartDate" : "2022-04-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7400,7 +7400,7 @@
     "Code" : "SCML",
     "OrganisationName" : "Smart Choice Metering Limited",
     "StartDate" : "2023-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7421,7 +7421,7 @@
     "Code" : "Valda",
     "OrganisationName" : "Valda Energy",
     "StartDate" : "2023-07-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7442,7 +7442,7 @@
     "Code" : "HYDRONORST",
     "OrganisationName" : "HYDRON (Orsted Energy)",
     "StartDate" : "2018-09-13",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7463,7 +7463,7 @@
     "Code" : "NPWR",
     "OrganisationName" : "NPower",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7484,7 +7484,7 @@
     "Code" : "AMHPLINC",
     "OrganisationName" : "AMHP Service Lincolnshire ",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7508,7 +7508,7 @@
     "Code" : "ICEEMBOS",
     "OrganisationName" : "East Midlands ICE Team (Boston)",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7532,7 +7532,7 @@
     "Code" : "NWPOL",
     "OrganisationName" : "North Wales Police",
     "StartDate" : "2018-11-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7553,7 +7553,7 @@
     "Code" : "OLDBC",
     "OrganisationName" : "Oldham Borough Council",
     "StartDate" : "2019-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7577,7 +7577,7 @@
     "Code" : "CNCPOL",
     "OrganisationName" : "Civil Nuclear Constabulary",
     "StartDate" : "2019-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7598,7 +7598,7 @@
     "Code" : "CCUN",
     "OrganisationName" : "Cumbria County Council - Urgent Care Team North",
     "StartDate" : "2019-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7625,7 +7625,7 @@
     "Code" : "CCUW",
     "OrganisationName" : "Cumbria County Council - Urgent Care Team West",
     "StartDate" : "2019-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7652,7 +7652,7 @@
     "Code" : "NRTHCBSMHT",
     "OrganisationName" : "Northcroft, Birmingham and Solihull Mental Health Team",
     "StartDate" : "2019-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7676,7 +7676,7 @@
     "Code" : "HAMPTS",
     "OrganisationName" : "Hampshire Trading Standards",
     "StartDate" : "2020-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7703,7 +7703,7 @@
     "Code" : "DWPF",
     "OrganisationName" : "DWP Financial Investigations Unit",
     "StartDate" : "2020-02-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7724,7 +7724,7 @@
     "Code" : "CPSPOC",
     "OrganisationName" : "Proceeds of Crime, Crown Prosecution Service",
     "StartDate" : "2020-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7751,7 +7751,7 @@
     "Code" : "HMRCNEWC",
     "OrganisationName" : "Her Majesty's Revenue and Customs",
     "StartDate" : "2020-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7775,7 +7775,7 @@
     "Code" : "AMSNOTTS",
     "OrganisationName" : "AMS Nottingham Limited",
     "StartDate" : "2020-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7796,7 +7796,7 @@
     "Code" : "NCCTS",
     "OrganisationName" : "Newport City Council Trading Standards",
     "StartDate" : "2020-12-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7817,7 +7817,7 @@
     "Code" : "LANCAMHP",
     "OrganisationName" : "Lancashire County Council Approved Mental Health Professional (AMHP) Service",
     "StartDate" : "2021-03-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7841,7 +7841,7 @@
     "Code" : "LBN",
     "OrganisationName" : "London Borough of Newham",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7862,7 +7862,7 @@
     "Code" : "LBBDC",
     "OrganisationName" : "London Borough of Barking and Dagenham Council",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7886,7 +7886,7 @@
     "Code" : "LBH",
     "OrganisationName" : "London Borough of Harrow",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7910,7 +7910,7 @@
     "Code" : "LBTH",
     "OrganisationName" : "London Borough of Tower Hamlets",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7931,7 +7931,7 @@
     "Code" : "LBE",
     "OrganisationName" : "London Borough of Enfield",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7955,7 +7955,7 @@
     "Code" : "LBI",
     "OrganisationName" : "London Borough of Islington",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -7979,7 +7979,7 @@
     "Code" : "LBHFC",
     "OrganisationName" : "LB Hammersmith & Fulham Council",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8000,7 +8000,7 @@
     "Code" : "LBW",
     "OrganisationName" : "London Borough of Waltham",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8021,7 +8021,7 @@
     "Code" : "SOC",
     "OrganisationName" : "Southwark Council",
     "StartDate" : "2023-10-20",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8045,7 +8045,7 @@
     "Code" : "TMBC",
     "OrganisationName" : "Tameside Metropolitan Borough Council",
     "StartDate" : "2024-01-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8069,7 +8069,7 @@
     "Code" : "WCC",
     "OrganisationName" : "Westminster City Council",
     "StartDate" : "2024-01-02",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8096,7 +8096,7 @@
     "Code" : "LINCC",
     "OrganisationName" : "Lincolnshire County Council",
     "StartDate" : "2024-05-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8120,7 +8120,7 @@
     "Code" : "SIA",
     "OrganisationName" : "Security Industry Authority",
     "StartDate" : "2024-06-25",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8141,7 +8141,7 @@
     "Code" : "BOLTONC",
     "OrganisationName" : "Bolton Council",
     "StartDate" : "2024-08-15",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8162,7 +8162,7 @@
     "Code" : "EALINO",
     "OrganisationName" : "Environment Agency for Lincolnshire & Northamptonshire Area",
     "StartDate" : "2025-10-01",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8183,8 +8183,8 @@
     "Code" : "OCTNWL",
     "OrganisationName" : "Northumbrian Water Limited",
     "StartDate" : "2026-04-27",
-    "Enddate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "EndDate" : null,
+    "UpdateDate" : "2026-07-21T12:43:34.989Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Northumbria House",
@@ -8210,7 +8210,7 @@
     "Code" : "OCTBSL",
     "OrganisationName" : "Business Stream Limited",
     "StartDate" : "2026-04-27",
-    "Enddate" : null,
+    "EndDate" : null,
     "UpdateDate" : "2026-07-07T15:08:00.411Z",
     "RevisionNumber" : 1,
     "Address" : [ {
@@ -8237,8 +8237,8 @@
     "Code" : "OCTEL",
     "OrganisationName" : "Everflow Limited",
     "StartDate" : "2026-04-27",
-    "Enddate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "EndDate" : null,
+    "UpdateDate" : "2026-07-21T12:43:45.059Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Traynor Hub (T2)",
@@ -8264,8 +8264,8 @@
     "Code" : "OCTSESBWL",
     "OrganisationName" : "SES Business Water Limited",
     "StartDate" : "2026-04-27",
-    "Enddate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "EndDate" : null,
+    "UpdateDate" : "2026-07-21T12:43:51.172Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "66-74 London Road",
