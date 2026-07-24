@@ -76,7 +76,7 @@ properties:
     example: "01225 123456"
     nullable: true
     maxLength: 20
-    minLength: 1
+    minLength: 10
 
   mobile:
     type: string
@@ -87,7 +87,7 @@ properties:
     example: "07123456789"
     nullable: true
     maxLength: 20
-    minLength: 1
+    minLength: 11
 
   email:
     type: string
