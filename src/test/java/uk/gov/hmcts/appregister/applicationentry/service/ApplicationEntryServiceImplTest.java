@@ -2146,11 +2146,6 @@ class ApplicationEntryServiceImplTest {
         return feeDetails;
     }
 
-    private void stubFeeStatusSave() {
-        when(appListEntryFeeStatusRepository.save(any(AppListEntryFeeStatus.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-    }
-
     @Test
     void replaceOfficials_replacesOfficialsForAllEntries() {
         val listId = UUID.randomUUID();

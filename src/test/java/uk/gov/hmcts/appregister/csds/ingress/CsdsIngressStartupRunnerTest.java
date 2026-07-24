@@ -17,7 +17,7 @@ class CsdsIngressStartupRunnerTest {
     @InjectMocks private CsdsIngressStartupRunner runner;
 
     @Test
-    void given_applicationStarts_when_run_then_executesIngress() throws Exception {
+    void given_applicationStarts_when_run_then_executesIngress() {
         runner.run(new DefaultApplicationArguments(new String[0]));
 
         verify(csdsIngressProcessor).runIngress();

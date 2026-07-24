@@ -877,6 +877,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional
     public MatchResponse<Void> updateClosedEntry(PayloadForUpdateClosedEntry updateEntry) {
 
         return updateClosedApplicationEntryValidator.validate(
@@ -1878,6 +1879,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetailFromClosedList(
             PayloadGetEntryInList entry) {
         log.debug(
