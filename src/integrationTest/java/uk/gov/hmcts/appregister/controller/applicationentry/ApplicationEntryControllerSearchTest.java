@@ -491,6 +491,51 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
+    void
+            givenUpdateFeeDetailsSelection_whenListBulkActionPreview_thenOnlyFeeRequiredEntriesAreEligible()
+                    throws Exception {
+        ApplicationList sourceList = createAndSaveList(Status.OPEN);
+
+        ApplicationCode feeRequiredCode = buildApplicationCode("PVFEEYES");
+        feeRequiredCode.setFeeDue(YesOrNo.YES);
+        feeRequiredCode.setApplicationListEntryList(null);
+        feeRequiredCode = persistance.save(feeRequiredCode);
+        ApplicationListEntry feeRequiredEntry = createEntry(sourceList);
+        feeRequiredEntry.setApplicationCode(feeRequiredCode);
+        feeRequiredEntry.setSequenceNumber((short) 1);
+        feeRequiredEntry = persistance.save(feeRequiredEntry);
+
+        ApplicationCode feeNotRequiredCode = buildApplicationCode("PVFEENO");
+        feeNotRequiredCode.setFeeDue(YesOrNo.NO);
+        feeNotRequiredCode.setApplicationListEntryList(null);
+        feeNotRequiredCode = persistance.save(feeNotRequiredCode);
+        ApplicationListEntry feeNotRequiredEntry = createEntry(sourceList);
+        feeNotRequiredEntry.setApplicationCode(feeNotRequiredCode);
+        feeNotRequiredEntry.setSequenceNumber((short) 2);
+        feeNotRequiredEntry = persistance.save(feeNotRequiredEntry);
+
+        BulkActionPreviewResponseDto response =
+                executeApplicationListBulkActionPreview(
+                        createAdminToken(),
+                        sourceList.getUuid(),
+                        applicationListBulkActionPreviewIdsRequest(
+                                BulkActionType.UPDATE_FEE_DETAILS,
+                                List.of(
+                                        feeRequiredEntry.getUuid(),
+                                        feeNotRequiredEntry.getUuid())));
+
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(
+                List.of(feeRequiredEntry.getUuid(), feeNotRequiredEntry.getUuid()),
+                response.getEntryIds());
+        assertThat(response.getEntries())
+                .extracting(EntryGetSummaryDto::getId)
+                .containsExactly(feeRequiredEntry.getUuid(), feeNotRequiredEntry.getUuid());
+    }
+
+    @Test
     void givenListFilterSelectionWithExclusions_whenListBulkActionPreview_thenExcludeEntries()
             throws Exception {
         ApplicationList sourceList = createAndSaveList(Status.OPEN);
