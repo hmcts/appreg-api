@@ -74,6 +74,8 @@ public class UpdateApplicationEntryValidator
             PayloadForUpdateEntry validatable,
             BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R>
                     validateSuccess) {
+        ApplicationList applicationList = validateParentApplicationList(validatable.getId());
+
         Optional<ApplicationListEntry> entry =
                 applicationListEntryRepository.findByUuid(validatable.getEntryId());
         if (entry.isEmpty()) {
@@ -101,12 +103,13 @@ public class UpdateApplicationEntryValidator
                 validatable.getEntryId(),
                 validatable.getId());
 
-        return super.validate(
+        return validateUsingApplicationList(
                 validatable,
                 (payload, success) -> {
                     validateFeeStatusTransition(success.getApplicationCode(), payload);
                     return validateSuccess == null ? null : validateSuccess.apply(payload, success);
-                });
+                },
+                applicationList);
     }
 
     private void validateFeeStatusTransition(

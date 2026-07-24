@@ -458,12 +458,15 @@ class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantListNotExisting() {
+    void givenMissingListAndEntryOutsideList_whenValidate_thenListNotFoundTakesPrecedence() {
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.getApplicant().setOrganisation(null);
 
         when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
+                .thenReturn(Optional.empty());
+        when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
@@ -477,6 +480,7 @@ class UpdateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+        Mockito.verifyNoInteractions(applicationListEntryRepository);
     }
 
     @Test
