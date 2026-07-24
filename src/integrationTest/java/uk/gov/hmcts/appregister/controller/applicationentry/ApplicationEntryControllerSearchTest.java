@@ -494,7 +494,7 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
     void
             givenUpdateFeeDetailsSelection_whenListBulkActionPreview_thenOnlyFeeRequiredEntriesAreEligible()
                     throws Exception {
-        ApplicationList sourceList = createAndSaveList(Status.OPEN);
+        final ApplicationList sourceList = createAndSaveList(Status.OPEN);
 
         ApplicationCode feeRequiredCode = buildApplicationCode("PVFEEYES");
         feeRequiredCode.setFeeDue(YesOrNo.YES);
