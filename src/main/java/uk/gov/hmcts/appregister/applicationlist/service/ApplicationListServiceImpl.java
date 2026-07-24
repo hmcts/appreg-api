@@ -21,7 +21,6 @@ import uk.gov.hmcts.appregister.applicationentry.audit.BulkApplicationListEntrie
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
-import uk.gov.hmcts.appregister.applicationlist.audit.ApplicationListPrintReadAudit;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
@@ -420,23 +419,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     return Optional.of(result);
                                 },
                                 true));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ApplicationListGetPrintDto print(UUID id) {
-        return auditService.processAudit(
-                null,
-                AppListAuditOperation.PRINT_APP_LIST,
-                req ->
-                        Optional.of(
-                                new AuditableResult<>(
-                                        buildGetPrintDtos(
-                                                        List.of(findApplicationListOrThrow(id)),
-                                                        List.of(id),
-                                                        List.of())
-                                                .get(0),
-                                        new ApplicationListPrintReadAudit(id))));
     }
 
     @Override

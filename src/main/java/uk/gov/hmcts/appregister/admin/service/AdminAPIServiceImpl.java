@@ -32,6 +32,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     private final AuditOperationService auditService;
 
     @Override
+    @Transactional(readOnly = true)
     public JobStatus getDatabaseJobStatusByName(AdminJobType jobName) {
         return auditService.processAudit(
                 AdminAuditOperation.GET_DATABASE_JOB_STATUS_AUDIT_EVENT,
@@ -61,6 +62,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public JobRetentionPolicy getDatabaseJobRetentionPeriodByName(AdminJobType jobName) {
         return auditService.processAudit(
                 AdminAuditOperation.GET_DATABASE_JOB_RETENTION_PERIOD_AUDIT_EVENT,

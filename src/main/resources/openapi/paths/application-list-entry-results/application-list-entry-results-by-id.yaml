@@ -47,24 +47,3 @@ put:
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
     "409": { $ref: "../../components/responses/conflict-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
-
-delete:
-  operationId: deleteApplicationListEntryResult
-  tags: [ application-list-entry-results ]
-  summary: Delete an Application List Entry Result
-  description: Permanently deletes the Application List Entry Result identified by `resultId`.
-  responses:
-    "204":
-      description: Application List Entry Result deleted (no content returned)
-      headers:
-        Vary:
-          description: Response varies by Accept for media-type versioning.
-          schema:
-            type: string
-            example: Accept
-    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
-    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
-    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
-    "404": { $ref: "../../components/responses/not-found-error.yaml" }
-    "409": { $ref: "../../components/responses/conflict-error.yaml" }
-    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
