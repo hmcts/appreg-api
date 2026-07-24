@@ -22,9 +22,9 @@ import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 
 /**
  * Mapper for ApplicationCode entity and ApplicationCodeDto.
@@ -55,12 +55,12 @@ public abstract class ApplicationCodeMapper {
      * @return the fee amount dto
      */
     @Named("mapFee")
-    public JsonNullable<ApplicationCodeGetSummaryDtoFeeAmount> map(Fee fee) {
+    public JsonNullable<ApplicationCodeGetDetailDtoFeeAmount> map(Fee fee) {
         long pence = getPence(fee);
 
-        ApplicationCodeGetSummaryDtoFeeAmount dto = new ApplicationCodeGetSummaryDtoFeeAmount();
+        ApplicationCodeGetDetailDtoFeeAmount dto = new ApplicationCodeGetDetailDtoFeeAmount();
         dto.setValue(pence);
-        dto.setCurrency(ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP);
+        dto.setCurrency(ApplicationCodeGetDetailDtoFeeAmount.CurrencyEnum.GBP);
 
         return JsonNullable.of(dto);
     }
@@ -80,13 +80,13 @@ public abstract class ApplicationCodeMapper {
     }
 
     @Named("mapOffsite")
-    public JsonNullable<ApplicationCodeGetSummaryDtoOffsiteFeeAmount> mapOffsite(Fee fee) {
+    public JsonNullable<ApplicationCodeGetDetailDtoOffsiteFeeAmount> mapOffsite(Fee fee) {
         long pence = getPence(fee);
 
-        ApplicationCodeGetSummaryDtoOffsiteFeeAmount dto =
-                new ApplicationCodeGetSummaryDtoOffsiteFeeAmount();
+        ApplicationCodeGetDetailDtoOffsiteFeeAmount dto =
+                new ApplicationCodeGetDetailDtoOffsiteFeeAmount();
         dto.setValue(pence);
-        dto.setCurrency(ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP);
+        dto.setCurrency(ApplicationCodeGetDetailDtoOffsiteFeeAmount.CurrencyEnum.GBP);
 
         return JsonNullable.of(dto);
     }

@@ -41,6 +41,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
@@ -1296,12 +1297,14 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         }
 
         Response response =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/print"), token);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/print"),
+                        token,
+                        new BulkGetApplicationListEntriesRequestDto().listIds(List.of(listId)));
 
         response.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
 
-        JsonNode body = mapper.readTree(response.asString());
+        JsonNode body = mapper.readTree(response.asString()).get(0);
         JsonNode firstEntry = body.path("entries").get(0);
 
         assertExplicitNull(firstEntry, "applicant.person.contactDetails.addressLine2");
@@ -1351,14 +1354,16 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         // fire test
         Response printApplicationListResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/print"),
+                        token,
+                        new BulkGetApplicationListEntriesRequestDto().listIds(List.of(id)));
 
         // assert success
         printApplicationListResp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
 
         ApplicationListGetPrintDto applicationListGetPrintDto =
-                printApplicationListResp.as(ApplicationListGetPrintDto.class);
+                printApplicationListResp.as(ApplicationListGetPrintDto[].class)[0];
         assertThat(applicationListGetPrintDto.getEntries()).isNotNull();
     }
 
@@ -1371,35 +1376,12 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
 
         // fire test
         Response resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/print"),
+                        token,
+                        new BulkGetApplicationListEntriesRequestDto().listIds(List.of(id)));
 
         resp.then().statusCode(HttpStatus.FORBIDDEN.value());
-    }
-
-    // --- Not found: Application List -------------------------------------------------
-    @Test
-    @DisplayName("Print Application List: 404 when list unknown")
-    void givenUnknownApplicationList_whenPrintApplicationList_then404() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
-
-        // fire test
-        Response resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
-
-        // assert success
-        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
-                problemDetail.getType().toString());
     }
 
     private NameAddress createPrintableSparsePersonNameAddress(

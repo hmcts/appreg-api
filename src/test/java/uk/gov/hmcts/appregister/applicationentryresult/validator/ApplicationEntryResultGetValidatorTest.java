@@ -89,6 +89,31 @@ class ApplicationEntryResultGetValidatorTest {
     }
 
     @Test
+    void givenClosedApplicationList_whenValidate_thenIncorrectStateErrorIsThrown() {
+        PayloadGetEntryResultInList payload =
+                PayloadGetEntryResultInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        ApplicationList applicationList = new ApplicationList();
+        applicationList.setStatus(Status.CLOSED);
+        applicationList.setDeleted(YesOrNo.NO);
+
+        Mockito.when(applicationListRepository.findByUuidIncludingDelete(payload.getListId()))
+                .thenReturn(java.util.Optional.of(applicationList));
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
+
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                appRegistryException.getCode().getCode());
+        Mockito.verifyNoInteractions(applicationListEntryRepository);
+    }
+
+    @Test
     void testGetApplicationListEntryResultFailOnApplicationListNotFound() {
         PayloadGetEntryResultInList payload =
                 PayloadGetEntryResultInList.builder()

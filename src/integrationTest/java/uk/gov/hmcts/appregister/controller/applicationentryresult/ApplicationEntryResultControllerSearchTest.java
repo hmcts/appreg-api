@@ -199,7 +199,7 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
     }
 
     @Test
-    void givenApplicationListEntryResult_whenSearchForResultsWithClosedList_thenSuccessResponse()
+    void givenApplicationListEntryResult_whenSearchForResultsWithClosedList_thenConflictResponse()
             throws Exception {
         // create 20 results
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -226,38 +226,17 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
 
         Assertions.assertEquals(201, response.getStatusCode());
 
-        // set the list to closed to prove this does not affect the get
+        // set the list to closed
         ApplicationList applicationList = applicationListRepository.findByUuid(appList).get();
         applicationList.setStatus(Status.CLOSED);
         persistance.save(applicationList);
 
-        // navigate to the second page
         response = getEntryResult(token, appList, detailDto.getId(), 10, 0);
 
-        Assertions.assertEquals(200, response.getStatusCode());
-        ResultPage page = response.as(ResultPage.class);
-        Assertions.assertEquals(1, page.getContent().size());
-
-        Assertions.assertEquals("APPC", page.getContent().get(0).getResultCode());
-        Assertions.assertEquals(
-                "Appeal forwarded to {{Name of Crown Court}}.",
-                page.getContent().get(0).getWording().getTemplate());
-        Assertions.assertEquals(
-                "test wording",
-                page.getContent()
-                        .get(0)
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getValue());
-        Assertions.assertEquals(
-                "Name of Crown Court",
-                page.getContent()
-                        .get(0)
-                        .getWording()
-                        .getSubstitutionKeyConstraints()
-                        .get(0)
-                        .getKey());
+        Assertions.assertEquals(409, response.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                response);
     }
 
     @Test

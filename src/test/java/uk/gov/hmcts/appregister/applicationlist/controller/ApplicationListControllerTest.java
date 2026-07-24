@@ -141,19 +141,6 @@ class ApplicationListControllerTest {
     }
 
     @Test
-    void printApplicationList_delegatesAndReturnsOk() {
-        UUID id = UUID.randomUUID();
-        var body = mock(ApplicationListGetPrintDto.class);
-        when(service.print(id)).thenReturn(body);
-
-        ResponseEntity<ApplicationListGetPrintDto> actual = controller.printApplicationList(id);
-
-        verify(service).print(id);
-        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(actual.getBody()).isSameAs(body);
-    }
-
-    @Test
     void printApplicationLists_delegatesAndReturnsOk() {
         var request = new BulkGetApplicationListEntriesRequestDto();
         var body = List.of(new ApplicationListGetPrintDto());
