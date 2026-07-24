@@ -266,8 +266,9 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned()
-            throws MalformedURLException, JOSEException {
+    void givenExistingEntryAndMissingList_whenUpdateEntry_then404ListNotFound() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
         var tokenGenerator = createAdminToken();
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
@@ -278,7 +279,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                                         + "/"
                                         + UUID.randomUUID()
                                         + "/entries/"
-                                        + UUID.randomUUID()),
+                                        + createdDetail.getId()),
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
@@ -286,7 +287,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
                 problemDetail.getType());
     }
 
