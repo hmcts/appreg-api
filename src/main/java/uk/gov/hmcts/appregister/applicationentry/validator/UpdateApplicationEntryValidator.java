@@ -74,7 +74,7 @@ public class UpdateApplicationEntryValidator
             PayloadForUpdateEntry validatable,
             BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R>
                     validateSuccess) {
-        ApplicationList applicationList = validateParentApplicationList(validatable.getId());
+        final ApplicationList applicationList = validateParentApplicationList(validatable.getId());
 
         Optional<ApplicationListEntry> entry =
                 applicationListEntryRepository.findByUuid(validatable.getEntryId());
