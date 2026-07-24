@@ -71,7 +71,8 @@ class CsdsIngressClientImplTest {
         when(requestHeadersSpec.header(eq("Api-Key"), any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.accept(MediaType.APPLICATION_JSON)).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(eq(String.class))).thenThrow(new RestClientException("404 Not Found"));
+        when(responseSpec.body(eq(String.class)))
+                .thenThrow(new RestClientException("404 Not Found"));
 
         var properties = new CsdsIngressProperties();
         properties.setBaseUrl("https://csds.dev.apps.hmcts.net/api/rest");

@@ -272,7 +272,8 @@ class CsdsIngressProcessorTest {
                 .anyMatch(
                         log ->
                                 log.contains("Skipping CSDS ingress processor test-dataset")
-                                        && log.contains("after failure: boom (cause: 404 Not Found)"));
+                                        && log.contains(
+                                                "after failure: boom (cause: 404 Not Found)"));
     }
 
     @Test

@@ -83,7 +83,9 @@ public class CsdsIngressProcessor {
     }
 
     private String summarizeFailure(RuntimeException ex) {
-        if (ex.getCause() == null || ex.getCause().getMessage() == null || ex.getCause().getMessage().isBlank()) {
+        if (ex.getCause() == null
+                || ex.getCause().getMessage() == null
+                || ex.getCause().getMessage().isBlank()) {
             return ex.getMessage();
         }
         return "%s (cause: %s)".formatted(ex.getMessage(), ex.getCause().getMessage());
