@@ -392,7 +392,7 @@ class BulkUploadAsyncLifecycleTest {
         BulkUploadError[] errors =
                 mapper.readValue(
                         context.getValidationFailureMessages().getFirst(), BulkUploadError[].class);
-        assertThat(errors).hasSize(3);
+        assertThat(errors).hasSize(2);
 
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
@@ -411,14 +411,6 @@ class BulkUploadAsyncLifecycleTest {
                                                 "APPLICATION_CODE",
                                                 null,
                                                 "Application code is required",
-                                                row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
-                                                "DATA_ERROR"),
-                                        new BulkUploadError(
-                                                2,
-                                                "applicationCode",
-                                                null,
-                                                "must not be null",
                                                 row.getRespondentAddressLine1(),
                                                 row.getRespondentOrganisationName(),
                                                 "DATA_ERROR"))));
@@ -748,7 +740,7 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(writtenCsv.toString())
                 .contains("HEADER|")
                 .contains("row-two|")
-                .contains("respondent.organisation.contactDetails.postcode")
+                .contains("POSTCODE - invalid: Field has been rejected")
                 .contains(row.getRespondentPostcode())
                 .contains("Field has been rejected")
                 .contains("row-three|");
@@ -789,10 +781,10 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(writtenCsv.toString())
                 .contains("HEADER|")
                 .contains("row-two|")
-                .contains("respondent.organisation.contactDetails.email")
+                .contains("EMAIL")
                 .contains("testtest.com")
                 .contains("Field has been rejected|")
-                .contains("respondent.organisation.contactDetails.postcode")
+                .contains("POSTCODE")
                 .contains(row.getRespondentPostcode())
                 .contains("Field has been rejected")
                 .contains("row-three|");
@@ -833,8 +825,7 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(writtenCsv.toString())
                 .contains("HEADER|HEADER_ERROR:4|HEADER_ERROR:3|HEADER_ERROR:2|HEADER_ERROR:1")
-                .contains(
-                        "row-two|respondent.organisation.contactDetails.postcode - invalid: Field has been rejected")
+                .contains("row-two|POSTCODE - invalid: Field has been rejected")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());

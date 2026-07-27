@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -149,11 +148,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             rowErrors.addAll(validator.validateRow(rowNumber, row));
 
-            if(rowErrors.isEmpty())
+            if (rowErrors.isEmpty()) {
                 rowErrors.addAll(validateMappedDto(rowNumber, dto));
+            }
 
-            if(rowErrors.isEmpty())
+            if (rowErrors.isEmpty()) {
                 rowErrors.addAll(validateBusinessRules(rowNumber, dto));
+            }
 
             allErrors.addAll(rowErrors);
             rowNumber++;
@@ -500,11 +501,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 builder.append(line);
                 for (BulkUploadError error : rowErrors) {
-                    var location = error.getLocation().split("\\.").length > 1
-                        ? error.getLocation().split("\\.")
-                        [error.getLocation().split("\\.").length - 1]
-                        .toUpperCase()
-                        : error.getLocation();
+                    var location =
+                            error.getLocation().split("\\.").length > 1
+                                    ? error.getLocation()
+                                            .split("\\.")[
+                                            error.getLocation().split("\\.").length - 1]
+                                            .toUpperCase()
+                                    : error.getLocation();
                     if (Objects.nonNull(error.getRejectedValue())
                             && !error.getRejectedValue().isBlank()) {
                         builder.append("|")
@@ -513,15 +516,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                                 .formatted(
                                                         location,
                                                         error.getRejectedValue(),
-                                                        error.getMessage().contains("must match \"") ?
-                                                            "Field has been rejected": error.getMessage()));
+                                                        error.getMessage().contains("must match \"")
+                                                                ? "Field has been rejected"
+                                                                : error.getMessage()));
 
                     } else {
                         builder.append("|")
-                                .append(
-                                        "%s: %s"
-                                                .formatted(
-                                                        location, error.getMessage()));
+                                .append("%s: %s".formatted(location, error.getMessage()));
                     }
                 }
                 builder.append("\n");
