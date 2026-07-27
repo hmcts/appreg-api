@@ -4,12 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -24,7 +26,7 @@ class CsdsExecutionLogServiceTest {
 
     @Test
     void given_terminalStatusToday_when_hasTerminalStatusToday_then_returnsTrue() {
-        var jdbcTemplate = org.mockito.Mockito.mock(NamedParameterJdbcTemplate.class);
+        var jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         var service = new CsdsExecutionLogService(jdbcTemplate, FIXED_CLOCK, UK_ZONE);
         ReflectionTestUtils.setField(service, "schema", "appreg");
 
@@ -39,13 +41,40 @@ class CsdsExecutionLogServiceTest {
 
     @Test
     void given_messageLongerThanColumn_when_recordFailure_then_truncatesToColumnLength() {
-        var jdbcTemplate = org.mockito.Mockito.mock(NamedParameterJdbcTemplate.class);
+        var jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         var service = new CsdsExecutionLogService(jdbcTemplate, FIXED_CLOCK, UK_ZONE);
         ReflectionTestUtils.setField(service, "schema", "appreg");
-        var startedAt = LocalDateTime.of(2026, 7, 27, 10, 20);
+        var startedAt = LocalDateTime.of(2026, Month.JULY, 27, 10, 20);
         var longMessage = "x".repeat(1200);
 
         service.recordFailure("CSDS_DATA_INGRESS", startedAt, longMessage);
+
+        verify(jdbcTemplate).update(anyString(), any(MapSqlParameterSource.class));
+    }
+
+    @Test
+    void given_noTerminalStatusToday_when_hasTerminalStatusToday_then_returnsFalse() {
+        var jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        var service = new CsdsExecutionLogService(jdbcTemplate, FIXED_CLOCK, UK_ZONE);
+        ReflectionTestUtils.setField(service, "schema", "appreg");
+
+        when(jdbcTemplate.queryForObject(
+                        anyString(),
+                        org.mockito.ArgumentMatchers.<Map<String, ?>>any(),
+                        eq(Boolean.class)))
+                .thenReturn(false);
+
+        assertThat(service.hasTerminalStatusToday("CSDS_DATA_INGRESS")).isFalse();
+    }
+
+    @Test
+    void given_nullMessage_when_recordSuccess_then_preservesNullMessage() {
+        var jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        var service = new CsdsExecutionLogService(jdbcTemplate, FIXED_CLOCK, UK_ZONE);
+        ReflectionTestUtils.setField(service, "schema", "appreg");
+        var startedAt = LocalDateTime.of(2026, Month.JULY, 27, 10, 20);
+
+        service.recordSuccess("CSDS_DATA_INGRESS", startedAt, null);
 
         verify(jdbcTemplate).update(anyString(), any(MapSqlParameterSource.class));
     }

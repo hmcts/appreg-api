@@ -8,10 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @SuppressWarnings(
         "java:S2077") // Schema name is trusted config; runtime values are parameter-bound.

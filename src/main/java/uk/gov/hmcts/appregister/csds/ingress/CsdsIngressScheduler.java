@@ -43,14 +43,7 @@ class CsdsIngressScheduler {
                         "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is"
                                 + " not available");
             }
-            case SUCCEEDED -> {
-                log.info("Running scheduled CSDS ingress");
-                csdsExecutionLogService.recordSuccess(
-                        CsdsIngressProcessor.DATABASE_JOB_NAME,
-                        startedAt,
-                        "Scheduled CSDS ingress completed successfully");
-                log.info("Completed scheduled CSDS ingress");
-            }
+            case SUCCEEDED -> logSuccessfulRun(startedAt);
             case FAILED -> {
                 log.info("Running scheduled CSDS ingress");
                 csdsExecutionLogService.recordFailure(
@@ -58,6 +51,15 @@ class CsdsIngressScheduler {
                 log.error("Scheduled CSDS ingress failed: {}", result.message());
             }
         }
+    }
+
+    private void logSuccessfulRun(LocalDateTime startedAt) {
+        log.info("Running scheduled CSDS ingress");
+        csdsExecutionLogService.recordSuccess(
+                CsdsIngressProcessor.DATABASE_JOB_NAME,
+                startedAt,
+                "Scheduled CSDS ingress completed successfully");
+        log.info("Completed scheduled CSDS ingress");
     }
 
     private boolean isDueNow() {
