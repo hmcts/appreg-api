@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class CsdsIngressProcessor {
 
     private final CsdsIngressProperties properties;
     private final CsdsIngressClient ingressClient;
+    private final CsdsExecutionLogService csdsExecutionLogService;
     private final DistributedJobLockService distributedJobLockService;
     private final List<IDataIngressProcessor<?>> processors;
 
@@ -45,7 +47,11 @@ public class CsdsIngressProcessor {
         }
     }
 
-    public ScheduledRunResult runScheduledIngress() {
+    public boolean hasTerminalStatusToday() {
+        return csdsExecutionLogService.hasTerminalStatusToday(DATABASE_JOB_NAME);
+    }
+
+    public ScheduledRunResult runScheduledIngress(LocalDateTime startedAt) {
         val lock =
                 distributedJobLockService.tryAcquire(
                         DATABASE_JOB_NAME, properties.getLeaseDuration());
@@ -56,12 +62,12 @@ public class CsdsIngressProcessor {
         try {
             var failedProcessors = runProcessors(lock.get());
             if (!failedProcessors.isEmpty()) {
-                return ScheduledRunResult.failed(
-                        "Failed processors: " + String.join(", ", failedProcessors));
+                return recordFailure(
+                        startedAt, "Failed processors: " + String.join(", ", failedProcessors));
             }
-            return ScheduledRunResult.succeeded();
+            return recordSuccess(startedAt);
         } catch (RuntimeException ex) {
-            return ScheduledRunResult.failed(summarizeFailure(ex));
+            return recordFailure(startedAt, summarizeFailure(ex));
         } finally {
             if (!distributedJobLockService.release(lock.get())) {
                 log.warn(
@@ -119,6 +125,17 @@ public class CsdsIngressProcessor {
             return ex.getMessage();
         }
         return "%s (cause: %s)".formatted(ex.getMessage(), ex.getCause().getMessage());
+    }
+
+    private ScheduledRunResult recordSuccess(LocalDateTime startedAt) {
+        csdsExecutionLogService.recordSuccess(
+                DATABASE_JOB_NAME, startedAt, "Scheduled CSDS ingress completed successfully");
+        return ScheduledRunResult.succeeded();
+    }
+
+    private ScheduledRunResult recordFailure(LocalDateTime startedAt, String message) {
+        csdsExecutionLogService.recordFailure(DATABASE_JOB_NAME, startedAt, message);
+        return ScheduledRunResult.failed(message);
     }
 
     private <T> void runProcessor(IDataIngressProcessor<T> processor) {

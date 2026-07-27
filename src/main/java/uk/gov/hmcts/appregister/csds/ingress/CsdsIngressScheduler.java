@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 class CsdsIngressScheduler {
     private final CsdsIngressProperties properties;
     private final CsdsIngressProcessor csdsIngressProcessor;
-    private final CsdsExecutionLogService csdsExecutionLogService;
     private final Clock clock;
     private final ZoneId ukZone;
 
@@ -30,36 +29,27 @@ class CsdsIngressScheduler {
         if (!isDueNow()) {
             return;
         }
-        if (csdsExecutionLogService.hasTerminalStatusToday(
-                CsdsIngressProcessor.DATABASE_JOB_NAME)) {
+        if (csdsIngressProcessor.hasTerminalStatusToday()) {
             return;
         }
 
         var startedAt = LocalDateTime.now(clock.withZone(ukZone));
-        var result = csdsIngressProcessor.runScheduledIngress();
+        var result = csdsIngressProcessor.runScheduledIngress(startedAt);
         switch (result.status()) {
             case SKIPPED_LOCK_UNAVAILABLE -> {
                 log.info(
                         "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is"
                                 + " not available");
             }
-            case SUCCEEDED -> logSuccessfulRun(startedAt);
+            case SUCCEEDED -> {
+                log.info("Running scheduled CSDS ingress");
+                log.info("Completed scheduled CSDS ingress");
+            }
             case FAILED -> {
                 log.info("Running scheduled CSDS ingress");
-                csdsExecutionLogService.recordFailure(
-                        CsdsIngressProcessor.DATABASE_JOB_NAME, startedAt, result.message());
                 log.error("Scheduled CSDS ingress failed: {}", result.message());
             }
         }
-    }
-
-    private void logSuccessfulRun(LocalDateTime startedAt) {
-        log.info("Running scheduled CSDS ingress");
-        csdsExecutionLogService.recordSuccess(
-                CsdsIngressProcessor.DATABASE_JOB_NAME,
-                startedAt,
-                "Scheduled CSDS ingress completed successfully");
-        log.info("Completed scheduled CSDS ingress");
     }
 
     private boolean isDueNow() {

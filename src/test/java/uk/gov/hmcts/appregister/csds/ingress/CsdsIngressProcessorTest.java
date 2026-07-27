@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import nl.altindag.log.LogCaptor;
@@ -28,6 +31,7 @@ class CsdsIngressProcessorTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Mock private CsdsIngressClient ingressClient;
+    @Mock private CsdsExecutionLogService csdsExecutionLogService;
     @Mock private DistributedJobLockService distributedJobLockService;
     @Mock private IDataIngressProcessor<String> dataIngressProcessor;
 
@@ -42,6 +46,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
 
@@ -86,6 +91,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
 
@@ -108,6 +114,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
 
@@ -115,7 +122,7 @@ class CsdsIngressProcessorTest {
                         CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
                 .thenReturn(Optional.empty());
 
-        var result = processor.runScheduledIngress();
+        var result = processor.runScheduledIngress(LocalDateTime.parse("2026-07-27T03:05:00"));
 
         assertThat(result.status())
                 .isEqualTo(CsdsIngressProcessor.ScheduledRunStatus.SKIPPED_LOCK_UNAVAILABLE);
@@ -134,6 +141,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
         var lock =
@@ -173,6 +181,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor, secondProcessor));
 
@@ -219,6 +228,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor, secondProcessor));
 
@@ -266,6 +276,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
         List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
@@ -283,10 +294,16 @@ class CsdsIngressProcessorTest {
         when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
         doThrow(new IllegalStateException("boom")).when(dataIngressProcessor).apply("processed");
 
-        var result = processor.runScheduledIngress();
+        var startedAt = LocalDateTime.parse("2026-07-27T03:05:00");
+        var result = processor.runScheduledIngress(startedAt);
 
         assertThat(result.status()).isEqualTo(CsdsIngressProcessor.ScheduledRunStatus.FAILED);
         assertThat(result.message()).isEqualTo("Failed processors: test-dataset");
+        verify(csdsExecutionLogService)
+                .recordFailure(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME,
+                        startedAt,
+                        "Failed processors: test-dataset");
         verify(distributedJobLockService).release(lock);
     }
 
@@ -301,6 +318,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
 
@@ -342,6 +360,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor, secondProcessor));
         List<JsonNode> firstRawJson =
@@ -360,11 +379,17 @@ class CsdsIngressProcessorTest {
         when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(firstRawJson);
         when(dataIngressProcessor.preProcess(firstRawJson)).thenReturn("processed-1");
 
-        var result = processor.runScheduledIngress();
+        var startedAt = LocalDateTime.parse("2026-07-27T03:05:00");
+        var result = processor.runScheduledIngress(startedAt);
 
         assertThat(result.status()).isEqualTo(CsdsIngressProcessor.ScheduledRunStatus.FAILED);
         assertThat(result.message())
                 .contains("CSDS distributed lease was lost after processor test-dataset-1");
+        verify(csdsExecutionLogService)
+                .recordFailure(
+                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME),
+                        eq(startedAt),
+                        contains("CSDS distributed lease was lost after processor test-dataset-1"));
         verify(distributedJobLockService).release(lock);
     }
 
@@ -379,6 +404,7 @@ class CsdsIngressProcessorTest {
                 new CsdsIngressProcessor(
                         properties,
                         ingressClient,
+                        csdsExecutionLogService,
                         distributedJobLockService,
                         List.of(dataIngressProcessor));
         List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
