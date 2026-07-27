@@ -831,29 +831,29 @@ class BulkUploadAsyncLifecycleTest {
         verify(persistenceService, times(1)).writeClob(any(), any());
     }
 
-
     @Test
-    void whenValidation_csvFileIsSet_containsHeaderError_thenWritesClobSuccesfully() throws IOException {
+    void whenValidation_csvFileIsSet_containsHeaderError_thenWritesClobSuccesfully()
+            throws IOException {
         when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\n".getBytes());
 
         StringBuilder writtenCsv = new StringBuilder();
         doAnswer(
-            invocation -> {
-                ByteArrayInputStream inputStream = invocation.getArgument(1);
-                writtenCsv.append(new String(inputStream.readAllBytes()));
-                return null;
-            })
-            .when(persistenceService)
-            .writeClob(any(), any());
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
 
         BulkUploadRow row = validOrganisationRow();
 
         doThrow(
-            new AppRegistryException(
-                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
-                "APPLICATION_TEXT1 is required for code AP99001"))
-            .when(validationSession)
-            .validate(any(), any());
+                        new AppRegistryException(
+                                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                                "APPLICATION_TEXT1 is required for code AP99001"))
+                .when(validationSession)
+                .validate(any(), any());
 
         JobContext context = new JobContext();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
@@ -861,15 +861,16 @@ class BulkUploadAsyncLifecycleTest {
         lifecycle.setCSVFile(csvFile);
 
         AppRegistryException exception =
-            assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+                assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
-            .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
 
         assertThat(writtenCsv.toString())
-            .contains("HEADER|")
-            .contains("row-two|APPLICATION_TEXT: APPLICATION_TEXT1 is required for code AP99001")
-            .doesNotContain("APPLICATION_TEXT - ");
+                .contains("HEADER|")
+                .contains(
+                        "row-two|APPLICATION_TEXT: APPLICATION_TEXT1 is required for code AP99001")
+                .doesNotContain("APPLICATION_TEXT - ");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
     }

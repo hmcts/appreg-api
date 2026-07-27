@@ -498,7 +498,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             int finalRowCount = rowCount;
             if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
                 List<BulkUploadError> rowErrors =
-                    errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
+                        errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
                 processErrorRows(rowErrors, builder, line);
             } else {
                 builder.append(line).append("|").append("\n");
@@ -507,31 +507,29 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
     }
 
-    private void processErrorRows(List<BulkUploadError> errors, StringBuilder builder, String line) {
+    private void processErrorRows(
+            List<BulkUploadError> errors, StringBuilder builder, String line) {
         builder.append(line);
         for (BulkUploadError error : errors) {
             var location =
-                error.getLocation().split("\\.").length > 1
-                    ? error.getLocation()
-                    .split("\\.")[
-                    error.getLocation().split("\\.").length - 1]
-                    .toUpperCase()
-                    : error.getLocation();
-            if (Objects.nonNull(error.getRejectedValue())
-                && !error.getRejectedValue().isBlank()) {
+                    error.getLocation().split("\\.").length > 1
+                            ? error.getLocation()
+                                    .split("\\.")[error.getLocation().split("\\.").length - 1]
+                                    .toUpperCase()
+                            : error.getLocation();
+            if (Objects.nonNull(error.getRejectedValue()) && !error.getRejectedValue().isBlank()) {
                 builder.append("|")
-                    .append(
-                        "%s - %s: %s"
-                            .formatted(
-                                location,
-                                error.getRejectedValue(),
-                                error.getMessage().contains("must match \"")
-                                    ? "Field has been rejected"
-                                    : error.getMessage()));
+                        .append(
+                                "%s - %s: %s"
+                                        .formatted(
+                                                location,
+                                                error.getRejectedValue(),
+                                                error.getMessage().contains("must match \"")
+                                                        ? "Field has been rejected"
+                                                        : error.getMessage()));
 
             } else {
-                builder.append("|")
-                    .append("%s: %s".formatted(location, error.getMessage()));
+                builder.append("|").append("%s: %s".formatted(location, error.getMessage()));
             }
         }
         builder.append("\n");
