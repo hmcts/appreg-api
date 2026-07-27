@@ -87,6 +87,7 @@ public class CsdsIngressProperties {
     public static class Schedule {
         private int hour = 3;
         private int minute = 0;
+        private Duration pollInterval = Duration.ofMinutes(10L);
     }
 
     @Getter

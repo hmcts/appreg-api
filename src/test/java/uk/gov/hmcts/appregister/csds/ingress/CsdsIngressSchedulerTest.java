@@ -1,51 +1,143 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class CsdsIngressSchedulerTest {
+    private static final ZoneId UK_ZONE = ZoneId.of("Europe/London");
+
+    @Mock private CsdsIngressProperties properties;
     @Mock private CsdsIngressProcessor csdsIngressProcessor;
-    @InjectMocks private CsdsIngressScheduler scheduler;
+    @Mock private CsdsExecutionLogService csdsExecutionLogService;
 
     @Test
-    void given_jobRuns_when_runNightlyIngress_then_logsCompletion() {
+    void given_jobRuns_when_pollNightlyIngress_then_logsCompletion() {
         var logCaptor = LogCaptor.forClass(CsdsIngressScheduler.class);
         logCaptor.clearLogs();
-        when(csdsIngressProcessor.runIngress()).thenReturn(true);
+        var schedule = new CsdsIngressProperties.Schedule();
+        schedule.setHour(3);
+        schedule.setMinute(0);
+        when(properties.getSchedule()).thenReturn(schedule);
+        when(csdsExecutionLogService.hasTerminalStatusToday(CsdsIngressProcessor.DATABASE_JOB_NAME))
+                .thenReturn(false);
+        when(csdsIngressProcessor.runScheduledIngress())
+                .thenReturn(CsdsIngressProcessor.ScheduledRunResult.succeeded());
+        var scheduler = schedulerAt("2026-07-27T03:05:00Z");
 
-        scheduler.runNightlyIngress();
+        scheduler.pollNightlyIngress();
 
-        verify(csdsIngressProcessor).runIngress();
+        verify(csdsIngressProcessor).runScheduledIngress();
+        verify(csdsExecutionLogService)
+                .recordSuccess(
+                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME),
+                        any(),
+                        eq("Scheduled CSDS ingress completed successfully"));
         assertThat(logCaptor.getInfoLogs())
-                .contains("Running scheduled CSDS ingress", "Completed scheduled CSDS ingress")
-                .doesNotContain(
+                .contains("Running scheduled CSDS ingress", "Completed scheduled CSDS ingress");
+    }
+
+    @Test
+    void given_terminalStatusExistsToday_when_pollNightlyIngress_then_doesNothing() {
+        var schedule = new CsdsIngressProperties.Schedule();
+        schedule.setHour(3);
+        schedule.setMinute(0);
+        var scheduler = schedulerAt("2026-07-27T03:05:00Z");
+        when(properties.getSchedule()).thenReturn(schedule);
+        when(csdsExecutionLogService.hasTerminalStatusToday(CsdsIngressProcessor.DATABASE_JOB_NAME))
+                .thenReturn(true);
+
+        scheduler.pollNightlyIngress();
+
+        verify(csdsIngressProcessor, never()).runScheduledIngress();
+    }
+
+    @Test
+    void given_beforeScheduledTime_when_pollNightlyIngress_then_doesNothing() {
+        var schedule = new CsdsIngressProperties.Schedule();
+        schedule.setHour(3);
+        schedule.setMinute(0);
+        var scheduler = schedulerAt("2026-07-27T01:59:00Z");
+        when(properties.getSchedule()).thenReturn(schedule);
+
+        scheduler.pollNightlyIngress();
+
+        verify(csdsExecutionLogService, never()).hasTerminalStatusToday(anyString());
+        verify(csdsIngressProcessor, never()).runScheduledIngress();
+    }
+
+    @Test
+    void given_jobDoesNotAcquireLease_when_pollNightlyIngress_then_logsSkip() {
+        var logCaptor = LogCaptor.forClass(CsdsIngressScheduler.class);
+        logCaptor.clearLogs();
+        var schedule = new CsdsIngressProperties.Schedule();
+        schedule.setHour(3);
+        schedule.setMinute(0);
+        when(properties.getSchedule()).thenReturn(schedule);
+        when(csdsExecutionLogService.hasTerminalStatusToday(CsdsIngressProcessor.DATABASE_JOB_NAME))
+                .thenReturn(false);
+        when(csdsIngressProcessor.runScheduledIngress())
+                .thenReturn(CsdsIngressProcessor.ScheduledRunResult.skippedLockUnavailable());
+        var scheduler = schedulerAt("2026-07-27T03:05:00Z");
+
+        scheduler.pollNightlyIngress();
+
+        verify(csdsIngressProcessor).runScheduledIngress();
+        verify(csdsExecutionLogService, never()).recordSuccess(anyString(), any(), anyString());
+        verify(csdsExecutionLogService, never()).recordFailure(anyString(), any(), anyString());
+        assertThat(logCaptor.getInfoLogs())
+                .contains(
                         "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is not"
                                 + " available");
     }
 
     @Test
-    void given_jobDoesNotRun_when_runNightlyIngress_then_logsSkip() {
+    void given_jobFails_when_pollNightlyIngress_then_recordsFailure() {
         var logCaptor = LogCaptor.forClass(CsdsIngressScheduler.class);
         logCaptor.clearLogs();
-        when(csdsIngressProcessor.runIngress()).thenReturn(false);
+        var schedule = new CsdsIngressProperties.Schedule();
+        schedule.setHour(3);
+        schedule.setMinute(0);
+        when(properties.getSchedule()).thenReturn(schedule);
+        when(csdsExecutionLogService.hasTerminalStatusToday(CsdsIngressProcessor.DATABASE_JOB_NAME))
+                .thenReturn(false);
+        when(csdsIngressProcessor.runScheduledIngress())
+                .thenReturn(
+                        CsdsIngressProcessor.ScheduledRunResult.failed("Failed processors: fee"));
+        var scheduler = schedulerAt("2026-07-27T03:05:00Z");
 
-        scheduler.runNightlyIngress();
+        scheduler.pollNightlyIngress();
 
-        verify(csdsIngressProcessor).runIngress();
-        assertThat(logCaptor.getInfoLogs())
-                .contains(
-                        "Running scheduled CSDS ingress",
-                        "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is not"
-                                + " available")
-                .doesNotContain("Completed scheduled CSDS ingress");
+        verify(csdsExecutionLogService)
+                .recordFailure(
+                        eq(CsdsIngressProcessor.DATABASE_JOB_NAME),
+                        any(),
+                        eq("Failed processors: fee"));
+        assertThat(logCaptor.getInfoLogs()).contains("Running scheduled CSDS ingress");
+        assertThat(logCaptor.getErrorLogs())
+                .contains("Scheduled CSDS ingress failed: Failed processors: fee");
+    }
+
+    private CsdsIngressScheduler schedulerAt(String instant) {
+        return new CsdsIngressScheduler(
+                properties,
+                csdsIngressProcessor,
+                csdsExecutionLogService,
+                Clock.fixed(Instant.parse(instant), ZoneId.of("UTC")),
+                UK_ZONE);
     }
 }

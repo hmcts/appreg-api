@@ -26,6 +26,7 @@ public class TableNames {
     public final String APPLICATION_LIST_ENTRY_RESOLUTIONS = "app_list_entry_resolutions";
     public final String APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING = "al_ale_sequence_mapping";
     public final String DATABASE_JOBS = "database_jobs";
+    public final String DATABASE_JOB_EXECUTION_LOG = "database_job_execution_log";
     public final String RETENTION_POLICY = "retention_policy";
     public final String ASYNC_JOBS = "asynch_jobs";
     public final String ASYNC_JOBS_APP_LIST_ENTRY = "async_jobs_app_list_entry";

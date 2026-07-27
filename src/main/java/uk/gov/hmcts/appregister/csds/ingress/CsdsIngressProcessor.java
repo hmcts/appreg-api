@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +45,39 @@ public class CsdsIngressProcessor {
         }
     }
 
-    private void runProcessors(DistributedJobLock lock) {
-        if (processors.isEmpty()) {
-            log.info("Skipping CSDS ingress because no data ingress processors are registered");
-            return;
+    public ScheduledRunResult runScheduledIngress() {
+        val lock =
+                distributedJobLockService.tryAcquire(
+                        DATABASE_JOB_NAME, properties.getLeaseDuration());
+        if (lock.isEmpty()) {
+            return ScheduledRunResult.skippedLockUnavailable();
         }
 
+        try {
+            var failedProcessors = runProcessors(lock.get());
+            if (!failedProcessors.isEmpty()) {
+                return ScheduledRunResult.failed(
+                        "Failed processors: " + String.join(", ", failedProcessors));
+            }
+            return ScheduledRunResult.succeeded();
+        } catch (RuntimeException ex) {
+            return ScheduledRunResult.failed(summarizeFailure(ex));
+        } finally {
+            if (!distributedJobLockService.release(lock.get())) {
+                log.warn(
+                        "Distributed lock release was skipped for job {} because the lease is no longer owned",
+                        DATABASE_JOB_NAME);
+            }
+        }
+    }
+
+    private List<String> runProcessors(DistributedJobLock lock) {
+        if (processors.isEmpty()) {
+            log.info("Skipping CSDS ingress because no data ingress processors are registered");
+            return List.of();
+        }
+
+        var failedProcessors = new ArrayList<String>();
         for (var index = 0; index < processors.size(); index++) {
             val processor = processors.get(index);
             if (!processor.enabled()) {
@@ -75,11 +103,13 @@ public class CsdsIngressProcessor {
                         processor.targetTable(),
                         processor.targetKeyField(),
                         ex);
+                failedProcessors.add(processor.datasetName());
             }
             if (index < processors.size() - 1) {
                 renewLock(lock, processor);
             }
         }
+        return List.copyOf(failedProcessors);
     }
 
     private String summarizeFailure(RuntimeException ex) {
@@ -126,5 +156,25 @@ public class CsdsIngressProcessor {
                     CommonAppError.INTERNAL_SERVER_ERROR,
                     "CSDS distributed lease was lost after processor " + processor.datasetName());
         }
+    }
+
+    public record ScheduledRunResult(ScheduledRunStatus status, String message) {
+        static ScheduledRunResult skippedLockUnavailable() {
+            return new ScheduledRunResult(ScheduledRunStatus.SKIPPED_LOCK_UNAVAILABLE, null);
+        }
+
+        static ScheduledRunResult succeeded() {
+            return new ScheduledRunResult(ScheduledRunStatus.SUCCEEDED, null);
+        }
+
+        static ScheduledRunResult failed(String message) {
+            return new ScheduledRunResult(ScheduledRunStatus.FAILED, message);
+        }
+    }
+
+    public enum ScheduledRunStatus {
+        SKIPPED_LOCK_UNAVAILABLE,
+        SUCCEEDED,
+        FAILED
     }
 }

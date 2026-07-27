@@ -1,5 +1,9 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,24 +19,51 @@ import org.springframework.stereotype.Component;
         havingValue = "true",
         matchIfMissing = true)
 class CsdsIngressScheduler {
-    private static final String LONDON_TIME_ZONE = "Europe/London";
-
+    private final CsdsIngressProperties properties;
     private final CsdsIngressProcessor csdsIngressProcessor;
+    private final CsdsExecutionLogService csdsExecutionLogService;
+    private final Clock clock;
+    private final ZoneId ukZone;
 
-    @Scheduled(
-            cron =
-                    "0 ${appreg.csds.ingress.schedule.minute:0} ${appreg.csds.ingress.schedule.hour:3} * * *",
-            zone = LONDON_TIME_ZONE)
-    void runNightlyIngress() {
-        log.info("Running scheduled CSDS ingress");
-
-        if (!csdsIngressProcessor.runIngress()) {
-            log.info(
-                    "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is not"
-                            + " available");
+    @Scheduled(fixedDelayString = "${appreg.csds.ingress.schedule.poll-interval:PT10M}")
+    void pollNightlyIngress() {
+        if (!isDueNow()) {
+            return;
+        }
+        if (csdsExecutionLogService.hasTerminalStatusToday(
+                CsdsIngressProcessor.DATABASE_JOB_NAME)) {
             return;
         }
 
-        log.info("Completed scheduled CSDS ingress");
+        var startedAt = LocalDateTime.now(clock.withZone(ukZone));
+        var result = csdsIngressProcessor.runScheduledIngress();
+        switch (result.status()) {
+            case SKIPPED_LOCK_UNAVAILABLE -> {
+                log.info(
+                        "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is"
+                                + " not available");
+            }
+            case SUCCEEDED -> {
+                log.info("Running scheduled CSDS ingress");
+                csdsExecutionLogService.recordSuccess(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME,
+                        startedAt,
+                        "Scheduled CSDS ingress completed successfully");
+                log.info("Completed scheduled CSDS ingress");
+            }
+            case FAILED -> {
+                log.info("Running scheduled CSDS ingress");
+                csdsExecutionLogService.recordFailure(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, startedAt, result.message());
+                log.error("Scheduled CSDS ingress failed: {}", result.message());
+            }
+        }
+    }
+
+    private boolean isDueNow() {
+        var nowUk = LocalDateTime.now(clock.withZone(ukZone));
+        var schedule = properties.getSchedule();
+        var scheduledTime = LocalTime.of(schedule.getHour(), schedule.getMinute());
+        return !nowUk.toLocalTime().isBefore(scheduledTime);
     }
 }
