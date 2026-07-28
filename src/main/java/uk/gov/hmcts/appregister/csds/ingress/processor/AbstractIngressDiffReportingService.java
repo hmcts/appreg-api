@@ -23,7 +23,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 
-public abstract class AbstractIngressDiffReportingService<RecordT> {
+public abstract class AbstractIngressDiffReportingService<R> {
     private static final DateTimeFormatter FILE_TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS");
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -38,9 +38,9 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
             String targetTable,
             String targetKeyField,
             List<JsonNode> processedData,
-            Map<Long, RecordT> incomingById,
-            Map<Long, RecordT> existingById,
-            List<IngressDiffRecord<RecordT, RecordT, RecordT>> diffRecords,
+            Map<Long, R> incomingById,
+            Map<Long, R> existingById,
+            List<IngressDiffRecord<R, R, R>> diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         var log = LoggerFactory.getLogger(getClass());
         if (!StringUtils.hasText(reportingDir)) {
@@ -78,13 +78,13 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
 
     protected abstract List<DiffReportCsvRow> buildDiffReport(
             List<JsonNode> processedData,
-            List<IngressDiffRecord<RecordT, RecordT, RecordT>> diffRecords,
+            List<IngressDiffRecord<R, R, R>> diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor);
 
     protected abstract String buildIncomingCsv(
             List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor);
 
-    protected abstract String buildExistingCsv(Map<Long, RecordT> existingById);
+    protected abstract String buildExistingCsv(Map<Long, R> existingById);
 
     protected abstract String diffReportHeader();
 
@@ -144,8 +144,7 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
     }
 
     private int countByOperation(
-            List<IngressDiffRecord<RecordT, RecordT, RecordT>> diffRecords,
-            IngressOperation operation) {
+            List<IngressDiffRecord<R, R, R>> diffRecords, IngressOperation operation) {
         return Math.toIntExact(
                 diffRecords.stream().filter(item -> item.operation() == operation).count());
     }
@@ -154,7 +153,7 @@ public abstract class AbstractIngressDiffReportingService<RecordT> {
             String reportingDir,
             String datasetName,
             List<JsonNode> processedData,
-            Map<Long, RecordT> existingById,
+            Map<Long, R> existingById,
             List<DiffReportCsvRow> diffReport,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         var log = LoggerFactory.getLogger(getClass());

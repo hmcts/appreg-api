@@ -132,7 +132,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = IOException.class)
     public void writeClob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException {
         setClob(inputStream, jobIdRequest);
     }

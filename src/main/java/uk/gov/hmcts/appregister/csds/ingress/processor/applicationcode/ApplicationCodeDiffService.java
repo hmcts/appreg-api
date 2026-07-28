@@ -102,6 +102,7 @@ public class ApplicationCodeDiffService
                 UPDATE_REASON_EXISTING_MATCH);
     }
 
+    @SuppressWarnings("java:S1172")
     private ApplicationCodeIngressRecord buildIntendedRecord(
             ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
         // ApplicationCode currently upserts directly from the incoming CSDS representation.

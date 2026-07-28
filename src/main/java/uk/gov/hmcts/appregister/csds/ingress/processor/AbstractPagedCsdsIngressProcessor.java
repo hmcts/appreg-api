@@ -34,8 +34,7 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
-        implements IDataIngressProcessor<T> {
+public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIngressProcessor<D> {
     private static final String DATA_LOCATION_NAME = "CSDS";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String VIEW_TYPE = "GD";
@@ -375,11 +374,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     }
 
     @Override
-    public final void apply(T processedData) {
+    public final void apply(D processedData) {
         applyWithAuditing(processedData);
     }
 
-    protected final DiffT applyWithAuditing(T processedData) {
+    protected final R applyWithAuditing(D processedData) {
         return csdsIngressTransactionRunner.execute(
                 () -> {
                     val diff = diff(processedData);
@@ -399,22 +398,22 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 });
     }
 
-    protected abstract DiffT diff(T processedData);
+    protected abstract R diff(D processedData);
 
-    protected abstract List<CsdsAuditEntry> buildSuccessAudits(T processedData, DiffT diff);
+    protected abstract List<CsdsAuditEntry> buildSuccessAudits(D processedData, R diff);
 
     protected abstract List<CsdsAuditEntry> buildFailureAudits(
-            T processedData, DiffT diff, CsdsBatchUpsertException ex);
+            D processedData, R diff, CsdsBatchUpsertException ex);
 
-    protected void logDiffSummary(DiffT diff) {
+    protected void logDiffSummary(R diff) {
         // Diff summary logging is optional per processor.
     }
 
-    protected void report(T processedData, DiffT diff) {
+    protected void report(D processedData, R diff) {
         // Reporting is optional per processor and can be implemented when configured.
     }
 
-    protected void applyDiff(DiffT diff) {
+    protected void applyDiff(R diff) {
         // Database apply is optional until concrete update flows are introduced.
     }
 
