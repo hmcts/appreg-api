@@ -148,11 +148,11 @@ public class BulkApplicationEntryResultCreationValidator
     private ResultCreateDto getCreateDto(PayloadForCreateResults<BulkResultDto> validatable) {
         return Optional.ofNullable(validatable.getPayload())
                 .map(BulkResultDto::getResult)
-                .orElse(null);
+                .orElseGet(ResultCreateDto::new);
     }
 
     private ResolutionCodeContext resolveResolutionCodeContext(ResultCreateDto createDto) {
-        if (createDto == null || createDto.getResultCode() == null) {
+        if (createDto.getResultCode() == null) {
             return new ResolutionCodeContext(null, null);
         }
 
