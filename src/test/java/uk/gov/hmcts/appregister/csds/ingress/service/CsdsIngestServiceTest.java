@@ -162,14 +162,13 @@ class CsdsIngestServiceTest {
     @Test
     void given_knownButDisabledFeeProcessor_when_ingest_then_throwsDisabledError() {
         var file = mock(MultipartFile.class);
+        var processorName = CsdsIngestProcessorName.FEE.getExternalName();
         when(applicationCodeProcessor.processorName())
                 .thenReturn(CsdsIngestProcessorName.APPLICATION_CODES.getExternalName());
-        when(feeProcessor.processorName())
-                .thenReturn(CsdsIngestProcessorName.FEE.getExternalName());
+        when(feeProcessor.processorName()).thenReturn(processorName);
         when(feeProcessor.enabled()).thenReturn(false);
 
-        assertThatThrownBy(
-                        () -> service.ingest(CsdsIngestProcessorName.FEE.getExternalName(), file))
+        assertThatThrownBy(() -> service.ingest(processorName, file))
                 .isInstanceOf(AppRegistryException.class)
                 .satisfies(
                         thrown ->

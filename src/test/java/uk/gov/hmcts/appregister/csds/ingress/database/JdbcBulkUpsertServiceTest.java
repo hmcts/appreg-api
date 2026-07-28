@@ -91,13 +91,8 @@ class JdbcBulkUpsertServiceTest {
                         YesOrNo.NO,
                         3L,
                         null);
-        assertThatThrownBy(
-                        () ->
-                                service.upsertBatch(
-                                        "application-codes-test",
-                                        "ac_id",
-                                        List.of(item),
-                                        rowMapper))
+        var tableName = "application-codes-test";
+        assertThatThrownBy(() -> service.upsertBatch(tableName, "ac_id", List.of(item), rowMapper))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid SQL tableName");
     }

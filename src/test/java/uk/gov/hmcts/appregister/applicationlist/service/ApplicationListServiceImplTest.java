@@ -104,6 +104,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("java:S9024")
 class ApplicationListServiceImplTest {
 
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
