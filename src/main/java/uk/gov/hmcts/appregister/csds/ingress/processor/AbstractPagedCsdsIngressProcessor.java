@@ -483,20 +483,20 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                                 java.util.LinkedHashMap::new));
     }
 
-    protected final <R> List<CsdsAuditEntry> buildSuccessAuditEntries(
-            List<IngressDiffRecord<R, R, R>> diffRecords,
+    protected final <T> List<CsdsAuditEntry> buildSuccessAuditEntries(
+            List<IngressDiffRecord<T, T, T>> diffRecords,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor) {
+            ToLongFunction<T> idExtractor) {
         return diffRecords.stream()
                 .map(item -> toSuccessAuditEntry(item, sourceById, idExtractor))
                 .toList();
     }
 
-    protected final <R> List<CsdsAuditEntry> buildFailureAuditEntries(
-            List<IngressDiffRecord<R, R, R>> diffRecords,
+    protected final <T> List<CsdsAuditEntry> buildFailureAuditEntries(
+            List<IngressDiffRecord<T, T, T>> diffRecords,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor,
-            Class<R> recordType,
+            ToLongFunction<T> idExtractor,
+            Class<T> recordType,
             CsdsBatchUpsertException ex) {
         var actionsById =
                 diffRecords.stream()
@@ -515,11 +515,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                 .toList();
     }
 
-    private <R> CsdsAuditEntry toFailureAuditEntry(
+    private <T> CsdsAuditEntry toFailureAuditEntry(
             FailedUpsertRecord<?> failure,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor,
-            Class<R> recordType,
+            ToLongFunction<T> idExtractor,
+            Class<T> recordType,
             Map<Long, String> actionsById) {
         var typedRecord = recordType.cast(failure.item());
         var key = idExtractor.applyAsLong(typedRecord);
@@ -527,10 +527,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                 actionsById.get(key), key, sourceById.get(key), failure.errorMessage());
     }
 
-    private <R> CsdsAuditEntry toSuccessAuditEntry(
-            IngressDiffRecord<R, R, R> item,
+    private <T> CsdsAuditEntry toSuccessAuditEntry(
+            IngressDiffRecord<T, T, T> item,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor) {
+            ToLongFunction<T> idExtractor) {
         var key = idExtractor.applyAsLong(item.intended());
         return createAuditEntry(item.operation().name(), key, sourceById.get(key), null);
     }

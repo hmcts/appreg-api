@@ -32,6 +32,7 @@ public abstract class AbstractIngressDiffReportingService<R> {
     private static final String CHANGE_TYPE_UPDATE = "update";
     private static final String RECORDS_FIELD = "records";
 
+    @SuppressWarnings("java:S107")
     protected final void reportDiff(
             String reportingDir,
             String datasetName,

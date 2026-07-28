@@ -322,6 +322,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
+    @SuppressWarnings("java:S107")
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             @Param("applicationListId") UUID applicationListId,
             Boolean hasHearingDate,
@@ -610,6 +611,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             ORDER BY ale.id ASC
             """)
+    @SuppressWarnings("java:S107")
     List<UUID> searchForGetSummaryIds(
             @Param("applicationListId") UUID applicationListId,
             Boolean hasHearingDate,
