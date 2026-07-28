@@ -64,7 +64,8 @@ public class BulkApplicationEntryResultCreationValidator
         validateEntryIdsProvided(entryIds);
         var entries = loadEntries(validatable, entryIds);
         var createDto = getCreateDto(validatable);
-        var resolutionCodeContext = resolveResolutionCodeContext(createDto);
+        var resultCode = getResultCode(validatable);
+        var resolutionCodeContext = resolveResolutionCodeContext(resultCode);
         var bulkSuccess = buildBulkSuccess(entries, entryIds, createDto, resolutionCodeContext);
 
         // now pass the success details through to the callback so the logic can take place
@@ -151,29 +152,30 @@ public class BulkApplicationEntryResultCreationValidator
                 .orElseGet(ResultCreateDto::new);
     }
 
-    private ResolutionCodeContext resolveResolutionCodeContext(ResultCreateDto createDto) {
-        if (createDto.getResultCode() == null) {
+    private String getResultCode(PayloadForCreateResults<BulkResultDto> validatable) {
+        return Optional.ofNullable(validatable.getPayload())
+                .map(BulkResultDto::getResult)
+                .map(ResultCreateDto::getResultCode)
+                .orElse(null);
+    }
+
+    private ResolutionCodeContext resolveResolutionCodeContext(String resultCode) {
+        if (resultCode == null) {
             return new ResolutionCodeContext(null, null);
         }
 
         var todayUk = businessDateProvider.currentUkDate();
         var matchingCodes =
-                resolutionCodeRepository.findPrioritisingNullEndDate(
-                        createDto.getResultCode(), todayUk);
+                resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
         if (matchingCodes.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
-                    "No valid resolution code could be found %s"
-                            .formatted(createDto.getResultCode()));
+                    "No valid resolution code could be found %s".formatted(resultCode));
         }
 
         var resolutionCode =
                 ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                        matchingCodes,
-                        "result code",
-                        createDto.getResultCode(),
-                        todayUk,
-                        ResolutionCode::getEndDate);
+                        matchingCodes, "result code", resultCode, todayUk, ResolutionCode::getEndDate);
         return new ResolutionCodeContext(resolutionCode, resolutionCode.getWording());
     }
 
