@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
@@ -121,7 +121,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {

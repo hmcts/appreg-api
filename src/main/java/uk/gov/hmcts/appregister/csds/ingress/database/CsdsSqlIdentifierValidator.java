@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 import org.springframework.util.StringUtils;
 
 public final class CsdsSqlIdentifierValidator {
-    private static final Pattern SQL_IDENTIFIER = Pattern.compile("[A-Za-z][A-Za-z0-9_]*");
+    private static final Pattern SQL_IDENTIFIER = Pattern.compile("[A-Za-z][\\w]*");
 
     private CsdsSqlIdentifierValidator() {
         // Utility class.

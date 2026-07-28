@@ -3,12 +3,12 @@ package uk.gov.hmcts.appregister.common.lock;
 import java.time.Duration;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class DistributedJobLockPersistenceService {
     private final DatabaseJobRepository databaseJobRepository;

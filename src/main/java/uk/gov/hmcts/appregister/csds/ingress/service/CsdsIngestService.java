@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -25,7 +25,7 @@ import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class CsdsIngestService {
