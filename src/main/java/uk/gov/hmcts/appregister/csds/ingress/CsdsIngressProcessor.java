@@ -60,6 +60,7 @@ public class CsdsIngressProcessor {
         }
 
         try {
+            log.info("Running scheduled CSDS ingress");
             var failedProcessors = runProcessors(lock.get());
             if (!failedProcessors.isEmpty()) {
                 return recordFailure(

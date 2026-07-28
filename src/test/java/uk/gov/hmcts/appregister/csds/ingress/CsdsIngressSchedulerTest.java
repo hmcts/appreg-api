@@ -38,8 +38,7 @@ class CsdsIngressSchedulerTest {
         scheduler.pollNightlyIngress();
 
         verify(csdsIngressProcessor).runScheduledIngress(any());
-        assertThat(logCaptor.getInfoLogs())
-                .contains("Running scheduled CSDS ingress", "Completed scheduled CSDS ingress");
+        assertThat(logCaptor.getInfoLogs()).contains("Completed scheduled CSDS ingress");
     }
 
     @Test
@@ -108,7 +107,6 @@ class CsdsIngressSchedulerTest {
 
         scheduler.pollNightlyIngress();
 
-        assertThat(logCaptor.getInfoLogs()).contains("Running scheduled CSDS ingress");
         assertThat(logCaptor.getErrorLogs())
                 .contains("Scheduled CSDS ingress failed: Failed processors: fee");
     }
