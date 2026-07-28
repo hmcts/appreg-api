@@ -175,7 +175,11 @@ public class BulkApplicationEntryResultCreationValidator
 
         var resolutionCode =
                 ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                        matchingCodes, "result code", resultCode, todayUk, ResolutionCode::getEndDate);
+                        matchingCodes,
+                        "result code",
+                        resultCode,
+                        todayUk,
+                        ResolutionCode::getEndDate);
         return new ResolutionCodeContext(resolutionCode, resolutionCode.getWording());
     }
 
