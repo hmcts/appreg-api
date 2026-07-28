@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.testutils;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -11,6 +13,7 @@ import org.hibernate.AssertionFailure;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -45,10 +48,15 @@ public abstract class BasePostgresIntegrationTest {
 
     @Autowired protected DatabasePersistance persistance;
 
+    @Value("${wiremock.server.baseUrl}")
+    private String wireMockBaseUrl;
+
     @LocalServerPort protected String port;
 
     @BeforeEach
     void beforeEachTest() {
+        var wireMockUri = URI.create(wireMockBaseUrl);
+        configureFor(wireMockUri.getHost(), wireMockUri.getPort());
         reset.resetDbData();
     }
 

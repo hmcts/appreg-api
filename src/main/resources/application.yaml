@@ -116,8 +116,9 @@ appreg:
       page-size: 100
       schedule:
         enabled: true
-        hour: 7
-        minute: 0
+        hour: ${CSDS_SCHEDULE_HOUR:3}
+        minute: ${CSDS_SCHEDULE_MINUTE:0}
+        poll-interval: PT10M
       processors:
         application-codes:
           enabled: true
