@@ -360,9 +360,9 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                 "CSDS field " + fieldName + " was missing or invalid for " + datasetName());
     }
 
-    protected final void validateExpectedFields(JsonNode record, List<String> expectedFields) {
+    protected final void validateExpectedFields(JsonNode node, List<String> expectedFields) {
         val absentFields =
-                expectedFields.stream().filter(fieldName -> !record.has(fieldName)).toList();
+                expectedFields.stream().filter(fieldName -> !node.has(fieldName)).toList();
         if (!absentFields.isEmpty()) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR,

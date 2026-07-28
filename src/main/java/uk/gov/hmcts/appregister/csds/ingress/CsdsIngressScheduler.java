@@ -25,6 +25,7 @@ class CsdsIngressScheduler {
     private final ZoneId ukZone;
 
     @Scheduled(fixedDelayString = "${appreg.csds.ingress.schedule.poll-interval:PT10M}")
+    @SuppressWarnings({"java:S6205"})
     void pollNightlyIngress() {
         if (!isDueNow()) {
             return;

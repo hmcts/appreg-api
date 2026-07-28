@@ -13,7 +13,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
@@ -928,35 +927,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> 'Y')
         """)
     List<ApplicationListEntry> findActiveByUuids(List<UUID> entryIds);
-
-    /**
-     * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
-     * rows updated.
-     *
-     * @param entryUuids the set of entry UUIDs to move; only entries matching these UUIDs and
-     *     belonging to the sourceListUuid will be updated
-     * @param targetList the ApplicationList entity representing the new target list to which the
-     *     entries will be reassigned; this value is written to the applicationList field of all
-     *     matching entries
-     * @param sourceListUuid the UUID of the source ApplicationList; only entries currently
-     *     associated with this list will be updated
-     * @return the number of rows updated; may be less than the number of provided UUIDs if some
-     *     entries are not found in the source list
-     * @deprecated use the audited move flow in {@code ApplicationEntryServiceImpl#move(UUID,
-     *     MoveEntriesDto)} instead
-     */
-    @Deprecated
-    @Modifying
-    @Query(
-            """
-        UPDATE ApplicationListEntry ale
-        SET ale.applicationList = :targetList
-        WHERE ale.uuid IN :entryUuids
-        AND ale.applicationList.uuid = :sourceListUuid
-        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
-        """)
-    int bulkMoveByUuidAndSourceList(
-            Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
 
     /**
      * Retrieves an application list entry by its UUID and the UUID of the application list it

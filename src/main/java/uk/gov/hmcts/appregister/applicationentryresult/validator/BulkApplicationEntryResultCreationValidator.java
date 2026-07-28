@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
@@ -64,8 +65,7 @@ public class BulkApplicationEntryResultCreationValidator
         validateEntryIdsProvided(entryIds);
         var entries = loadEntries(validatable, entryIds);
         var createDto = getCreateDto(validatable);
-        var resultCode = getResultCode(validatable);
-        var resolutionCodeContext = resolveResolutionCodeContext(resultCode);
+        var resolutionCodeContext = resolveResolutionCodeContext(validatable.getPayload());
         var bulkSuccess = buildBulkSuccess(entries, entryIds, createDto, resolutionCodeContext);
 
         // now pass the success details through to the callback so the logic can take place
@@ -152,18 +152,15 @@ public class BulkApplicationEntryResultCreationValidator
                 .orElseGet(ResultCreateDto::new);
     }
 
-    private String getResultCode(PayloadForCreateResults<BulkResultDto> validatable) {
-        return Optional.ofNullable(validatable.getPayload())
+    private ResolutionCodeContext resolveResolutionCodeContext(BulkResultDto payload) {
+        return Optional.ofNullable(payload)
                 .map(BulkResultDto::getResult)
-                .map(ResultCreateDto::getResultCode)
-                .orElse(null);
+                .flatMap(this::getResultCode)
+                .map(this::resolveResolutionCodeContext)
+                .orElseGet(() -> new ResolutionCodeContext(null, null));
     }
 
     private ResolutionCodeContext resolveResolutionCodeContext(String resultCode) {
-        if (resultCode == null) {
-            return new ResolutionCodeContext(null, null);
-        }
-
         var todayUk = businessDateProvider.currentUkDate();
         var matchingCodes =
                 resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
@@ -181,6 +178,11 @@ public class BulkApplicationEntryResultCreationValidator
                         todayUk,
                         ResolutionCode::getEndDate);
         return new ResolutionCodeContext(resolutionCode, resolutionCode.getWording());
+    }
+
+    private Optional<String> getResultCode(ResultCreateDto createDto) {
+        var resultCode = createDto.getResultCode();
+        return StringUtils.hasText(resultCode) ? Optional.of(resultCode) : Optional.empty();
     }
 
     private BulkApplicationEntryResultCreationSuccess buildBulkSuccess(
