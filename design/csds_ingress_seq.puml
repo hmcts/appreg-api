@@ -1,0 +1,130 @@
+@startuml
+
+title CSDS ingress lifecycle
+
+actor "Spring trigger" as Trigger
+participant "CsdsIngressScheduler /\nCsdsIngressStartupRunner" as EntryPoint
+participant CsdsIngressProcessor as Orchestrator
+participant DistributedJobLockService as LockService
+participant "IDataIngressProcessor\n(concrete processor)" as DataProcessor
+participant CsdsIngressClient as IngressClient
+participant JdbcIngressBackupService as BackupService
+participant CsdsIngressTransactionRunner as BackupTx
+database "PostgreSQL\n(source/target tables)" as Db
+
+Trigger -> EntryPoint : scheduled run / startup run
+activate EntryPoint
+EntryPoint -> Orchestrator : runIngress()
+activate Orchestrator
+
+Orchestrator -> LockService : tryAcquire(CSDS_DATA_INGRESS, leaseDuration)
+activate LockService
+LockService --> Orchestrator : Optional<DistributedJobLock>
+deactivate LockService
+
+alt lock not acquired
+    Orchestrator --> EntryPoint : false
+    deactivate Orchestrator
+    EntryPoint --> Trigger : log skipped run
+    deactivate EntryPoint
+else lock acquired
+    loop each registered processor
+        alt processor disabled
+            Orchestrator -> Orchestrator : log skipped processor
+        else processor enabled
+            Orchestrator -> DataProcessor : retrieve(ingressClient)
+            activate DataProcessor
+
+            alt mock configured
+                DataProcessor -> DataProcessor : load mock payload
+                DataProcessor --> Orchestrator : List<JsonNode>
+            else remote retrieval
+                alt processor uses count endpoint
+                    DataProcessor -> IngressClient : retrieveJson(countPath)
+                    activate IngressClient
+                    IngressClient --> DataProcessor : count response
+                    deactivate IngressClient
+
+                    loop each page offset
+                        DataProcessor -> IngressClient : retrieveJson(queryPath + paging)
+                        activate IngressClient
+                        IngressClient --> DataProcessor : page response
+                        deactivate IngressClient
+                    end
+                else retrieve until empty page
+                    loop paged query until records array is empty
+                        DataProcessor -> IngressClient : retrieveJson(queryPath + paging)
+                        activate IngressClient
+                        IngressClient --> DataProcessor : page response
+                        deactivate IngressClient
+                    end
+                end
+
+                DataProcessor --> Orchestrator : List<JsonNode>
+            end
+            deactivate DataProcessor
+
+            Orchestrator -> DataProcessor : backup()
+            activate DataProcessor
+            opt backup-source and backup-target are both set and different
+                DataProcessor -> BackupService : backup(sourceTable, targetTable)
+                activate BackupService
+                BackupService -> BackupTx : execute(transaction callback)
+                activate BackupTx
+                BackupTx -> Db : DELETE FROM schema.target
+                activate Db
+                Db --> BackupTx : deleted count
+                BackupTx -> Db : INSERT INTO schema.target SELECT * FROM schema.source
+                Db --> BackupTx : inserted count
+                deactivate Db
+                BackupTx --> BackupService : BackupResult
+                deactivate BackupTx
+                BackupService --> DataProcessor : BackupResult
+                deactivate BackupService
+                DataProcessor -> DataProcessor : log backup success
+            end
+            alt backup throws runtime exception
+                DataProcessor -> DataProcessor : log backup failure
+                DataProcessor --> Orchestrator
+                Orchestrator -> Orchestrator : log failure and continue ingress
+            else backup completes or is skipped
+                DataProcessor --> Orchestrator
+            end
+            deactivate DataProcessor
+
+            Orchestrator -> DataProcessor : preProcess(rawJson)
+            activate DataProcessor
+            DataProcessor --> Orchestrator : processedData
+            deactivate DataProcessor
+
+            Orchestrator -> DataProcessor : apply(processedData)
+            activate DataProcessor
+            DataProcessor --> Orchestrator : persisted changes / audit side effects
+            deactivate DataProcessor
+
+            Orchestrator -> Orchestrator : log processor completion
+        end
+
+        opt more processors remain
+            Orchestrator -> LockService : renew(lock)
+            activate LockService
+            LockService --> Orchestrator : true / false
+            deactivate LockService
+            alt lease lost
+                Orchestrator -> Orchestrator : throw AppRegistryException
+                break
+            end
+        end
+    end
+
+    Orchestrator -> LockService : release(lock)
+    activate LockService
+    LockService --> Orchestrator : released / skipped
+    deactivate LockService
+    Orchestrator --> EntryPoint : true
+    deactivate Orchestrator
+    EntryPoint --> Trigger : log completed run
+    deactivate EntryPoint
+end
+
+@enduml

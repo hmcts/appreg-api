@@ -26,10 +26,18 @@ appreg:
       enable-complex-diff: true
   csds:
     ingress:
+      schedule:
+        enabled: false
       processors:
         application-codes:
           enabled: false
+        fee:
+          enabled: false
+        national-court-houses:
+          enabled: false
         resolution-codes:
+          enabled: false
+        standard-applicants:
           enabled: false
   job:
     page-size: 2

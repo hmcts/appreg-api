@@ -28,6 +28,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
@@ -43,6 +44,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
     private final CsdsAuditService csdsAuditService;
     private final CsdsIngressTransactionRunner csdsIngressTransactionRunner;
+    private final JdbcIngressBackupService ingressBackupService;
 
     @Override
     public final boolean enabled() {
@@ -134,12 +136,41 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     @Override
     public final String targetTable() {
-        return processorProperties.getTableName();
+        return processorProperties.getIngressTarget();
     }
 
     @Override
     public final String targetKeyField() {
         return processorProperties.getPrimaryKey();
+    }
+
+    @Override
+    public final void backup() {
+        val backupSource = processorProperties.getBackupSource();
+        val backupTarget = processorProperties.getBackupTarget();
+        if (!StringUtils.hasText(backupSource)
+                || !StringUtils.hasText(backupTarget)
+                || backupSource.equals(backupTarget)) {
+            return;
+        }
+
+        try {
+            val result = ingressBackupService.backup(backupSource, backupTarget);
+            log.info(
+                    "Completed CSDS backup for {} from {} to {} with deleted={} and inserted={}",
+                    datasetName(),
+                    backupSource,
+                    backupTarget,
+                    result.deletedCount(),
+                    result.insertedCount());
+        } catch (RuntimeException ex) {
+            log.error(
+                    "Failed CSDS backup for {} from {} to {}. Continuing ingress.",
+                    datasetName(),
+                    backupSource,
+                    backupTarget,
+                    ex);
+        }
     }
 
     protected final List<JsonNode> extractRecords(JsonNode response) {

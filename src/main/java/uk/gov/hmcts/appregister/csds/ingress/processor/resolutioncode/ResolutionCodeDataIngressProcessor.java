@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
@@ -49,6 +50,7 @@ public class ResolutionCodeDataIngressProcessor
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
+            JdbcIngressBackupService ingressBackupService,
             ResolutionCodeDiffService diffService,
             ResolutionCodeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
@@ -57,7 +59,8 @@ public class ResolutionCodeDataIngressProcessor
                 properties,
                 properties.getProcessors().getResolutionCodes(),
                 csdsAuditService,
-                csdsIngressTransactionRunner);
+                csdsIngressTransactionRunner,
+                ingressBackupService);
         resolutionCodeProperties = properties.getProcessors().getResolutionCodes();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
