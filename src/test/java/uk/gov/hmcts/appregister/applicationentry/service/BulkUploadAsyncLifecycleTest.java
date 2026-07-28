@@ -435,10 +435,10 @@ class BulkUploadAsyncLifecycleTest {
         context.logFailure("second header validation failure");
 
         lifecycle.setCSVFile(csvFile);
+        var validationEvent = event(row, context);
         AppRegistryException exception =
                 assertThrows(
-                        AppRegistryException.class,
-                        () -> lifecycle.validating(event(row, context)));
+                        AppRegistryException.class, () -> lifecycle.validating(validationEvent));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -514,10 +514,12 @@ class BulkUploadAsyncLifecycleTest {
                 .when(validationSession)
                 .validate(any(), any());
         context = new JobContext();
-        AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+        var respondentEvent = event(respondentRow, context);
 
         lifecycle.setCSVFile(csvFile);
-        exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
+        exception =
+                assertThrows(
+                        AppRegistryException.class, () -> lifecycle.validating(respondentEvent));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);

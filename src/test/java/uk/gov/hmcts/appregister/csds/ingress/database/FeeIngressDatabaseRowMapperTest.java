@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.csds.ingress.processor.fee.FeeIngressRecord;
 
@@ -22,7 +23,7 @@ class FeeIngressDatabaseRowMapperTest {
                                 "CO10.1",
                                 "Fee",
                                 new BigDecimal("245.00"),
-                                LocalDate.of(2020, 1, 1),
+                                LocalDate.of(2020, Month.JANUARY, 1),
                                 null,
                                 1L));
 
@@ -41,7 +42,7 @@ class FeeIngressDatabaseRowMapperTest {
                                 "CO1.1",
                                 "Fee",
                                 new BigDecimal("245.00"),
-                                LocalDate.of(2020, 1, 1),
+                                LocalDate.of(2020, Month.JANUARY, 1),
                                 null,
                                 1L));
 
@@ -55,20 +56,21 @@ class FeeIngressDatabaseRowMapperTest {
         when(rs.getString("fee_reference")).thenReturn("CO10.1");
         when(rs.getString("fee_description")).thenReturn("Fee");
         when(rs.getBigDecimal("fee_value")).thenReturn(new BigDecimal("245.00"));
-        when(rs.getObject("fee_start_date", LocalDate.class)).thenReturn(LocalDate.of(2020, 1, 1));
+        when(rs.getObject("fee_start_date", LocalDate.class))
+                .thenReturn(LocalDate.of(2020, Month.JANUARY, 1));
         when(rs.getObject("fee_end_date", LocalDate.class)).thenReturn(null);
         when(rs.getLong("fee_version")).thenReturn(1L);
 
-        var record = rowMapper.mapRow(rs, 0);
+        var mappedRecord = rowMapper.mapRow(rs, 0);
 
-        assertThat(record)
+        assertThat(mappedRecord)
                 .isEqualTo(
                         new FeeIngressRecord(
                                 33L,
                                 "CO10.1",
                                 "Fee",
                                 new BigDecimal("245.00"),
-                                LocalDate.of(2020, 1, 1),
+                                LocalDate.of(2020, Month.JANUARY, 1),
                                 null,
                                 1L));
     }

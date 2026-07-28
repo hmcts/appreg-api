@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReportingService;
 
-@Component
+@Service
 public class NationalCourtHouseDiffReportingService
         extends AbstractIngressDiffReportingService<NationalCourtHouseIngressRecord> {
     private static final String NCH_ID = "NCH_ID";

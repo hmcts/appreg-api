@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.report.audit;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
  * <p>The async job framework is shared by reports and non-report jobs, so this service owns the
  * filtering rules that keep the new audit rows scoped to report jobs only.
  */
-@Component
+@Service
 @RequiredArgsConstructor
 public class ReportJobAuditService {
     private static final String UNKNOWN_ERROR = "Failed with unknown error";

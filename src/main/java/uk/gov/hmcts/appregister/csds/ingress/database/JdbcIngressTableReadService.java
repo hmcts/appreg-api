@@ -6,9 +6,9 @@ import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class JdbcIngressTableReadService {
     private final NamedParameterJdbcTemplate jdbcTemplate;

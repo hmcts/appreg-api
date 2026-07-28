@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -126,7 +127,13 @@ class NationalCourtHouseDataIngressProcessorTest {
     void given_existingAndNewCourts_when_ingest_then_upsertsAndReturnsSummary() throws Exception {
         var existing =
                 new NationalCourtHouseIngressRecord(
-                        3106L, "Old Court", 1L, LocalDate.of(1900, 1, 1), null, "OLD", null);
+                        3106L,
+                        "Old Court",
+                        1L,
+                        LocalDate.of(1900, Month.JANUARY, 1),
+                        null,
+                        "OLD",
+                        null);
         when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
                 .thenReturn(List.of(existing));
 
@@ -162,13 +169,13 @@ class NationalCourtHouseDataIngressProcessorTest {
 
     @Test
     void given_duplicateResolvedId_when_ingest_then_rejectsBeforeDatabaseRead() {
-        List<JsonNode> records =
+        List<JsonNode> processedData =
                 List.of(
                         page(
                                 sourceRecord(3802L, 3106L, "First Court", 1L),
                                 sourceRecord(3803L, 3106L, "Duplicate Court", 1L)));
 
-        assertThatThrownBy(() -> processor.ingest(records))
+        assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("Duplicate incoming NCH_ID 3106");
         verifyNoInteractions(tableReadService, bulkUpsertService);
@@ -176,10 +183,11 @@ class NationalCourtHouseDataIngressProcessorTest {
 
     @Test
     void given_missingRequiredField_when_preProcess_then_rejectsRecord() {
-        var record = sourceRecord(3802L, 3106L, "Court", 1L);
-        record.remove("CourtName");
+        var sourceRecord = sourceRecord(3802L, 3106L, "Court", 1L);
+        sourceRecord.remove("CourtName");
+        List<JsonNode> processedData = List.of(page(sourceRecord));
 
-        assertThatThrownBy(() -> processor.preProcess(List.of(page(record))))
+        assertThatThrownBy(() -> processor.preProcess(processedData))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("CourtName");
         verifyNoInteractions(tableReadService, bulkUpsertService);
@@ -187,18 +195,20 @@ class NationalCourtHouseDataIngressProcessorTest {
 
     @Test
     void given_noResolvableId_when_ingest_then_rejectsRecord() {
-        var record = sourceRecord(null, null, "Court", 1L);
+        var sourceRecord = sourceRecord(null, null, "Court", 1L);
+        List<JsonNode> processedData = List.of(page(sourceRecord));
 
-        assertThatThrownBy(() -> processor.ingest(List.of(page(record))))
+        assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("NCH_ID");
     }
 
     @Test
     void given_invalidDate_when_ingest_then_rejectsRecord() {
-        var record = sourceRecord(3802L, 3106L, "Court", 1L).put("StartDate", "invalid");
+        var sourceRecord = sourceRecord(3802L, 3106L, "Court", 1L).put("StartDate", "invalid");
+        List<JsonNode> processedData = List.of(page(sourceRecord));
 
-        assertThatThrownBy(() -> processor.ingest(List.of(page(record))))
+        assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("StartDate");
     }
@@ -207,8 +217,9 @@ class NationalCourtHouseDataIngressProcessorTest {
     void given_recordNodeIsNotObject_when_preProcess_then_preservesItForValidation() {
         var page = OBJECT_MAPPER.createObjectNode();
         page.putArray("records").add("invalid");
+        List<JsonNode> processedData = List.of(page);
 
-        assertThatThrownBy(() -> processor.ingest(List.of(page)))
+        assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("missing expected fields");
     }
@@ -219,7 +230,7 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     private ObjectNode sourceRecord(Long courtId, Long pssId, String name, Long version) {
-        var record =
+        var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("CourtName", name)
@@ -228,9 +239,9 @@ class NationalCourtHouseDataIngressProcessorTest {
                         .put("StartDate", "1900-01-01")
                         .putNull("EndDate")
                         .put("RevisionNumber", version);
-        record.put("CourtID", courtId);
-        record.put("PSSNationalCourtHouseID", pssId);
-        return record;
+        sourceRecord.put("CourtID", courtId);
+        sourceRecord.put("PSSNationalCourtHouseID", pssId);
+        return sourceRecord;
     }
 
     private ObjectNode page(ObjectNode... sourceRecords) {
