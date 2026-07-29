@@ -8621,7 +8621,7 @@ components:
           description: The participant's home-phone number.
           example: 01225 123456
           maxLength: 20
-          minLength: 1
+          minLength: 10
           nullable: true
           pattern: "[0-9 \\-]*"
           type: string
@@ -8629,7 +8629,7 @@ components:
           description: The participant's mobile number.
           example: "07123456789"
           maxLength: 20
-          minLength: 1
+          minLength: 11
           nullable: true
           pattern: "^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$"
           type: string
