@@ -43,7 +43,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            columnName("applicantCode"),
+                            "standardApplicantCode",
                             null,
                             "Applicant code is required",
                             row.getRespondentAddressLine1(),
@@ -55,7 +55,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            columnName("applicationCode"),
+                            "applicationCode",
                             null,
                             "Application code is required",
                             row.getRespondentAddressLine1(),
@@ -107,7 +107,7 @@ public class BulkUploadApplicationEntryValidator {
                 .collect(Collectors.joining("/"));
     }
 
-    private static String columnName(String fieldName) {
+    public static String columnName(String fieldName) {
         try {
             Field field = BulkUploadRow.class.getDeclaredField(fieldName);
             CsvBindByName binding = field.getAnnotation(CsvBindByName.class);

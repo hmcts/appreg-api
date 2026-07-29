@@ -37,7 +37,7 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 2,
-                                "APPLICANT_CODE",
+                                "standardApplicantCode",
                                 null,
                                 "Applicant code is required",
                                 row.getRespondentAddressLine1(),
@@ -61,7 +61,7 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 2,
-                                "APPLICATION_CODE",
+                                "applicationCode",
                                 null,
                                 "Application code is required",
                                 row.getRespondentAddressLine1(),
@@ -141,7 +141,7 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 5,
-                                "APPLICANT_CODE",
+                                "standardApplicantCode",
                                 null,
                                 "Applicant code is required",
                                 row.getRespondentAddressLine1(),
@@ -149,7 +149,7 @@ class BulkUploadApplicationEntryValidatorTest {
                                 "DATA_ERROR"),
                         new BulkUploadError(
                                 5,
-                                "APPLICATION_CODE",
+                                "applicationCode",
                                 null,
                                 "Application code is required",
                                 row.getRespondentAddressLine1(),
