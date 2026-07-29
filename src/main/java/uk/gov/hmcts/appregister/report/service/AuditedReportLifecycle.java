@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.report.service;
 import java.io.IOException;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 
 /**
@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 class AuditedReportLifecycle<T> implements AsyncJobLifecycle<T> {
     private final AsyncJobLifecycle<T> delegate;
     private final ReportJobAuditService reportJobAuditService;
-    private JobStatus1 previousStatus;
+    private JobStatus previousStatus;
 
     AuditedReportLifecycle(
             AsyncJobLifecycle<T> delegate, ReportJobAuditService reportJobAuditService) {
@@ -27,7 +27,7 @@ class AuditedReportLifecycle<T> implements AsyncJobLifecycle<T> {
     @Override
     public void lifeCycleEventPerformed(AsyncJobLifecycleEvent<T> lifecycleEvent)
             throws IOException {
-        JobStatus1 status = lifecycleEvent.getJobStatus();
+        JobStatus status = lifecycleEvent.getJobStatus();
 
         try {
             delegate.lifeCycleEventPerformed(lifecycleEvent);
@@ -37,8 +37,8 @@ class AuditedReportLifecycle<T> implements AsyncJobLifecycle<T> {
         }
     }
 
-    private void auditTransition(AsyncJobLifecycleEvent<T> lifecycleEvent, JobStatus1 status) {
-        if (status != JobStatus1.COMPLETED && status != JobStatus1.FAILED) {
+    private void auditTransition(AsyncJobLifecycleEvent<T> lifecycleEvent, JobStatus status) {
+        if (status != JobStatus.COMPLETED && status != JobStatus.FAILED) {
             return;
         }
 
@@ -54,7 +54,7 @@ class AuditedReportLifecycle<T> implements AsyncJobLifecycle<T> {
     }
 
     private String failureReason(AsyncJobLifecycleEvent<T> lifecycleEvent) {
-        if (lifecycleEvent.getJobStatus() != JobStatus1.FAILED
+        if (lifecycleEvent.getJobStatus() != JobStatus.FAILED
                 || lifecycleEvent.getContext() == null
                 || !lifecycleEvent.getContext().hasFailure()) {
             return null;

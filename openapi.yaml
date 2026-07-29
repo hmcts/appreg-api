@@ -68,7 +68,7 @@ paths:
           content:
             application/vnd.hmcts.appreg.v1+json:
               schema:
-                $ref: "#/components/schemas/job-status"
+                $ref: "#/components/schemas/admin-job-status"
           description: Job status retrieved successfully.
           headers:
             Vary:
@@ -6032,7 +6032,7 @@ components:
       - REFRESH_REFERENCE_DATA
       example: APPLICATION_LISTS_DATABASE_JOB
       type: string
-    job-status:
+    admin-job-status:
       description: Details of the database job status.
       properties:
         lastRan:
@@ -7128,7 +7128,7 @@ components:
         type:
           $ref: "#/components/schemas/job-type"
         status:
-          $ref: "#/components/schemas/job-status_1"
+          $ref: "#/components/schemas/job-status"
         error_description:
           description: A description of the errorneous outcome of the job. Typically
             used for error messages.
@@ -8167,7 +8167,7 @@ components:
       - BULK_UPLOAD_ENTRIES
       example: FEES_REPORT
       type: string
-    job-status_1:
+    job-status:
       description: The status of the job being polled by the user.
       enum:
       - RECEIVED
@@ -8455,7 +8455,7 @@ components:
           description: The constraint details for the field
       required:
       - constraint
-      - field
+      - key
       type: object
     bulk-action-selection-type:
       description: How the global bulk action selection should be resolved.

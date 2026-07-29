@@ -15,7 +15,7 @@ import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 
@@ -31,12 +31,12 @@ class AuditedReportLifecycleTest {
                 new AuditedReportLifecycle<>(delegate, reportJobAuditService);
         JobStatusResponse response = reportJob(JobType.FEES_REPORT);
 
-        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.PROCESSING));
-        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.COMPLETED));
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus.PROCESSING));
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus.COMPLETED));
 
         verify(delegate, times(2)).lifeCycleEventPerformed(any());
         verify(reportJobAuditService)
-                .auditStatusTransition(response, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
+                .auditStatusTransition(response, JobStatus.PROCESSING, JobStatus.COMPLETED, null);
     }
 
     @Test
@@ -46,12 +46,12 @@ class AuditedReportLifecycleTest {
                 new AuditedReportLifecycle<>(delegate, reportJobAuditService);
         JobStatusResponse response = reportJob(JobType.FEES_REPORT);
 
-        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.RECEIVED));
-        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.COMPLETED));
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus.RECEIVED));
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus.COMPLETED));
 
         verify(delegate, times(2)).lifeCycleEventPerformed(any());
         verify(reportJobAuditService)
-                .auditStatusTransition(response, JobStatus1.RECEIVED, JobStatus1.COMPLETED, null);
+                .auditStatusTransition(response, JobStatus.RECEIVED, JobStatus.COMPLETED, null);
     }
 
     @Test
@@ -63,16 +63,16 @@ class AuditedReportLifecycleTest {
         JobContext context = new JobContext();
         context.logFailure("report failed");
 
-        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.PROCESSING));
-        lifecycle.lifeCycleEventPerformed(event(response, context, JobStatus1.FAILED));
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus.PROCESSING));
+        lifecycle.lifeCycleEventPerformed(event(response, context, JobStatus.FAILED));
 
         verify(reportJobAuditService)
                 .auditStatusTransition(
-                        response, JobStatus1.PROCESSING, JobStatus1.FAILED, "report failed");
+                        response, JobStatus.PROCESSING, JobStatus.FAILED, "report failed");
     }
 
     private AsyncJobLifecycleEvent<String> event(
-            JobStatusResponse response, JobContext context, JobStatus1 status) {
+            JobStatusResponse response, JobContext context, JobStatus status) {
         return new AsyncJobLifecycleEvent<>(response, List.of(), context, status);
     }
 

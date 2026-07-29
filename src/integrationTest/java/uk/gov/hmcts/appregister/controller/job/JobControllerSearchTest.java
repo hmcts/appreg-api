@@ -25,7 +25,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.audit.JobAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
@@ -99,13 +99,12 @@ class JobControllerSearchTest extends BaseIntegration {
                         responseSpec.then().statusCode(200);
 
                         // if not a completed or failed then fail
-                        if (jobStatusResponse.getStatus() != JobStatus1.COMPLETED
-                                && jobStatusResponse.getStatus() != JobStatus1.FAILED) {
+                        if (jobStatusResponse.getStatus() != JobStatus.COMPLETED
+                                && jobStatusResponse.getStatus() != JobStatus.FAILED) {
                             return false;
                         }
 
-                        Assertions.assertEquals(
-                                JobStatus1.COMPLETED, jobStatusResponse.getStatus());
+                        Assertions.assertEquals(JobStatus.COMPLETED, jobStatusResponse.getStatus());
                         Assertions.assertEquals(JobType.FEES_REPORT, jobStatusResponse.getType());
                         Assertions.assertEquals(
                                 response.getJobId().getId(), jobStatusResponse.getId());

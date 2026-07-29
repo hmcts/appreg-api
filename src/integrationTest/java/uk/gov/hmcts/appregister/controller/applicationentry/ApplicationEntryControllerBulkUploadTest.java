@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
@@ -81,7 +81,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                         getLocalUrl("jobs/" + acknowledgement.getId()),
                         tokenGenerator.fetchTokenForRole());
         Assertions.assertEquals(
-                JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
+                JobStatus.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
         Assertions.assertEquals(expectedApiEntries(), apiEntriesForList(listId, token));
@@ -147,7 +147,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                             getLocalUrl("jobs/" + acknowledgement.getId()),
                             tokenGenerator.fetchTokenForRole());
 
-            Assertions.assertEquals(JobStatus1.FAILED, completedJob.getStatus());
+            Assertions.assertEquals(JobStatus.FAILED, completedJob.getStatus());
             assertThat(completedJob.getErrorDescription())
                     .isNotBlank()
                     .contains("\"rowNumber\":2")
@@ -204,7 +204,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                             getLocalUrl("jobs/" + acknowledgement.getId()),
                             tokenGenerator.fetchTokenForRole());
 
-            Assertions.assertEquals(JobStatus1.FAILED, completedJob.getStatus());
+            Assertions.assertEquals(JobStatus.FAILED, completedJob.getStatus());
             assertThat(completedJob.getErrorDescription())
                     .isEqualTo(
                             "[{\"rowNumber\":-1,\"location\":\"BULK_UPLOAD_ROW\","
@@ -353,8 +353,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
         Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
 
-        JobStatus1 status = acknowledgement.getStatus();
-        while (!status.equals(JobStatus1.COMPLETED)) {
+        JobStatus status = acknowledgement.getStatus();
+        while (!status.equals(JobStatus.COMPLETED)) {
             Thread.sleep(1000);
             Response jobStatusResponse =
                     restAssuredClient.executeGetRequest(
@@ -417,8 +417,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
         Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
 
-        JobStatus1 status = acknowledgement.getStatus();
-        while (!status.equals(JobStatus1.COMPLETED)) {
+        JobStatus status = acknowledgement.getStatus();
+        while (!status.equals(JobStatus.COMPLETED)) {
             Thread.sleep(1000);
             Response jobStatusResponse =
                     restAssuredClient.executeGetRequest(

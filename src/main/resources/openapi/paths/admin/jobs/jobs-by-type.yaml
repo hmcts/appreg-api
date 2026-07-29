@@ -22,7 +22,7 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../../components/schemas/admin/job-status.yaml"
+            $ref: "../../../components/schemas/admin/admin-job-status.yaml"
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "409": { $ref: "../../../components/responses/conflict-error.yaml" }
     "403": { $ref: "../../../components/responses/forbidden-error.yaml" }

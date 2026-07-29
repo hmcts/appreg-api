@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.common.log.PayloadLogSupport;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -55,7 +55,7 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
         JobAcknowledgement acknowledgement = createResponse.as(JobAcknowledgement.class);
 
         assertThat(acknowledgement.getType()).isEqualTo(JobType.FEES_REPORT);
-        assertThat(acknowledgement.getStatus()).isEqualTo(JobStatus1.RECEIVED);
+        assertThat(acknowledgement.getStatus()).isEqualTo(JobStatus.RECEIVED);
         assertThat(payloadLogCaptor.getInfoLogs())
                 .anySatisfy(
                         log ->
@@ -77,6 +77,6 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
                         tokenGenerator.fetchTokenForRole(),
                         Duration.ofSeconds(30));
 
-        assertThat(terminalStatus.getStatus()).isEqualTo(JobStatus1.COMPLETED);
+        assertThat(terminalStatus.getStatus()).isEqualTo(JobStatus.COMPLETED);
     }
 }

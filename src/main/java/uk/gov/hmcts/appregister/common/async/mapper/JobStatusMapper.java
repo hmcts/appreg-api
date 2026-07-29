@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.common.async.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.enumeration.JobStatusType;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 /**
  * This mapper works for the asynchronous job status mapper.
@@ -17,7 +17,7 @@ public abstract class JobStatusMapper {
      * @param status The status to map
      * @return The database status
      */
-    public JobStatusType getJobStatus(JobStatus1 status) {
+    public JobStatusType getJobStatus(JobStatus status) {
         if (status == null) {
             return null;
         }
@@ -37,17 +37,17 @@ public abstract class JobStatusMapper {
      * @param status The database status to map
      * @return The status
      */
-    public JobStatus1 getJobStatus(JobStatusType status) {
+    public JobStatus getJobStatus(JobStatusType status) {
         if (status == null) {
             return null;
         }
 
         return switch (status) {
-            case PENDING -> JobStatus1.VALIDATING;
-            case SUBMITTED -> JobStatus1.RECEIVED;
-            case COMPLETED -> JobStatus1.COMPLETED;
-            case FAILED -> JobStatus1.FAILED;
-            case RUNNING -> JobStatus1.PROCESSING;
+            case PENDING -> JobStatus.VALIDATING;
+            case SUBMITTED -> JobStatus.RECEIVED;
+            case COMPLETED -> JobStatus.COMPLETED;
+            case FAILED -> JobStatus.FAILED;
+            case RUNNING -> JobStatus.PROCESSING;
         };
     }
 }

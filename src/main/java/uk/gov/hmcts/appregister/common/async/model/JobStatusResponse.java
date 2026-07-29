@@ -11,7 +11,7 @@ import lombok.Setter;
 import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 /**
@@ -30,7 +30,7 @@ public class JobStatusResponse {
     private final JobType type;
 
     /** The job status. */
-    private final JobStatus1 status;
+    private final JobStatus status;
 
     /** The username that the job is associated with. */
     private final String userName;
@@ -58,7 +58,7 @@ public class JobStatusResponse {
      * @throws IOException Any problems
      */
     public void write(InputStream updateWithInputStream) throws IOException {
-        if (status.equals(JobStatus1.COMPLETED)) {
+        if (status.equals(JobStatus.COMPLETED)) {
             throw new JobException("Can't write clob to a finished job %s".formatted(getJobId()));
         }
 

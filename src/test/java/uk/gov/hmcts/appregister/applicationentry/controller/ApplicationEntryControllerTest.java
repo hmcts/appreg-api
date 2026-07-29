@@ -53,7 +53,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 class ApplicationEntryControllerTest {
@@ -196,7 +196,7 @@ class ApplicationEntryControllerTest {
                 JobStatusResponse.builder()
                         .uuid(jobId)
                         .type(JobType.BULK_UPLOAD_ENTRIES)
-                        .status(JobStatus1.RECEIVED)
+                        .status(JobStatus.RECEIVED)
                         .userName("user-1")
                         .errorMessage(null)
                         .persistence(null)
@@ -221,7 +221,7 @@ class ApplicationEntryControllerTest {
                 new JobAcknowledgement()
                         .id(jobId)
                         .type(JobType.BULK_UPLOAD_ENTRIES)
-                        .status(JobStatus1.RECEIVED);
+                        .status(JobStatus.RECEIVED);
         ResponseEntity<JobAcknowledgement> response =
                 controller.bulkUploadApplicationListEntries(listId, file);
 
