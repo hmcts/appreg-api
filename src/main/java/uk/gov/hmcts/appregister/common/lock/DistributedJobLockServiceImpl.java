@@ -6,13 +6,13 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 public class DistributedJobLockServiceImpl implements DistributedJobLockService {
     private final DistributedJobLockPersistenceService persistenceService;

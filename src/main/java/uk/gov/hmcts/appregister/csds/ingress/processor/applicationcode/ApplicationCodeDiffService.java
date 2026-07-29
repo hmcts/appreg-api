@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 public class ApplicationCodeDiffService
         implements IngressDiffService<ApplicationCodeDiffRequest, ApplicationCodeDiffResult> {
@@ -102,6 +102,7 @@ public class ApplicationCodeDiffService
                 UPDATE_REASON_EXISTING_MATCH);
     }
 
+    @SuppressWarnings("java:S1172")
     private ApplicationCodeIngressRecord buildIntendedRecord(
             ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
         // ApplicationCode currently upserts directly from the incoming CSDS representation.

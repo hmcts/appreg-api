@@ -143,16 +143,16 @@ class BulkActionPreviewValidatorTest {
                         List.of(
                                 new EntryToList(validEntryId, listId),
                                 new EntryToList(otherListEntryId, otherListId)));
+        var request =
+                validApplicationListRequest(
+                        applicationListIdsSelection(validEntryId, otherListEntryId));
 
         AppRegistryException exception =
                 assertThrows(
                         AppRegistryException.class,
                         () ->
                                 validator.validateApplicationListEntryBulkActionPreview(
-                                        listId,
-                                        validApplicationListRequest(
-                                                applicationListIdsSelection(
-                                                        validEntryId, otherListEntryId))));
+                                        listId, request));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.ENTRY_NOT_ACCESSIBLE_FOR_LIST);
         assertThat(exception.getDetails().get("invalid_entry_ids"))
@@ -167,16 +167,16 @@ class BulkActionPreviewValidatorTest {
         when(applicationListEntryRepository.findApplicationListForAllEntries(
                         List.of(validEntryId, missingEntryId)))
                 .thenReturn(List.of(new EntryToList(validEntryId, listId)));
+        var request =
+                validApplicationListRequest(
+                        applicationListIdsSelection(validEntryId, missingEntryId));
 
         AppRegistryException exception =
                 assertThrows(
                         AppRegistryException.class,
                         () ->
                                 validator.validateApplicationListEntryBulkActionPreview(
-                                        listId,
-                                        validApplicationListRequest(
-                                                applicationListIdsSelection(
-                                                        validEntryId, missingEntryId))));
+                                        listId, request));
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST);
         assertThat(exception.getDetails().get("invalid_entry_ids"))

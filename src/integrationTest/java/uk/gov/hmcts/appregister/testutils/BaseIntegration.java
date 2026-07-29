@@ -24,6 +24,8 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
 
     private static final ObjectMapper SHARED_OBJECT_MAPPER = createObjectMapper();
     private static final String GLOBAL_JWKS_KEY = TokenGenerator.builder().build().getGlobalKey();
+    private static final int JWKS_STUB_MAX_ATTEMPTS = 5;
+    private static final long JWKS_STUB_RETRY_DELAY_MILLIS = 200L;
 
     @Autowired protected TokenStub tokenStub;
 
@@ -48,18 +50,45 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
 
     @BeforeEach
     void setup() {
-        try {
-            // populate the jkws keys endpoint with a global public key
-            tokenStub.stubExternalJwksKeysOnce(GLOBAL_JWKS_KEY);
-        } catch (Exception e) {
-            log.error("Error setting up wiremock", e);
-        }
+        stubExternalJwksKeysWithRetry();
 
         logCaptor = LogCaptor.forClass(AuditOperationSlf4jLogger.class);
         activityAuditLogAsserter = new ActivityAuditLogAsserter();
         logCaptor.clearLogs();
         differenceLogAsserter.clearLogs();
         mapper = SHARED_OBJECT_MAPPER;
+    }
+
+    private void stubExternalJwksKeysWithRetry() {
+        RuntimeException lastFailure = null;
+
+        for (int attempt = 1; attempt <= JWKS_STUB_MAX_ATTEMPTS; attempt++) {
+            try {
+                // Populate the JWKS endpoint with a global public key for resource-server auth.
+                tokenStub.stubExternalJwksKeysOnce(GLOBAL_JWKS_KEY);
+                return;
+            } catch (RuntimeException exception) {
+                lastFailure = exception;
+                log.warn(
+                        "WireMock JWKS stub setup failed on attempt {}/{}",
+                        attempt,
+                        JWKS_STUB_MAX_ATTEMPTS,
+                        exception);
+
+                if (attempt < JWKS_STUB_MAX_ATTEMPTS) {
+                    try {
+                        Thread.sleep(JWKS_STUB_RETRY_DELAY_MILLIS);
+                    } catch (InterruptedException interruptedException) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(
+                                "Interrupted while retrying WireMock JWKS stub setup",
+                                interruptedException);
+                    }
+                }
+            }
+        }
+
+        throw new IllegalStateException("Error setting up WireMock JWKS stub", lastFailure);
     }
 
     private static ObjectMapper createObjectMapper() {

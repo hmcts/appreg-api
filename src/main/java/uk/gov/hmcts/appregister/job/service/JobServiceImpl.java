@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.job.service;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.job.audit.JobAuditOperation;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class JobServiceImpl implements JobService {

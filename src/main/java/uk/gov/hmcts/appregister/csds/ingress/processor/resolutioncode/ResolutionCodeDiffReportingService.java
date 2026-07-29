@@ -6,14 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReportingService;
 
-@Component
+@Service
 public class ResolutionCodeDiffReportingService
         extends AbstractIngressDiffReportingService<ResolutionCodeIngressRecord> {
+    private static final String RC_ID = "RC_ID";
     private final String reportingDir;
 
     public ResolutionCodeDiffReportingService(CsdsIngressProperties properties) {
@@ -57,10 +58,10 @@ public class ResolutionCodeDiffReportingService
         var incomingRecordsByRcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, "RC_ID") != null)
+                        .filter(item -> nullableLong(item, RC_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, "RC_ID"),
+                                        item -> nullableLong(item, RC_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -114,7 +115,7 @@ public class ResolutionCodeDiffReportingService
                         ",",
                         csvValue(nullableLong(node, "PSSRCID")),
                         csvValue(nullableLong(node, "ResolutionCodeID")),
-                        csvValue(nullableLong(node, "RC_ID")),
+                        csvValue(nullableLong(node, RC_ID)),
                         csvValue(nullableText(node, "Code")),
                         csvValue(nullableText(node, "ResultTitle")),
                         csvValue(nullableText(node, "ResultWording")),

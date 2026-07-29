@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReportingService;
 
-@Component
+@Service
 public class StandardApplicantDiffReportingService
         extends AbstractIngressDiffReportingService<StandardApplicantIngressRecord> {
     private static final String APPLICANT_ID = "ApplicantID";
@@ -20,7 +20,7 @@ public class StandardApplicantDiffReportingService
     private static final String CODE = "Code";
     private static final String NAME = "OrganisationName";
     private static final String START_DATE = "StartDate";
-    private static final String END_DATE = "Enddate";
+    private static final String END_DATE = "EndDate";
     private static final String VERSION = "RevisionNumber";
     private static final String CSV_HEADER =
             "psssaId,applicantId,saId,code,name,startDate,endDate,version\n";

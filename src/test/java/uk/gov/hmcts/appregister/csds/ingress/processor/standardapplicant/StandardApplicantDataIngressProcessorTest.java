@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.StandardApplicantIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
@@ -36,6 +37,7 @@ class StandardApplicantDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private StandardApplicantIngressApplyService applyService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     private CsdsIngressProperties properties;
     private StandardApplicantDataIngressProcessor processor;
@@ -51,6 +53,7 @@ class StandardApplicantDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
                         new StandardApplicantDiffReportingService(properties),
@@ -118,6 +121,7 @@ class StandardApplicantDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         new StandardApplicantDiffService(
                                 tableReadService, new StandardApplicantIngressDatabaseRowMapper()),
                         new StandardApplicantDiffReportingService(properties),
@@ -138,37 +142,39 @@ class StandardApplicantDataIngressProcessorTest {
     }
 
     private ObjectNode sourceRecord(Long applicantId, Long psssaId, String organisationName) {
-        var record =
+        var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("ApplicantID", applicantId)
                         .put("Code", "DCCMH")
                         .put("OrganisationName", organisationName)
                         .put("StartDate", "2018-08-01")
-                        .putNull("Enddate")
+                        .putNull("EndDate")
                         .put("RevisionNumber", 2);
         if (psssaId == null) {
-            record.putNull("PSSSAID");
+            sourceRecord.putNull("PSSSAID");
         } else {
-            record.put("PSSSAID", psssaId);
+            sourceRecord.put("PSSSAID", psssaId);
         }
-        record.putArray("Address").addObject().put("AddressLine1", "County Hall");
-        record.putArray("ContactInformation")
+        sourceRecord.putArray("Address").addObject().put("AddressLine1", "County Hall");
+        sourceRecord
+                .putArray("ContactInformation")
                 .addObject()
                 .put("ContactType", "Email Address")
                 .put("ContactValue", "email@example.test");
-        record.withArray("ContactInformation")
+        sourceRecord
+                .withArray("ContactInformation")
                 .addObject()
                 .put("ContactType", "Telephone")
                 .put("ContactValue", "020 1234 5678");
-        return record;
+        return sourceRecord;
     }
 
     private ObjectNode createPage(JsonNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var array = page.putArray("records");
-        for (var record : records) {
-            array.add(record);
+        for (var sourceRecord : records) {
+            array.add(sourceRecord);
         }
         return page;
     }

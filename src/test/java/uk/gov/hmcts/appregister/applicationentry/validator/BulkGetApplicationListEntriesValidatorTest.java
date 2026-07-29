@@ -37,13 +37,9 @@ class BulkGetApplicationListEntriesValidatorTest {
     @Test
     void givenDuplicateListIds_whenValidate_thenThrowsListIdsMustBeUnique() {
         UUID listId = UUID.randomUUID();
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkGetApplicationListEntriesRequestDto()
-                                                .listIds(List.of(listId, listId))));
+        var request =
+                new BulkGetApplicationListEntriesRequestDto().listIds(List.of(listId, listId));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.LIST_IDS_MUST_BE_UNIQUE);
     }
@@ -51,14 +47,9 @@ class BulkGetApplicationListEntriesValidatorTest {
     @Test
     void givenTooManyListIds_whenValidate_thenThrowsListIdsLimitExceeded() {
         var listIds = IntStream.range(0, 2001).mapToObj(index -> UUID.randomUUID()).toList();
+        var request = new BulkGetApplicationListEntriesRequestDto().listIds(listIds);
 
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkGetApplicationListEntriesRequestDto()
-                                                .listIds(listIds)));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.LIST_IDS_LIMIT_EXCEEDED);
     }
@@ -67,14 +58,9 @@ class BulkGetApplicationListEntriesValidatorTest {
     void givenMissingList_whenValidate_thenThrowsListNotFound() {
         UUID listId = UUID.randomUUID();
         when(applicationListRepository.findByUuidIn(List.of(listId))).thenReturn(List.of());
+        var request = new BulkGetApplicationListEntriesRequestDto().listIds(List.of(listId));
 
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkGetApplicationListEntriesRequestDto()
-                                                .listIds(List.of(listId))));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.LIST_NOT_FOUND);
     }
@@ -85,15 +71,12 @@ class BulkGetApplicationListEntriesValidatorTest {
         UUID entryId = UUID.randomUUID();
         when(applicationListRepository.findByUuidIn(List.of(listId)))
                 .thenReturn(List.of(applicationList(listId)));
+        var request =
+                new BulkGetApplicationListEntriesRequestDto()
+                        .listIds(List.of(listId))
+                        .entryIds(List.of(entryId, entryId));
 
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkGetApplicationListEntriesRequestDto()
-                                                .listIds(List.of(listId))
-                                                .entryIds(List.of(entryId, entryId))));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE);
     }
@@ -107,15 +90,12 @@ class BulkGetApplicationListEntriesValidatorTest {
                 .thenReturn(List.of(applicationList(listId)));
         when(applicationListEntryRepository.findApplicationListForAllEntries(List.of(entryId)))
                 .thenReturn(List.of(new EntryToList(entryId, otherListId)));
+        var request =
+                new BulkGetApplicationListEntriesRequestDto()
+                        .listIds(List.of(listId))
+                        .entryIds(List.of(entryId));
 
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkGetApplicationListEntriesRequestDto()
-                                                .listIds(List.of(listId))
-                                                .entryIds(List.of(entryId))));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST);
     }

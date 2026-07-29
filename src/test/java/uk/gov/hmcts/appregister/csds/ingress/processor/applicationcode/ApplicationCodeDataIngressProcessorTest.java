@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -32,6 +33,8 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService.BackupResult;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
@@ -45,6 +48,7 @@ class ApplicationCodeDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     @TempDir Path tempDir;
 
@@ -68,6 +72,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
@@ -238,7 +243,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null);
-        when(tableReadService.loadAll("application_codes", rowMapper))
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
                 .thenReturn(
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
@@ -287,7 +294,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null);
-        when(tableReadService.loadAll("application_codes", rowMapper))
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
                 .thenReturn(
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
@@ -307,6 +316,51 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_backupConfigured_when_backup_then_copySourceIntoTarget() {
+        properties.getProcessors().getApplicationCodes().setBackupSource("application_codes");
+        properties
+                .getProcessors()
+                .getApplicationCodes()
+                .setBackupTarget("application_codes_staging");
+        when(ingressBackupService.backup("application_codes", "application_codes_staging"))
+                .thenReturn(new BackupResult(2, 3));
+        var logCaptor = LogCaptor.forClass(AbstractPagedCsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        processor.backup();
+
+        verify(ingressBackupService).backup("application_codes", "application_codes_staging");
+        assertThat(logCaptor.getInfoLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Completed CSDS backup for application_codes")
+                                        && log.contains("deleted=2")
+                                        && log.contains("inserted=3"));
+    }
+
+    @Test
+    void given_backupFails_when_backup_then_logAndContinue() {
+        properties.getProcessors().getApplicationCodes().setBackupSource("application_codes");
+        properties
+                .getProcessors()
+                .getApplicationCodes()
+                .setBackupTarget("application_codes_staging");
+        doThrow(new IllegalStateException("backup boom"))
+                .when(ingressBackupService)
+                .backup("application_codes", "application_codes_staging");
+        var logCaptor = LogCaptor.forClass(AbstractPagedCsdsIngressProcessor.class);
+        logCaptor.clearLogs();
+
+        processor.backup();
+
+        assertThat(logCaptor.getErrorLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Failed CSDS backup for application_codes")
+                                        && log.contains("Continuing ingress"));
+    }
+
+    @Test
     void given_reportingDirConfigured_when_apply_then_writesCsvFiles() throws Exception {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
@@ -316,6 +370,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
@@ -339,7 +394,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         1L,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         LocalDate.now().minusDays(1));
-        when(tableReadService.loadAll("application_codes", rowMapper))
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
                 .thenReturn(
                         List.of(
                                 ApplicationCodeIngressRecord.fromEntity(existingUpdated),
@@ -490,25 +547,28 @@ class ApplicationCodeDataIngressProcessorTest {
         assertThat(diffResult.diffRecords()).hasSize(2);
         assertThat(diffResult.diffRecords())
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.UPDATE);
-                            assertThat(record.existing()).isNotNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id()).isEqualTo(345L);
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.UPDATE);
+                            assertThat(diffRecord.existing()).isNotNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id()).isEqualTo(345L);
                         })
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.INSERT);
-                            assertThat(record.existing()).isNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id())
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
+                            assertThat(diffRecord.existing()).isNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id())
                                     .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
                         });
     }
 
     @Test
     void given_pssacidPresent_when_apply_then_useItAsTheResolvedKey() {
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
         logCaptor.clearLogs();
@@ -526,7 +586,10 @@ class ApplicationCodeDataIngressProcessorTest {
 
     @Test
     void given_pssacidMissing_when_apply_then_useApplicationCodeIdOffsetKey() {
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
         logCaptor.clearLogs();
@@ -544,7 +607,10 @@ class ApplicationCodeDataIngressProcessorTest {
 
     @Test
     void given_revisionNumberPresent_when_apply_then_acceptLiveCsdsFieldName() {
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
         var sourceRecord = createSourceRecord(345L, "A3", "Title 3", "Wording 3", 7L);
 
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
@@ -559,8 +625,9 @@ class ApplicationCodeDataIngressProcessorTest {
     @Test
     void given_queryResponseMissingRecordsArray_when_apply_then_throwException() {
         var invalidPage = OBJECT_MAPPER.createObjectNode().put("unexpected", true);
+        List<JsonNode> invalidPages = List.of(invalidPage);
 
-        assertThatThrownBy(() -> processor.apply(List.of(invalidPage)))
+        assertThatThrownBy(() -> processor.apply(invalidPages))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("records array");
     }
@@ -594,8 +661,9 @@ class ApplicationCodeDataIngressProcessorTest {
                                         345L, "A3", "Title 3", "Wording 3", 1L),
                                 createSourceRecordWithoutApplicationCodeId(
                                         345L, "A4", "Title 4", "Wording 4", 2L)));
+        var preProcessed = processor.preProcess(processedData);
 
-        assertThatThrownBy(() -> processor.apply(processor.preProcess(processedData)))
+        assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("Duplicate incoming AC_ID 345");
         assertThat(logCaptor.getErrorLogs())
@@ -619,20 +687,20 @@ class ApplicationCodeDataIngressProcessorTest {
 
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(record -> record.get("AC_ID").longValue())
+                .extracting(sourceRecord -> sourceRecord.get("AC_ID").longValue())
                 .containsExactly(
                         ApplicationCodeIngressRecord.calculateId(null, 3L),
                         ApplicationCodeIngressRecord.calculateId(null, 1L),
                         ApplicationCodeIngressRecord.calculateId(null, 2L));
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(record -> record.get("ApplicationCodeID").longValue())
+                .extracting(sourceRecord -> sourceRecord.get("ApplicationCodeID").longValue())
                 .containsExactly(3L, 1L, 2L);
     }
 
     @Test
     void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addAcId() {
-        var record = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
-        record.remove(
+        var sourceRecord = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
+        sourceRecord.remove(
                 List.of(
                         "Notes",
                         "AuthoringStatus",
@@ -649,7 +717,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         "FID_ReleasePackage",
                         "Updator"));
 
-        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+        var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
         assertThat(
                         extractRecordsFromPage(preProcessed.getFirst())
@@ -681,11 +749,15 @@ class ApplicationCodeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
                         rowMapper);
-        when(tableReadService.loadAll("application_codes", rowMapper)).thenReturn(List.of());
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
 
         processor.apply(
                 processor.preProcess(
@@ -694,7 +766,10 @@ class ApplicationCodeDataIngressProcessorTest {
                                         createSourceRecord(
                                                 1L, "A1", "Title 1", "Wording 1", 1L)))));
 
-        verify(tableReadService).loadAll("application_codes", rowMapper);
+        verify(tableReadService)
+                .loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper);
     }
 
     private ApplicationCode createApplicationCode(
@@ -724,8 +799,8 @@ class ApplicationCodeDataIngressProcessorTest {
     private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
-        for (var record : records) {
-            recordsArray.add(record);
+        for (var sourceRecord : records) {
+            recordsArray.add(sourceRecord);
         }
         return page;
     }
@@ -749,7 +824,7 @@ class ApplicationCodeDataIngressProcessorTest {
             Long version,
             String startDate,
             String endDate) {
-        var record =
+        var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("Code", code)
@@ -778,24 +853,25 @@ class ApplicationCodeDataIngressProcessorTest {
                         .putNull("FID_ReleasePackage")
                         .put("Updator", "migration");
         if (id == null) {
-            record.putNull("ApplicationCodeID");
+            sourceRecord.putNull("ApplicationCodeID");
         } else {
-            record.put("ApplicationCodeID", id);
+            sourceRecord.put("ApplicationCodeID", id);
         }
         if (endDate == null) {
-            record.putNull("EndDate");
-            return record;
+            sourceRecord.putNull("EndDate");
+            return sourceRecord;
         }
 
-        record.put("EndDate", endDate);
-        return record;
+        sourceRecord.put("EndDate", endDate);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithoutApplicationCodeId(
             Long pssacid, String code, String title, String wording, Long version) {
-        var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
-        record.put("PSSApplicationCodeID", pssacid);
-        return record;
+        var sourceRecord =
+                createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
+        sourceRecord.put("PSSApplicationCodeID", pssacid);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssacid(
@@ -805,9 +881,9 @@ class ApplicationCodeDataIngressProcessorTest {
             String title,
             String wording,
             Long version) {
-        var record = createSourceRecord(applicationCodeId, code, title, wording, version);
-        record.put("PSSApplicationCodeID", pssacid);
-        return record;
+        var sourceRecord = createSourceRecord(applicationCodeId, code, title, wording, version);
+        sourceRecord.put("PSSApplicationCodeID", pssacid);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssacid(
@@ -818,9 +894,10 @@ class ApplicationCodeDataIngressProcessorTest {
             Long version,
             String startDate,
             String endDate) {
-        var record = createSourceRecord(null, code, title, wording, version, startDate, endDate);
-        record.put("PSSApplicationCodeID", pssacid);
-        return record;
+        var sourceRecord =
+                createSourceRecord(null, code, title, wording, version, startDate, endDate);
+        sourceRecord.put("PSSApplicationCodeID", pssacid);
+        return sourceRecord;
     }
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {

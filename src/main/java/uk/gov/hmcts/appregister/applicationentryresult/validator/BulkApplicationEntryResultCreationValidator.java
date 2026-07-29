@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
@@ -58,123 +59,185 @@ public class BulkApplicationEntryResultCreationValidator
                             BulkApplicationEntryResultCreationSuccess,
                             R>
                     validateSuccess) {
-
         var entryIds = getEntryIds(validatable);
+        validateDuplicateEntryIds(entryIds);
+        validateAndLoadApplicationList(validatable);
+        validateEntryIdsProvided(entryIds);
+        var entries = loadEntries(validatable, entryIds);
+        var createDto = getCreateDto(validatable);
+        var resolutionCodeContext = resolveResolutionCodeContext(validatable.getPayload());
+        var bulkSuccess = buildBulkSuccess(entries, entryIds, createDto, resolutionCodeContext);
+
+        // now pass the success details through to the callback so the logic can take place
+        return validateSuccess.apply(validatable, bulkSuccess);
+    }
+
+    private void validateDuplicateEntryIds(List<UUID> entryIds) {
         if (!entryIds.isEmpty()) {
             validateNoDuplicateEntryIds(entryIds);
         }
+    }
 
-        ApplicationList validatedList = null;
+    private ApplicationList validateAndLoadApplicationList(
+            PayloadForCreateResults<BulkResultDto> validatable) {
+        if (validatable.getListId() == null) {
+            return null;
+        }
+
+        log.debug("Validating bulk result entries for list {}", validatable.getListId());
+        var validatedList =
+                applicationListRepository
+                        .findByUuid(validatable.getListId())
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListEntryResultError
+                                                        .APPLICATION_LIST_DOES_NOT_EXIST,
+                                                "The list does not exist %s"
+                                                        .formatted(validatable.getListId())));
+        validateParentApplicationListIsOpen(validatedList);
+        return validatedList;
+    }
+
+    private List<ApplicationListEntry> loadEntries(
+            PayloadForCreateResults<BulkResultDto> validatable, List<UUID> entryIds) {
         if (validatable.getListId() != null) {
-            log.debug("Validating bulk result entries for list {}", validatable.getListId());
-            validatedList =
-                    applicationListRepository
-                            .findByUuid(validatable.getListId())
-                            .orElseThrow(
-                                    () ->
-                                            new AppRegistryException(
-                                                    ApplicationListEntryResultError
-                                                            .APPLICATION_LIST_DOES_NOT_EXIST,
-                                                    "The list does not exist %s"
-                                                            .formatted(validatable.getListId())));
-            validateParentApplicationListIsOpen(validatedList);
+            return loadEntriesForList(validatable.getListId(), entryIds);
         }
 
-        validateEntryIdsProvided(entryIds);
+        return loadActiveEntries(entryIds);
+    }
 
-        List<ApplicationListEntry> entries;
-        if (validatable.getListId() != null) {
-            entries =
-                    applicationListEntryRepository.findByUuidsInSourceList(
-                            validatable.getListId(), new HashSet<>(entryIds));
-            if (entries.size() < entryIds.size()) {
-                var activeEntries = applicationListEntryRepository.findActiveByUuids(entryIds);
-                if (activeEntries.size() < entryIds.size()) {
-                    throw new AppRegistryException(
-                            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
-                            "One or more application list entries do not exist");
-                }
-                throw new AppRegistryException(
-                        ApplicationListEntryResultError
-                                .APPLICATION_ENTRY_RESULT_ENTRIES_NOT_IN_LIST,
-                        "The bulk result entries are not in the same application list for %s"
-                                .formatted(validatable.getListId()));
-            }
-        } else {
-            entries = applicationListEntryRepository.findActiveByUuids(entryIds);
-            if (entries.size() < entryIds.size()) {
-                throw new AppRegistryException(
-                        ApplicationListEntryResultError.APPLICATION_ENTRIES_NOT_ALL_EXIST,
-                        "The entries are not all present");
-            }
-
-            entries.forEach(
-                    entry -> validateParentApplicationListIsOpen(entry.getApplicationList()));
+    private List<ApplicationListEntry> loadEntriesForList(UUID listId, List<UUID> entryIds) {
+        var entries =
+                applicationListEntryRepository.findByUuidsInSourceList(
+                        listId, new HashSet<>(entryIds));
+        if (entries.size() >= entryIds.size()) {
+            return entries;
         }
 
-        ResolutionCode resolutionCode = null;
-        String wordingTemplate = null;
-        var createDto =
-                Optional.ofNullable(validatable.getPayload())
-                        .map(BulkResultDto::getResult)
-                        .orElse(null);
-        if (createDto != null && createDto.getResultCode() != null) {
-            var todayUk = businessDateProvider.currentUkDate();
-            var matchingCodes =
-                    resolutionCodeRepository.findPrioritisingNullEndDate(
-                            createDto.getResultCode(), todayUk);
-            if (matchingCodes.isEmpty()) {
-                throw new AppRegistryException(
-                        ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
-                        "No valid resolution code could be found %s"
-                                .formatted(createDto.getResultCode()));
-            }
-            resolutionCode =
-                    ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                            matchingCodes,
-                            "result code",
-                            createDto.getResultCode(),
-                            todayUk,
-                            ResolutionCode::getEndDate);
-            wordingTemplate = resolutionCode.getWording();
+        validateMissingEntriesForList(listId, entryIds);
+        return entries;
+    }
+
+    private void validateMissingEntriesForList(UUID listId, List<UUID> entryIds) {
+        var activeEntries = applicationListEntryRepository.findActiveByUuids(entryIds);
+        if (activeEntries.size() < entryIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
+                    "One or more application list entries do not exist");
         }
 
-        BulkApplicationEntryResultCreationSuccess bulkSuccess =
-                new BulkApplicationEntryResultCreationSuccess();
+        throw new AppRegistryException(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_ENTRIES_NOT_IN_LIST,
+                "The bulk result entries are not in the same application list for %s"
+                        .formatted(listId));
+    }
+
+    private List<ApplicationListEntry> loadActiveEntries(List<UUID> entryIds) {
+        var entries = applicationListEntryRepository.findActiveByUuids(entryIds);
+        if (entries.size() < entryIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRIES_NOT_ALL_EXIST,
+                    "The entries are not all present");
+        }
+
+        entries.forEach(entry -> validateParentApplicationListIsOpen(entry.getApplicationList()));
+        return entries;
+    }
+
+    private ResultCreateDto getCreateDto(PayloadForCreateResults<BulkResultDto> validatable) {
+        return Optional.ofNullable(validatable.getPayload())
+                .map(BulkResultDto::getResult)
+                .orElseGet(ResultCreateDto::new);
+    }
+
+    private ResolutionCodeContext resolveResolutionCodeContext(BulkResultDto payload) {
+        return Optional.ofNullable(payload)
+                .map(BulkResultDto::getResult)
+                .flatMap(this::getResultCode)
+                .map(this::resolveResolutionCodeContext)
+                .orElseGet(() -> new ResolutionCodeContext(null, null));
+    }
+
+    private ResolutionCodeContext resolveResolutionCodeContext(String resultCode) {
+        var todayUk = businessDateProvider.currentUkDate();
+        var matchingCodes =
+                resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
+        if (matchingCodes.isEmpty()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
+                    "No valid resolution code could be found %s".formatted(resultCode));
+        }
+
+        var resolutionCode =
+                ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                        matchingCodes,
+                        "result code",
+                        resultCode,
+                        todayUk,
+                        ResolutionCode::getEndDate);
+        return new ResolutionCodeContext(resolutionCode, resolutionCode.getWording());
+    }
+
+    private Optional<String> getResultCode(ResultCreateDto createDto) {
+        var resultCode = createDto.getResultCode();
+        return StringUtils.hasText(resultCode) ? Optional.of(resultCode) : Optional.empty();
+    }
+
+    private BulkApplicationEntryResultCreationSuccess buildBulkSuccess(
+            List<ApplicationListEntry> entries,
+            List<UUID> entryIds,
+            ResultCreateDto createDto,
+            ResolutionCodeContext resolutionCodeContext) {
+        var bulkSuccess = new BulkApplicationEntryResultCreationSuccess();
+        var entriesByUuid = indexEntriesByUuid(entries);
+        for (var entryId : entryIds) {
+            bulkSuccess
+                    .getResults()
+                    .add(
+                            buildValidatedItem(
+                                    entriesByUuid, entryId, createDto, resolutionCodeContext));
+        }
+        return bulkSuccess;
+    }
+
+    private Map<UUID, ApplicationListEntry> indexEntriesByUuid(List<ApplicationListEntry> entries) {
         Map<UUID, ApplicationListEntry> entriesByUuid = new HashMap<>();
         for (var entry : entries) {
             entriesByUuid.put(entry.getUuid(), entry);
         }
-        for (var entryId : entryIds) {
-            var entry = entriesByUuid.get(entryId);
-            if (entry == null) {
-                throw new AppRegistryException(
-                        ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
-                        "No application list entry exists %s".formatted(entryId));
-            }
-            bulkSuccess
-                    .getResults()
-                    .add(
-                            new BulkApplicationEntryResultValidatedItem(
-                                    PayloadForCreateEntryResult.<ResultCreateDto>builder()
-                                            .listId(entry.getApplicationList().getUuid())
-                                            .entryId(entry.getUuid())
-                                            .data(createDto)
-                                            .build(),
-                                    ListEntryResultCreateValidationSuccess.builder()
-                                            .applicationList(entry.getApplicationList())
-                                            .applicationListEntry(entry)
-                                            .resolutionCode(resolutionCode)
-                                            .wordingSentence(
-                                                    wordingTemplate == null
-                                                            ? null
-                                                            : WordingTemplateSentence.with(
-                                                                    wordingTemplate))
-                                            .build()));
+        return entriesByUuid;
+    }
+
+    private BulkApplicationEntryResultValidatedItem buildValidatedItem(
+            Map<UUID, ApplicationListEntry> entriesByUuid,
+            UUID entryId,
+            ResultCreateDto createDto,
+            ResolutionCodeContext resolutionCodeContext) {
+        var entry = entriesByUuid.get(entryId);
+        if (entry == null) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
+                    "No application list entry exists %s".formatted(entryId));
         }
 
-        // now pass the success details through to the callback so the logic can take place
-        return validateSuccess.apply(validatable, bulkSuccess);
+        return new BulkApplicationEntryResultValidatedItem(
+                PayloadForCreateEntryResult.<ResultCreateDto>builder()
+                        .listId(entry.getApplicationList().getUuid())
+                        .entryId(entry.getUuid())
+                        .data(createDto)
+                        .build(),
+                ListEntryResultCreateValidationSuccess.builder()
+                        .applicationList(entry.getApplicationList())
+                        .applicationListEntry(entry)
+                        .resolutionCode(resolutionCodeContext.resolutionCode())
+                        .wordingSentence(toWordingSentence(resolutionCodeContext.wordingTemplate()))
+                        .build());
+    }
+
+    private WordingTemplateSentence toWordingSentence(String wordingTemplate) {
+        return wordingTemplate == null ? null : WordingTemplateSentence.with(wordingTemplate);
     }
 
     private void validateNoDuplicateEntryIds(List<UUID> entryIds) {
@@ -209,4 +272,6 @@ public class BulkApplicationEntryResultCreationValidator
                             .formatted(validatable.getUuid(), validatable.getStatus()));
         }
     }
+
+    private record ResolutionCodeContext(ResolutionCode resolutionCode, String wordingTemplate) {}
 }

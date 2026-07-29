@@ -15,7 +15,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.TransactionUnitOfWork;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
  * A default implementation of the {@link AsyncJobService} interface.
  */
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 @Setter
 public class AsyncJobServiceImpl implements AsyncJobService {

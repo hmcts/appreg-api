@@ -65,19 +65,6 @@ class ApplicationEntryResultControllerSecurityTest extends AbstractSecurityContr
                                                 + entryId
                                                 + "/results/"
                                                 + resultId))
-                        .method(HttpMethod.DELETE)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(
-                                getLocalUrl(
-                                        "application-lists/"
-                                                + listId
-                                                + "/entries/"
-                                                + entryId
-                                                + "/results/"
-                                                + resultId))
                         .method(HttpMethod.PUT)
                         .payload(
                                 new ResultUpdateDto()

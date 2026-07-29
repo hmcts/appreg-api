@@ -14,6 +14,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ApplicationCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
@@ -51,6 +52,7 @@ public class ApplicationCodeDataIngressProcessor
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
+            JdbcIngressBackupService ingressBackupService,
             ApplicationCodeDiffService diffService,
             ApplicationCodeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
@@ -59,7 +61,8 @@ public class ApplicationCodeDataIngressProcessor
                 properties,
                 properties.getProcessors().getApplicationCodes(),
                 csdsAuditService,
-                csdsIngressTransactionRunner);
+                csdsIngressTransactionRunner,
+                ingressBackupService);
         applicationCodeProperties = properties.getProcessors().getApplicationCodes();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;

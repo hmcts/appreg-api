@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
@@ -31,7 +32,7 @@ public class StandardApplicantDataIngressProcessor
                     "Code",
                     "OrganisationName",
                     "StartDate",
-                    "Enddate",
+                    "EndDate",
                     "RevisionNumber",
                     "Address",
                     "ContactInformation");
@@ -45,6 +46,7 @@ public class StandardApplicantDataIngressProcessor
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
+            JdbcIngressBackupService ingressBackupService,
             StandardApplicantDiffService diffService,
             StandardApplicantDiffReportingService diffReportingService,
             StandardApplicantIngressApplyService applyService) {
@@ -52,7 +54,8 @@ public class StandardApplicantDataIngressProcessor
                 properties,
                 properties.getProcessors().getStandardApplicants(),
                 csdsAuditService,
-                csdsIngressTransactionRunner);
+                csdsIngressTransactionRunner,
+                ingressBackupService);
         standardApplicantProperties = properties.getProcessors().getStandardApplicants();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -178,7 +181,7 @@ public class StandardApplicantDataIngressProcessor
                 requiredLong(node, SA_ID),
                 requiredText(node, "Code"),
                 requiredLocalDate(node, "StartDate"),
-                nullableLocalDate(node, "Enddate"),
+                nullableLocalDate(node, "EndDate"),
                 requiredLong(node, "RevisionNumber"),
                 nullableText(node, "OrganisationName"),
                 addressLine1(address),

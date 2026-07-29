@@ -186,6 +186,7 @@ import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("java:S9024")
 class ApplicationEntryServiceImplTest {
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
@@ -2146,11 +2147,6 @@ class ApplicationEntryServiceImplTest {
         return feeDetails;
     }
 
-    private void stubFeeStatusSave() {
-        when(appListEntryFeeStatusRepository.save(any(AppListEntryFeeStatus.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-    }
-
     @Test
     void replaceOfficials_replacesOfficialsForAllEntries() {
         val listId = UUID.randomUUID();
@@ -3010,14 +3006,11 @@ class ApplicationEntryServiceImplTest {
     @Test
     void given_idsSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        var request = bulkActionPreviewRequest(UUID.randomUUID(), UUID.randomUUID());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.bulkActionPreview(
-                                        bulkActionPreviewRequest(
-                                                UUID.randomUUID(), UUID.randomUUID())));
+                        AppRegistryException.class, () -> service.bulkActionPreview(request));
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
@@ -3055,6 +3048,48 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(2, response.getSelectedCount());
         Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
         Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void
+            given_updateFeeDetailsSelection_when_bulkActionPreview_then_onlyFeeRequiredEntriesAreEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewSingleListLimit", 2);
+        UUID listId = UUID.randomUUID();
+        UUID feeRequiredEntryId = UUID.randomUUID();
+        UUID feeNotRequiredEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection feeRequiredProjection =
+                bulkActionPreviewProjection(feeRequiredEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection feeNotRequiredProjection =
+                bulkActionPreviewProjection(feeNotRequiredEntryId, 2L);
+        EntryGetSummaryDto feeRequiredSummary =
+                stubEntrySummary(feeRequiredProjection, feeRequiredEntryId);
+        feeRequiredSummary.setIsFeeRequired(true);
+        EntryGetSummaryDto feeNotRequiredSummary =
+                stubEntrySummary(feeNotRequiredProjection, feeNotRequiredEntryId);
+        feeNotRequiredSummary.setIsFeeRequired(false);
+
+        when(applicationListEntryRepository.findApplicationListForAllEntries(anyList()))
+                .thenReturn(
+                        List.of(
+                                new EntryToList(feeRequiredEntryId, listId),
+                                new EntryToList(feeNotRequiredEntryId, listId)));
+        stubBulkActionPreviewSummaryPage(2, feeRequiredProjection, feeNotRequiredProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        listId,
+                        applicationListBulkActionPreviewRequest(
+                                feeRequiredEntryId, feeNotRequiredEntryId));
+
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(
+                List.of(feeRequiredEntryId, feeNotRequiredEntryId), response.getEntryIds());
+        Assertions.assertEquals(
+                List.of(feeRequiredSummary, feeNotRequiredSummary), response.getEntries());
     }
 
     @Test
@@ -3142,14 +3177,11 @@ class ApplicationEntryServiceImplTest {
                 bulkActionPreviewProjection(UUID.randomUUID(), 1L);
 
         stubBulkActionPreviewSummaryPage(2, projection);
+        var request = bulkActionPreviewFilterRequest(new EntryGetFilterDto(), List.of(), List.of());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.bulkActionPreview(
-                                        bulkActionPreviewFilterRequest(
-                                                new EntryGetFilterDto(), List.of(), List.of())));
+                        AppRegistryException.class, () -> service.bulkActionPreview(request));
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());

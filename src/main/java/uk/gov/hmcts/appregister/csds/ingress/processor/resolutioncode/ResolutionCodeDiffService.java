@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 public class ResolutionCodeDiffService
         implements IngressDiffService<ResolutionCodeDiffRequest, ResolutionCodeDiffResult> {

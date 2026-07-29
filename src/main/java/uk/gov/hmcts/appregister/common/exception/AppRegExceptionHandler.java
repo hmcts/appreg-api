@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -21,7 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.http.InvalidParameterException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -29,6 +34,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.method.MethodValidationException;
 import org.springframework.validation.method.MethodValidationResult;
@@ -36,13 +42,20 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.log.LogPayloads;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 
 @Slf4j
@@ -65,7 +78,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
-        // getss the core exception code that we used to apply the application specific code
+        // gets the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
         ProblemDetail problemDetail = getDetailFromEnum(exception.getCode(), exception);
@@ -261,6 +274,21 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                 findCause(ex, UnrecognizedPropertyException.class);
         ValueInstantiationException valueInstantiationException =
                 findCause(ex, ValueInstantiationException.class);
+
+        getLogPayloadsAnnotation(request)
+                .ifPresent(
+                        logPayloads -> {
+                            if (logPayloads.direction().includesRequest()) {
+                                logPayloads
+                                        .level()
+                                        .log(
+                                                log,
+                                                "{}: {}",
+                                                logPayloads.requestPrefix(),
+                                                ObfuscationUtil.getObfuscatedString(
+                                                        getRequestPayload(request)));
+                            }
+                        });
 
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
 
@@ -504,5 +532,47 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ProblemDetail.forStatusAndDetail(
                                 HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"));
+    }
+
+    private Optional<LogPayloads> getLogPayloadsAnnotation(WebRequest request) {
+        Object handler =
+                request.getAttribute(
+                        HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE,
+                        RequestAttributes.SCOPE_REQUEST);
+
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
+            return Optional.empty();
+        }
+
+        Method specificMethod =
+                AopUtils.getMostSpecificMethod(
+                        handlerMethod.getMethod(), handlerMethod.getBeanType());
+
+        LogPayloads logPayloads =
+                AnnotatedElementUtils.findMergedAnnotation(specificMethod, LogPayloads.class);
+
+        return Optional.ofNullable(logPayloads);
+    }
+
+    private String getRequestPayload(WebRequest request) {
+        if (!(request instanceof NativeWebRequest nativeWebRequest)) {
+            return "";
+        }
+
+        ContentCachingRequestWrapper cachingRequest =
+                nativeWebRequest.getNativeRequest(ContentCachingRequestWrapper.class);
+
+        if (cachingRequest == null || cachingRequest.getContentAsByteArray().length == 0) {
+            return "";
+        }
+
+        Charset charset = StandardCharsets.UTF_8;
+        String characterEncoding = cachingRequest.getCharacterEncoding();
+
+        if (StringUtils.hasText(characterEncoding)) {
+            charset = Charset.forName(characterEncoding);
+        }
+
+        return new String(cachingRequest.getContentAsByteArray(), charset);
     }
 }

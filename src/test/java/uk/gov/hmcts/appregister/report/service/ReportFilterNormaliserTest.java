@@ -13,8 +13,6 @@ import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 
 class ReportFilterNormaliserTest {
-    private final ReportFilterNormaliser normaliser = new ReportFilterNormaliser();
-
     @Test
     void givenActivityAuditDateRangeIsReversed_whenNormalised_thenDatesAreSwapped() {
         ActivityAuditFilterDto filter =
@@ -22,7 +20,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        ActivityAuditFilterDto normalisedFilter = normaliser.normalise(filter);
+        ActivityAuditFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -36,7 +34,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        FeesReportFilterDto normalisedFilter = normaliser.normalise(filter);
+        FeesReportFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -50,7 +48,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        DurationFilterDto normalisedFilter = normaliser.normalise(filter);
+        DurationFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -64,7 +62,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        ListMaintenanceFilterDto normalisedFilter = normaliser.normalise(filter);
+        ListMaintenanceFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -78,7 +76,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        SearchWarrantsReportFilterDto normalisedFilter = normaliser.normalise(filter);
+        SearchWarrantsReportFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -92,7 +90,8 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        PrivateProsecutorsIndexFilterDto normalisedFilter = normaliser.normalise(filter);
+        PrivateProsecutorsIndexFilterDto normalisedFilter =
+                ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -106,7 +105,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        WorkloadFilterDto normalisedFilter = normaliser.normalise(filter);
+        WorkloadFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -118,7 +117,7 @@ class ReportFilterNormaliserTest {
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto().dateTo(LocalDate.of(2018, Month.MAY, 1));
 
-        ActivityAuditFilterDto normalisedFilter = normaliser.normalise(filter);
+        ActivityAuditFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertNull(normalisedFilter.getDateFrom());
@@ -130,7 +129,7 @@ class ReportFilterNormaliserTest {
         WorkloadFilterDto filter =
                 new WorkloadFilterDto().dateFrom(LocalDate.of(2018, Month.MAY, 31));
 
-        WorkloadFilterDto normalisedFilter = normaliser.normalise(filter);
+        WorkloadFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), normalisedFilter.getDateFrom());
@@ -144,7 +143,7 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
 
-        SearchWarrantsReportFilterDto normalisedFilter = normaliser.normalise(filter);
+        SearchWarrantsReportFilterDto normalisedFilter = ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 1), normalisedFilter.getDateFrom());
@@ -158,7 +157,8 @@ class ReportFilterNormaliserTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
 
-        PrivateProsecutorsIndexFilterDto normalisedFilter = normaliser.normalise(filter);
+        PrivateProsecutorsIndexFilterDto normalisedFilter =
+                ReportFilterNormaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, Month.MAY, 31), normalisedFilter.getDateFrom());
