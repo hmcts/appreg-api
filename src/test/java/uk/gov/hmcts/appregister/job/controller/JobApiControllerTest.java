@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.service.JobService;
 
@@ -25,7 +25,7 @@ class JobApiControllerTest {
                 new JobAcknowledgement()
                         .id(jobId)
                         .type(JobType.FEES_REPORT)
-                        .status(JobStatus1.RECEIVED);
+                        .status(JobStatus.RECEIVED);
         when(jobService.getJobAckById(jobId)).thenReturn(body);
 
         ResponseEntity<JobAcknowledgement> actual = controller.getJobStatusById(jobId);

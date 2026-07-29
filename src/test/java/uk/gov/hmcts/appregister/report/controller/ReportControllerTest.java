@@ -29,7 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
@@ -283,6 +283,6 @@ class ReportControllerTest {
         return new JobAcknowledgement()
                 .id(UUID.randomUUID())
                 .type(jobType)
-                .status(JobStatus1.RECEIVED);
+                .status(JobStatus.RECEIVED);
     }
 }

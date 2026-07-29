@@ -16,9 +16,9 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +33,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
 
     @Override
     @Transactional(readOnly = true)
-    public JobStatus getDatabaseJobStatusByName(AdminJobType jobName) {
+    public AdminJobStatus getDatabaseJobStatusByName(AdminJobType jobName) {
         return auditService.processAudit(
                 AdminAuditOperation.GET_DATABASE_JOB_STATUS_AUDIT_EVENT,
                 unused ->

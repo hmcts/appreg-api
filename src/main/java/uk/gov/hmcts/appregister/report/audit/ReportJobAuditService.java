@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 /**
  * Emits report job lifecycle audit records for the terminal transitions required by ARCPOC-1225.
@@ -29,8 +29,8 @@ public class ReportJobAuditService {
      */
     public void auditStatusTransition(
             JobStatusResponse jobStatusResponse,
-            JobStatus1 previousStatus,
-            JobStatus1 newStatus,
+            JobStatus previousStatus,
+            JobStatus newStatus,
             String errorReason) {
         if (!shouldAudit(jobStatusResponse, previousStatus, newStatus)) {
             return;
@@ -59,7 +59,7 @@ public class ReportJobAuditService {
 
     /** Applies the ticket scope: report jobs only, and only transitions into terminal status. */
     private boolean shouldAudit(
-            JobStatusResponse jobStatusResponse, JobStatus1 previousStatus, JobStatus1 newStatus) {
+            JobStatusResponse jobStatusResponse, JobStatus previousStatus, JobStatus newStatus) {
         if (jobStatusResponse == null
                 || jobStatusResponse.getType() == null
                 || jobStatusResponse.getUuid() == null) {
@@ -79,12 +79,12 @@ public class ReportJobAuditService {
         return isTerminalStatus(newStatus);
     }
 
-    private boolean isTerminalStatus(JobStatus1 status) {
-        return status == JobStatus1.COMPLETED || status == JobStatus1.FAILED;
+    private boolean isTerminalStatus(JobStatus status) {
+        return status == JobStatus.COMPLETED || status == JobStatus.FAILED;
     }
 
-    private String failureReason(JobStatus1 newStatus, String errorReason) {
-        if (newStatus != JobStatus1.FAILED) {
+    private String failureReason(JobStatus newStatus, String errorReason) {
+        if (newStatus != JobStatus.FAILED) {
             return null;
         }
 

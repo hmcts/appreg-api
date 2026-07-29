@@ -10,7 +10,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 /**
@@ -27,7 +27,7 @@ public class ReportJobAudit implements Auditable {
     private final UUID jobId;
     private final JobType reportType;
     private final String requestingUser;
-    private final JobStatus1 status;
+    private final JobStatus status;
     private final String errorReason;
     private final String fileReference;
     private final Auditable reportParameters;
@@ -86,7 +86,7 @@ public class ReportJobAudit implements Auditable {
             UUID jobId,
             JobType reportType,
             String requestingUser,
-            JobStatus1 status,
+            JobStatus status,
             String errorReason) {
         return ReportJobAudit.builder()
                 .jobId(jobId)

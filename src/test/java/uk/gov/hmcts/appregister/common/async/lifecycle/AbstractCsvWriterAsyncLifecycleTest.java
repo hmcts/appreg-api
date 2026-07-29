@@ -18,14 +18,14 @@ import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 class AbstractCsvWriterAsyncLifecycleTest {
 
     @Test
     void testAbstractCsvAsyncLifecycle() throws IOException {
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.FAILED);
         when(jobStatusResponse.getUserName()).thenReturn("user");
         when(jobStatusResponse.getErrorMessage()).thenReturn("error");
 
@@ -47,10 +47,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
         // first processing call
         lifecycleUnderTest.lifeCycleEventPerformed(
                 new AsyncJobLifecycleEvent<>(
-                        jobStatusResponse,
-                        List.of(nameAddress),
-                        jobContext,
-                        JobStatus1.PROCESSING));
+                        jobStatusResponse, List.of(nameAddress), jobContext, JobStatus.PROCESSING));
 
         // second processing call
         lifecycleUnderTest.lifeCycleEventPerformed(
@@ -58,7 +55,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
                         jobStatusResponse,
                         List.of(nameAddress1),
                         jobContext,
-                        JobStatus1.PROCESSING));
+                        JobStatus.PROCESSING));
 
         CsvReader<PersonCsvPojo> csvReader;
         csvReader = new CsvReader<>(csvWriter.getInputStream(), PersonCsvPojo.class);
@@ -83,7 +80,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
                         jobStatusResponse,
                         List.of(nameAddress, nameAddress1),
                         jobContext,
-                        JobStatus1.COMPLETED));
+                        JobStatus.COMPLETED));
 
         // ensure we try to write the clob
         verify(jobStatusResponse).write(notNull());
@@ -96,7 +93,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
     @Test
     void testAbstractCsvAsyncLifecycleFail() throws IOException {
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.FAILED);
         when(jobStatusResponse.getUserName()).thenReturn("user");
         when(jobStatusResponse.getErrorMessage()).thenReturn("error");
 
@@ -117,10 +114,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
         // first processing call
         lifecycleUnderTest.lifeCycleEventPerformed(
                 new AsyncJobLifecycleEvent<>(
-                        jobStatusResponse,
-                        List.of(nameAddress),
-                        jobContext,
-                        JobStatus1.PROCESSING));
+                        jobStatusResponse, List.of(nameAddress), jobContext, JobStatus.PROCESSING));
 
         // second processing call
         lifecycleUnderTest.lifeCycleEventPerformed(
@@ -128,7 +122,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
                         jobStatusResponse,
                         List.of(nameAddress1),
                         jobContext,
-                        JobStatus1.PROCESSING));
+                        JobStatus.PROCESSING));
 
         CsvReader<PersonCsvPojo> csvReader;
         csvReader = new CsvReader<>(csvWriter.getInputStream(), PersonCsvPojo.class);
@@ -153,7 +147,7 @@ class AbstractCsvWriterAsyncLifecycleTest {
                         jobStatusResponse,
                         List.of(nameAddress, nameAddress1),
                         jobContext,
-                        JobStatus1.FAILED));
+                        JobStatus.FAILED));
 
         // ensure we did not write the clob
         verify(jobStatusResponse, never()).write(notNull());

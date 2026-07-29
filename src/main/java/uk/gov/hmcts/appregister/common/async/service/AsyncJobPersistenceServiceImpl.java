@@ -29,7 +29,7 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.JobStatusType;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 /**
@@ -61,7 +61,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void setJobStatus(JobIdRequest jobType, JobStatus1 jobStatus) {
+    public void setJobStatus(JobIdRequest jobType, JobStatus jobStatus) {
         // do nothing
         AsyncJob asyncJob = asyncJobRepository.findByJobId(jobType.getId(), jobType.getUserName());
 

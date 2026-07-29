@@ -8,8 +8,8 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
     @Test
@@ -29,7 +29,7 @@ class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
                         getLocalUrl(WEB_CONTEXT + "/" + jobName),
                         createAdminToken().fetchTokenForRole());
 
-        var jobStatus = getResponseSpec.getBody().as(JobStatus.class);
+        var jobStatus = getResponseSpec.getBody().as(AdminJobStatus.class);
         assertEquals(false, jobStatus.getEnabled());
         assertNull(jobStatus.getLastRan());
 

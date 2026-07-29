@@ -20,10 +20,10 @@ import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.api.AdminApi;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 @PreAuthorize(RoleNames.ADMIN_ROLE_RESTRICTION)
 @Validated
@@ -70,7 +70,8 @@ public class AdminAPIController implements AdminApi {
     @GetMapping(
             value = PATH_GET_JOB_STATUS,
             produces = {"application/vnd.hmcts.appreg.v1+json", "application/problem+json"})
-    public ResponseEntity<JobStatus> getJobStatus(@PathVariable("jobType") AdminJobType jobType) {
+    public ResponseEntity<AdminJobStatus> getJobStatus(
+            @PathVariable("jobType") AdminJobType jobType) {
         return ResponseEntity.ok(adminAPIService.getDatabaseJobStatusByName(jobType));
     }
 
