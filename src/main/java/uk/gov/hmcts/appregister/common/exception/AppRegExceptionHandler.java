@@ -34,6 +34,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.method.MethodValidationException;
 import org.springframework.validation.method.MethodValidationResult;
@@ -568,7 +569,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         Charset charset = StandardCharsets.UTF_8;
         String characterEncoding = cachingRequest.getCharacterEncoding();
 
-        if (characterEncoding != null && !characterEncoding.isBlank()) {
+        if (StringUtils.hasText(characterEncoding)) {
             charset = Charset.forName(characterEncoding);
         }
 

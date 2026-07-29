@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)

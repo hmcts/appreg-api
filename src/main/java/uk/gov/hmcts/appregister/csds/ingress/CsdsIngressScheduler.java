@@ -25,6 +25,7 @@ class CsdsIngressScheduler {
     private final ZoneId ukZone;
 
     @Scheduled(fixedDelayString = "${appreg.csds.ingress.schedule.poll-interval:PT10M}")
+    @SuppressWarnings({"java:S6205"})
     void pollNightlyIngress() {
         if (!isDueNow()) {
             return;
@@ -41,12 +42,8 @@ class CsdsIngressScheduler {
                         "Skipping scheduled CSDS ingress because the job is disabled or the distributed lease is"
                                 + " not available");
             }
-            case SUCCEEDED -> {
-                log.info("Running scheduled CSDS ingress");
-                log.info("Completed scheduled CSDS ingress");
-            }
+            case SUCCEEDED -> log.info("Completed scheduled CSDS ingress");
             case FAILED -> {
-                log.info("Running scheduled CSDS ingress");
                 log.error("Scheduled CSDS ingress failed: {}", result.message());
             }
         }

@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @SuppressWarnings("java:S2077") // Schema and table names are restricted to lowercase letters,
 // digits and underscores.

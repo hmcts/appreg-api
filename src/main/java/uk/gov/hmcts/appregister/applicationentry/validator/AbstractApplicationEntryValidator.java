@@ -522,6 +522,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         return applicationCode.getFeeDue() == YesOrNo.YES;
     }
 
+    @SuppressWarnings("java:S1172")
     protected boolean isRetainedFeeStatusAllowed(
             ApplicationCode applicationCode, T validatable, List<FeeStatus> feeStatuses) {
         return false;

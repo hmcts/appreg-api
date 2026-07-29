@@ -33,7 +33,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.8.0'
+  id 'com.diffplug.spotless' version '8.9.0'
   id 'org.openrewrite.rewrite' version '7.37.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
@@ -46,7 +46,7 @@ ext {
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.8.0'
+  toolVersion = '13.9.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0

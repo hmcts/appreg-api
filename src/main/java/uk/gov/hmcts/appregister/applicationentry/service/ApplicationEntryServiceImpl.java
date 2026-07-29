@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
@@ -44,6 +44,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkActionPreviewValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -121,7 +122,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
@@ -1030,129 +1031,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         try {
             BulkUpdateResponseDto response =
                     bulkUpdateFeesValidator.validate(
-                            payload,
-                            (req, success) -> {
-                                List<ApplicationListEntry> entries =
-                                        new ArrayList<>(success.getEntries());
-                                entries.sort(
-                                        Comparator.comparing(
-                                                ApplicationListEntry::getSequenceNumber));
-                                List<BulkFeeDetailsDto> feeDetails =
-                                        req.data().getFeeDetails().orElse(List.of());
-                                boolean hasOffsiteFee =
-                                        Boolean.TRUE.equals(
-                                                req.data()
-                                                        .getHasOffsiteFee()
-                                                        .orElse(Boolean.FALSE));
-                                Supplier<Fee> offsiteFeeSupplier =
-                                        offsiteFeeSupplier(hasOffsiteFee);
-                                List<UUID> entryUuids =
-                                        entries.stream()
-                                                .map(ApplicationListEntry::getUuid)
-                                                .toList();
-                                Map<Long, UUID> entryUuidsById =
-                                        entries.stream()
-                                                .collect(
-                                                        Collectors.toMap(
-                                                                ApplicationListEntry::getId,
-                                                                ApplicationListEntry::getUuid));
-                                List<AppListEntryFeeStatus> existingFeeStatuses =
-                                        appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(
-                                                entryUuids);
-                                Set<Long> entryIdsWithOffsiteMapping =
-                                        hasOffsiteFee
-                                                ? getEntryIdsWithOffsiteMapping(entries)
-                                                : Set.of();
-                                List<AppListEntryFeeStatus> feeStatusesToCreate =
-                                        new ArrayList<>(entries.size() * feeDetails.size());
-                                List<AppListEntryFeeId> offsiteFeeMappingsToCreate =
-                                        new ArrayList<>();
-
-                                if (!feeDetails.isEmpty()) {
-                                    for (ApplicationListEntry entry : entries) {
-                                        appendFeeDetailsForEntry(
-                                                entry,
-                                                feeDetails,
-                                                hasOffsiteFee,
-                                                offsiteFeeSupplier,
-                                                entryIdsWithOffsiteMapping,
-                                                feeStatusesToCreate,
-                                                offsiteFeeMappingsToCreate);
-                                    }
-                                } else if (hasOffsiteFee) {
-                                    for (ApplicationListEntry entry : entries) {
-                                        ensureOffsiteFeeMapping(
-                                                entry,
-                                                offsiteFeeSupplier,
-                                                entryIdsWithOffsiteMapping,
-                                                offsiteFeeMappingsToCreate);
-                                    }
-                                } else if (!hasOffsiteFee) {
-                                    for (ApplicationListEntry entry : entries) {
-                                        deleteOffsiteFeeForEntry(entry);
-                                    }
-                                }
-
-                                var oldAudit =
-                                        new BulkUpdateFeesAudit(
-                                                applicationListId(entries),
-                                                listId,
-                                                entryUuids,
-                                                entries.size(),
-                                                BulkUpdateFeesAudit.formatExistingFeeStatuses(
-                                                        existingFeeStatuses),
-                                                BulkUpdateFeesAudit.formatOffsiteEntryIds(
-                                                        entryIdsWithOffsiteMapping,
-                                                        entryUuidsById));
-
-                                int updatedCount = entries.size();
-                                Set<Long> updatedOffsiteEntryIds =
-                                        new HashSet<>(entryIdsWithOffsiteMapping);
-                                offsiteFeeMappingsToCreate.stream()
-                                        .map(AppListEntryFeeId::getAppListEntryId)
-                                        .forEach(updatedOffsiteEntryIds::add);
-                                var newAudit =
-                                        new BulkUpdateFeesAudit(
-                                                applicationListId(entries),
-                                                listId,
-                                                entryUuids,
-                                                entries.size(),
-                                                BulkUpdateFeesAudit.formatRequestedFeeDetails(
-                                                        feeDetails,
-                                                        req.data()
-                                                                .getHasOffsiteFee()
-                                                                .orElse(Boolean.FALSE)),
-                                                BulkUpdateFeesAudit.formatOffsiteEntryIds(
-                                                        updatedOffsiteEntryIds, entryUuidsById));
-
-                                return auditService.processAudit(
-                                        oldAudit,
-                                        AppListEntryAuditOperation.BULK_UPDATE_FEES,
-                                        ignored -> {
-                                            if (!feeStatusesToCreate.isEmpty()) {
-                                                appListEntryFeeStatusRepository.saveAll(
-                                                        feeStatusesToCreate);
-                                            }
-
-                                            if (!offsiteFeeMappingsToCreate.isEmpty()) {
-                                                appListEntryFeeRepository.saveAll(
-                                                        offsiteFeeMappingsToCreate);
-                                            }
-
-                                            var bulkUpdateResponse =
-                                                    new BulkUpdateResponseDto()
-                                                            .totalCount(
-                                                                    req.data().getEntryIds().size())
-                                                            .updatedCount(updatedCount)
-                                                            .status(
-                                                                    BulkUpdateResponseDto.StatusEnum
-                                                                            .SUCCEEDED);
-
-                                            return Optional.of(
-                                                    new AuditableResult<>(
-                                                            bulkUpdateResponse, newAudit));
-                                        });
-                            });
+                            payload, (req, success) -> processBulkFeeUpdate(req, success, listId));
 
             long durationNanos = System.nanoTime() - startNanos;
             recordBulkFeeUpdateMetrics(
@@ -1221,6 +1100,150 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
     }
 
+    private BulkUpdateResponseDto processBulkFeeUpdate(
+            BulkUpdateFeesPayload req, BulkUpdateFeesValidationSuccess success, UUID listId) {
+        List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
+        entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+
+        var feeUpdateContext = prepareBulkFeeUpdateContext(req, entries);
+        applyRequestedFeeChanges(entries, feeUpdateContext);
+
+        var oldAudit = buildExistingFeesAudit(listId, entries, feeUpdateContext);
+        var newAudit = buildRequestedFeesAudit(listId, req, entries, feeUpdateContext);
+
+        return auditService.processAudit(
+                oldAudit,
+                AppListEntryAuditOperation.BULK_UPDATE_FEES,
+                ignored -> persistBulkFeeUpdate(req, entries, feeUpdateContext, newAudit));
+    }
+
+    private BulkFeeUpdateContext prepareBulkFeeUpdateContext(
+            BulkUpdateFeesPayload req, List<ApplicationListEntry> entries) {
+        List<BulkFeeDetailsDto> feeDetails = req.data().getFeeDetails().orElse(List.of());
+        boolean hasOffsiteFee =
+                Boolean.TRUE.equals(req.data().getHasOffsiteFee().orElse(Boolean.FALSE));
+        Supplier<Fee> offsiteFeeSupplier = offsiteFeeSupplier(hasOffsiteFee);
+        List<UUID> entryUuids = entries.stream().map(ApplicationListEntry::getUuid).toList();
+        Map<Long, UUID> entryUuidsById =
+                entries.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ApplicationListEntry::getId,
+                                        ApplicationListEntry::getUuid));
+        List<AppListEntryFeeStatus> existingFeeStatuses =
+                appListEntryFeeStatusRepository.findByAppListEntry_UuidIn(entryUuids);
+        Set<Long> entryIdsWithOffsiteMapping =
+                hasOffsiteFee ? getEntryIdsWithOffsiteMapping(entries) : Set.of();
+        List<AppListEntryFeeStatus> feeStatusesToCreate =
+                new ArrayList<>(entries.size() * feeDetails.size());
+        List<AppListEntryFeeId> offsiteFeeMappingsToCreate = new ArrayList<>();
+
+        return new BulkFeeUpdateContext(
+                feeDetails,
+                hasOffsiteFee,
+                offsiteFeeSupplier,
+                entryUuids,
+                entryUuidsById,
+                existingFeeStatuses,
+                entryIdsWithOffsiteMapping,
+                feeStatusesToCreate,
+                offsiteFeeMappingsToCreate);
+    }
+
+    private void applyRequestedFeeChanges(
+            List<ApplicationListEntry> entries, BulkFeeUpdateContext feeUpdateContext) {
+        if (!feeUpdateContext.feeDetails().isEmpty()) {
+            for (ApplicationListEntry entry : entries) {
+                appendFeeDetailsForEntry(
+                        entry,
+                        feeUpdateContext.feeDetails(),
+                        feeUpdateContext.hasOffsiteFee(),
+                        feeUpdateContext.offsiteFeeSupplier(),
+                        feeUpdateContext.entryIdsWithOffsiteMapping(),
+                        feeUpdateContext.feeStatusesToCreate(),
+                        feeUpdateContext.offsiteFeeMappingsToCreate());
+            }
+            return;
+        }
+
+        if (feeUpdateContext.hasOffsiteFee()) {
+            for (ApplicationListEntry entry : entries) {
+                ensureOffsiteFeeMapping(
+                        entry,
+                        feeUpdateContext.offsiteFeeSupplier(),
+                        feeUpdateContext.entryIdsWithOffsiteMapping(),
+                        feeUpdateContext.offsiteFeeMappingsToCreate());
+            }
+            return;
+        }
+
+        for (ApplicationListEntry entry : entries) {
+            deleteOffsiteFeeForEntry(entry);
+        }
+    }
+
+    private BulkUpdateFeesAudit buildExistingFeesAudit(
+            UUID listId,
+            List<ApplicationListEntry> entries,
+            BulkFeeUpdateContext feeUpdateContext) {
+        return new BulkUpdateFeesAudit(
+                applicationListId(entries),
+                listId,
+                feeUpdateContext.entryUuids(),
+                entries.size(),
+                BulkUpdateFeesAudit.formatExistingFeeStatuses(
+                        feeUpdateContext.existingFeeStatuses()),
+                BulkUpdateFeesAudit.formatOffsiteEntryIds(
+                        feeUpdateContext.entryIdsWithOffsiteMapping(),
+                        feeUpdateContext.entryUuidsById()));
+    }
+
+    private BulkUpdateFeesAudit buildRequestedFeesAudit(
+            UUID listId,
+            BulkUpdateFeesPayload req,
+            List<ApplicationListEntry> entries,
+            BulkFeeUpdateContext feeUpdateContext) {
+        Set<Long> updatedOffsiteEntryIds =
+                new HashSet<>(feeUpdateContext.entryIdsWithOffsiteMapping());
+        feeUpdateContext.offsiteFeeMappingsToCreate().stream()
+                .map(AppListEntryFeeId::getAppListEntryId)
+                .forEach(updatedOffsiteEntryIds::add);
+
+        return new BulkUpdateFeesAudit(
+                applicationListId(entries),
+                listId,
+                feeUpdateContext.entryUuids(),
+                entries.size(),
+                BulkUpdateFeesAudit.formatRequestedFeeDetails(
+                        feeUpdateContext.feeDetails(),
+                        req.data().getHasOffsiteFee().orElse(Boolean.FALSE)),
+                BulkUpdateFeesAudit.formatOffsiteEntryIds(
+                        updatedOffsiteEntryIds, feeUpdateContext.entryUuidsById()));
+    }
+
+    private Optional<AuditableResult<BulkUpdateResponseDto, BulkUpdateFeesAudit>>
+            persistBulkFeeUpdate(
+                    BulkUpdateFeesPayload req,
+                    List<ApplicationListEntry> entries,
+                    BulkFeeUpdateContext feeUpdateContext,
+                    BulkUpdateFeesAudit newAudit) {
+        if (!feeUpdateContext.feeStatusesToCreate().isEmpty()) {
+            appListEntryFeeStatusRepository.saveAll(feeUpdateContext.feeStatusesToCreate());
+        }
+
+        if (!feeUpdateContext.offsiteFeeMappingsToCreate().isEmpty()) {
+            appListEntryFeeRepository.saveAll(feeUpdateContext.offsiteFeeMappingsToCreate());
+        }
+
+        var bulkUpdateResponse =
+                new BulkUpdateResponseDto()
+                        .totalCount(req.data().getEntryIds().size())
+                        .updatedCount(entries.size())
+                        .status(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+
+        return Optional.of(new AuditableResult<>(bulkUpdateResponse, newAudit));
+    }
+
     private void appendFeeDetailsForEntry(
             ApplicationListEntry entry,
             List<BulkFeeDetailsDto> feeDetails,
@@ -1241,6 +1264,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     offsiteFeeMappingsToCreate);
         }
     }
+
+    private record BulkFeeUpdateContext(
+            List<BulkFeeDetailsDto> feeDetails,
+            boolean hasOffsiteFee,
+            Supplier<Fee> offsiteFeeSupplier,
+            List<UUID> entryUuids,
+            Map<Long, UUID> entryUuidsById,
+            List<AppListEntryFeeStatus> existingFeeStatuses,
+            Set<Long> entryIdsWithOffsiteMapping,
+            List<AppListEntryFeeStatus> feeStatusesToCreate,
+            List<AppListEntryFeeId> offsiteFeeMappingsToCreate) {}
 
     /**
      * creates the fees for the entry.

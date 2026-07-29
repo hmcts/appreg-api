@@ -7,7 +7,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
  * NationalCourtHouseRepository} and mapping entities into API DTOs. All operations are executed
  * within an audited context using {@link AuditOperationService}.
  */
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
