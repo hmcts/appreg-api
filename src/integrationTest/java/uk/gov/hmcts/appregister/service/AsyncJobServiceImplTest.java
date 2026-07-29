@@ -27,7 +27,7 @@ import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.csv.ApplicationCodeCsvPojo;
@@ -116,7 +116,7 @@ class AsyncJobServiceImplTest extends BaseIntegration {
 
             // ensure we succeeded
             Assertions.assertEquals(
-                    JobStatus1.COMPLETED,
+                    JobStatus.COMPLETED,
                     asyncJobService.getJobStatus(response.getJobId()).get().getStatus());
         }
     }
@@ -174,7 +174,7 @@ class AsyncJobServiceImplTest extends BaseIntegration {
 
         // ensure we succeeded
         Assertions.assertEquals(
-                JobStatus1.COMPLETED,
+                JobStatus.COMPLETED,
                 asyncJobService.getJobStatus(response.getJobId()).get().getStatus());
 
         // lets make sure the generated clob in the database is the same as the original
@@ -221,7 +221,7 @@ class AsyncJobServiceImplTest extends BaseIntegration {
 
         // ensure we succeeded
         Assertions.assertEquals(
-                JobStatus1.FAILED,
+                JobStatus.FAILED,
                 asyncJobService.getJobStatus(response.getJobId()).get().getStatus());
 
         Assertions.assertTrue(

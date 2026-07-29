@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
@@ -183,7 +183,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     }
 
                     return jobResponse.as(JobAcknowledgement.class).getStatus()
-                            == JobStatus1.COMPLETED;
+                            == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -342,7 +342,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.FEES_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -609,7 +609,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.SEARCH_WARRANTS_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
         Response downloadResponse =
@@ -745,7 +745,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.DURATION_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -888,7 +888,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -953,7 +953,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1040,7 +1040,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1180,7 +1180,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1539,7 +1539,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(
                             JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1633,7 +1633,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(
                             JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1698,7 +1698,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(
                             JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1788,7 +1788,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     }
 
                     return jobResponse.as(JobAcknowledgement.class).getStatus()
-                            == JobStatus1.COMPLETED;
+                            == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -1904,7 +1904,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.LIST_MAINTENANCE_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -3258,7 +3258,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                                     token);
                     return jobResponse.statusCode() == 200
                             && jobResponse.as(JobAcknowledgement.class).getStatus()
-                                    == JobStatus1.COMPLETED;
+                                    == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -3297,7 +3297,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                                     token);
                     return jobResponse.statusCode() == 200
                             && jobResponse.as(JobAcknowledgement.class).getStatus()
-                                    == JobStatus1.COMPLETED;
+                                    == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -3335,7 +3335,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                                     token);
                     return jobResponse.statusCode() == 200
                             && jobResponse.as(JobAcknowledgement.class).getStatus()
-                                    == JobStatus1.COMPLETED;
+                                    == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
     }
@@ -3369,7 +3369,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     }
 
                     return jobResponse.as(JobAcknowledgement.class).getStatus()
-                            == JobStatus1.COMPLETED;
+                            == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 
@@ -3451,7 +3451,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                     Assertions.assertEquals(createdJob.getId(), job.getId());
                     Assertions.assertEquals(JobType.FEES_REPORT, job.getType());
 
-                    return job.getStatus() == JobStatus1.COMPLETED;
+                    return job.getStatus() == JobStatus.COMPLETED;
                 },
                 Duration.ofSeconds(30));
 

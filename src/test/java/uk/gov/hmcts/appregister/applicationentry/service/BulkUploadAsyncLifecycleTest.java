@@ -49,7 +49,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -116,7 +116,7 @@ class BulkUploadAsyncLifecycleTest {
     void givenNoRows_whenValidating_thenThrowsEmptyFileError() {
         val event =
                 new AsyncJobLifecycleEvent<BulkUploadRow>(
-                        null, List.of(), new JobContext(), JobStatus1.VALIDATING);
+                        null, List.of(), new JobContext(), JobStatus.VALIDATING);
 
         val exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
@@ -133,13 +133,13 @@ class BulkUploadAsyncLifecycleTest {
                         new JobStatusResponse(
                                 UUID.randomUUID(),
                                 JobType.BULK_UPLOAD_ENTRIES,
-                                JobStatus1.VALIDATING,
+                                JobStatus.VALIDATING,
                                 "user",
                                 "error",
                                 persistenceService),
                         null,
                         context,
-                        JobStatus1.FAILED);
+                        JobStatus.FAILED);
 
         lifecycle.setCSVFile(csvFile);
         lifecycle.failed(event);
@@ -163,7 +163,7 @@ class BulkUploadAsyncLifecycleTest {
         JobContext context = new JobContext();
         context.logFailure("Processing failed for row 2");
         AsyncJobLifecycleEvent<BulkUploadRow> event =
-                new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED);
+                new AsyncJobLifecycleEvent<>(null, null, context, JobStatus.FAILED);
 
         lifecycle.failed(event);
 
@@ -419,10 +419,10 @@ class BulkUploadAsyncLifecycleTest {
         context.logFailure("second header validation failure");
 
         lifecycle.setCSVFile(csvFile);
+        var validationEvent = event(row, context);
         AppRegistryException exception =
                 assertThrows(
-                        AppRegistryException.class,
-                        () -> lifecycle.validating(event(row, context)));
+                        AppRegistryException.class, () -> lifecycle.validating(validationEvent));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -498,10 +498,12 @@ class BulkUploadAsyncLifecycleTest {
                 .when(validationSession)
                 .validate(any(), any());
         context = new JobContext();
-        AsyncJobLifecycleEvent<BulkUploadRow> event2 = event(respondentRow, context);
+        var respondentEvent = event(respondentRow, context);
 
         lifecycle.setCSVFile(csvFile);
-        exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event2));
+        exception =
+                assertThrows(
+                        AppRegistryException.class, () -> lifecycle.validating(respondentEvent));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -527,10 +529,10 @@ class BulkUploadAsyncLifecycleTest {
         JobContext context = new JobContext();
         lifecycle.validating(
                 new AsyncJobLifecycleEvent<>(
-                        null, List.of(firstRow, secondRow), context, JobStatus1.VALIDATING));
+                        null, List.of(firstRow, secondRow), context, JobStatus.VALIDATING));
         AsyncJobLifecycleEvent<BulkUploadRow> event =
                 new AsyncJobLifecycleEvent<>(
-                        null, List.of(firstRow, secondRow), context, JobStatus1.PROCESSING);
+                        null, List.of(firstRow, secondRow), context, JobStatus.PROCESSING);
         when(bulkImportService.persistPage(any(), any()))
                 .thenThrow(new IllegalStateException("boom"));
 
@@ -552,23 +554,23 @@ class BulkUploadAsyncLifecycleTest {
                 JobStatusResponse.builder()
                         .uuid(jobId)
                         .type(JobType.BULK_UPLOAD_ENTRIES)
-                        .status(JobStatus1.PROCESSING)
+                        .status(JobStatus.PROCESSING)
                         .userName("user")
                         .build();
         var duplicate = validOrganisationRow();
         var context = new JobContext();
         lifecycle.received(
-                new AsyncJobLifecycleEvent<>(response, null, context, JobStatus1.RECEIVED));
+                new AsyncJobLifecycleEvent<>(response, null, context, JobStatus.RECEIVED));
         lifecycle.validating(
                 new AsyncJobLifecycleEvent<>(
-                        response, List.of(duplicate, duplicate), context, JobStatus1.VALIDATING));
+                        response, List.of(duplicate, duplicate), context, JobStatus.VALIDATING));
         when(bulkImportService.persistPage(eq(jobId), any())).thenReturn(2);
 
         lifecycle.processing(
                 new AsyncJobLifecycleEvent<>(
-                        response, List.of(duplicate, duplicate), context, JobStatus1.PROCESSING));
+                        response, List.of(duplicate, duplicate), context, JobStatus.PROCESSING));
         lifecycle.completed(
-                new AsyncJobLifecycleEvent<>(response, null, context, JobStatus1.COMPLETED));
+                new AsyncJobLifecycleEvent<>(response, null, context, JobStatus.COMPLETED));
 
         var pageCaptor = ArgumentCaptor.<List<ValidatedBulkImportEntry>>captor();
         verify(bulkImportService).persistPage(eq(jobId), pageCaptor.capture());
@@ -593,22 +595,22 @@ class BulkUploadAsyncLifecycleTest {
                 JobStatusResponse.builder()
                         .uuid(jobId)
                         .type(JobType.BULK_UPLOAD_ENTRIES)
-                        .status(JobStatus1.PROCESSING)
+                        .status(JobStatus.PROCESSING)
                         .userName("user")
                         .build();
         var context = new JobContext();
         var rows = List.of(validOrganisationRow(), validOrganisationRow(), validOrganisationRow());
         lifecycle.validating(
-                new AsyncJobLifecycleEvent<>(response, rows, context, JobStatus1.VALIDATING));
+                new AsyncJobLifecycleEvent<>(response, rows, context, JobStatus.VALIDATING));
         when(bulkImportService.persistPage(eq(jobId), any()))
                 .thenAnswer(invocation -> invocation.<List<?>>getArgument(1).size());
 
         lifecycle.processing(
                 new AsyncJobLifecycleEvent<>(
-                        response, rows.subList(0, 2), context, JobStatus1.PROCESSING));
+                        response, rows.subList(0, 2), context, JobStatus.PROCESSING));
         lifecycle.processing(
                 new AsyncJobLifecycleEvent<>(
-                        response, rows.subList(2, 3), context, JobStatus1.PROCESSING));
+                        response, rows.subList(2, 3), context, JobStatus.PROCESSING));
 
         var pageCaptor = ArgumentCaptor.<List<ValidatedBulkImportEntry>>captor();
         verify(bulkImportService, times(2)).persistPage(eq(jobId), pageCaptor.capture());
@@ -682,7 +684,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "HEADER_ERROR"))));
 
-        lifecycle.failed(new AsyncJobLifecycleEvent<>(null, null, context, JobStatus1.FAILED));
+        lifecycle.failed(new AsyncJobLifecycleEvent<>(null, null, context, JobStatus.FAILED));
 
         assertThat(context.getValidationFailureMessages())
                 .containsExactly(
@@ -918,13 +920,13 @@ class BulkUploadAsyncLifecycleTest {
                 new JobStatusResponse(
                         UUID.randomUUID(),
                         JobType.BULK_UPLOAD_ENTRIES,
-                        JobStatus1.VALIDATING,
+                        JobStatus.VALIDATING,
                         "user",
                         "error",
                         persistenceService),
                 List.of(row),
                 context,
-                JobStatus1.VALIDATING);
+                JobStatus.VALIDATING);
     }
 
     private static BulkUploadRow validOrganisationRow() {

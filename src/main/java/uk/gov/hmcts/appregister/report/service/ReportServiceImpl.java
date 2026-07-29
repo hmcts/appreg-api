@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
@@ -309,7 +309,7 @@ public class ReportServiceImpl implements ReportService {
                 ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT,
                 unused -> {
                     JobStatusResponse jobStatusResponse = jobService.getJobStatusById(jobId);
-                    if (jobStatusResponse.getStatus() != JobStatus1.COMPLETED
+                    if (jobStatusResponse.getStatus() != JobStatus.COMPLETED
                             && jobStatusResponse.getType() != JobType.BULK_UPLOAD_ENTRIES) {
                         throw new AppRegistryException(
                                 JobError.JOB_STATE_IS_NOT_SUITABLE_FOR_DOWNLOAD,

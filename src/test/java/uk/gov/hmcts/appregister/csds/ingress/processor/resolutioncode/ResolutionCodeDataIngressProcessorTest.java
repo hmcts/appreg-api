@@ -277,8 +277,8 @@ class ResolutionCodeDataIngressProcessorTest {
 
     @Test
     void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addRcId() {
-        var record = createSourceRecord(3L, "RC3", "Title 3", "Wording 3", 1L);
-        record.remove(
+        var sourceRecord = createSourceRecord(3L, "RC3", "Title 3", "Wording 3", 1L);
+        sourceRecord.remove(
                 List.of(
                         "Notes",
                         "AuthoringStatus",
@@ -295,7 +295,7 @@ class ResolutionCodeDataIngressProcessorTest {
                         "FID_ReleasePackage",
                         "Updator"));
 
-        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+        var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
         assertThat(
                         extractRecordsFromPage(preProcessed.getFirst())
@@ -497,18 +497,18 @@ class ResolutionCodeDataIngressProcessorTest {
         assertThat(diffResult.diffRecords()).hasSize(2);
         assertThat(diffResult.diffRecords())
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.UPDATE);
-                            assertThat(record.existing()).isNotNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id()).isEqualTo(345L);
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.UPDATE);
+                            assertThat(diffRecord.existing()).isNotNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id()).isEqualTo(345L);
                         })
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.INSERT);
-                            assertThat(record.existing()).isNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id())
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
+                            assertThat(diffRecord.existing()).isNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id())
                                     .isEqualTo(ResolutionCodeIngressRecord.calculateId(null, 3L));
                         });
     }
@@ -566,8 +566,9 @@ class ResolutionCodeDataIngressProcessorTest {
     @Test
     void given_queryResponseMissingRecordsArray_when_apply_then_throwException() {
         var invalidPage = OBJECT_MAPPER.createObjectNode().put("unexpected", true);
+        List<JsonNode> invalidPages = List.of(invalidPage);
 
-        assertThatThrownBy(() -> processor.apply(List.of(invalidPage)))
+        assertThatThrownBy(() -> processor.apply(invalidPages))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("records array");
     }
@@ -612,8 +613,9 @@ class ResolutionCodeDataIngressProcessorTest {
                                         345L, 2L, "R2", "Title 2", "Wording 2", 2L),
                                 createSourceRecordWithPssrcid(
                                         345L, 3L, "R3", "Title 3", "Wording 3", 1L)));
+        var preProcessed = processor.preProcess(processedData);
 
-        assertThatThrownBy(() -> processor.apply(processor.preProcess(processedData)))
+        assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("Duplicate incoming RC_ID 345");
         assertThat(logCaptor.getErrorLogs())
@@ -669,8 +671,8 @@ class ResolutionCodeDataIngressProcessorTest {
     private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
-        for (var record : records) {
-            recordsArray.add(record);
+        for (var sourceRecord : records) {
+            recordsArray.add(sourceRecord);
         }
         return page;
     }
@@ -688,7 +690,7 @@ class ResolutionCodeDataIngressProcessorTest {
             Long version,
             String startDate,
             String endDate) {
-        var record =
+        var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("Code", code)
@@ -716,21 +718,22 @@ class ResolutionCodeDataIngressProcessorTest {
                         .putNull("FID_ReleasePackage")
                         .put("Updator", "migration");
         if (id == null) {
-            record.putNull("ResolutionCodeID");
+            sourceRecord.putNull("ResolutionCodeID");
         } else {
-            record.put("ResolutionCodeID", id);
+            sourceRecord.put("ResolutionCodeID", id);
         }
         if (endDate != null) {
-            record.put("EndDate", endDate);
+            sourceRecord.put("EndDate", endDate);
         }
-        return record;
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithoutResolutionCodeId(
             Long pssrcid, String code, String title, String wording, Long version) {
-        var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
-        record.put("PSSRCID", pssrcid);
-        return record;
+        var sourceRecord =
+                createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
+        sourceRecord.put("PSSRCID", pssrcid);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssrcid(
@@ -740,9 +743,9 @@ class ResolutionCodeDataIngressProcessorTest {
             String title,
             String wording,
             Long version) {
-        var record = createSourceRecord(resolutionCodeId, code, title, wording, version);
-        record.put("PSSRCID", pssrcid);
-        return record;
+        var sourceRecord = createSourceRecord(resolutionCodeId, code, title, wording, version);
+        sourceRecord.put("PSSRCID", pssrcid);
+        return sourceRecord;
     }
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {

@@ -547,18 +547,18 @@ class ApplicationCodeDataIngressProcessorTest {
         assertThat(diffResult.diffRecords()).hasSize(2);
         assertThat(diffResult.diffRecords())
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.UPDATE);
-                            assertThat(record.existing()).isNotNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id()).isEqualTo(345L);
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.UPDATE);
+                            assertThat(diffRecord.existing()).isNotNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id()).isEqualTo(345L);
                         })
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.INSERT);
-                            assertThat(record.existing()).isNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id())
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
+                            assertThat(diffRecord.existing()).isNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id())
                                     .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
                         });
     }
@@ -625,8 +625,9 @@ class ApplicationCodeDataIngressProcessorTest {
     @Test
     void given_queryResponseMissingRecordsArray_when_apply_then_throwException() {
         var invalidPage = OBJECT_MAPPER.createObjectNode().put("unexpected", true);
+        List<JsonNode> invalidPages = List.of(invalidPage);
 
-        assertThatThrownBy(() -> processor.apply(List.of(invalidPage)))
+        assertThatThrownBy(() -> processor.apply(invalidPages))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("records array");
     }
@@ -660,8 +661,9 @@ class ApplicationCodeDataIngressProcessorTest {
                                         345L, "A3", "Title 3", "Wording 3", 1L),
                                 createSourceRecordWithoutApplicationCodeId(
                                         345L, "A4", "Title 4", "Wording 4", 2L)));
+        var preProcessed = processor.preProcess(processedData);
 
-        assertThatThrownBy(() -> processor.apply(processor.preProcess(processedData)))
+        assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("Duplicate incoming AC_ID 345");
         assertThat(logCaptor.getErrorLogs())
@@ -685,20 +687,20 @@ class ApplicationCodeDataIngressProcessorTest {
 
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(record -> record.get("AC_ID").longValue())
+                .extracting(sourceRecord -> sourceRecord.get("AC_ID").longValue())
                 .containsExactly(
                         ApplicationCodeIngressRecord.calculateId(null, 3L),
                         ApplicationCodeIngressRecord.calculateId(null, 1L),
                         ApplicationCodeIngressRecord.calculateId(null, 2L));
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(record -> record.get("ApplicationCodeID").longValue())
+                .extracting(sourceRecord -> sourceRecord.get("ApplicationCodeID").longValue())
                 .containsExactly(3L, 1L, 2L);
     }
 
     @Test
     void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addAcId() {
-        var record = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
-        record.remove(
+        var sourceRecord = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
+        sourceRecord.remove(
                 List.of(
                         "Notes",
                         "AuthoringStatus",
@@ -715,7 +717,7 @@ class ApplicationCodeDataIngressProcessorTest {
                         "FID_ReleasePackage",
                         "Updator"));
 
-        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+        var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
         assertThat(
                         extractRecordsFromPage(preProcessed.getFirst())
@@ -797,8 +799,8 @@ class ApplicationCodeDataIngressProcessorTest {
     private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
-        for (var record : records) {
-            recordsArray.add(record);
+        for (var sourceRecord : records) {
+            recordsArray.add(sourceRecord);
         }
         return page;
     }
@@ -822,7 +824,7 @@ class ApplicationCodeDataIngressProcessorTest {
             Long version,
             String startDate,
             String endDate) {
-        var record =
+        var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("Code", code)
@@ -851,24 +853,25 @@ class ApplicationCodeDataIngressProcessorTest {
                         .putNull("FID_ReleasePackage")
                         .put("Updator", "migration");
         if (id == null) {
-            record.putNull("ApplicationCodeID");
+            sourceRecord.putNull("ApplicationCodeID");
         } else {
-            record.put("ApplicationCodeID", id);
+            sourceRecord.put("ApplicationCodeID", id);
         }
         if (endDate == null) {
-            record.putNull("EndDate");
-            return record;
+            sourceRecord.putNull("EndDate");
+            return sourceRecord;
         }
 
-        record.put("EndDate", endDate);
-        return record;
+        sourceRecord.put("EndDate", endDate);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithoutApplicationCodeId(
             Long pssacid, String code, String title, String wording, Long version) {
-        var record = createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
-        record.put("PSSApplicationCodeID", pssacid);
-        return record;
+        var sourceRecord =
+                createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
+        sourceRecord.put("PSSApplicationCodeID", pssacid);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssacid(
@@ -878,9 +881,9 @@ class ApplicationCodeDataIngressProcessorTest {
             String title,
             String wording,
             Long version) {
-        var record = createSourceRecord(applicationCodeId, code, title, wording, version);
-        record.put("PSSApplicationCodeID", pssacid);
-        return record;
+        var sourceRecord = createSourceRecord(applicationCodeId, code, title, wording, version);
+        sourceRecord.put("PSSApplicationCodeID", pssacid);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssacid(
@@ -891,9 +894,10 @@ class ApplicationCodeDataIngressProcessorTest {
             Long version,
             String startDate,
             String endDate) {
-        var record = createSourceRecord(null, code, title, wording, version, startDate, endDate);
-        record.put("PSSApplicationCodeID", pssacid);
-        return record;
+        var sourceRecord =
+                createSourceRecord(null, code, title, wording, version, startDate, endDate);
+        sourceRecord.put("PSSApplicationCodeID", pssacid);
+        return sourceRecord;
     }
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {

@@ -12,10 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 class AdminAPIControllerTest {
     private final AdminAPIService adminAPIService = mock(AdminAPIService.class);
@@ -71,12 +71,12 @@ class AdminAPIControllerTest {
 
     @Test
     void getJobStatus_delegatesAndReturnsBody() {
-        var body = new JobStatus().enabled(true);
+        var body = new AdminJobStatus().enabled(true);
         when(adminAPIService.getDatabaseJobStatusByName(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB))
                 .thenReturn(body);
 
-        ResponseEntity<JobStatus> response =
+        ResponseEntity<AdminJobStatus> response =
                 controller.getJobStatus(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
 
         verify(adminAPIService)

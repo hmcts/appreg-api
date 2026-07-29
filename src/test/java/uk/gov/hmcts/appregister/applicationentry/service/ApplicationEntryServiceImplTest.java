@@ -186,6 +186,7 @@ import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("java:S9024")
 class ApplicationEntryServiceImplTest {
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
@@ -3005,14 +3006,11 @@ class ApplicationEntryServiceImplTest {
     @Test
     void given_idsSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        var request = bulkActionPreviewRequest(UUID.randomUUID(), UUID.randomUUID());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.bulkActionPreview(
-                                        bulkActionPreviewRequest(
-                                                UUID.randomUUID(), UUID.randomUUID())));
+                        AppRegistryException.class, () -> service.bulkActionPreview(request));
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
@@ -3179,14 +3177,11 @@ class ApplicationEntryServiceImplTest {
                 bulkActionPreviewProjection(UUID.randomUUID(), 1L);
 
         stubBulkActionPreviewSummaryPage(2, projection);
+        var request = bulkActionPreviewFilterRequest(new EntryGetFilterDto(), List.of(), List.of());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.bulkActionPreview(
-                                        bulkActionPreviewFilterRequest(
-                                                new EntryGetFilterDto(), List.of(), List.of())));
+                        AppRegistryException.class, () -> service.bulkActionPreview(request));
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());

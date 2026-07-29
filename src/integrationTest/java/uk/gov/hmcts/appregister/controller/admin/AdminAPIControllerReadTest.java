@@ -10,8 +10,8 @@ import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.admin.audit.AdminAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
     @Test
@@ -24,7 +24,7 @@ class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
                         createAdminToken().fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
-        var jobStatus = responseSpec.getBody().as(JobStatus.class);
+        var jobStatus = responseSpec.getBody().as(AdminJobStatus.class);
         assertEquals(true, jobStatus.getEnabled());
         assertNull(jobStatus.getLastRan());
     }

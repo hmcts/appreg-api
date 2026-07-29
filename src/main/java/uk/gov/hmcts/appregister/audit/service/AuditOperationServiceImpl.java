@@ -6,7 +6,7 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
@@ -27,7 +27,7 @@ import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
  */
 @Slf4j
 @RequiredArgsConstructor
-@Component
+@Service
 public class AuditOperationServiceImpl implements AuditOperationService {
 
     /** The trace id name that is inserted by micrometer. */

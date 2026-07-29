@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.RowMapper;
@@ -22,11 +23,10 @@ class JdbcIngressTableReadServiceTest {
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
     @Mock private RowMapper<Object> rowMapper;
 
-    private JdbcIngressTableReadService service;
+    @InjectMocks private JdbcIngressTableReadService service;
 
     @BeforeEach
     void setUp() {
-        service = new JdbcIngressTableReadService(jdbcTemplate);
         ReflectionTestUtils.setField(service, "schema", "appreg");
     }
 

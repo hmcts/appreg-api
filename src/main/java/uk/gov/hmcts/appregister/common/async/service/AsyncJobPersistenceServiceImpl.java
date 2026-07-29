@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.async.DeleteableFileInputStream;
@@ -29,13 +29,13 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.JobStatusType;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 /**
  * A persistence layer to control the asynchronous job persistence.
  */
-@Component
+@Service
 @RequiredArgsConstructor
 public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceService {
     /** The schema from the Spring configuration. */
@@ -61,7 +61,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void setJobStatus(JobIdRequest jobType, JobStatus1 jobStatus) {
+    public void setJobStatus(JobIdRequest jobType, JobStatus jobStatus) {
         // do nothing
         AsyncJob asyncJob = asyncJobRepository.findByJobId(jobType.getId(), jobType.getUserName());
 
@@ -132,7 +132,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = IOException.class)
     public void writeClob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException {
         setClob(inputStream, jobIdRequest);
     }

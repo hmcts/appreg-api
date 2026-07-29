@@ -82,8 +82,6 @@ class StandardApplicantServiceTest {
 
     @Spy private PageMapper pageMapper = new PageMapper();
 
-    //    @Spy private CsvWriter<StandardApplicantCsvRow> csvWriter;
-
     @InjectMocks private StandardApplicationServiceImpl standardApplicantService;
 
     @BeforeEach
@@ -435,6 +433,7 @@ class StandardApplicantServiceTest {
                 requestPageable.getSort().and(Sort.by(Sort.Direction.ASC, StandardApplicant_.ID));
         val firstPrintPageable = PageRequest.of(0, 1000, stableSort);
         val secondPrintPageable = PageRequest.of(1, 1000, stableSort);
+        var pagingWrapper = PagingWrapper.of(List.of(), requestPageable);
 
         val firstPageRows =
                 IntStream.range(0, 1000)
@@ -454,12 +453,7 @@ class StandardApplicantServiceTest {
         assertThatThrownBy(
                         () ->
                                 standardApplicantService.print(
-                                        code,
-                                        name,
-                                        null,
-                                        from,
-                                        to,
-                                        PagingWrapper.of(List.of(), requestPageable)))
+                                        code, name, null, from, to, pagingWrapper))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("exceeds 1000 rows");
 

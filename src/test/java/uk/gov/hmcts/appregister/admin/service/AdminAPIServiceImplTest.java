@@ -29,8 +29,8 @@ import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyReposito
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 @ExtendWith(MockitoExtension.class)
 class AdminAPIServiceImplTest {
@@ -43,7 +43,7 @@ class AdminAPIServiceImplTest {
     @Test
     void getDatabaseJobStatusByName_returnsMappedStatus() {
         var databaseJob = new DatabaseJob();
-        var jobStatus = new JobStatus().enabled(true);
+        var jobStatus = new AdminJobStatus().enabled(true);
         when(databaseJobRepository.findByName(
                         AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
                 .thenReturn(databaseJob);

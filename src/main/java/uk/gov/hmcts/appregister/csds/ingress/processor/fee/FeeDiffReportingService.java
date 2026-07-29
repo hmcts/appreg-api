@@ -6,15 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReportingService;
 
-@Component
+@Service
 public class FeeDiffReportingService extends AbstractIngressDiffReportingService<FeeIngressRecord> {
     private static final long DEFAULT_FEE_VERSION = 1L;
     private static final String FEE_ID = "FEE_ID";
+    private static final String CSV_HEADER =
+            "pssFixedListId,civilFeeId,feeId,reference,description,amount,startDate,endDate,version\n";
     private final String reportingDir;
 
     public FeeDiffReportingService(CsdsIngressProperties properties) {
@@ -77,7 +79,7 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
 
     @Override
     protected String buildExistingCsv(Map<Long, FeeIngressRecord> existingById) {
-        var csv = new StringBuilder(csvHeader());
+        var csv = new StringBuilder(CSV_HEADER);
         existingById.values().stream()
                 .sorted(Comparator.comparing(FeeIngressRecord::id))
                 .map(this::toExistingCsvRow)
@@ -88,16 +90,12 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
     @Override
     protected String buildIncomingCsv(
             List<JsonNode> processedData, Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var csv = new StringBuilder(csvHeader());
+        var csv = new StringBuilder(CSV_HEADER);
         processedData.stream()
                 .flatMap(page -> recordsExtractor.apply(page).stream())
                 .map(this::toIncomingCsvRow)
                 .forEach(csv::append);
         return csv.toString();
-    }
-
-    private String csvHeader() {
-        return "pssFixedListId,civilFeeId,feeId,reference,description,amount,startDate,endDate,version\n";
     }
 
     @Override

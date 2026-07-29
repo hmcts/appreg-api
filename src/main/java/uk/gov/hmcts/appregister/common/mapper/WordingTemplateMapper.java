@@ -42,49 +42,82 @@ public class WordingTemplateMapper {
 
         // ensure we return the values if we have applied the template
         // else just return the parsed template details
-        if (appliedTemplateSupplier != null) {
-            log.debug("Parsing applied template");
-
-            // parse out the wording string assuming braces delimet each value
-            BraceSubstitutedSentence sentence =
-                    BraceSubstitutedSentence.withSubstitutedSentence(appliedTemplateSupplier.get());
-
-            List<String> appliedValues = sentence.getAppliedValues();
-            Templateable[] templateables = wordingTemplate.getTemplateableContents();
-
-            if (appliedValues.size() != templateables.length) {
-                log.warn(
-                        "Stored wording '{}' contains {} values but template '{}' expects {}."
-                                + " Filling what we can and leaving the rest blank.",
-                        appliedTemplateSupplier.get(),
-                        appliedValues.size(),
-                        wordingTemplateSupplier.get(),
-                        templateables.length);
-            }
-
-            if (validateStoredValues) {
-                for (int i = 0; i < templateables.length; i++) {
-                    String value = i < appliedValues.size() ? appliedValues.get(i) : "";
-                    wordingTemplate.substituteForTemplate(templateables[i], value);
-                }
-
-                // gets the template details with the values that are currently in the database
-                // for each key
-                return wordingTemplate.getDetail();
-            }
-
-            TemplateDetail detail = wordingTemplate.getDetail();
-            for (int i = 0; i < detail.getSubstitutionKeyConstraints().size(); i++) {
-                String value = i < appliedValues.size() ? appliedValues.get(i) : "";
-                detail.getSubstitutionKeyConstraints().get(i).setValue(value);
-            }
-
-            return detail;
-        } else {
+        if (appliedTemplateSupplier == null) {
             log.debug("No applied values to parse");
-
             return wordingTemplate.getDetail();
         }
+
+        return buildAppliedTemplateDetail(
+                wordingTemplateSupplier,
+                appliedTemplateSupplier,
+                validateStoredValues,
+                wordingTemplate);
+    }
+
+    private TemplateDetail buildAppliedTemplateDetail(
+            Supplier<String> wordingTemplateSupplier,
+            Supplier<String> appliedTemplateSupplier,
+            boolean validateStoredValues,
+            WordingTemplateSentence wordingTemplate) {
+        log.debug("Parsing applied template");
+
+        var appliedTemplate = appliedTemplateSupplier.get();
+        var appliedValues = parseAppliedValues(appliedTemplate);
+        var templateables = wordingTemplate.getTemplateableContents();
+
+        warnWhenAppliedValueCountDiffers(
+                appliedTemplate, appliedValues, wordingTemplateSupplier.get(), templateables);
+
+        if (validateStoredValues) {
+            applyStoredValues(wordingTemplate, templateables, appliedValues);
+            return wordingTemplate.getDetail();
+        }
+
+        return populateTemplateDetailValues(wordingTemplate.getDetail(), appliedValues);
+    }
+
+    private List<String> parseAppliedValues(String appliedTemplate) {
+        return BraceSubstitutedSentence.withSubstitutedSentence(appliedTemplate).getAppliedValues();
+    }
+
+    private void warnWhenAppliedValueCountDiffers(
+            String appliedTemplate,
+            List<String> appliedValues,
+            String wordingTemplate,
+            Templateable[] templateables) {
+        if (appliedValues.size() == templateables.length) {
+            return;
+        }
+
+        log.warn(
+                "Stored wording '{}' contains {} values but template '{}' expects {}."
+                        + " Filling what we can and leaving the rest blank.",
+                appliedTemplate,
+                appliedValues.size(),
+                wordingTemplate,
+                templateables.length);
+    }
+
+    private void applyStoredValues(
+            WordingTemplateSentence wordingTemplate,
+            Templateable[] templateables,
+            List<String> appliedValues) {
+        for (int i = 0; i < templateables.length; i++) {
+            wordingTemplate.substituteForTemplate(templateables[i], valueAt(appliedValues, i));
+        }
+    }
+
+    private TemplateDetail populateTemplateDetailValues(
+            TemplateDetail detail, List<String> appliedValues) {
+        for (int i = 0; i < detail.getSubstitutionKeyConstraints().size(); i++) {
+            detail.getSubstitutionKeyConstraints().get(i).setValue(valueAt(appliedValues, i));
+        }
+
+        return detail;
+    }
+
+    private String valueAt(List<String> appliedValues, int index) {
+        return index < appliedValues.size() ? appliedValues.get(index) : "";
     }
 
     /**

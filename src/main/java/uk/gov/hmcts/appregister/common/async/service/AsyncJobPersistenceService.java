@@ -7,7 +7,7 @@ import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.async.model.JobIdRequest;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 /**
  * This is a job status persistence interface that allows us to control the job persistence.
@@ -20,7 +20,7 @@ public interface AsyncJobPersistenceService {
      * @param jobType The job type
      * @param jobStatus The job status
      */
-    void setJobStatus(JobIdRequest jobType, JobStatus1 jobStatus);
+    void setJobStatus(JobIdRequest jobType, JobStatus jobStatus);
 
     /**
      * Sets the status of the job as failed with the reason for failure.

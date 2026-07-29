@@ -36,7 +36,7 @@ import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobServiceImpl;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,33 +111,33 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
             verify(persistence)
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
-                            JobStatus1.RECEIVED);
+                            JobStatus.RECEIVED);
             verify(persistence, times(3))
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
-                            JobStatus1.VALIDATING);
+                            JobStatus.VALIDATING);
             verify(persistence, times(3))
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
-                            JobStatus1.PROCESSING);
+                            JobStatus.PROCESSING);
             verify(persistence)
                     .setJobStatus(
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
-                            JobStatus1.COMPLETED);
+                            JobStatus.COMPLETED);
 
             // assert the number of the events fired
             Assertions.assertEquals(
-                    JobStatus1.RECEIVED,
+                    JobStatus.RECEIVED,
                     lifecycleEventArgumentCaptor.getAllValues().get(0).getJobStatus());
             Assertions.assertEquals(
-                    JobStatus1.VALIDATING,
+                    JobStatus.VALIDATING,
                     lifecycleEventArgumentCaptor.getAllValues().get(1).getJobStatus());
             Assertions.assertEquals(
                     "Alice",
                     lifecycleEventArgumentCaptor.getAllValues().get(1).getData().get(0).getName());
 
             Assertions.assertEquals(
-                    JobStatus1.PROCESSING,
+                    JobStatus.PROCESSING,
                     lifecycleEventArgumentCaptor.getAllValues().get(2).getJobStatus());
 
             Assertions.assertEquals(
@@ -145,29 +145,29 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                     lifecycleEventArgumentCaptor.getAllValues().get(2).getData().get(0).getName());
 
             Assertions.assertEquals(
-                    JobStatus1.VALIDATING,
+                    JobStatus.VALIDATING,
                     lifecycleEventArgumentCaptor.getAllValues().get(3).getJobStatus());
             Assertions.assertEquals(
                     "Bob",
                     lifecycleEventArgumentCaptor.getAllValues().get(3).getData().get(0).getName());
 
             Assertions.assertEquals(
-                    JobStatus1.PROCESSING,
+                    JobStatus.PROCESSING,
                     lifecycleEventArgumentCaptor.getAllValues().get(4).getJobStatus());
 
             Assertions.assertEquals(
                     "Bob",
                     lifecycleEventArgumentCaptor.getAllValues().get(4).getData().get(0).getName());
             Assertions.assertEquals(
-                    JobStatus1.VALIDATING,
+                    JobStatus.VALIDATING,
                     lifecycleEventArgumentCaptor.getAllValues().get(5).getJobStatus());
 
             Assertions.assertEquals(
-                    JobStatus1.PROCESSING,
+                    JobStatus.PROCESSING,
                     lifecycleEventArgumentCaptor.getAllValues().get(6).getJobStatus());
 
             Assertions.assertEquals(
-                    JobStatus1.COMPLETED,
+                    JobStatus.COMPLETED,
                     lifecycleEventArgumentCaptor.getAllValues().get(7).getJobStatus());
         } finally {
             MDC.clear();
@@ -201,10 +201,10 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         var events = lifecycleEventCaptor();
         verify(lifecycle, times(8)).lifeCycleEventPerformed(events.capture());
         assertValidationFirstOrder(events.getAllValues());
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.COMPLETED);
     }
 
     @Test
@@ -218,7 +218,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         Mockito.doAnswer(
                         invocation -> {
                             AsyncJobLifecycleEvent<?> event = invocation.getArgument(0);
-                            if (event.getJobStatus() == JobStatus1.VALIDATING) {
+                            if (event.getJobStatus() == JobStatus.VALIDATING) {
                                 event.getContext().logFailure("invalid row");
                             }
                             return null;
@@ -239,10 +239,10 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
             Assertions.assertThrows(ExecutionException.class, () -> outcome.getFuture().get());
         }
 
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
-        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
-        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.COMPLETED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
     }
 
     @Test
@@ -277,24 +277,24 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         var events = lifecycleEventCaptor();
         verify(lifecycle, times(2)).lifeCycleEventPerformed(events.capture());
-        Assertions.assertEquals(JobStatus1.RECEIVED, events.getAllValues().get(0).getJobStatus());
-        Assertions.assertEquals(JobStatus1.FAILED, events.getAllValues().get(1).getJobStatus());
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
-        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        Assertions.assertEquals(JobStatus.RECEIVED, events.getAllValues().get(0).getJobStatus());
+        Assertions.assertEquals(JobStatus.FAILED, events.getAllValues().get(1).getJobStatus());
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
     }
 
     private static void assertValidationFirstOrder(
             List<AsyncJobLifecycleEvent<PersonCsvPojo>> events) {
-        Assertions.assertEquals(JobStatus1.RECEIVED, events.get(0).getJobStatus());
-        Assertions.assertEquals(JobStatus1.VALIDATING, events.get(1).getJobStatus());
-        Assertions.assertEquals(JobStatus1.VALIDATING, events.get(2).getJobStatus());
-        Assertions.assertEquals(JobStatus1.VALIDATING, events.get(3).getJobStatus());
-        Assertions.assertEquals(JobStatus1.PROCESSING, events.get(4).getJobStatus());
-        Assertions.assertEquals(JobStatus1.PROCESSING, events.get(5).getJobStatus());
-        Assertions.assertEquals(JobStatus1.PROCESSING, events.get(6).getJobStatus());
-        Assertions.assertEquals(JobStatus1.COMPLETED, events.get(7).getJobStatus());
+        Assertions.assertEquals(JobStatus.RECEIVED, events.get(0).getJobStatus());
+        Assertions.assertEquals(JobStatus.VALIDATING, events.get(1).getJobStatus());
+        Assertions.assertEquals(JobStatus.VALIDATING, events.get(2).getJobStatus());
+        Assertions.assertEquals(JobStatus.VALIDATING, events.get(3).getJobStatus());
+        Assertions.assertEquals(JobStatus.PROCESSING, events.get(4).getJobStatus());
+        Assertions.assertEquals(JobStatus.PROCESSING, events.get(5).getJobStatus());
+        Assertions.assertEquals(JobStatus.PROCESSING, events.get(6).getJobStatus());
+        Assertions.assertEquals(JobStatus.COMPLETED, events.get(7).getJobStatus());
     }
 
     @Test
@@ -321,9 +321,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         trackJobStatusResponse.getFuture().get();
 
         verify(dataReader).close();
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
-        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.COMPLETED);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.FAILED);
     }
 
     @Test
@@ -345,14 +345,14 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.RECEIVED);
+                        JobStatus.RECEIVED);
 
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.VALIDATING);
+                        JobStatus.VALIDATING);
 
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
 
         verify(persistence)
                 .setFailure(
@@ -381,12 +381,12 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.RECEIVED);
+                        JobStatus.RECEIVED);
 
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.VALIDATING);
+                        JobStatus.VALIDATING);
 
         verify(persistence)
                 .setFailure(
@@ -417,16 +417,16 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.RECEIVED);
+                        JobStatus.RECEIVED);
 
         verify(persistence, times(3))
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.VALIDATING);
+                        JobStatus.VALIDATING);
 
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
 
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
 
         verify(persistence)
                 .setFailure(
@@ -465,7 +465,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.RECEIVED);
+                        JobStatus.RECEIVED);
 
         // fail was executed and we logged only one error
         Assertions.assertTrue(lifecycle.failed);
@@ -477,7 +477,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                                 + ", Job failed during VALIDATING for job "
                                 + jobIdRequest.getId()
                                 + ". Forced termination");
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
         Assertions.assertTrue(
                 logCaptor.getWarnLogs().stream()
                         .anyMatch(
@@ -521,13 +521,13 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.RECEIVED);
+                        JobStatus.RECEIVED);
 
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.FAILED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
 
-        verify(persistence, times(3)).setJobStatus(jobIdRequest, JobStatus1.VALIDATING);
+        verify(persistence, times(3)).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
 
-        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus1.PROCESSING);
+        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
     }
 
     @Test
@@ -548,9 +548,9 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence)
                 .setJobStatus(
                         JobIdRequest.builder().id(jobId).userName(userId).build(),
-                        JobStatus1.RECEIVED);
+                        JobStatus.RECEIVED);
 
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
 
         verify(persistence).setFailure(jobIdRequest, BrokenLifecycleWithContext.ERROR);
     }

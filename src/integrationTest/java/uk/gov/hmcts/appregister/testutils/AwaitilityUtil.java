@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hibernate.AssertionFailure;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
@@ -104,8 +104,8 @@ public final class AwaitilityUtil {
                         });
     }
 
-    private static boolean isTerminalJobStatus(JobStatus1 status) {
-        return status == JobStatus1.COMPLETED || status == JobStatus1.FAILED;
+    private static boolean isTerminalJobStatus(JobStatus status) {
+        return status == JobStatus.COMPLETED || status == JobStatus.FAILED;
     }
 
     @RequiredArgsConstructor

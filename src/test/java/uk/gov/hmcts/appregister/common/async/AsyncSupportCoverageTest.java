@@ -17,7 +17,7 @@ import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 class AsyncSupportCoverageTest {
@@ -58,7 +58,7 @@ class AsyncSupportCoverageTest {
                 JobStatusResponse.builder()
                         .uuid(uuid)
                         .type(JobType.FEES_REPORT)
-                        .status(JobStatus1.PROCESSING)
+                        .status(JobStatus.PROCESSING)
                         .userName("tester")
                         .errorMessage(null)
                         .persistence(persistence)
@@ -88,7 +88,7 @@ class AsyncSupportCoverageTest {
                 JobStatusResponse.builder()
                         .uuid(UUID.randomUUID())
                         .type(JobType.FEES_REPORT)
-                        .status(JobStatus1.COMPLETED)
+                        .status(JobStatus.COMPLETED)
                         .userName("tester")
                         .errorMessage(null)
                         .persistence(persistence)
@@ -106,7 +106,7 @@ class AsyncSupportCoverageTest {
                 JobStatusResponse.builder()
                         .uuid(UUID.randomUUID())
                         .type(JobType.FEES_REPORT)
-                        .status(JobStatus1.FAILED)
+                        .status(JobStatus.FAILED)
                         .userName("tester")
                         .errorMessage("bad")
                         .persistence(persistence)
