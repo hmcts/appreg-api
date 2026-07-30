@@ -67,12 +67,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     Map.entry(CommonAppError.WORDING_LENGTH_FAILURE, APPLICATION_TEXT_COLUMNS),
                     Map.entry(CommonAppError.WORDING_DATA_TYPE_FAILURE, APPLICATION_TEXT_COLUMNS),
                     Map.entry(
-                            AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST, "APPLICANT_CODE"),
+                            AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
+                            "standardApplicantCode"),
                     Map.entry(
                             AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
-                            "APPLICANT_CODE"),
-                    Map.entry(
-                            AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, "APPLICATION_CODE"),
+                            "standardApplicantCode"),
+                    Map.entry(AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, "applicationCode"),
                     Map.entry(
                             AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                             "ACCOUNT_NUMBER"),
@@ -141,7 +141,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = nextRowNumber;
 
         List<BulkUploadError> allErrors = new ArrayList<>();
-        addHeaderErrors(context, allErrors);
 
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
@@ -494,31 +493,57 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
                 List<BulkUploadError> rowErrors =
                         errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
-                builder.append(line);
-                for (BulkUploadError error : rowErrors) {
-                    if (Objects.nonNull(error.getRejectedValue())
-                            && !error.getRejectedValue().isBlank()) {
-                        builder.append("|")
-                                .append(
-                                        "%s - %s: %s"
-                                                .formatted(
-                                                        error.getLocation(),
-                                                        error.getRejectedValue(),
-                                                        "Field has been rejected"));
-
-                    } else {
-                        builder.append("|")
-                                .append(
-                                        "%s: %s"
-                                                .formatted(
-                                                        error.getLocation(), error.getMessage()));
-                    }
-                }
-                builder.append("\n");
+                rowErrors = deduplicateErrors(rowErrors);
+                processErrorRows(rowErrors, builder, line);
             } else {
                 builder.append(line).append("|").append("\n");
             }
             rowCount++;
         }
+    }
+
+    private List<BulkUploadError> deduplicateErrors(List<BulkUploadError> errors) {
+        List<BulkUploadError> dedupedErrors = new ArrayList<>(errors);
+        for (var error : errors) {
+            List<BulkUploadError> dupes =
+                    errors.stream()
+                            .filter(
+                                    e ->
+                                            e.getRowNumber() == error.getRowNumber()
+                                                    && e.getLocation()
+                                                            .contains(error.getLocation()))
+                            .toList();
+            if (dupes.size() > 1) {
+                dedupedErrors.removeAll(dupes.subList(1, dupes.size()));
+            }
+        }
+        return dedupedErrors;
+    }
+
+    private void processErrorRows(
+            List<BulkUploadError> errors, StringBuilder builder, String line) {
+        builder.append(line);
+        for (BulkUploadError error : errors) {
+            var location =
+                    error.getLocation().split("\\.").length > 1
+                            ? error.getLocation()
+                                    .split("\\.")[error.getLocation().split("\\.").length - 1]
+                            : error.getLocation();
+            if (Objects.nonNull(error.getRejectedValue()) && !error.getRejectedValue().isBlank()) {
+                builder.append("|")
+                        .append(
+                                "%s - %s: %s"
+                                        .formatted(
+                                                location,
+                                                error.getRejectedValue(),
+                                                error.getMessage().contains("must match \"")
+                                                        ? "Field has been rejected"
+                                                        : error.getMessage()));
+
+            } else {
+                builder.append("|").append("%s: %s".formatted(location, error.getMessage()));
+            }
+        }
+        builder.append("\n");
     }
 }
