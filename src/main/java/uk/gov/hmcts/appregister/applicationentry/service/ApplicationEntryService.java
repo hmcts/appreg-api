@@ -22,7 +22,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
@@ -35,8 +34,6 @@ public interface ApplicationEntryService {
      * @return The entry page containing the search results
      */
     EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable);
-
-    EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
 
     List<EntryGetSummaryDto> bulkGetApplicationListEntries(
             BulkGetApplicationListEntriesRequestDto request);
@@ -140,9 +137,6 @@ public interface ApplicationEntryService {
             PayloadGetEntryInList payloadForGet,
             PagingWrapper pageable,
             EntryApplicationListGetFilterDto filter);
-
-    EntryIdsDto getApplicationListEntryIds(
-            PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filter);
 
     /**
      * Moves the specified entries from a source Application List to a destination Application List.
