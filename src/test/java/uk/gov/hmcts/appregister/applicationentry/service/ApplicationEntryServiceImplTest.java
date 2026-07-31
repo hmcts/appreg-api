@@ -169,7 +169,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
@@ -1334,62 +1333,6 @@ class ApplicationEntryServiceImplTest {
         // audit surrogate from the path parameter and query-string filter.
         verify(applicationListEntryMapStructMapper)
                 .toApplicationListEntry(payloadGetEntryInList, entryGetFilterDto);
-    }
-
-    @Test
-    void testGetApplicationListEntryIds_success() {
-        ApplicationList applicationList = new AppListTestData().someComplete();
-
-        when(applicationListRepository.findByUuid(applicationList.getUuid()))
-                .thenReturn(Optional.of(applicationList));
-
-        EntryApplicationListGetFilterDto entryGetFilterDto = new EntryApplicationListGetFilterDto();
-        entryGetFilterDto.setApplicantName("  Applicant Match  ");
-        entryGetFilterDto.setAccountReference("  ACC-123  ");
-        entryGetFilterDto.setResulted("  RC1  ");
-        entryGetFilterDto.setSequenceNumber(7);
-
-        List<UUID> expectedIds = List.of(UUID.randomUUID(), UUID.randomUUID());
-
-        when(applicationListEntryRepository.searchForGetSummaryIds(
-                        applicationList.getUuid(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "Applicant Match",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "ACC-123",
-                        null,
-                        "RC1",
-                        null,
-                        7))
-                .thenReturn(expectedIds);
-
-        PayloadGetEntryInList payloadGetEntryInList =
-                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
-
-        when(applicationListEntryMapStructMapper.toApplicationListEntry(
-                        any(PayloadGetEntryInList.class),
-                        any(EntryApplicationListGetFilterDto.class)))
-                .thenReturn(new ApplicationListEntry());
-
-        EntryIdsDto response =
-                service.getApplicationListEntryIds(payloadGetEntryInList, entryGetFilterDto);
-
-        Assertions.assertNotNull(response);
-        Assertions.assertEquals(expectedIds, response.getIds());
-
-        verify(applicationListEntryMapStructMapper)
-                .toApplicationListEntry(any(PayloadGetEntryInList.class), any());
     }
 
     @Test
@@ -2839,92 +2782,6 @@ class ApplicationEntryServiceImplTest {
                         validateSuccess) {
             return validateSuccess.apply(validatable, success);
         }
-    }
-
-    @Test
-    void given_filter_when_getEntryIds_then_return_ids() {
-        EntryGetFilterDto filterDto = new EntryGetFilterDto();
-        filterDto.setStatus(ApplicationListStatus.OPEN);
-        filterDto.setCourtCode("COURT1");
-        filterDto.setCjaCode("CJA1");
-        filterDto.setApplicantOrganisation("Applicant Org");
-        filterDto.setApplicantSurname("ApplicantSurname");
-        filterDto.setStandardApplicantCode("STD1");
-        filterDto.setRespondentOrganisation("Respondent Org");
-        filterDto.setRespondentSurname("RespondentSurname");
-        filterDto.setRespondentPostcode("AB1 2CD");
-        filterDto.setAccountReference("ACC123");
-        filterDto.setApplicationTitle("Title");
-
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-
-        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
-                .thenReturn(Status.OPEN);
-        when(applicationListEntryRepository.searchForGetSummaryIds(
-                        null,
-                        false,
-                        null,
-                        "COURT1",
-                        null,
-                        "CJA1",
-                        "Applicant Org",
-                        "ApplicantSurname",
-                        null,
-                        "STD1",
-                        Status.OPEN,
-                        "Respondent Org",
-                        "RespondentSurname",
-                        null,
-                        "AB1 2CD",
-                        "ACC123",
-                        "Title",
-                        null,
-                        null,
-                        null))
-                .thenReturn(List.of(id1, id2));
-
-        EntryIdsDto response = service.getEntryIds(filterDto);
-
-        Assertions.assertEquals(List.of(id1, id2), response.getIds());
-        verify(applicationListEntryRepository)
-                .searchForGetSummaryIds(
-                        null,
-                        false,
-                        null,
-                        "COURT1",
-                        null,
-                        "CJA1",
-                        "Applicant Org",
-                        "ApplicantSurname",
-                        null,
-                        "STD1",
-                        Status.OPEN,
-                        "Respondent Org",
-                        "RespondentSurname",
-                        null,
-                        "AB1 2CD",
-                        "ACC123",
-                        "Title",
-                        null,
-                        null,
-                        null);
-    }
-
-    @Test
-    void given_nullFilter_when_getEntryIds_then_use_empty_filter() {
-        UUID id = UUID.randomUUID();
-
-        when(applicationListEntryMapStructMapper.toStatus((ApplicationListStatus) null))
-                .thenReturn(null);
-        when(applicationListEntryRepository.searchForGetSummaryIds(
-                        null, false, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null))
-                .thenReturn(List.of(id));
-
-        EntryIdsDto response = service.getEntryIds(null);
-
-        Assertions.assertEquals(List.of(id), response.getIds());
     }
 
     @Test

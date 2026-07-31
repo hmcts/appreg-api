@@ -114,7 +114,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
@@ -258,58 +257,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     newPage,
                                     applicationListEntryMapStructMapper.toApplicationListEntry(
                                             filterDto));
-
-                    return Optional.of(result);
-                });
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public EntryIdsDto getEntryIds(EntryGetFilterDto filterDto) {
-        EntryGetFilterDto safeFilterDto = filterDto == null ? new EntryGetFilterDto() : filterDto;
-
-        log.debug("Started find application entry ids");
-
-        return auditService.processAudit(
-                null,
-                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
-                req -> {
-                    Status status =
-                            applicationListEntryMapStructMapper.toStatus(safeFilterDto.getStatus());
-
-                    List<UUID> entryIds =
-                            applicationListEntryRepository.searchForGetSummaryIds(
-                                    null,
-                                    safeFilterDto.getDate() != null,
-                                    safeFilterDto.getDate(),
-                                    safeFilterDto.getCourtCode(),
-                                    safeFilterDto.getOtherLocationDescription(),
-                                    safeFilterDto.getCjaCode(),
-                                    safeFilterDto.getApplicantOrganisation(),
-                                    safeFilterDto.getApplicantSurname(),
-                                    null,
-                                    safeFilterDto.getStandardApplicantCode(),
-                                    status,
-                                    safeFilterDto.getRespondentOrganisation(),
-                                    safeFilterDto.getRespondentSurname(),
-                                    null,
-                                    safeFilterDto.getRespondentPostcode(),
-                                    safeFilterDto.getAccountReference(),
-                                    safeFilterDto.getApplicationTitle(),
-                                    null,
-                                    null,
-                                    null);
-
-                    EntryIdsDto response = new EntryIdsDto();
-                    response.setIds(entryIds);
-
-                    log.debug("Finished find application entry ids count={}", entryIds.size());
-
-                    AuditableResult<EntryIdsDto, ApplicationListEntry> result =
-                            new AuditableResult<>(
-                                    response,
-                                    applicationListEntryMapStructMapper.toApplicationListEntry(
-                                            safeFilterDto));
 
                     return Optional.of(result);
                 });
@@ -2008,65 +1955,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     return Optional.of(
                                             new AuditableResult<>(
                                                     entryPage,
-                                                    new ApplicationListEntryReadAudit(
-                                                            applicationListEntryMapStructMapper
-                                                                    .toApplicationListEntry(
-                                                                            payloadForGet,
-                                                                            normalisedFilterDto),
-                                                            normalisedFilterDto.getResulted())));
-                                }));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public EntryIdsDto getApplicationListEntryIds(
-            PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filterDto) {
-        log.debug(
-                "Started: Getting application list entry ids for list: {}",
-                payloadForGet.getListId());
-
-        EntryApplicationListGetFilterDto normalisedFilterDto = normaliseEntryListFilter(filterDto);
-
-        return getApplicationListEntriesValidator.validate(
-                payloadForGet,
-                (req, success) ->
-                        auditService.processAudit(
-                                null,
-                                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
-                                r -> {
-                                    List<UUID> entryIds =
-                                            applicationListEntryRepository.searchForGetSummaryIds(
-                                                    payloadForGet.getListId(),
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    normalisedFilterDto.getApplicantName(),
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    null,
-                                                    normalisedFilterDto.getRespondentName(),
-                                                    normalisedFilterDto.getRespondentPostcode(),
-                                                    normalisedFilterDto.getAccountReference(),
-                                                    normalisedFilterDto.getApplicationTitle(),
-                                                    normalisedFilterDto.getResulted(),
-                                                    normalisedFilterDto.getFeeRequired(),
-                                                    normalisedFilterDto.getSequenceNumber());
-
-                                    EntryIdsDto response = new EntryIdsDto();
-                                    response.setIds(entryIds);
-
-                                    log.debug(
-                                            "Finished: Getting application list entry ids for list: {}",
-                                            payloadForGet.getListId());
-
-                                    return Optional.of(
-                                            new AuditableResult<>(
-                                                    response,
                                                     new ApplicationListEntryReadAudit(
                                                             applicationListEntryMapStructMapper
                                                                     .toApplicationListEntry(
