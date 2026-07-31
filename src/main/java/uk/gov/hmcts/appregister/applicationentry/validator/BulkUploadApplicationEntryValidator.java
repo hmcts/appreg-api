@@ -28,13 +28,6 @@ public class BulkUploadApplicationEntryValidator {
         List<BulkUploadError> errors = new ArrayList<>();
         boolean hasOrganisation = BulkUploadRow.hasRespondentOrganisation(row);
         boolean hasPerson = BulkUploadRow.hasRespondentPerson(row);
-        String name = null;
-        if (hasOrganisation || hasPerson) {
-            name =
-                    row.getRespondentOrganisationName() == null
-                            ? row.getRespondentForename1() + " " + row.getRespondentSurname()
-                            : row.getRespondentOrganisationName();
-        }
         final String errorType = "DATA_ERROR";
 
         // --- REQUIRED FIELDS ---
@@ -47,7 +40,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Applicant code is required",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -59,7 +52,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Application code is required",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -74,7 +67,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Respondent cannot be both organisation and person",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -87,7 +80,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Respondent details must be provided",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 

@@ -191,21 +191,20 @@ class BulkUploadAsyncLifecycleTest {
                                 List.of(
                                         new BulkUploadError(
                                                 2,
-                                                "respondent.organisation.contactDetails.postcode",
+                                                "postcode",
                                                 "invalid",
-                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
-                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                "Field has been rejected",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
         assertThat(output)
                 .contains("Bulk upload validation failure for list")
                 .contains("\"rowNumber\":2")
-                .contains("respondent.organisation.contactDetails.postcode")
+                .contains("postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"must match")
+                .contains("\"message\":\"Field has been rejected")
                 .contains("\"addressLine1\":\"1 Example Street\"")
-                .contains("\"name\":\"Example Organisation\"")
+                .contains("\"code\":\"" + row.getApplicantCode() + "\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
 
         // Respondent Test
@@ -227,21 +226,20 @@ class BulkUploadAsyncLifecycleTest {
                                 List.of(
                                         new BulkUploadError(
                                                 3,
-                                                "respondent.person.contactDetails.postcode",
+                                                "postcode",
                                                 "invalid",
-                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
-                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                "Field has been rejected",
                                                 row.getRespondentAddressLine1(),
-                                                "John Doe",
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
         assertThat(output)
                 .contains("Bulk upload validation failure for list")
                 .contains("\"rowNumber\":3")
-                .contains("respondent.person.contactDetails.postcode")
+                .contains("postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"must match")
+                .contains("\"message\":\"Field has been rejected")
                 .contains("\"addressLine1\":\"1 Example Street\"")
-                .contains("\"name\":\"John Doe\"")
+                .contains("\"code\":\"" + row.getApplicantCode() + "\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
     }
 
@@ -271,21 +269,20 @@ class BulkUploadAsyncLifecycleTest {
                                 List.of(
                                         new BulkUploadError(
                                                 2,
-                                                "respondent.person.contactDetails.postcode",
+                                                "postcode",
                                                 "invalid",
-                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
-                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                "Field has been rejected",
                                                 respondentRow.getRespondentAddressLine1(),
-                                                "John Middle Doe",
+                                                respondentRow.getApplicantCode(),
                                                 "DATA_ERROR"))));
         assertThat(output)
                 .contains("Bulk upload validation failure for list")
                 .contains("\"rowNumber\":2")
-                .contains("respondent.person.contactDetails.postcode")
+                .contains("postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"must match")
+                .contains("\"message\":\"Field has been rejected")
                 .contains("\"addressLine1\":\"1 Example Street\"")
-                .contains("\"name\":\"John Middle Doe\"")
+                .contains("\"code\":\"APP001\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
     }
 
@@ -349,7 +346,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "APPLICATION_TEXT1 is required for code AP99001",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
     }
 
@@ -388,7 +385,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "Applicant code is required",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"),
                                         new BulkUploadError(
                                                 2,
@@ -396,7 +393,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "Application code is required",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"),
                                         new BulkUploadError(
                                                 2,
@@ -404,7 +401,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "must not be null",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
     }
 
@@ -448,12 +445,11 @@ class BulkUploadAsyncLifecycleTest {
                                                 "HEADER_ERROR"),
                                         new BulkUploadError(
                                                 2,
-                                                "respondent.organisation.contactDetails.postcode",
+                                                "postcode",
                                                 "invalid",
-                                                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) "
-                                                        + "\\d[A-Z]{2})|(GIR 0A{2}))$\"",
+                                                "Field has been rejected",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
     }
 
@@ -487,7 +483,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "Unexpected validation failure",
                                                 row.getRespondentAddressLine1(),
-                                                "John Byron Doe",
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
 
         BulkUploadRow respondentRow = validRespondentRow();
@@ -517,7 +513,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "Unexpected validation failure",
                                                 row.getRespondentAddressLine1(),
-                                                "John Doe",
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
     }
 

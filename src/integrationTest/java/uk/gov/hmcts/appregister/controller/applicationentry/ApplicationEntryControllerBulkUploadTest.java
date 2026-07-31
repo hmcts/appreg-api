@@ -210,7 +210,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                             "[{\"rowNumber\":-1,\"location\":\"BULK_UPLOAD_ROW\","
                                     + "\"rejectedValue\":null,\"message\":\"Number of data fields "
                                     + "does not match number of headers.\",\"addressLine1\":null,"
-                                    + "\"name\":null,\"errorType\":\"HEADER_ERROR\"}]")
+                                    + "\"code\":null,\"errorType\":\"HEADER_ERROR\"}]")
                     .doesNotContain("Failed to process job");
             Assertions.assertEquals(0, countEntriesForList(listId));
 
