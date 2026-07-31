@@ -69,12 +69,6 @@ class ApplicationEntryControllerSecurityTest extends AbstractSecurityControllerT
                         .successRole(RoleEnum.ADMIN)
                         .build(),
                 RestEndpointDescription.builder()
-                        .url(getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/ids"))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
                         .url(getLocalUrl(WEB_CONTEXT + "/bulk-action-preview"))
                         .method(HttpMethod.POST)
                         .payload(validBulkActionPreviewRequest(entryId))

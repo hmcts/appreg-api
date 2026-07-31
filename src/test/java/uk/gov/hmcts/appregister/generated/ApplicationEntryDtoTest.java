@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
@@ -128,21 +127,6 @@ class ApplicationEntryDtoTest {
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "additionalNotes", "size must be between 0 and 4000");
-    }
-
-    @Test
-    void testEntryIdsDtoAllowsEmptyIdList() {
-        EntryIdsDto entryIdsDto = new EntryIdsDto();
-        entryIdsDto.setIds(List.of());
-
-        Set<ConstraintViolation<Object>> constraintValidator =
-                Validation.byDefaultProvider()
-                        .configure()
-                        .buildValidatorFactory()
-                        .getValidator()
-                        .validate((Object) entryIdsDto);
-
-        Assertions.assertEquals(0, constraintValidator.size());
     }
 
     @Test

@@ -71,10 +71,8 @@ paths:
   /application-lists/{listId}:                                      { $ref: './paths/application-lists/application-lists-by-id.yaml' }
   # APPLICATION LIST ENTRIES
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
-  /application-list-entries/ids:                                    { $ref: './paths/application-list-entries/entry-ids.yaml' }
   /application-list-entries/bulk-action-preview:                    { $ref: './paths/application-list-entries/bulk-action-preview.yaml' }
   /application-lists/{listId}/entries:                              { $ref: './paths/application-list-entries/application-list-entries.yaml' }
-  /application-lists/{listId}/entries/ids:                          { $ref: './paths/application-list-entries/application-list-entry-ids.yaml' }
   /application-lists/{listId}/entries/bulk-action-preview:          { $ref: './paths/application-list-entries/application-list-entry-bulk-action-preview.yaml' }
   /application-lists/{listId}/entries/officials:                    { $ref: './paths/application-list-entries/entries-officials.yaml' }
   /application-lists/{listId}/entries/fees:                         { $ref: './paths/application-list-entries/entries-fees.yaml' }
