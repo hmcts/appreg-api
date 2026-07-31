@@ -32684,6 +32684,1211 @@
           ]
         }
       ]
+    },
+    {
+      "name": "ARCPOC-1559 Bulk endpoints – performance",
+      "item": [
+        {
+          "name": "01 Preview source list A – exactly 1050",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "pm.test('Single-list limit and selection are exactly 1050', function () {",
+                  "  pm.expect(body.limit).to.eql(1050);",
+                  "  pm.expect(body.selectedCount).to.eql(1050);",
+                  "  pm.expect(body.eligibleCount).to.eql(1050);",
+                  "  pm.expect(body.ineligibleCount).to.eql(0);",
+                  "  pm.expect(body.entryIds).to.have.lengthOf(1050);",
+                  "});",
+                  "pm.collectionVariables.set('arcpoc1559_source_entry_ids', JSON.stringify(body.entryIds));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"RESULT_SELECTED\",\n  \"selection\": {\n    \"selectionType\": \"FILTER\",\n    \"filter\": {},\n    \"sort\": [\"sequenceNumber,asc\"],\n    \"excludedEntryIds\": []\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_id}}/entries/bulk-action-preview",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_id}}",
+                "entries",
+                "bulk-action-preview"
+              ]
+            },
+            "description": "Resolves the maximum single-list selection for source A and stores its IDs. Screenshot: request body and response limit/count fields, status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "02 Collect first 950 IDs from source list B",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const page = Number(pm.collectionVariables.get('arcpoc1559_source_b_page') || 0);",
+                  "if (page === 0) {",
+                  "  pm.collectionVariables.set('arcpoc1559_source_b_entry_ids', '[]');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('Source B page returned 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "const currentPage = Number(pm.collectionVariables.get('arcpoc1559_source_b_page') || 0);",
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_b_entry_ids') || '[]');",
+                  "const uniqueIds = new Set(ids);",
+                  "for (const entry of body.content || []) {",
+                  "  if (uniqueIds.size >= 950) break;",
+                  "  uniqueIds.add(entry.id);",
+                  "}",
+                  "const collected = Array.from(uniqueIds);",
+                  "pm.collectionVariables.set('arcpoc1559_source_b_entry_ids', JSON.stringify(collected));",
+                  "console.log('ARCPOC-1559 source B IDs collected: ' + collected.length + '/950');",
+                  "if (collected.length < 950) {",
+                  "  pm.test('Source B has another page available', function () {",
+                  "    pm.expect(body.last, 'source B ended before 950 IDs').to.be.false;",
+                  "    pm.expect(body.content, 'source B page content').not.to.be.empty;",
+                  "  });",
+                  "  pm.collectionVariables.set('arcpoc1559_source_b_page', String(currentPage + 1));",
+                  "  if (pm.execution && pm.execution.setNextRequest) {",
+                  "    pm.execution.setNextRequest(pm.info.requestName);",
+                  "  }",
+                  "} else {",
+                  "  pm.test('Exactly 950 unique source B IDs collected', function () {",
+                  "    pm.expect(collected).to.have.lengthOf(950);",
+                  "  });",
+                  "  pm.collectionVariables.set('arcpoc1559_source_b_page', '0');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_b_id}}/entries?pageNumber={{arcpoc1559_source_b_page}}&pageSize=100&sort=sequenceNumber,asc",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_b_id}}",
+                "entries"
+              ],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "{{arcpoc1559_source_b_page}}"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "100"
+                },
+                {
+                  "key": "sort",
+                  "value": "sequenceNumber,asc"
+                }
+              ]
+            },
+            "description": "Collection Runner only: pages through source B in sequence order and stores exactly its first 950 entry IDs. Source B may contain more than 950 entries. This request repeats automatically until 950 unique IDs have been collected. Screenshot the final iteration showing the Console count, 200 status and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "03 Preview global IDS selection – exactly 2000",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const sourceAIds = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_entry_ids') || '[]');",
+                  "const sourceBIds = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_b_entry_ids') || '[]');",
+                  "pm.expect(sourceAIds, 'source A IDs').to.have.lengthOf(1050);",
+                  "pm.expect(sourceBIds, 'source B IDs').to.have.lengthOf(950);",
+                  "const entryIds = sourceAIds.concat(sourceBIds);",
+                  "pm.expect(new Set(entryIds).size, 'all entry IDs must be unique').to.eql(2000);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({",
+                  "  action: 'RESULT_SELECTED',",
+                  "  selection: { selectionType: 'IDS', entryIds }",
+                  "}));",
+                  "console.log('ARCPOC-1559 source A count: ' + sourceAIds.length);",
+                  "console.log('ARCPOC-1559 source B count: ' + sourceBIds.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "pm.test('Global limit and selection are exactly 2000', function () {",
+                  "  pm.expect(body.limit).to.eql(2000);",
+                  "  pm.expect(body.selectedCount).to.eql(2000);",
+                  "  pm.expect(body.eligibleCount).to.eql(2000);",
+                  "  pm.expect(body.ineligibleCount).to.eql(0);",
+                  "  pm.expect(body.entryIds).to.have.lengthOf(2000);",
+                  "  pm.expect(body.entries).to.have.lengthOf(2000);",
+                  "});",
+                  "const listByEntry = {};",
+                  "body.entries.forEach(entry => { listByEntry[entry.id] = entry.listId; });",
+                  "pm.collectionVariables.set('arcpoc1559_global_entry_ids', JSON.stringify(body.entryIds));",
+                  "pm.collectionVariables.set('arcpoc1559_list_by_entry', JSON.stringify(listByEntry));",
+                  "const sourceAListId = pm.collectionVariables.get('arcpoc1559_source_list_id');",
+                  "const sourceBListId = pm.collectionVariables.get('arcpoc1559_source_list_b_id');",
+                  "const countsByList = body.entries.reduce((counts, entry) => {",
+                  "  counts[entry.listId] = (counts[entry.listId] || 0) + 1;",
+                  "  return counts;",
+                  "}, {});",
+                  "pm.test('Global selection contains only source A (1050) and source B (950)', function () {",
+                  "  pm.expect(Object.keys(countsByList)).to.have.members([sourceAListId, sourceBListId]);",
+                  "  pm.expect(countsByList[sourceAListId]).to.eql(1050);",
+                  "  pm.expect(countsByList[sourceBListId]).to.eql(950);",
+                  "});",
+                  "console.log('ARCPOC-1559 entries by list:', countsByList);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-list-entries/bulk-action-preview",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-list-entries",
+                "bulk-action-preview"
+              ]
+            },
+            "description": "Combines the 1050 source A IDs and 950 source B IDs and resolves an explicit 2000-entry global selection. Screenshot: Console source counts, request body, response count fields, status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "04 Create results globally – 2000 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_global_entry_ids') || '[]');",
+                  "pm.expect(ids.length, 'arcpoc1559_global_entry_ids must contain the expected entries').to.be.above(0);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ entryIds: ids, result: { resultCode: pm.collectionVariables.get('arcpoc1559_result_code'), wordingFields: [] } }));",
+                  "console.log('ARCPOC-1559 global result entry count: ' + ids.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "const listByEntry = JSON.parse(pm.collectionVariables.get('arcpoc1559_list_by_entry') || '{}');",
+                  "pm.test('A separate result was returned for all 2000 entries', function () {",
+                  "  pm.expect(body).to.be.an('array').with.lengthOf(2000);",
+                  "  body.forEach(result => {",
+                  "    pm.expect(result.id).to.match(/^[0-9a-f-]{36}$/i);",
+                  "    pm.expect(result.entryId).to.match(/^[0-9a-f-]{36}$/i);",
+                  "  });",
+                  "});",
+                  "const deletes = body.map(result => ({",
+                  "  listId: listByEntry[result.entryId], entryId: result.entryId, resultId: result.id",
+                  "}));",
+                  "pm.expect(deletes.every(item => item.listId), 'every result maps to a list').to.be.true;",
+                  "pm.collectionVariables.set('arcpoc1559_global_delete_items', JSON.stringify(deletes));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/results",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "results"
+              ]
+            },
+            "description": "Creates DISM (or arcpoc1559_result_code) for all 2000 previewed entries. Screenshot: generated request body entryIds count in Console, response array count, status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "05 Delete results atomically – 2000 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const results = JSON.parse(pm.collectionVariables.get('arcpoc1559_global_delete_items') || '[]');",
+                  "pm.expect(results).to.have.lengthOf(2000);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ results }));",
+                  "console.log('ARCPOC-1559 bulk delete result count: ' + results.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('204 response (not 504)', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/results",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "results"
+              ]
+            },
+            "description": "Uses the ARCPOC-1559 bulk replacement for repeated legacy DELETE calls. Screenshot: generated results count in Console, 204 status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "06 Create results in one list – 1050 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_entry_ids') || '[]');",
+                  "pm.expect(ids.length, 'arcpoc1559_source_entry_ids must contain the expected entries').to.be.above(0);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ entryIds: ids, result: { resultCode: pm.collectionVariables.get('arcpoc1559_result_code'), wordingFields: [] } }));",
+                  "console.log('ARCPOC-1559 list result entry count: ' + ids.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "pm.test('A separate result was returned for all 1050 entries', function () {",
+                  "  pm.expect(body).to.be.an('array').with.lengthOf(1050);",
+                  "});",
+                  "const listId = pm.collectionVariables.get('arcpoc1559_source_list_id');",
+                  "const deletes = body.map(result => ({ listId, entryId: result.entryId, resultId: result.id }));",
+                  "pm.collectionVariables.set('arcpoc1559_single_delete_items', JSON.stringify(deletes));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_id}}/entries/results",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_id}}",
+                "entries",
+                "results"
+              ]
+            },
+            "description": "Exercises the list-scoped result endpoint at the single-list preview limit. Screenshot: generated entry count in Console, response array count, status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "07 Cleanup list results atomically – 1050 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const results = JSON.parse(pm.collectionVariables.get('arcpoc1559_single_delete_items') || '[]');",
+                  "pm.expect(results).to.have.lengthOf(1050);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ results }));",
+                  "console.log('ARCPOC-1559 single-list cleanup count: ' + results.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('204 response (not 504)', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/results",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "results"
+              ]
+            },
+            "description": "Deletes the results made by request 05 so later tests start clean. Screenshot: generated result count in Console, 204 status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "08 Replace officials – 1050 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_entry_ids') || '[]');",
+                  "pm.expect(ids.length, 'arcpoc1559_source_entry_ids must contain the expected entries').to.be.above(0);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ entryIds: ids, officials: [{ title: 'Ms', forename: 'Ada', surname: 'Bench', type: 'MAGISTRATE' }] }));",
+                  "console.log('ARCPOC-1559 officials entry count: ' + ids.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('204 response (not 504)', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_id}}/entries/officials",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_id}}",
+                "entries",
+                "officials"
+              ]
+            },
+            "description": "Replaces officials on every source-list entry. Screenshot: generated entry count in Console, 204 status, response time and passed Tests; then capture the first, middle and last entry in the Applications Register UI showing Ms Ada Bench as MAGISTRATE."
+          },
+          "response": []
+        },
+        {
+          "name": "09 Update fees – 1050 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_entry_ids') || '[]');",
+                  "pm.expect(ids.length, 'arcpoc1559_source_entry_ids must contain the expected entries').to.be.above(0);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ entryIds: ids, feeDetails: [{ paymentStatus: 'PAID', statusDate: new Date().toISOString().slice(0, 10), paymentReference: 'ARC1559' }], hasOffsiteFee: false }));",
+                  "console.log('ARCPOC-1559 fees entry count: ' + ids.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "pm.test('All 1050 fee updates are reported', function () {",
+                  "  pm.expect(body.totalCount).to.eql(1050);",
+                  "  pm.expect(body.updatedCount).to.eql(1050);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_id}}/entries/fees",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_id}}",
+                "entries",
+                "fees"
+              ]
+            },
+            "description": "Control check for the endpoint noted as consistently passing at 1050. Screenshot: generated entry count in Console, response body updatedCount/totalCount, status, response time and passed Tests; then capture the first, middle and last entry in the UI showing PAID and the ARC1559 payment reference."
+          },
+          "response": []
+        },
+        {
+          "name": "10 Move source A to target – 1050 entries",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_entry_ids') || '[]');",
+                  "pm.expect(ids.length, 'arcpoc1559_source_entry_ids must contain the expected entries').to.be.above(0);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ targetListId: pm.collectionVariables.get('arcpoc1559_target_list_id'), entryIds: ids }));",
+                  "console.log('ARCPOC-1559 move entry count: ' + ids.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_id}}/entries/move",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_id}}",
+                "entries",
+                "move"
+              ]
+            },
+            "description": "Moves all source-list entries in one call. Screenshot: generated entry count in Console, 200 status, response time and passed Tests. Do not rely on a 504 followed by eventual state changes."
+          },
+          "response": []
+        },
+        {
+          "name": "11 Verify target contains moved 1050",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "pm.test('Target contains all 1050 moved entries', function () {",
+                  "  pm.expect(body.selectedCount).to.eql(1050);",
+                  "  pm.expect(body.entryIds).to.have.lengthOf(1050);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"UPDATE_OFFICIALS\",\n  \"selection\": {\n    \"selectionType\": \"FILTER\",\n    \"filter\": {},\n    \"sort\": [\"sequenceNumber,asc\"],\n    \"excludedEntryIds\": []\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_target_list_id}}/entries/bulk-action-preview",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_target_list_id}}",
+                "entries",
+                "bulk-action-preview"
+              ]
+            },
+            "description": "Confirms all moved entries are visible in the target list. Screenshot: target list ID, selectedCount 1050, status, response time and passed Tests; also capture the target-list UI count."
+          },
+          "response": []
+        },
+        {
+          "name": "12 Move entries back to source A – cleanup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const ids = JSON.parse(pm.collectionVariables.get('arcpoc1559_source_entry_ids') || '[]');",
+                  "pm.expect(ids.length, 'arcpoc1559_source_entry_ids must contain the expected entries').to.be.above(0);",
+                  "pm.variables.set('arcpoc1559_request_body', JSON.stringify({ targetListId: pm.collectionVariables.get('arcpoc1559_source_list_id'), entryIds: ids }));",
+                  "console.log('ARCPOC-1559 move-back entry count: ' + ids.length);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{arcpoc1559_request_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_target_list_id}}/entries/move",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_target_list_id}}",
+                "entries",
+                "move"
+              ]
+            },
+            "description": "Restores the source/target lists after the move test. Screenshot: generated entry count in Console, 200 status, response time and passed Tests."
+          },
+          "response": []
+        },
+        {
+          "name": "13 Verify source restored – 1050",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "if (pm.response.code >= 400) {",
+                  "  console.error('ARCPOC-1559 error response: ' + pm.response.text());",
+                  "}",
+                  "pm.test('200 response (not 504)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.code).not.to.eql(504);",
+                  "});",
+                  "pm.test('Completed within configured gateway allowance', function () {",
+                  "  const maxMs = Number(pm.collectionVariables.get('arcpoc1559_max_response_ms'));",
+                  "  pm.expect(pm.response.responseTime).to.be.below(maxMs);",
+                  "});",
+                  "console.log('ARCPOC-1559 response time (ms): ' + pm.response.responseTime);",
+                  "const body = pm.response.json();",
+                  "pm.test('Source contains all 1050 restored entries', function () {",
+                  "  pm.expect(body.selectedCount).to.eql(1050);",
+                  "  pm.expect(body.entryIds).to.have.lengthOf(1050);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"UPDATE_OFFICIALS\",\n  \"selection\": {\n    \"selectionType\": \"FILTER\",\n    \"filter\": {},\n    \"sort\": [\"sequenceNumber,asc\"],\n    \"excludedEntryIds\": []\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1559_source_list_id}}/entries/bulk-action-preview",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1559_source_list_id}}",
+                "entries",
+                "bulk-action-preview"
+              ]
+            },
+            "description": "Final cleanup verification. Screenshot: source list ID, selectedCount 1050, status, response time and passed Tests; also capture the source-list UI count and empty target-list UI count."
+          },
+          "response": []
+        }
+      ],
+      "description": "Performance and state-change checks for ARCPOC-1559. Run in Collection Runner order. Prerequisites: source list A is OPEN with exactly 1050 active entries; source list B is OPEN with at least 950 active entries; all 2000 entries are initially unresulted; the target list is OPEN and empty. Set arcpoc1559_source_list_id, arcpoc1559_source_list_b_id and arcpoc1559_target_list_id before running. The supplied recording list 43f0d031-a565-4bdd-a2d9-58080b384c5b is prefilled as source A but must be reset or replaced if previous tests changed it. Request 02 collects the first 950 source B IDs by pagination. The global preview uses an explicit IDS selection assembled from source A and B; it does not depend on a date filter. The old single-result DELETE endpoint is not used: ARCPOC-1559 introduced atomic DELETE /application-lists/entries/results.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{access_token_user}}",
+            "type": "string"
+          }
+        ]
+      }
     }
   ],
   "event": [
@@ -32884,6 +34089,54 @@
     {
       "key": "arcpoc1461_result_c_id",
       "value": ""
+    },
+    {
+      "key": "arcpoc1559_source_list_id",
+      "value": "43f0d031-a565-4bdd-a2d9-58080b384c5b"
+    },
+    {
+      "key": "arcpoc1559_source_list_b_id",
+      "value": "570361a7-99e5-49a3-a936-d180bba3d363"
+    },
+    {
+      "key": "arcpoc1559_target_list_id",
+      "value": ""
+    },
+    {
+      "key": "arcpoc1559_result_code",
+      "value": "DISM"
+    },
+    {
+      "key": "arcpoc1559_max_response_ms",
+      "value": "240000"
+    },
+    {
+      "key": "arcpoc1559_global_entry_ids",
+      "value": "[]"
+    },
+    {
+      "key": "arcpoc1559_source_entry_ids",
+      "value": "[]"
+    },
+    {
+      "key": "arcpoc1559_source_b_entry_ids",
+      "value": "[]"
+    },
+    {
+      "key": "arcpoc1559_source_b_page",
+      "value": "0"
+    },
+    {
+      "key": "arcpoc1559_list_by_entry",
+      "value": "{}"
+    },
+    {
+      "key": "arcpoc1559_global_delete_items",
+      "value": "[]"
+    },
+    {
+      "key": "arcpoc1559_single_delete_items",
+      "value": "[]"
     }
   ]
 }
