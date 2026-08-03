@@ -406,6 +406,121 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenMissingRespondentNames_whenValidating_thenLogsOnlyBusinessFriendlyNameError()
+            throws IOException {
+        BulkUploadRow row = validRespondentRow();
+        row.setRespondentTitle("");
+        row.setRespondentFirstName(null);
+        row.setRespondentLastName(null);
+        JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "RESPONDENT",
+                                                null,
+                                                "Respondent details are missing. Enter either"
+                                                        + " Organisation Name, or Respondent First"
+                                                        + " Name and Last Name.",
+                                                row.getRespondentAddressLine1(),
+                                                null,
+                                                "DATA_ERROR"))))
+                .allSatisfy(
+                        errorDescription ->
+                                assertThat(errorDescription)
+                                        .doesNotContain("must not be null")
+                                        .doesNotContain("size must be between")
+                                        .doesNotContain("respondent.person.name"));
+    }
+
+    @Test
+    void givenPartialPersonName_whenValidating_thenRetainsRelevantLastNameError()
+            throws IOException {
+        BulkUploadRow row = validRespondentRow();
+        row.setRespondentLastName(null);
+        JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages().getFirst())
+                .contains("respondent.person.name.lastName")
+                .contains("must not be null")
+                .doesNotContain("Respondent details are missing");
+    }
+
+    @Test
+    void givenMissingRespondentNamesAndInvalidContactField_whenValidating_thenRetainsContactError()
+            throws IOException {
+        BulkUploadRow row = validRespondentRow();
+        row.setRespondentFirstName(null);
+        row.setRespondentLastName(null);
+        row.setRespondentPostcode("invalid");
+        JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        String errorDescription = context.getValidationFailureMessages().getFirst();
+        assertThat(errorDescription)
+                .contains("Respondent details are missing")
+                .contains("respondent.person.contactDetails.postcode")
+                .doesNotContain("respondent.person.name");
+    }
+
+    @Test
+    void givenOrganisationAndPersonNames_whenValidating_thenLogsMutualExclusionError()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentFirstName("Jane");
+        row.setRespondentLastName("Jones");
+        JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        createErrorDescription(
+                                List.of(
+                                        new BulkUploadError(
+                                                2,
+                                                "RESPONDENT",
+                                                null,
+                                                "Respondent cannot be both organisation and person",
+                                                row.getRespondentAddressLine1(),
+                                                row.getRespondentOrganisationName(),
+                                                "DATA_ERROR"))));
+    }
+
+    @Test
     void givenExistingValidationFailures_whenValidating_thenPrependsHeaderErrors()
             throws IOException {
         BulkUploadRow row = validOrganisationRow();
@@ -736,6 +851,55 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
+    }
+
+    @Test
+    void givenMissingRespondentNames_whenValidating_thenJsonAndCsvContainSameFriendlyError()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\n".getBytes());
+
+        StringBuilder writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+
+        BulkUploadRow row = validRespondentRow();
+        row.setRespondentTitle("");
+        row.setRespondentFirstName(null);
+        row.setRespondentLastName(null);
+        JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        String errorDescription = context.getValidationFailureMessages().getFirst();
+        assertThat(errorDescription)
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"RESPONDENT\"")
+                .contains("Respondent details are missing")
+                .doesNotContain("must not be null")
+                .doesNotContain("size must be between")
+                .doesNotContain("respondent.person.name");
+        assertThat(writtenCsv.toString())
+                .contains(
+                        "row-two|RESPONDENT: Respondent details are missing. Enter either"
+                                + " Organisation Name, or Respondent First Name and Last Name.")
+                .doesNotContain("must not be null")
+                .doesNotContain("size must be between")
+                .doesNotContain("respondent.person.name");
+
+        verify(persistenceService).writeClob(any(), any());
     }
 
     @Test
