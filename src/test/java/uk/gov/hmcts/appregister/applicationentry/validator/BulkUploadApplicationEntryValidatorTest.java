@@ -85,7 +85,7 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 3,
-                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME/RESP_FIRST_NAME/RESP_LAST_NAME",
+                                "RESPONDENT",
                                 null,
                                 "Respondent cannot be both organisation and person",
                                 row.getRespondentAddressLine1(),
@@ -113,11 +113,55 @@ class BulkUploadApplicationEntryValidatorTest {
                 .containsExactly(
                         new BulkUploadError(
                                 4,
-                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME/RESP_FIRST_NAME/RESP_LAST_NAME",
+                                "RESPONDENT",
                                 null,
-                                "Respondent details must be provided",
+                                "Respondent details are missing. Enter either Organisation Name, or"
+                                        + " Respondent First Name and Last Name.",
                                 row.getRespondentAddressLine1(),
                                 name,
+                                "DATA_ERROR"));
+    }
+
+    @Test
+    void
+            givenCanonicalOrganisationAndPersonNames_whenValidateRow_thenReturnsMutualExclusionError() {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentFirstName("Jane");
+        row.setRespondentLastName("Jones");
+
+        List<BulkUploadError> errors = validator.validateRow(3, row);
+
+        assertThat(errors)
+                .containsExactly(
+                        new BulkUploadError(
+                                3,
+                                "RESPONDENT",
+                                null,
+                                "Respondent cannot be both organisation and person",
+                                row.getRespondentAddressLine1(),
+                                row.getRespondentOrganisationName(),
+                                "DATA_ERROR"));
+    }
+
+    @Test
+    void givenWhitespaceRespondentNames_whenValidateRow_thenReturnsRespondentRequiredError() {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentOrganisationName(" ");
+        row.setRespondentFirstName(" ");
+        row.setRespondentLastName("\t");
+
+        List<BulkUploadError> errors = validator.validateRow(4, row);
+
+        assertThat(errors)
+                .containsExactly(
+                        new BulkUploadError(
+                                4,
+                                "RESPONDENT",
+                                null,
+                                "Respondent details are missing. Enter either Organisation Name, or"
+                                        + " Respondent First Name and Last Name.",
+                                row.getRespondentAddressLine1(),
+                                null,
                                 "DATA_ERROR"));
     }
 
@@ -157,9 +201,10 @@ class BulkUploadApplicationEntryValidatorTest {
                                 "DATA_ERROR"),
                         new BulkUploadError(
                                 5,
-                                "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME/RESP_FIRST_NAME/RESP_LAST_NAME",
+                                "RESPONDENT",
                                 null,
-                                "Respondent details must be provided",
+                                "Respondent details are missing. Enter either Organisation Name, or"
+                                        + " Respondent First Name and Last Name.",
                                 row.getRespondentAddressLine1(),
                                 name,
                                 "DATA_ERROR"));
