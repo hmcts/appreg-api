@@ -31,6 +31,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow.RespondentNameState;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -147,7 +148,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             List<BulkUploadError> rowErrors = new ArrayList<>();
 
             rowErrors.addAll(validator.validateRow(rowNumber, row));
-            rowErrors.addAll(validateMappedDto(rowNumber, dto));
+            rowErrors.addAll(validateMappedDto(rowNumber, row, dto));
             rowErrors.addAll(validateBusinessRules(rowNumber, dto));
 
             allErrors.addAll(rowErrors);
@@ -217,12 +218,39 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         context.setValidationFailureMessages(new ArrayList<>());
     }
 
-    private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {
+    /**
+     * Runs Jakarta Bean Validation against the DTO mapped from a CSV row. This validates generated
+     * OpenAPI constraints such as required values, sizes and patterns. Application-specific rules,
+     * including missing respondent details and organisation/person mutual exclusion, are handled by
+     * {@link BulkUploadApplicationEntryValidator} because they depend on the original CSV fields;
+     * the mapper may create an empty person or select organisation when both respondent types are
+     * supplied, so the mapped DTO no longer preserves enough information to evaluate those rules.
+     */
+    private List<BulkUploadError> validateMappedDto(
+            int rowNumber, BulkUploadRow row, EntryCreateDto dto) {
+        RespondentNameState respondentNameState = BulkUploadRow.respondentNameState(row);
+
         return beanValidator.validate(dto).stream()
                 .filter(BulkUploadAsyncLifecycle::isNotWordingFieldViolation)
+                .filter(violation -> isRelevantRespondentViolation(violation, respondentNameState))
                 .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
                 .map(violation -> toBulkUploadError(rowNumber, violation))
                 .toList();
+    }
+
+    private static boolean isRelevantRespondentViolation(
+            ConstraintViolation<EntryCreateDto> violation,
+            RespondentNameState respondentNameState) {
+        // When respondent name fields have been supplied, retain their constraint violations so
+        // the user can identify and correct the relevant field.
+        if (respondentNameState != RespondentNameState.MISSING) {
+            return true;
+        }
+
+        // The mapper creates an empty person when all respondent name fields are missing. Suppress
+        // the resulting name constraints because the row validator already reports one actionable
+        // missing-respondent error.
+        return !violation.getPropertyPath().toString().startsWith("respondent.person.name");
     }
 
     private List<BulkUploadError> validateBusinessRules(int rowNumber, EntryCreateDto dto) {

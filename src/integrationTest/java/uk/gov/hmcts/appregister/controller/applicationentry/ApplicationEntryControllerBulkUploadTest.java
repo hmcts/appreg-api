@@ -51,6 +51,21 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
     private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
     private static final int CSV_ROW_COUNT = 5;
+    private static final String RESPONDENT_MISSING_MESSAGE =
+            "Respondent details are missing. Enter either Organisation Name, or Respondent First"
+                    + " Name and Last Name.";
+    private static final String LEGACY_BULK_UPLOAD_HEADER =
+            "APPLICANT_CODE|RESP_TITLE|RESP_NAME_ORG|RESP_FORENAME1|RESP_FORENAME2"
+                    + "|RESP_FORENAME3|RESP_SURNAME|RESP_ADDLINE1|RESP_ADDLINE2"
+                    + "|RESP_ADDLINE3|RESP_ADDLINE4|RESP_ADDLINE5|RESP_POSTCODE"
+                    + "|RESP_EMAIL|RESP_TEL|RESP_MOBILE|ACCOUNT_NUMBER|APPLICATION_CODE"
+                    + "|APPLICATION_TEXT1|APPLICATION_TEXT2";
+    private static final String CANONICAL_BULK_UPLOAD_HEADER =
+            "APPLICANT_CODE|RESP_TITLE|RESP_NAME_ORG|RESP_FIRST_NAME|RESP_MIDDLE_NAME"
+                    + "|RESP_LAST_NAME|RESP_ADDLINE1|RESP_ADDLINE2|RESP_ADDLINE3"
+                    + "|RESP_ADDLINE4|RESP_ADDLINE5|RESP_POSTCODE|RESP_EMAIL|RESP_TEL"
+                    + "|RESP_MOBILE|ACCOUNT_NUMBER|APPLICATION_CODE|APPLICATION_TEXT1"
+                    + "|APPLICATION_TEXT2";
 
     @Autowired private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
     @Autowired private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
@@ -168,6 +183,44 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
             Assertions.assertFalse(errorCSV.isBlank());
             Assertions.assertTrue(errorCSV.contains("No valid code can be found ZZ99999"));
         }
+    }
+
+    @Test
+    void givenLegacyCsvWithMissingRespondentNames_whenBulkUpload_thenJsonAndCsvAreUserFriendly()
+            throws Exception {
+        FailedBulkUpload failure =
+                submitBulkUploadExpectingFailure(
+                        LEGACY_BULK_UPLOAD_HEADER, legacyBulkUploadRow("", "", ""));
+
+        assertMissingRespondentFailure(failure);
+    }
+
+    @Test
+    void givenCanonicalCsvWithMissingRespondentNames_whenBulkUpload_thenJsonAndCsvAreUserFriendly()
+            throws Exception {
+        FailedBulkUpload failure =
+                submitBulkUploadExpectingFailure(
+                        CANONICAL_BULK_UPLOAD_HEADER, canonicalBulkUploadRow("", "", ""));
+
+        assertMissingRespondentFailure(failure);
+    }
+
+    @Test
+    void givenOrganisationAndPersonNames_whenBulkUpload_thenJsonAndCsvContainMutualExclusionError()
+            throws Exception {
+        FailedBulkUpload failure =
+                submitBulkUploadExpectingFailure(
+                        CANONICAL_BULK_UPLOAD_HEADER,
+                        canonicalBulkUploadRow("Example Organisation", "Jane", "Jones"));
+
+        assertThat(failure.completedJob().getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failure.completedJob().getErrorDescription())
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"RESPONDENT\"")
+                .contains("Respondent cannot be both organisation and person");
+        assertThat(failure.errorCsv())
+                .contains("RESPONDENT: Respondent cannot be both organisation and person");
+        assertThat(countEntriesForList(failure.listId())).isZero();
     }
 
     @Test
@@ -469,6 +522,111 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
         return response.as(ApplicationListGetDetailDto.class).getId();
     }
+
+    private FailedBulkUpload submitBulkUploadExpectingFailure(String header, String row)
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        try (var file = tempCsv(header + "\n" + row + "\n")) {
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+
+            response.then().statusCode(202);
+            JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+            JobAcknowledgement completedJob =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient,
+                            getLocalUrl("jobs/" + acknowledgement.getId()),
+                            tokenGenerator.fetchTokenForRole());
+
+            Response csvResponse =
+                    restAssuredClient.executeGetRequest(
+                            getLocalUrl("reports/jobs/" + acknowledgement.getId() + "/download"),
+                            tokenGenerator.fetchTokenForRole());
+            csvResponse.then().statusCode(200);
+
+            return new FailedBulkUpload(listId, completedJob, csvResponse.getBody().asString());
+        }
+    }
+
+    private void assertMissingRespondentFailure(FailedBulkUpload failure) {
+        assertThat(failure.completedJob().getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failure.completedJob().getErrorDescription())
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"RESPONDENT\"")
+                .contains(RESPONDENT_MISSING_MESSAGE)
+                .doesNotContain("must not be null")
+                .doesNotContain("size must be between")
+                .doesNotContain("respondent.person.name");
+        assertThat(failure.errorCsv())
+                .contains("RESPONDENT: " + RESPONDENT_MISSING_MESSAGE)
+                .doesNotContain("must not be null")
+                .doesNotContain("size must be between")
+                .doesNotContain("respondent.person.name");
+        assertThat(countEntriesForList(failure.listId())).isZero();
+    }
+
+    private static String legacyBulkUploadRow(
+            String organisationName, String firstName, String lastName) {
+        return String.join(
+                "|",
+                "APP001",
+                "",
+                organisationName,
+                firstName,
+                "",
+                "",
+                lastName,
+                "1 Example Street",
+                "",
+                "",
+                "",
+                "",
+                "AA1 1AA",
+                "",
+                "",
+                "",
+                "AC2023110001",
+                "AD99001",
+                "",
+                "");
+    }
+
+    private static String canonicalBulkUploadRow(
+            String organisationName, String firstName, String lastName) {
+        return String.join(
+                "|",
+                "APP001",
+                "",
+                organisationName,
+                firstName,
+                "",
+                lastName,
+                "1 Example Street",
+                "",
+                "",
+                "",
+                "",
+                "AA1 1AA",
+                "",
+                "",
+                "",
+                "AC2023110001",
+                "AD99001",
+                "",
+                "");
+    }
+
+    private record FailedBulkUpload(
+            UUID listId, JobAcknowledgement completedJob, String errorCsv) {}
 
     private File csvFile() throws URISyntaxException {
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
