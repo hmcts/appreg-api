@@ -108,7 +108,7 @@ if [[ "${mode}" == "full" ]]; then
 fi
 
 log "Checking required local tools"
-for command_name in git bash find awk sort uniq wc; do
+for command_name in git bash find awk sort uniq wc python3; do
   require_command "${command_name}"
 done
 
@@ -125,6 +125,12 @@ log "Validating shell scripts"
 bash -n \
   .github/scripts/*.sh \
   bin/*.sh
+
+log "Validating parity result collector"
+python_cache="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codex-pycache"
+mkdir -p "${python_cache}"
+PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parity-result.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
@@ -154,10 +160,46 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
 
     codex_steps.each do |step|
       version = step.fetch("with", {}).fetch("codex-version", "")
-      next if version == expected_codex_version
+      errors << "#{path}:#{job_name} must pin codex-version to #{expected_codex_version}" unless version == expected_codex_version
 
-      errors << "#{path}:#{job_name} must pin codex-version to #{expected_codex_version}"
+      next unless File.basename(path) == "codex_runner_smoke.yml"
+
+      inputs = step.fetch("with", {})
+      unless inputs.fetch("model", "") == "gpt-5.6-sol" && inputs.fetch("effort", "") == "ultra"
+        errors << "#{path}:#{job_name} must smoke-test gpt-5.6-sol with ultra effort"
+      end
     end
+  end
+
+  next unless File.basename(path) == "appreg_parity_check.yml"
+
+  parity_job = workflow.fetch("jobs", {}).fetch("parity-check", {})
+  parity_steps = parity_job.fetch("steps", [])
+  action_index = parity_steps.index do |step|
+    step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
+  end
+  unless action_index == parity_steps.length - 1
+    errors << "#{path}:parity-check must end with the Codex Action"
+  end
+  if parity_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
+    errors << "#{path}:parity-check must not receive the Jira notification secret"
+  end
+
+  notify_job = workflow.fetch("jobs", {}).fetch("parity-notify", {})
+  unless notify_job.fetch("needs", "") == "parity-check"
+    errors << "#{path}:parity-notify must depend on parity-check"
+  end
+  unless notify_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
+    errors << "#{path}:parity-notify must own the Jira notification secret"
+  end
+end
+
+if File.exist?(".github/scripts/codex-usage-metrics.sh")
+  errors << ".github/scripts/codex-usage-metrics.sh must not emit empty compatibility telemetry"
+end
+Dir[".github/**/*"].select { |path| File.file?(path) }.each do |path|
+  if File.read(path).include?("codex-usage-summary")
+    errors << "#{path} still references the removed empty token-usage artefact"
   end
 end
 

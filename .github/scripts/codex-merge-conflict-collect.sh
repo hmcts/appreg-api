@@ -20,13 +20,8 @@ conflicted_files_path="${CONFLICTED_FILES_PATH}"
 patch_path="${output_dir}/changes.patch"
 comment_body_path="${output_dir}/codex-comment.md"
 metadata_path="${output_dir}/metadata.env"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 sanitized_home="${RUNNER_TEMP:-/tmp}/codex-conflict-collect-home"
 sanitized_tmp="${RUNNER_TEMP:-/tmp}/codex-conflict-collect-tmp"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
 
 run_sanitized() {
   env -i \
@@ -105,5 +100,3 @@ fi
   echo "head_sha=${HEAD_SHA}"
   echo "base_sha=${BASE_SHA}"
 } >"${metadata_path}"
-
-write_codex_usage_summary /dev/null "${usage_summary_path}" "merge-conflict-resolution" 0

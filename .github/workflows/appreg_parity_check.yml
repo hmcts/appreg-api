@@ -38,6 +38,10 @@ jobs:
     timeout-minutes: 120
     permissions:
       contents: read
+    outputs:
+      codex_outcome: ${{ steps.codex-action.outcome }}
+      parity_result: ${{ steps.codex-action.outputs.final-message }}
+      snapshot_id: ${{ steps.prepare.outputs.snapshot_id }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -65,13 +69,6 @@ jobs:
           ref: ${{ env.DEFAULT_BRANCH }}
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Initialise fallback parity result
-        run: |
-          python3 ./.github/scripts/write-parity-fallback-report.py \
-            --summary "Parity check did not complete before the report stage. Setup, authentication, snapshot download, or validation may have failed." \
-            --gap "Parity workflow setup failed before Codex produced a result." \
-            --recommended-next-step "Inspect the GitHub Actions run logs and rerun the parity check after fixing the setup failure."
 
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
@@ -120,8 +117,6 @@ jobs:
 
       - name: Prepare parity prompt
         id: prepare
-        env:
-          CODEX_PREPARE_ONLY: "true"
         run: ./.github/scripts/codex-parity-check.sh
 
       - name: Run report-only parity check
@@ -141,55 +136,42 @@ jobs:
           codex-user: codex
           codex-args: '["--ephemeral", "--add-dir", "${{ steps.prepare.outputs.legacy_snapshot_dir }}"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          [[ -s "$server_info" ]] || exit 0
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  parity-notify:
+    needs: parity-check
+    if: ${{ always() && inputs.workflowType == 'parity-check' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      CODEX_ACTION_OUTCOME: ${{ needs.parity-check.outputs.codex_outcome }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      SNAPSHOT_ID: ${{ needs.parity-check.outputs.snapshot_id }}
 
-      - name: Collect parity report
-        if: always() && steps.prepare.outcome == 'success'
+    steps:
+      - name: Checkout trusted notification scripts
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Validate and sanitise parity result
         env:
-          CODEX_EXIT_STATUS: ${{ steps.codex-action.outcome == 'success' && '0' || '1' }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
-
-      - name: Verify no tracked files changed
-        run: |
-          changed="$(git status --short --untracked-files=all)"
-          if [[ -n "${changed}" ]]; then
-            echo "Parity checker must not modify tracked files:" >&2
-            echo "${changed}" >&2
-            python3 ./.github/scripts/write-parity-fallback-report.py \
-              --summary "Parity check result was suppressed because the report-only workflow modified tracked files." \
-              --gap "The parity checker modified tracked files, which violates the report-only contract." \
-              --recommended-next-step "Inspect the GitHub Actions run logs before relying on this parity result."
-            exit 1
-          fi
+          CODEX_FINAL_MESSAGE: ${{ needs.parity-check.outputs.parity_result }}
+          OUTPUT_DIR: ${{ runner.temp }}/parity-output
+        run: ./.github/scripts/collect-parity-result.py
 
       - name: Notify Jira parity result
-        if: always()
         env:
           CODEX_JIRA_PARITY_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PARITY_NOTIFY_URL }}
           CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS || '10' }}
+          OUTPUT_DIR: ${{ runner.temp }}/parity-output
+        run: ./.github/scripts/notify-jira-parity-result.py --report "${OUTPUT_DIR}/parity-report.json"
+
+      - name: Preserve Codex failure status
+        if: ${{ env.CODEX_ACTION_OUTCOME != 'success' }}
         run: |
-          report_path="${OUTPUT_DIR}/parity-report.json"
-          if [[ ! -s "${report_path}" ]]; then
-            echo "::warning::Parity report was not produced; skipping Jira parity notification."
-            exit 0
-          fi
-
-          ./.github/scripts/notify-jira-parity-result.py --report "${report_path}"
-
-      - name: Upload token usage summary
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: codex-parity-usage-summary
-          path: ${{ runner.temp }}/parity-output/codex-usage-summary.json
-          if-no-files-found: warn
-          retention-days: 14
+          echo "Codex parity execution did not succeed: ${CODEX_ACTION_OUTCOME:-not-run}" >&2
+          exit 1

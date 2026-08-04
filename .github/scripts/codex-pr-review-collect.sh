@@ -15,10 +15,8 @@ output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
 comment_body_path="${output_dir}/codex-comment.md"
 patch_path="${output_dir}/changes.patch"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 sanitized_home="${RUNNER_TEMP:-/tmp}/codex-review-collect-home"
 sanitized_tmp="${RUNNER_TEMP:-/tmp}/codex-review-collect-tmp"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # A preparation skip already wrote the complete no-change metadata artefact.
 if [[ -s "${metadata_path}" ]] && grep -qx 'has_changes=false' "${metadata_path}"; then
@@ -43,9 +41,6 @@ set +a
 for name in PR_NUMBER HEAD_REF BASE_REF COMMENT_AUTHOR COMMENT_URL; do
   required_env "${name}"
 done
-
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
 
 run_sanitized() {
   env -i \
@@ -89,7 +84,6 @@ if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
     echo "head_ref=${HEAD_REF}"
     echo "base_ref=${BASE_REF}"
   } >"${metadata_path}"
-  write_codex_usage_summary /dev/null "${usage_summary_path}" "pr-review-feedback" 0
   exit 0
 fi
 
@@ -108,5 +102,3 @@ git_sanitized diff --cached --binary >"${patch_path}"
   echo "comment_author=${COMMENT_AUTHOR}"
   echo "comment_url=${COMMENT_URL}"
 } >"${metadata_path}"
-
-write_codex_usage_summary /dev/null "${usage_summary_path}" "pr-review-feedback" 0

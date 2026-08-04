@@ -23,7 +23,6 @@ capture_codex_collector() {
   mkdir -p "${trusted_dir}"
   chmod 0755 "${trusted_dir}"
   install -m 0555 "${collector_source}" "${collector_path}"
-  install -m 0444 "${source_dir}/codex-usage-metrics.sh" "${trusted_dir}/codex-usage-metrics.sh"
   install -m 0444 "${source_dir}/codex-action-runtime.sh" "${trusted_dir}/codex-action-runtime.sh"
 
   printf '%s\n' "${collector_path}"

@@ -21,13 +21,8 @@ final_message_path="${FINAL_MESSAGE_PATH}"
 pr_body_path="${output_dir}/codex-pr-body.md"
 patch_path="${output_dir}/changes.patch"
 metadata_path="${output_dir}/metadata.env"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 sanitized_home="${RUNNER_TEMP:-/tmp}/codex-collect-home"
 sanitized_tmp="${RUNNER_TEMP:-/tmp}/codex-collect-tmp"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
 
 run_sanitized() {
   env -i \
@@ -120,10 +115,6 @@ git_sanitized diff --cached --binary >"${patch_path}"
     echo "repair_attempt=${REPAIR_ATTEMPT}"
   fi
 } >"${metadata_path}"
-
-# The official Action does not expose its JSON event stream as a file. Preserve
-# the existing artefact schema and mark usage unavailable for this invocation.
-write_codex_usage_summary /dev/null "${usage_summary_path}" "${CODEX_OPERATION}" 0
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {

@@ -47,25 +47,56 @@ workflows pass.
 Generation and repair jobs split their work into trusted preparation, a direct
 official Action invocation, proxy shutdown, and collection through a script
 captured before any generated patch or PR branch is loaded. The captured
-collector is held outside the
-writable checkout and cannot be read or changed by the `codex` user. Repository
-formatters, tests, publishing, and other repository-controlled executables run
-only in separate jobs where neither the API key nor the proxy is available.
+collector is held outside the writable checkout and cannot be read or changed
+by the `codex` user. Repository formatters, tests, publishing, and other
+repository-controlled executables run only in separate jobs where neither the
+API key nor the proxy is available. The report-only parity workflow is stricter:
+the Codex Action is the final step on its runner, and a fresh dependent job
+validates the structured result and receives the Jira notification secret.
 
 The regional Responses endpoint is
-`https://eu.api.openai.com/v1/responses`. The official Action does not expose a
-token-event file to the collector, so the existing usage-summary artefact is
-retained for schema compatibility with `usageAvailable=false`.
+`https://eu.api.openai.com/v1/responses`.
+
+## Cost and usage monitoring
+
+The official Action does not expose its token event stream to trusted workflow
+collectors. Empty per-run token artefacts are therefore not emitted: a file with
+`usageAvailable=false` is not cost telemetry and must not be used for reporting.
+This is an accepted limitation of the credential-proxy migration.
+
+Cost governance uses the OpenAI provider control plane instead:
+
+- Run the Apps Reg agent from a dedicated OpenAI project. Use separate project
+  API keys for each repository when repository-level attribution is required.
+- Keep the organisation Admin API key in the CGI AI team's central monitoring
+  service or Key Vault. It must not be stored in these repositories, GitHub
+  Actions, or AKS.
+- Export daily usage from
+  `GET /v1/organization/usage/completions`, filtered by project or API key and
+  grouped by model. Export daily spend from
+  `GET /v1/organization/costs`, filtered by the same project.
+- Retain the raw daily buckets, publish a monthly cost report, and alert against
+  the agreed project budget. GitHub run history remains the source for run counts
+  and operational failures; provider data is the source for tokens and cost.
+
+Before production rollout, record the OpenAI project ID, reporting owner,
+collection location, retention period, and spend-alert threshold. Until the
+central export is operational, the named owner must review the OpenAI
+organisation usage dashboard at least weekly. See OpenAI's
+[Usage and Costs API guide](https://developers.openai.com/cookbook/examples/completions_usage_api)
+and [organisation usage dashboard](https://platform.openai.com/settings/organization/usage).
 
 ## Required Repository Secrets
 
 - `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
+- `CODEX_JIRA_PARITY_NOTIFY_URL`: Azure Function URL, including its function key, for parity-result notifications.
 
 ## Optional Repository Variables
 
 - `CODEX_REVIEWER`: GitHub username to request for review on Codex PRs.
 - `CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after PR creation. Defaults to `10`.
+- `CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after a parity check. Defaults to `10`.
 
 ## Jira Automation
 
