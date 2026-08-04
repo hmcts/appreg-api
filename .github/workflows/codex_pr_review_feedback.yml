@@ -157,8 +157,6 @@ jobs:
           persist-credentials: false
 
       - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Run Codex on review feedback and create patch artifact

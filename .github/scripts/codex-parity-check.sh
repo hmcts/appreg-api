@@ -21,7 +21,6 @@ required_env "LEGACY_SNAPSHOT_DIR"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-parity-${run_id}-${run_attempt}"
-runner_home="${HOME:-/home/runner}"
 codex_home="${artifact_dir}/codex-home"
 codex_tmp="${artifact_dir}/codex-tmp"
 codex_runner_temp="${artifact_dir}/codex-runner-temp"
@@ -41,22 +40,14 @@ source "${script_dir}/codex-usage-metrics.sh"
 
 prepare_codex_home() {
   mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-
-  if [[ -f "${runner_home}/.codex/auth.json" ]]; then
-    cp "${runner_home}/.codex/auth.json" "${codex_home}/.codex/auth.json"
-    chmod 600 "${codex_home}/.codex/auth.json"
-  fi
-
-  if [[ -f "${runner_home}/.codex/config.toml" ]]; then
-    cp "${runner_home}/.codex/config.toml" "${codex_home}/.codex/config.toml"
-    chmod 600 "${codex_home}/.codex/config.toml"
-  fi
 }
 
 run_codex() {
   env -i \
     "HOME=${codex_home}" \
     "CODEX_HOME=${codex_home}/.codex" \
+    "CODEX_API_KEY=${CODEX_API_KEY:?CODEX_API_KEY is required}" \
+    "CODEX_OPENAI_BASE_URL=${CODEX_OPENAI_BASE_URL:?CODEX_OPENAI_BASE_URL is required}" \
     "XDG_CACHE_HOME=${codex_home}/.cache" \
     "XDG_CONFIG_HOME=${codex_home}/.config" \
     "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
@@ -257,6 +248,7 @@ echo "Running report-only Apps Reg legacy parity check for ${ISSUE_KEY}"
 codex_status=0
 run_codex_exec_with_usage "legacy-parity-check" "${usage_events_path}" "${usage_summary_path}" \
   run_codex codex exec \
+  -c "openai_base_url=\"${CODEX_OPENAI_BASE_URL}\"" \
   --json \
   --cd "${PWD}" \
   --add-dir "${legacy_snapshot_dir}" \

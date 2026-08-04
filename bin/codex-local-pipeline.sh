@@ -23,8 +23,8 @@ Options:
 
 Environment:
   BASE_BRANCH                  Alternative way to set --base.
-  OPENAI_API_KEY               Used by codex mode if present; otherwise existing
-                              Codex CLI login is used.
+  CODEX_API_KEY                Required by codex mode for API-key authentication.
+  CODEX_OPENAI_BASE_URL        Required regional OpenAI API endpoint.
   GRADLE_FAST_TASKS            Space-separated Gradle tasks for fast mode.
                               Default: clean check.
   REQUIRE_DOCKER               Set true to require Docker outside full mode.

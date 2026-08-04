@@ -34,9 +34,15 @@ All Codex workflows target:
 runs-on: codex-pilot-azure-aks
 ```
 
+## Runner-provisioned Codex authentication
+
+The ARC runner template injects `CODEX_API_KEY` from the Kubernetes
+`codex-openai-api-key` secret and sets `CODEX_OPENAI_BASE_URL` to the approved
+regional OpenAI API endpoint. Codex workflows do not read the API key from a
+GitHub repository secret and do not copy local Codex login files.
+
 ## Required Repository Secrets
 
-- `OPENAI_API_KEY`: used by the runner to authenticate Codex non-interactively.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
 
 ## Optional Repository Variables

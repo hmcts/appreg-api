@@ -31,11 +31,14 @@ else
   echo "::warning::docker is not installed or not on PATH. This is acceptable for fast smoke/unit-test runs, but full Testcontainers-based verification will need Docker support."
 fi
 
-if [[ -n "${OPENAI_API_KEY:-}" ]]; then
-  echo "Authenticating Codex CLI with repository secret."
-  printf '%s' "$OPENAI_API_KEY" | codex login --with-api-key >/dev/null
-else
-  echo "::notice::OPENAI_API_KEY not set; using runner-provisioned Codex auth."
+if [[ -z "${CODEX_API_KEY:-}" ]]; then
+  echo "Missing runner-provisioned CODEX_API_KEY." >&2
+  exit 1
 fi
 
-codex login status
+if [[ -z "${CODEX_OPENAI_BASE_URL:-}" ]]; then
+  echo "Missing runner-provisioned CODEX_OPENAI_BASE_URL." >&2
+  exit 1
+fi
+
+echo "Using runner-provisioned Codex API-key authentication."
