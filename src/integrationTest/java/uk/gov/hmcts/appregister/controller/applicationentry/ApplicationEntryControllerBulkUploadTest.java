@@ -467,8 +467,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
         assertThat(jobId).isNotEmpty();
 
-        Response jobFailureDetailResponse = restAssuredClient.executeGetRequest(
-            getLocalUrl("jobs/" + jobId), token);
+        Response jobFailureDetailResponse =
+                restAssuredClient.executeGetRequest(getLocalUrl("jobs/" + jobId), token);
 
         assertThat(jobFailureDetailResponse.getStatusCode()).isEqualTo(200);
         JobAcknowledgement jobFailureDetail = jobFailureDetailResponse.as(JobAcknowledgement.class);
@@ -480,11 +480,14 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         assertThat(jobFailureDetail.getErrorDescription()).contains("\"location\":\"mobile\"");
         assertThat(jobFailureDetail.getErrorDescription()).contains("\"location\":\"email\"");
 
-        assertThat(jobFailureDetail.getErrorDescription()).doesNotContain("\"location\":\"respondent.contactDetails.postcode\"");
-        assertThat(jobFailureDetail.getErrorDescription()).doesNotContain("\"location\":\"respondent.contactDetails.phone\"");
-        assertThat(jobFailureDetail.getErrorDescription()).doesNotContain("\"location\":\"respondent.contactDetails.mobile\"");
-        assertThat(jobFailureDetail.getErrorDescription()).doesNotContain("\"location\":\"respondent.contactDetails.email\"");
-
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.postcode\"");
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.phone\"");
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.mobile\"");
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.email\"");
     }
 
     @Test
