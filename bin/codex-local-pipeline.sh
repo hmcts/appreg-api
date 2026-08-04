@@ -11,7 +11,7 @@ Runs a local approximation of the checks that matter before a Codex PR is opened
 Modes:
   checks-only  Validate workflow/script syntax and repository PR guardrails only.
   fast         Run checks-only plus Gradle check. Default.
-  codex        Run the Codex runner preflight plus fast mode.
+  codex        Run the runner toolchain preflight plus fast mode.
   full         Run fast mode plus full Gradle checks, integration, functional,
                smoke, coverage, and dependency checks.
 
@@ -23,8 +23,6 @@ Options:
 
 Environment:
   BASE_BRANCH                  Alternative way to set --base.
-  CODEX_API_KEY                Required by codex mode for API-key authentication.
-  CODEX_OPENAI_BASE_URL        Required regional OpenAI API endpoint.
   GRADLE_FAST_TASKS            Space-separated Gradle tasks for fast mode.
                               Default: clean check.
   REQUIRE_DOCKER               Set true to require Docker outside full mode.

@@ -8,13 +8,45 @@ on:
         required: false
         default: codex-runner-smoke
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
-  smoke-test:
+  codex-auth-smoke:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Verify runner toolchain
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Make the checkout readable by the Codex user
+        run: chmod -R g+rX "$GITHUB_WORKSPACE"
+
+      - name: Verify Codex API authentication
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          permission-profile: ":read-only"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          prompt: "Reply exactly CODEX_SMOKE_OK. Do not run commands or modify files."
+          codex-args: '["--ephemeral"]'
+
+  branch-smoke:
+    needs: codex-auth-smoke
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 30
+    permissions:
+      contents: write
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       BRANCH_PREFIX: ${{ inputs.branch_prefix }}
@@ -30,7 +62,7 @@ jobs:
           git fetch --prune --no-tags origin "${DEFAULT_BRANCH}"
           git checkout -B "${DEFAULT_BRANCH}" FETCH_HEAD
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Configure Git identity

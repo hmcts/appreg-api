@@ -54,8 +54,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Start secure Codex API proxy
+        uses: ./.github/actions/setup-codex-proxy
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
 
       - name: Run Codex and create patch artifact
         id: codex
@@ -185,7 +190,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -199,6 +204,11 @@ jobs:
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
+
+      - name: Start secure Codex API proxy
+        uses: ./.github/actions/setup-codex-proxy
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
 
       - name: Repair Codex patch
         id: repair
@@ -330,7 +340,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -344,6 +354,11 @@ jobs:
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
+
+      - name: Start secure Codex API proxy
+        uses: ./.github/actions/setup-codex-proxy
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
 
       - name: Repair Codex patch
         id: repair
@@ -475,7 +490,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -489,6 +504,11 @@ jobs:
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
+
+      - name: Start secure Codex API proxy
+        uses: ./.github/actions/setup-codex-proxy
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
 
       - name: Repair Codex patch
         id: repair
@@ -806,7 +826,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -820,6 +840,11 @@ jobs:
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
+
+      - name: Start secure Codex API proxy
+        uses: ./.github/actions/setup-codex-proxy
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
 
       - name: Repair Codex patch from PR verification
         id: repair

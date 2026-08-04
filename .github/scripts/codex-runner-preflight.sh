@@ -31,14 +31,9 @@ else
   echo "::warning::docker is not installed or not on PATH. This is acceptable for fast smoke/unit-test runs, but full Testcontainers-based verification will need Docker support."
 fi
 
-if [[ -z "${CODEX_API_KEY:-}" ]]; then
-  echo "Missing runner-provisioned CODEX_API_KEY." >&2
-  exit 1
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  id codex
+  sudo -n -u codex -- true
 fi
 
-if [[ -z "${CODEX_OPENAI_BASE_URL:-}" ]]; then
-  echo "Missing runner-provisioned CODEX_OPENAI_BASE_URL." >&2
-  exit 1
-fi
-
-echo "Using runner-provisioned Codex API-key authentication."
+echo "Runner toolchain is ready; Codex authentication is verified separately through the official action proxy."

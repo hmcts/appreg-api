@@ -34,15 +34,22 @@ All Codex workflows target:
 runs-on: codex-pilot-azure-aks
 ```
 
-## Runner-provisioned Codex authentication
+## Codex Action authentication
 
-The ARC runner template injects `CODEX_API_KEY` from the Kubernetes
-`codex-openai-api-key` secret and sets `CODEX_OPENAI_BASE_URL` to the approved
-regional OpenAI API endpoint. Codex workflows do not read the API key from a
-GitHub repository secret and do not copy local Codex login files.
+The API key is stored as the GitHub Actions secret `CODEX_OPENAI_API_KEY` and
+is supplied only to the pinned official `openai/codex-action`. The action keeps
+the real key behind a local Responses API proxy; Codex runs as the dedicated
+unprivileged `codex` user and never receives the key in its environment.
+
+Generation and repair scripts use the proxy-bootstrap mode supported by the
+official action so they can retain JSON token-usage artefacts. Each script shuts
+the proxy down immediately after `codex exec`, before repository-controlled
+formatters or verification commands run. The regional Responses endpoint is
+`https://eu.api.openai.com/v1/responses`.
 
 ## Required Repository Secrets
 
+- `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
 
 ## Optional Repository Variables

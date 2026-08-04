@@ -42,6 +42,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=.github/scripts/codex-usage-metrics.sh
 source "${script_dir}/codex-usage-metrics.sh"
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
 
 prepare_codex_home() {
   mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
@@ -79,15 +81,13 @@ run_codex() {
   local codex_env=(
     env -i
     "HOME=${codex_home}"
-    "CODEX_HOME=${codex_home}/.codex"
-    "CODEX_API_KEY=${CODEX_API_KEY:?CODEX_API_KEY is required}"
-    "CODEX_OPENAI_BASE_URL=${CODEX_OPENAI_BASE_URL:?CODEX_OPENAI_BASE_URL is required}"
+    "CODEX_HOME=${CODEX_ACTION_HOME:-${codex_home}/.codex}"
     "XDG_CACHE_HOME=${codex_home}/.cache"
     "XDG_CONFIG_HOME=${codex_home}/.config"
     "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
     "SHELL=${SHELL:-/bin/bash}"
-    "USER=${USER:-runner}"
-    "LOGNAME=${LOGNAME:-${USER:-runner}}"
+    "USER=${CODEX_RUN_USER:-${USER:-runner}}"
+    "LOGNAME=${CODEX_RUN_USER:-${LOGNAME:-${USER:-runner}}}"
     "LANG=${LANG:-C.UTF-8}"
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
     "TERM=${TERM:-xterm}"
@@ -104,7 +104,7 @@ run_codex() {
     codex_env+=("JAVA_HOME=${JAVA_HOME}")
   fi
 
-  "${codex_env[@]}" "$@"
+  run_codex_as_action_user "${codex_env[@]}" "$@"
 }
 
 git_sanitized() {
@@ -251,16 +251,19 @@ fi
 write_prompt
 unset GH_TOKEN
 
+prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
+arm_codex_action_proxy_shutdown
 echo "Running Codex merge-conflict resolution for PR #${PR_NUMBER} on ${HEAD_REF}"
 run_codex_exec_with_usage "merge-conflict-resolution" "${usage_events_path}" "${usage_summary_path}" \
   run_codex codex exec \
-  -c "openai_base_url=\"${CODEX_OPENAI_BASE_URL}\"" \
   --json \
   --cd "${PWD}" \
-  --sandbox workspace-write \
+  --config 'default_permissions=":workspace"' \
   --ephemeral \
   --output-last-message "${final_message_path}" \
   - <"${prompt_path}"
+shutdown_codex_action_proxy
+disarm_codex_action_proxy_shutdown
 
 if [[ ! -s "${final_message_path}" ]]; then
   echo "Codex completed without writing a final message." >"${final_message_path}"

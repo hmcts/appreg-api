@@ -37,23 +37,23 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=.github/scripts/codex-usage-metrics.sh
 source "${script_dir}/codex-usage-metrics.sh"
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
 
 prepare_codex_home() {
   mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
 }
 
 run_codex() {
-  env -i \
+  run_codex_as_action_user env -i \
     "HOME=${codex_home}" \
-    "CODEX_HOME=${codex_home}/.codex" \
-    "CODEX_API_KEY=${CODEX_API_KEY:?CODEX_API_KEY is required}" \
-    "CODEX_OPENAI_BASE_URL=${CODEX_OPENAI_BASE_URL:?CODEX_OPENAI_BASE_URL is required}" \
+    "CODEX_HOME=${CODEX_ACTION_HOME:-${codex_home}/.codex}" \
     "XDG_CACHE_HOME=${codex_home}/.cache" \
     "XDG_CONFIG_HOME=${codex_home}/.config" \
     "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
     "SHELL=${SHELL:-/bin/bash}" \
-    "USER=${USER:-runner}" \
-    "LOGNAME=${LOGNAME:-${USER:-runner}}" \
+    "USER=${CODEX_RUN_USER:-${USER:-runner}}" \
+    "LOGNAME=${CODEX_RUN_USER:-${LOGNAME:-${USER:-runner}}}" \
     "LANG=${LANG:-C.UTF-8}" \
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
     "TERM=${TERM:-xterm}" \
@@ -246,17 +246,20 @@ PY
 
 echo "Running report-only Apps Reg legacy parity check for ${ISSUE_KEY}"
 codex_status=0
+prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}" "${legacy_snapshot_dir}"
+arm_codex_action_proxy_shutdown
 run_codex_exec_with_usage "legacy-parity-check" "${usage_events_path}" "${usage_summary_path}" \
   run_codex codex exec \
-  -c "openai_base_url=\"${CODEX_OPENAI_BASE_URL}\"" \
   --json \
   --cd "${PWD}" \
   --add-dir "${legacy_snapshot_dir}" \
-  --sandbox read-only \
+  --config 'default_permissions=":read-only"' \
   --ephemeral \
   --output-schema "${schema_path}" \
   --output-last-message "${final_message_path}" \
   - <"${prompt_path}" || codex_status=$?
+shutdown_codex_action_proxy
+disarm_codex_action_proxy_shutdown
 
 if [[ "${codex_status}" -ne 0 ]]; then
   echo "::warning::Codex parity check exited with status ${codex_status}; writing UNCERTAIN report for Jira."
