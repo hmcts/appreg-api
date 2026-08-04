@@ -159,24 +159,44 @@ jobs:
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Start secure Codex API proxy
+      - name: Prepare review-feedback prompt
+        id: prepare
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-pr-review-feedback.sh
+
+      - name: Run Codex on review feedback
+        id: codex-action
+        if: steps.prepare.outputs.prompt_path != ''
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          working-directory: .
+          permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
+          codex-args: '["--ephemeral"]'
 
-      - name: Export non-secret Codex runtime settings
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
         run: |
-          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
-          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
 
-      - name: Run Codex on review feedback and create patch artifact
-        id: codex
+      - name: Collect review-feedback patch
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-        run: ./.github/scripts/codex-pr-review-feedback.sh
+          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
+          FEEDBACK_ENV_PATH: ${{ steps.prepare.outputs.feedback_env_path }}
+          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
+        run: '"$COLLECTOR_PATH"'
 
       - name: Upload Codex review output
         uses: actions/upload-artifact@v7

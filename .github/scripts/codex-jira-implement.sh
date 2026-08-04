@@ -20,99 +20,16 @@ required_env "OUTPUT_DIR"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-generate-${run_id}-${run_attempt}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
-sanitized_home="${artifact_dir}/sanitized-home"
-sanitized_tmp="${artifact_dir}/sanitized-tmp"
-sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 output_dir="${OUTPUT_DIR}"
 prompt_path="${artifact_dir}/codex-prompt.md"
 final_message_path="${output_dir}/codex-final-message.md"
 pr_body_path="${output_dir}/codex-pr-body.md"
-patch_path="${output_dir}/changes.patch"
-metadata_path="${output_dir}/metadata.env"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
 
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-}
-
-run_codex() {
-  local codex_env=(
-    env -i
-    "HOME=${codex_home}"
-    "CODEX_HOME=${CODEX_ACTION_HOME:-${codex_home}/.codex}"
-    "XDG_CACHE_HOME=${codex_home}/.cache"
-    "XDG_CONFIG_HOME=${codex_home}/.config"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${CODEX_RUN_USER:-${USER:-runner}}"
-    "LOGNAME=${CODEX_RUN_USER:-${LOGNAME:-${USER:-runner}}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${codex_tmp}"
-    "RUNNER_TEMP=${codex_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    codex_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  run_codex_as_action_user "${codex_env[@]}" "$@"
-}
-
-run_sanitized() {
-  local sanitized_env=(
-    env -i
-    "HOME=${sanitized_home}"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${USER:-runner}"
-    "LOGNAME=${LOGNAME:-${USER:-runner}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${sanitized_tmp}"
-    "RUNNER_TEMP=${sanitized_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GRADLE_USER_HOME=${sanitized_home}/.gradle"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    sanitized_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  "${sanitized_env[@]}" "$@"
-}
-
-git_sanitized() {
-  run_sanitized git \
-    -c core.hooksPath=/dev/null \
-    -c credential.helper= \
-    -c protocol.file.allow=never \
-    "$@"
-}
-
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-prepare_codex_home
+mkdir -p "${artifact_dir}" "${output_dir}"
 
 branch_slug="$(
   python3 -I - <<'PY'
@@ -200,52 +117,14 @@ Codex may run lightweight targeted checks during generation. This workflow verif
 Path(os.environ["PR_BODY_PATH"]).write_text(pr_body, encoding="utf-8")
 PY
 
+collector_path="$(capture_codex_collector "${script_dir}/codex-jira-collect.sh")"
 prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
-arm_codex_action_proxy_shutdown
-echo "Running Codex for ${ISSUE_KEY}; publish will use ${branch_name}"
-run_codex_exec_with_usage "jira-generate" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --config 'default_permissions=":workspace"' \
-  --ephemeral \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}"
-shutdown_codex_action_proxy
-disarm_codex_action_proxy_shutdown
-
-if [[ ! -s "${final_message_path}" ]]; then
-  echo "Codex completed without writing a final message." >"${final_message_path}"
-fi
-
-{
-  echo
-  echo "## Codex Final Message"
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >>"${pr_body_path}"
-
-if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
-  echo "Codex did not produce any committable changes." >&2
-  exit 1
-fi
-
-git_sanitized add -A
-if git_sanitized diff --cached --quiet; then
-  echo "Codex produced changes, but none were staged for patch output." >&2
-  exit 1
-fi
-
-git_sanitized diff --cached --binary >"${patch_path}"
-
-{
-  echo "branch_name=${branch_name}"
-  echo "has_changes=true"
-} >"${metadata_path}"
-
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
+    echo "prompt_path=${prompt_path}"
+    echo "final_message_path=${final_message_path}"
+    echo "pr_body_path=${pr_body_path}"
     echo "branch_name=${branch_name}"
-    echo "has_changes=true"
+    echo "collector_path=${collector_path}"
   } >>"${GITHUB_OUTPUT}"
 fi

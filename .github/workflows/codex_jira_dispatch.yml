@@ -57,24 +57,45 @@ jobs:
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Start secure Codex API proxy
+      - name: Prepare Codex prompt
+        id: prepare
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-jira-implement.sh
+
+      - name: Run Codex
+        id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          working-directory: .
+          permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
+          codex-args: '["--ephemeral"]'
 
-      - name: Export non-secret Codex runtime settings
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
         run: |
-          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
-          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
 
-      - name: Run Codex and create patch artifact
+      - name: Collect Codex patch artifact
         id: codex
         env:
+          CODEX_OPERATION: jira-generate
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-        run: ./.github/scripts/codex-jira-implement.sh
+          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
+          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
+          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
+        run: '"$COLLECTOR_PATH"'
 
       - name: Upload Codex output
         uses: actions/upload-artifact@v7
@@ -213,26 +234,48 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Start secure Codex API proxy
-        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
-        with:
-          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
-          responses-api-endpoint: https://eu.api.openai.com/v1/responses
-          safety-strategy: unprivileged-user
-          codex-user: codex
-
-      - name: Export non-secret Codex runtime settings
-        run: |
-          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
-          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
-
-      - name: Repair Codex patch
-        id: repair
+      - name: Prepare Codex repair prompt
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
+        run: |
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+
+      - name: Collect repaired Codex patch
+        id: repair
+        env:
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
+          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
+          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
+        run: '"$COLLECTOR_PATH"'
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -371,26 +414,48 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Start secure Codex API proxy
-        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
-        with:
-          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
-          responses-api-endpoint: https://eu.api.openai.com/v1/responses
-          safety-strategy: unprivileged-user
-          codex-user: codex
-
-      - name: Export non-secret Codex runtime settings
-        run: |
-          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
-          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
-
-      - name: Repair Codex patch
-        id: repair
+      - name: Prepare Codex repair prompt
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
+        run: |
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+
+      - name: Collect repaired Codex patch
+        id: repair
+        env:
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
+          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
+          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
+        run: '"$COLLECTOR_PATH"'
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -529,26 +594,48 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Start secure Codex API proxy
-        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
-        with:
-          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
-          responses-api-endpoint: https://eu.api.openai.com/v1/responses
-          safety-strategy: unprivileged-user
-          codex-user: codex
-
-      - name: Export non-secret Codex runtime settings
-        run: |
-          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
-          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
-
-      - name: Repair Codex patch
-        id: repair
+      - name: Prepare Codex repair prompt
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
+        run: |
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+
+      - name: Collect repaired Codex patch
+        id: repair
+        env:
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
+          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
+          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
+        run: '"$COLLECTOR_PATH"'
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -873,26 +960,48 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Start secure Codex API proxy
-        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
-        with:
-          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
-          responses-api-endpoint: https://eu.api.openai.com/v1/responses
-          safety-strategy: unprivileged-user
-          codex-user: codex
-
-      - name: Export non-secret Codex runtime settings
-        run: |
-          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
-          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
-
-      - name: Repair Codex patch from PR verification
-        id: repair
+      - name: Prepare Codex repair prompt from PR verification
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
+        run: |
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+
+      - name: Collect repaired Codex patch
+        id: repair
+        env:
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
+          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
+          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
+        run: '"$COLLECTOR_PATH"'
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7

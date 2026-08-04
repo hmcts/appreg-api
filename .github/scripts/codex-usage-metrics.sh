@@ -115,29 +115,12 @@ summary = {
     "invalidJsonLineCount": invalid_json_lines,
     "observedTokenFields": observed_token_fields,
     "note": (
-        "Usage is parsed from `codex exec --json` events. If usageAvailable is false, "
-        "this Codex CLI/auth mode did not emit token usage in the JSON event stream."
+        "The official Codex Action does not expose a token-event file to the trusted "
+        "collector. The compatibility artefact is retained with usageAvailable=false."
     ),
 }
 
 summary_path.parent.mkdir(parents=True, exist_ok=True)
 summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
 PY
-}
-
-run_codex_exec_with_usage() {
-  local invocation="$1"
-  local events_path="$2"
-  local summary_path="$3"
-  shift 3
-
-  set +e
-  "$@" 2>&1 | tee "${events_path}"
-  local codex_status="${PIPESTATUS[0]}"
-  set -e
-
-  write_codex_usage_summary "${events_path}" "${summary_path}" "${invocation}" "${codex_status}"
-  rm -f "${events_path}"
-
-  return "${codex_status}"
 }

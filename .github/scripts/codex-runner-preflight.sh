@@ -34,6 +34,12 @@ fi
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   id codex
   sudo -n -u codex -- true
+  test -d /opt/codex-trusted
+  test -w /opt/codex-trusted
+  if sudo -n -u codex -- test -r /opt/codex-trusted; then
+    echo "The Codex user must not be able to access trusted post-action scripts." >&2
+    exit 1
+  fi
 fi
 
 echo "Runner toolchain is ready; Codex authentication is verified separately through the official action proxy."

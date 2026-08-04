@@ -23,9 +23,6 @@ required_env "REPAIR_ATTEMPT"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-repair-${run_id}-${run_attempt}-${REPAIR_ATTEMPT}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
 sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
@@ -34,60 +31,18 @@ failure_dir="${FAILURE_DIR}"
 output_dir="${OUTPUT_DIR}"
 input_metadata_path="${input_dir}/metadata.env"
 input_patch_path="${input_dir}/changes.patch"
-input_pr_body_path="${input_dir}/codex-pr-body.md"
 failure_log_path="${failure_dir}/verification-failure.log"
 failure_summary_path="${failure_dir}/verification-failure-summary.log"
 prompt_path="${artifact_dir}/codex-repair-prompt.md"
 final_message_path="${output_dir}/codex-repair-${REPAIR_ATTEMPT}-final-message.md"
-pr_body_path="${output_dir}/codex-pr-body.md"
-patch_path="${output_dir}/changes.patch"
-metadata_path="${output_dir}/metadata.env"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
 
 metadata_value() {
   local key="$1"
   awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "${input_metadata_path}"
-}
-
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-}
-
-run_codex() {
-  local codex_env=(
-    env -i
-    "HOME=${codex_home}"
-    "CODEX_HOME=${CODEX_ACTION_HOME:-${codex_home}/.codex}"
-    "XDG_CACHE_HOME=${codex_home}/.cache"
-    "XDG_CONFIG_HOME=${codex_home}/.config"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${CODEX_RUN_USER:-${USER:-runner}}"
-    "LOGNAME=${CODEX_RUN_USER:-${LOGNAME:-${USER:-runner}}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${codex_tmp}"
-    "RUNNER_TEMP=${codex_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    codex_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  run_codex_as_action_user "${codex_env[@]}" "$@"
 }
 
 run_sanitized() {
@@ -127,7 +82,6 @@ git_sanitized() {
 }
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-prepare_codex_home
 
 if [[ ! -s "${input_metadata_path}" ]]; then
   echo "Missing input metadata: ${input_metadata_path}" >&2
@@ -202,63 +156,14 @@ Trusted verification failure:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
+collector_path="$(capture_codex_collector "${script_dir}/codex-jira-collect.sh")"
 prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
-arm_codex_action_proxy_shutdown
 echo "Running Codex repair attempt ${REPAIR_ATTEMPT} for ${ISSUE_KEY}; publish will use ${branch_name}"
-run_codex_exec_with_usage "jira-repair-${REPAIR_ATTEMPT}" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --config 'default_permissions=":workspace"' \
-  --ephemeral \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}"
-shutdown_codex_action_proxy
-disarm_codex_action_proxy_shutdown
-
-if [[ ! -s "${final_message_path}" ]]; then
-  echo "Codex repair completed without writing a final message." >"${final_message_path}"
-fi
-
-if [[ -s "${input_pr_body_path}" ]]; then
-  cp "${input_pr_body_path}" "${pr_body_path}"
-else
-  {
-    echo "### Jira link"
-    echo
-    echo "See [${ISSUE_KEY}](${ISSUE_URL})"
-  } >"${pr_body_path}"
-fi
-
-{
-  echo
-  echo "## Codex Repair Attempt ${REPAIR_ATTEMPT}"
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >>"${pr_body_path}"
-
-if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
-  echo "Codex repair left no committable changes." >&2
-  exit 1
-fi
-
-git_sanitized add -A
-if git_sanitized diff --cached --quiet; then
-  echo "Codex repair produced no staged patch output." >&2
-  exit 1
-fi
-
-git_sanitized diff --cached --binary >"${patch_path}"
-
-{
-  echo "branch_name=${branch_name}"
-  echo "has_changes=true"
-  echo "repair_attempt=${REPAIR_ATTEMPT}"
-} >"${metadata_path}"
-
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
+    echo "prompt_path=${prompt_path}"
+    echo "final_message_path=${final_message_path}"
     echo "branch_name=${branch_name}"
-    echo "has_changes=true"
+    echo "collector_path=${collector_path}"
   } >>"${GITHUB_OUTPUT}"
 fi

@@ -21,9 +21,6 @@ required_env "LEGACY_SNAPSHOT_DIR"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-parity-${run_id}-${run_attempt}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
 output_dir="${OUTPUT_DIR}"
 legacy_snapshot_dir="${LEGACY_SNAPSHOT_DIR}"
 prompt_path="${artifact_dir}/codex-parity-prompt.md"
@@ -31,7 +28,6 @@ schema_path="${artifact_dir}/codex-parity-schema.json"
 final_message_path="${output_dir}/codex-parity-final.json"
 report_path="${output_dir}/parity-report.json"
 comment_path="${output_dir}/parity-comment.md"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
 usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -40,28 +36,6 @@ source "${script_dir}/codex-usage-metrics.sh"
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
 
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-}
-
-run_codex() {
-  run_codex_as_action_user env -i \
-    "HOME=${codex_home}" \
-    "CODEX_HOME=${CODEX_ACTION_HOME:-${codex_home}/.codex}" \
-    "XDG_CACHE_HOME=${codex_home}/.cache" \
-    "XDG_CONFIG_HOME=${codex_home}/.config" \
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
-    "SHELL=${SHELL:-/bin/bash}" \
-    "USER=${CODEX_RUN_USER:-${USER:-runner}}" \
-    "LOGNAME=${CODEX_RUN_USER:-${LOGNAME:-${USER:-runner}}}" \
-    "LANG=${LANG:-C.UTF-8}" \
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
-    "TERM=${TERM:-xterm}" \
-    "TMPDIR=${codex_tmp}" \
-    "RUNNER_TEMP=${codex_runner_temp}" \
-    "$@"
-}
-
 snapshot_manifest_path="${legacy_snapshot_dir}/manifest.json"
 if [[ ! -s "${snapshot_manifest_path}" ]]; then
   echo "Legacy snapshot manifest is missing: ${snapshot_manifest_path}" >&2
@@ -69,7 +43,6 @@ if [[ ! -s "${snapshot_manifest_path}" ]]; then
 fi
 
 mkdir -p "${artifact_dir}" "${output_dir}"
-prepare_codex_home
 
 snapshot_id="$(
   SNAPSHOT_MANIFEST_PATH="${snapshot_manifest_path}" python3 - <<'PY'
@@ -245,21 +218,23 @@ Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
 echo "Running report-only Apps Reg legacy parity check for ${ISSUE_KEY}"
-codex_status=0
 prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}" "${legacy_snapshot_dir}"
-arm_codex_action_proxy_shutdown
-run_codex_exec_with_usage "legacy-parity-check" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --add-dir "${legacy_snapshot_dir}" \
-  --config 'default_permissions=":read-only"' \
-  --ephemeral \
-  --output-schema "${schema_path}" \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}" || codex_status=$?
-shutdown_codex_action_proxy
-disarm_codex_action_proxy_shutdown
+if [[ "${CODEX_PREPARE_ONLY:-false}" == "true" ]]; then
+  collector_path="$(capture_codex_collector "${script_dir}/codex-parity-check.sh")"
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    {
+      echo "prompt_path=${prompt_path}"
+      echo "schema_path=${schema_path}"
+      echo "final_message_path=${final_message_path}"
+      echo "legacy_snapshot_dir=${legacy_snapshot_dir}"
+      echo "collector_path=${collector_path}"
+    } >>"${GITHUB_OUTPUT}"
+  fi
+  exit 0
+fi
+
+codex_status="${CODEX_EXIT_STATUS:-0}"
+write_codex_usage_summary /dev/null "${usage_summary_path}" "legacy-parity-check" "${codex_status}"
 
 if [[ "${codex_status}" -ne 0 ]]; then
   echo "::warning::Codex parity check exited with status ${codex_status}; writing UNCERTAIN report for Jira."

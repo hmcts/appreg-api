@@ -41,11 +41,17 @@ is supplied only to the pinned official `openai/codex-action`. The action keeps
 the real key behind a local Responses API proxy; Codex runs as the dedicated
 unprivileged `codex` user and never receives the key in its environment.
 
-Generation and repair scripts use the proxy-bootstrap mode supported by the
-official action so they can retain JSON token-usage artefacts. Each script shuts
-the proxy down immediately after `codex exec`, before repository-controlled
-formatters or verification commands run. The regional Responses endpoint is
-`https://eu.api.openai.com/v1/responses`.
+Generation and repair jobs split their work into trusted preparation, a direct
+official Action invocation, proxy shutdown, and collection through a script
+captured before Codex starts. The captured collector is held outside the
+writable checkout and cannot be read or changed by the `codex` user. Repository
+formatters, tests, publishing, and other repository-controlled executables run
+only in separate jobs where neither the API key nor the proxy is available.
+
+The regional Responses endpoint is
+`https://eu.api.openai.com/v1/responses`. The official Action does not expose a
+token-event file to the collector, so the existing usage-summary artefact is
+retained for schema compatibility with `usageAvailable=false`.
 
 ## Required Repository Secrets
 

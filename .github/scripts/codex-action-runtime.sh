@@ -4,10 +4,6 @@
 # openai/codex-action's local Responses API proxy.
 
 prepare_codex_action_runtime() {
-  if [[ -z "${CODEX_RUN_USER:-}" ]]; then
-    return 0
-  fi
-
   local runtime_path
   for runtime_path in "$@"; do
     [[ -e "${runtime_path}" ]] || continue
@@ -16,43 +12,32 @@ prepare_codex_action_runtime() {
   done
 }
 
-run_codex_as_action_user() {
-  if [[ -n "${CODEX_RUN_USER:-}" ]]; then
-    sudo -n -u "${CODEX_RUN_USER}" -- "$@"
-  else
-    "$@"
-  fi
+capture_codex_collector() {
+  local collector_source="$1"
+  local source_dir trusted_dir collector_path
+
+  source_dir="$(cd "$(dirname "${collector_source}")" && pwd)"
+  trusted_dir="${CODEX_TRUSTED_DIR_ROOT:-/opt/codex-trusted}/${GITHUB_RUN_ID:-manual}-${GITHUB_RUN_ATTEMPT:-1}-${GITHUB_JOB:-job}"
+  collector_path="${trusted_dir}/$(basename "${collector_source}")"
+
+  mkdir -p "${trusted_dir}"
+  chmod 0755 "${trusted_dir}"
+  install -m 0555 "${collector_source}" "${collector_path}"
+  install -m 0444 "${source_dir}/codex-usage-metrics.sh" "${trusted_dir}/codex-usage-metrics.sh"
+  install -m 0444 "${source_dir}/codex-action-runtime.sh" "${trusted_dir}/codex-action-runtime.sh"
+
+  printf '%s\n' "${collector_path}"
 }
 
-shutdown_codex_action_proxy() {
-  [[ -n "${CODEX_ACTION_HOME:-}" ]] || return 0
-  [[ -n "${GITHUB_RUN_ID:-}" ]] || {
-    echo "Missing GITHUB_RUN_ID while shutting down the Codex Action proxy." >&2
-    return 1
-  }
+capture_codex_metadata() {
+  local source_path="$1"
+  local collector_path="$2"
+  local target_name="$3"
+  local trusted_dir target_path
 
-  local server_info_path="${CODEX_ACTION_HOME}/${GITHUB_RUN_ID}.json"
-  if [[ ! -s "${server_info_path}" ]]; then
-    echo "Missing Codex Action proxy server information: ${server_info_path}" >&2
-    return 1
-  fi
+  trusted_dir="$(dirname "${collector_path}")"
+  target_path="${trusted_dir}/${target_name}"
+  install -m 0444 "${source_path}" "${target_path}"
 
-  local proxy_port
-  proxy_port="$(jq -r '.port // empty' "${server_info_path}")"
-  if [[ ! "${proxy_port}" =~ ^[0-9]+$ ]]; then
-    echo "Invalid Codex Action proxy port in ${server_info_path}." >&2
-    return 1
-  fi
-
-  curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
-}
-
-arm_codex_action_proxy_shutdown() {
-  if [[ -n "${CODEX_ACTION_HOME:-}" ]]; then
-    trap shutdown_codex_action_proxy EXIT
-  fi
-}
-
-disarm_codex_action_proxy_shutdown() {
-  trap - EXIT
+  printf '%s\n' "${target_path}"
 }
