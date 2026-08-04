@@ -69,6 +69,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          model: gpt-5.6-sol
+          effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           working-directory: .
@@ -248,6 +250,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          model: gpt-5.6-sol
+          effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           working-directory: .
@@ -428,6 +432,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          model: gpt-5.6-sol
+          effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           working-directory: .
@@ -608,6 +614,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          model: gpt-5.6-sol
+          effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           working-directory: .
@@ -974,6 +982,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          model: gpt-5.6-sol
+          effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           working-directory: .
