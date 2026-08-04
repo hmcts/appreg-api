@@ -17,6 +17,6 @@ public class BulkUploadError {
     private String rejectedValue;
     private String message;
     private String addressLine1;
-    private String name;
+    private String code;
     private String errorType;
 }

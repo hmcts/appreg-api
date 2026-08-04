@@ -41,7 +41,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Applicant code is required",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -53,7 +53,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Application code is required",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -68,7 +68,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Respondent cannot be both organisation and person",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -81,7 +81,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             RESPONDENT_MISSING_MESSAGE,
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
