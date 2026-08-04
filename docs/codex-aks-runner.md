@@ -40,10 +40,14 @@ The API key is stored as the GitHub Actions secret `CODEX_OPENAI_API_KEY` and
 is supplied only to the pinned official `openai/codex-action`. The action keeps
 the real key behind a local Responses API proxy; Codex runs as the dedicated
 unprivileged `codex` user and never receives the key in its environment.
+The workflows also pin the Codex CLI and proxy to `0.146.0`; update that
+version consistently across all invocations only after both repository smoke
+workflows pass.
 
 Generation and repair jobs split their work into trusted preparation, a direct
 official Action invocation, proxy shutdown, and collection through a script
-captured before Codex starts. The captured collector is held outside the
+captured before any generated patch or PR branch is loaded. The captured
+collector is held outside the
 writable checkout and cannot be read or changed by the `codex` user. Repository
 formatters, tests, publishing, and other repository-controlled executables run
 only in separate jobs where neither the API key nor the proxy is available.

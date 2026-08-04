@@ -128,9 +128,61 @@ bash -n \
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
-  ruby -e 'require "yaml"; Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each { |f| YAML.load_file(f) }; puts "workflow yaml ok"'
+  ruby - <<'RUBY'
+require "yaml"
+
+expected_codex_version = "0.146.0"
+errors = []
+
+Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
+  workflow = YAML.load_file(path)
+  workflow_env = workflow.fetch("env", {}) || {}
+  workflow.fetch("jobs", {}).each do |job_name, job|
+    steps = job.fetch("steps", [])
+    codex_steps = steps.select do |step|
+      step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
+    end
+    next if codex_steps.empty?
+
+    job_env = job.fetch("env", {}) || {}
+    action_exposes_token = codex_steps.any? do |step|
+      (step.fetch("env", {}) || {}).key?("GH_TOKEN")
+    end
+    if workflow_env.key?("GH_TOKEN") || job_env.key?("GH_TOKEN") || action_exposes_token
+      errors << "#{path}:#{job_name} exposes GH_TOKEN to the Codex Action"
+    end
+
+    codex_steps.each do |step|
+      version = step.fetch("with", {}).fetch("codex-version", "")
+      next if version == expected_codex_version
+
+      errors << "#{path}:#{job_name} must pin codex-version to #{expected_codex_version}"
+    end
+  end
+end
+
+collector_order_checks = {
+  ".github/scripts/codex-jira-repair.sh" => /git_sanitized apply --binary/,
+  ".github/scripts/codex-merge-conflict-implement.sh" => /git_sanitized checkout -B/,
+  ".github/scripts/codex-pr-review-repair.sh" => /git_sanitized checkout -B/,
+}
+
+collector_order_checks.each do |path, untrusted_operation|
+  next unless File.exist?(path)
+
+  lines = File.readlines(path)
+  capture_index = lines.index { |line| line.include?("capture_codex_collector") }
+  untrusted_index = lines.index { |line| line.match?(untrusted_operation) }
+  if capture_index.nil? || untrusted_index.nil? || capture_index >= untrusted_index
+    errors << "#{path} must capture its collector before loading untrusted repository content"
+  end
+end
+
+abort(errors.join("\n")) unless errors.empty?
+puts "workflow yaml and Codex security invariants ok"
+RUBY
 else
-  warn "ruby is not installed; skipping workflow YAML parse"
+  warn "ruby is not installed; skipping workflow YAML and Codex security validation"
 fi
 
 log "Checking Flyway migration numbers are unique"

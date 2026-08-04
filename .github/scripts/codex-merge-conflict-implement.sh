@@ -175,6 +175,9 @@ PY
 }
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
+
+# Capture before the PR branch replaces the trusted default-branch checkout.
+collector_path="$(capture_codex_collector "${script_dir}/codex-merge-conflict-collect.sh")"
 read_conflicted_files
 printf '%s\n' "${conflicted_files[@]}" >"${conflicted_files_path}"
 
@@ -206,7 +209,6 @@ fi
 write_prompt
 unset GH_TOKEN
 
-collector_path="$(capture_codex_collector "${script_dir}/codex-merge-conflict-collect.sh")"
 prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
 echo "Running Codex merge-conflict resolution for PR #${PR_NUMBER} on ${HEAD_REF}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then

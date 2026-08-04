@@ -40,6 +40,7 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
           prompt-file: ${{ runner.temp }}/codex-smoke/prompt.md
           output-file: ${{ runner.temp }}/codex-smoke/final-message.md
           permission-profile: ":read-only"

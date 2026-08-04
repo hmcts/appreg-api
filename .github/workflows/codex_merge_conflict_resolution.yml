@@ -196,7 +196,6 @@ jobs:
       issues: read
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
       HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
       BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
@@ -218,6 +217,7 @@ jobs:
       - name: Prepare conflict-resolution prompt
         id: prepare
         env:
+          GH_TOKEN: ${{ github.token }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
         run: ./.github/scripts/codex-merge-conflict-implement.sh
 
@@ -227,6 +227,7 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           working-directory: .

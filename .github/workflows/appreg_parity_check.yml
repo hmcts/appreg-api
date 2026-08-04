@@ -131,6 +131,7 @@ jobs:
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-file: ${{ steps.prepare.outputs.final_message_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}

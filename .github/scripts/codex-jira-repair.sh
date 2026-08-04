@@ -83,6 +83,9 @@ git_sanitized() {
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
 
+# Capture from the trusted default-branch checkout before applying the generated patch.
+collector_path="$(capture_codex_collector "${script_dir}/codex-jira-collect.sh")"
+
 if [[ ! -s "${input_metadata_path}" ]]; then
   echo "Missing input metadata: ${input_metadata_path}" >&2
   exit 1
@@ -156,7 +159,6 @@ Trusted verification failure:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-collector_path="$(capture_codex_collector "${script_dir}/codex-jira-collect.sh")"
 prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
 echo "Running Codex repair attempt ${REPAIR_ATTEMPT} for ${ISSUE_KEY}; publish will use ${branch_name}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
