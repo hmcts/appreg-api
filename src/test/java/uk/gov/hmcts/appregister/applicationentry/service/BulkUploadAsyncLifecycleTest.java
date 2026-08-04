@@ -434,7 +434,7 @@ class BulkUploadAsyncLifecycleTest {
                                                         + " Organisation Name, or Respondent First"
                                                         + " Name and Last Name.",
                                                 row.getRespondentAddressLine1(),
-                                                null,
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))))
                 .allSatisfy(
                         errorDescription ->
@@ -460,7 +460,7 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
         assertThat(context.getValidationFailureMessages().getFirst())
-                .contains("respondent.person.name.lastName")
+                .contains("lastName")
                 .contains("must not be null")
                 .doesNotContain("Respondent details are missing");
     }
@@ -486,7 +486,7 @@ class BulkUploadAsyncLifecycleTest {
         String errorDescription = context.getValidationFailureMessages().getFirst();
         assertThat(errorDescription)
                 .contains("Respondent details are missing")
-                .contains("respondent.person.contactDetails.postcode")
+                .contains("postcode")
                 .doesNotContain("respondent.person.name");
     }
 
@@ -516,7 +516,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 null,
                                                 "Respondent cannot be both organisation and person",
                                                 row.getRespondentAddressLine1(),
-                                                row.getRespondentOrganisationName(),
+                                                row.getApplicantCode(),
                                                 "DATA_ERROR"))));
     }
 

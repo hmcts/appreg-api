@@ -116,7 +116,7 @@ class BulkUploadApplicationEntryValidatorTest {
                                 null,
                                 "Respondent cannot be both organisation and person",
                                 row.getRespondentAddressLine1(),
-                                row.getRespondentOrganisationName(),
+                                row.getApplicantCode(),
                                 "DATA_ERROR"));
     }
 
@@ -138,7 +138,7 @@ class BulkUploadApplicationEntryValidatorTest {
                                 "Respondent details are missing. Enter either Organisation Name, or"
                                         + " Respondent First Name and Last Name.",
                                 row.getRespondentAddressLine1(),
-                                null,
+                                row.getApplicantCode(),
                                 "DATA_ERROR"));
     }
 

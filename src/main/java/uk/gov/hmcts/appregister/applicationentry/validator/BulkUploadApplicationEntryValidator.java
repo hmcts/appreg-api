@@ -41,7 +41,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Applicant code is required",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
@@ -53,7 +53,7 @@ public class BulkUploadApplicationEntryValidator {
                             null,
                             "Application code is required",
                             row.getRespondentAddressLine1(),
-                            name,
+                            row.getApplicantCode(),
                             errorType));
         }
 
