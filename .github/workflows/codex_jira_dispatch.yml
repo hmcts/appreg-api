@@ -58,9 +58,17 @@ jobs:
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Start secure Codex API proxy
-        uses: ./.github/actions/setup-codex-proxy
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          safety-strategy: unprivileged-user
+          codex-user: codex
+
+      - name: Export non-secret Codex runtime settings
+        run: |
+          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
+          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
 
       - name: Run Codex and create patch artifact
         id: codex
@@ -206,9 +214,17 @@ jobs:
           path: ${{ runner.temp }}/codex-failure
 
       - name: Start secure Codex API proxy
-        uses: ./.github/actions/setup-codex-proxy
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          safety-strategy: unprivileged-user
+          codex-user: codex
+
+      - name: Export non-secret Codex runtime settings
+        run: |
+          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
+          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
 
       - name: Repair Codex patch
         id: repair
@@ -356,9 +372,17 @@ jobs:
           path: ${{ runner.temp }}/codex-failure
 
       - name: Start secure Codex API proxy
-        uses: ./.github/actions/setup-codex-proxy
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          safety-strategy: unprivileged-user
+          codex-user: codex
+
+      - name: Export non-secret Codex runtime settings
+        run: |
+          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
+          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
 
       - name: Repair Codex patch
         id: repair
@@ -506,9 +530,17 @@ jobs:
           path: ${{ runner.temp }}/codex-failure
 
       - name: Start secure Codex API proxy
-        uses: ./.github/actions/setup-codex-proxy
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          safety-strategy: unprivileged-user
+          codex-user: codex
+
+      - name: Export non-secret Codex runtime settings
+        run: |
+          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
+          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
 
       - name: Repair Codex patch
         id: repair
@@ -842,9 +874,17 @@ jobs:
           path: ${{ runner.temp }}/codex-failure
 
       - name: Start secure Codex API proxy
-        uses: ./.github/actions/setup-codex-proxy
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          safety-strategy: unprivileged-user
+          codex-user: codex
+
+      - name: Export non-secret Codex runtime settings
+        run: |
+          echo "CODEX_ACTION_HOME=/home/codex/.codex" >>"$GITHUB_ENV"
+          echo "CODEX_RUN_USER=codex" >>"$GITHUB_ENV"
 
       - name: Repair Codex patch from PR verification
         id: repair
