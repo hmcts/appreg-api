@@ -135,7 +135,7 @@ jobs:
             echo "head_ref=${head_ref}"
           } >>"$GITHUB_OUTPUT"
 
-  codex-review-generate:
+  codex-review-generate-action:
     needs: detect-codex-pr
     if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
     runs-on: codex-pilot-azure-aks
@@ -143,6 +143,15 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
+    outputs:
+      should_run: ${{ steps.prepare.outputs.should_run }}
+      skip_reason: ${{ steps.prepare.outputs.skip_reason }}
+      pr_number: ${{ steps.prepare.outputs.pr_number }}
+      head_ref: ${{ steps.prepare.outputs.head_ref }}
+      base_ref: ${{ steps.prepare.outputs.base_ref }}
+      comment_author: ${{ steps.prepare.outputs.comment_author }}
+      comment_url: ${{ steps.prepare.outputs.comment_url }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     timeout-minutes: 120
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -176,30 +185,42 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  codex-review-generate:
+    needs: [detect-codex-pr, codex-review-generate-action]
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
 
-      - name: Collect review-feedback patch
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Materialise review-feedback patch
         env:
+          CODEX_SHOULD_RUN: ${{ needs.codex-review-generate-action.outputs.should_run }}
+          CODEX_SKIP_REASON: ${{ needs.codex-review-generate-action.outputs.skip_reason }}
+          CODEX_RESULT: ${{ needs.codex-review-generate-action.outputs.codex_result }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          FEEDBACK_ENV_PATH: ${{ steps.prepare.outputs.feedback_env_path }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+          PR_NUMBER: ${{ needs.codex-review-generate-action.outputs.pr_number }}
+          HEAD_REF: ${{ needs.codex-review-generate-action.outputs.head_ref }}
+          BASE_REF: ${{ needs.codex-review-generate-action.outputs.base_ref }}
+          COMMENT_AUTHOR: ${{ needs.codex-review-generate-action.outputs.comment_author }}
+          COMMENT_URL: ${{ needs.codex-review-generate-action.outputs.comment_url }}
+        run: ./.github/scripts/codex-pr-review-collect.sh
 
       - name: Upload Codex review output
         uses: actions/upload-artifact@v7

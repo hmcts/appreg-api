@@ -12,31 +12,51 @@ prepare_codex_action_runtime() {
   done
 }
 
-capture_codex_collector() {
-  local collector_source="$1"
-  local source_dir trusted_dir collector_path
+capture_codex_patch_schema() {
+  local schema_source="$1"
+  local artifact_dir="$2"
+  local schema_path="${artifact_dir}/codex-patch-result.schema.json"
 
-  source_dir="$(cd "$(dirname "${collector_source}")" && pwd)"
-  trusted_dir="${CODEX_TRUSTED_DIR_ROOT:-/opt/codex-trusted}/${GITHUB_RUN_ID:-manual}-${GITHUB_RUN_ATTEMPT:-1}-${GITHUB_JOB:-job}"
-  collector_path="${trusted_dir}/$(basename "${collector_source}")"
-
-  mkdir -p "${trusted_dir}"
-  chmod 0755 "${trusted_dir}"
-  install -m 0555 "${collector_source}" "${collector_path}"
-  install -m 0444 "${source_dir}/codex-action-runtime.sh" "${trusted_dir}/codex-action-runtime.sh"
-
-  printf '%s\n' "${collector_path}"
+  install -m 0444 "${schema_source}" "${schema_path}"
+  printf '%s\n' "${schema_path}"
 }
 
-capture_codex_metadata() {
-  local source_path="$1"
-  local collector_path="$2"
-  local target_name="$3"
-  local trusted_dir target_path
+prepare_codex_patch_contract() {
+  local prompt_path="$1"
+  local schema_path="$2"
+  local artifact_dir="$3"
+  local patch_scope="${4:-full}"
 
-  trusted_dir="$(dirname "${collector_path}")"
-  target_path="${trusted_dir}/${target_name}"
-  install -m 0444 "${source_path}" "${target_path}"
+  if [[ ! -s "${schema_path}" ]]; then
+    echo "Missing captured Codex patch schema: ${schema_path}" >&2
+    return 1
+  fi
 
-  printf '%s\n' "${target_path}"
+  cat >>"${prompt_path}" <<'EOF'
+
+Patch hand-off contract:
+- The Codex Action is the final step in this job. No privileged process will inspect this working tree after you finish.
+- Before returning, stage the complete intended patch using Git.
+- Generate a binary Git patch from the staged changes, gzip it, and base64 encode it as one line.
+- Return only the JSON object required by the supplied output schema.
+- Set `has_changes` to true and put the encoded patch in `patch_gzip_base64` when a patch exists.
+- Set `has_changes` to false and `patch_gzip_base64` to an empty string only when no code change is appropriate.
+- Put the human-readable implementation summary in `summary` and checks performed in `testing`.
+- The encoded patch must be no more than 60000 characters. If it exceeds that limit, report the size problem in `summary` with no patch so the trusted job fails closed.
+EOF
+
+  if [[ "${patch_scope}" == "conflicted-files" ]]; then
+    cat >>"${prompt_path}" <<'EOF'
+- For this conflict-resolution operation, stage only the conflicted files listed above and generate the patch relative to HEAD for only those paths.
+- A suitable command pattern is: `git add -- <conflicted paths> && git -c core.fsmonitor= -c diff.external= diff --cached --binary --no-ext-diff HEAD -- <conflicted paths> | gzip -9 | base64 | tr -d '\n'`.
+EOF
+  else
+    cat >>"${prompt_path}" <<'EOF'
+- A suitable command pattern is: `git add -A && git -c core.fsmonitor= -c diff.external= diff --cached --binary --no-ext-diff | gzip -9 | base64 | tr -d '\n'`.
+EOF
+  fi
+
+  chmod 0444 "${prompt_path}"
+  chmod 0755 "${artifact_dir}"
+  printf '%s\n' "${schema_path}"
 }

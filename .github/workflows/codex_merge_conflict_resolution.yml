@@ -185,7 +185,7 @@ jobs:
             echo "EOF"
           } >>"$GITHUB_OUTPUT"
 
-  codex-conflict-generate:
+  codex-conflict-generate-action:
     needs: detect-conflicted-pr
     if: needs.detect-conflicted-pr.outputs.should_run == 'true'
     runs-on: codex-pilot-azure-aks
@@ -194,6 +194,8 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
+    outputs:
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
@@ -218,7 +220,6 @@ jobs:
         id: prepare
         env:
           GH_TOKEN: ${{ github.token }}
-          OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
         run: ./.github/scripts/codex-merge-conflict-implement.sh
 
       - name: Run Codex conflict resolution
@@ -229,30 +230,41 @@ jobs:
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  codex-conflict-generate:
+    needs: [detect-conflicted-pr, codex-conflict-generate-action]
+    if: needs.detect-conflicted-pr.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
+      HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
+      BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
+      HEAD_SHA: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+      BASE_SHA: ${{ needs.detect-conflicted-pr.outputs.base_sha }}
+      CONFLICTED_FILES: ${{ needs.detect-conflicted-pr.outputs.conflicted_files }}
 
-      - name: Collect conflict-resolution patch
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Materialise conflict-resolution patch
         env:
+          CODEX_RESULT: ${{ needs.codex-conflict-generate-action.outputs.codex_result }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          CONFLICTED_FILES_PATH: ${{ steps.prepare.outputs.conflicted_files_path }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+        run: ./.github/scripts/codex-merge-conflict-collect.sh
 
       - name: Upload Codex conflict-resolution output
         uses: actions/upload-artifact@v7

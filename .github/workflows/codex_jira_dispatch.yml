@@ -29,14 +29,14 @@ on:
         type: string
 
 jobs:
-  codex-generate:
+  codex-generate-action:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.codex.outputs.branch_name }}
-      has_changes: ${{ steps.codex.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -59,8 +59,6 @@ jobs:
 
       - name: Prepare Codex prompt
         id: prepare
-        env:
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-implement.sh
 
       - name: Run Codex
@@ -73,32 +71,43 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  codex-generate:
+    needs: codex-generate-action
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.codex.outputs.branch_name }}
+      has_changes: ${{ steps.codex.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
 
-      - name: Collect Codex patch artifact
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Materialise Codex patch result
         id: codex
         env:
+          CODEX_RESULT: ${{ needs.codex-generate-action.outputs.codex_result }}
           CODEX_OPERATION: jira-generate
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+          BRANCH_NAME: ${{ needs.codex-generate-action.outputs.branch_name }}
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload Codex output
         uses: actions/upload-artifact@v7
@@ -190,7 +199,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-codex-output-1:
+  repair-codex-output-1-action:
     needs: [codex-generate, verify-codex-output]
     if: needs.codex-generate.outputs.has_changes == 'true' && needs.verify-codex-output.outputs.passed != 'true'
     runs-on: codex-pilot-azure-aks
@@ -198,8 +207,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -242,7 +251,6 @@ jobs:
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -255,33 +263,54 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  repair-codex-output-1:
+    needs: [verify-codex-output, repair-codex-output-1-action]
+    if: needs.verify-codex-output.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
 
-      - name: Collect repaired Codex patch
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
         id: repair
         env:
+          CODEX_RESULT: ${{ needs.repair-codex-output-1-action.outputs.codex_result }}
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+          BRANCH_NAME: ${{ needs.repair-codex-output-1-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '1'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -373,7 +402,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-codex-output-2:
+  repair-codex-output-2-action:
     needs: [codex-generate, verify-codex-output-1]
     if: needs.verify-codex-output-1.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
@@ -381,8 +410,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -425,7 +454,6 @@ jobs:
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -438,33 +466,54 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  repair-codex-output-2:
+    needs: [verify-codex-output-1, repair-codex-output-2-action]
+    if: needs.verify-codex-output-1.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-1.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
 
-      - name: Collect repaired Codex patch
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
         id: repair
         env:
+          CODEX_RESULT: ${{ needs.repair-codex-output-2-action.outputs.codex_result }}
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+          BRANCH_NAME: ${{ needs.repair-codex-output-2-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '2'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -556,7 +605,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-codex-output-3:
+  repair-codex-output-3-action:
     needs: [codex-generate, verify-codex-output-2]
     if: needs.verify-codex-output-2.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
@@ -564,8 +613,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -608,7 +657,6 @@ jobs:
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -621,33 +669,54 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  repair-codex-output-3:
+    needs: [verify-codex-output-2, repair-codex-output-3-action]
+    if: needs.verify-codex-output-2.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-2.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
 
-      - name: Collect repaired Codex patch
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
         id: repair
         env:
+          CODEX_RESULT: ${{ needs.repair-codex-output-3-action.outputs.codex_result }}
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+          BRANCH_NAME: ${{ needs.repair-codex-output-3-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '3'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -925,7 +994,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-published-pr-1:
+  repair-published-pr-1-action:
     needs: [codex-generate, publish-pr, verify-published-pr]
     if: always() && needs.verify-published-pr.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
@@ -933,8 +1002,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -977,7 +1046,6 @@ jobs:
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -990,33 +1058,54 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
-          output-file: ${{ steps.prepare.outputs.final_message_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+  repair-published-pr-1:
+    needs: [verify-published-pr, repair-published-pr-1-action]
+    if: always() && needs.verify-published-pr.outputs.passed == 'false' && needs.repair-published-pr-1-action.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-published-pr.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
 
-      - name: Collect repaired Codex patch
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
         id: repair
         env:
+          CODEX_RESULT: ${{ needs.repair-published-pr-1-action.outputs.codex_result }}
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-          FINAL_MESSAGE_PATH: ${{ steps.prepare.outputs.final_message_path }}
-          BRANCH_NAME: ${{ steps.prepare.outputs.branch_name }}
-          COLLECTOR_PATH: ${{ steps.prepare.outputs.collector_path }}
-        run: '"$COLLECTOR_PATH"'
+          BRANCH_NAME: ${{ needs.repair-published-pr-1-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '1'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7

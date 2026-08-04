@@ -15,21 +15,19 @@ required_env "ISSUE_KEY"
 required_env "ISSUE_SUMMARY"
 required_env "ISSUE_DESCRIPTION"
 required_env "ISSUE_URL"
-required_env "OUTPUT_DIR"
 
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-generate-${run_id}-${run_attempt}"
-output_dir="${OUTPUT_DIR}"
 prompt_path="${artifact_dir}/codex-prompt.md"
-final_message_path="${output_dir}/codex-final-message.md"
-pr_body_path="${output_dir}/codex-pr-body.md"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
 
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
 
-mkdir -p "${artifact_dir}" "${output_dir}"
+mkdir -p "${artifact_dir}"
+schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
 
 branch_slug="$(
   python3 -I - <<'PY'
@@ -43,7 +41,7 @@ PY
 )"
 branch_name="codex/${branch_slug}-${run_id}-${run_attempt}"
 
-PROMPT_PATH="${prompt_path}" PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
+PROMPT_PATH="${prompt_path}" python3 -I - <<'PY'
 import os
 from pathlib import Path
 
@@ -85,46 +83,14 @@ Description:
 """
 
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
-
-pr_body = f"""### Jira link
-
-See [{payload["issueKey"]}]({payload["issueUrl"]})
-
-### Change description
-
-Implements Jira issue {payload["issueKey"]}: {payload["summary"]}
-
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context. See the Codex final message below for the implementation summary.
-
-### Testing done
-
-Codex may run lightweight targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
-
-### Security Vulnerability Assessment ###
-
-**CVE Suppression:** Are there any CVEs present in the codebase (either newly introduced or pre-existing) that are being intentionally suppressed or ignored by this commit?
-  * [ ] Yes
-  * [x] No
-
-### Checklist
-
-- [x] commit messages are meaningful and follow good commit message guidelines
-- [ ] README and other documentation has been updated / added (if needed)
-- [ ] tests have been updated / new tests has been added (if needed)
-- [ ] Does this PR introduce a breaking change
-"""
-
-Path(os.environ["PR_BODY_PATH"]).write_text(pr_body, encoding="utf-8")
 PY
 
-collector_path="$(capture_codex_collector "${script_dir}/codex-jira-collect.sh")"
-prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${artifact_dir}" full)"
+prepare_codex_action_runtime "${PWD}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "prompt_path=${prompt_path}"
-    echo "final_message_path=${final_message_path}"
-    echo "pr_body_path=${pr_body_path}"
+    echo "schema_path=${schema_path}"
     echo "branch_name=${branch_name}"
-    echo "collector_path=${collector_path}"
   } >>"${GITHUB_OUTPUT}"
 fi

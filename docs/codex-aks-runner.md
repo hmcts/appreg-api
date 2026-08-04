@@ -44,15 +44,14 @@ The workflows also pin the Codex CLI and proxy to `0.146.0`; update that
 version consistently across all invocations only after both repository smoke
 workflows pass.
 
-Generation and repair jobs split their work into trusted preparation, a direct
-official Action invocation, proxy shutdown, and collection through a script
-captured before any generated patch or PR branch is loaded. The captured
-collector is held outside the writable checkout and cannot be read or changed
-by the `codex` user. Repository formatters, tests, publishing, and other
-repository-controlled executables run only in separate jobs where neither the
-API key nor the proxy is available. The report-only parity workflow is stricter:
-the Codex Action is the final step on its runner, and a fresh dependent job
-validates the structured result and receives the Jira notification secret.
+Every workspace-writing Codex job ends with the official Action. Codex returns
+a schema-validated, size-bounded gzip/base64 patch through the Action's
+`final-message` job output; no privileged collector, Git command, or artifact
+action runs against the model-writable checkout afterward. A fresh dependent
+job checks out trusted workflow code, validates and materialises that untrusted
+patch, and passes it to the existing credential-free verification and trusted
+publication stages. The report-only parity workflow follows the same final-step
+boundary and gives its Jira notification secret only to a fresh dependent job.
 
 The regional Responses endpoint is
 `https://eu.api.openai.com/v1/responses`.

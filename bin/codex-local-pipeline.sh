@@ -131,6 +131,7 @@ python_cache="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codex-pycache"
 mkdir -p "${python_cache}"
 PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parity-result.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
@@ -159,12 +160,22 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
     end
 
     codex_steps.each do |step|
-      version = step.fetch("with", {}).fetch("codex-version", "")
+      inputs = step.fetch("with", {})
+      version = inputs.fetch("codex-version", "")
       errors << "#{path}:#{job_name} must pin codex-version to #{expected_codex_version}" unless version == expected_codex_version
+
+      if inputs.fetch("permission-profile", "") == ":workspace"
+        action_index = steps.index(step)
+        unless action_index == steps.length - 1
+          errors << "#{path}:#{job_name} must end with the workspace-writing Codex Action"
+        end
+        unless inputs.key?("output-schema-file") && !inputs.key?("output-file")
+          errors << "#{path}:#{job_name} must return a structured patch without a post-Action output file"
+        end
+      end
 
       next unless File.basename(path) == "codex_runner_smoke.yml"
 
-      inputs = step.fetch("with", {})
       unless inputs.fetch("model", "") == "gpt-5.6-sol" && inputs.fetch("effort", "") == "ultra"
         errors << "#{path}:#{job_name} must smoke-test gpt-5.6-sol with ultra effort"
       end
@@ -203,20 +214,18 @@ Dir[".github/**/*"].select { |path| File.file?(path) }.each do |path|
   end
 end
 
-collector_order_checks = {
+schema_capture_checks = {
   ".github/scripts/codex-jira-repair.sh" => /git_sanitized apply --binary/,
   ".github/scripts/codex-merge-conflict-implement.sh" => /git_sanitized checkout -B/,
-  ".github/scripts/codex-pr-review-repair.sh" => /git_sanitized checkout -B/,
+  ".github/scripts/codex-pr-review-feedback.sh" => /git_sanitized checkout -B/,
 }
 
-collector_order_checks.each do |path, untrusted_operation|
-  next unless File.exist?(path)
-
+schema_capture_checks.each do |path, untrusted_operation|
   lines = File.readlines(path)
-  capture_index = lines.index { |line| line.include?("capture_codex_collector") }
+  capture_index = lines.index { |line| line.include?("capture_codex_patch_schema") }
   untrusted_index = lines.index { |line| line.match?(untrusted_operation) }
   if capture_index.nil? || untrusted_index.nil? || capture_index >= untrusted_index
-    errors << "#{path} must capture its collector before loading untrusted repository content"
+    errors << "#{path} must capture its output schema before loading untrusted repository content"
   end
 end
 

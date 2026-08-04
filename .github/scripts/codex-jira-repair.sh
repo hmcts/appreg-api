@@ -17,7 +17,6 @@ required_env "ISSUE_DESCRIPTION"
 required_env "ISSUE_URL"
 required_env "INPUT_DIR"
 required_env "FAILURE_DIR"
-required_env "OUTPUT_DIR"
 required_env "REPAIR_ATTEMPT"
 
 run_id="${GITHUB_RUN_ID:-manual}"
@@ -28,14 +27,13 @@ sanitized_tmp="${artifact_dir}/sanitized-tmp"
 sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 input_dir="${INPUT_DIR}"
 failure_dir="${FAILURE_DIR}"
-output_dir="${OUTPUT_DIR}"
 input_metadata_path="${input_dir}/metadata.env"
 input_patch_path="${input_dir}/changes.patch"
 failure_log_path="${failure_dir}/verification-failure.log"
 failure_summary_path="${failure_dir}/verification-failure-summary.log"
 prompt_path="${artifact_dir}/codex-repair-prompt.md"
-final_message_path="${output_dir}/codex-repair-${REPAIR_ATTEMPT}-final-message.md"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
 
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
@@ -81,10 +79,8 @@ git_sanitized() {
     "$@"
 }
 
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-
-# Capture from the trusted default-branch checkout before applying the generated patch.
-collector_path="$(capture_codex_collector "${script_dir}/codex-jira-collect.sh")"
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}"
+schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
 
 if [[ ! -s "${input_metadata_path}" ]]; then
   echo "Missing input metadata: ${input_metadata_path}" >&2
@@ -159,13 +155,13 @@ Trusted verification failure:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${artifact_dir}" full)"
+prepare_codex_action_runtime "${PWD}"
 echo "Running Codex repair attempt ${REPAIR_ATTEMPT} for ${ISSUE_KEY}; publish will use ${branch_name}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "prompt_path=${prompt_path}"
-    echo "final_message_path=${final_message_path}"
+    echo "schema_path=${schema_path}"
     echo "branch_name=${branch_name}"
-    echo "collector_path=${collector_path}"
   } >>"${GITHUB_OUTPUT}"
 fi

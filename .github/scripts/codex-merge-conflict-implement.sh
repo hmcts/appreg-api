@@ -19,18 +19,16 @@ required_env "BASE_REF"
 required_env "HEAD_SHA"
 required_env "BASE_SHA"
 required_env "CONFLICTED_FILES"
-required_env "OUTPUT_DIR"
 
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-conflict-generate-${GITHUB_RUN_ID:-manual}-${GITHUB_RUN_ATTEMPT:-1}"
-output_dir="${OUTPUT_DIR}"
 pr_json_path="${artifact_dir}/pull-request.json"
 prompt_path="${artifact_dir}/codex-merge-conflict-prompt.md"
-conflicted_files_path="${output_dir}/conflicted-files.txt"
-final_message_path="${output_dir}/codex-final-message.md"
+conflicted_files_path="${artifact_dir}/conflicted-files.txt"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
 sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
 
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
@@ -174,10 +172,8 @@ Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 }
 
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-
-# Capture before the PR branch replaces the trusted default-branch checkout.
-collector_path="$(capture_codex_collector "${script_dir}/codex-merge-conflict-collect.sh")"
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}"
+schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
 read_conflicted_files
 printf '%s\n' "${conflicted_files[@]}" >"${conflicted_files_path}"
 
@@ -209,13 +205,12 @@ fi
 write_prompt
 unset GH_TOKEN
 
-prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${artifact_dir}" conflicted-files)"
+prepare_codex_action_runtime "${PWD}"
 echo "Running Codex merge-conflict resolution for PR #${PR_NUMBER} on ${HEAD_REF}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "prompt_path=${prompt_path}"
-    echo "final_message_path=${final_message_path}"
-    echo "conflicted_files_path=${conflicted_files_path}"
-    echo "collector_path=${collector_path}"
+    echo "schema_path=${schema_path}"
   } >>"${GITHUB_OUTPUT}"
 fi
