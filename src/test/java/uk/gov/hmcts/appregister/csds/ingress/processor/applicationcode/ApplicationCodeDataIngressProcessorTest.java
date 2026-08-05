@@ -623,6 +623,57 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_nullStartDate_when_apply_then_includeOffendingRecordJsonInException() {
+        var sourceRecord = createSourceRecord(345L, "A3", "Title 3", "Wording 3", 7L);
+        sourceRecord.putNull("StartDate");
+
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(
+                                                List.of(createPageResponse(sourceRecord)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining(
+                        "CSDS field StartDate was missing or invalid for application_codes")
+                .hasMessageContaining("\"ApplicationCodeID\":345")
+                .hasMessageContaining("\"Code\":\"A3\"");
+    }
+
+    @Test
+    void given_missingRequiredText_when_apply_then_includeOffendingRecordJsonInException() {
+        var sourceRecord = createSourceRecord(345L, "A3", "Title 3", "Wording 3", 7L);
+        sourceRecord.putNull("ApplicationTitle");
+
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(
+                                                List.of(createPageResponse(sourceRecord)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining(
+                        "CSDS field ApplicationTitle was missing or invalid for application_codes")
+                .hasMessageContaining("\"ApplicationCodeID\":345")
+                .hasMessageContaining("\"Code\":\"A3\"");
+    }
+
+    @Test
+    void given_invalidYesOrNo_when_apply_then_includeOffendingRecordJsonInException() {
+        var sourceRecord = createSourceRecord(345L, "A3", "Title 3", "Wording 3", 7L);
+        sourceRecord.put("FeeDue", "MAYBE");
+
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(
+                                                List.of(createPageResponse(sourceRecord)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining(
+                        "CSDS field FeeDue contained an unknown YesOrNo value for application_codes")
+                .hasMessageContaining("\"ApplicationCodeID\":345")
+                .hasMessageContaining("\"FeeDue\":\"MAYBE\"");
+    }
+
+    @Test
     void given_queryResponseMissingRecordsArray_when_apply_then_throwException() {
         var invalidPage = OBJECT_MAPPER.createObjectNode().put("unexpected", true);
         List<JsonNode> invalidPages = List.of(invalidPage);
