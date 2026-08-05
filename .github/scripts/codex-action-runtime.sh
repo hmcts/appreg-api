@@ -12,13 +12,30 @@ prepare_codex_action_runtime() {
   done
 }
 
-capture_codex_patch_schema() {
+prepare_codex_read_only_runtime() {
+  local runtime_path
+  for runtime_path in "$@"; do
+    [[ -e "${runtime_path}" ]] || continue
+    chmod -R g+rX "${runtime_path}"
+    chmod -R g-w,o-w "${runtime_path}"
+  done
+}
+
+capture_codex_output_schema() {
   local schema_source="$1"
   local artifact_dir="$2"
-  local schema_path="${artifact_dir}/codex-patch-result.schema.json"
+  local output_name="$3"
+  local schema_path="${artifact_dir}/${output_name}"
 
   install -m 0444 "${schema_source}" "${schema_path}"
   printf '%s\n' "${schema_path}"
+}
+
+capture_codex_patch_schema() {
+  local schema_source="$1"
+  local artifact_dir="$2"
+
+  capture_codex_output_schema "${schema_source}" "${artifact_dir}" codex-patch-result.schema.json
 }
 
 capture_codex_patch_exporter() {
@@ -28,6 +45,34 @@ capture_codex_patch_exporter() {
 
   install -m 0555 "${exporter_source}" "${exporter_path}"
   printf '%s\n' "${exporter_path}"
+}
+
+validated_codex_plan_path() {
+  local plan_dir="$1"
+  local plan_path="${plan_dir}/plan.json"
+  local sha_path="${plan_dir}/plan.sha256"
+
+  python3 -I - "${plan_path}" "${sha_path}" <<'PY'
+import hashlib
+import re
+import sys
+from pathlib import Path
+
+plan_path = Path(sys.argv[1])
+sha_path = Path(sys.argv[2])
+if not plan_path.is_file() or not sha_path.is_file():
+    raise SystemExit("Missing validated Codex plan artifact")
+plan_bytes = plan_path.read_bytes()
+if not plan_bytes or len(plan_bytes) > 32 * 1024:
+    raise SystemExit("Validated Codex plan is empty or oversized")
+expected = sha_path.read_text(encoding="ascii").strip().lower()
+if not re.fullmatch(r"[0-9a-f]{64}", expected):
+    raise SystemExit("Validated Codex plan hash is malformed")
+actual = hashlib.sha256(plan_bytes).hexdigest()
+if actual != expected:
+    raise SystemExit("Validated Codex plan hash does not match plan.json")
+print(plan_path)
+PY
 }
 
 prepare_codex_patch_contract() {

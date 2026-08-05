@@ -29,13 +29,12 @@ on:
         type: string
 
 jobs:
-  codex-generate-action:
+  codex-plan-action:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.prepare.outputs.branch_name }}
       codex_result: ${{ steps.codex-action.outputs.final-message }}
       trusted_sha: ${{ steps.trusted.outputs.sha }}
     env:
@@ -62,8 +61,171 @@ jobs:
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
+      - name: Prepare read-only planning prompt
+        id: prepare
+        run: ./.github/scripts/codex-jira-plan.sh
+
+      - name: Plan implementation
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":read-only"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  validate-codex-plan:
+    needs: codex-plan-action
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      ready_to_implement: ${{ steps.validate.outputs.ready_to_implement }}
+      requires_approval: ${{ steps.validate.outputs.requires_approval }}
+      risk_level: ${{ steps.validate.outputs.risk_level }}
+      plan_sha256: ${{ steps.validate.outputs.plan_sha256 }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
+
+    steps:
+      - name: Checkout trusted plan validator
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Confirm trusted checkout SHA
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
+
+      - name: Validate and normalise Codex plan
+        id: validate
+        env:
+          CODEX_PLAN_RESULT: ${{ needs.codex-plan-action.outputs.codex_result }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py
+
+      - name: Add plan to workflow summary
+        run: cat "${RUNNER_TEMP}/codex-plan/plan.md" >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Upload validated Codex plan
+        uses: actions/upload-artifact@v7
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Enforce plan readiness
+        env:
+          READY_TO_IMPLEMENT: ${{ steps.validate.outputs.ready_to_implement }}
+        run: |
+          if [[ "${READY_TO_IMPLEMENT}" != "true" ]]; then
+            echo "Codex planning stopped because the ticket is not ready to implement." >&2
+            exit 1
+          fi
+
+  approve-codex-plan:
+    needs: [codex-plan-action, validate-codex-plan]
+    if: needs.validate-codex-plan.outputs.requires_approval == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: codex-plan-approval
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
+      - name: Verify approved plan
+        env:
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+        run: |
+          python3 -I - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          plan_dir = Path(os.environ["RUNNER_TEMP"]) / "codex-plan"
+          plan_bytes = (plan_dir / "plan.json").read_bytes()
+          bundled_sha = (plan_dir / "plan.sha256").read_text(encoding="ascii").strip()
+          actual_sha = hashlib.sha256(plan_bytes).hexdigest()
+          if actual_sha != bundled_sha or actual_sha != os.environ["EXPECTED_PLAN_SHA"]:
+              raise SystemExit("Approved Codex plan hash does not match the validated plan")
+          PY
+          cat "${RUNNER_TEMP}/codex-plan/plan.md" >>"$GITHUB_STEP_SUMMARY"
+
+  codex-generate-action:
+    needs: [codex-plan-action, validate-codex-plan, approve-codex-plan]
+    if: >-
+      ${{
+        always() &&
+        needs.validate-codex-plan.result == 'success' &&
+        (needs.approve-codex-plan.result == 'success' || needs.approve-codex-plan.result == 'skipped')
+      }}
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+
+    steps:
+      - name: Checkout planned repository revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Confirm planned repository revision
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
+
+      - name: Verify runner toolchain
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
       - name: Prepare Codex prompt
         id: prepare
+        env:
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-implement.sh
 
       - name: Run Codex
@@ -115,6 +277,12 @@ jobs:
           test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
           echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
 
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
       - name: Materialise Codex patch result
         id: codex
         env:
@@ -122,6 +290,7 @@ jobs:
           CODEX_OPERATION: jira-generate
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           BRANCH_NAME: ${{ needs.codex-generate-action.outputs.branch_name }}
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload Codex output
@@ -261,11 +430,18 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
       - name: Prepare Codex repair prompt
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -464,11 +640,18 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
       - name: Prepare Codex repair prompt
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -667,11 +850,18 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
       - name: Prepare Codex repair prompt
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -1056,11 +1246,18 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Download validated Codex plan
+        uses: actions/download-artifact@v8
+        with:
+          name: codex-jira-plan
+          path: ${{ runner.temp }}/codex-plan
+
       - name: Prepare Codex repair prompt from PR verification
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair

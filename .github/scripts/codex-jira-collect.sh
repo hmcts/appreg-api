@@ -20,13 +20,24 @@ pr_body_path="${output_dir}/codex-pr-body.md"
 metadata_path="${output_dir}/metadata.env"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
+
 mkdir -p "${output_dir}"
 REQUIRE_CHANGES=true python3 "${script_dir}/collect-codex-patch-result.py"
 
 case "${CODEX_OPERATION}" in
   jira-generate)
-    for name in ISSUE_KEY ISSUE_SUMMARY ISSUE_URL; do
+    for name in ISSUE_KEY ISSUE_SUMMARY ISSUE_URL PLAN_DIR; do
       required_env "${name}"
+    done
+    validated_codex_plan_path "${PLAN_DIR}" >/dev/null
+    for plan_file in plan.json plan.md plan.sha256; do
+      if [[ ! -s "${PLAN_DIR}/${plan_file}" ]]; then
+        echo "Missing validated Codex plan file: ${plan_file}" >&2
+        exit 1
+      fi
+      cp "${PLAN_DIR}/${plan_file}" "${output_dir}/${plan_file}"
     done
     PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
 import os
@@ -61,6 +72,12 @@ Codex may run lightweight targeted checks during generation. This workflow verif
 """
 Path(os.environ["PR_BODY_PATH"]).write_text(body, encoding="utf-8")
 PY
+    {
+      echo
+      echo "## Codex Plan"
+      echo
+      sed -n '1,240p' "${output_dir}/plan.md"
+    } >>"${pr_body_path}"
     ;;
   jira-repair)
     required_env "INPUT_DIR"

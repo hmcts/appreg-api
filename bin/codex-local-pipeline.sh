@@ -134,6 +134,8 @@ PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parit
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-patch-export.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-codex-plan.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-handoff.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
@@ -208,6 +210,63 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
   end
   unless notify_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
     errors << "#{path}:parity-notify must own the Jira notification secret"
+  end
+end
+
+jira_path = ".github/workflows/codex_jira_dispatch.yml"
+jira_workflow = YAML.load_file(jira_path)
+jira_jobs = jira_workflow.fetch("jobs", {})
+
+planner = jira_jobs.fetch("codex-plan-action", {})
+planner_steps = planner.fetch("steps", [])
+planner_action = planner_steps.find do |step|
+  step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
+end
+if planner_action.nil?
+  errors << "#{jira_path}:codex-plan-action must invoke the Codex Action"
+else
+  planner_inputs = planner_action.fetch("with", {})
+  if planner_inputs.key?("model") || planner_inputs.key?("effort")
+    errors << "#{jira_path}:codex-plan-action must use the default model and reasoning effort"
+  end
+  unless planner_inputs.fetch("permission-profile", "") == ":read-only"
+    errors << "#{jira_path}:codex-plan-action must use the read-only permission profile"
+  end
+  unless planner_steps.last == planner_action
+    errors << "#{jira_path}:codex-plan-action must end with the Codex Action"
+  end
+end
+
+validator = jira_jobs.fetch("validate-codex-plan", {})
+unless validator.fetch("needs", "") == "codex-plan-action" && validator.inspect.include?("codex-jira-plan")
+  errors << "#{jira_path}:validate-codex-plan must validate and publish the planner hand-off"
+end
+
+approval = jira_jobs.fetch("approve-codex-plan", {})
+approval_environment = approval.fetch("environment", {})
+approval_environment_name = approval_environment.is_a?(Hash) ? approval_environment.fetch("name", "") : approval_environment
+unless approval_environment_name == "codex-plan-approval"
+  errors << "#{jira_path}:approve-codex-plan must use the protected codex-plan-approval environment"
+end
+
+implementation = jira_jobs.fetch("codex-generate-action", {})
+implementation_needs = Array(implementation.fetch("needs", []))
+unless %w[codex-plan-action validate-codex-plan approve-codex-plan].all? { |name| implementation_needs.include?(name) }
+  errors << "#{jira_path}:codex-generate-action must wait for plan validation and any required approval"
+end
+unless implementation.inspect.include?("needs.codex-plan-action.outputs.trusted_sha") &&
+       implementation.inspect.include?("PLAN_DIR") &&
+       implementation.inspect.include?("codex-jira-plan")
+  errors << "#{jira_path}:codex-generate-action must use the planned revision and validated plan artefact"
+end
+
+repair_actions = jira_jobs.select { |name, _job| name.match?(/^repair-codex-output-\d+-action$|^repair-published-pr-\d+-action$/) }
+unless repair_actions.length == 4
+  errors << "#{jira_path}:expected four Jira repair Action jobs"
+end
+repair_actions.each do |job_name, job|
+  unless job.inspect.include?("codex-jira-plan") && job.inspect.include?("PLAN_DIR")
+    errors << "#{jira_path}:#{job_name} must reuse the original validated plan"
   end
 end
 

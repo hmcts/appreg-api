@@ -9,6 +9,9 @@ Jira Automation
   -> Azure Function webhook
   -> GitHub workflow_dispatch: codex_jira_dispatch.yml
   -> ARC runner scale set: codex-pilot-azure-aks
+  -> read-only Codex planning and trusted plan validation
+  -> optional human approval for high-risk or cross-system plans
+  -> Codex implementation and isolated verification
   -> Codex creates a codex/* branch and pull request
   -> Azure Function notifies Jira Automation
   -> Jira Automation transitions the issue to Dev Review
@@ -25,7 +28,7 @@ The flow is not tied to one Jira board. Each board needs its own Automation rule
 ## Workflows
 
 - `.github/workflows/codex_runner_smoke.yml`: validates the AKS runner can start, authenticate Codex, create a branch, commit, and push.
-- `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
+- `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, plans the implementation, validates and gates the plan, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
 - `.github/workflows/codex_pr_review_feedback.yml`: sends PR review feedback back to Codex for follow-up changes on the same `codex/*` branch.
 
 All Codex workflows target:
@@ -59,6 +62,33 @@ notification secret only to a fresh dependent job.
 
 The regional Responses endpoint is
 `https://eu.api.openai.com/v1/responses`.
+
+## Planning and approval
+
+Each Jira dispatch starts with a separate read-only Codex invocation. The
+planner intentionally omits the `model` and `effort` inputs so Codex uses its
+defaults, while the Action commit, CLI version, regional endpoint,
+unprivileged user and `:read-only` permission profile remain pinned. The
+planner returns structured JSON containing the root cause, scope decision,
+alternatives, implementation paths, tests, acceptance criteria, risks,
+assumptions and blockers.
+
+A fresh GitHub-hosted job validates and size-limits the untrusted JSON, rejects
+protected automation paths, and stores a canonical plan plus its SHA-256 hash
+as the `codex-jira-plan` artefact. Tickets that are not ready stop before any
+workspace-writing model invocation. Plans marked high risk or cross-system
+wait on the `codex-plan-approval` GitHub environment.
+
+Repository administrators must create that environment and configure required
+reviewers before enabling this workflow. Without required reviewers, GitHub
+does not provide a human approval gate. Reviewers inspect the validator job
+summary or downloaded plan artefact before approving.
+
+Implementation checks out the exact commit inspected by the planner and uses
+`gpt-5.6-sol` with `ultra` effort. The validated plan is included in the
+implementation prompt and the generated PR body. Verification repairs reuse
+the original plan; they stop and request a new planning run when repository
+evidence invalidates the planned architecture or scope.
 
 ## Cost and usage monitoring
 
