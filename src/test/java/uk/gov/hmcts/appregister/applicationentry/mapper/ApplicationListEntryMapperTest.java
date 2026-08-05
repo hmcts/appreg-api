@@ -173,6 +173,24 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void givenBlankOptionalContactFields_whenMappingBulkUpload_thenMapsThemToNull() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("APP123");
+        row.setRespondentOrganisationName("Respondent organisation");
+        row.setRespondentPostcode("");
+        row.setRespondentTelephone("");
+        row.setRespondentMobile("");
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        var contactDetails = dto.getRespondent().getOrganisation().getContactDetails();
+        assertThat(contactDetails.getPostcode()).isNull();
+        assertThat(contactDetails.getPhone()).isEqualTo(JsonNullable.of(null));
+        assertThat(contactDetails.getMobile()).isEqualTo(JsonNullable.of(null));
+    }
+
+    @Test
     void testToEntryCreateDto_mapsCanonicalBulkUploadPersonRespondent() {
         BulkUploadRow row = new BulkUploadRow();
         row.setApplicantCode("APP001");
@@ -189,65 +207,6 @@ class ApplicationListEntryMapperTest {
         assertThat(name.getFirstName()).isEqualTo("Beatrice");
         assertThat(name.getMiddleName()).isEqualTo(JsonNullable.of("Anne Louise"));
         assertThat(name.getLastName()).isEqualTo("Baxter");
-    }
-
-    @Test
-    void testToEntryCreateDto_truncatesBulkUploadOrganisationFields() {
-        BulkUploadRow row = new BulkUploadRow();
-        row.setApplicantCode("APP001EXTRA");
-        row.setApplicationCode("APP123EXTRA");
-        row.setAccountNumber("A".repeat(25));
-        row.setRespondentOrganisationName("O".repeat(105));
-        row.setRespondentAddressLine1("1".repeat(40));
-        row.setRespondentAddressLine2("2".repeat(40));
-        row.setRespondentAddressLine3("3".repeat(40));
-        row.setRespondentAddressLine4("4".repeat(40));
-        row.setRespondentAddressLine5("5".repeat(40));
-        row.setRespondentPostcode("SW1A 2AAZZZ");
-        row.setRespondentEmail("e".repeat(260));
-        row.setRespondentTelephone("1".repeat(25));
-        row.setRespondentMobile("2".repeat(25));
-
-        EntryCreateDto dto = mapper.toEntryCreateDto(row);
-
-        assertThat(dto.getStandardApplicantCode()).isEqualTo("APP001EXTR");
-        assertThat(dto.getApplicationCode()).isEqualTo("APP123EXTR");
-        assertThat(dto.getAccountNumber()).isEqualTo("A".repeat(20));
-
-        var organisation = dto.getRespondent().getOrganisation();
-        assertThat(organisation.getName()).isEqualTo("O".repeat(100));
-
-        ContactDetails contactDetails = organisation.getContactDetails();
-        assertThat(contactDetails.getAddressLine1()).isEqualTo("1".repeat(35));
-        assertThat(contactDetails.getAddressLine2()).isEqualTo(JsonNullable.of("2".repeat(35)));
-        assertThat(contactDetails.getAddressLine3()).isEqualTo(JsonNullable.of("3".repeat(35)));
-        assertThat(contactDetails.getAddressLine4()).isEqualTo(JsonNullable.of("4".repeat(35)));
-        assertThat(contactDetails.getAddressLine5()).isEqualTo(JsonNullable.of("5".repeat(35)));
-        assertThat(contactDetails.getPostcode()).isEqualTo("SW1A 2AA");
-        assertThat(contactDetails.getEmail()).isEqualTo(JsonNullable.of("e".repeat(253)));
-        assertThat(contactDetails.getPhone()).isEqualTo(JsonNullable.of("1".repeat(20)));
-        assertThat(contactDetails.getMobile()).isEqualTo(JsonNullable.of("2".repeat(20)));
-    }
-
-    @Test
-    void testToEntryCreateDto_truncatesBulkUploadPersonFields() {
-        BulkUploadRow row = new BulkUploadRow();
-        row.setApplicantCode("APP001");
-        row.setApplicationCode("APP123");
-        row.setRespondentOrganisationName("");
-        row.setRespondentTitle("T".repeat(105));
-        row.setRespondentForename1("F".repeat(105));
-        row.setRespondentForename2("S".repeat(105));
-        row.setRespondentForename3("R".repeat(105));
-        row.setRespondentSurname("L".repeat(105));
-
-        EntryCreateDto dto = mapper.toEntryCreateDto(row);
-
-        var name = dto.getRespondent().getPerson().getName();
-        assertThat(name.getTitle()).isEqualTo("T".repeat(100));
-        assertThat(name.getFirstName()).isEqualTo("F".repeat(100));
-        assertThat(name.getMiddleName()).isEqualTo(JsonNullable.of("S".repeat(100)));
-        assertThat(name.getLastName()).isEqualTo("L".repeat(100));
     }
 
     @Test

@@ -138,6 +138,23 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     }
 
     /**
+     * Runs the shared entry rules with an application list that has already been validated.
+     *
+     * <p>This allows operation-specific validators to enforce path-resource validation order
+     * without performing a duplicate application-list lookup.
+     */
+    protected <R> R validateUsingApplicationList(
+            T validatable, BiFunction<T, O, R> validateSuccess, ApplicationList applicationList) {
+        return validateUsing(
+                validatable,
+                validateSuccess,
+                ignored -> applicationList,
+                this::validateStandardApplicantCode,
+                this::validateApplicationCode,
+                this::resolveFee);
+    }
+
+    /**
      * gets the result of the validation.
      *
      * @param code The application code
@@ -505,6 +522,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         return applicationCode.getFeeDue() == YesOrNo.YES;
     }
 
+    @SuppressWarnings("java:S1172")
     protected boolean isRetainedFeeStatusAllowed(
             ApplicationCode applicationCode, T validatable, List<FeeStatus> feeStatuses) {
         return false;

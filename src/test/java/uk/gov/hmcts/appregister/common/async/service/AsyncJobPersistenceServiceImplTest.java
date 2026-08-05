@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.entity.AsyncJob;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.JobStatusType;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 class AsyncJobPersistenceServiceImplTest {
@@ -62,9 +62,9 @@ class AsyncJobPersistenceServiceImplTest {
         var jobId = JobIdRequest.builder().id(UUID.randomUUID()).userName("tester").build();
         var asyncJob = AsyncJob.builder().uuid(jobId.getId()).userName("tester").build();
         when(asyncJobRepository.findByJobId(jobId.getId(), "tester")).thenReturn(asyncJob);
-        when(jobStatusMapper.getJobStatus(JobStatus1.PROCESSING)).thenReturn(JobStatusType.RUNNING);
+        when(jobStatusMapper.getJobStatus(JobStatus.PROCESSING)).thenReturn(JobStatusType.RUNNING);
 
-        service.setJobStatus(jobId, JobStatus1.PROCESSING);
+        service.setJobStatus(jobId, JobStatus.PROCESSING);
 
         assertEquals(JobStatusType.RUNNING, asyncJob.getJobState());
         verify(asyncJobRepository).save(asyncJob);
@@ -91,12 +91,12 @@ class AsyncJobPersistenceServiceImplTest {
                         .failureMessage("bad")
                         .build();
         when(asyncJobRepository.findByJobId(uuid, "tester")).thenReturn(asyncJob);
-        when(jobStatusMapper.getJobStatus(JobStatusType.RUNNING)).thenReturn(JobStatus1.PROCESSING);
+        when(jobStatusMapper.getJobStatus(JobStatusType.RUNNING)).thenReturn(JobStatus.PROCESSING);
 
         Optional<JobStatusResponse> response = service.getJobStatus(jobId);
 
         assertTrue(response.isPresent());
-        assertEquals(JobStatus1.PROCESSING, response.orElseThrow().getStatus());
+        assertEquals(JobStatus.PROCESSING, response.orElseThrow().getStatus());
         assertEquals(JobType.FEES_REPORT, response.orElseThrow().getType());
         assertEquals("bad", response.orElseThrow().getErrorMessage());
     }

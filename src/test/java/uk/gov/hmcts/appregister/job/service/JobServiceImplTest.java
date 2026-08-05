@@ -21,7 +21,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.entity.AsyncJob;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
@@ -39,13 +39,13 @@ class JobServiceImplTest {
         val jobId = UUID.randomUUID();
         val responseDto = new JobAcknowledgement();
         responseDto.setId(jobId);
-        responseDto.setStatus(JobStatus1.COMPLETED);
+        responseDto.setStatus(JobStatus.COMPLETED);
         responseDto.setType(JobType.FEES_REPORT);
 
         val jobStatusResponse =
                 JobStatusResponse.builder()
                         .uuid(jobId)
-                        .status(JobStatus1.COMPLETED)
+                        .status(JobStatus.COMPLETED)
                         .type(JobType.FEES_REPORT)
                         .userName("tenant:oid")
                         .build();
@@ -79,7 +79,7 @@ class JobServiceImplTest {
 
         // The business response should still be the mapped acknowledgement DTO.
         Assertions.assertEquals(jobId, actual.getId());
-        Assertions.assertEquals(JobStatus1.COMPLETED, actual.getStatus());
+        Assertions.assertEquals(JobStatus.COMPLETED, actual.getStatus());
         Assertions.assertEquals(JobType.FEES_REPORT, actual.getType());
 
         // The auditable surrogate should contain the requested job UUID so the data-audit layer
@@ -93,7 +93,7 @@ class JobServiceImplTest {
     @Test
     void testGetJobStatusById_delegatesToValidator() {
         val jobId = UUID.randomUUID();
-        val expected = JobStatusResponse.builder().uuid(jobId).status(JobStatus1.RECEIVED).build();
+        val expected = JobStatusResponse.builder().uuid(jobId).status(JobStatus.RECEIVED).build();
 
         when(jobExistanceValidator.validate(eq(jobId), any())).thenReturn(expected);
 

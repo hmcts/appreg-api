@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.common.util.EtagUtil;
 /**
  * A match service that applies the match etag from the request to the etag of the entity.
  */
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class MatchServiceImpl implements MatchService {

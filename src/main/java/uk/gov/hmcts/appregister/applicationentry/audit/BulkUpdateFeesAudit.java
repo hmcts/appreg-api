@@ -55,7 +55,7 @@ public record BulkUpdateFeesAudit(
                                         (AppListEntryFeeStatus status) ->
                                                 status.getAppListEntry().getSequenceNumber())
                                 .thenComparing(
-                                        status -> status.getId(),
+                                        AppListEntryFeeStatus::getId,
                                         Comparator.nullsLast(Long::compareTo)))
                 .map(
                         status ->

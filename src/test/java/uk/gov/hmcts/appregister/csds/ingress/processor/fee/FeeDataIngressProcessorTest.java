@@ -34,6 +34,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.FeeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
@@ -46,6 +47,7 @@ class FeeDataIngressProcessorTest {
     @Mock private JdbcIngressTableReadService tableReadService;
     @Mock private JdbcBulkUpsertService bulkUpsertService;
     @Mock private CsdsAuditService csdsAuditService;
+    @Mock private JdbcIngressBackupService ingressBackupService;
 
     @TempDir Path tempDir;
 
@@ -69,6 +71,7 @@ class FeeDataIngressProcessorTest {
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
+                        ingressBackupService,
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
@@ -136,8 +139,8 @@ class FeeDataIngressProcessorTest {
 
     @Test
     void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addFeeId() {
-        var record = createSourceRecord(3L, "CO3.1", "Fee 3", 1L);
-        record.remove(
+        var sourceRecord = createSourceRecord(3L, "CO3.1", "Fee 3", 1L);
+        sourceRecord.remove(
                 List.of(
                         "Notes",
                         "CurrentRecordIndicator",
@@ -154,7 +157,7 @@ class FeeDataIngressProcessorTest {
                         "FID_ReleasePackage",
                         "Updator"));
 
-        var preProcessed = processor.preProcess(List.of(createPageResponse(record)));
+        var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
         assertThat(
                         extractRecordsFromPage(preProcessed.getFirst())
@@ -314,18 +317,18 @@ class FeeDataIngressProcessorTest {
         assertThat(diffResult.diffRecords()).hasSize(2);
         assertThat(diffResult.diffRecords())
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.UPDATE);
-                            assertThat(record.existing()).isNotNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id()).isEqualTo(33L);
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.UPDATE);
+                            assertThat(diffRecord.existing()).isNotNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id()).isEqualTo(33L);
                         })
                 .anySatisfy(
-                        record -> {
-                            assertThat(record.operation()).isEqualTo(IngressOperation.INSERT);
-                            assertThat(record.existing()).isNull();
-                            assertThat(record.intended()).isEqualTo(record.incoming());
-                            assertThat(record.intended().id())
+                        diffRecord -> {
+                            assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
+                            assertThat(diffRecord.existing()).isNull();
+                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().id())
                                     .isEqualTo(FeeIngressRecord.calculateId(null, 697L));
                         });
     }
@@ -368,8 +371,9 @@ class FeeDataIngressProcessorTest {
     @Test
     void given_queryResponseMissingRecordsArray_when_apply_then_throwException() {
         var invalidPage = OBJECT_MAPPER.createObjectNode().put("unexpected", true);
+        List<JsonNode> invalidPages = List.of(invalidPage);
 
-        assertThatThrownBy(() -> processor.apply(List.of(invalidPage)))
+        assertThatThrownBy(() -> processor.apply(invalidPages))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("records array");
     }
@@ -395,8 +399,9 @@ class FeeDataIngressProcessorTest {
     void given_pssFixedListIdFieldMissing_when_preProcess_then_failBeforeDatabaseRead() {
         var sourceRecord = createSourceRecord(696L, "CO10.1", "Fee 1", 1L);
         sourceRecord.remove("PSSFixedListID");
+        List<JsonNode> processedData = List.of(createPageResponse(sourceRecord));
 
-        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(sourceRecord))))
+        assertThatThrownBy(() -> processor.preProcess(processedData))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("PSSFixedListID");
         verifyNoInteractions(tableReadService, bulkUpsertService);
@@ -406,12 +411,9 @@ class FeeDataIngressProcessorTest {
     void given_invalidFeeValue_when_apply_then_throwException() {
         var sourceRecord = createSourceRecord(696L, "CO10.1", "Fee 1", 1L);
         sourceRecord.put("FeeValue", "not-a-number");
+        var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
-        assertThatThrownBy(
-                        () ->
-                                processor.apply(
-                                        processor.preProcess(
-                                                List.of(createPageResponse(sourceRecord)))))
+        assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("FeeValue");
     }
@@ -478,8 +480,9 @@ class FeeDataIngressProcessorTest {
                                         33L, "CO10.1", "Fee 1", 1L, "245.00"),
                                 createSourceRecordWithoutCivilFeeId(
                                         33L, "CO10.2", "Fee 2", 2L, "250.00")));
+        var preProcessed = processor.preProcess(processedData);
 
-        assertThatThrownBy(() -> processor.apply(processor.preProcess(processedData)))
+        assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("Duplicate incoming FEE_ID 33");
         assertThat(logCaptor.getErrorLogs())
@@ -505,8 +508,8 @@ class FeeDataIngressProcessorTest {
     private ObjectNode createPageResponse(ObjectNode... records) {
         var page = OBJECT_MAPPER.createObjectNode();
         var recordsArray = page.putArray("records");
-        for (var record : records) {
-            recordsArray.add(record);
+        for (var sourceRecord : records) {
+            recordsArray.add(sourceRecord);
         }
         return page;
     }
@@ -553,7 +556,7 @@ class FeeDataIngressProcessorTest {
             Long version,
             String feeValue,
             String versionFieldName) {
-        var record =
+        var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("FeeReference", feeReference)
@@ -579,18 +582,18 @@ class FeeDataIngressProcessorTest {
                         .put("FID_FixedListHeader", 171576L)
                         .putNull("FID_ReleasePackage")
                         .put("Updator", "migration");
-        putNullableLong(record, versionFieldName, version);
+        putNullableLong(sourceRecord, versionFieldName, version);
         if ("RevisionNumber".equals(versionFieldName)) {
-            record.put("RevisionType", "New");
+            sourceRecord.put("RevisionType", "New");
         } else {
-            record.put("VersionType", "New");
+            sourceRecord.put("VersionType", "New");
         }
         if (civilFeeId == null) {
-            record.putNull("CivilFeeID");
+            sourceRecord.putNull("CivilFeeID");
         } else {
-            record.put("CivilFeeID", civilFeeId);
+            sourceRecord.put("CivilFeeID", civilFeeId);
         }
-        return record;
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssFixedListId(
@@ -600,9 +603,10 @@ class FeeDataIngressProcessorTest {
             String description,
             Long version,
             String feeValue) {
-        var record = createSourceRecord(civilFeeId, feeReference, description, version, feeValue);
-        record.put("PSSFixedListID", pssFixedListId);
-        return record;
+        var sourceRecord =
+                createSourceRecord(civilFeeId, feeReference, description, version, feeValue);
+        sourceRecord.put("PSSFixedListID", pssFixedListId);
+        return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithoutCivilFeeId(
@@ -629,13 +633,13 @@ class FeeDataIngressProcessorTest {
         return 1L;
     }
 
-    private void putNullableLong(ObjectNode record, String fieldName, Long value) {
+    private void putNullableLong(ObjectNode sourceRecord, String fieldName, Long value) {
         if (value == null) {
-            record.putNull(fieldName);
+            sourceRecord.putNull(fieldName);
             return;
         }
 
-        record.put(fieldName, value);
+        sourceRecord.put(fieldName, value);
     }
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {

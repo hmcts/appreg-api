@@ -169,7 +169,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
@@ -186,6 +185,7 @@ import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("java:S9024")
 class ApplicationEntryServiceImplTest {
 
     private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
@@ -1336,62 +1336,6 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void testGetApplicationListEntryIds_success() {
-        ApplicationList applicationList = new AppListTestData().someComplete();
-
-        when(applicationListRepository.findByUuid(applicationList.getUuid()))
-                .thenReturn(Optional.of(applicationList));
-
-        EntryApplicationListGetFilterDto entryGetFilterDto = new EntryApplicationListGetFilterDto();
-        entryGetFilterDto.setApplicantName("  Applicant Match  ");
-        entryGetFilterDto.setAccountReference("  ACC-123  ");
-        entryGetFilterDto.setResulted("  RC1  ");
-        entryGetFilterDto.setSequenceNumber(7);
-
-        List<UUID> expectedIds = List.of(UUID.randomUUID(), UUID.randomUUID());
-
-        when(applicationListEntryRepository.searchForGetSummaryIds(
-                        applicationList.getUuid(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "Applicant Match",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "ACC-123",
-                        null,
-                        "RC1",
-                        null,
-                        7))
-                .thenReturn(expectedIds);
-
-        PayloadGetEntryInList payloadGetEntryInList =
-                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
-
-        when(applicationListEntryMapStructMapper.toApplicationListEntry(
-                        any(PayloadGetEntryInList.class),
-                        any(EntryApplicationListGetFilterDto.class)))
-                .thenReturn(new ApplicationListEntry());
-
-        EntryIdsDto response =
-                service.getApplicationListEntryIds(payloadGetEntryInList, entryGetFilterDto);
-
-        Assertions.assertNotNull(response);
-        Assertions.assertEquals(expectedIds, response.getIds());
-
-        verify(applicationListEntryMapStructMapper)
-                .toApplicationListEntry(any(PayloadGetEntryInList.class), any());
-    }
-
-    @Test
     void testGetApplicationListEntries_buildsAuditEntityFromPayloadAndFilter() {
         // Arrange a simple successful search so we can focus on whether the service builds the
         // correct audit payload for the read operation.
@@ -2146,11 +2090,6 @@ class ApplicationEntryServiceImplTest {
         return feeDetails;
     }
 
-    private void stubFeeStatusSave() {
-        when(appListEntryFeeStatusRepository.save(any(AppListEntryFeeStatus.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-    }
-
     @Test
     void replaceOfficials_replacesOfficialsForAllEntries() {
         val listId = UUID.randomUUID();
@@ -2846,92 +2785,6 @@ class ApplicationEntryServiceImplTest {
     }
 
     @Test
-    void given_filter_when_getEntryIds_then_return_ids() {
-        EntryGetFilterDto filterDto = new EntryGetFilterDto();
-        filterDto.setStatus(ApplicationListStatus.OPEN);
-        filterDto.setCourtCode("COURT1");
-        filterDto.setCjaCode("CJA1");
-        filterDto.setApplicantOrganisation("Applicant Org");
-        filterDto.setApplicantSurname("ApplicantSurname");
-        filterDto.setStandardApplicantCode("STD1");
-        filterDto.setRespondentOrganisation("Respondent Org");
-        filterDto.setRespondentSurname("RespondentSurname");
-        filterDto.setRespondentPostcode("AB1 2CD");
-        filterDto.setAccountReference("ACC123");
-        filterDto.setApplicationTitle("Title");
-
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-
-        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
-                .thenReturn(Status.OPEN);
-        when(applicationListEntryRepository.searchForGetSummaryIds(
-                        null,
-                        false,
-                        null,
-                        "COURT1",
-                        null,
-                        "CJA1",
-                        "Applicant Org",
-                        "ApplicantSurname",
-                        null,
-                        "STD1",
-                        Status.OPEN,
-                        "Respondent Org",
-                        "RespondentSurname",
-                        null,
-                        "AB1 2CD",
-                        "ACC123",
-                        "Title",
-                        null,
-                        null,
-                        null))
-                .thenReturn(List.of(id1, id2));
-
-        EntryIdsDto response = service.getEntryIds(filterDto);
-
-        Assertions.assertEquals(List.of(id1, id2), response.getIds());
-        verify(applicationListEntryRepository)
-                .searchForGetSummaryIds(
-                        null,
-                        false,
-                        null,
-                        "COURT1",
-                        null,
-                        "CJA1",
-                        "Applicant Org",
-                        "ApplicantSurname",
-                        null,
-                        "STD1",
-                        Status.OPEN,
-                        "Respondent Org",
-                        "RespondentSurname",
-                        null,
-                        "AB1 2CD",
-                        "ACC123",
-                        "Title",
-                        null,
-                        null,
-                        null);
-    }
-
-    @Test
-    void given_nullFilter_when_getEntryIds_then_use_empty_filter() {
-        UUID id = UUID.randomUUID();
-
-        when(applicationListEntryMapStructMapper.toStatus((ApplicationListStatus) null))
-                .thenReturn(null);
-        when(applicationListEntryRepository.searchForGetSummaryIds(
-                        null, false, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null))
-                .thenReturn(List.of(id));
-
-        EntryIdsDto response = service.getEntryIds(null);
-
-        Assertions.assertEquals(List.of(id), response.getIds());
-    }
-
-    @Test
     void given_idsSelection_when_bulkActionPreview_then_return_submitted_ids_and_counts() {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 2);
         UUID firstEntryId = UUID.randomUUID();
@@ -3010,14 +2863,11 @@ class ApplicationEntryServiceImplTest {
     @Test
     void given_idsSelectionAboveLimit_when_bulkActionPreview_then_throw_exceeds_limit() {
         ReflectionTestUtils.setField(service, "bulkActionPreviewGlobalLimit", 1);
+        var request = bulkActionPreviewRequest(UUID.randomUUID(), UUID.randomUUID());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.bulkActionPreview(
-                                        bulkActionPreviewRequest(
-                                                UUID.randomUUID(), UUID.randomUUID())));
+                        AppRegistryException.class, () -> service.bulkActionPreview(request));
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());
@@ -3055,6 +2905,48 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(2, response.getSelectedCount());
         Assertions.assertEquals(List.of(firstEntryId, secondEntryId), response.getEntryIds());
         Assertions.assertEquals(List.of(firstSummary, secondSummary), response.getEntries());
+    }
+
+    @Test
+    void
+            given_updateFeeDetailsSelection_when_bulkActionPreview_then_onlyFeeRequiredEntriesAreEligible() {
+        ReflectionTestUtils.setField(service, "bulkActionPreviewSingleListLimit", 2);
+        UUID listId = UUID.randomUUID();
+        UUID feeRequiredEntryId = UUID.randomUUID();
+        UUID feeNotRequiredEntryId = UUID.randomUUID();
+        ApplicationListEntryGetSummaryProjection feeRequiredProjection =
+                bulkActionPreviewProjection(feeRequiredEntryId, 1L);
+        ApplicationListEntryGetSummaryProjection feeNotRequiredProjection =
+                bulkActionPreviewProjection(feeNotRequiredEntryId, 2L);
+        EntryGetSummaryDto feeRequiredSummary =
+                stubEntrySummary(feeRequiredProjection, feeRequiredEntryId);
+        feeRequiredSummary.setIsFeeRequired(true);
+        EntryGetSummaryDto feeNotRequiredSummary =
+                stubEntrySummary(feeNotRequiredProjection, feeNotRequiredEntryId);
+        feeNotRequiredSummary.setIsFeeRequired(false);
+
+        when(applicationListEntryRepository.findApplicationListForAllEntries(anyList()))
+                .thenReturn(
+                        List.of(
+                                new EntryToList(feeRequiredEntryId, listId),
+                                new EntryToList(feeNotRequiredEntryId, listId)));
+        stubBulkActionPreviewSummaryPage(2, feeRequiredProjection, feeNotRequiredProjection);
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of());
+
+        BulkActionPreviewResponseDto response =
+                service.bulkActionPreview(
+                        listId,
+                        applicationListBulkActionPreviewRequest(
+                                feeRequiredEntryId, feeNotRequiredEntryId));
+
+        Assertions.assertEquals(2, response.getSelectedCount());
+        Assertions.assertEquals(1, response.getEligibleCount());
+        Assertions.assertEquals(1, response.getIneligibleCount());
+        Assertions.assertEquals(
+                List.of(feeRequiredEntryId, feeNotRequiredEntryId), response.getEntryIds());
+        Assertions.assertEquals(
+                List.of(feeRequiredSummary, feeNotRequiredSummary), response.getEntries());
     }
 
     @Test
@@ -3142,14 +3034,11 @@ class ApplicationEntryServiceImplTest {
                 bulkActionPreviewProjection(UUID.randomUUID(), 1L);
 
         stubBulkActionPreviewSummaryPage(2, projection);
+        var request = bulkActionPreviewFilterRequest(new EntryGetFilterDto(), List.of(), List.of());
 
         AppRegistryException exception =
                 Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.bulkActionPreview(
-                                        bulkActionPreviewFilterRequest(
-                                                new EntryGetFilterDto(), List.of(), List.of())));
+                        AppRegistryException.class, () -> service.bulkActionPreview(request));
 
         Assertions.assertEquals(
                 AppListEntryError.BULK_ACTION_SELECTION_EXCEEDS_LIMIT, exception.getCode());

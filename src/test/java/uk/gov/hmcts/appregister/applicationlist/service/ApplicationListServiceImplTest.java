@@ -49,7 +49,6 @@ import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkGetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
-import uk.gov.hmcts.appregister.applicationlist.audit.ApplicationListPrintReadAudit;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
@@ -105,6 +104,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("java:S9024")
 class ApplicationListServiceImplTest {
 
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.OCTOBER, 7);
@@ -940,8 +940,6 @@ class ApplicationListServiceImplTest {
         ApplicationList list = new ApplicationList();
         list.setUuid(id);
 
-        when(repository.findByUuid(id)).thenReturn(Optional.of(list));
-
         // 1) Entry projections for the list (single query)
         var entryProjection =
                 applicationListEntryPrintProjection()
@@ -988,8 +986,11 @@ class ApplicationListServiceImplTest {
         ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
         when(mapper.toGetPrintDto(list)).thenReturn(expected);
 
+        var request = new BulkGetApplicationListEntriesRequestDto().listIds(List.of(id));
+        when(repository.findByUuidIn(request.getListIds())).thenReturn(List.of(list));
+
         // When
-        ApplicationListGetPrintDto actual = service.print(id);
+        ApplicationListGetPrintDto actual = service.print(request).getFirst();
 
         // Then: it should enrich the mapped entry with wordings + officials
         assertNotNull(actual);
@@ -1003,37 +1004,16 @@ class ApplicationListServiceImplTest {
         assertEquals(List.of(WORDING_1, WORDING_2), dto.getResultWordings());
         assertEquals(List.of(officialDto), dto.getOfficials());
 
+        verify(repository).findByUuidIn(request.getListIds());
         verify(aleRepository)
                 .findByApplicationListIdsForPrinting(eq(List.of(id)), eq(false), any());
         verify(alerRepository).findByApplicationListEntryIdsForPrinting(List.of(1L));
         verify(aleoRepository)
                 .findByApplicationListEntryIdsForPrinting(List.of(1L), PRINTABLE_OFFICIAL_TYPES);
+        verify(bulkGetApplicationListEntriesValidator).validate(request);
 
         // And the per-entry mapper was invoked
         verify(entryMapper).toPrintDto(entryProjection);
-    }
-
-    @Test
-    void print_auditsLookupIdOnly() {
-        UUID id = UUID.randomUUID();
-        ApplicationList list = new ApplicationList();
-        list.setUuid(id);
-
-        when(repository.findByUuid(id)).thenReturn(Optional.of(list));
-        when(aleRepository.findByApplicationListIdsForPrinting(eq(List.of(id)), eq(false), any()))
-                .thenReturn(List.of());
-
-        ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
-        when(mapper.toGetPrintDto(list)).thenReturn(expected);
-
-        auditOperationService.clearCapturedAudit();
-        ApplicationListGetPrintDto actual = service.print(id);
-
-        Assertions.assertEquals(expected, actual);
-        Assertions.assertInstanceOf(
-                ApplicationListPrintReadAudit.class, auditOperationService.getLastNewEntity());
-        Assertions.assertNotSame(list, auditOperationService.getLastNewEntity());
-        Assertions.assertEquals(-1L, auditOperationService.getLastNewEntity().getId());
     }
 
     @Test
@@ -1110,17 +1090,6 @@ class ApplicationListServiceImplTest {
                 .extracting(EntryGetPrintDto::getId)
                 .containsExactly(firstEntrySecondId, firstEntryFirstId);
         verify(bulkGetApplicationListEntriesValidator).validate(request);
-    }
-
-    @Test
-    void print_returns404_whenApplicationListRepositoryEmpty() {
-        UUID id = UUID.randomUUID();
-        when(repository.findByUuid(id)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.print(id))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     class DummyAuditOperationService implements AuditOperationService {

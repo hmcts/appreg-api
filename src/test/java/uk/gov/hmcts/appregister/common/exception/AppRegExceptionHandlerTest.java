@@ -10,6 +10,7 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Iterator;
@@ -39,12 +40,19 @@ import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.log.LogPayloads;
+import uk.gov.hmcts.appregister.common.log.PayloadLogDirection;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
@@ -652,7 +660,7 @@ class AppRegExceptionHandlerTest {
                 new HttpMessageNotReadableException(content, cause, null);
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, webRequest);
 
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
@@ -677,6 +685,7 @@ class AppRegExceptionHandlerTest {
     @Test
     void
             givenHttpMessageNotReadableNestedUnknownPropertyException_whenThrown_thenProblemDetailUsesJsonPath() {
+
         String content = "Not Readable Error";
         String body =
                 """
@@ -699,7 +708,7 @@ class AppRegExceptionHandlerTest {
                 new HttpMessageNotReadableException(content, cause, null);
 
         ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, webRequest);
 
         Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
@@ -720,6 +729,80 @@ class AppRegExceptionHandlerTest {
                                                 "[400]: Unsupported request field:"
                                                         + " nested.unexpected")));
         assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @Test
+    void givenHttpMessageNotReadable_WhenControllerHasLogPayload_thenLogRequest() throws Exception {
+        NativeWebRequest nativeWebRequest = Mockito.mock(NativeWebRequest.class);
+        ContentCachingRequestWrapper cachingRequest =
+                Mockito.mock(ContentCachingRequestWrapper.class);
+
+        byte[] payload =
+                """
+             {
+             "courtCode": "LOC123"
+             }
+             """
+                        .getBytes(StandardCharsets.UTF_8);
+
+        Mockito.when(cachingRequest.getContentAsByteArray()).thenReturn(payload);
+        Mockito.when(cachingRequest.getCharacterEncoding())
+                .thenReturn(StandardCharsets.UTF_8.name());
+        Mockito.when(nativeWebRequest.getNativeRequest(ContentCachingRequestWrapper.class))
+                .thenReturn(cachingRequest);
+
+        Method method =
+                AppRegExceptionHandlerTest.class.getDeclaredMethod("sampleLogPayloadsEndpoint");
+        HandlerMethod handlerMethod = new HandlerMethod(this, method);
+
+        Mockito.when(
+                        nativeWebRequest.getAttribute(
+                                HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE,
+                                RequestAttributes.SCOPE_REQUEST))
+                .thenReturn(handlerMethod);
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(
+                        "Type conversion problem. Something in the payload is not correct",
+                        (HttpInputMessage) null);
+
+        exceptionHandler.handleHttpMessageNotReadable(
+                exception, HEADERS, BAD_REQUEST, nativeWebRequest);
+
+        assertThat(logCaptor.getLogs())
+                .anyMatch(
+                        log ->
+                                log.contains("Test request payload:")
+                                        && log.contains(
+                                                "{\\n\\\"courtCode\\\": \\\"LOC123\\\"\\n}\\n"));
+    }
+
+    @Test
+    void
+            givenHttpMessageNotReadable_WhenControllerHasLogPayloadButResponseIsPopulated_thenDoNotLogRequest()
+                    throws Exception {
+        NativeWebRequest nativeWebRequest = Mockito.mock(NativeWebRequest.class);
+
+        Method method =
+                AppRegExceptionHandlerTest.class.getDeclaredMethod(
+                        "sampleLogResponsePayloadsEndpoint");
+        HandlerMethod handlerMethod = new HandlerMethod(this, method);
+
+        Mockito.when(
+                        nativeWebRequest.getAttribute(
+                                HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE,
+                                RequestAttributes.SCOPE_REQUEST))
+                .thenReturn(handlerMethod);
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(
+                        "Type conversion problem. Something in the payload is not correct",
+                        (HttpInputMessage) null);
+
+        exceptionHandler.handleHttpMessageNotReadable(
+                exception, HEADERS, BAD_REQUEST, nativeWebRequest);
+
+        assertThat(logCaptor.getLogs()).noneMatch(log -> log.contains("Test request payload:"));
     }
 
     @Test
@@ -1005,6 +1088,23 @@ class AppRegExceptionHandlerTest {
                 .containsExactly(
                         "[400]: CSDS batch upsert failed for application_codes_staging.ac_id. Failed rows=3.");
         assertThat(logCaptor.getErrorLogs()).isEmpty();
+    }
+
+    @LogPayloads(requestPrefix = "Test request payload")
+    @SuppressWarnings("unused")
+    private void sampleLogPayloadsEndpoint() {
+        // used to provide a HandlerMethod annotated with @LogPayloads
+    }
+
+    @LogPayloads(direction = PayloadLogDirection.RESPONSE, responsePrefix = "Test response payload")
+    @SuppressWarnings("unused")
+    private void sampleLogResponsePayloadsEndpoint() {
+        // used to provide a HandlerMethod annotated with @LogPayloads for response payload logging
+    }
+
+    @SuppressWarnings("unused")
+    private void sampleNoLogPayloadsEndpoint() {
+        // used to provide a HandlerMethod without @LogPayloads
     }
 
     private static Path path(String value) {

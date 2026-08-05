@@ -15,7 +15,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.TransactionUnitOfWork;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
@@ -28,13 +28,13 @@ import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 /**
  * A default implementation of the {@link AsyncJobService} interface.
  */
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 @Setter
 public class AsyncJobServiceImpl implements AsyncJobService {
@@ -102,7 +102,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                         .persistence(persistence)
                         .type(jobRequest.getJobType())
                         .userName(jobRequest.getUserName())
-                        .status(JobStatus1.RECEIVED)
+                        .status(JobStatus.RECEIVED)
                         .build();
 
         ReadPagePosition position = new ReadPagePosition(pageSize, 0);
@@ -183,7 +183,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                                 fireEventAndChangeState(
                                         jobStatusResponse,
                                         null,
-                                        JobStatus1.RECEIVED,
+                                        JobStatus.RECEIVED,
                                         lifecycle,
                                         jobContext);
 
@@ -202,7 +202,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                                     fireEventAndChangeState(
                                             jobStatusResponse,
                                             null,
-                                            JobStatus1.COMPLETED,
+                                            JobStatus.COMPLETED,
                                             lifecycle,
                                             jobContext);
                                 }
@@ -223,15 +223,15 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         }
 
         private void processValidationFirst() throws IOException {
-            changeState(jobStatusResponse, JobStatus1.VALIDATING);
-            readPhase(JobStatus1.VALIDATING);
+            changeState(jobStatusResponse, JobStatus.VALIDATING);
+            readPhase(JobStatus.VALIDATING);
             failJobIfValidationFailed();
 
-            changeState(jobStatusResponse, JobStatus1.PROCESSING);
-            readPhase(JobStatus1.PROCESSING);
+            changeState(jobStatusResponse, JobStatus.PROCESSING);
+            readPhase(JobStatus.PROCESSING);
         }
 
-        private void readPhase(JobStatus1 status) throws IOException {
+        private void readPhase(JobStatus status) throws IOException {
             var pageReadInPhase = new AtomicBoolean();
             dataReader.readData(
                     position,
@@ -253,7 +253,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                         fireEventAndChangeState(
                                 jobStatusResponse,
                                 data,
-                                JobStatus1.VALIDATING,
+                                JobStatus.VALIDATING,
                                 lifecycle,
                                 jobContext);
 
@@ -265,7 +265,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                             fireEventAndChangeState(
                                     jobStatusResponse,
                                     data,
-                                    JobStatus1.PROCESSING,
+                                    JobStatus.PROCESSING,
                                     lifecycle,
                                     jobContext);
                         }
@@ -289,7 +289,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
 
             try {
                 fireEventAndChangeState(
-                        jobStatusResponse, null, JobStatus1.FAILED, lifecycle, jobContext);
+                        jobStatusResponse, null, JobStatus.FAILED, lifecycle, jobContext);
             } catch (IOException e) {
                 log.error("Error calling failure lifecycle", e);
             }
@@ -326,7 +326,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         private void fireEventAndChangeState(
                 JobStatusResponse response,
                 List<T> data,
-                JobStatus1 status,
+                JobStatus status,
                 AsyncJobLifecycle<T> lifecycle,
                 JobContext context)
                 throws IOException {
@@ -337,7 +337,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
         private void fireLifecycleEvent(
                 JobStatusResponse response,
                 List<T> data,
-                JobStatus1 status,
+                JobStatus status,
                 AsyncJobLifecycle<T> lifecycle,
                 JobContext context)
                 throws IOException {
@@ -348,12 +348,12 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             log.debug("Processed {} for job {}", status, response.getJobId().getId());
         }
 
-        private void changeState(JobStatusResponse response, JobStatus1 status) {
+        private void changeState(JobStatusResponse response, JobStatus status) {
             persistence.setJobStatus(response.getJobId(), status);
 
-            if (status == JobStatus1.RECEIVED
-                    || status == JobStatus1.COMPLETED
-                    || status == JobStatus1.FAILED) {
+            if (status == JobStatus.RECEIVED
+                    || status == JobStatus.COMPLETED
+                    || status == JobStatus.FAILED) {
                 log.info("Job {} is now {}", response.getJobId().getId(), status);
             } else {
                 log.debug("Job {} is now {}", response.getJobId().getId(), status);
@@ -367,7 +367,7 @@ public class AsyncJobServiceImpl implements AsyncJobService {
          * @param jobStatusResponse The job status response containing the job id.
          */
         private void handleFailure(
-                JobContext jobContext, JobStatusResponse jobStatusResponse, JobStatus1 status)
+                JobContext jobContext, JobStatusResponse jobStatusResponse, JobStatus status)
                 throws JobException {
             // if we have a failure but we want to validate all other
             // results then keep going.

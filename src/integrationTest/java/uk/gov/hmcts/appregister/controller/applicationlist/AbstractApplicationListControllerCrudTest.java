@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkGetApplicationListEntriesRequestDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
@@ -258,11 +259,12 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
 
     protected ApplicationListGetPrintDto getApplicationListPrint(UUID listId, TokenAndJwksKey token)
             throws Exception {
+        var request = new BulkGetApplicationListEntriesRequestDto().listIds(List.of(listId));
         Response resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/print"), token);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/print"), token, request);
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-        return resp.as(ApplicationListGetPrintDto.class);
+        return resp.as(ApplicationListGetPrintDto[].class)[0];
     }
 
     protected UUID createApplicationListWithCourtCode(

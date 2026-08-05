@@ -30,7 +30,13 @@ public class CsdsIngressProperties {
 
     private StartupRunner startupRunner = new StartupRunner();
 
+    private Schedule schedule = new Schedule();
+
     private Processors processors = new Processors();
+
+    public String getNightlyCron() {
+        return "0 %d %d * * *".formatted(schedule.getMinute(), schedule.getHour());
+    }
 
     @AssertTrue(
             message =
@@ -78,6 +84,14 @@ public class CsdsIngressProperties {
 
     @Getter
     @Setter
+    public static class Schedule {
+        private int hour = 3;
+        private int minute = 0;
+        private Duration pollInterval = Duration.ofMinutes(10L);
+    }
+
+    @Getter
+    @Setter
     public static class Processors {
         private ApplicationCodes applicationCodes = new ApplicationCodes();
         private ResolutionCodes resolutionCodes = new ResolutionCodes();
@@ -121,7 +135,11 @@ public class CsdsIngressProperties {
 
         private String sourceEntityName;
 
-        private String tableName;
+        private String ingressTarget;
+
+        private String backupSource;
+
+        private String backupTarget;
 
         private String primaryKey;
 
@@ -132,16 +150,16 @@ public class CsdsIngressProperties {
         }
 
         protected ProcessorProperties(
-                String sourceEntityName, String tableName, String primaryKey) {
+                String sourceEntityName, String ingressTarget, String primaryKey) {
             this.sourceEntityName = sourceEntityName;
-            this.tableName = tableName;
+            this.ingressTarget = ingressTarget;
             this.primaryKey = primaryKey;
         }
 
         protected boolean isConfigurationValid() {
             return !enabled
                     || (StringUtils.hasText(sourceEntityName)
-                            && StringUtils.hasText(tableName)
+                            && StringUtils.hasText(ingressTarget)
                             && StringUtils.hasText(primaryKey));
         }
 
@@ -154,7 +172,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class ApplicationCodes extends ProcessorProperties {
         public ApplicationCodes() {
-            super("ApplicationCode", "application_codes", "ac_id");
+            super("ApplicationCode", "application_codes_staging", "ac_id");
         }
     }
 

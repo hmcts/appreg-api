@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 class PayloadLoggingAdviceTest {
@@ -68,7 +68,7 @@ class PayloadLoggingAdviceTest {
                 new JobAcknowledgement()
                         .id(java.util.UUID.randomUUID())
                         .type(JobType.FEES_REPORT)
-                        .status(JobStatus1.RECEIVED);
+                        .status(JobStatus.RECEIVED);
 
         responseAdvice.beforeBodyWrite(
                 body,

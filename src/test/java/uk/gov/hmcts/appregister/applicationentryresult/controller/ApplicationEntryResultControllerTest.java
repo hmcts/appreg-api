@@ -87,20 +87,6 @@ class ApplicationEntryResultControllerTest {
     }
 
     @Test
-    void deleteApplicationListEntryResult_delegatesAndReturnsNoContent() {
-        UUID listId = UUID.randomUUID();
-        UUID entryId = UUID.randomUUID();
-        UUID resultId = UUID.randomUUID();
-        doNothing().when(service).delete(any());
-
-        ResponseEntity<Void> actual =
-                controller.deleteApplicationListEntryResult(listId, entryId, resultId);
-
-        verify(service).delete(any());
-        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-    }
-
-    @Test
     void createApplicationListEntryResult_delegatesAndReturnsCreated() {
         UUID listId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();

@@ -3,10 +3,10 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.AsyncJob;
 
-@Component
+@Repository
 public interface AsyncJobRepository extends JpaRepository<AsyncJob, Long> {
 
     /**

@@ -21,7 +21,7 @@ import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +44,7 @@ class ReportJobAuditServiceTest {
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
                         executionCaptor.capture());
 
-        service.auditStatusTransition(job, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
+        service.auditStatusTransition(job, JobStatus.PROCESSING, JobStatus.COMPLETED, null);
 
         // Execute the captured callback to inspect the new audit payload that would be persisted.
         ReportJobAudit oldAudit = oldAuditCaptor.getValue();
@@ -52,9 +52,9 @@ class ReportJobAuditServiceTest {
                 executionCaptor.getValue().apply(null).orElseThrow().getNewEntity();
 
         Assertions.assertTrue(
-                oldAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.PROCESSING)));
+                oldAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus.PROCESSING)));
         Assertions.assertTrue(
-                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.COMPLETED)));
+                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus.COMPLETED)));
         Assertions.assertTrue(
                 newAudit.extractAuditData(CrudEnum.UPDATE)
                         .contains(
@@ -80,16 +80,16 @@ class ReportJobAuditServiceTest {
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
                         executionCaptor.capture());
 
-        service.auditStatusTransition(job, JobStatus1.RECEIVED, JobStatus1.COMPLETED, null);
+        service.auditStatusTransition(job, JobStatus.RECEIVED, JobStatus.COMPLETED, null);
 
         ReportJobAudit oldAudit = oldAuditCaptor.getValue();
         ReportJobAudit newAudit =
                 executionCaptor.getValue().apply(null).orElseThrow().getNewEntity();
 
         Assertions.assertTrue(
-                oldAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.RECEIVED)));
+                oldAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus.RECEIVED)));
         Assertions.assertTrue(
-                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.COMPLETED)));
+                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus.COMPLETED)));
     }
 
     @Test
@@ -106,15 +106,14 @@ class ReportJobAuditServiceTest {
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
                         executionCaptor.capture());
 
-        service.auditStatusTransition(
-                job, JobStatus1.PROCESSING, JobStatus1.FAILED, "report failed");
+        service.auditStatusTransition(job, JobStatus.PROCESSING, JobStatus.FAILED, "report failed");
 
         // Execute the captured callback to inspect the new audit payload that would be persisted.
         ReportJobAudit newAudit =
                 executionCaptor.getValue().apply(null).orElseThrow().getNewEntity();
 
         Assertions.assertTrue(
-                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.FAILED)));
+                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus.FAILED)));
         Assertions.assertTrue(
                 newAudit.extractAuditData(CrudEnum.UPDATE)
                         .contains(
@@ -135,7 +134,7 @@ class ReportJobAuditServiceTest {
                         eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
                         executionCaptor.capture());
 
-        service.auditStatusTransition(job, JobStatus1.PROCESSING, JobStatus1.FAILED, null);
+        service.auditStatusTransition(job, JobStatus.PROCESSING, JobStatus.FAILED, null);
 
         ReportJobAudit newAudit =
                 executionCaptor.getValue().apply(null).orElseThrow().getNewEntity();
@@ -155,13 +154,13 @@ class ReportJobAuditServiceTest {
 
         service.auditStatusTransition(
                 reportJob(JobType.BULK_UPLOAD_ENTRIES),
-                JobStatus1.PROCESSING,
-                JobStatus1.COMPLETED,
+                JobStatus.PROCESSING,
+                JobStatus.COMPLETED,
                 null);
         service.auditStatusTransition(
-                reportJob(JobType.FEES_REPORT), JobStatus1.VALIDATING, JobStatus1.PROCESSING, null);
+                reportJob(JobType.FEES_REPORT), JobStatus.VALIDATING, JobStatus.PROCESSING, null);
         service.auditStatusTransition(
-                reportJob(JobType.FEES_REPORT), JobStatus1.COMPLETED, JobStatus1.FAILED, null);
+                reportJob(JobType.FEES_REPORT), JobStatus.COMPLETED, JobStatus.FAILED, null);
 
         verify(auditService, never()).processAudit(any(ReportJobAudit.class), any(), any());
     }
@@ -172,11 +171,9 @@ class ReportJobAuditServiceTest {
         var missingType = JobStatusResponse.builder().uuid(UUID.randomUUID()).build();
         var missingUuid = JobStatusResponse.builder().type(JobType.FEES_REPORT).build();
 
-        service.auditStatusTransition(null, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
-        service.auditStatusTransition(
-                missingType, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
-        service.auditStatusTransition(
-                missingUuid, JobStatus1.PROCESSING, JobStatus1.COMPLETED, null);
+        service.auditStatusTransition(null, JobStatus.PROCESSING, JobStatus.COMPLETED, null);
+        service.auditStatusTransition(missingType, JobStatus.PROCESSING, JobStatus.COMPLETED, null);
+        service.auditStatusTransition(missingUuid, JobStatus.PROCESSING, JobStatus.COMPLETED, null);
 
         verify(auditService, never()).processAudit(any(ReportJobAudit.class), any(), any());
     }
@@ -189,7 +186,7 @@ class ReportJobAuditServiceTest {
                 .build();
     }
 
-    private AuditableData status(JobStatus1 status) {
+    private AuditableData status(JobStatus status) {
         return new AuditableData("report_jobs", "status", status.toString());
     }
 

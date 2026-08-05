@@ -51,7 +51,6 @@ class BulkApplicationEntryResultDeletionValidatorTest {
                         .listId(UUID.randomUUID())
                         .entryId(UUID.randomUUID())
                         .resultId(UUID.randomUUID());
-
         var request = new BulkDeleteResultsDto().results(List.of(item, item));
 
         var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
@@ -66,13 +65,9 @@ class BulkApplicationEntryResultDeletionValidatorTest {
                         .listId(UUID.randomUUID())
                         .entryId(UUID.randomUUID())
                         .resultId(UUID.randomUUID());
+        var request = new BulkDeleteResultsDto().results(List.of(item));
 
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkDeleteResultsDto().results(List.of(item))));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode())
                 .isEqualTo(ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST);
@@ -156,12 +151,8 @@ class BulkApplicationEntryResultDeletionValidatorTest {
                 .thenReturn(List.of(result));
 
         var item = new BulkDeleteResultItemDto().listId(listId).entryId(entryId).resultId(resultId);
-        var exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkDeleteResultsDto().results(List.of(item))));
+        var request = new BulkDeleteResultsDto().results(List.of(item));
+        var exception = assertThrows(AppRegistryException.class, () -> validator.validate(request));
 
         assertThat(exception.getCode())
                 .isEqualTo(

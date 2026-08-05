@@ -108,6 +108,29 @@ public class BulkUploadRow implements CsvPojo {
                         || StringUtils.isNotBlank(row.getRespondentLastNameValue()));
     }
 
+    public static RespondentNameState respondentNameState(BulkUploadRow row) {
+        boolean hasOrganisation = hasRespondentOrganisation(row);
+        boolean hasPerson = hasRespondentPerson(row);
+
+        if (hasOrganisation && hasPerson) {
+            return RespondentNameState.CONFLICTING;
+        }
+        if (hasOrganisation) {
+            return RespondentNameState.ORGANISATION;
+        }
+        if (hasPerson) {
+            return RespondentNameState.PERSON;
+        }
+        return RespondentNameState.MISSING;
+    }
+
+    public enum RespondentNameState {
+        MISSING,
+        ORGANISATION,
+        PERSON,
+        CONFLICTING
+    }
+
     public String getRespondentFirstNameValue() {
         return firstNonBlank(respondentFirstName, respondentForename1);
     }

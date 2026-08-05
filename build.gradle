@@ -24,7 +24,7 @@ plugins {
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.0'
-  id 'com.github.ben-manes.versions' version '0.54.0'
+  id 'com.github.ben-manes.versions' version '0.56.0'
   id 'org.sonarqube' version '7.3.1.8318'
   id 'org.openapi.generator' version '7.23.0'
   id 'io.freefair.lombok' version '9.5.0'
@@ -33,7 +33,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.8.0'
+  id 'com.diffplug.spotless' version '8.9.0'
   id 'org.openrewrite.rewrite' version '7.37.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
@@ -46,7 +46,7 @@ ext {
 def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
-  toolVersion = '13.8.0'
+  toolVersion = '13.9.0'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
   checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
@@ -55,7 +55,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.29.0'
+    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.30.0'
   }
 }
 
@@ -431,7 +431,7 @@ dependencies {
   // Allows us to use Jackson 2 until we can successfully migrate to Jackson 3.
   implementation 'org.springframework.cloud:spring-cloud-starter'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-  implementation 'org.openapitools:jackson-databind-nullable:0.2.10'
+  implementation 'org.openapitools:jackson-databind-nullable:0.2.11'
 
   // OAuth2 support
   implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
@@ -444,13 +444,11 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
-  implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
-
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.52'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.53'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.11.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:13.1.0'
 
   // Future Jackson 2 overrides for CVE-2026-54515.
   // Leave commented until the FasterXML 2.x fixes are actually published to Maven Central.
@@ -458,7 +456,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
   implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.11.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:13.1.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
@@ -468,9 +466,6 @@ dependencies {
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
   implementation 'tools.jackson.core:jackson-databind:3.2.1'
 
-  // Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
-  implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
-
   // Source: https://mvnrepository.com/artifact/com.opencsv/opencsv
   implementation 'com.opencsv:opencsv:5.12.0'
 
@@ -479,6 +474,7 @@ dependencies {
   annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.5.Final'
 
   // Lombok
+  compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
   compileOnly 'org.projectlombok:lombok:1.18.46'
   compileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
@@ -500,10 +496,10 @@ dependencies {
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.2'
   testImplementation 'org.instancio:instancio-junit:5.6.0'
 
-  testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
+  testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.0'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
-  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.39.0'
+  rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.40.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'

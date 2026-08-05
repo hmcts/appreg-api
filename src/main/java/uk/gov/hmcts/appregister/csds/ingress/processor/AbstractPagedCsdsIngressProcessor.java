@@ -28,13 +28,13 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
+import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
-        implements IDataIngressProcessor<T> {
+public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIngressProcessor<D> {
     private static final String DATA_LOCATION_NAME = "CSDS";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String VIEW_TYPE = "GD";
@@ -43,6 +43,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
     private final CsdsAuditService csdsAuditService;
     private final CsdsIngressTransactionRunner csdsIngressTransactionRunner;
+    private final JdbcIngressBackupService ingressBackupService;
 
     @Override
     public final boolean enabled() {
@@ -134,12 +135,41 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
 
     @Override
     public final String targetTable() {
-        return processorProperties.getTableName();
+        return processorProperties.getIngressTarget();
     }
 
     @Override
     public final String targetKeyField() {
         return processorProperties.getPrimaryKey();
+    }
+
+    @Override
+    public final void backup() {
+        val backupSource = processorProperties.getBackupSource();
+        val backupTarget = processorProperties.getBackupTarget();
+        if (!StringUtils.hasText(backupSource)
+                || !StringUtils.hasText(backupTarget)
+                || backupSource.equals(backupTarget)) {
+            return;
+        }
+
+        try {
+            val result = ingressBackupService.backup(backupSource, backupTarget);
+            log.info(
+                    "Completed CSDS backup for {} from {} to {} with deleted={} and inserted={}",
+                    datasetName(),
+                    backupSource,
+                    backupTarget,
+                    result.deletedCount(),
+                    result.insertedCount());
+        } catch (RuntimeException ex) {
+            log.error(
+                    "Failed CSDS backup for {} from {} to {}. Continuing ingress.",
+                    datasetName(),
+                    backupSource,
+                    backupTarget,
+                    ex);
+        }
     }
 
     protected final List<JsonNode> extractRecords(JsonNode response) {
@@ -330,25 +360,25 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 "CSDS field " + fieldName + " was missing or invalid for " + datasetName());
     }
 
-    protected final void validateExpectedFields(JsonNode record, List<String> expectedFields) {
-        val missingFields =
-                expectedFields.stream().filter(fieldName -> !record.has(fieldName)).toList();
-        if (!missingFields.isEmpty()) {
+    protected final void validateExpectedFields(JsonNode node, List<String> expectedFields) {
+        val absentFields =
+                expectedFields.stream().filter(fieldName -> !node.has(fieldName)).toList();
+        if (!absentFields.isEmpty()) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR,
                     "CSDS record for "
                             + datasetName()
                             + " was missing expected fields: "
-                            + String.join(", ", missingFields));
+                            + String.join(", ", absentFields));
         }
     }
 
     @Override
-    public final void apply(T processedData) {
+    public final void apply(D processedData) {
         applyWithAuditing(processedData);
     }
 
-    protected final DiffT applyWithAuditing(T processedData) {
+    protected final R applyWithAuditing(D processedData) {
         return csdsIngressTransactionRunner.execute(
                 () -> {
                     val diff = diff(processedData);
@@ -368,22 +398,22 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 });
     }
 
-    protected abstract DiffT diff(T processedData);
+    protected abstract R diff(D processedData);
 
-    protected abstract List<CsdsAuditEntry> buildSuccessAudits(T processedData, DiffT diff);
+    protected abstract List<CsdsAuditEntry> buildSuccessAudits(D processedData, R diff);
 
     protected abstract List<CsdsAuditEntry> buildFailureAudits(
-            T processedData, DiffT diff, CsdsBatchUpsertException ex);
+            D processedData, R diff, CsdsBatchUpsertException ex);
 
-    protected void logDiffSummary(DiffT diff) {
+    protected void logDiffSummary(R diff) {
         // Diff summary logging is optional per processor.
     }
 
-    protected void report(T processedData, DiffT diff) {
+    protected void report(D processedData, R diff) {
         // Reporting is optional per processor and can be implemented when configured.
     }
 
-    protected void applyDiff(DiffT diff) {
+    protected void applyDiff(R diff) {
         // Database apply is optional until concrete update flows are introduced.
     }
 
@@ -453,20 +483,20 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                                 java.util.LinkedHashMap::new));
     }
 
-    protected final <R> List<CsdsAuditEntry> buildSuccessAuditEntries(
-            List<IngressDiffRecord<R, R, R>> diffRecords,
+    protected final <T> List<CsdsAuditEntry> buildSuccessAuditEntries(
+            List<IngressDiffRecord<T, T, T>> diffRecords,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor) {
+            ToLongFunction<T> idExtractor) {
         return diffRecords.stream()
                 .map(item -> toSuccessAuditEntry(item, sourceById, idExtractor))
                 .toList();
     }
 
-    protected final <R> List<CsdsAuditEntry> buildFailureAuditEntries(
-            List<IngressDiffRecord<R, R, R>> diffRecords,
+    protected final <T> List<CsdsAuditEntry> buildFailureAuditEntries(
+            List<IngressDiffRecord<T, T, T>> diffRecords,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor,
-            Class<R> recordType,
+            ToLongFunction<T> idExtractor,
+            Class<T> recordType,
             CsdsBatchUpsertException ex) {
         var actionsById =
                 diffRecords.stream()
@@ -485,11 +515,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 .toList();
     }
 
-    private <R> CsdsAuditEntry toFailureAuditEntry(
+    private <T> CsdsAuditEntry toFailureAuditEntry(
             FailedUpsertRecord<?> failure,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor,
-            Class<R> recordType,
+            ToLongFunction<T> idExtractor,
+            Class<T> recordType,
             Map<Long, String> actionsById) {
         var typedRecord = recordType.cast(failure.item());
         var key = idExtractor.applyAsLong(typedRecord);
@@ -497,10 +527,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<T, DiffT>
                 actionsById.get(key), key, sourceById.get(key), failure.errorMessage());
     }
 
-    private <R> CsdsAuditEntry toSuccessAuditEntry(
-            IngressDiffRecord<R, R, R> item,
+    private <T> CsdsAuditEntry toSuccessAuditEntry(
+            IngressDiffRecord<T, T, T> item,
             Map<Long, JsonNode> sourceById,
-            ToLongFunction<R> idExtractor) {
+            ToLongFunction<T> idExtractor) {
         var key = idExtractor.applyAsLong(item.intended());
         return createAuditEntry(item.operation().name(), key, sourceById.get(key), null);
     }

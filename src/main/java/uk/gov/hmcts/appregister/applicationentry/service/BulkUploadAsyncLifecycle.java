@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow.RespondentNameState;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
@@ -43,8 +45,6 @@ import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-import uk.gov.hmcts.appregister.generated.model.FullName;
-import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
@@ -58,6 +58,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
     private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
     private static final String BULK_UPLOAD_ROW = "BULK_UPLOAD_ROW";
+    private static final Map<String, String> CONTACT_VALIDATION_MESSAGES =
+            Map.of(
+                    "postcode", "Provide a valid UK postcode.",
+                    "mobile", "Provide a valid UK mobile number.",
+                    "phone", "Provide a valid UK telephone number.");
     private static final Map<ErrorCodeEnum, String> BUSINESS_RULE_LOCATIONS =
             Map.ofEntries(
                     Map.entry(
@@ -66,12 +71,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     Map.entry(CommonAppError.WORDING_LENGTH_FAILURE, APPLICATION_TEXT_COLUMNS),
                     Map.entry(CommonAppError.WORDING_DATA_TYPE_FAILURE, APPLICATION_TEXT_COLUMNS),
                     Map.entry(
-                            AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST, "APPLICANT_CODE"),
+                            AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
+                            "standardApplicantCode"),
                     Map.entry(
                             AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
-                            "APPLICANT_CODE"),
-                    Map.entry(
-                            AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, "APPLICATION_CODE"),
+                            "standardApplicantCode"),
+                    Map.entry(AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, "applicationCode"),
                     Map.entry(
                             AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                             "ACCOUNT_NUMBER"),
@@ -140,18 +145,14 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = nextRowNumber;
 
         List<BulkUploadError> allErrors = new ArrayList<>();
-        addHeaderErrors(context, allErrors);
 
         for (BulkUploadRow row : rows) {
             EntryCreateDto dto = mapper.toEntryCreateDto(row);
             List<BulkUploadError> rowErrors = new ArrayList<>();
 
             rowErrors.addAll(validator.validateRow(rowNumber, row));
-            rowErrors.addAll(validateMappedDto(rowNumber, dto));
-
-            if (rowErrors.isEmpty()) {
-                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
-            }
+            rowErrors.addAll(validateMappedDto(rowNumber, row, dto));
+            rowErrors.addAll(validateBusinessRules(rowNumber, dto));
 
             allErrors.addAll(rowErrors);
             rowNumber++;
@@ -162,6 +163,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         context.setFieldCountMismatch(false);
 
         if (!allErrors.isEmpty()) {
+            sanitiseErrorMessages(allErrors);
             logValidationFailure(context, allErrors);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
             saveErrorCSV(allErrors, event, context);
@@ -195,6 +197,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         List<BulkUploadError> errors = new ArrayList<>();
         addHeaderErrors(context, errors);
+        sanitiseErrorMessages(errors);
         logValidationFailure(context, errors);
         saveErrorCSV(errors, event, context);
     }
@@ -220,12 +223,40 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         context.setValidationFailureMessages(new ArrayList<>());
     }
 
-    private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {
+    /**
+     * Runs Jakarta Bean Validation against the DTO mapped from a CSV row. This validates generated
+     * OpenAPI constraints such as required values, sizes and patterns. Application-specific rules,
+     * including missing respondent details and organisation/person mutual exclusion, are handled by
+     * {@link BulkUploadApplicationEntryValidator} because they depend on the original CSV fields;
+     * the mapper may create an empty person or select organisation when both respondent types are
+     * supplied, so the mapped DTO no longer preserves enough information to evaluate those rules.
+     */
+    private List<BulkUploadError> validateMappedDto(
+            int rowNumber, BulkUploadRow row, EntryCreateDto dto) {
+        RespondentNameState respondentNameState = BulkUploadRow.respondentNameState(row);
+
         return beanValidator.validate(dto).stream()
                 .filter(BulkUploadAsyncLifecycle::isNotWordingFieldViolation)
+                .filter(violation -> isRelevantRespondentViolation(violation, respondentNameState))
                 .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
                 .map(violation -> toBulkUploadError(rowNumber, violation))
+                .distinct()
                 .toList();
+    }
+
+    private static boolean isRelevantRespondentViolation(
+            ConstraintViolation<EntryCreateDto> violation,
+            RespondentNameState respondentNameState) {
+        // When respondent name fields have been supplied, retain their constraint violations so
+        // the user can identify and correct the relevant field.
+        if (respondentNameState != RespondentNameState.MISSING) {
+            return true;
+        }
+
+        // The mapper creates an empty person when all respondent name fields are missing. Suppress
+        // the resulting name constraints because the row validator already reports one actionable
+        // missing-respondent error.
+        return !violation.getPropertyPath().toString().startsWith("respondent.person.name");
     }
 
     private List<BulkUploadError> validateBusinessRules(int rowNumber, EntryCreateDto dto) {
@@ -260,7 +291,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                             .getPerson()
                                             .getContactDetails()
                                             .getAddressLine1(),
-                            getName(dto.getRespondent()),
+                            dto.getStandardApplicantCode(),
                             "DATA_ERROR"));
         }
     }
@@ -284,7 +315,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 rowNumber,
                 violation.getPropertyPath().toString(),
                 rejectedValue(violation),
-                violation.getMessage(),
+                validationMessage(violation),
                 violation.getRootBean().getRespondent().getOrganisation() != null
                         ? violation
                                 .getRootBean()
@@ -298,8 +329,14 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                 .getPerson()
                                 .getContactDetails()
                                 .getAddressLine1(),
-                getName(violation.getRootBean().getRespondent()),
+                violation.getRootBean().getStandardApplicantCode(),
                 "DATA_ERROR");
+    }
+
+    private static String validationMessage(ConstraintViolation<?> violation) {
+        String propertyPath = violation.getPropertyPath().toString();
+        String fieldName = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
+        return CONTACT_VALIDATION_MESSAGES.getOrDefault(fieldName, violation.getMessage());
     }
 
     private static String rejectedValue(ConstraintViolation<?> violation) {
@@ -312,7 +349,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
-
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(error);
@@ -420,23 +456,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             List<TemplateSubstitution> wordingFields,
             CreateApplicationEntryValidationSuccess validationResult) {}
 
-    private static String getName(Respondent respondent) {
-        if (respondent.getOrganisation() != null) {
-            return respondent.getOrganisation().getName();
-        }
-
-        FullName fullName = respondent.getPerson().getName();
-        if (fullName.getMiddleName().get() != null) {
-            return "%s %s %s"
-                    .formatted(
-                            fullName.getFirstName(),
-                            fullName.getMiddleName().get(),
-                            fullName.getLastName());
-        }
-
-        return "%s %s".formatted(fullName.getFirstName(), fullName.getLastName());
-    }
-
     private void saveErrorCSV(
             List<BulkUploadError> errors,
             AsyncJobLifecycleEvent<BulkUploadRow> event,
@@ -496,15 +515,75 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             if (errors.stream().anyMatch(error -> error.getRowNumber() == finalRowCount)) {
                 List<BulkUploadError> rowErrors =
                         errors.stream().filter(e -> e.getRowNumber() == finalRowCount).toList();
-                builder.append(line);
-                for (BulkUploadError error : rowErrors) {
-                    builder.append("|").append(error.getMessage());
-                }
-                builder.append("\n");
+                rowErrors = deduplicateErrors(rowErrors);
+                processErrorRows(rowErrors, builder, line);
             } else {
                 builder.append(line).append("|").append("\n");
             }
             rowCount++;
         }
+    }
+
+    private List<BulkUploadError> deduplicateErrors(List<BulkUploadError> errors) {
+        List<BulkUploadError> dedupedErrors = new ArrayList<>(errors);
+        for (var error : errors) {
+            List<BulkUploadError> dupes =
+                    errors.stream()
+                            .filter(
+                                    e ->
+                                            e.getRowNumber() == error.getRowNumber()
+                                                    && e.getLocation()
+                                                            .contains(error.getLocation()))
+                            .toList();
+            if (dupes.size() > 1) {
+                dedupedErrors.removeAll(dupes.subList(1, dupes.size()));
+            }
+        }
+        return dedupedErrors;
+    }
+
+    private void processErrorRows(
+            List<BulkUploadError> errors, StringBuilder builder, String line) {
+        builder.append(line);
+        for (BulkUploadError error : errors) {
+
+            if (Objects.nonNull(error.getRejectedValue()) && !error.getRejectedValue().isBlank()) {
+                builder.append("|")
+                        .append(
+                                "%s - %s: %s"
+                                        .formatted(
+                                                error.getLocation(),
+                                                error.getRejectedValue(),
+                                                error.getMessage().contains("must match \"")
+                                                        ? "Field has been rejected"
+                                                        : error.getMessage()));
+
+            } else {
+                builder.append("|")
+                        .append("%s: %s".formatted(error.getLocation(), error.getMessage()));
+            }
+        }
+        builder.append("\n");
+    }
+
+    private void sanitiseErrorMessages(List<BulkUploadError> errorRows) {
+        errorRows.forEach(
+                error -> {
+
+                    // This is to tidy up the location field.
+                    var location =
+                            error.getLocation().split("\\.").length > 1
+                                    ? error.getLocation()
+                                            .split("\\.")[
+                                            error.getLocation().split("\\.").length - 1]
+                                    : error.getLocation();
+
+                    error.setLocation(location);
+
+                    // removing regex from error message
+                    if (error.getMessage().contains("must match \"")) {
+                        error.setMessage("Field has been rejected");
+                    }
+                });
     }
 }

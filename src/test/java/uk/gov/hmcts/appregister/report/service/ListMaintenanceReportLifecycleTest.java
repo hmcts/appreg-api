@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.report.model.ListMaintenanceReportRow;
 
 class ListMaintenanceReportLifecycleTest {
@@ -37,9 +37,9 @@ class ListMaintenanceReportLifecycleTest {
         ListMaintenanceReportLifecycle lifecycle = new ListMaintenanceReportLifecycle();
         File outputFile = getOutputFile(lifecycle);
         try {
-            lifecycle.processing(event(response, List.of(populatedRow()), JobStatus1.PROCESSING));
-            lifecycle.processing(event(response, List.of(blankRow()), JobStatus1.PROCESSING));
-            lifecycle.completed(event(response, List.of(), JobStatus1.COMPLETED));
+            lifecycle.processing(event(response, List.of(populatedRow()), JobStatus.PROCESSING));
+            lifecycle.processing(event(response, List.of(blankRow()), JobStatus.PROCESSING));
+            lifecycle.completed(event(response, List.of(), JobStatus.COMPLETED));
 
             Assertions.assertFalse(outputFile.exists());
             assertThat(csv.get()).contains("List Maintenance Report");
@@ -60,7 +60,7 @@ class ListMaintenanceReportLifecycleTest {
         try {
             Assertions.assertTrue(outputFile.exists());
 
-            lifecycle.failed(event(mock(JobStatusResponse.class), List.of(), JobStatus1.FAILED));
+            lifecycle.failed(event(mock(JobStatusResponse.class), List.of(), JobStatus.FAILED));
 
             Assertions.assertFalse(outputFile.exists());
         } finally {
@@ -69,7 +69,7 @@ class ListMaintenanceReportLifecycleTest {
     }
 
     private AsyncJobLifecycleEvent<ListMaintenanceReportRow> event(
-            JobStatusResponse response, List<ListMaintenanceReportRow> data, JobStatus1 status) {
+            JobStatusResponse response, List<ListMaintenanceReportRow> data, JobStatus status) {
         return new AsyncJobLifecycleEvent<>(response, data, mock(JobContext.class), status);
     }
 

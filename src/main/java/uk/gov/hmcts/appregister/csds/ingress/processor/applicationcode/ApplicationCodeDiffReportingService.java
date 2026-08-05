@@ -6,14 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReportingService;
 
-@Component
+@Service
 public class ApplicationCodeDiffReportingService
         extends AbstractIngressDiffReportingService<ApplicationCodeIngressRecord> {
+    private static final String AC_ID = "AC_ID";
     private final String reportingDir;
 
     public ApplicationCodeDiffReportingService(CsdsIngressProperties properties) {
@@ -57,10 +58,10 @@ public class ApplicationCodeDiffReportingService
         var incomingRecordsByAcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, "AC_ID") != null)
+                        .filter(item -> nullableLong(item, AC_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, "AC_ID"),
+                                        item -> nullableLong(item, AC_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -115,7 +116,7 @@ public class ApplicationCodeDiffReportingService
                         ",",
                         csvValue(nullableLong(node, "PSSApplicationCodeID")),
                         csvValue(nullableLong(node, "ApplicationCodeID")),
-                        csvValue(nullableLong(node, "AC_ID")),
+                        csvValue(nullableLong(node, AC_ID)),
                         csvValue(nullableText(node, "Code")),
                         csvValue(nullableText(node, "ApplicationTitle")),
                         csvValue(nullableText(node, "ApplicationWording")),

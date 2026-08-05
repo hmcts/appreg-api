@@ -47,7 +47,7 @@ import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
@@ -88,7 +88,6 @@ class ReportServiceImplTest {
                 jdbcTemplate,
                 auditService,
                 reportJobAuditService,
-                new ReportFilterNormaliser(),
                 reportLocationValidator,
                 "appreg",
                 500);
@@ -106,7 +105,7 @@ class ReportServiceImplTest {
 
         when(userProvider.getUserId()).thenReturn("requesting-user");
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.COMPLETED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.COMPLETED);
         when(jobStatusResponse.getUuid()).thenReturn(jobId);
         when(jobStatusResponse.getType()).thenReturn(JobType.FEES_REPORT);
         when(jobStatusResponse.read()).thenReturn(resource);
@@ -137,7 +136,7 @@ class ReportServiceImplTest {
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
 
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.RECEIVED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.RECEIVED);
         runAuditPassThrough();
         ReportServiceImpl service = service();
 
@@ -157,7 +156,7 @@ class ReportServiceImplTest {
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
 
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.COMPLETED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.COMPLETED);
         when(jobStatusResponse.read()).thenThrow(new IOException("boom"));
         runAuditPassThrough();
         ReportServiceImpl service = service();
@@ -173,12 +172,12 @@ class ReportServiceImplTest {
     }
 
     @Test
-    void givenJobHasFailed_whenDownloadingReport_thenFails() throws IOException {
+    void givenJobHasFailed_whenDownloadingReport_thenFails() {
         UUID jobId = UUID.randomUUID();
         JobStatusResponse jobStatusResponse = Mockito.mock(JobStatusResponse.class);
 
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.FAILED);
         runAuditPassThrough();
         ReportServiceImpl service = service();
 
@@ -196,7 +195,7 @@ class ReportServiceImplTest {
 
         when(jobService.getJobStatusById(jobId)).thenReturn(jobStatusResponse);
         when(jobStatusResponse.getType()).thenReturn(JobType.BULK_UPLOAD_ENTRIES);
-        when(jobStatusResponse.getStatus()).thenReturn(JobStatus1.FAILED);
+        when(jobStatusResponse.getStatus()).thenReturn(JobStatus.FAILED);
         when(jobStatusResponse.read())
                 .thenReturn(
                         new InputStreamResource(
@@ -724,7 +723,7 @@ class ReportServiceImplTest {
                 JobStatusResponse.builder()
                         .uuid(UUID.randomUUID())
                         .type(jobType)
-                        .status(JobStatus1.RECEIVED)
+                        .status(JobStatus.RECEIVED)
                         .userName("user-id")
                         .persistence(Mockito.mock(AsyncJobPersistenceService.class))
                         .build();
@@ -771,7 +770,7 @@ class ReportServiceImplTest {
             lifecycle
                     .get()
                     .lifeCycleEventPerformed(
-                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus.FAILED));
         }
     }
 

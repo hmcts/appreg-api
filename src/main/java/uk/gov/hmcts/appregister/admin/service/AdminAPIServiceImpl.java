@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.admin.service;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.admin.audit.AdminAuditOperation;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapper;
@@ -16,11 +16,11 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
+import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
-import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class AdminAPIServiceImpl implements AdminAPIService {
@@ -32,7 +32,8 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     private final AuditOperationService auditService;
 
     @Override
-    public JobStatus getDatabaseJobStatusByName(AdminJobType jobName) {
+    @Transactional(readOnly = true)
+    public AdminJobStatus getDatabaseJobStatusByName(AdminJobType jobName) {
         return auditService.processAudit(
                 AdminAuditOperation.GET_DATABASE_JOB_STATUS_AUDIT_EVENT,
                 unused ->
@@ -61,6 +62,7 @@ public class AdminAPIServiceImpl implements AdminAPIService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public JobRetentionPolicy getDatabaseJobRetentionPeriodByName(AdminJobType jobName) {
         return auditService.processAudit(
                 AdminAuditOperation.GET_DATABASE_JOB_RETENTION_PERIOD_AUDIT_EVENT,

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Month;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse.NationalCourtHouseIngressRecord;
 
@@ -21,8 +22,8 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
                                 3106L,
                                 "Brentford Magistrates' Court",
                                 1L,
-                                LocalDate.of(1900, 1, 1),
-                                LocalDate.of(2011, 12, 9),
+                                LocalDate.of(1900, Month.JANUARY, 1),
+                                LocalDate.of(2011, Month.DECEMBER, 9),
                                 "B01CF00",
                                 null));
 
@@ -47,8 +48,10 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
         when(rs.getLong("nch_id")).thenReturn(3106L);
         when(rs.getString("courthouse_name")).thenReturn("Brentford Magistrates' Court");
         when(rs.getLong("version_number")).thenReturn(1L);
-        when(rs.getObject("start_date", LocalDate.class)).thenReturn(LocalDate.of(1900, 1, 1));
-        when(rs.getObject("end_date", LocalDate.class)).thenReturn(LocalDate.of(2011, 12, 9));
+        when(rs.getObject("start_date", LocalDate.class))
+                .thenReturn(LocalDate.of(1900, Month.JANUARY, 1));
+        when(rs.getObject("end_date", LocalDate.class))
+                .thenReturn(LocalDate.of(2011, Month.DECEMBER, 9));
         when(rs.getString("court_location_code")).thenReturn("B01CF00");
         when(rs.getString("sl_courthouse_name")).thenReturn(null);
 
@@ -58,8 +61,8 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
                                 3106L,
                                 "Brentford Magistrates' Court",
                                 1L,
-                                LocalDate.of(1900, 1, 1),
-                                LocalDate.of(2011, 12, 9),
+                                LocalDate.of(1900, Month.JANUARY, 1),
+                                LocalDate.of(2011, Month.DECEMBER, 9),
                                 "B01CF00",
                                 null));
     }

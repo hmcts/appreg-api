@@ -53,7 +53,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
-import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
@@ -102,16 +101,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(entryPage);
-    }
-
-    @Override
-    public ResponseEntity<EntryIdsDto> getEntryIds(EntryGetFilterDto filter) {
-        EntryIdsDto entryIds = applicationEntryService.getEntryIds(filter);
-
-        return ResponseEntity.ok()
-                .varyBy(HttpHeaders.ACCEPT)
-                .contentType(VND_JSON_V1)
-                .body(entryIds);
     }
 
     @Override
@@ -232,23 +221,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(entryResponse);
-    }
-
-    @Override
-    public ResponseEntity<EntryIdsDto> getApplicationListEntryIds(
-            UUID listId, EntryApplicationListGetFilterDto filter) {
-        PayloadGetEntryInList payloadForGet =
-                PayloadGetEntryInList.builder().listId(listId).build();
-
-        EntryIdsDto entryIds =
-                applicationEntryService.getApplicationListEntryIds(payloadForGet, filter);
-
-        log.info("Get Application List Entry IDs for listId: {}", listId);
-
-        return ResponseEntity.ok()
-                .varyBy(HttpHeaders.ACCEPT)
-                .contentType(VND_JSON_V1)
-                .body(entryIds);
     }
 
     @Override

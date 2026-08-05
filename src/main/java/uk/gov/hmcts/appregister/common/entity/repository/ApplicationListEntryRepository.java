@@ -13,7 +13,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
@@ -322,6 +321,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
+    @SuppressWarnings("java:S107")
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             @Param("applicationListId") UUID applicationListId,
             Boolean hasHearingDate,
@@ -515,122 +515,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             @Param("hasExcludedEntryIds") boolean hasExcludedEntryIds,
             @Param("excludedEntryIds") Collection<UUID> excludedEntryIds,
             Pageable pageable);
-
-    @Query(
-            """
-             SELECT ale.uuid
-                from ApplicationListEntry ale
-                LEFT JOIN ale.anamedaddress ana
-                LEFT JOIN ale.standardApplicant sa
-                LEFT JOIN ale.rnameaddress rna
-                LEFT JOIN ale.applicationCode ac
-                LEFT JOIN ale.applicationList al
-                LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
-            WHERE  (:hasHearingDate = false OR :hasHearingDate IS NULL OR al.date = :hearingDate)
-                    AND (:applicationListId IS NULL OR al.uuid = :applicationListId)
-                    AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
-                            LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
-                    AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
-                    AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
-                    AND (
-                            :applicantName IS NULL
-                            OR (
-                                    ana.code = 'NA'
-                                    AND LOWER(COALESCE(
-                                            ana.name,
-                                            FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)))
-                                            LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
-                                                    ESCAPE '\\'
-                            )
-                            OR LOWER(COALESCE(
-                                            sa.name,
-                                            FUNCTION(
-                                                    'concat_ws',
-                                                    ' ',
-                                                    sa.applicantForename1,
-                                                    sa.applicantSurname)))
-                                    LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
-                                            ESCAPE '\\'
-                    )
-                    AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
-                            LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
-                            AND ana.code='NA')
-                    AND (
-                            :applicantLastName IS NULL
-                            OR (
-                                    ana.id IS NOT NULL
-                                    AND ana.code='NA'
-                                    AND LOWER(ana.lastName)
-                                            LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)), '%')
-                                                    ESCAPE '\\'
-                            )
-                            OR (
-                                    ana.id IS NULL
-                                    AND sa.name IS NULL
-                                    AND LOWER(sa.applicantSurname)
-                                            LIKE CONCAT('%', LOWER(cast(:applicantLastName AS string)), '%')
-                                                    ESCAPE '\\'
-                            )
-                    )
-                    AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
-                            LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
-                    AND (:status IS NULL OR :status=ale.applicationList.status)
-                    AND (:respondentName IS NULL OR
-                                LOWER(COALESCE(
-                                        rna.name,
-                                        FUNCTION('concat_ws', ' ', rna.firstName, rna.lastName)))
-                                        LIKE CONCAT('%', LOWER(cast(:respondentName AS string )), '%')
-                                            ESCAPE '\\' AND rna.code='RE')
-                    AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
-                            LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
-                    AND (:respondentLastName IS NULL OR LOWER(rna.lastName) LIKE CONCAT('%',
-                            LOWER(cast(:respondentLastName AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
-                    AND (:accountReference IS NULL OR  LOWER(ale.accountNumber)
-                            LIKE CONCAT('%', LOWER(cast(:accountReference AS string)), '%')
-                                         ESCAPE '\\')
-                    AND (:respondentPostcode IS NULL OR LOWER(rna.postcode) LIKE
-                              CONCAT('%', LOWER(cast(:respondentPostcode AS string)), '%')
-                                          ESCAPE '\\' AND rna.code='RE')
-                    AND (:applicationTitle IS NULL OR LOWER(ac.title) LIKE
-                                CONCAT('%', LOWER(cast(:applicationTitle AS string)), '%')  ESCAPE '\\')
-                    AND (:feeRequired IS NULL OR ac.feeDue = CASE WHEN :feeRequired = true THEN 'Y' ELSE 'N' END)
-                    AND (:sequenceNumber IS NULL OR ale.sequenceNumber = :sequenceNumber)
-                    AND (
-                            :resulted IS NULL
-                            OR EXISTS (
-                                    SELECT 1
-                                    FROM AppListEntryResolution allResolutions
-                                    JOIN allResolutions.resolutionCode anyResolutionCode
-                                    WHERE allResolutions.applicationList = ale
-                                    AND LOWER(anyResolutionCode.resultCode)
-                                            LIKE CONCAT('%', LOWER(cast(:resulted AS string)), '%') ESCAPE '\\'
-                            )
-                    )
-                    AND (al.deleted IS NULL OR al.deleted <> 'Y')
-                    AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
-            ORDER BY ale.id ASC
-            """)
-    List<UUID> searchForGetSummaryIds(
-            @Param("applicationListId") UUID applicationListId,
-            Boolean hasHearingDate,
-            @Param("hearingDate") LocalDate hearingDate,
-            @Param("courtCode") String courtCode,
-            @LikeParam @Param("otherLocationDescription") String otherLocationDescription,
-            @Param("cjaCode") String cjaCode,
-            @LikeParam @Param("applicantOrganisation") String applicantOrganisation,
-            @LikeParam @Param("applicantLastName") String applicantLastName,
-            @LikeParam @Param("applicantName") String applicantName,
-            @LikeParam @Param("standardApplicantCode") String standardApplicantCode,
-            @Param("status") Status status,
-            @LikeParam @Param("respondentOrganisation") String respondentOrganisation,
-            @LikeParam @Param("respondentLastName") String respondentLastName,
-            @LikeParam @Param("respondentName") String respondentName,
-            @LikeParam @Param("respondentPostcode") String respondentPostcode,
-            @LikeParam @Param("accountReference") String accountReference,
-            @LikeParam @Param("applicationTitle") String applicationTitle,
-            @LikeParam @Param("resulted") String resulted,
-            @Param("feeRequired") Boolean feeRequired,
-            @Param("sequenceNumber") Integer sequenceNumber);
 
     /**
      * Retrieves all resolution codes associated with the given Application List Entry IDs.
@@ -926,35 +810,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> 'Y')
         """)
     List<ApplicationListEntry> findActiveByUuids(List<UUID> entryIds);
-
-    /**
-     * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
-     * rows updated.
-     *
-     * @param entryUuids the set of entry UUIDs to move; only entries matching these UUIDs and
-     *     belonging to the sourceListUuid will be updated
-     * @param targetList the ApplicationList entity representing the new target list to which the
-     *     entries will be reassigned; this value is written to the applicationList field of all
-     *     matching entries
-     * @param sourceListUuid the UUID of the source ApplicationList; only entries currently
-     *     associated with this list will be updated
-     * @return the number of rows updated; may be less than the number of provided UUIDs if some
-     *     entries are not found in the source list
-     * @deprecated use the audited move flow in {@code ApplicationEntryServiceImpl#move(UUID,
-     *     MoveEntriesDto)} instead
-     */
-    @Deprecated
-    @Modifying
-    @Query(
-            """
-        UPDATE ApplicationListEntry ale
-        SET ale.applicationList = :targetList
-        WHERE ale.uuid IN :entryUuids
-        AND ale.applicationList.uuid = :sourceListUuid
-        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
-        """)
-    int bulkMoveByUuidAndSourceList(
-            Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
 
     /**
      * Retrieves an application list entry by its UUID and the UUID of the application list it

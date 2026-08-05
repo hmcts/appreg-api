@@ -50,9 +50,9 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
@@ -1437,7 +1437,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         if (mainFeeAmt.isPresent()) {
             applicationCodeGetSummaryDto.setFeeAmount(
-                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+                    JsonNullable.of(new ApplicationCodeGetDetailDtoFeeAmount()));
             applicationCodeGetSummaryDto
                     .getFeeAmount()
                     .get()
@@ -1455,7 +1455,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         if (offsiteFeeAmt.isPresent()) {
             applicationCodeGetSummaryDto.setOffsiteFeeAmount(
-                    JsonNullable.of(new ApplicationCodeGetSummaryDtoOffsiteFeeAmount()));
+                    JsonNullable.of(new ApplicationCodeGetDetailDtoOffsiteFeeAmount()));
             applicationCodeGetSummaryDto
                     .getOffsiteFeeAmount()
                     .get()
@@ -1502,7 +1502,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         if (mainFeeAmt.isPresent()) {
             applicationCodeGetSummaryDto.setFeeAmount(
-                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+                    JsonNullable.of(new ApplicationCodeGetDetailDtoFeeAmount()));
             applicationCodeGetSummaryDto
                     .getFeeAmount()
                     .get()
@@ -1521,7 +1521,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         if (offsiteFeeAmt.isPresent()) {
             applicationCodeGetSummaryDto.setOffsiteFeeAmount(
-                    JsonNullable.of(new ApplicationCodeGetSummaryDtoOffsiteFeeAmount()));
+                    JsonNullable.of(new ApplicationCodeGetDetailDtoOffsiteFeeAmount()));
             applicationCodeGetSummaryDto
                     .getOffsiteFeeAmount()
                     .get()

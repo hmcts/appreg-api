@@ -3,21 +3,17 @@ package uk.gov.hmcts.appregister.csds.ingress.database;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class JdbcBulkUpsertService {
-    private static final Pattern SQL_IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]*");
-
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final JdbcBatchFailureIsolationService jdbcBatchFailureIsolationService;
 
@@ -42,20 +38,30 @@ public class JdbcBulkUpsertService {
             return new int[0];
         }
 
-        validateIdentifier(tableName, "tableName");
-        validateIdentifier(primaryKey, "primaryKey");
-        rowMapper.columns().forEach(column -> validateIdentifier(column, "column"));
+        CsdsSqlIdentifierValidator.requireValid(tableName, "tableName");
+        CsdsSqlIdentifierValidator.requireValid(primaryKey, "primaryKey");
+        rowMapper
+                .columns()
+                .forEach(column -> CsdsSqlIdentifierValidator.requireValid(column, "column"));
         rowMapper
                 .updatableColumns()
-                .forEach(column -> validateIdentifier(column, "updatableColumn"));
+                .forEach(
+                        column ->
+                                CsdsSqlIdentifierValidator.requireValid(column, "updatableColumn"));
         rowMapper
                 .insertExpressions()
                 .keySet()
-                .forEach(column -> validateIdentifier(column, "insertExpression"));
+                .forEach(
+                        column ->
+                                CsdsSqlIdentifierValidator.requireValid(
+                                        column, "insertExpression"));
         rowMapper
                 .updateExpressions()
                 .keySet()
-                .forEach(column -> validateIdentifier(column, "updateExpression"));
+                .forEach(
+                        column ->
+                                CsdsSqlIdentifierValidator.requireValid(
+                                        column, "updateExpression"));
 
         val sql = buildUpsertSql(tableName, primaryKey, rowMapper);
         val parameters =
@@ -112,11 +118,5 @@ public class JdbcBulkUpsertService {
                         String.join(", ", insertValues),
                         primaryKey,
                         String.join(", ", updateAssignments));
-    }
-
-    private void validateIdentifier(String value, String description) {
-        if (!StringUtils.hasText(value) || !SQL_IDENTIFIER.matcher(value).matches()) {
-            throw new IllegalArgumentException("Invalid SQL " + description + ": " + value);
-        }
     }
 }
