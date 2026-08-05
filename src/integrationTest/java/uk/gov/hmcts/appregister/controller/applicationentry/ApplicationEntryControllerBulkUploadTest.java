@@ -50,6 +50,7 @@ import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryCrudTest {
 
     private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
+    private static final String BULK_UPLOAD_ISSUES_CSV = "/bulk_upload_issues.csv";
     private static final int CSV_ROW_COUNT = 5;
     private static final String RESPONDENT_MISSING_MESSAGE =
             "Respondent details are missing. Enter either Organisation Name, or Respondent First"
@@ -263,7 +264,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                             "[{\"rowNumber\":-1,\"location\":\"BULK_UPLOAD_ROW\","
                                     + "\"rejectedValue\":null,\"message\":\"Number of data fields "
                                     + "does not match number of headers.\",\"addressLine1\":null,"
-                                    + "\"name\":null,\"errorType\":\"HEADER_ERROR\"}]")
+                                    + "\"code\":null,\"errorType\":\"HEADER_ERROR\"}]")
                     .doesNotContain("Failed to process job");
             Assertions.assertEquals(0, countEntriesForList(listId));
 
@@ -428,6 +429,65 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(200);
         UUID[] appListEntries = appListEntriesForJob.as(UUID[].class);
         assertThat(appListEntries).hasSizeGreaterThan(0);
+    }
+
+    @Test
+    void givenSuccessfulBulkUpload_whenDTOValidationFails_thenJobFails() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+
+        UUID listId = createNewApplicationList(token);
+        Assertions.assertEquals(0, countEntriesForList(listId));
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                        token,
+                        "file",
+                        csvIssuesFile(),
+                        "text/csv");
+
+        assertThat(response.getStatusCode()).isEqualTo(202);
+
+        JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+        Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
+
+        JobStatus status = acknowledgement.getStatus();
+        while (!status.equals(JobStatus.FAILED)) {
+            Thread.sleep(1000);
+            Response jobStatusResponse =
+                    restAssuredClient.executeGetRequest(
+                            getLocalUrl("jobs/" + acknowledgement.getId()), token);
+            assertThat(jobStatusResponse.getStatusCode()).isEqualTo(200);
+            JobAcknowledgement jobStatus = jobStatusResponse.as(JobAcknowledgement.class);
+            status = jobStatus.getStatus();
+        }
+
+        String jobId = acknowledgement.getId().toString();
+
+        assertThat(jobId).isNotEmpty();
+
+        Response jobFailureDetailResponse =
+                restAssuredClient.executeGetRequest(getLocalUrl("jobs/" + jobId), token);
+
+        assertThat(jobFailureDetailResponse.getStatusCode()).isEqualTo(200);
+        JobAcknowledgement jobFailureDetail = jobFailureDetailResponse.as(JobAcknowledgement.class);
+
+        assertThat(jobFailureDetail.getErrorDescription()).isNotBlank();
+
+        assertThat(jobFailureDetail.getErrorDescription()).contains("\"location\":\"postcode\"");
+        assertThat(jobFailureDetail.getErrorDescription()).contains("\"location\":\"phone\"");
+        assertThat(jobFailureDetail.getErrorDescription()).contains("\"location\":\"mobile\"");
+        assertThat(jobFailureDetail.getErrorDescription()).contains("\"location\":\"email\"");
+
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.postcode\"");
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.phone\"");
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.mobile\"");
+        assertThat(jobFailureDetail.getErrorDescription())
+                .doesNotContain("\"location\":\"respondent.contactDetails.email\"");
     }
 
     @Test
@@ -630,6 +690,10 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
     private File csvFile() throws URISyntaxException {
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
+    }
+
+    private File csvIssuesFile() throws URISyntaxException {
+        return new File(getClass().getResource(BULK_UPLOAD_ISSUES_CSV).toURI());
     }
 
     private static AutoDeletingFile tempCsv(int size, String sizeSuffix) throws IOException {

@@ -45,8 +45,6 @@ import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-import uk.gov.hmcts.appregister.generated.model.FullName;
-import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
@@ -160,6 +158,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         context.setFieldCountMismatch(false);
 
         if (!allErrors.isEmpty()) {
+            sanitiseErrorMessages(allErrors);
             logValidationFailure(context, allErrors);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
             saveErrorCSV(allErrors, event, context);
@@ -193,6 +192,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         List<BulkUploadError> errors = new ArrayList<>();
         addHeaderErrors(context, errors);
+        sanitiseErrorMessages(errors);
         logValidationFailure(context, errors);
         saveErrorCSV(errors, event, context);
     }
@@ -285,7 +285,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                             .getPerson()
                                             .getContactDetails()
                                             .getAddressLine1(),
-                            getName(dto.getRespondent()),
+                            dto.getStandardApplicantCode(),
                             "DATA_ERROR"));
         }
     }
@@ -323,7 +323,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                 .getPerson()
                                 .getContactDetails()
                                 .getAddressLine1(),
-                getName(violation.getRootBean().getRespondent()),
+                violation.getRootBean().getStandardApplicantCode(),
                 "DATA_ERROR");
     }
 
@@ -337,7 +337,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
-
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(error);
@@ -445,23 +444,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             List<TemplateSubstitution> wordingFields,
             CreateApplicationEntryValidationSuccess validationResult) {}
 
-    private static String getName(Respondent respondent) {
-        if (respondent.getOrganisation() != null) {
-            return respondent.getOrganisation().getName();
-        }
-
-        FullName fullName = respondent.getPerson().getName();
-        if (fullName.getMiddleName().get() != null) {
-            return "%s %s %s"
-                    .formatted(
-                            fullName.getFirstName(),
-                            fullName.getMiddleName().get(),
-                            fullName.getLastName());
-        }
-
-        return "%s %s".formatted(fullName.getFirstName(), fullName.getLastName());
-    }
-
     private void saveErrorCSV(
             List<BulkUploadError> errors,
             AsyncJobLifecycleEvent<BulkUploadRow> event,
@@ -552,26 +534,44 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             List<BulkUploadError> errors, StringBuilder builder, String line) {
         builder.append(line);
         for (BulkUploadError error : errors) {
-            var location =
-                    error.getLocation().split("\\.").length > 1
-                            ? error.getLocation()
-                                    .split("\\.")[error.getLocation().split("\\.").length - 1]
-                            : error.getLocation();
+
             if (Objects.nonNull(error.getRejectedValue()) && !error.getRejectedValue().isBlank()) {
                 builder.append("|")
                         .append(
                                 "%s - %s: %s"
                                         .formatted(
-                                                location,
+                                                error.getLocation(),
                                                 error.getRejectedValue(),
                                                 error.getMessage().contains("must match \"")
                                                         ? "Field has been rejected"
                                                         : error.getMessage()));
 
             } else {
-                builder.append("|").append("%s: %s".formatted(location, error.getMessage()));
+                builder.append("|")
+                        .append("%s: %s".formatted(error.getLocation(), error.getMessage()));
             }
         }
         builder.append("\n");
+    }
+
+    private void sanitiseErrorMessages(List<BulkUploadError> errorRows) {
+        errorRows.forEach(
+                error -> {
+
+                    // This is to tidy up the location field.
+                    var location =
+                            error.getLocation().split("\\.").length > 1
+                                    ? error.getLocation()
+                                            .split("\\.")[
+                                            error.getLocation().split("\\.").length - 1]
+                                    : error.getLocation();
+
+                    error.setLocation(location);
+
+                    // removing regex from error message
+                    if (error.getMessage().contains("must match \"")) {
+                        error.setMessage("Field has been rejected");
+                    }
+                });
     }
 }
