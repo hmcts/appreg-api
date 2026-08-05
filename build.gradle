@@ -588,8 +588,13 @@ tasks.named('openApiGenerate') {
 // Add a new jar that will be published to maven with the classifier -openapi
 tasks.register('openapiJarArtefact', Jar) {
   archiveClassifier = 'openapi'
+  from(layout.buildDirectory.file('specmerge/yaml/openapi.yaml')) {
+    rename { 'bundledOpenApi.yaml' }
+  }
   from new File("$rootDir/src/main/resources/openapi")
+  dependsOn tasks.named('bundleOpenApiYaml')
 }
+
 
 // Add a new jar that will be published to maven with the classifier -flyway
 tasks.register('flywayArtefact', Jar) {
