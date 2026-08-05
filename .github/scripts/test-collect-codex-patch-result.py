@@ -23,6 +23,33 @@ index 257cc56..5716ca5 100644
 -old
 +new
 """
+RAW_SECTION_PATCH = PATCH + """--- a/unrelated.txt
++++ b/unrelated.txt
+@@ -1 +1 @@
+-old
++new
+"""
+MISMATCHED_SOURCE_PATCH = """diff --git a/example.txt b/example.txt
+index 257cc56..5716ca5 100644
+--- a/unrelated.txt
++++ b/example.txt
+@@ -1 +1 @@
+-old
++new
+"""
+SPACE_PATH_PATCH = """diff --git a/space name.txt b/space name.txt
+index 257cc56..5716ca5 100644
+--- a/space name.txt\t
++++ b/space name.txt\t
+@@ -1 +1 @@
+-old
++new
+"""
+RENAME_PATCH = """diff --git a/old name.txt b/new name.txt
+similarity index 100%
+rename from old name.txt
+rename to new name.txt
+"""
 
 
 def encoded_patch(patch: str = PATCH) -> str:
@@ -101,6 +128,49 @@ class CollectCodexPatchResultTest(unittest.TestCase):
 
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("outside the allowed set", completed.stderr)
+
+    def test_rejects_appended_raw_unified_diff_section(self) -> None:
+        result = self.valid_result()
+        result["patch_gzip_base64"] = encoded_patch(RAW_SECTION_PATCH)
+        completed, _, _, temporary_directory = self.run_collector(
+            result, allowed_paths=["example.txt"]
+        )
+        self.addCleanup(temporary_directory.cleanup)
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("multiple --- path headers", completed.stderr)
+
+    def test_rejects_mismatched_source_path_outside_allowed_paths(self) -> None:
+        result = self.valid_result()
+        result["patch_gzip_base64"] = encoded_patch(MISMATCHED_SOURCE_PATCH)
+        completed, _, _, temporary_directory = self.run_collector(
+            result, allowed_paths=["example.txt"]
+        )
+        self.addCleanup(temporary_directory.cleanup)
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("outside the allowed set: unrelated.txt", completed.stderr)
+
+    def test_accepts_git_generated_path_with_spaces(self) -> None:
+        result = self.valid_result()
+        result["patch_gzip_base64"] = encoded_patch(SPACE_PATH_PATCH)
+        completed, _, _, temporary_directory = self.run_collector(
+            result, allowed_paths=["space name.txt"]
+        )
+        self.addCleanup(temporary_directory.cleanup)
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_validates_both_sides_of_a_rename(self) -> None:
+        result = self.valid_result()
+        result["patch_gzip_base64"] = encoded_patch(RENAME_PATCH)
+        completed, _, _, temporary_directory = self.run_collector(
+            result, allowed_paths=["new name.txt"]
+        )
+        self.addCleanup(temporary_directory.cleanup)
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("outside the allowed set: old name.txt", completed.stderr)
 
     def test_rejects_git_metadata_path(self) -> None:
         unsafe_patch = PATCH.replace("example.txt", ".git/config")
