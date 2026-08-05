@@ -226,7 +226,7 @@ DECLARE
 			   changed_date, user_name, ac_fee_reference
 			FROM ${flyway:defaultSchema}.application_codes_master
 			ORDER BY ac_id;
-	r_legacy_codes appreg.application_codes;
+	r_legacy_codes ${flyway:defaultSchema}.application_codes;
 	
 	l_new_key INTEGER;
 	l_existing_record BOOLEAN;
@@ -356,12 +356,6 @@ BEGIN
 					CALL ${flyway:defaultSchema}.write_csds_realignment_table(r_legacy_codes.ac_id,NULL,'modern: '||r_legacy_codes.ac_id||' '||r_legacy_codes.application_code||' '||r_legacy_codes.application_code_start_date||' can''t be found in legacy, ignoring');
 				END IF;
 			END IF;
-		EXCEPTION
-			WHEN OTHERS THEN
-				GET STACKED DIAGNOSTICS
-					v_sqlstate = RETURNED_SQLSTATE,
-					v_message = MESSAGE_TEXT;
-				CALL ${flyway:defaultSchema}.write_csds_realignment_table(NULL,NULL,'error '||v_sqlstate||' '||v_message);
 		END;
 
 	END LOOP;
@@ -677,12 +671,6 @@ BEGIN
 					CALL ${flyway:defaultSchema}.write_csds_realignment_table(r_legacy_codes.rc_id,NULL,'modern: '||r_legacy_codes.rc_id||' '||r_legacy_codes.resolution_code||' '||r_legacy_codes.resolution_code_start_date||' can''t be found in legacy, ignoring');
 				END IF;
 			END IF;
-		EXCEPTION
-			WHEN OTHERS THEN
-				GET STACKED DIAGNOSTICS
-					v_sqlstate = RETURNED_SQLSTATE,
-					v_message = MESSAGE_TEXT;
-				CALL ${flyway:defaultSchema}.write_csds_realignment_table(NULL,NULL,'error '||v_sqlstate||' '||v_message);
 		END;
 
 	END LOOP;
@@ -1166,12 +1154,6 @@ BEGIN
 					CALL ${flyway:defaultSchema}.write_csds_realignment_table(r_legacy_fees.fee_id,NULL,'fee_id: '||r_legacy_fees.fee_id||' has been created');
 				END IF;
 			END IF;
-		EXCEPTION
-			WHEN OTHERS THEN
-				GET STACKED DIAGNOSTICS
-					v_sqlstate = RETURNED_SQLSTATE,
-					v_message = MESSAGE_TEXT;
-				CALL ${flyway:defaultSchema}.write_csds_realignment_table(NULL,NULL,'error '||v_sqlstate||' '||v_message);
 		END;
 
 	END LOOP;
@@ -1329,7 +1311,7 @@ DECLARE
 			   postcode, email_address, telephone_number, mobile_number
 			FROM ${flyway:defaultSchema}.standard_applicants
 			ORDER BY sa_id;
-	r_modern_standard_applicants appreg.standard_applicants%ROWTYPE;
+	r_modern_standard_applicants ${flyway:defaultSchema}.standard_applicants%ROWTYPE;
 	
 	l_new_key INTEGER;
 	l_existing_record BOOLEAN;

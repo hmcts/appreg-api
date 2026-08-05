@@ -4,8 +4,6 @@ import static org.instancio.Select.field;
 
 import java.util.UUID;
 import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.util.StringUtil;
 
@@ -30,10 +28,8 @@ public class CriminalJusticeTestData
 
     @Override
     public CriminalJusticeArea someComplete() {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         return Instancio.of(CriminalJusticeArea.class)
                 .ignore(field(CriminalJusticeArea::getId))
-                .withSettings(settings)
                 .create();
     }
 }

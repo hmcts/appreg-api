@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionPreviewRequestDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntryBulkActionSelectionDto;
@@ -1991,9 +1992,10 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
     private ApplicationListEntry createClosedStandardPersonApplicantEntry(
             String applicantFirstName, String applicantLastName, String accountReference) {
-        StandardApplicant applicant = new StandardApplicant();
+        StandardApplicant applicant = new StandardApplicantTestData().someComplete();
         applicant.setApplicantCode("SA" + accountReference);
         applicant.setApplicantStartDate(TEST_DATE);
+        applicant.setApplicantEndDate(null);
         applicant.setName(null);
         applicant.setApplicantTitle("Ms");
         applicant.setApplicantForename1(applicantFirstName);

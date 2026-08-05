@@ -28,12 +28,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -314,7 +317,6 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setWordingFields(List.of());
         entryCreateDto.setApplicationCode("AD99004");
         entryCreateDto.setRespondent(null);
-        entryCreateDto.setFeeStatuses(List.of());
 
         var tokenGenerator = createAdminToken();
 
@@ -609,8 +611,19 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
         feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryCreateDto.setFeeStatuses(List.of(feeStatus));
-        entryCreateDto.setApplicationCode("CT99002");
-        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZNF001");
+        applicationCode.setTitle("No fee test");
+        applicationCode.setWording("Test wording");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.YES);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
+        entryCreateDto.setApplicationCode("ZZNF001");
+        entryCreateDto.setWordingFields(List.of());
 
         val tokenGenerator = createAdminToken();
         Response responseSpecCreate =
@@ -2202,6 +2215,8 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
+        entryCreateDto.setNumberOfRespondents(null);
+
         // Use an app code which does NOT require a respondent
         entryCreateDto.setApplicationCode("AD99004");
 
@@ -2210,20 +2225,29 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                 "Test requires respondent to be present in payload");
 
         entryCreateDto.setWordingFields(List.of());
-        entryCreateDto.setFeeStatuses(List.of());
 
         var tokenGenerator = createAdminToken();
         String surnameToLookup = UUID.randomUUID().toString();
 
         // Act
-        SuccessCreateEntryResponse createdDto =
-                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
 
-        // Assert
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
+
+        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
         Assertions.assertNotNull(createdDto);
-        Assertions.assertNotNull(createdDto.getDetailDto());
-        Assertions.assertNotNull(createdDto.getDetailDto().getId());
-        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+        Assertions.assertNotNull(createdDto.getId());
     }
 
     @Test
@@ -2238,7 +2262,17 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setStandardApplicantCode(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryCreateDto.setApplicationCode("CT99001");
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR001");
+        applicationCode.setTitle("Bulk respondent allowed test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+        entryCreateDto.setApplicationCode("ZZBR001");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryCreateDto.setWordingFields(List.of(templateSubstitution));
 
@@ -2281,7 +2315,17 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setFeeStatuses(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryCreateDto.setApplicationCode("CT99001");
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR001");
+        applicationCode.setTitle("Bulk respondent allowed test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+        entryCreateDto.setApplicationCode("ZZBR001");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryCreateDto.setWordingFields(List.of(templateSubstitution));
 
@@ -2321,7 +2365,17 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(5);
         entryCreateDto.setFeeStatuses(null);
-        entryCreateDto.setApplicationCode("CT99001");
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR001");
+        applicationCode.setTitle("Bulk respondent allowed test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+        entryCreateDto.setApplicationCode("ZZBR001");
         entryCreateDto.setCaseReference("CASE-CRT-001");
         entryCreateDto.setNotes("Create audit notes");
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
@@ -2348,7 +2402,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         val createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
         Assertions.assertEquals("Create audit notes", createdDto.getNotes());
         Assertions.assertEquals(JsonNullable.of(5), createdDto.getNumberOfRespondents());
-        Assertions.assertEquals("CT99001", createdDto.getApplicationCode());
+        Assertions.assertEquals("ZZBR001", createdDto.getApplicationCode());
         Assertions.assertEquals("CASE-CRT-001", createdDto.getCaseReference());
 
         // Notes are stored directly on the entry row, so we expect a matching create audit row.
@@ -2390,7 +2444,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         val applicationCodeAuditRow =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_CODES, "application_code", "CT99001")
+                                TableNames.APPLICATION_CODES, "application_code", "ZZBR001")
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
@@ -2623,7 +2677,17 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setFeeStatuses(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryCreateDto.setApplicationCode("CT99001");
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR001");
+        applicationCode.setTitle("Bulk respondent allowed test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+        entryCreateDto.setApplicationCode("ZZBR001");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryCreateDto.setWordingFields(List.of(templateSubstitution));
 
@@ -2657,7 +2721,17 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setFeeStatuses(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryCreateDto.setApplicationCode("CT99001");
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR001");
+        applicationCode.setTitle("Bulk respondent allowed test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+        entryCreateDto.setApplicationCode("ZZBR001");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryCreateDto.setWordingFields(List.of(templateSubstitution));
 

@@ -353,24 +353,19 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
         Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
 
-        JobStatus1 status = acknowledgement.getStatus();
-        while (!status.equals(JobStatus1.COMPLETED)) {
-            Thread.sleep(1000);
-            Response jobStatusResponse =
-                    restAssuredClient.executeGetRequest(
-                            getLocalUrl("jobs/" + acknowledgement.getId()), token);
-            assertThat(jobStatusResponse.getStatusCode()).isEqualTo(200);
-            JobAcknowledgement jobStatus = jobStatusResponse.as(JobAcknowledgement.class);
-            status = jobStatus.getStatus();
-        }
+        JobAcknowledgement completedJob =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient, getLocalUrl("jobs/" + acknowledgement.getId()), token);
+
+        Assertions.assertEquals(
+                JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         String jobId = acknowledgement.getId().toString();
 
-        assertThat(jobId).isNotEmpty();
-
         Response appListEntriesForJob =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/entries/bulk-import/" + jobId), token);
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/entries/bulk-import/" + jobId),
+                        getToken());
 
         assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(200);
         UUID[] appListEntries = appListEntriesForJob.as(UUID[].class);
@@ -417,20 +412,16 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
         Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
 
-        JobStatus1 status = acknowledgement.getStatus();
-        while (!status.equals(JobStatus1.COMPLETED)) {
-            Thread.sleep(1000);
-            Response jobStatusResponse =
-                    restAssuredClient.executeGetRequest(
-                            getLocalUrl("jobs/" + acknowledgement.getId()), adminToken);
-            assertThat(jobStatusResponse.getStatusCode()).isEqualTo(200);
-            JobAcknowledgement jobStatus = jobStatusResponse.as(JobAcknowledgement.class);
-            status = jobStatus.getStatus();
-        }
+        JobAcknowledgement completedJob =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient,
+                        getLocalUrl("jobs/" + acknowledgement.getId()),
+                        adminToken);
+
+        Assertions.assertEquals(
+                JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         String jobId = acknowledgement.getId().toString();
-
-        assertThat(jobId).isNotEmpty();
 
         when(provider.getUserId()).thenReturn("different-user-id");
         when(provider.getEmail()).thenReturn("different@user.com");
@@ -438,8 +429,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
         Response appListEntriesForJob =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(
-                                CREATE_ENTRY_CONTEXT + "/entries/bulk-import/" + new UUID(0, 0)),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/entries/bulk-import/" + jobId),
                         getToken());
 
         assertThat(appListEntriesForJob.getStatusCode()).isEqualTo(404);
@@ -702,11 +692,10 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                 expectedEntry(
                         (short) 3,
                         "APP003",
-                        "CT99002",
+                        "SW99001",
                         "AC2023110003",
-                        "Attends to swear a complaint for the issue of a summons for the debtor "
-                                + "to answer an application for a liability order in relation to "
-                                + "unpaid council tax (reference {COUNCIL-333})",
+                        "Application by {COUNCIL-333} for a search warrant in respect of stolen goods "
+                                + "under reference number {Gamma unused}",
                         personRespondent(
                                 "Dr",
                                 "Caleb",
@@ -771,7 +760,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                 List.of(
                         "Copy documents",
                         "Appeal to Crown Court",
-                        "Issue of liability order summons - council tax",
+                        "Search Warrant - Stolen Goods",
                         "Copy documents",
                         "Inspection of Bankers' Books (criminal proceedings)");
         List<Boolean> feeRequired = List.of(true, false, false, true, false);
@@ -785,9 +774,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     private static List<PersistedFeeStatus> expectedInitialFeeStatuses() {
-        return List.of(
-                new PersistedFeeStatus((short) 1, "AD99001", FeeStatusType.DUE, null),
-                new PersistedFeeStatus((short) 4, "MS99007", FeeStatusType.DUE, null));
+        return List.of(new PersistedFeeStatus((short) 1, "AD99001", FeeStatusType.DUE, null));
     }
 
     private static ApiEntry expectedApiEntry(

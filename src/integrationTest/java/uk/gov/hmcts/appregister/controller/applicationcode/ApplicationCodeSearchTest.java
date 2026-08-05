@@ -102,7 +102,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 21, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size(), "");
 
         TemplateAssertion.assertTemplate(
@@ -111,12 +111,13 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(200.0),
-                        Optional.of(MAIN_FEE_REFERENCE),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(155.0),
-                        Optional.of("CO2.1"));
+                        Optional.of(
+                                "Copy of a document on a computer disk or in other electronic form"),
+                        Optional.of(11.0),
+                        Optional.of("CO5.2"),
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(29.0),
+                        Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -162,18 +163,19 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                         getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 21, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(200.0),
-                        Optional.of(MAIN_FEE_REFERENCE),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(155.0),
-                        Optional.of("CO2.1"));
+                        Optional.of(
+                                "Copy of a document on a computer disk or in other electronic form"),
+                        Optional.of(11.0),
+                        Optional.of("CO5.2"),
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(29.0),
+                        Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -220,16 +222,17 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 16, 159);
 
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION2),
-                        Optional.of(0.50),
-                        Optional.of("CO4.1"));
+                        Optional.of(
+                                "Copy of a document on a computer disk or in other electronic form"),
+                        Optional.of(10.0),
+                        Optional.of("CO5.2"),
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(25.0),
+                        Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -284,10 +287,10 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(50.0),
-                        Optional.of(MAIN_FEE_REFERENCE),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION3),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of("Offsite: JP perform function away from court"),
                         Optional.of(70.0),
                         Optional.of(MAIN_FEE_REFERENCE));
 
@@ -375,10 +378,10 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(50.0),
-                        Optional.of(MAIN_FEE_REFERENCE),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION3),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of("Offsite: JP perform function away from court"),
                         Optional.of(70.0),
                         Optional.of(MAIN_FEE_REFERENCE));
 
@@ -425,10 +428,11 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION3),
+                        Optional.of(
+                                "Copy of a document on a computer disk or in other electronic form"),
+                        Optional.of(10.0),
+                        Optional.of("CO5.2"),
+                        Optional.of("Offsite: JP perform function away from court"),
                         Optional.of(40.0),
                         Optional.of(MAIN_FEE_REFERENCE));
 
@@ -665,7 +669,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // make the assertions
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 23, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 105, TOTAL_APP_CODES_COUNT);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -677,10 +681,12 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         assertTrue(firstEntry.getIsFeeDue());
         assertFalse(firstEntry.getRequiresRespondent());
         assertFalse(firstEntry.getBulkRespondentAllowed());
-        assertEquals(MAIN_FEE_REFERENCE, firstEntry.getFeeReference().get());
-        assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
-        assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(15500L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals("CO3.3", firstEntry.getFeeReference().get());
+        assertEquals(
+                "Certified copy of a memorandum of conviction.",
+                firstEntry.getFeeDescription().get());
+        assertEquals(1500L, firstEntry.getFeeAmount().get().getValue());
+        assertEquals(2900L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
@@ -690,12 +696,12 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                 "Request for a certificate of satisfaction of debt registered in the register "
                         + "of judgements, orders and fines",
                 secondEntry.getWording().getTemplate());
-        assertFalse(secondEntry.getIsFeeDue());
+        assertTrue(secondEntry.getIsFeeDue());
         assertFalse(secondEntry.getRequiresRespondent());
         assertFalse(secondEntry.getBulkRespondentAllowed());
-        assertFalse(secondEntry.getFeeReference().isPresent());
-        assertFalse(secondEntry.getFeeDescription().isPresent());
-        assertFalse(secondEntry.getFeeAmount().isPresent());
+        assertTrue(secondEntry.getFeeReference().isPresent());
+        assertTrue(secondEntry.getFeeDescription().isPresent());
+        assertTrue(secondEntry.getFeeAmount().isPresent());
         assertTrue(secondEntry.getOffsiteFeeAmount().isPresent());
     }
 
@@ -720,8 +726,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
-        assertEquals(15500, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
-        assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
+        assertEquals(2900, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+        assertTrue(response.getContent().get(0).getFeeAmount().isPresent());
     }
 
     @Test
@@ -776,14 +782,14 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert the response
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 23, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 105, TOTAL_APP_CODES_COUNT);
 
         // assert records are sorted based on the title of the auth codes
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
 
-        assertEquals("AP99001", firstEntry.getApplicationCode());
-        assertEquals("SW99009", secondEntry.getApplicationCode());
+        assertEquals("SW99052", firstEntry.getApplicationCode());
+        assertEquals("SW99037", secondEntry.getApplicationCode());
     }
 
     @Test
@@ -843,7 +849,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                         List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new ApplicationCodeRequestFilter(Optional.of("CT99002"), Optional.empty()),
+                        new ApplicationCodeRequestFilter(Optional.of("AD99002"), Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -851,14 +857,14 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
-        assertEquals("CT99002", firstEntry.getApplicationCode());
+        assertEquals("AD99002", firstEntry.getApplicationCode());
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         APPLICATION_CODE_FIELD,
                         null,
-                        "CT99002",
+                        "AD99002",
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
@@ -1370,13 +1376,16 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        assertEquals(6, page.getContent().size());
+        assertEquals(9, page.getContent().size());
         assertEquals("AD99001", page.getContent().get(0).getApplicationCode());
         assertEquals("AP99001", page.getContent().get(1).getApplicationCode());
-        assertEquals("CT99001", page.getContent().get(2).getApplicationCode());
-        assertEquals("MS99001", page.getContent().get(3).getApplicationCode());
-        assertEquals("RE99001", page.getContent().get(4).getApplicationCode());
-        assertEquals("SW99001", page.getContent().get(5).getApplicationCode());
+        assertEquals("EF99001", page.getContent().get(2).getApplicationCode());
+        assertEquals("EV99001", page.getContent().get(3).getApplicationCode());
+        assertEquals("MS99001", page.getContent().get(4).getApplicationCode());
+        assertEquals("MX99001", page.getContent().get(5).getApplicationCode());
+        assertEquals("RE99001", page.getContent().get(6).getApplicationCode());
+        assertEquals("SB99001", page.getContent().get(7).getApplicationCode());
+        assertEquals("SW99001", page.getContent().get(8).getApplicationCode());
     }
 
     @Test

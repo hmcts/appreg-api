@@ -17,13 +17,14 @@ public class NationalCourtHouseData
     @Override
     public NationalCourtHouse.NationalCourtHouseBuilder someMinimal() {
         UUID id = UUID.randomUUID();
-        var data = NationalCourtHouse.builder();
-        data.courtLocationCode(StringUtil.stripToMax(id.toString(), 10))
+        long suffix = Math.abs(id.getMostSignificantBits() % 1000000);
+
+        return NationalCourtHouse.builder()
+                .id(Math.abs(id.getMostSignificantBits()))
+                .courtLocationCode("NCH" + suffix)
                 .name(StringUtil.stripToMax("name " + id, 100))
                 .startDate(LocalDate.now(java.time.ZoneOffset.UTC))
                 .courtType("CHOA");
-
-        return data;
     }
 
     @Override
@@ -34,10 +35,17 @@ public class NationalCourtHouseData
     @Override
     public NationalCourtHouse someComplete() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        return Instancio.of(NationalCourtHouse.class)
-                .ignore(field(NationalCourtHouse::getId))
-                .ignore(field(NationalCourtHouse::getVersion))
-                .withSettings(settings)
-                .create();
+        UUID id = UUID.randomUUID();
+
+        NationalCourtHouse court =
+                Instancio.of(NationalCourtHouse.class)
+                        .ignore(field(NationalCourtHouse::getId))
+                        .ignore(field(NationalCourtHouse::getVersion))
+                        .withSettings(settings)
+                        .create();
+
+        court.setId(Math.abs(id.getMostSignificantBits()));
+        court.setCourtLocationCode("NCH" + Math.abs(id.getMostSignificantBits() % 1000000));
+        return court;
     }
 }
