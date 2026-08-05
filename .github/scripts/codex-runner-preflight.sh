@@ -11,7 +11,7 @@ require_command() {
   fi
 }
 
-for command_name in git gh java node npm python3 codex; do
+for command_name in git gh java node npm python3 codex gzip base64 mktemp tr wc; do
   require_command "$command_name"
 done
 

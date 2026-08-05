@@ -48,10 +48,14 @@ Every workspace-writing Codex job ends with the official Action. Codex returns
 a schema-validated, size-bounded gzip/base64 patch through the Action's
 `final-message` job output; no privileged collector, Git command, or artifact
 action runs against the model-writable checkout afterward. A fresh dependent
-job checks out trusted workflow code, validates and materialises that untrusted
-patch, and passes it to the existing credential-free verification and trusted
-publication stages. The report-only parity workflow follows the same final-step
-boundary and gives its Jira notification secret only to a fresh dependent job.
+job checks out the exact trusted commit recorded by the Action job, validates
+and materialises that untrusted patch, and passes it to the existing
+credential-free verification and trusted publication stages. Before loading
+untrusted repository content, the runner captures a read-only patch exporter;
+it builds the patch with a temporary Git index and object store because the
+`:workspace` profile keeps the real `.git` metadata read-only. The report-only
+parity workflow follows the same final-step boundary and gives its Jira
+notification secret only to a fresh dependent job.
 
 The regional Responses endpoint is
 `https://eu.api.openai.com/v1/responses`.

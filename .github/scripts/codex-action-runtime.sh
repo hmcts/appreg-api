@@ -21,14 +21,29 @@ capture_codex_patch_schema() {
   printf '%s\n' "${schema_path}"
 }
 
+capture_codex_patch_exporter() {
+  local exporter_source="$1"
+  local artifact_dir="$2"
+  local exporter_path="${artifact_dir}/codex-patch-export.sh"
+
+  install -m 0555 "${exporter_source}" "${exporter_path}"
+  printf '%s\n' "${exporter_path}"
+}
+
 prepare_codex_patch_contract() {
   local prompt_path="$1"
   local schema_path="$2"
-  local artifact_dir="$3"
-  local patch_scope="${4:-full}"
+  local exporter_path="$3"
+  local artifact_dir="$4"
+  local patch_scope="${5:-full}"
+  local allowed_paths_file="${6:-}"
 
   if [[ ! -s "${schema_path}" ]]; then
     echo "Missing captured Codex patch schema: ${schema_path}" >&2
+    return 1
+  fi
+  if [[ ! -x "${exporter_path}" ]]; then
+    echo "Missing captured Codex patch exporter: ${exporter_path}" >&2
     return 1
   fi
 
@@ -36,24 +51,27 @@ prepare_codex_patch_contract() {
 
 Patch hand-off contract:
 - The Codex Action is the final step in this job. No privileged process will inspect this working tree after you finish.
-- Before returning, stage the complete intended patch using Git.
-- Generate a binary Git patch from the staged changes, gzip it, and base64 encode it as one line.
+- The `:workspace` permission profile makes the real `.git` directory read-only. Do not run `git add` against the real checkout or try to modify `.git`.
+- After making the complete intended change, run the captured trusted patch exporter specified below. It uses a temporary Git index and object store outside `.git`.
 - Return only the JSON object required by the supplied output schema.
-- Set `has_changes` to true and put the encoded patch in `patch_gzip_base64` when a patch exists.
-- Set `has_changes` to false and `patch_gzip_base64` to an empty string only when no code change is appropriate.
+- Copy the exporter's `has_changes` and `patch_gzip_base64` values exactly into the final JSON object.
 - Put the human-readable implementation summary in `summary` and checks performed in `testing`.
-- The encoded patch must be no more than 60000 characters. If it exceeds that limit, report the size problem in `summary` with no patch so the trusted job fails closed.
+- If the exporter fails, do not fabricate or truncate a patch. Report the failure in `summary` with no patch so the trusted collector fails closed when changes are required.
 EOF
 
   if [[ "${patch_scope}" == "conflicted-files" ]]; then
-    cat >>"${prompt_path}" <<'EOF'
-- For this conflict-resolution operation, stage only the conflicted files listed above and generate the patch relative to HEAD for only those paths.
-- A suitable command pattern is: `git add -- <conflicted paths> && git -c core.fsmonitor= -c diff.external= diff --cached --binary --no-ext-diff HEAD -- <conflicted paths> | gzip -9 | base64 | tr -d '\n'`.
-EOF
+    if [[ ! -s "${allowed_paths_file}" ]]; then
+      echo "Missing captured conflict path scope: ${allowed_paths_file}" >&2
+      return 1
+    fi
+    chmod 0444 "${allowed_paths_file}"
+    printf '%s\n' \
+      "- For this conflict-resolution operation, export only the captured conflicted paths by running: \`${exporter_path} --paths-file ${allowed_paths_file}\`." \
+      >>"${prompt_path}"
   else
-    cat >>"${prompt_path}" <<'EOF'
-- A suitable command pattern is: `git add -A && git -c core.fsmonitor= -c diff.external= diff --cached --binary --no-ext-diff | gzip -9 | base64 | tr -d '\n'`.
-EOF
+    printf '%s\n' \
+      "- Export the complete working-tree change by running: \`${exporter_path}\`." \
+      >>"${prompt_path}"
   fi
 
   chmod 0444 "${prompt_path}"

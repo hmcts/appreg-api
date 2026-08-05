@@ -22,12 +22,14 @@ artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-generate-${run_id}-${run_attempt}"
 prompt_path="${artifact_dir}/codex-prompt.md"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
+exporter_source="${script_dir}/codex-patch-export.sh"
 
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
 
 mkdir -p "${artifact_dir}"
 schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
+exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
 
 branch_slug="$(
   python3 -I - <<'PY'
@@ -85,7 +87,7 @@ Description:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${artifact_dir}" full)"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" full)"
 prepare_codex_action_runtime "${PWD}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {

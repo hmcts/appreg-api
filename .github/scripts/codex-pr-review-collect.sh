@@ -13,7 +13,7 @@ required_env() {
 required_env "OUTPUT_DIR"
 output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
-comment_body_path="${output_dir}/codex-comment.md"
+comment_body_path="${output_dir}/codex-review-comment.md"
 final_message_path="${output_dir}/codex-final-message.md"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "${output_dir}"

@@ -29,6 +29,7 @@ sanitized_tmp="${artifact_dir}/sanitized-tmp"
 sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
+exporter_source="${script_dir}/codex-patch-export.sh"
 
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
@@ -174,6 +175,7 @@ PY
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}"
 schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
+exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
 read_conflicted_files
 printf '%s\n' "${conflicted_files[@]}" >"${conflicted_files_path}"
 
@@ -205,7 +207,7 @@ fi
 write_prompt
 unset GH_TOKEN
 
-schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${artifact_dir}" conflicted-files)"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" conflicted-files "${conflicted_files_path}")"
 prepare_codex_action_runtime "${PWD}"
 echo "Running Codex merge-conflict resolution for PR #${PR_NUMBER} on ${HEAD_REF}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then

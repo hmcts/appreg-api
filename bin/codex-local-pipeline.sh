@@ -132,6 +132,8 @@ mkdir -p "${python_cache}"
 PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parity-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-patch-export.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
@@ -214,18 +216,84 @@ Dir[".github/**/*"].select { |path| File.file?(path) }.each do |path|
   end
 end
 
-schema_capture_checks = {
+contract_capture_checks = {
   ".github/scripts/codex-jira-repair.sh" => /git_sanitized apply --binary/,
   ".github/scripts/codex-merge-conflict-implement.sh" => /git_sanitized checkout -B/,
   ".github/scripts/codex-pr-review-feedback.sh" => /git_sanitized checkout -B/,
 }
 
-schema_capture_checks.each do |path, untrusted_operation|
+contract_capture_checks.each do |path, untrusted_operation|
   lines = File.readlines(path)
-  capture_index = lines.index { |line| line.include?("capture_codex_patch_schema") }
   untrusted_index = lines.index { |line| line.match?(untrusted_operation) }
-  if capture_index.nil? || untrusted_index.nil? || capture_index >= untrusted_index
-    errors << "#{path} must capture its output schema before loading untrusted repository content"
+  %w[capture_codex_patch_schema capture_codex_patch_exporter].each do |capture_function|
+    capture_index = lines.index { |line| line.include?(capture_function) }
+    if capture_index.nil? || untrusted_index.nil? || capture_index >= untrusted_index
+      errors << "#{path} must call #{capture_function} before loading untrusted repository content"
+    end
+  end
+end
+
+runtime = File.read(".github/scripts/codex-action-runtime.sh")
+unless runtime.include?("capture_codex_patch_exporter") && runtime.include?("--paths-file")
+  errors << ".github/scripts/codex-action-runtime.sh must use the captured exporter for full and conflict-scoped patches"
+end
+if runtime.match?(/git add (?:-A|--)/)
+  errors << ".github/scripts/codex-action-runtime.sh must not instruct the workspace-scoped Action to write the real Git index"
+end
+
+revision_pinned_workflows = %w[
+  appreg_parity_check.yml
+  codex_jira_dispatch.yml
+  codex_merge_conflict_resolution.yml
+  codex_pr_review_feedback.yml
+]
+
+revision_pinned_workflows.each do |workflow_name|
+  path = ".github/workflows/#{workflow_name}"
+  workflow = YAML.load_file(path)
+  workflow.fetch("jobs", {}).each do |job_name, job|
+    steps = job.fetch("steps", [])
+    action_index = steps.index do |step|
+      step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
+    end
+
+    moving_checkouts = steps.each_index.select do |index|
+      step = steps[index]
+      next false unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
+
+      ref = (step.fetch("with", {}) || {}).fetch("ref", "")
+      !ref.include?("outputs.trusted_sha")
+    end
+
+    declared_needs = Array(job.fetch("needs", []))
+    steps.each do |step|
+      next unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
+
+      ref = (step.fetch("with", {}) || {}).fetch("ref", "")
+      trusted_source = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.trusted_sha/)&.captures&.first
+      if trusted_source
+        producer = workflow.fetch("jobs", {}).fetch(trusted_source, {})
+        producer_output = (producer.fetch("outputs", {}) || {}).fetch("trusted_sha", "")
+        if producer_output.empty?
+          errors << "#{path}:#{trusted_source} must expose the trusted SHA consumed by #{job_name}"
+        end
+        unless declared_needs.include?(trusted_source)
+          errors << "#{path}:#{job_name} must directly need #{trusted_source} to consume its trusted SHA"
+        end
+      end
+    end
+
+    if action_index
+      trusted_index = steps.index do |step|
+        step.is_a?(Hash) && step.fetch("id", "") == "trusted" && step.fetch("run", "").include?("git rev-parse HEAD")
+      end
+      trusted_output = (job.fetch("outputs", {}) || {}).fetch("trusted_sha", "")
+      if moving_checkouts.any? && (trusted_index.nil? || trusted_index >= action_index || !trusted_output.include?("steps.trusted.outputs.sha"))
+        errors << "#{path}:#{job_name} must capture and expose its exact trusted checkout SHA before the Codex Action"
+      end
+    elsif moving_checkouts.any?
+      errors << "#{path}:#{job_name} must check out the captured trusted SHA"
+    end
   end
 end
 

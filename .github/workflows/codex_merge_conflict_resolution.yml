@@ -196,6 +196,7 @@ jobs:
       issues: read
     outputs:
       codex_result: ${{ steps.codex-action.outputs.final-message }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
@@ -212,6 +213,10 @@ jobs:
           ref: ${{ env.DEFAULT_BRANCH }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Capture trusted checkout SHA
+        id: trusted
+        run: echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
 
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
@@ -244,6 +249,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
@@ -257,8 +264,17 @@ jobs:
       - name: Checkout trusted collector
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-conflict-generate-action.outputs.trusted_sha }}
           persist-credentials: false
+
+      - name: Confirm trusted checkout SHA
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-conflict-generate-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
 
       - name: Materialise conflict-resolution patch
         env:
@@ -298,7 +314,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -343,7 +359,7 @@ jobs:
           retention-days: 1
 
   publish-conflict-resolution:
-    needs: [detect-conflicted-pr, verify-conflict-resolution]
+    needs: [detect-conflicted-pr, codex-conflict-generate, verify-conflict-resolution]
     if: needs.detect-conflicted-pr.outputs.should_run == 'true' && needs.verify-conflict-resolution.outputs.passed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -364,7 +380,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
