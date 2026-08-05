@@ -58,6 +58,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
     private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
     private static final String BULK_UPLOAD_ROW = "BULK_UPLOAD_ROW";
+    private static final Map<String, String> CONTACT_VALIDATION_MESSAGES =
+            Map.of(
+                    "postcode", "Provide a valid UK postcode.",
+                    "mobile", "Provide a valid UK mobile number.",
+                    "phone", "Provide a valid UK telephone number.");
     private static final Map<ErrorCodeEnum, String> BUSINESS_RULE_LOCATIONS =
             Map.ofEntries(
                     Map.entry(
@@ -235,6 +240,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 .filter(violation -> isRelevantRespondentViolation(violation, respondentNameState))
                 .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
                 .map(violation -> toBulkUploadError(rowNumber, violation))
+                .distinct()
                 .toList();
     }
 
@@ -309,7 +315,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 rowNumber,
                 violation.getPropertyPath().toString(),
                 rejectedValue(violation),
-                violation.getMessage(),
+                validationMessage(violation),
                 violation.getRootBean().getRespondent().getOrganisation() != null
                         ? violation
                                 .getRootBean()
@@ -325,6 +331,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                                 .getAddressLine1(),
                 violation.getRootBean().getStandardApplicantCode(),
                 "DATA_ERROR");
+    }
+
+    private static String validationMessage(ConstraintViolation<?> violation) {
+        String propertyPath = violation.getPropertyPath().toString();
+        String fieldName = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
+        return CONTACT_VALIDATION_MESSAGES.getOrDefault(fieldName, violation.getMessage());
     }
 
     private static String rejectedValue(ConstraintViolation<?> violation) {

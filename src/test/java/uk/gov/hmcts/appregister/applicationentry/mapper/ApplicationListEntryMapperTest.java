@@ -173,6 +173,24 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void givenBlankOptionalContactFields_whenMappingBulkUpload_thenMapsThemToNull() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("APP123");
+        row.setRespondentOrganisationName("Respondent organisation");
+        row.setRespondentPostcode("");
+        row.setRespondentTelephone("");
+        row.setRespondentMobile("");
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        var contactDetails = dto.getRespondent().getOrganisation().getContactDetails();
+        assertThat(contactDetails.getPostcode()).isNull();
+        assertThat(contactDetails.getPhone()).isEqualTo(JsonNullable.of(null));
+        assertThat(contactDetails.getMobile()).isEqualTo(JsonNullable.of(null));
+    }
+
+    @Test
     void testToEntryCreateDto_mapsCanonicalBulkUploadPersonRespondent() {
         BulkUploadRow row = new BulkUploadRow();
         row.setApplicantCode("APP001");

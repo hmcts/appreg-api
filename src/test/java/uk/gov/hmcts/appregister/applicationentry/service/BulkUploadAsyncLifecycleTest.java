@@ -193,7 +193,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 2,
                                                 "postcode",
                                                 "invalid",
-                                                "Field has been rejected",
+                                                "Provide a valid UK postcode.",
                                                 row.getRespondentAddressLine1(),
                                                 row.getApplicantCode(),
                                                 "DATA_ERROR"))));
@@ -202,7 +202,7 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("\"rowNumber\":2")
                 .contains("postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"Field has been rejected")
+                .contains("\"message\":\"Provide a valid UK postcode.\"")
                 .contains("\"addressLine1\":\"1 Example Street\"")
                 .contains("\"code\":\"" + row.getApplicantCode() + "\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
@@ -228,7 +228,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 3,
                                                 "postcode",
                                                 "invalid",
-                                                "Field has been rejected",
+                                                "Provide a valid UK postcode.",
                                                 row.getRespondentAddressLine1(),
                                                 row.getApplicantCode(),
                                                 "DATA_ERROR"))));
@@ -237,7 +237,7 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("\"rowNumber\":3")
                 .contains("postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"Field has been rejected")
+                .contains("\"message\":\"Provide a valid UK postcode.\"")
                 .contains("\"addressLine1\":\"1 Example Street\"")
                 .contains("\"code\":\"" + row.getApplicantCode() + "\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
@@ -271,7 +271,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 2,
                                                 "postcode",
                                                 "invalid",
-                                                "Field has been rejected",
+                                                "Provide a valid UK postcode.",
                                                 respondentRow.getRespondentAddressLine1(),
                                                 respondentRow.getApplicantCode(),
                                                 "DATA_ERROR"))));
@@ -280,7 +280,7 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("\"rowNumber\":2")
                 .contains("postcode")
                 .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"Field has been rejected")
+                .contains("\"message\":\"Provide a valid UK postcode.\"")
                 .contains("\"addressLine1\":\"1 Example Street\"")
                 .contains("\"code\":\"APP001\"")
                 .contains("\"errorType\":\"DATA_ERROR\"");
@@ -297,6 +297,36 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(context.hasFailure()).isFalse();
         verify(validationSession).validate(any(), any());
+    }
+
+    @Test
+    void givenPostcodeViolatesPatternAndSize_whenValidating_thenLogsOneFriendlyError()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentPostcode("INVALID99");
+
+        assertFriendlyContactValidationFailure(
+                row, "postcode", "INVALID99", "Provide a valid UK postcode.");
+    }
+
+    @Test
+    void givenTelephoneViolatesPatternAndSize_whenValidating_thenLogsOneFriendlyError()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentTelephone("invalid");
+
+        assertFriendlyContactValidationFailure(
+                row, "phone", "invalid", "Provide a valid UK telephone number.");
+    }
+
+    @Test
+    void givenMobileViolatesPatternAndSize_whenValidating_thenLogsOneFriendlyError()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentMobile("invalid");
+
+        assertFriendlyContactValidationFailure(
+                row, "mobile", "invalid", "Provide a valid UK mobile number.");
     }
 
     @Test
@@ -562,7 +592,7 @@ class BulkUploadAsyncLifecycleTest {
                                                 2,
                                                 "postcode",
                                                 "invalid",
-                                                "Field has been rejected",
+                                                "Provide a valid UK postcode.",
                                                 row.getRespondentAddressLine1(),
                                                 row.getApplicantCode(),
                                                 "DATA_ERROR"))));
@@ -845,9 +875,9 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(writtenCsv.toString())
                 .contains("HEADER|")
                 .contains("row-two|")
-                .contains("postcode - invalid: Field has been rejected")
+                .contains("postcode - invalid: Provide a valid UK postcode.")
                 .contains(row.getRespondentPostcode())
-                .contains("Field has been rejected")
+                .doesNotContain("Field has been rejected")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
@@ -940,7 +970,7 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("Field has been rejected|")
                 .contains("postcode")
                 .contains(row.getRespondentPostcode())
-                .contains("Field has been rejected")
+                .contains("Provide a valid UK postcode.")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
@@ -979,7 +1009,7 @@ class BulkUploadAsyncLifecycleTest {
 
         assertThat(writtenCsv.toString())
                 .contains("HEADER|HEADER_ERROR:4|HEADER_ERROR:3|HEADER_ERROR:2|HEADER_ERROR:1")
-                .contains("row-two|postcode - invalid: Field has been rejected")
+                .contains("row-two|postcode - invalid: Provide a valid UK postcode.")
                 .contains("row-three|");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
@@ -1087,6 +1117,35 @@ class BulkUploadAsyncLifecycleTest {
                 List.of(row),
                 context,
                 JobStatus.VALIDATING);
+    }
+
+    private void assertFriendlyContactValidationFailure(
+            BulkUploadRow row, String location, String rejectedValue, String message)
+            throws IOException {
+        JobContext context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+
+        BulkUploadError[] errors =
+                new ObjectMapper()
+                        .readValue(
+                                context.getValidationFailureMessages().getFirst(),
+                                BulkUploadError[].class);
+        assertThat(errors)
+                .singleElement()
+                .satisfies(
+                        error -> {
+                            assertThat(error.getLocation()).isEqualTo(location);
+                            assertThat(error.getRejectedValue()).isEqualTo(rejectedValue);
+                            assertThat(error.getMessage()).isEqualTo(message);
+                        });
     }
 
     private static BulkUploadRow validOrganisationRow() {

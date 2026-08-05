@@ -840,7 +840,7 @@ public abstract class ApplicationListEntryMapper {
         contactDetails.setAddressLine3(map(row.getRespondentAddressLine3()));
         contactDetails.setAddressLine4(map(row.getRespondentAddressLine4()));
         contactDetails.setAddressLine5(map(row.getRespondentAddressLine5()));
-        contactDetails.setPostcode(row.getRespondentPostcode());
+        contactDetails.setPostcode(OutgoingDtoSanitiser.emptyToNull(row.getRespondentPostcode()));
         contactDetails.setEmail(map(row.getRespondentEmail()));
         contactDetails.setPhone(map(row.getRespondentTelephone()));
         contactDetails.setMobile(map(row.getRespondentMobile()));

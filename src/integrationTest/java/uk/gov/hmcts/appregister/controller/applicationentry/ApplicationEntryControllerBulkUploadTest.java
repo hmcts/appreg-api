@@ -225,6 +225,71 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
+    void givenInvalidContactDetails_whenBulkUpload_thenJsonAndCsvContainFriendlyErrors()
+            throws Exception {
+        FailedBulkUpload failure =
+                submitBulkUploadExpectingFailure(
+                        CANONICAL_BULK_UPLOAD_HEADER,
+                        canonicalBulkUploadRowWithContactDetails(
+                                "Example Organisation", "", "", "INVALID99", "invalid", "invalid"));
+
+        assertThat(failure.completedJob().getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failure.completedJob().getErrorDescription())
+                .containsOnlyOnce("Provide a valid UK postcode.")
+                .containsOnlyOnce("Provide a valid UK telephone number.")
+                .containsOnlyOnce("Provide a valid UK mobile number.")
+                .doesNotContain("must match")
+                .doesNotContain("size must be between");
+        assertThat(failure.errorCsv())
+                .containsOnlyOnce("Provide a valid UK postcode.")
+                .containsOnlyOnce("Provide a valid UK telephone number.")
+                .containsOnlyOnce("Provide a valid UK mobile number.")
+                .doesNotContain("Field has been rejected")
+                .doesNotContain("size must be between");
+        assertThat(countEntriesForList(failure.listId())).isZero();
+    }
+
+    @Test
+    void givenBlankOptionalContactDetails_whenBulkUpload_thenCreatesEntryWithNullValues()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+        String row =
+                canonicalBulkUploadRowWithContactDetails(
+                        "Example Organisation", "", "", "", "", "");
+
+        try (var file = tempCsv(CANONICAL_BULK_UPLOAD_HEADER + "\n" + row + "\n")) {
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+
+            response.then().statusCode(202);
+            JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+            JobAcknowledgement completedJob =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient,
+                            getLocalUrl("jobs/" + acknowledgement.getId()),
+                            tokenGenerator.fetchTokenForRole());
+
+            assertThat(completedJob.getStatus())
+                    .as("Unexpected bulk-upload failure: %s", completedJob.getErrorDescription())
+                    .isEqualTo(JobStatus.COMPLETED);
+            assertThat(countEntriesForList(listId)).isOne();
+            PersistedRespondent respondent =
+                    persistedEntriesForList(listId).getFirst().respondent();
+            assertThat(respondent.postcode()).isNull();
+            assertThat(respondent.telephone()).isNull();
+            assertThat(respondent.mobile()).isNull();
+        }
+    }
+
+    @Test
     void givenFieldCountMismatchOnOnlyRow_whenJobPolled_thenReturnsStructuredHeaderError()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
@@ -662,6 +727,17 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
     private static String canonicalBulkUploadRow(
             String organisationName, String firstName, String lastName) {
+        return canonicalBulkUploadRowWithContactDetails(
+                organisationName, firstName, lastName, "AA1 1AA", "", "");
+    }
+
+    private static String canonicalBulkUploadRowWithContactDetails(
+            String organisationName,
+            String firstName,
+            String lastName,
+            String postcode,
+            String telephone,
+            String mobile) {
         return String.join(
                 "|",
                 "APP001",
@@ -675,10 +751,10 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                 "",
                 "",
                 "",
-                "AA1 1AA",
+                postcode,
                 "",
-                "",
-                "",
+                telephone,
+                mobile,
                 "AC2023110001",
                 "AD99001",
                 "",
