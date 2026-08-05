@@ -83,6 +83,9 @@ withPipeline(type, product, component) {
 
   syncBranchesWithMaster(branchesToSync)
 
+  before('build') {
+    sh('./bin/codex-local-pipeline.sh checks-only --no-fetch')
+  }
 
   before('dbmigrate:demo') {
     sh("./gradlew --no-daemon --init-script init.gradle assemble")

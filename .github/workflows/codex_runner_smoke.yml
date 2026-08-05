@@ -8,18 +8,71 @@ on:
         required: false
         default: codex-runner-smoke
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
-  smoke-test:
+  codex-auth-smoke:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout workflow revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify runner toolchain
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Prepare authentication prompt
+        run: |
+          mkdir -p "$RUNNER_TEMP/codex-smoke"
+          printf '%s\n' 'Reply exactly CODEX_SMOKE_OK. Do not run commands or modify files.' \
+            >"$RUNNER_TEMP/codex-smoke/prompt.md"
+          chmod -R g+rwX "$GITHUB_WORKSPACE" "$RUNNER_TEMP/codex-smoke"
+
+      - name: Verify Codex API authentication
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: ultra
+          prompt-file: ${{ runner.temp }}/codex-smoke/prompt.md
+          output-file: ${{ runner.temp }}/codex-smoke/final-message.md
+          permission-profile: ":read-only"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+      - name: Stop Codex API proxy
+        if: always() && steps.codex-action.outcome != 'skipped'
+        run: |
+          set -euo pipefail
+          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
+          test -s "$server_info"
+          proxy_port="$(jq -r '.port // empty' "$server_info")"
+          [[ "$proxy_port" =~ ^[0-9]+$ ]]
+          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
+
+      - name: Verify authentication response
+        run: grep -qx 'CODEX_SMOKE_OK' "$RUNNER_TEMP/codex-smoke/final-message.md"
+
+  branch-smoke:
+    needs: codex-auth-smoke
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 30
+    permissions:
+      contents: write
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       BRANCH_PREFIX: ${{ inputs.branch_prefix }}
       GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN || github.token }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout default branch
@@ -31,7 +84,7 @@ jobs:
           git fetch --prune --no-tags origin "${DEFAULT_BRANCH}"
           git checkout -B "${DEFAULT_BRANCH}" FETCH_HEAD
 
-      - name: Verify runner toolchain and Codex auth
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Configure Git identity

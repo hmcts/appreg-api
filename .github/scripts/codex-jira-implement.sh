@@ -15,126 +15,21 @@ required_env "ISSUE_KEY"
 required_env "ISSUE_SUMMARY"
 required_env "ISSUE_DESCRIPTION"
 required_env "ISSUE_URL"
-required_env "OUTPUT_DIR"
 
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-generate-${run_id}-${run_attempt}"
-runner_home="${HOME:-/home/runner}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
-sanitized_home="${artifact_dir}/sanitized-home"
-sanitized_tmp="${artifact_dir}/sanitized-tmp"
-sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
-output_dir="${OUTPUT_DIR}"
 prompt_path="${artifact_dir}/codex-prompt.md"
-final_message_path="${output_dir}/codex-final-message.md"
-pr_body_path="${output_dir}/codex-pr-body.md"
-patch_path="${output_dir}/changes.patch"
-metadata_path="${output_dir}/metadata.env"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
+exporter_source="${script_dir}/codex-patch-export.sh"
 
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
 
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-
-  if [[ -f "${runner_home}/.codex/auth.json" ]]; then
-    cp "${runner_home}/.codex/auth.json" "${codex_home}/.codex/auth.json"
-    chmod 600 "${codex_home}/.codex/auth.json"
-  fi
-
-  if [[ -f "${runner_home}/.codex/config.toml" ]]; then
-    cp "${runner_home}/.codex/config.toml" "${codex_home}/.codex/config.toml"
-    chmod 600 "${codex_home}/.codex/config.toml"
-  fi
-}
-
-run_codex() {
-  local codex_env=(
-    env -i
-    "HOME=${codex_home}"
-    "CODEX_HOME=${codex_home}/.codex"
-    "XDG_CACHE_HOME=${codex_home}/.cache"
-    "XDG_CONFIG_HOME=${codex_home}/.config"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${USER:-runner}"
-    "LOGNAME=${LOGNAME:-${USER:-runner}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${codex_tmp}"
-    "RUNNER_TEMP=${codex_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    codex_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  "${codex_env[@]}" "$@"
-}
-
-run_sanitized() {
-  local sanitized_env=(
-    env -i
-    "HOME=${sanitized_home}"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${USER:-runner}"
-    "LOGNAME=${LOGNAME:-${USER:-runner}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${sanitized_tmp}"
-    "RUNNER_TEMP=${sanitized_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GRADLE_USER_HOME=${sanitized_home}/.gradle"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    sanitized_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  "${sanitized_env[@]}" "$@"
-}
-
-git_sanitized() {
-  run_sanitized git \
-    -c core.hooksPath=/dev/null \
-    -c credential.helper= \
-    -c protocol.file.allow=never \
-    "$@"
-}
-
-run_backend_checkstyle_probe() {
-  echo "Running backend Checkstyle probe before creating the Codex patch."
-  if ! run_sanitized ./gradlew --no-daemon \
-    checkstyleMain \
-    checkstyleTest \
-    checkstyleTestCommon \
-    checkstyleIntegrationTest \
-    checkstyleFunctionalTest \
-    checkstyleSmokeTest; then
-    echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure and trigger the repair loop."
-  fi
-}
-
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-prepare_codex_home
+mkdir -p "${artifact_dir}"
+schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
+exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
 
 branch_slug="$(
   python3 -I - <<'PY'
@@ -148,7 +43,7 @@ PY
 )"
 branch_name="codex/${branch_slug}-${run_id}-${run_attempt}"
 
-PROMPT_PATH="${prompt_path}" PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
+PROMPT_PATH="${prompt_path}" python3 -I - <<'PY'
 import os
 from pathlib import Path
 
@@ -190,84 +85,14 @@ Description:
 """
 
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
-
-pr_body = f"""### Jira link
-
-See [{payload["issueKey"]}]({payload["issueUrl"]})
-
-### Change description
-
-Implements Jira issue {payload["issueKey"]}: {payload["summary"]}
-
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context. See the Codex final message below for the implementation summary.
-
-### Testing done
-
-Codex may run lightweight targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
-
-### Security Vulnerability Assessment ###
-
-**CVE Suppression:** Are there any CVEs present in the codebase (either newly introduced or pre-existing) that are being intentionally suppressed or ignored by this commit?
-  * [ ] Yes
-  * [x] No
-
-### Checklist
-
-- [x] commit messages are meaningful and follow good commit message guidelines
-- [ ] README and other documentation has been updated / added (if needed)
-- [ ] tests have been updated / new tests has been added (if needed)
-- [ ] Does this PR introduce a breaking change
-"""
-
-Path(os.environ["PR_BODY_PATH"]).write_text(pr_body, encoding="utf-8")
 PY
 
-echo "Running Codex for ${ISSUE_KEY}; publish will use ${branch_name}"
-run_codex_exec_with_usage "jira-generate" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --sandbox workspace-write \
-  --ephemeral \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}"
-
-if [[ ! -s "${final_message_path}" ]]; then
-  echo "Codex completed without writing a final message." >"${final_message_path}"
-fi
-
-{
-  echo
-  echo "## Codex Final Message"
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >>"${pr_body_path}"
-
-echo "Applying Java formatting before creating the Codex patch."
-run_sanitized ./gradlew --no-daemon spotlessApply
-run_backend_checkstyle_probe
-
-if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
-  echo "Codex did not produce any committable changes." >&2
-  exit 1
-fi
-
-git_sanitized add -A
-if git_sanitized diff --cached --quiet; then
-  echo "Codex produced changes, but none were staged for patch output." >&2
-  exit 1
-fi
-
-git_sanitized diff --cached --binary >"${patch_path}"
-
-{
-  echo "branch_name=${branch_name}"
-  echo "has_changes=true"
-} >"${metadata_path}"
-
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" full)"
+prepare_codex_action_runtime "${PWD}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
+    echo "prompt_path=${prompt_path}"
+    echo "schema_path=${schema_path}"
     echo "branch_name=${branch_name}"
-    echo "has_changes=true"
   } >>"${GITHUB_OUTPUT}"
 fi

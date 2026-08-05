@@ -21,55 +21,15 @@ required_env "LEGACY_SNAPSHOT_DIR"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-parity-${run_id}-${run_attempt}"
-runner_home="${HOME:-/home/runner}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
 output_dir="${OUTPUT_DIR}"
 legacy_snapshot_dir="${LEGACY_SNAPSHOT_DIR}"
 prompt_path="${artifact_dir}/codex-parity-prompt.md"
 schema_path="${artifact_dir}/codex-parity-schema.json"
 final_message_path="${output_dir}/codex-parity-final.json"
-report_path="${output_dir}/parity-report.json"
-comment_path="${output_dir}/parity-comment.md"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
-
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-
-  if [[ -f "${runner_home}/.codex/auth.json" ]]; then
-    cp "${runner_home}/.codex/auth.json" "${codex_home}/.codex/auth.json"
-    chmod 600 "${codex_home}/.codex/auth.json"
-  fi
-
-  if [[ -f "${runner_home}/.codex/config.toml" ]]; then
-    cp "${runner_home}/.codex/config.toml" "${codex_home}/.codex/config.toml"
-    chmod 600 "${codex_home}/.codex/config.toml"
-  fi
-}
-
-run_codex() {
-  env -i \
-    "HOME=${codex_home}" \
-    "CODEX_HOME=${codex_home}/.codex" \
-    "XDG_CACHE_HOME=${codex_home}/.cache" \
-    "XDG_CONFIG_HOME=${codex_home}/.config" \
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
-    "SHELL=${SHELL:-/bin/bash}" \
-    "USER=${USER:-runner}" \
-    "LOGNAME=${LOGNAME:-${USER:-runner}}" \
-    "LANG=${LANG:-C.UTF-8}" \
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
-    "TERM=${TERM:-xterm}" \
-    "TMPDIR=${codex_tmp}" \
-    "RUNNER_TEMP=${codex_runner_temp}" \
-    "$@"
-}
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
 
 snapshot_manifest_path="${legacy_snapshot_dir}/manifest.json"
 if [[ ! -s "${snapshot_manifest_path}" ]]; then
@@ -78,7 +38,6 @@ if [[ ! -s "${snapshot_manifest_path}" ]]; then
 fi
 
 mkdir -p "${artifact_dir}" "${output_dir}"
-prepare_codex_home
 
 snapshot_id="$(
   SNAPSHOT_MANIFEST_PATH="${snapshot_manifest_path}" python3 - <<'PY'
@@ -87,13 +46,14 @@ import os
 from pathlib import Path
 
 manifest = json.loads(Path(os.environ["SNAPSHOT_MANIFEST_PATH"]).read_text(encoding="utf-8"))
-print(
+value = (
     manifest.get("snapshotId")
     or manifest.get("id")
     or manifest.get("snapshotTimestamp")
     or manifest.get("createdAt")
     or "unknown-snapshot"
 )
+print(str(value).replace("\r", " ").replace("\n", " ")[:200])
 PY
 )"
 
@@ -253,195 +213,15 @@ Return only JSON matching the supplied schema.
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-echo "Running report-only Apps Reg legacy parity check for ${ISSUE_KEY}"
-codex_status=0
-run_codex_exec_with_usage "legacy-parity-check" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --add-dir "${legacy_snapshot_dir}" \
-  --sandbox read-only \
-  --ephemeral \
-  --output-schema "${schema_path}" \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}" || codex_status=$?
+echo "Preparing report-only Apps Reg legacy parity check for ${ISSUE_KEY}"
+prepare_codex_action_runtime "${PWD}" "${artifact_dir}" "${output_dir}" "${legacy_snapshot_dir}"
 
-if [[ "${codex_status}" -ne 0 ]]; then
-  echo "::warning::Codex parity check exited with status ${codex_status}; writing UNCERTAIN report for Jira."
-fi
-
-SNAPSHOT_ID="${snapshot_id}" \
-CODEX_EXIT_STATUS="${codex_status}" \
-FINAL_MESSAGE_PATH="${final_message_path}" \
-REPORT_PATH="${report_path}" \
-COMMENT_PATH="${comment_path}" \
-python3 - <<'PY'
-import json
-import os
-import re
-from pathlib import Path
-
-valid_statuses = {"MATCHES_LEGACY", "GAP_FOUND", "UNCERTAIN"}
-valid_confidence = {"high", "medium", "low"}
-codex_exit_status = int(os.environ.get("CODEX_EXIT_STATUS", "0"))
-
-sensitive_patterns = [
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in [
-        r"\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|secret|password|passwd|authorization)\b\s*[:=]",
-        r"\bbearer\s+[a-z0-9._~+/=-]{12,}",
-        r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
-        r"\bAKIA[0-9A-Z]{16}\b",
-        r"\bghp_[A-Za-z0-9_]{20,}\b",
-        r"\bgithub_pat_[A-Za-z0-9_]{20,}\b",
-        r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.",
-        r"\b[A-Z][A-Z0-9_]{2,}\s*=",
-    ]
-]
-
-code_patterns = [
-    re.compile(pattern, re.IGNORECASE)
-    for pattern in [
-        r"```",
-        r"\b(?:if|for|while|switch|catch)\s*\(",
-        r"\b(?:public|private|protected|class|interface|enum|function|const|let|var|return|throw|new)\b.*[{};]",
-        r"(?:=>|->|==|!=|&&|\|\|)",
-        r"[A-Za-z_][A-Za-z0-9_]*\([^)]*\)\s*[.{;]",
-    ]
-]
-
-
-def coerce_string(value, limit):
-    text = str(value or "").replace("\r", " ").replace("\n", " ").strip()
-    text = re.sub(r"\s+", " ", text)
-    return text[:limit]
-
-
-def contains_blocked_content(text):
-    if not text:
-        return False
-    return any(pattern.search(text) for pattern in sensitive_patterns + code_patterns)
-
-
-def safe_string(value, limit, fallback):
-    text = coerce_string(value, limit)
-    if contains_blocked_content(text):
-        return fallback
-    return text
-
-
-def safe_array(value, limit, item_limit, fallback):
-    if not isinstance(value, list):
-        return []
-    items = []
-    for item in value[:limit]:
-        text = coerce_string(item, item_limit)
-        if not text or contains_blocked_content(text):
-            continue
-        items.append(text)
-    if value and not items:
-        return [fallback]
-    return items
-
-
-def parse_final_message(path):
-    text = Path(path).read_text(encoding="utf-8", errors="replace").strip()
-    if not text:
-        return {}
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, flags=re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
-        raise
-
-
-if codex_exit_status != 0:
-    raw = {
-        "status": "UNCERTAIN",
-        "confidence": "low",
-        "summary": f"Codex parity check failed before producing a trusted result. Exit status: {codex_exit_status}.",
-        "legacyEvidence": [],
-        "modernEvidence": [],
-        "gaps": ["Parity workflow needs manual review because Codex did not complete successfully."],
-        "recommendedNextStep": "Inspect the GitHub Actions run logs and rerun the parity check."
-    }
-else:
-    try:
-        raw = parse_final_message(os.environ["FINAL_MESSAGE_PATH"])
-    except Exception as error:
-        raw = {
-            "status": "UNCERTAIN",
-            "confidence": "low",
-            "summary": f"Codex parity report could not be parsed: {error}",
-            "legacyEvidence": [],
-            "modernEvidence": [],
-            "gaps": ["Parity workflow needs manual review because the Codex output was not valid JSON."],
-            "recommendedNextStep": "Inspect the GitHub Actions run logs and rerun the parity check."
-        }
-
-status = raw.get("status") if raw.get("status") in valid_statuses else "UNCERTAIN"
-confidence = raw.get("confidence") if raw.get("confidence") in valid_confidence else "low"
-
-report = {
-    "issueKey": os.environ.get("ISSUE_KEY", ""),
-    "issueUrl": os.environ.get("ISSUE_URL", ""),
-    "repository": os.environ.get("GITHUB_REPOSITORY", ""),
-    "status": status,
-    "confidence": confidence,
-    "summary": safe_string(raw.get("summary"), 900, "Parity summary was suppressed because it contained unsafe content."),
-    "runUrl": f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}",
-    "snapshotId": os.environ["SNAPSHOT_ID"],
-    "legacyEvidence": safe_array(
-        raw.get("legacyEvidence"),
-        10,
-        240,
-        "Generated legacy evidence was suppressed because it contained unsafe content."
-    ),
-    "modernEvidence": safe_array(
-        raw.get("modernEvidence"),
-        10,
-        240,
-        "Generated Jira ticket evidence was suppressed because it contained unsafe content."
-    ),
-    "gaps": safe_array(raw.get("gaps"), 10, 320, "Generated gap details were suppressed because they contained unsafe content."),
-    "recommendedNextStep": safe_string(
-        raw.get("recommendedNextStep"),
-        500,
-        "Review the Jira ticket and GitHub Actions run manually."
-    ),
-}
-
-Path(os.environ["REPORT_PATH"]).write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
-
-lines = [
-    "## Apps Reg legacy parity check",
-    "",
-    f"Result: {report['status']}",
-    f"Confidence: {report['confidence']}",
-    f"Snapshot: {report['snapshotId']}",
-    "",
-    report["summary"] or "No summary provided.",
-    "",
-    "Legacy evidence:",
-]
-lines.extend(f"- {item}" for item in report["legacyEvidence"] or ["No legacy evidence identified."])
-lines.append("")
-lines.append("Jira ticket evidence:")
-lines.extend(f"- {item}" for item in report["modernEvidence"] or ["No Jira ticket evidence identified."])
-lines.append("")
-lines.append("Gaps:")
-lines.extend(f"- {item}" for item in report["gaps"] or ["No gaps listed."])
-lines.append("")
-lines.append(f"Recommended next step: {report['recommendedNextStep'] or 'Manual review.'}")
-lines.append(f"Run: {report['runUrl']}")
-
-Path(os.environ["COMMENT_PATH"]).write_text("\n".join(lines) + "\n", encoding="utf-8")
-PY
-
-echo "Parity report written to ${report_path}"
-
-if [[ "${codex_status}" -ne 0 ]]; then
-  exit "${codex_status}"
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+  {
+    echo "prompt_path=${prompt_path}"
+    echo "schema_path=${schema_path}"
+    echo "final_message_path=${final_message_path}"
+    echo "legacy_snapshot_dir=${legacy_snapshot_dir}"
+    echo "snapshot_id=${snapshot_id}"
+  } >>"${GITHUB_OUTPUT}"
 fi

@@ -185,7 +185,7 @@ jobs:
             echo "EOF"
           } >>"$GITHUB_OUTPUT"
 
-  codex-conflict-generate:
+  codex-conflict-generate-action:
     needs: detect-conflicted-pr
     if: needs.detect-conflicted-pr.outputs.should_run == 'true'
     runs-on: codex-pilot-azure-aks
@@ -194,9 +194,11 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
+    outputs:
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
       HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
       BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
@@ -212,15 +214,73 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Capture trusted checkout SHA
+        id: trusted
+        run: echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Run Codex and create conflict-resolution patch
+      - name: Prepare conflict-resolution prompt
+        id: prepare
         env:
-          OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
+          GH_TOKEN: ${{ github.token }}
         run: ./.github/scripts/codex-merge-conflict-implement.sh
+
+      - name: Run Codex conflict resolution
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  codex-conflict-generate:
+    needs: [detect-conflicted-pr, codex-conflict-generate-action]
+    if: needs.detect-conflicted-pr.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
+      HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
+      BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
+      HEAD_SHA: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+      BASE_SHA: ${{ needs.detect-conflicted-pr.outputs.base_sha }}
+      CONFLICTED_FILES: ${{ needs.detect-conflicted-pr.outputs.conflicted_files }}
+
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-conflict-generate-action.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Confirm trusted checkout SHA
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-conflict-generate-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
+
+      - name: Materialise conflict-resolution patch
+        env:
+          CODEX_RESULT: ${{ needs.codex-conflict-generate-action.outputs.codex_result }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
+        run: ./.github/scripts/codex-merge-conflict-collect.sh
 
       - name: Upload Codex conflict-resolution output
         uses: actions/upload-artifact@v7
@@ -254,7 +314,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -299,7 +359,7 @@ jobs:
           retention-days: 1
 
   publish-conflict-resolution:
-    needs: [detect-conflicted-pr, verify-conflict-resolution]
+    needs: [detect-conflicted-pr, codex-conflict-generate, verify-conflict-resolution]
     if: needs.detect-conflicted-pr.outputs.should_run == 'true' && needs.verify-conflict-resolution.outputs.passed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -320,7 +380,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
