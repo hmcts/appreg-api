@@ -202,6 +202,10 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
   unless notify_job.fetch("needs", "") == "parity-check"
     errors << "#{path}:parity-notify must depend on parity-check"
   end
+  expected_notify_condition = "${{ always() && inputs.workflowType == 'parity-check' && needs.parity-check.outputs.trusted_sha != '' }}"
+  unless notify_job.fetch("if", "") == expected_notify_condition
+    errors << "#{path}:parity-notify must require a non-empty trusted SHA before checking out repository code"
+  end
   unless notify_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
     errors << "#{path}:parity-notify must own the Jira notification secret"
   end

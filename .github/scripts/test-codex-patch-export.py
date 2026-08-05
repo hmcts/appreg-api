@@ -207,6 +207,42 @@ class CodexPatchExportTest(unittest.TestCase):
         self.assertEqual((target / "conflict.txt").read_text(encoding="utf-8"), "resolved\n")
         self.assertEqual((target / "unrelated.txt").read_text(encoding="utf-8"), "unchanged\n")
 
+    def test_scoped_export_treats_metacharacter_path_as_literal(self) -> None:
+        source = self.root / "literal-source"
+        target = self.root / "literal-target"
+        initialise_repository(source)
+        (source / "literal[1].txt").write_text("allowed old\n", encoding="utf-8")
+        (source / "literal1.txt").write_text("decoy old\n", encoding="utf-8")
+        git(source, "add", "-A")
+        git(source, "commit", "--quiet", "-m", "base")
+        git(self.root, "clone", "--quiet", str(source), str(target))
+
+        (source / "literal[1].txt").write_text("allowed new\n", encoding="utf-8")
+        (source / "literal1.txt").write_text("decoy new\n", encoding="utf-8")
+        paths_file = self.root / "literal-path.txt"
+        paths_file.write_text("literal[1].txt\n", encoding="utf-8")
+
+        git_dir = source / ".git"
+        before = git_metadata_snapshot(git_dir)
+        modes = make_tree_read_only(git_dir)
+        try:
+            completed = self.export(source, paths_file=paths_file)
+        finally:
+            restore_modes(modes)
+
+        result, patch = decode_export(completed)
+        self.assertTrue(result["has_changes"])
+        self.assertIn(b"literal[1].txt", patch)
+        self.assertNotIn(b"literal1.txt", patch)
+        self.assertEqual(git_metadata_snapshot(git_dir), before)
+
+        patch_path = self.root / "literal.patch"
+        patch_path.write_bytes(patch)
+        git(target, "apply", "--check", "--binary", str(patch_path))
+        git(target, "apply", "--binary", str(patch_path))
+        self.assertEqual((target / "literal[1].txt").read_text(encoding="utf-8"), "allowed new\n")
+        self.assertEqual((target / "literal1.txt").read_text(encoding="utf-8"), "decoy old\n")
+
     def test_no_change_export(self) -> None:
         source = self.root / "clean"
         initialise_repository(source)

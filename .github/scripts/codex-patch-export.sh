@@ -87,7 +87,7 @@ if [[ -n "${paths_file}" ]]; then
   while IFS= read -r path || [[ -n "${path}" ]]; do
     [[ -n "${path}" ]] || continue
     validate_path "${path}"
-    pathspecs+=("${path}")
+    pathspecs+=(":(top,literal)${path}")
   done <"${paths_file}"
   if [[ ${#pathspecs[@]} -eq 0 ]]; then
     echo "Patch scope file contains no paths: ${paths_file}" >&2
