@@ -29,14 +29,15 @@ on:
         type: string
 
 jobs:
-  codex-generate:
+  codex-generate-action:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.codex.outputs.branch_name }}
-      has_changes: ${{ steps.codex.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -54,16 +55,74 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Capture trusted checkout SHA
+        id: trusted
+        run: echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Run Codex and create patch artifact
+      - name: Prepare Codex prompt
+        id: prepare
+        run: ./.github/scripts/codex-jira-implement.sh
+
+      - name: Run Codex
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: ultra
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  codex-generate:
+    needs: codex-generate-action
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.codex.outputs.branch_name }}
+      has_changes: ${{ steps.codex.outputs.has_changes }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate-action.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Confirm trusted checkout SHA
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-generate-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
+
+      - name: Materialise Codex patch result
         id: codex
         env:
+          CODEX_RESULT: ${{ needs.codex-generate-action.outputs.codex_result }}
+          CODEX_OPERATION: jira-generate
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-        run: ./.github/scripts/codex-jira-implement.sh
+          BRANCH_NAME: ${{ needs.codex-generate-action.outputs.branch_name }}
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload Codex output
         uses: actions/upload-artifact@v7
@@ -99,7 +158,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -155,7 +214,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-codex-output-1:
+  repair-codex-output-1-action:
     needs: [codex-generate, verify-codex-output]
     if: needs.codex-generate.outputs.has_changes == 'true' && needs.verify-codex-output.outputs.passed != 'true'
     runs-on: codex-pilot-azure-aks
@@ -163,8 +222,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -183,13 +242,11 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -204,13 +261,71 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Repair Codex patch
-        id: repair
+      - name: Prepare Codex repair prompt
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: ultra
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  repair-codex-output-1:
+    needs: [codex-generate, verify-codex-output, repair-codex-output-1-action]
+    if: needs.verify-codex-output.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
+
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
+        id: repair
+        env:
+          CODEX_RESULT: ${{ needs.repair-codex-output-1-action.outputs.codex_result }}
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          BRANCH_NAME: ${{ needs.repair-codex-output-1-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '1'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -246,7 +361,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -302,7 +417,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-codex-output-2:
+  repair-codex-output-2-action:
     needs: [codex-generate, verify-codex-output-1]
     if: needs.verify-codex-output-1.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
@@ -310,8 +425,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -330,13 +445,11 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -351,13 +464,71 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Repair Codex patch
-        id: repair
+      - name: Prepare Codex repair prompt
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: ultra
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  repair-codex-output-2:
+    needs: [codex-generate, verify-codex-output-1, repair-codex-output-2-action]
+    if: needs.verify-codex-output-1.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-1.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
+
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
+        id: repair
+        env:
+          CODEX_RESULT: ${{ needs.repair-codex-output-2-action.outputs.codex_result }}
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          BRANCH_NAME: ${{ needs.repair-codex-output-2-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '2'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -393,7 +564,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -449,7 +620,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-codex-output-3:
+  repair-codex-output-3-action:
     needs: [codex-generate, verify-codex-output-2]
     if: needs.verify-codex-output-2.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
@@ -457,8 +628,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -477,13 +648,11 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -498,13 +667,71 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Repair Codex patch
-        id: repair
+      - name: Prepare Codex repair prompt
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: ultra
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  repair-codex-output-3:
+    needs: [codex-generate, verify-codex-output-2, repair-codex-output-3-action]
+    if: needs.verify-codex-output-2.outputs.passed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-2.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
+
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
+        id: repair
+        env:
+          CODEX_RESULT: ${{ needs.repair-codex-output-3-action.outputs.codex_result }}
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          BRANCH_NAME: ${{ needs.repair-codex-output-3-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '3'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -540,7 +767,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -641,7 +868,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -726,7 +953,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -782,7 +1009,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  repair-published-pr-1:
+  repair-published-pr-1-action:
     needs: [codex-generate, publish-pr, verify-published-pr]
     if: always() && needs.verify-published-pr.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
@@ -790,8 +1017,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.repair.outputs.branch_name }}
-      has_changes: ${{ steps.repair.outputs.has_changes }}
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       ISSUE_KEY: ${{ inputs.issueKey }}
@@ -810,13 +1037,11 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify runner toolchain and Codex auth
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Download Codex output to repair
@@ -831,13 +1056,71 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
-      - name: Repair Codex patch from PR verification
-        id: repair
+      - name: Prepare Codex repair prompt from PR verification
+        id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
-          OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: ./.github/scripts/codex-jira-repair.sh
+
+      - name: Run Codex repair
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: ultra
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  repair-published-pr-1:
+    needs: [codex-generate, verify-published-pr, repair-published-pr-1-action]
+    if: always() && needs.verify-published-pr.outputs.passed == 'false' && needs.repair-published-pr-1-action.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.repair.outputs.branch_name }}
+      has_changes: ${{ steps.repair.outputs.has_changes }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      CODEX_INPUT_ARTIFACT: ${{ needs.verify-published-pr.outputs.output_artifact }}
+      CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
+
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Download Codex output being repaired
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CODEX_INPUT_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-input
+
+      - name: Materialise repaired Codex patch
+        id: repair
+        env:
+          CODEX_RESULT: ${{ needs.repair-published-pr-1-action.outputs.codex_result }}
+          CODEX_OPERATION: jira-repair
+          INPUT_DIR: ${{ runner.temp }}/codex-input
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          BRANCH_NAME: ${{ needs.repair-published-pr-1-action.outputs.branch_name }}
+          REPAIR_ATTEMPT: '1'
+        run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload repaired Codex output
         uses: actions/upload-artifact@v7
@@ -880,7 +1163,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -968,7 +1251,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -1003,7 +1286,7 @@ jobs:
         run: "$RUNNER_TEMP/codex-jira-publish.sh"
 
   verify-published-pr-1:
-    needs: [publish-pr, publish-published-pr-repair-1]
+    needs: [codex-generate, publish-pr, publish-published-pr-repair-1]
     if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -1033,7 +1316,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.DEFAULT_BRANCH }}
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
 

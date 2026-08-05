@@ -17,86 +17,31 @@ required_env "ISSUE_DESCRIPTION"
 required_env "ISSUE_URL"
 required_env "INPUT_DIR"
 required_env "FAILURE_DIR"
-required_env "OUTPUT_DIR"
 required_env "REPAIR_ATTEMPT"
 
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
 artifact_dir="${RUNNER_TEMP:-/tmp}/codex-jira-repair-${run_id}-${run_attempt}-${REPAIR_ATTEMPT}"
-runner_home="${HOME:-/home/runner}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
 sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
 input_dir="${INPUT_DIR}"
 failure_dir="${FAILURE_DIR}"
-output_dir="${OUTPUT_DIR}"
 input_metadata_path="${input_dir}/metadata.env"
 input_patch_path="${input_dir}/changes.patch"
-input_pr_body_path="${input_dir}/codex-pr-body.md"
 failure_log_path="${failure_dir}/verification-failure.log"
 failure_summary_path="${failure_dir}/verification-failure-summary.log"
 prompt_path="${artifact_dir}/codex-repair-prompt.md"
-final_message_path="${output_dir}/codex-repair-${REPAIR_ATTEMPT}-final-message.md"
-pr_body_path="${output_dir}/codex-pr-body.md"
-patch_path="${output_dir}/changes.patch"
-metadata_path="${output_dir}/metadata.env"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
+exporter_source="${script_dir}/codex-patch-export.sh"
 
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
 
 metadata_value() {
   local key="$1"
   awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "${input_metadata_path}"
-}
-
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
-
-  if [[ -f "${runner_home}/.codex/auth.json" ]]; then
-    cp "${runner_home}/.codex/auth.json" "${codex_home}/.codex/auth.json"
-    chmod 600 "${codex_home}/.codex/auth.json"
-  fi
-
-  if [[ -f "${runner_home}/.codex/config.toml" ]]; then
-    cp "${runner_home}/.codex/config.toml" "${codex_home}/.codex/config.toml"
-    chmod 600 "${codex_home}/.codex/config.toml"
-  fi
-}
-
-run_codex() {
-  local codex_env=(
-    env -i
-    "HOME=${codex_home}"
-    "CODEX_HOME=${codex_home}/.codex"
-    "XDG_CACHE_HOME=${codex_home}/.cache"
-    "XDG_CONFIG_HOME=${codex_home}/.config"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${USER:-runner}"
-    "LOGNAME=${LOGNAME:-${USER:-runner}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${codex_tmp}"
-    "RUNNER_TEMP=${codex_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    codex_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  "${codex_env[@]}" "$@"
 }
 
 run_sanitized() {
@@ -135,21 +80,9 @@ git_sanitized() {
     "$@"
 }
 
-run_backend_checkstyle_probe() {
-  echo "Running backend Checkstyle probe before creating the repaired Codex patch."
-  if ! run_sanitized ./gradlew --no-daemon \
-    checkstyleMain \
-    checkstyleTest \
-    checkstyleTestCommon \
-    checkstyleIntegrationTest \
-    checkstyleFunctionalTest \
-    checkstyleSmokeTest; then
-    echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure and trigger the next repair attempt if available."
-  fi
-}
-
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-prepare_codex_home
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}"
+schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
+exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
 
 if [[ ! -s "${input_metadata_path}" ]]; then
   echo "Missing input metadata: ${input_metadata_path}" >&2
@@ -224,63 +157,13 @@ Trusted verification failure:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" full)"
+prepare_codex_action_runtime "${PWD}"
 echo "Running Codex repair attempt ${REPAIR_ATTEMPT} for ${ISSUE_KEY}; publish will use ${branch_name}"
-run_codex_exec_with_usage "jira-repair-${REPAIR_ATTEMPT}" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --sandbox workspace-write \
-  --ephemeral \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}"
-
-if [[ ! -s "${final_message_path}" ]]; then
-  echo "Codex repair completed without writing a final message." >"${final_message_path}"
-fi
-
-if [[ -s "${input_pr_body_path}" ]]; then
-  cp "${input_pr_body_path}" "${pr_body_path}"
-else
-  {
-    echo "### Jira link"
-    echo
-    echo "See [${ISSUE_KEY}](${ISSUE_URL})"
-  } >"${pr_body_path}"
-fi
-
-{
-  echo
-  echo "## Codex Repair Attempt ${REPAIR_ATTEMPT}"
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >>"${pr_body_path}"
-
-echo "Applying Java formatting before creating the repaired Codex patch."
-run_sanitized ./gradlew --no-daemon spotlessApply
-run_backend_checkstyle_probe
-
-if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
-  echo "Codex repair left no committable changes." >&2
-  exit 1
-fi
-
-git_sanitized add -A
-if git_sanitized diff --cached --quiet; then
-  echo "Codex repair produced no staged patch output." >&2
-  exit 1
-fi
-
-git_sanitized diff --cached --binary >"${patch_path}"
-
-{
-  echo "branch_name=${branch_name}"
-  echo "has_changes=true"
-  echo "repair_attempt=${REPAIR_ATTEMPT}"
-} >"${metadata_path}"
-
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
+    echo "prompt_path=${prompt_path}"
+    echo "schema_path=${schema_path}"
     echo "branch_name=${branch_name}"
-    echo "has_changes=true"
   } >>"${GITHUB_OUTPUT}"
 fi

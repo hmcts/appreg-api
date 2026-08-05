@@ -26,35 +26,32 @@ pr_json_path="${artifact_dir}/pull-request.json"
 review_comments_json_path="${artifact_dir}/review-comments.json"
 prompt_path="${artifact_dir}/codex-review-feedback-prompt.md"
 final_message_path="${output_dir}/codex-final-message.md"
-comment_body_path="${output_dir}/codex-review-comment.md"
-patch_path="${output_dir}/changes.patch"
 metadata_path="${output_dir}/metadata.env"
-runner_home="${HOME:-/home/runner}"
-codex_home="${artifact_dir}/codex-home"
-codex_tmp="${artifact_dir}/codex-tmp"
-codex_runner_temp="${artifact_dir}/codex-runner-temp"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
 sanitized_runner_temp="${artifact_dir}/sanitized-runner-temp"
-usage_events_path="${artifact_dir}/codex-events.jsonl"
-usage_summary_path="${output_dir}/codex-usage-summary.json"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema_source="${script_dir}/../schemas/codex-patch-result.schema.json"
+exporter_source="${script_dir}/codex-patch-export.sh"
 
-# shellcheck source=.github/scripts/codex-usage-metrics.sh
-source "${script_dir}/codex-usage-metrics.sh"
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
 
-prepare_codex_home() {
-  mkdir -p "${codex_home}/.codex" "${codex_home}/.cache" "${codex_home}/.config" "${codex_tmp}" "${codex_runner_temp}"
+skip_codex_action() {
+  local reason="$1"
 
-  if [[ -f "${runner_home}/.codex/auth.json" ]]; then
-    cp "${runner_home}/.codex/auth.json" "${codex_home}/.codex/auth.json"
-    chmod 600 "${codex_home}/.codex/auth.json"
+  echo "Skipping Codex review feedback: ${reason}"
+  {
+    echo "has_changes=false"
+    echo "skip_reason=${reason}"
+  } >"${metadata_path}"
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    {
+      echo "should_run=false"
+      echo "skip_reason=${reason}"
+    } >>"${GITHUB_OUTPUT}"
   fi
-
-  if [[ -f "${runner_home}/.codex/config.toml" ]]; then
-    cp "${runner_home}/.codex/config.toml" "${codex_home}/.codex/config.toml"
-    chmod 600 "${codex_home}/.codex/config.toml"
-  fi
+  exit 0
 }
 
 run_sanitized() {
@@ -83,36 +80,6 @@ run_sanitized() {
   fi
 
   "${sanitized_env[@]}" "$@"
-}
-
-run_codex() {
-  local codex_env=(
-    env -i
-    "HOME=${codex_home}"
-    "CODEX_HOME=${codex_home}/.codex"
-    "XDG_CACHE_HOME=${codex_home}/.cache"
-    "XDG_CONFIG_HOME=${codex_home}/.config"
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
-    "SHELL=${SHELL:-/bin/bash}"
-    "USER=${USER:-runner}"
-    "LOGNAME=${LOGNAME:-${USER:-runner}}"
-    "LANG=${LANG:-C.UTF-8}"
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
-    "TERM=${TERM:-xterm}"
-    "TMPDIR=${codex_tmp}"
-    "RUNNER_TEMP=${codex_runner_temp}"
-    "CI=${CI:-true}"
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
-    "GIT_CONFIG_GLOBAL=/dev/null"
-    "GIT_CONFIG_NOSYSTEM=1"
-    "GIT_TERMINAL_PROMPT=0"
-  )
-
-  if [[ -n "${JAVA_HOME:-}" ]]; then
-    codex_env+=("JAVA_HOME=${JAVA_HOME}")
-  fi
-
-  "${codex_env[@]}" "$@"
 }
 
 git_sanitized() {
@@ -147,7 +114,8 @@ git_read_authenticated() {
 }
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}" "${output_dir}"
-prepare_codex_home
+schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
+exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
 
 python3 - <<'PY' >"${feedback_env_path}"
 import json
@@ -226,12 +194,7 @@ source "${feedback_env_path}"
 set +a
 
 if [[ -n "${SKIP_REASON}" ]]; then
-  echo "Skipping Codex review feedback: ${SKIP_REASON}"
-  {
-    echo "has_changes=false"
-    echo "skip_reason=${SKIP_REASON}"
-  } >"${metadata_path}"
-  exit 0
+  skip_codex_action "${SKIP_REASON}"
 fi
 
 if [[ "${COMMENT_KIND}" == "pull_request_review" && -n "${REVIEW_ID}" ]]; then
@@ -274,12 +237,7 @@ PY
 fi
 
 if [[ -z "${COMMENT_BODY}${REVIEW_COMMENTS}" ]]; then
-  echo "Skipping Codex review feedback: comment body is empty"
-  {
-    echo "has_changes=false"
-    echo "skip_reason=comment body is empty"
-  } >"${metadata_path}"
-  exit 0
+  skip_codex_action "comment body is empty"
 fi
 
 gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" >"${pr_json_path}"
@@ -311,21 +269,11 @@ source "${feedback_env_path}"
 set +a
 
 if [[ "${PR_STATE}" != "open" || "${HEAD_REPO}" != "${GITHUB_REPOSITORY}" || "${HEAD_REF}" != codex/* ]]; then
-  echo "Skipping Codex review feedback: PR is not an open Codex PR in this repository"
-  {
-    echo "has_changes=false"
-    echo "skip_reason=PR is not an open Codex PR in this repository"
-  } >"${metadata_path}"
-  exit 0
+  skip_codex_action "PR is not an open Codex PR in this repository"
 fi
 
 if ! git_read_authenticated ls-remote --exit-code --heads origin "${HEAD_REF}" >/dev/null 2>&1; then
-  echo "Skipping Codex review feedback: branch ${HEAD_REF} no longer exists on origin"
-  {
-    echo "has_changes=false"
-    echo "skip_reason=branch no longer exists"
-  } >"${metadata_path}"
-  exit 0
+  skip_codex_action "branch no longer exists"
 fi
 
 PROMPT_PATH="${prompt_path}" python3 - <<'PY'
@@ -379,65 +327,18 @@ git_sanitized checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
 
 unset GH_TOKEN
 
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" full)"
+prepare_codex_action_runtime "${PWD}"
 echo "Running Codex review feedback for PR #${PR_NUMBER} on ${HEAD_REF}"
-run_codex_exec_with_usage "pr-review-feedback" "${usage_events_path}" "${usage_summary_path}" \
-  run_codex codex exec \
-  --json \
-  --cd "${PWD}" \
-  --sandbox workspace-write \
-  --ephemeral \
-  --output-last-message "${final_message_path}" \
-  - <"${prompt_path}"
-
-if [[ ! -s "${final_message_path}" ]]; then
-  echo "Codex completed without writing a final message." >"${final_message_path}"
-fi
-
-echo "Applying Java formatting before creating the Codex review patch."
-run_sanitized ./gradlew --no-daemon spotlessApply
-echo "Running backend Checkstyle probe before creating the Codex review patch."
-if ! run_sanitized ./gradlew --no-daemon \
-  checkstyleMain \
-  checkstyleTest \
-  checkstyleTestCommon \
-  checkstyleIntegrationTest \
-  checkstyleFunctionalTest \
-  checkstyleSmokeTest; then
-  echo "::warning::Backend Checkstyle probe failed. Trusted verification will capture the failure."
-fi
-
-if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
-    echo "Codex reviewed this feedback but did not produce any committable changes."
-    echo
-    echo "Feedback from @${COMMENT_AUTHOR}: ${COMMENT_URL}"
-    echo
-    echo "Codex final message:"
-    echo
-    sed -n '1,200p' "${final_message_path}"
-  } >"${comment_body_path}"
-  {
-    echo "has_changes=false"
+    echo "should_run=true"
+    echo "prompt_path=${prompt_path}"
+    echo "schema_path=${schema_path}"
     echo "pr_number=${PR_NUMBER}"
     echo "head_ref=${HEAD_REF}"
     echo "base_ref=${BASE_REF}"
-  } >"${metadata_path}"
-  exit 0
+    echo "comment_author=${COMMENT_AUTHOR}"
+    echo "comment_url=${COMMENT_URL}"
+  } >>"${GITHUB_OUTPUT}"
 fi
-
-git_sanitized add -A
-if git_sanitized diff --cached --quiet; then
-  echo "Codex produced changes, but none were staged for patch output." >&2
-  exit 1
-fi
-
-git_sanitized diff --cached --binary >"${patch_path}"
-
-{
-  echo "has_changes=true"
-  echo "pr_number=${PR_NUMBER}"
-  echo "head_ref=${HEAD_REF}"
-  echo "base_ref=${BASE_REF}"
-  echo "comment_author=${COMMENT_AUTHOR}"
-  echo "comment_url=${COMMENT_URL}"
-} >"${metadata_path}"
