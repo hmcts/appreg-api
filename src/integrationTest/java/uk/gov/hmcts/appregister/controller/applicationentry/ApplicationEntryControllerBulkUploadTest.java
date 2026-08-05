@@ -477,7 +477,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                         restAssuredClient, getLocalUrl("jobs/" + acknowledgement.getId()), token);
 
         Assertions.assertEquals(
-                JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
+                JobStatus.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         String jobId = acknowledgement.getId().toString();
 
@@ -597,7 +597,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                         adminToken);
 
         Assertions.assertEquals(
-                JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
+                JobStatus.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         String jobId = acknowledgement.getId().toString();
 
