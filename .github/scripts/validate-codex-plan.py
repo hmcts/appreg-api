@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Validate and normalise the untrusted Codex planning hand-off."""
+"""Validate, normalise, and materialise the untrusted Codex plan hand-off."""
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 MAX_PLAN_BYTES = 32 * 1024
+MAX_ENCODED_PLAN_BYTES = 4 * ((MAX_PLAN_BYTES + 2) // 3)
 EXPECTED_KEYS = {
     "ready_to_implement",
     "problem_analysis",
@@ -55,8 +59,8 @@ def require_string_list(value: Any, field: str, *, max_items: int = 20) -> list[
 
 def validate_path(value: Any, field: str) -> str:
     path_text = require_string(value, field, max_length=500)
-    if "\\" in path_text or "\x00" in path_text:
-        raise PlanValidationError(f"{field} must use a safe repository-relative POSIX path")
+    if "\\" in path_text or "\x00" in path_text or path_text.endswith("/"):
+        raise PlanValidationError(f"{field} must identify one repository-relative file")
     path = PurePosixPath(path_text)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
         raise PlanValidationError(f"{field} must be a safe repository-relative path")
@@ -71,15 +75,20 @@ def validate_steps(value: Any) -> list[dict[str, str]]:
     if len(value) > 30:
         raise PlanValidationError("implementation_steps contains more than 30 items")
 
+    paths: set[str] = set()
     steps: list[dict[str, str]] = []
     for index, item in enumerate(value):
         if not isinstance(item, dict) or set(item) != {"path", "change", "reason"}:
             raise PlanValidationError(
                 f"implementation_steps[{index}] must contain only path, change, and reason"
             )
+        path = validate_path(item["path"], f"implementation_steps[{index}].path")
+        if path in paths:
+            raise PlanValidationError(f"implementation_steps contains duplicate path: {path}")
+        paths.add(path)
         steps.append(
             {
-                "path": validate_path(item["path"], f"implementation_steps[{index}].path"),
+                "path": path,
                 "change": require_string(
                     item["change"], f"implementation_steps[{index}].change", max_length=3000
                 ),
@@ -150,61 +159,23 @@ def validate_plan(raw: str) -> dict[str, Any]:
     return plan
 
 
-def render_markdown(plan: dict[str, Any]) -> str:
-    def bullets(values: list[str]) -> str:
-        return "\n".join(f"- {value}" for value in values) or "- None"
+def canonical_plan_bytes(plan: dict[str, Any]) -> bytes:
+    plan_bytes = (json.dumps(plan, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    if len(plan_bytes) > MAX_PLAN_BYTES:
+        raise PlanValidationError(f"normalised plan exceeds the {MAX_PLAN_BYTES}-byte limit")
+    return plan_bytes
 
-    steps = "\n".join(
-        f"{index}. `{step['path']}`: {step['change']}  \n   Reason: {step['reason']}"
-        for index, step in enumerate(plan["implementation_steps"], start=1)
-    ) or "No implementation steps proposed."
 
-    return f"""### Planning decision
+def write_plan_bundle(output_dir: Path, plan: dict[str, Any], plan_bytes: bytes) -> str:
+    plan_sha256 = hashlib.sha256(plan_bytes).hexdigest()
+    allowed_paths = [step["path"] for step in plan["implementation_steps"]]
+    allowed_paths_bytes = (("\n".join(allowed_paths) + "\n") if allowed_paths else "").encode("utf-8")
 
-- Ready to implement: **{str(plan['ready_to_implement']).lower()}**
-- Risk level: **{plan['risk_level']}**
-- Cross-system change: **{str(plan['cross_system_change']).lower()}**
-
-### Problem analysis
-
-{plan['problem_analysis']}
-
-### Root cause
-
-{plan['root_cause']}
-
-### Scope decision
-
-{plan['scope_decision']}
-
-### Alternatives considered
-
-{bullets(plan['alternatives_considered'])}
-
-### Implementation steps
-
-{steps}
-
-### Tests required
-
-{bullets(plan['tests_required'])}
-
-### Acceptance criteria
-
-{bullets(plan['acceptance_criteria'])}
-
-### Risks
-
-{bullets(plan['risks'])}
-
-### Assumptions
-
-{bullets(plan['assumptions'])}
-
-### Blockers
-
-{bullets(plan['blockers'])}
-"""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "plan.json").write_bytes(plan_bytes)
+    (output_dir / "plan.sha256").write_text(f"{plan_sha256}\n", encoding="ascii")
+    (output_dir / "allowed-paths.txt").write_bytes(allowed_paths_bytes)
+    return plan_sha256
 
 
 def write_output(name: str, value: str) -> None:
@@ -214,7 +185,7 @@ def write_output(name: str, value: str) -> None:
             output.write(f"{name}={value}\n")
 
 
-def main() -> int:
+def validate_action_result() -> int:
     raw = os.environ.get("CODEX_PLAN_RESULT", "")
     output_dir_value = os.environ.get("OUTPUT_DIR", "")
     if not raw or not output_dir_value:
@@ -223,24 +194,67 @@ def main() -> int:
 
     try:
         plan = validate_plan(raw)
+        plan_bytes = canonical_plan_bytes(plan)
     except PlanValidationError as exc:
         print(f"Invalid Codex plan: {exc}", file=sys.stderr)
         return 1
 
-    output_dir = Path(output_dir_value)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    plan_bytes = (json.dumps(plan, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    plan_sha256 = hashlib.sha256(plan_bytes).hexdigest()
-    (output_dir / "plan.json").write_bytes(plan_bytes)
-    (output_dir / "plan.md").write_text(render_markdown(plan), encoding="utf-8")
-    (output_dir / "plan.sha256").write_text(f"{plan_sha256}\n", encoding="ascii")
-
-    requires_approval = plan["risk_level"] == "high" or plan["cross_system_change"]
+    plan_sha256 = write_plan_bundle(Path(output_dir_value), plan, plan_bytes)
     write_output("ready_to_implement", str(plan["ready_to_implement"]).lower())
-    write_output("requires_approval", str(requires_approval).lower())
-    write_output("risk_level", plan["risk_level"])
+    write_output("approval_required", str(plan["ready_to_implement"]).lower())
     write_output("plan_sha256", plan_sha256)
+    write_output("plan_payload", base64.b64encode(plan_bytes).decode("ascii"))
+    write_output("planned_path_count", str(len(plan["implementation_steps"])))
     return 0
+
+
+def materialize_job_output() -> int:
+    encoded = os.environ.get("CODEX_PLAN_PAYLOAD", "")
+    expected_sha = os.environ.get("EXPECTED_PLAN_SHA", "").strip()
+    output_dir_value = os.environ.get("OUTPUT_DIR", "")
+    if not encoded or not expected_sha or not output_dir_value:
+        print("CODEX_PLAN_PAYLOAD, EXPECTED_PLAN_SHA, and OUTPUT_DIR are required", file=sys.stderr)
+        return 2
+    if len(encoded) > MAX_ENCODED_PLAN_BYTES:
+        print("Invalid Codex plan hand-off: encoded plan exceeds the bounded output limit", file=sys.stderr)
+        return 1
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_sha):
+        print("Invalid Codex plan hand-off: expected plan hash is malformed", file=sys.stderr)
+        return 1
+
+    try:
+        plan_bytes = base64.b64decode(encoded, validate=True)
+        raw = plan_bytes.decode("utf-8")
+        plan = validate_plan(raw)
+        canonical_bytes = canonical_plan_bytes(plan)
+    except (binascii.Error, UnicodeDecodeError, PlanValidationError) as exc:
+        print(f"Invalid Codex plan hand-off: {exc}", file=sys.stderr)
+        return 1
+
+    if not plan_bytes or plan_bytes != canonical_bytes:
+        print("Invalid Codex plan hand-off: plan payload is not canonical", file=sys.stderr)
+        return 1
+    if hashlib.sha256(plan_bytes).hexdigest() != expected_sha:
+        print("Invalid Codex plan hand-off: plan hash does not match validated output", file=sys.stderr)
+        return 1
+    if not plan["ready_to_implement"]:
+        print("Invalid Codex plan hand-off: blocked plan cannot be materialised for implementation", file=sys.stderr)
+        return 1
+
+    actual_sha = write_plan_bundle(Path(output_dir_value), plan, plan_bytes)
+    if actual_sha != expected_sha:
+        print("Invalid Codex plan hand-off: materialised plan hash changed", file=sys.stderr)
+        return 1
+    return 0
+
+
+def main() -> int:
+    if sys.argv[1:] == ["--materialize"]:
+        return materialize_job_output()
+    if sys.argv[1:]:
+        print("Usage: validate-codex-plan.py [--materialize]", file=sys.stderr)
+        return 2
+    return validate_action_result()
 
 
 if __name__ == "__main__":

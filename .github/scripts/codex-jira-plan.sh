@@ -53,7 +53,7 @@ Planning rules:
 - Set `cross_system_change` to true when implementation or coordinated validation is required outside this repository.
 - Use `risk_level` high for security-sensitive, breaking-contract, data-migration, or broad cross-system work.
 - Set `ready_to_implement` to false and list concrete blockers when the ticket or repository does not provide enough evidence for a defensible implementation.
-- For every implementation step, provide a repository-relative path. Never propose changes under `.git` or `.github`.
+- For every implementation step, provide one exact repository-relative file path. Use a separate step for each file; never provide a directory or propose changes under `.git` or `.github`.
 - Include specific tests and observable acceptance criteria. A ready plan must contain at least one alternative, implementation step, test, and acceptance criterion.
 - Return only the JSON object required by the output schema. Do not include a patch or implementation code.
 

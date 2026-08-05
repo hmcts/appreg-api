@@ -51,17 +51,21 @@ validated_codex_plan_path() {
   local plan_dir="$1"
   local plan_path="${plan_dir}/plan.json"
   local sha_path="${plan_dir}/plan.sha256"
+  local allowed_paths_path="${plan_dir}/allowed-paths.txt"
 
-  python3 -I - "${plan_path}" "${sha_path}" <<'PY'
+  python3 -I - "${plan_path}" "${sha_path}" "${allowed_paths_path}" <<'PY'
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
 plan_path = Path(sys.argv[1])
 sha_path = Path(sys.argv[2])
-if not plan_path.is_file() or not sha_path.is_file():
-    raise SystemExit("Missing validated Codex plan artifact")
+allowed_paths_path = Path(sys.argv[3])
+paths = (plan_path, sha_path, allowed_paths_path)
+if any(path.is_symlink() or not path.is_file() for path in paths):
+    raise SystemExit("Missing validated Codex plan hand-off")
 plan_bytes = plan_path.read_bytes()
 if not plan_bytes or len(plan_bytes) > 32 * 1024:
     raise SystemExit("Validated Codex plan is empty or oversized")
@@ -71,6 +75,22 @@ if not re.fullmatch(r"[0-9a-f]{64}", expected):
 actual = hashlib.sha256(plan_bytes).hexdigest()
 if actual != expected:
     raise SystemExit("Validated Codex plan hash does not match plan.json")
+try:
+    plan = json.loads(plan_bytes)
+    steps = plan["implementation_steps"]
+    allowed_paths = [step["path"] for step in steps]
+except (json.JSONDecodeError, KeyError, TypeError) as error:
+    raise SystemExit(f"Validated Codex plan structure is invalid: {error}") from error
+if plan.get("ready_to_implement") is not True or not allowed_paths:
+    raise SystemExit("Validated Codex plan is not ready for scoped implementation")
+if len(set(allowed_paths)) != len(allowed_paths) or not all(
+    isinstance(path, str) and path and "\n" not in path and "\r" not in path
+    for path in allowed_paths
+):
+    raise SystemExit("Validated Codex plan paths are invalid")
+expected_paths = ("\n".join(allowed_paths) + "\n").encode("utf-8")
+if allowed_paths_path.read_bytes() != expected_paths:
+    raise SystemExit("Validated Codex allowed paths do not match plan.json")
 print(plan_path)
 PY
 }
@@ -81,7 +101,7 @@ prepare_codex_patch_contract() {
   local exporter_path="$3"
   local artifact_dir="$4"
   local patch_scope="${5:-full}"
-  local allowed_paths_file="${6:-}"
+  local scoped_paths_file="${6:-}"
 
   if [[ ! -s "${schema_path}" ]]; then
     echo "Missing captured Codex patch schema: ${schema_path}" >&2
@@ -104,20 +124,37 @@ Patch hand-off contract:
 - If the exporter fails, do not fabricate or truncate a patch. Report the failure in `summary` with no patch so the trusted collector fails closed when changes are required.
 EOF
 
-  if [[ "${patch_scope}" == "conflicted-files" ]]; then
-    if [[ ! -s "${allowed_paths_file}" ]]; then
-      echo "Missing captured conflict path scope: ${allowed_paths_file}" >&2
+  case "${patch_scope}" in
+  conflicted-files)
+    if [[ ! -s "${scoped_paths_file}" ]]; then
+      echo "Missing captured conflict path scope: ${scoped_paths_file}" >&2
       return 1
     fi
-    chmod 0444 "${allowed_paths_file}"
+    chmod 0444 "${scoped_paths_file}"
     printf '%s\n' \
-      "- For this conflict-resolution operation, export only the captured conflicted paths by running: \`${exporter_path} --paths-file ${allowed_paths_file}\`." \
+      "- For this conflict-resolution operation, export only the captured conflicted paths by running: \`${exporter_path} --paths-file ${scoped_paths_file}\`." \
       >>"${prompt_path}"
-  else
+    ;;
+  planned-files)
+    if [[ ! -s "${scoped_paths_file}" ]]; then
+      echo "Missing captured implementation plan path scope: ${scoped_paths_file}" >&2
+      return 1
+    fi
+    chmod 0444 "${scoped_paths_file}"
+    printf '%s\n' \
+      "- Export only the exact files approved in the validated plan by running: \`${exporter_path} --paths-file ${scoped_paths_file} --strict-paths\`. The exporter fails if any other repository path changed." \
+      >>"${prompt_path}"
+    ;;
+  full)
     printf '%s\n' \
       "- Export the complete working-tree change by running: \`${exporter_path}\`." \
       >>"${prompt_path}"
-  fi
+    ;;
+  *)
+    echo "Unsupported Codex patch scope: ${patch_scope}" >&2
+    return 1
+    ;;
+  esac
 
   chmod 0444 "${prompt_path}"
   chmod 0755 "${artifact_dir}"

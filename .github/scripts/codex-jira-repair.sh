@@ -40,6 +40,7 @@ exporter_source="${script_dir}/codex-patch-export.sh"
 # shellcheck source=.github/scripts/codex-action-runtime.sh
 source "${script_dir}/codex-action-runtime.sh"
 plan_path="$(validated_codex_plan_path "${PLAN_DIR}")"
+allowed_paths_file="${artifact_dir}/codex-plan-allowed-paths.txt"
 
 metadata_value() {
   local key="$1"
@@ -85,6 +86,7 @@ git_sanitized() {
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${sanitized_runner_temp}"
 schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
 exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
+install -m 0444 "${PLAN_DIR}/allowed-paths.txt" "${allowed_paths_file}"
 
 if [[ ! -s "${input_metadata_path}" ]]; then
   echo "Missing input metadata: ${input_metadata_path}" >&2
@@ -169,7 +171,7 @@ Trusted verification failure:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" full)"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" planned-files "${allowed_paths_file}")"
 prepare_codex_action_runtime "${PWD}"
 echo "Running Codex repair attempt ${REPAIR_ATTEMPT} for ${ISSUE_KEY}; publish will use ${branch_name}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then

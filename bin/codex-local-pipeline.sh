@@ -238,26 +238,66 @@ else
 end
 
 validator = jira_jobs.fetch("validate-codex-plan", {})
-unless validator.fetch("needs", "") == "codex-plan-action" && validator.inspect.include?("codex-jira-plan")
-  errors << "#{jira_path}:validate-codex-plan must validate and publish the planner hand-off"
+validator_outputs = validator.fetch("outputs", {}) || {}
+unless validator.fetch("needs", "") == "codex-plan-action" &&
+       %w[ready_to_implement plan_sha256 plan_payload planned_path_count].all? { |name| validator_outputs.key?(name) }
+  errors << "#{jira_path}:validate-codex-plan must expose the bounded validated plan hand-off"
+end
+
+blocked = jira_jobs.fetch("codex-plan-blocked", {})
+unless blocked.fetch("needs", "") == "validate-codex-plan" &&
+       blocked.fetch("if", "") == "needs.validate-codex-plan.outputs.ready_to_implement == 'false'" &&
+       blocked.inspect.include?("exit 1")
+  errors << "#{jira_path}:codex-plan-blocked must expose a terminal failure for plans that are not ready"
 end
 
 approval = jira_jobs.fetch("approve-codex-plan", {})
 approval_environment = approval.fetch("environment", {})
 approval_environment_name = approval_environment.is_a?(Hash) ? approval_environment.fetch("name", "") : approval_environment
-unless approval_environment_name == "codex-plan-approval"
-  errors << "#{jira_path}:approve-codex-plan must use the protected codex-plan-approval environment"
+approval_steps = approval.fetch("steps", [])
+approval_check = approval_steps.first || {}
+approval_check_source = approval_check.fetch("run", "")
+unless approval_environment_name == "codex-plan-approval" &&
+       approval.fetch("if", "") == "needs.validate-codex-plan.outputs.ready_to_implement == 'true'"
+  errors << "#{jira_path}:every ready plan must use the codex-plan-approval environment"
+end
+unless approval_check_source.include?("/environments/") &&
+       approval_check_source.include?("required_reviewers") &&
+       approval_check_source.include?("protection_rules")
+  errors << "#{jira_path}:approve-codex-plan must first fail closed on missing required-reviewer protection"
+end
+if approval_check_source.match?(/Authorization|GH_TOKEN|github\.token/) ||
+   approval_check.inspect.include?("actions/checkout@")
+  errors << "#{jira_path}:approval environment protection check must not expose a token or checkout code"
 end
 
 implementation = jira_jobs.fetch("codex-generate-action", {})
 implementation_needs = Array(implementation.fetch("needs", []))
 unless %w[codex-plan-action validate-codex-plan approve-codex-plan].all? { |name| implementation_needs.include?(name) }
-  errors << "#{jira_path}:codex-generate-action must wait for plan validation and any required approval"
+  errors << "#{jira_path}:codex-generate-action must wait for validation and mandatory approval"
 end
-unless implementation.inspect.include?("needs.codex-plan-action.outputs.trusted_sha") &&
-       implementation.inspect.include?("PLAN_DIR") &&
-       implementation.inspect.include?("codex-jira-plan")
-  errors << "#{jira_path}:codex-generate-action must use the planned revision and validated plan artefact"
+unless implementation.fetch("if", "").include?("needs.approve-codex-plan.result == 'success'") &&
+       !implementation.fetch("if", "").include?("skipped") &&
+       implementation.inspect.include?("needs.codex-plan-action.outputs.trusted_sha") &&
+       implementation.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+       implementation.inspect.include?("--materialize") &&
+       implementation.inspect.include?("PLAN_DIR")
+  errors << "#{jira_path}:codex-generate-action must use only the approved bounded plan hand-off"
+end
+
+jira_source = File.read(jira_path)
+if jira_source.match?(/^\s+name:\s+codex-jira-plan\s*$/) ||
+   jira_source.include?("plan.md") ||
+   jira_source.match?(/cat .*plan\.json.*GITHUB_STEP_SUMMARY/)
+  errors << "#{jira_path}:raw validated plans must not be published as artifacts or summaries"
+end
+
+generation_collector = jira_jobs.fetch("codex-generate", {})
+unless Array(generation_collector.fetch("needs", [])).include?("validate-codex-plan") &&
+       generation_collector.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+       generation_collector.inspect.include?("--materialize") &&
+       generation_collector.inspect.include?("PLAN_DIR")
+  errors << "#{jira_path}:codex-generate must freshly materialise the validated plan before collecting"
 end
 
 repair_actions = jira_jobs.select { |name, _job| name.match?(/^repair-codex-output-\d+-action$|^repair-published-pr-\d+-action$/) }
@@ -265,8 +305,38 @@ unless repair_actions.length == 4
   errors << "#{jira_path}:expected four Jira repair Action jobs"
 end
 repair_actions.each do |job_name, job|
-  unless job.inspect.include?("codex-jira-plan") && job.inspect.include?("PLAN_DIR")
-    errors << "#{jira_path}:#{job_name} must reuse the original validated plan"
+  unless Array(job.fetch("needs", [])).include?("validate-codex-plan") &&
+         job.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+         job.inspect.include?("--materialize") &&
+         job.inspect.include?("PLAN_DIR")
+    errors << "#{jira_path}:#{job_name} must reuse the original bounded validated plan"
+  end
+end
+
+repair_collectors = jira_jobs.select { |name, _job| name.match?(/^repair-codex-output-\d+$|^repair-published-pr-\d+$/) }
+unless repair_collectors.length == 4
+  errors << "#{jira_path}:expected four fresh Jira repair collector jobs"
+end
+repair_collectors.each do |job_name, job|
+  unless Array(job.fetch("needs", [])).include?("validate-codex-plan") &&
+         job.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+         job.inspect.include?("--materialize") &&
+         job.inspect.include?("PLAN_DIR")
+    errors << "#{jira_path}:#{job_name} must enforce the original plan in the fresh collector"
+  end
+end
+
+jira_collector = File.read(".github/scripts/codex-jira-collect.sh")
+if jira_collector.include?("## Codex Plan") || jira_collector.include?("plan.md")
+  errors << ".github/scripts/codex-jira-collect.sh must not copy raw plan content into public PR bodies"
+end
+unless jira_collector.include?("ALLOWED_PATHS_FILE") && jira_collector.include?("validated_codex_plan_path")
+  errors << ".github/scripts/codex-jira-collect.sh must enforce planned paths in every fresh collector"
+end
+%w[.github/scripts/codex-jira-implement.sh .github/scripts/codex-jira-repair.sh].each do |path|
+  source = File.read(path)
+  unless source.include?("planned-files") && source.include?("allowed-paths.txt")
+    errors << "#{path} must constrain the trusted exporter to exact planned files"
   end
 end
 
@@ -297,8 +367,10 @@ contract_capture_checks.each do |path, untrusted_operation|
 end
 
 runtime = File.read(".github/scripts/codex-action-runtime.sh")
-unless runtime.include?("capture_codex_patch_exporter") && runtime.include?("--paths-file")
-  errors << ".github/scripts/codex-action-runtime.sh must use the captured exporter for full and conflict-scoped patches"
+unless runtime.include?("capture_codex_patch_exporter") &&
+       runtime.include?("--paths-file") &&
+       runtime.include?("--strict-paths")
+  errors << ".github/scripts/codex-action-runtime.sh must use the captured exporter for full and strictly scoped patches"
 end
 if runtime.match?(/git add (?:-A|--)/)
   errors << ".github/scripts/codex-action-runtime.sh must not instruct the workspace-scoped Action to write the real Git index"

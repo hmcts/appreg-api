@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the validated plan artefact hand-off."""
+"""Regression tests for the private validated-plan job-output hand-off."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ index 257cc56..5716ca5 100644
 -old
 +new
 """
+PLAN_DETAIL = "Sensitive Jira-derived planning detail must remain private."
 
 
 class CodexPlanHandoffTest(unittest.TestCase):
@@ -30,12 +31,33 @@ class CodexPlanHandoffTest(unittest.TestCase):
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         plan_dir = Path(temp_dir.name)
-        plan_bytes = b'{"ready_to_implement":true}\n'
+        plan = {
+            "ready_to_implement": True,
+            "problem_analysis": PLAN_DETAIL,
+            "root_cause": "The example is stale.",
+            "scope_decision": "Update only the planned example file.",
+            "risk_level": "low",
+            "cross_system_change": False,
+            "alternatives_considered": ["Leave the stale example unchanged."],
+            "implementation_steps": [
+                {
+                    "path": "example.txt",
+                    "change": "Update the example.",
+                    "reason": "Keep the example current.",
+                }
+            ],
+            "tests_required": ["Inspect the exported patch."],
+            "acceptance_criteria": ["The example contains the new value."],
+            "risks": [],
+            "assumptions": [],
+            "blockers": [],
+        }
+        plan_bytes = (json.dumps(plan, indent=2, sort_keys=True) + "\n").encode("utf-8")
         (plan_dir / "plan.json").write_bytes(plan_bytes)
         (plan_dir / "plan.sha256").write_text(
             f"{hashlib.sha256(plan_bytes).hexdigest()}\n", encoding="ascii"
         )
-        (plan_dir / "plan.md").write_text("### Scope decision\n\nUpdate the shared validator.\n")
+        (plan_dir / "allowed-paths.txt").write_text("example.txt\n", encoding="utf-8")
         return plan_dir
 
     def validate(self, plan_dir: Path) -> subprocess.CompletedProcess[str]:
@@ -53,7 +75,53 @@ class CodexPlanHandoffTest(unittest.TestCase):
             check=False,
         )
 
-    def test_accepts_matching_plan_hash(self) -> None:
+    @staticmethod
+    def codex_result(patch: str) -> str:
+        encoded_patch = base64.b64encode(
+            gzip.compress(patch.encode("utf-8"), mtime=0)
+        ).decode("ascii")
+        return json.dumps(
+            {
+                "has_changes": True,
+                "patch_gzip_base64": encoded_patch,
+                "summary": "Updated the shared validator.",
+                "testing": "Added a focused test.",
+            }
+        )
+
+    def run_collector(
+        self, plan_dir: Path, operation: str, patch: str
+    ) -> tuple[subprocess.CompletedProcess[str], Path]:
+        output_dir = plan_dir / f"output-{operation}"
+        input_dir = plan_dir / "input"
+        input_dir.mkdir(exist_ok=True)
+        (input_dir / "codex-pr-body.md").write_text(
+            "### Planning audit\n\nPrivate plan content is omitted.\n", encoding="utf-8"
+        )
+        environment = {
+            **os.environ,
+            "CODEX_RESULT": self.codex_result(patch),
+            "CODEX_OPERATION": operation,
+            "OUTPUT_DIR": str(output_dir),
+            "BRANCH_NAME": "codex/test-plan",
+            "ISSUE_KEY": "ARCPOC-1",
+            "ISSUE_SUMMARY": "Validate requests",
+            "ISSUE_URL": "https://example.invalid/ARCPOC-1",
+            "PLAN_DIR": str(plan_dir),
+            "INPUT_DIR": str(input_dir),
+            "REPAIR_ATTEMPT": "1",
+        }
+        completed = subprocess.run(
+            ["bash", str(COLLECTOR)],
+            cwd=plan_dir,
+            env=environment,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        return completed, output_dir
+
+    def test_accepts_matching_plan_hash_and_paths(self) -> None:
         plan_dir = self.make_plan()
         result = self.validate(plan_dir)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -73,41 +141,39 @@ class CodexPlanHandoffTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("malformed", result.stderr)
 
-    def test_generation_collector_persists_plan_in_pr_body(self) -> None:
+    def test_rejects_allowed_paths_that_do_not_match_plan(self) -> None:
         plan_dir = self.make_plan()
-        output_dir = plan_dir / "output"
-        encoded_patch = base64.b64encode(
-            gzip.compress(PATCH.encode("utf-8"), mtime=0)
-        ).decode("ascii")
-        result = {
-            "has_changes": True,
-            "patch_gzip_base64": encoded_patch,
-            "summary": "Updated the shared validator.",
-            "testing": "Added a focused test.",
-        }
-        completed = subprocess.run(
-            ["bash", str(COLLECTOR)],
-            cwd=plan_dir,
-            env={
-                **os.environ,
-                "CODEX_RESULT": json.dumps(result),
-                "CODEX_OPERATION": "jira-generate",
-                "OUTPUT_DIR": str(output_dir),
-                "BRANCH_NAME": "codex/test-plan",
-                "ISSUE_KEY": "ARCPOC-1",
-                "ISSUE_SUMMARY": "Validate requests",
-                "ISSUE_URL": "https://example.invalid/ARCPOC-1",
-                "PLAN_DIR": str(plan_dir),
-            },
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        (plan_dir / "allowed-paths.txt").write_text("outside.txt\n", encoding="utf-8")
+        result = self.validate(plan_dir)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("allowed paths do not match", result.stderr)
+
+    def test_generation_collector_omits_raw_plan_from_public_pr_body(self) -> None:
+        plan_dir = self.make_plan()
+        completed, output_dir = self.run_collector(plan_dir, "jira-generate", PATCH)
         self.assertEqual(completed.returncode, 0, completed.stderr)
         pr_body = (output_dir / "codex-pr-body.md").read_text(encoding="utf-8")
-        self.assertIn("## Codex Plan", pr_body)
-        self.assertIn("Update the shared validator.", pr_body)
-        self.assertEqual((output_dir / "plan.json").read_bytes(), (plan_dir / "plan.json").read_bytes())
+        self.assertNotIn("Codex Plan", pr_body)
+        self.assertNotIn(PLAN_DETAIL, pr_body)
+        self.assertNotIn("Updated the shared validator.", pr_body)
+        self.assertIn("Validated plan SHA-256", pr_body)
+        self.assertFalse((output_dir / "plan.json").exists())
+        self.assertFalse((output_dir / "allowed-paths.txt").exists())
+        self.assertFalse((output_dir / "codex-final-message.md").exists())
+
+    def test_generation_rejects_patch_outside_planned_paths(self) -> None:
+        plan_dir = self.make_plan()
+        outside_patch = PATCH.replace("example.txt", "outside.txt")
+        completed, _ = self.run_collector(plan_dir, "jira-generate", outside_patch)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("outside the allowed set: outside.txt", completed.stderr)
+
+    def test_repair_rejects_patch_outside_planned_paths(self) -> None:
+        plan_dir = self.make_plan()
+        outside_patch = PATCH.replace("example.txt", "repair-outside.txt")
+        completed, _ = self.run_collector(plan_dir, "jira-repair", outside_patch)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("outside the allowed set: repair-outside.txt", completed.stderr)
 
 
 if __name__ == "__main__":

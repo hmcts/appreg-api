@@ -10,7 +10,7 @@ Jira Automation
   -> GitHub workflow_dispatch: codex_jira_dispatch.yml
   -> ARC runner scale set: codex-pilot-azure-aks
   -> read-only Codex planning and trusted plan validation
-  -> optional human approval for high-risk or cross-system plans
+  -> mandatory human approval for every ready plan
   -> Codex implementation and isolated verification
   -> Codex creates a codex/* branch and pull request
   -> Azure Function notifies Jira Automation
@@ -74,21 +74,31 @@ alternatives, implementation paths, tests, acceptance criteria, risks,
 assumptions and blockers.
 
 A fresh GitHub-hosted job validates and size-limits the untrusted JSON, rejects
-protected automation paths, and stores a canonical plan plus its SHA-256 hash
-as the `codex-jira-plan` artefact. Tickets that are not ready stop before any
-workspace-writing model invocation. Plans marked high risk or cross-system
-wait on the `codex-plan-approval` GitHub environment.
+protected automation paths, and emits a canonical plan plus its SHA-256 hash as
+a bounded private job output. Raw plan content is not uploaded as an artefact,
+written to a workflow summary, or copied into the generated PR body. Tickets
+that are not ready produce an explicit terminal `codex-plan-blocked` failure
+before any workspace-writing model invocation.
 
-Repository administrators must create that environment and configure required
-reviewers before enabling this workflow. Without required reviewers, GitHub
-does not provide a human approval gate. Reviewers inspect the validator job
-summary or downloaded plan artefact before approving.
+Every ready plan waits on the `codex-plan-approval` GitHub environment. The
+approval job makes an unauthenticated GitHub API request before any checkout and
+fails unless the environment has a `required_reviewers` protection rule. This
+means a missing environment that GitHub auto-creates without protection cannot
+open the implementation path. Repository administrators must create the
+environment and configure required reviewers before enabling this workflow.
 
 Implementation checks out the exact commit inspected by the planner and uses
-`gpt-5.6-sol` with `ultra` effort. The validated plan is included in the
-implementation prompt and the generated PR body. Verification repairs reuse
-the original plan; they stop and request a new planning run when repository
-evidence invalidates the planned architecture or scope.
+`gpt-5.6-sol` with `ultra` effort. The validated plan is included only in the
+implementation and repair prompts. Its exact file paths constrain both the
+captured patch exporter and every fresh trusted collector; any other changed
+path is rejected. Verification repairs reuse the original plan and stop for a
+new planning run when repository evidence invalidates its scope.
+
+The current Azure Function implementation callback accepts only genuine
+PR-created payloads and transitions Jira to Dev Review. It has no blocker or
+failure result contract, so a blocked plan cannot truthfully notify Jira from
+this workflow; the failed job and audit hash are the terminal result until that
+external API and Jira Automation rule are extended.
 
 ## Cost and usage monitoring
 

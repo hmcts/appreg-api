@@ -32,6 +32,8 @@ mkdir -p "${artifact_dir}"
 schema_path="$(capture_codex_patch_schema "${schema_source}" "${artifact_dir}")"
 exporter_path="$(capture_codex_patch_exporter "${exporter_source}" "${artifact_dir}")"
 plan_path="$(validated_codex_plan_path "${PLAN_DIR}")"
+allowed_paths_file="${artifact_dir}/codex-plan-allowed-paths.txt"
+install -m 0444 "${PLAN_DIR}/allowed-paths.txt" "${allowed_paths_file}"
 
 branch_slug="$(
   python3 -I - <<'PY'
@@ -100,7 +102,7 @@ Validated implementation plan:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" full)"
+schema_path="$(prepare_codex_patch_contract "${prompt_path}" "${schema_path}" "${exporter_path}" "${artifact_dir}" planned-files "${allowed_paths_file}")"
 prepare_codex_action_runtime "${PWD}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {

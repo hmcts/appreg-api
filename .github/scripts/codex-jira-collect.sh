@@ -10,12 +10,11 @@ required_env() {
   fi
 }
 
-for name in CODEX_RESULT CODEX_OPERATION OUTPUT_DIR BRANCH_NAME; do
+for name in CODEX_RESULT CODEX_OPERATION OUTPUT_DIR BRANCH_NAME PLAN_DIR; do
   required_env "${name}"
 done
 
 output_dir="${OUTPUT_DIR}"
-final_message_path="${output_dir}/codex-final-message.md"
 pr_body_path="${output_dir}/codex-pr-body.md"
 metadata_path="${output_dir}/metadata.env"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,25 +23,22 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${script_dir}/codex-action-runtime.sh"
 
 mkdir -p "${output_dir}"
-REQUIRE_CHANGES=true python3 "${script_dir}/collect-codex-patch-result.py"
+validated_codex_plan_path "${PLAN_DIR}" >/dev/null
+allowed_paths_file="${PLAN_DIR}/allowed-paths.txt"
+ALLOWED_PATHS_FILE="${allowed_paths_file}" REQUIRE_CHANGES=true \
+  python3 "${script_dir}/collect-codex-patch-result.py"
+unlink "${output_dir}/codex-final-message.md"
 
 case "${CODEX_OPERATION}" in
   jira-generate)
-    for name in ISSUE_KEY ISSUE_SUMMARY ISSUE_URL PLAN_DIR; do
+    for name in ISSUE_KEY ISSUE_SUMMARY ISSUE_URL; do
       required_env "${name}"
     done
-    validated_codex_plan_path "${PLAN_DIR}" >/dev/null
-    for plan_file in plan.json plan.md plan.sha256; do
-      if [[ ! -s "${PLAN_DIR}/${plan_file}" ]]; then
-        echo "Missing validated Codex plan file: ${plan_file}" >&2
-        exit 1
-      fi
-      cp "${PLAN_DIR}/${plan_file}" "${output_dir}/${plan_file}"
-    done
-    PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
+    PR_BODY_PATH="${pr_body_path}" PLAN_SHA_PATH="${PLAN_DIR}/plan.sha256" python3 -I - <<'PY'
 import os
 from pathlib import Path
 
+plan_sha = Path(os.environ["PLAN_SHA_PATH"]).read_text(encoding="ascii").strip()
 body = f"""### Jira link
 
 See [{os.environ['ISSUE_KEY']}]({os.environ['ISSUE_URL']})
@@ -51,11 +47,16 @@ See [{os.environ['ISSUE_KEY']}]({os.environ['ISSUE_URL']})
 
 Implements Jira issue {os.environ['ISSUE_KEY']}: {os.environ['ISSUE_SUMMARY']}
 
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context. See the Codex final message below for the implementation summary.
+Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context.
 
 ### Testing done
 
-Codex may run lightweight targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
+Codex may run lightweight targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the workflow checks for the trusted verification result.
+
+### Planning audit
+
+- Validated plan SHA-256: `{plan_sha}`
+- Human approval: required
 
 ### Security Vulnerability Assessment ###
 
@@ -72,12 +73,6 @@ Codex may run lightweight targeted checks during generation. This workflow verif
 """
 Path(os.environ["PR_BODY_PATH"]).write_text(body, encoding="utf-8")
 PY
-    {
-      echo
-      echo "## Codex Plan"
-      echo
-      sed -n '1,240p' "${output_dir}/plan.md"
-    } >>"${pr_body_path}"
     ;;
   jira-repair)
     required_env "INPUT_DIR"
@@ -100,17 +95,6 @@ PY
     exit 1
     ;;
 esac
-
-{
-  echo
-  if [[ "${CODEX_OPERATION}" == "jira-repair" ]]; then
-    echo "## Codex Repair Attempt ${REPAIR_ATTEMPT}"
-  else
-    echo "## Codex Final Message"
-  fi
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >>"${pr_body_path}"
 
 {
   echo "branch_name=${BRANCH_NAME}"
