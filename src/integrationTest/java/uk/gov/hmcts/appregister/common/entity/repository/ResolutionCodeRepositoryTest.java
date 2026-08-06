@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -68,7 +69,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
 
             assertThat(page.getContent())
                     .extracting(ResolutionCode::getResultCode)
-                    .containsExactly("APPC");
+                    .containsExactly("APPC", "APPABANDON");
         }
 
         @Test
@@ -96,6 +97,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         void includesRowStartingOnActiveDate() {
             LocalDate activeDate = today();
             ResolutionCode startsToday = new ResolutionCode();
+            startsToday.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
             startsToday.setResultCode("BOUNDARY1");
             startsToday.setTitle("Boundary Start");
             startsToday.setWording("Boundary wording");
@@ -138,6 +140,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             LocalDate t = today();
 
             ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
+            additionalActiveWithEndDate.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
             additionalActiveWithEndDate.setResultCode("APPC");
             additionalActiveWithEndDate.setTitle("Some other APPC title (should not win)");
             additionalActiveWithEndDate.setWording("Dummy wording");

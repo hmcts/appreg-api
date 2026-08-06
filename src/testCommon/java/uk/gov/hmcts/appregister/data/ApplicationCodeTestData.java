@@ -6,8 +6,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.util.StringUtil;
@@ -30,15 +28,14 @@ public class ApplicationCodeTestData
 
     @Override
     public ApplicationCode someComplete() {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
-        return Instancio.of(ApplicationCode.class)
-                .ignore(field(ApplicationCode::getId))
-                .ignore(field(ApplicationCode::getVersion))
-                .ignore(field(ApplicationCode::getApplicationListEntryList))
-                .set(field(ApplicationCode::getStartDate), today.minusDays(10))
-                .set(field(ApplicationCode::getEndDate), today.plusDays(10))
-                .withSettings(settings)
-                .create();
+        ApplicationCode code =
+                Instancio.of(ApplicationCode.class)
+                        .ignore(field(ApplicationCode::getId))
+                        .ignore(field(ApplicationCode::getVersion))
+                        .ignore(field(ApplicationCode::getApplicationListEntryList))
+                        .create();
+
+        code.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+        return code;
     }
 }

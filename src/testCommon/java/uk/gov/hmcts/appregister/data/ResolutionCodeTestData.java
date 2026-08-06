@@ -2,9 +2,8 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
+import java.util.UUID;
 import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 
 public class ResolutionCodeTestData
@@ -13,11 +12,13 @@ public class ResolutionCodeTestData
 
     @Override
     public ResolutionCode someComplete() {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        return Instancio.of(ResolutionCode.class)
-                .ignore(field(ResolutionCode::getId))
-                .ignore(field(ResolutionCode::getVersion))
-                .withSettings(settings)
-                .create();
+        ResolutionCode code =
+                Instancio.of(ResolutionCode.class)
+                        .ignore(field(ResolutionCode::getId))
+                        .ignore(field(ResolutionCode::getVersion))
+                        .create();
+
+        code.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+        return code;
     }
 }

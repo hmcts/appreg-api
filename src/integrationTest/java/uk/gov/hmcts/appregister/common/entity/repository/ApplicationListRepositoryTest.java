@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.description;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
 import jakarta.transaction.Transactional;
@@ -57,9 +58,11 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         return al;
     }
 
-    private CriminalJusticeArea saveCja(String code, String desc) {
-        CriminalJusticeArea cja =
-                CriminalJusticeArea.builder().code(code).description(desc).build();
+    private CriminalJusticeArea saveCja(String code, String description) {
+        CriminalJusticeArea cja = new CriminalJusticeArea();
+        cja.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+        cja.setCode(code);
+        cja.setDescription(description);
         return cjaRepository.saveAndFlush(cja);
     }
 

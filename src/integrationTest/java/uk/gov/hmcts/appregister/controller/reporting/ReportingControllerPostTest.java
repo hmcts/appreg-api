@@ -1297,7 +1297,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         val entryId =
                 insertApplicationListEntry(
                         appListId,
-                        insertApplicationCodeRow(),
+                        applicationCodeId("MX99010"),
                         insertNameAddress(
                                 "Workload Multiple Magistrates Applicant",
                                 null,
@@ -1439,14 +1439,10 @@ class ReportingControllerPostTest extends BaseIntegration {
                         "N");
         val entryId =
                 insertApplicationListEntry(
-                        listId,
-                        applicationCodeIdOrInsert("MX99010"),
-                        applicantId,
-                        respondentId,
-                        listDate);
+                        listId, applicationCodeId("MX99010"), applicantId, respondentId, listDate);
 
-        insertResolutionCodesAndResult(entryId, "WRA");
-        insertResolutionCodesAndResult(entryId, "WRB");
+        insertResolutionCodesAndResult(entryId, "CASE");
+        insertResolutionCodesAndResult(entryId, "AUTH");
         // Resolutions and officials are both one-to-many joins; the report should still emit
         // one workload row per application list entry.
         insertOfficial(entryId, "M", "Mr", "Jill", "Magistrate");
@@ -1458,8 +1454,8 @@ class ReportingControllerPostTest extends BaseIntegration {
         val applicantRows = report.lines().filter(line -> line.contains(applicantName)).toList();
 
         Assertions.assertEquals(1, applicantRows.size()); // asserts one row per entry
-        assertThat(applicantRows.getFirst()).contains("WRA"); // includes first result
-        assertThat(applicantRows.getFirst()).contains("WRB"); // includes second result
+        assertThat(applicantRows.getFirst()).contains("CASE"); // includes first result
+        assertThat(applicantRows.getFirst()).contains("AUTH"); // includes second result
         assertThat(applicantRows.getFirst()).contains("Jill Magistrate"); // includes JP
         Assertions.assertTrue(
                 applicantRows.getFirst().contains("Casey Clerk")); // includes official
@@ -1561,8 +1557,8 @@ class ReportingControllerPostTest extends BaseIntegration {
             assertThat(report).contains("Private");
             assertThat(report).contains("Respondent Org Ltd");
             assertThat(report).contains("Private wording");
-            assertThat(report).contains("PIZ");
-            assertThat(report).contains("PIA");
+            assertThat(report).contains("CASE");
+            assertThat(report).contains("AUTH");
             assertThat(report).contains("Private notes");
             assertThat(report).doesNotContain("{wording}");
         }
@@ -1582,7 +1578,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 new PrivateProsecutorsIndexFilterDto()
                         .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
                         .dateTo(LocalDate.of(2026, Month.APRIL, 28))
-                        .standardApplicantName("Standards")
+                        .standardApplicantName("John")
                         .respondentOrganisationName("Standard Respondent")
                         .location(
                                 new LegacyReportLocation()
@@ -1599,7 +1595,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 "standardApplicantName",
-                "Standards");
+                "John");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 "respondentOrganisationName",
@@ -1649,12 +1645,12 @@ class ReportingControllerPostTest extends BaseIntegration {
             assertThat(report).contains("Private Prosecution Index Report");
             assertThat(report).contains("12/04/2026");
             assertThat(report).contains("XCD998 - Standard Private Court");
-            assertThat(report).contains("Private Standards Body");
             assertThat(report).contains("Standard Respondent Ltd");
             assertThat(report).contains("Standard private wording");
-            assertThat(report).contains("PIS");
+            assertThat(report).contains("REF");
             assertThat(report).contains("Standard private notes");
-            assertThat(report).contains("CD,,,Private Standards Body,");
+            assertThat(report).contains("John Smith");
+            assertThat(report).contains("CD,,,John Smith,");
         }
     }
 
@@ -1714,8 +1710,8 @@ class ReportingControllerPostTest extends BaseIntegration {
             assertThat(report).contains("Private Prosecution Index Report");
             assertThat(report).contains("13/04/2026");
             assertThat(report).contains("XCD997 - Individual Standard Private Court");
-            assertThat(report).contains("Private Citizen");
-            assertThat(report).contains("CD,,,Private Citizen,");
+            assertThat(report).contains("Jane Doe");
+            assertThat(report).contains("CD,,,Jane Doe,");
         }
     }
 
@@ -2391,7 +2387,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private void insertApplicationListEntryRows(Long applicationListId, int count, String deleted) {
-        Long applicationCodeId = insertApplicationCodeRow();
+        Long applicationCodeId = applicationCodeId("MX99010");
         for (int index = 0; index < count; index++) {
             jdbcTemplate.update(
                     String.format(
@@ -2432,47 +2428,6 @@ class ReportingControllerPostTest extends BaseIntegration {
         }
     }
 
-    private Long insertApplicationCodeRow() {
-        Long applicationCodeId =
-                jdbcTemplate.queryForObject(
-                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
-        String applicationCode = "LM" + Math.floorMod(applicationCodeId, 100_000_000);
-        jdbcTemplate.update(
-                String.format(
-                        """
-                    INSERT INTO %s.application_codes (
-                        ac_id,
-                        application_code,
-                        application_code_title,
-                        application_code_wording,
-                        fee_due,
-                        application_code_respondent,
-                        application_code_start_date,
-                        bulk_respondent_allowed,
-                        version,
-                        changed_by,
-                        changed_date
-                    )
-                    VALUES (
-                        ?,
-                        ?,
-                        'List Maintenance Code',
-                        'List Maintenance Wording',
-                        'N',
-                        'N',
-                        CURRENT_TIMESTAMP,
-                        'N',
-                        1,
-                        0,
-                        CURRENT_TIMESTAMP
-                    )
-                    """,
-                        schema),
-                applicationCodeId,
-                applicationCode);
-        return applicationCodeId;
-    }
-
     private void insertPrivateProsecutorsIndexApplication(LocalDate listDate) {
         long applicantId =
                 insertNameAddressRow(null, "Private", "Middle", "Legacy", "Applicant Street");
@@ -2492,20 +2447,20 @@ class ReportingControllerPostTest extends BaseIntegration {
         long entryId =
                 insertApplicationListEntryRow(
                         listId,
-                        applicationCodeIdOrInsert("MX99010"),
+                        applicationCodeId("MX99010"),
                         applicantId,
                         respondentId,
                         "Private {wording}",
                         "Private notes",
                         listDate);
-        long highResolutionCodeId = insertResolutionCode("PIZ");
-        long lowResolutionCodeId = insertResolutionCode("PIA");
+        long highResolutionCodeId = resolutionCodeId("CASE");
+        long lowResolutionCodeId = resolutionCodeId("AUTH");
         insertApplicationListEntryResolution(entryId, highResolutionCodeId);
         insertApplicationListEntryResolution(entryId, lowResolutionCodeId);
     }
 
     private void insertPrivateProsecutorsIndexStandardApplicantApplication(LocalDate listDate) {
-        long standardApplicantId = insertStandardApplicantRow("Private Standards Body");
+        long standardApplicantId = standardApplicantId("APP001");
         long respondentId =
                 insertNameAddressRow(
                         "Standard Respondent Ltd", null, null, null, "Respondent Street");
@@ -2523,19 +2478,34 @@ class ReportingControllerPostTest extends BaseIntegration {
         long entryId =
                 insertStandardApplicantApplicationListEntryRow(
                         listId,
-                        applicationCodeIdOrInsert("MX99010"),
+                        applicationCodeId("MX99010"),
                         standardApplicantId,
                         respondentId,
                         "Standard private {wording}",
                         "Standard private notes",
                         listDate);
-        long resolutionCodeId = insertResolutionCode("PIS");
+        long resolutionCodeId = resolutionCodeId("REF");
         insertApplicationListEntryResolution(entryId, resolutionCodeId);
+    }
+
+    private long standardApplicantId(String code) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                      SELECT sa_id
+                      FROM %s.standard_applicants
+                      WHERE standard_applicant_code = ?
+                      ORDER BY sa_id DESC
+                      LIMIT 1
+                      """,
+                        schema),
+                Long.class,
+                code);
     }
 
     private void insertPrivateProsecutorsIndexIndividualStandardApplicantApplication(
             LocalDate listDate) {
-        long standardApplicantId = insertStandardApplicantRow(null, "Private", "Citizen");
+        long standardApplicantId = standardApplicantId("APP002");
         long respondentId =
                 insertNameAddressRow(
                         "Individual Standard Respondent Ltd", "", "", "", "Respondent Street");
@@ -2553,13 +2523,13 @@ class ReportingControllerPostTest extends BaseIntegration {
         long entryId =
                 insertStandardApplicantApplicationListEntryRow(
                         listId,
-                        applicationCodeIdOrInsert("MX99010"),
+                        applicationCodeId("MX99010"),
                         standardApplicantId,
                         respondentId,
                         "Individual standard private {wording}",
                         "Individual standard private notes",
                         listDate);
-        long resolutionCodeId = insertResolutionCode("PII");
+        long resolutionCodeId = resolutionCodeId("WDN");
         insertApplicationListEntryResolution(entryId, resolutionCodeId);
     }
 
@@ -2606,92 +2576,28 @@ class ReportingControllerPostTest extends BaseIntegration {
         long entryId =
                 insertApplicationListEntryRow(
                         listId,
-                        insertFeesApplicationCodeRow(),
+                        applicationCodeId("AD99001"),
                         applicantId,
                         applicantId,
                         wording,
                         "Fees notes",
                         listDate);
-        long feeId = insertFeeRow();
-        insertApplicationListEntryFee(entryId, feeId);
+        insertApplicationListEntryFee(entryId, feeId("CO5.1a"));
     }
 
-    private long insertFeesApplicationCodeRow() {
-        Long applicationCodeId =
-                jdbcTemplate.queryForObject(
-                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
-        String applicationCode = "FR" + Math.floorMod(applicationCodeId, 1_000_000L);
-        jdbcTemplate.update(
-                String.format(
-                        """
-                    INSERT INTO %s.application_codes (
-                        ac_id,
-                        application_code,
-                        application_code_title,
-                        application_code_wording,
-                        fee_due,
-                        application_code_respondent,
-                        application_code_start_date,
-                        bulk_respondent_allowed,
-                        version,
-                        changed_by,
-                        changed_date,
-                        user_name
-                    )
-                    VALUES (
-                        ?,
-                        ?,
-                        'Fees Report Code',
-                        'Fees report wording',
-                        'Y',
-                        'N',
-                        DATE '2020-01-01',
-                        'N',
-                        1,
-                        0,
-                        CURRENT_TIMESTAMP,
-                        'report-integration-test'
-                    )
-                    """,
-                        schema),
-                applicationCodeId,
-                applicationCode);
-        return applicationCodeId;
-    }
-
-    private long insertFeeRow() {
+    private long feeId(String feeReference) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
-                    INSERT INTO %s.fee (
-                        fee_id,
-                        fee_reference,
-                        fee_description,
-                        fee_value,
-                        fee_start_date,
-                        fee_version,
-                        fee_changed_by,
-                        fee_changed_date,
-                        fee_user_name,
-                        is_offsite
-                    )
-                    VALUES (
-                        nextval('%s.fee_seq'),
-                        ?,
-                        'Fees report integration fee',
-                        10.00,
-                        DATE '2020-01-01',
-                        1,
-                        0,
-                        CURRENT_TIMESTAMP,
-                        'report-integration-test',
-                        false
-                    )
-                    RETURNING fee_id
-                    """,
-                        schema, schema),
+                      SELECT fee_id
+                      FROM %s.fee
+                      WHERE fee_reference = ?
+                      ORDER BY fee_start_date DESC, fee_id DESC
+                      LIMIT 1
+                      """,
+                        schema),
                 Long.class,
-                "FR" + Math.floorMod(System.nanoTime(), 1_000_000_000L));
+                feeReference);
     }
 
     private void insertApplicationListEntryFee(long entryId, long feeId) {
@@ -2808,97 +2714,34 @@ class ReportingControllerPostTest extends BaseIntegration {
                 surname);
     }
 
-    private long applicationCodeIdOrInsert(String applicationCode) {
-        List<Long> applicationCodeIds =
-                jdbcTemplate.queryForList(
-                        String.format(
-                                """
-                        SELECT ac_id
-                        FROM %s.application_codes
-                        WHERE application_code = ?
-                        ORDER BY ac_id DESC
-                        LIMIT 1
-                        """,
-                                schema),
-                        Long.class,
-                        applicationCode);
-        if (!applicationCodeIds.isEmpty()) {
-            return applicationCodeIds.getFirst();
-        }
-
+    private long applicationCodeId(String applicationCode) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
-                    INSERT INTO %s.application_codes (
-                        ac_id,
-                        application_code,
-                        application_code_title,
-                        application_code_wording,
-                        application_legislation,
-                        fee_due,
-                        application_code_respondent,
-                        application_code_start_date,
-                        bulk_respondent_allowed,
-                        version,
-                        changed_by,
-                        changed_date,
-                        user_name
-                    )
-                    VALUES (
-                        nextval('%s.ac_seq'),
-                        ?,
-                        'Application for a private prosecution summons',
-                        'Application for private prosecution {TEXT|Summarise offence title(s)|250}',
-                        'Section 1 Magistrates Courts Act 1980',
-                        'N',
-                        'Y',
-                        DATE '2020-01-01',
-                        'N',
-                        1,
-                        0,
-                        CURRENT_TIMESTAMP,
-                        'report-integration-test'
-                    )
-                    RETURNING ac_id
-                    """,
-                        schema, schema),
+                      SELECT ac_id
+                      FROM %s.application_codes
+                      WHERE application_code = ?
+                      ORDER BY ac_id DESC
+                      LIMIT 1
+                      """,
+                        schema),
                 Long.class,
                 applicationCode);
     }
 
-    private long insertResolutionCode(String resolutionCode) {
+    private long resolutionCodeId(String resolutionCode) {
         return jdbcTemplate.queryForObject(
                 String.format(
                         """
-                    INSERT INTO %s.resolution_codes (
-                        rc_id,
-                        resolution_code,
-                        resolution_code_title,
-                        resolution_code_wording,
-                        resolution_code_start_date,
-                        version,
-                        changed_by,
-                        changed_date,
-                        user_name
-                    )
-                    VALUES (
-                        nextval('%s.rc_seq'),
-                        ?,
-                        ?,
-                        ?,
-                        DATE '2020-01-01',
-                        1,
-                        0,
-                        CURRENT_TIMESTAMP,
-                        'report-integration-test'
-                    )
-                    RETURNING rc_id
-                    """,
-                        schema, schema),
+                      SELECT rc_id
+                      FROM %s.resolution_codes
+                      WHERE resolution_code = ?
+                      ORDER BY rc_id DESC
+                      LIMIT 1
+                      """,
+                        schema),
                 Long.class,
-                resolutionCode,
-                resolutionCode + " title",
-                resolutionCode + " wording");
+                resolutionCode);
     }
 
     private void insertApplicationListEntryResolution(long entryId, long resolutionCodeId) {
@@ -2981,33 +2824,17 @@ class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private void insertResolutionCodesAndResult(long entryId, String resultCode) {
-        val resultId =
-                jdbcTemplate.queryForObject(
-                        """
-                    INSERT INTO %s.resolution_codes (
-                        rc_id, resolution_code, resolution_code_title, resolution_code_wording,
-                        resolution_code_start_date, version, changed_by, changed_date, user_name
-                    ) VALUES (
-                        nextval('%s.rc_seq'), ?, ?, ?, DATE '2020-01-01', 1, 0,
-                        CURRENT_TIMESTAMP, 'report-integration-test'
-                    )
-                    RETURNING rc_id
-                    """
-                                .formatted(schema, schema),
-                        Long.class,
-                        resultCode,
-                        resultCode + " title",
-                        resultCode + " wording");
+        long resultId = resolutionCodeId(resultCode);
         jdbcTemplate.update(
                 """
-                INSERT INTO %s.app_list_entry_resolutions (
-                    aler_id, rc_rc_id, ale_ale_id, al_entry_resolution_wording,
-                    al_entry_resolution_officer, version, changed_by, changed_date, user_name
-                ) VALUES (
-                    nextval('%s.aler_seq'), ?, ?, 'Resolution wording', 'Resolution officer',
-                    1, 0, CURRENT_TIMESTAMP, 'report-integration-test'
-                )
-                """
+              INSERT INTO %s.app_list_entry_resolutions (
+                  aler_id, rc_rc_id, ale_ale_id, al_entry_resolution_wording,
+                  al_entry_resolution_officer, version, changed_by, changed_date, user_name
+              ) VALUES (
+                  nextval('%s.aler_seq'), ?, ?, 'Resolution wording', 'Resolution officer',
+                  1, 0, CURRENT_TIMESTAMP, 'report-integration-test'
+              )
+              """
                         .formatted(schema, schema),
                 resultId,
                 entryId);
@@ -3226,7 +3053,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                         .formatted(schema, schema),
                 Long.class,
                 appListId,
-                insertApplicationCodeRow(),
+                applicationCodeId("MX99010"),
                 applicantId,
                 respondentId,
                 sequenceNumber,

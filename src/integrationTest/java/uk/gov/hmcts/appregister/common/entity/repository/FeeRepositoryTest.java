@@ -27,7 +27,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         this.applicationFeeRepository = applicationFeeRepository;
     }
 
-    private static final int BASELINE_TEST_COUNT = 23;
+    private static final int BASELINE_TEST_COUNT = 107;
 
     @Test
     void testBasicInsertionUpdate() {

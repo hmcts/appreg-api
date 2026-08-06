@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,7 @@ class CriminalJusticeRepositoryTest extends BaseRepositoryTest {
                     // test save
                     CriminalJusticeArea dataToPersist =
                             new CriminalJusticeTestData().someMinimal().build();
+                    dataToPersist.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
                     CriminalJusticeArea data = persistance.save(dataToPersist);
 
                     // assert that the save has occurred
