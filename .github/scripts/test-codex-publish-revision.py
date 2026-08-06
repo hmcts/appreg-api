@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Sequence
 
 SCRIPT_DIR = Path(__file__).parent
 JIRA_PUBLISHER = SCRIPT_DIR / "codex-jira-publish.sh"
@@ -25,27 +26,52 @@ class PublisherRevisionTest(unittest.TestCase):
         self,
         root: Path,
         *,
-        remote_base: str,
-        remote_head: str,
+        remote_base: str | Sequence[str],
+        remote_head: str | Sequence[str],
     ) -> tuple[Path, Path]:
         fake_bin = root / "bin"
         fake_bin.mkdir()
         command_log = root / "git-commands.log"
         conflict_counter = root / "conflict-counter"
+        base_sequence = [remote_base] if isinstance(remote_base, str) else list(remote_base)
+        head_sequence = [remote_head] if isinstance(remote_head, str) else list(remote_head)
+        base_responses = root / "base-responses"
+        head_responses = root / "head-responses"
+        base_counter = root / "base-counter"
+        head_counter = root / "head-counter"
+        base_responses.write_text("\n".join(base_sequence) + "\n", encoding="utf-8")
+        head_responses.write_text("\n".join(head_sequence) + "\n", encoding="utf-8")
         fake_git = fake_bin / "git"
         fake_git.write_text(
             f"""#!/usr/bin/env bash
 set -euo pipefail
 args="$*"
 printf '%s\\n' "$args" >>{str(command_log)!r}
+next_response() {{
+  local responses_path="$1"
+  local counter_path="$2"
+  local count=0
+  if [[ -f "$counter_path" ]]; then
+    count="$(cat "$counter_path")"
+  fi
+  count=$((count + 1))
+  echo "$count" >"$counter_path"
+  response="$(sed -n "${{count}}p" "$responses_path")"
+  if [[ "$count" -gt "$(wc -l <"$responses_path")" ]]; then
+    response="$(tail -n 1 "$responses_path")"
+  fi
+  printf '%s' "$response"
+}}
 if [[ "$args" == *"ls-remote"* ]]; then
   if [[ "$args" == *"refs/heads/master"* ]]; then
-    if [[ -n {remote_base!r} ]]; then
-      printf '%s\\trefs/heads/master\\n' {remote_base!r}
+    response="$(next_response {str(base_responses)!r} {str(base_counter)!r})"
+    if [[ -n "$response" ]]; then
+      printf '%s\\trefs/heads/master\\n' "$response"
     fi
   elif [[ "$args" == *"refs/heads/codex/example"* ]]; then
-    if [[ -n {remote_head!r} ]]; then
-      printf '%s\\trefs/heads/codex/example\\n' {remote_head!r}
+    response="$(next_response {str(head_responses)!r} {str(head_counter)!r})"
+    if [[ -n "$response" ]]; then
+      printf '%s\\trefs/heads/codex/example\\n' "$response"
     fi
   fi
 elif [[ "$args" == *"rev-parse refs/remotes/origin/codex/example"* ]]; then
@@ -84,6 +110,160 @@ esac
         )
         fake_gh.chmod(0o755)
         return fake_bin, command_log
+
+    @staticmethod
+    def assert_no_push(commands: str) -> None:
+        push_lines = [
+            line
+            for line in commands.splitlines()
+            if line.startswith("push ") or " push " in line
+        ]
+        if push_lines:
+            raise AssertionError(f"Unexpected Git push commands: {push_lines}")
+
+    @staticmethod
+    def assert_command_logged(commands: str, command: str) -> None:
+        matching_lines = [
+            line
+            for line in commands.splitlines()
+            if line.startswith(f"{command} ") or f" {command} " in line
+        ]
+        if not matching_lines:
+            raise AssertionError(f"Git command was not logged: {command}")
+
+    @staticmethod
+    def run_real_git(
+        cwd: Path,
+        *args: str,
+        check: bool = True,
+    ) -> subprocess.CompletedProcess[str]:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            env={
+                **os.environ,
+                "GIT_CONFIG_GLOBAL": "/dev/null",
+                "GIT_CONFIG_NOSYSTEM": "1",
+                "GIT_TERMINAL_PROMPT": "0",
+            },
+            capture_output=True,
+            text=True,
+        )
+        if check and completed.returncode != 0:
+            raise AssertionError(
+                f"git {' '.join(args)} failed:\n{completed.stdout}\n{completed.stderr}"
+            )
+        return completed
+
+    def make_bare_remote(self, root: Path) -> tuple[Path, Path, Path]:
+        remote = root / "remote.git"
+        publisher = root / "publisher"
+        racer = root / "racer"
+        self.run_real_git(root, "init", "--bare", str(remote))
+        self.run_real_git(root, "init", str(publisher))
+        self.run_real_git(publisher, "config", "user.name", "Publisher")
+        self.run_real_git(publisher, "config", "user.email", "publisher@example.invalid")
+        (publisher / "seed.txt").write_text("seed\n", encoding="utf-8")
+        self.run_real_git(publisher, "add", "seed.txt")
+        self.run_real_git(publisher, "commit", "-m", "Seed")
+        self.run_real_git(publisher, "branch", "-M", "master")
+        self.run_real_git(publisher, "remote", "add", "origin", str(remote))
+        self.run_real_git(publisher, "push", "-u", "origin", "master")
+        self.run_real_git(root, "clone", str(remote), str(racer))
+        self.run_real_git(racer, "config", "user.name", "Racer")
+        self.run_real_git(racer, "config", "user.email", "racer@example.invalid")
+        return remote, publisher, racer
+
+    def commit_real_file(
+        self,
+        repository: Path,
+        path: str,
+        content: str,
+        message: str,
+    ) -> str:
+        target = repository / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        self.run_real_git(repository, "add", path)
+        self.run_real_git(repository, "commit", "-m", message)
+        return self.run_real_git(repository, "rev-parse", "HEAD").stdout.strip()
+
+    def remote_branch_sha(self, remote: Path, branch: str) -> str:
+        return self.run_real_git(
+            remote,
+            "rev-parse",
+            f"refs/heads/{branch}",
+        ).stdout.strip()
+
+    def assert_exact_lease_rejects_atomic_race(self, branch: str) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            remote, publisher, racer = self.make_bare_remote(Path(temporary_directory))
+            self.run_real_git(publisher, "checkout", "-b", branch, "master")
+            expected_sha = self.commit_real_file(
+                publisher,
+                "expected.txt",
+                f"{branch} expected\n",
+                "Create expected branch head",
+            )
+            self.run_real_git(publisher, "push", "-u", "origin", branch)
+            self.commit_real_file(
+                publisher,
+                "publisher.txt",
+                f"{branch} publisher\n",
+                "Prepare publisher update",
+            )
+
+            self.run_real_git(racer, "fetch", "origin", branch)
+            self.run_real_git(racer, "checkout", "-B", branch, f"origin/{branch}")
+            moved_sha = self.commit_real_file(
+                racer,
+                "racer.txt",
+                f"{branch} racer\n",
+                "Move remote branch",
+            )
+            self.run_real_git(racer, "push", "origin", branch)
+
+            completed = self.run_real_git(
+                publisher,
+                "push",
+                f"--force-with-lease=refs/heads/{branch}:{expected_sha}",
+                "origin",
+                branch,
+                check=False,
+            )
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(self.remote_branch_sha(remote, branch), moved_sha)
+
+    def assert_empty_lease_rejects_atomic_race(self, branch: str) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            remote, publisher, racer = self.make_bare_remote(Path(temporary_directory))
+            self.run_real_git(publisher, "checkout", "-b", branch, "master")
+            self.commit_real_file(
+                publisher,
+                "publisher.txt",
+                f"{branch} publisher\n",
+                "Prepare initial publication",
+            )
+
+            self.run_real_git(racer, "checkout", "-b", branch, "origin/master")
+            moved_sha = self.commit_real_file(
+                racer,
+                "racer.txt",
+                f"{branch} racer\n",
+                "Create remote branch during publication",
+            )
+            self.run_real_git(racer, "push", "origin", branch)
+
+            completed = self.run_real_git(
+                publisher,
+                "push",
+                f"--force-with-lease=refs/heads/{branch}:",
+                "origin",
+                branch,
+                check=False,
+            )
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertEqual(self.remote_branch_sha(remote, branch), moved_sha)
 
     @staticmethod
     def write_patch_artifacts(root: Path, *, kind: str) -> tuple[Path, Path]:
@@ -204,8 +384,8 @@ esac
         self,
         *,
         mode: str,
-        remote_base: str = BASE_SHA,
-        remote_head: str = "",
+        remote_base: str | Sequence[str] = BASE_SHA,
+        remote_head: str | Sequence[str] = "",
     ) -> tuple[subprocess.CompletedProcess[str], str]:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
@@ -247,8 +427,8 @@ esac
     def run_conflict(
         self,
         *,
-        remote_head: str = HEAD_SHA,
-        remote_base: str = BASE_SHA,
+        remote_head: str | Sequence[str] = HEAD_SHA,
+        remote_base: str | Sequence[str] = BASE_SHA,
     ) -> tuple[subprocess.CompletedProcess[str], str]:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
@@ -303,7 +483,7 @@ esac
         completed, commands = self.run_jira(mode="initial", remote_head=HEAD_SHA)
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("Initial publication requires", completed.stderr)
-        self.assertNotIn(" push ", commands)
+        self.assert_no_push(commands)
 
     def test_jira_publisher_rejects_moved_base(self) -> None:
         completed, _ = self.run_jira(mode="initial", remote_base=MOVED_SHA)
@@ -320,10 +500,14 @@ esac
         )
 
     def test_jira_repair_rejects_intervening_commit(self) -> None:
-        completed, commands = self.run_jira(mode="repair", remote_head=MOVED_SHA)
+        completed, commands = self.run_jira(
+            mode="repair",
+            remote_head=[HEAD_SHA, MOVED_SHA],
+        )
         self.assertNotEqual(completed.returncode, 0)
-        self.assertIn("no longer matches the trusted published commit", completed.stderr)
-        self.assertNotIn(" push ", commands)
+        self.assertIn("moved while the repaired commit was being prepared", completed.stderr)
+        self.assert_command_logged(commands, "commit")
+        self.assert_no_push(commands)
 
     def test_conflict_publish_accepts_exact_refs_and_uses_exact_lease(self) -> None:
         completed, commands = self.run_conflict()
@@ -338,13 +522,24 @@ esac
         completed, commands = self.run_conflict(remote_head=MOVED_SHA)
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("moved before push", completed.stderr)
-        self.assertNotIn(" push ", commands)
+        self.assert_command_logged(commands, "commit")
+        self.assert_no_push(commands)
 
     def test_conflict_publish_rejects_base_movement(self) -> None:
         completed, commands = self.run_conflict(remote_base=MOVED_SHA)
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("moved before push", completed.stderr)
-        self.assertNotIn(" push ", commands)
+        self.assert_command_logged(commands, "commit")
+        self.assert_no_push(commands)
+
+    def test_initial_empty_lease_rejects_atomic_branch_creation(self) -> None:
+        self.assert_empty_lease_rejects_atomic_race("codex/atomic-initial")
+
+    def test_jira_repair_exact_lease_rejects_atomic_branch_movement(self) -> None:
+        self.assert_exact_lease_rejects_atomic_race("codex/atomic-repair")
+
+    def test_conflict_exact_lease_rejects_atomic_branch_movement(self) -> None:
+        self.assert_exact_lease_rejects_atomic_race("codex/atomic-conflict")
 
 
 if __name__ == "__main__":
