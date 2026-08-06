@@ -234,6 +234,8 @@ jobs:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: medium
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .

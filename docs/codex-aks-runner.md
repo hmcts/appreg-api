@@ -87,8 +87,10 @@ means a missing environment that GitHub auto-creates without protection cannot
 open the implementation path. Repository administrators must create the
 environment and configure required reviewers before enabling this workflow.
 
-Implementation checks out the exact commit inspected by the planner and uses
-`gpt-5.6-sol` with `ultra` effort. The validated plan is included only in the
+Planning uses `gpt-5.6-sol` with `ultra` effort. Implementation checks out the
+exact commit inspected by the planner and uses `gpt-5.6-sol` with `medium`
+effort; repair, PR-feedback, and conflict-resolution invocations use the same
+implementation configuration. The validated plan is included only in the
 implementation and repair prompts. Its exact file paths constrain both the
 captured patch exporter and every fresh trusted collector; any other changed
 path is rejected. Verification repairs reuse the original plan and stop for a

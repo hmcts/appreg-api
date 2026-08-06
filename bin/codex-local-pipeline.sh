@@ -168,6 +168,12 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
       version = inputs.fetch("codex-version", "")
       errors << "#{path}:#{job_name} must pin codex-version to #{expected_codex_version}" unless version == expected_codex_version
 
+      if File.basename(path) == "codex_jira_dispatch.yml" && job_name == "codex-plan-action"
+        unless inputs.fetch("model", "") == "gpt-5.6-sol" && inputs.fetch("effort", "") == "ultra"
+          errors << "#{path}:#{job_name} must plan with gpt-5.6-sol and ultra effort"
+        end
+      end
+
       if inputs.fetch("permission-profile", "") == ":workspace"
         action_index = steps.index(step)
         unless action_index == steps.length - 1
@@ -175,6 +181,9 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
         end
         unless inputs.key?("output-schema-file") && !inputs.key?("output-file")
           errors << "#{path}:#{job_name} must return a structured patch without a post-Action output file"
+        end
+        unless inputs.fetch("model", "") == "gpt-5.6-sol" && inputs.fetch("effort", "") == "medium"
+          errors << "#{path}:#{job_name} must implement with gpt-5.6-sol and medium effort"
         end
       end
 
@@ -226,8 +235,9 @@ if planner_action.nil?
   errors << "#{jira_path}:codex-plan-action must invoke the Codex Action"
 else
   planner_inputs = planner_action.fetch("with", {})
-  if planner_inputs.key?("model") || planner_inputs.key?("effort")
-    errors << "#{jira_path}:codex-plan-action must use the default model and reasoning effort"
+  unless planner_inputs.fetch("model", "") == "gpt-5.6-sol" &&
+         planner_inputs.fetch("effort", "") == "ultra"
+    errors << "#{jira_path}:codex-plan-action must use gpt-5.6-sol with ultra effort"
   end
   unless planner_inputs.fetch("permission-profile", "") == ":read-only"
     errors << "#{jira_path}:codex-plan-action must use the read-only permission profile"
