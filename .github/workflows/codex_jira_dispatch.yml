@@ -155,6 +155,45 @@ jobs:
           echo "::error title=Codex plan blocked::The validated plan is not ready to implement; no implementation or pull request was created."
           exit 1
 
+  prepare-codex-verification-source:
+    needs: [codex-plan-action, validate-codex-plan]
+    if: >-
+      ${{
+        needs.validate-codex-plan.result == 'success' &&
+        needs.validate-codex-plan.outputs.ready_to_implement == 'true'
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      artifact: codex-verification-source
+
+    steps:
+      - name: Checkout planned repository revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build credential-free verification source
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "${EXPECTED_TRUSTED_SHA}"
+          test -z "$(git config --local --get-all http.https://github.com/.extraheader || true)"
+          test -z "$(git config --local --get-all credential.helper || true)"
+          tar -czf "$RUNNER_TEMP/codex-verification-source.tar.gz" .
+
+      - name: Upload credential-free verification source
+        uses: actions/upload-artifact@v7
+        with:
+          name: codex-verification-source
+          path: ${{ runner.temp }}/codex-verification-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   codex-generate-action:
     needs: [codex-plan-action, validate-codex-plan]
     if: >-
@@ -287,12 +326,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output:
-    needs: codex-generate
+    needs: [codex-generate, prepare-codex-verification-source, validate-codex-plan]
     if: needs.codex-generate.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output
@@ -301,20 +339,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-0
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-0
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -506,12 +544,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output-1:
-    needs: [codex-generate, repair-codex-output-1]
+    needs: [codex-generate, repair-codex-output-1, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-codex-output-1.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output-repair-1
@@ -520,20 +557,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-1
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-1
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -725,12 +762,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output-2:
-    needs: [codex-generate, repair-codex-output-2]
+    needs: [codex-generate, repair-codex-output-2, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-codex-output-2.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output-repair-2
@@ -739,20 +775,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-2
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-2
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -944,12 +980,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output-3:
-    needs: [codex-generate, repair-codex-output-3]
+    needs: [codex-generate, repair-codex-output-3, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-codex-output-3.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output-repair-3
@@ -958,20 +993,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-3
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-3
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -1115,13 +1150,12 @@ jobs:
             echo "- Pull request: ${{ steps.publish.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
 
-  verify-published-pr:
-    needs: [codex-generate, publish-pr]
+  verify-published-pr-patch:
+    needs: [publish-pr, prepare-codex-verification-source, validate-codex-plan]
     if: always() && needs.publish-pr.outputs.pr_number != ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
@@ -1129,19 +1163,7 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.publish-pr.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
-      SONAR_PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
-      SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
-      PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
-      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
-      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
-      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-pr.outputs.output_artifact }}
       CODEX_FAILURE_ARTIFACT: codex-jira-pr-verification-failure-0
 
@@ -1152,12 +1174,14 @@ jobs:
           echo "output_artifact=${CODEX_OUTPUT_ARTIFACT}" >>"$GITHUB_OUTPUT"
           echo "failure_artifact=${CODEX_FAILURE_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -1171,28 +1195,16 @@ jobs:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
 
-      - name: Verify published PR with Sonar
+      - name: Verify published PR patch without credentials
         id: verify
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
           set +e
-          (
-            ./.github/scripts/codex-jira-verify.sh
-            status=$?
-            if [[ "${status}" -eq 0 ]]; then
-              ./.github/scripts/codex-check-sonar-quality-gate.sh
-              status=$?
-            fi
-            if [[ "${status}" -eq 0 ]]; then
-              ./.github/scripts/codex-wait-pr-status.sh
-              status=$?
-            fi
-            exit "${status}"
-          ) >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
           status=$?
           cat "$RUNNER_TEMP/codex-pr-verification.log"
-          if [[ "${status}" -eq 0 ]]; then
+          if [[ "$status" -eq 0 ]]; then
             echo "passed=true" >>"$GITHUB_OUTPUT"
           else
             mkdir -p "$RUNNER_TEMP/codex-pr-verification-failure"
@@ -1208,6 +1220,78 @@ jobs:
         with:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-pr-verification-failure
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-published-pr:
+    needs: [codex-generate, publish-pr, verify-published-pr-patch]
+    if: always() && needs.publish-pr.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: ${{ needs.verify-published-pr-patch.outputs.output_artifact }}
+      failure_artifact: ${{ steps.verify.outputs.failure_artifact }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+      STATUS_FAILURE_ARTIFACT: codex-jira-pr-status-failure-0
+    steps:
+      - name: Checkout trusted status scripts
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+      - name: Check external PR status and Sonar quality gate
+        id: verify
+        env:
+          LOCAL_VERIFICATION_PASSED: ${{ needs.verify-published-pr-patch.outputs.passed }}
+          LOCAL_FAILURE_ARTIFACT: ${{ needs.verify-published-pr-patch.outputs.failure_artifact }}
+        run: |
+          if [[ "$LOCAL_VERIFICATION_PASSED" != "true" ]]; then
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+            echo "failure_artifact=$LOCAL_FAILURE_ARTIFACT" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
+          {
+            ./.github/scripts/codex-wait-pr-status.sh
+            status=$?
+            if [[ "$status" -eq 0 ]]; then
+              ./.github/scripts/codex-check-sonar-quality-gate.sh
+              status=$?
+            fi
+            exit "$status"
+          } >"$RUNNER_TEMP/codex-pr-status.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-pr-status.log"
+          echo "failure_artifact=$STATUS_FAILURE_ARTIFACT" >>"$GITHUB_OUTPUT"
+          if [[ "$status" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-pr-status-failure"
+            cp "$RUNNER_TEMP/codex-pr-status.log" "$RUNNER_TEMP/codex-pr-status-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-pr-status.log" >"$RUNNER_TEMP/codex-pr-status-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+      - name: Upload external status failure
+        if: >-
+          steps.verify.outputs.passed != 'true' &&
+          needs.verify-published-pr-patch.outputs.passed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.STATUS_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-pr-status-failure
           if-no-files-found: error
           retention-days: 1
 
@@ -1349,12 +1433,11 @@ jobs:
           retention-days: 1
 
   verify-published-pr-repair-1:
-    needs: [codex-generate, repair-published-pr-1]
+    needs: [codex-generate, repair-published-pr-1, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-published-pr-1.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
@@ -1363,9 +1446,7 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
       CODEX_VERIFIED_ARTIFACT: codex-jira-pr-repair-verified-1
       CODEX_FAILURE_ARTIFACT: codex-jira-pr-repair-verification-failure-1
@@ -1378,12 +1459,14 @@ jobs:
           echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
           echo "failure_artifact=${CODEX_FAILURE_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -1503,40 +1586,29 @@ jobs:
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-jira-publish.sh"
 
-  verify-published-pr-1:
-    needs: [codex-generate, publish-pr, publish-published-pr-repair-1]
+  verify-published-pr-1-patch:
+    needs: [publish-published-pr-repair-1, prepare-codex-verification-source, validate-codex-plan]
     if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.publish-published-pr-repair-1.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
-      SONAR_PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
-      SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
-      PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
-      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
-      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
-      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-published-pr-repair-1.outputs.output_artifact }}
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -1550,15 +1622,68 @@ jobs:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
 
-      - name: Verify repaired published PR with Sonar
+      - name: Verify repaired published PR patch without credentials
         id: verify
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
-          ./.github/scripts/codex-jira-verify.sh
-          ./.github/scripts/codex-check-sonar-quality-gate.sh
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-repaired-pr-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-repaired-pr-verification.log"
+          if [[ "$status" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+  verify-published-pr-1:
+    needs: [codex-generate, publish-published-pr-repair-1, verify-published-pr-1-patch]
+    if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+    steps:
+      - name: Checkout trusted status scripts
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+      - name: Check repaired external PR status and Sonar quality gate
+        id: verify
+        env:
+          LOCAL_VERIFICATION_PASSED: ${{ needs.verify-published-pr-1-patch.outputs.passed }}
+        run: |
+          if [[ "$LOCAL_VERIFICATION_PASSED" != "true" ]]; then
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
           ./.github/scripts/codex-wait-pr-status.sh
-          echo "passed=true" >>"$GITHUB_OUTPUT"
+          status=$?
+          if [[ "$status" -eq 0 ]]; then
+            ./.github/scripts/codex-check-sonar-quality-gate.sh
+            status=$?
+          fi
+          if [[ "$status" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
 
   codex-published-pr-verification-failed:
     needs:

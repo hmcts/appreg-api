@@ -76,7 +76,11 @@ class CodexPlanHandoffTest(unittest.TestCase):
         )
 
     @staticmethod
-    def codex_result(patch: str) -> str:
+    def codex_result(
+        patch: str,
+        summary: str = "Updated the shared validator.",
+        testing: str = "Added a focused test.",
+    ) -> str:
         encoded_patch = base64.b64encode(
             gzip.compress(patch.encode("utf-8"), mtime=0)
         ).decode("ascii")
@@ -84,8 +88,8 @@ class CodexPlanHandoffTest(unittest.TestCase):
             {
                 "has_changes": True,
                 "patch_gzip_base64": encoded_patch,
-                "summary": "Updated the shared validator.",
-                "testing": "Added a focused test.",
+                "summary": summary,
+                "testing": testing,
             }
         )
 
@@ -155,12 +159,50 @@ class CodexPlanHandoffTest(unittest.TestCase):
         pr_body = (output_dir / "codex-pr-body.md").read_text(encoding="utf-8")
         self.assertNotIn("Codex Plan", pr_body)
         self.assertNotIn(PLAN_DETAIL, pr_body)
-        self.assertNotIn("Updated the shared validator.", pr_body)
+        self.assertIn("Model-generated implementation summary", pr_body)
+        self.assertIn("Updated the shared validator.", pr_body)
+        self.assertIn("Model-generated testing details", pr_body)
+        self.assertIn("Added a focused test.", pr_body)
         self.assertIn("Validated plan SHA-256", pr_body)
         self.assertIn("Plan approval: automatic after trusted validation", pr_body)
         self.assertFalse((output_dir / "plan.json").exists())
         self.assertFalse((output_dir / "allowed-paths.txt").exists())
         self.assertFalse((output_dir / "codex-final-message.md").exists())
+        self.assertFalse((output_dir / "codex-summary.txt").exists())
+        self.assertFalse((output_dir / "codex-testing.txt").exists())
+
+    def test_model_details_are_rendered_as_text_without_shell_evaluation(self) -> None:
+        plan_dir = self.make_plan()
+        marker = plan_dir / "shell-evaluation-marker"
+        output_dir = plan_dir / "output-safe-text"
+        environment = {
+            **os.environ,
+            "CODEX_RESULT": self.codex_result(
+                PATCH,
+                summary=f"Literal shell text: $(touch {marker})",
+                testing=f"Literal substitution: `touch {marker}`",
+            ),
+            "CODEX_OPERATION": "jira-generate",
+            "OUTPUT_DIR": str(output_dir),
+            "BRANCH_NAME": "codex/test-plan",
+            "ISSUE_KEY": "ARCPOC-1",
+            "ISSUE_SUMMARY": "Validate requests",
+            "ISSUE_URL": "https://example.invalid/ARCPOC-1",
+            "PLAN_DIR": str(plan_dir),
+        }
+        completed = subprocess.run(
+            ["bash", str(COLLECTOR)],
+            cwd=plan_dir,
+            env=environment,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertFalse(marker.exists())
+        pr_body = (output_dir / "codex-pr-body.md").read_text(encoding="utf-8")
+        self.assertIn(f"$(touch {marker})", pr_body)
+        self.assertIn(f"`touch {marker}`", pr_body)
 
     def test_generation_rejects_patch_outside_planned_paths(self) -> None:
         plan_dir = self.make_plan()
@@ -168,6 +210,15 @@ class CodexPlanHandoffTest(unittest.TestCase):
         completed, _ = self.run_collector(plan_dir, "jira-generate", outside_patch)
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("outside the allowed set: outside.txt", completed.stderr)
+
+    def test_repair_appends_model_generated_details(self) -> None:
+        plan_dir = self.make_plan()
+        completed, output_dir = self.run_collector(plan_dir, "jira-repair", PATCH)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        pr_body = (output_dir / "codex-pr-body.md").read_text(encoding="utf-8")
+        self.assertIn("Model-generated repair details (attempt 1)", pr_body)
+        self.assertIn("Updated the shared validator.", pr_body)
+        self.assertIn("Added a focused test.", pr_body)
 
     def test_repair_rejects_patch_outside_planned_paths(self) -> None:
         plan_dir = self.make_plan()

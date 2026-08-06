@@ -105,15 +105,18 @@ class ValidateCodexPlanTest(unittest.TestCase):
         self.assertEqual(hashlib.sha256(decoded).hexdigest(), outputs["plan_sha256"])
         self.assertLessEqual(len(decoded), 32 * 1024)
 
-    def test_ready_high_risk_cross_system_plan_has_no_approval_requirement(self) -> None:
+    def test_high_risk_cross_system_plan_is_stopped_without_an_approval_gate(self) -> None:
         plan = valid_plan()
         plan["risk_level"] = "high"
         plan["cross_system_change"] = True
         result, root = self.run_validator(plan)
         self.assertEqual(result.returncode, 0, result.stderr)
         outputs = self.outputs(root)
-        self.assertEqual(outputs["ready_to_implement"], "true")
+        self.assertEqual(outputs["ready_to_implement"], "false")
         self.assertNotIn("approval_required", outputs)
+        normalised = json.loads((root / "output" / "plan.json").read_text(encoding="utf-8"))
+        self.assertIn("High-risk changes", normalised["blockers"][0])
+        self.assertIn("Cross-system changes", normalised["blockers"][1])
 
     def test_blocked_plan_is_valid_but_cannot_request_implementation(self) -> None:
         plan = valid_plan()
@@ -172,6 +175,21 @@ class ValidateCodexPlanTest(unittest.TestCase):
         result, _ = self.run_validator(plan)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("protected automation metadata", result.stderr)
+
+    def test_rejects_verification_sensitive_paths(self) -> None:
+        for path in (
+            "build.gradle",
+            "gradlew",
+            "gradle/wrapper/gradle-wrapper.jar",
+            "buildSrc/src/main/java/Plugin.java",
+            "bin/codex-local-pipeline.sh",
+        ):
+            with self.subTest(path=path):
+                plan = valid_plan()
+                plan["implementation_steps"][0]["path"] = path
+                result, _ = self.run_validator(plan)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("verification-sensitive tooling", result.stderr)
 
     def test_rejects_directory_and_duplicate_paths(self) -> None:
         directory_plan = valid_plan()

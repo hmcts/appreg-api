@@ -32,6 +32,15 @@ EXPECTED_KEYS = {
 }
 RISK_LEVELS = {"low", "medium", "high"}
 FORBIDDEN_PATH_ROOTS = {".git", ".github"}
+VERIFICATION_SENSITIVE_PATH_ROOTS = {"bin", "buildSrc", "gradle"}
+VERIFICATION_SENSITIVE_PATHS = {
+    "build.gradle",
+    "gradle.properties",
+    "gradlew",
+    "gradlew.bat",
+    "init.gradle",
+    "settings.gradle",
+}
 
 
 class PlanValidationError(ValueError):
@@ -66,6 +75,11 @@ def validate_path(value: Any, field: str) -> str:
         raise PlanValidationError(f"{field} must be a safe repository-relative path")
     if path.parts[0] in FORBIDDEN_PATH_ROOTS:
         raise PlanValidationError(f"{field} targets protected automation metadata")
+    if (
+        path.parts[0] in VERIFICATION_SENSITIVE_PATH_ROOTS
+        or path.as_posix() in VERIFICATION_SENSITIVE_PATHS
+    ):
+        raise PlanValidationError(f"{field} targets verification-sensitive tooling")
     return path.as_posix()
 
 
@@ -153,6 +167,18 @@ def validate_plan(raw: str) -> dict[str, Any]:
                 raise PlanValidationError(f"a ready plan must include {field}")
         if plan["blockers"]:
             raise PlanValidationError("a ready plan must not contain blockers")
+        eligibility_blockers = []
+        if plan["risk_level"] == "high":
+            eligibility_blockers.append(
+                "High-risk changes are outside the auto-approved small-bug workflow."
+            )
+        if plan["cross_system_change"]:
+            eligibility_blockers.append(
+                "Cross-system changes are outside the auto-approved single-repository workflow."
+            )
+        if eligibility_blockers:
+            plan["ready_to_implement"] = False
+            plan["blockers"] = eligibility_blockers
     elif not plan["blockers"]:
         raise PlanValidationError("a plan that is not ready must explain its blockers")
 
