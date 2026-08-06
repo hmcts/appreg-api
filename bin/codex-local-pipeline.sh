@@ -133,6 +133,8 @@ PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parity-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-patch-export.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-check-sonar-quality-gate.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-publish-revision.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-codex-plan.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-handoff.py
@@ -362,8 +364,15 @@ verification_specs = [
     path: ".github/workflows/codex_pr_review_feedback.yml",
     source_job: "prepare-review-verification-source",
     verifier_marker: "trusted-codex-pr-review-verify.sh",
-    expected_count: File.exist?(".github/scripts/codex-pr-review-repair.sh") ? 4 : 1,
+    expected_count: File.read(".github/workflows/codex_pr_review_feedback.yml").include?("codex-review-verify-3:") ? 4 : 1,
     restore_marker: "Restore credential-free review source",
+  },
+  {
+    path: ".github/workflows/codex_pr_review_feedback.yml",
+    source_job: "prepare-published-review-repair-source",
+    verifier_marker: "trusted-codex-pr-review-verify.sh",
+    expected_count: 1,
+    restore_marker: "Restore credential-free published review source",
   },
   {
     path: ".github/workflows/codex_merge_conflict_resolution.yml",
@@ -388,9 +397,10 @@ verification_specs.each do |spec|
   end
 
   verifiers = jobs.select do |_job_name, job|
-    Array(job.fetch("steps", [])).any? do |step|
+    Array(job.fetch("needs", [])).include?(spec.fetch(:source_job)) &&
+      Array(job.fetch("steps", [])).any? do |step|
       step.is_a?(Hash) && step.fetch("run", "").match?(/bash .*#{Regexp.escape(spec.fetch(:verifier_marker))}/)
-    end
+      end
   end
   unless verifiers.length == spec.fetch(:expected_count)
     errors << "#{spec.fetch(:path)}:expected #{spec.fetch(:expected_count)} credential-free patch verifier paths"
@@ -409,11 +419,52 @@ verification_specs.each do |spec|
 end
 
 review_workflow = YAML.load_file(".github/workflows/codex_pr_review_feedback.yml")
-review_status = review_workflow.fetch("jobs", {}).fetch("verify-review-status", {})
-if review_status.inspect.match?(/trusted-codex-pr-review-verify|codex-local-pipeline|gradlew|yarn (?:lint|cichecks)/) ||
-   !review_status.inspect.include?("codex-wait-pr-status.sh") ||
-   !review_status.inspect.include?("codex-check-sonar-quality-gate.sh")
-  errors << ".github/workflows/codex_pr_review_feedback.yml:verify-review-status must query external status without executing model-writable content"
+%w[verify-review-status verify-review-status-repair].each do |job_name|
+  review_status = review_workflow.fetch("jobs", {}).fetch(job_name, {})
+  if review_status.inspect.match?(/trusted-codex-pr-review-verify|codex-local-pipeline|gradlew|yarn (?:lint|cichecks)/) ||
+     !review_status.inspect.include?("codex-wait-pr-status.sh") ||
+     !review_status.inspect.include?("codex-check-sonar-quality-gate.sh")
+    errors << ".github/workflows/codex_pr_review_feedback.yml:#{job_name} must query external status without executing model-writable content"
+  end
+end
+
+review_jobs = review_workflow.fetch("jobs", {})
+initial_status = review_jobs.fetch("verify-review-status", {})
+external_repair = review_jobs.fetch("codex-review-external-repair-action", {})
+external_verify = review_jobs.fetch("codex-review-external-repair-verify", {})
+external_republish = review_jobs.fetch("codex-review-external-republish", {})
+repaired_status = review_jobs.fetch("verify-review-status-repair", {})
+unless initial_status.inspect.include?("verification-failure.log") &&
+       initial_status.inspect.include?("actions/upload-artifact@") &&
+       Array(external_repair.fetch("needs", [])).include?("verify-review-status") &&
+       external_repair.inspect.include?("failure_artifact") &&
+       external_repair.fetch("steps", []).last.fetch("uses", "").start_with?("openai/codex-action@") &&
+       external_verify.fetch("permissions", nil) == {} &&
+       Array(external_republish.fetch("needs", [])).include?("codex-review-external-repair-verify") &&
+       Array(repaired_status.fetch("needs", [])).include?("codex-review-external-republish")
+  errors << ".github/workflows/codex_pr_review_feedback.yml:external status failure must feed one bounded repair, credential-free verification, re-publication, and status cycle"
+end
+
+sonar_source = File.read(".github/scripts/codex-check-sonar-quality-gate.sh")
+unless sonar_source.include?("PUBLISHED_COMMIT_SHA") &&
+       sonar_source.include?("/api/project_analyses/search") &&
+       sonar_source.include?("analysisId=") &&
+       !sonar_source.match?(/project_status.*projectKey=.*pullRequest=/)
+  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published commit's exact analysis ID"
+end
+
+jira_publish_source = File.read(".github/scripts/codex-jira-publish.sh")
+review_publish_source = File.read(".github/scripts/codex-pr-review-publish.sh")
+conflict_publish_source = File.read(".github/scripts/codex-merge-conflict-publish.sh")
+unless jira_publish_source.include?("EXPECTED_BASE_SHA") && jira_publish_source.include?("ls-remote --heads")
+  errors << ".github/scripts/codex-jira-publish.sh must reject a moved default branch before applying a verified patch"
+end
+unless review_publish_source.include?("EXPECTED_HEAD_SHA") && review_publish_source.include?("ls-remote --heads") &&
+       review_publish_source.include?("--force-with-lease")
+  errors << ".github/scripts/codex-pr-review-publish.sh must reject a moved PR branch before applying a verified patch"
+end
+unless conflict_publish_source.include?("actual_head_sha") && conflict_publish_source.include?("actual_base_sha")
+  errors << ".github/scripts/codex-merge-conflict-publish.sh must reject moved head and base branches"
 end
 
 {
@@ -501,15 +552,20 @@ revision_pinned_workflows.each do |workflow_name|
       next false unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha)/)
+      !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha|commit_sha)/)
     end
 
     declared_needs = Array(job.fetch("needs", []))
+    referenced_needs = job.inspect.scan(/needs\.([A-Za-z0-9_-]+)\./).flatten.uniq
+    missing_needs = referenced_needs - declared_needs
+    unless missing_needs.empty?
+      errors << "#{path}:#{job_name} references jobs not declared in needs: #{missing_needs.join(", ")}"
+    end
     steps.each do |step|
       next unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      pinned_ref = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.(trusted_sha|head_sha|base_sha)/)
+      pinned_ref = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.(trusted_sha|head_sha|base_sha|commit_sha)/)
       if pinned_ref
         trusted_source, output_name = pinned_ref.captures
         producer = workflow.fetch("jobs", {}).fetch(trusted_source, {})

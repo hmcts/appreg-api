@@ -168,6 +168,7 @@ jobs:
       contents: read
     outputs:
       artifact: codex-verification-source
+      source_sha: ${{ steps.source.outputs.sha }}
 
     steps:
       - name: Checkout planned repository revision
@@ -178,10 +179,12 @@ jobs:
           persist-credentials: false
 
       - name: Build credential-free verification source
+        id: source
         env:
           EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
         run: |
           test "$(git rev-parse HEAD)" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${EXPECTED_TRUSTED_SHA}" >>"$GITHUB_OUTPUT"
           test -z "$(git config --local --get-all http.https://github.com/.extraheader || true)"
           test -z "$(git config --local --get-all credential.helper || true)"
           tar -czf "$RUNNER_TEMP/codex-verification-source.tar.gz" .
@@ -1063,6 +1066,7 @@ jobs:
   publish-pr:
     needs:
       - codex-generate
+      - prepare-codex-verification-source
       - verify-codex-output
       - verify-codex-output-1
       - verify-codex-output-2
@@ -1096,6 +1100,7 @@ jobs:
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.output_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.output_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.output_artifact || needs.verify-codex-output.outputs.output_artifact }}
       CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.verified_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.verified_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.verified_artifact || needs.verify-codex-output.outputs.verified_artifact }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
@@ -1521,7 +1526,7 @@ jobs:
           retention-days: 1
 
   publish-published-pr-repair-1:
-    needs: [codex-generate, publish-pr, verify-published-pr-repair-1]
+    needs: [codex-generate, publish-pr, verify-published-pr-repair-1, prepare-codex-verification-source]
     if: always() && needs.verify-published-pr-repair-1.outputs.passed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1543,6 +1548,7 @@ jobs:
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.output_artifact }}
       CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.verified_artifact }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}

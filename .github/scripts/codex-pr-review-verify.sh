@@ -150,6 +150,8 @@ has_changes="$(metadata_value has_changes)"
 pr_number="$(metadata_value pr_number)"
 head_ref="$(metadata_value head_ref)"
 base_ref="$(metadata_value base_ref)"
+head_sha="$(metadata_value head_sha)"
+base_sha="$(metadata_value base_sha)"
 
 if [[ "${has_changes}" != "true" ]]; then
   {
@@ -157,11 +159,13 @@ if [[ "${has_changes}" != "true" ]]; then
     echo "pr_number=${pr_number}"
     echo "head_ref=${head_ref}"
     echo "base_ref=${base_ref}"
+    echo "head_sha=${head_sha}"
+    echo "base_sha=${base_sha}"
   } >"${verification_path}"
   exit 0
 fi
 
-if [[ "${pr_number}" != "${EXPECTED_PR_NUMBER}" || "${head_ref}" != "${EXPECTED_HEAD_REF}" || "${base_ref}" != "${EXPECTED_BASE_REF}" || "${head_ref}" != codex/* ]]; then
+if [[ "${pr_number}" != "${EXPECTED_PR_NUMBER}" || "${head_ref}" != "${EXPECTED_HEAD_REF}" || "${base_ref}" != "${EXPECTED_BASE_REF}" || "${head_sha}" != "${EXPECTED_HEAD_SHA}" || "${base_sha}" != "${EXPECTED_BASE_SHA}" || "${head_ref}" != codex/* ]]; then
   echo "Refusing to verify unexpected review artifact metadata." >&2
   exit 1
 fi
@@ -202,6 +206,8 @@ fi
   echo "pr_number=${pr_number}"
   echo "head_ref=${head_ref}"
   echo "base_ref=${base_ref}"
+  echo "head_sha=${head_sha}"
+  echo "base_sha=${base_sha}"
   echo "patch_sha=${patch_sha}"
   echo "guardrail_review_required=${guardrail_review_required}"
 } >"${verification_path}"
