@@ -4,9 +4,10 @@ set -euo pipefail
 
 max_encoded_patch_bytes=60000
 paths_file=""
+strict_paths=false
 
 usage() {
-  echo "Usage: $0 [--paths-file <path>]" >&2
+  echo "Usage: $0 [--paths-file <path>] [--strict-paths]" >&2
 }
 
 while [[ $# -gt 0 ]]; do
@@ -18,6 +19,10 @@ while [[ $# -gt 0 ]]; do
       fi
       paths_file="$2"
       shift 2
+      ;;
+    --strict-paths)
+      strict_paths=true
+      shift
       ;;
     -h|--help)
       usage
@@ -98,7 +103,50 @@ else
 fi
 
 patch_git read-tree HEAD
-patch_git add -A -- "${pathspecs[@]}"
+if [[ "${strict_paths}" == "true" ]]; then
+  if [[ -z "${paths_file}" ]]; then
+    echo "--strict-paths requires --paths-file" >&2
+    exit 2
+  fi
+
+  patch_git add -A -- .
+  changed_paths_file="${scratch_dir}/changed-paths.bin"
+  patch_git diff \
+    --cached \
+    --name-only \
+    -z \
+    --no-renames \
+    --no-ext-diff \
+    HEAD \
+    -- . >"${changed_paths_file}"
+
+  ALLOWED_PATHS_FILE="${paths_file}" CHANGED_PATHS_FILE="${changed_paths_file}" python3 -I - <<'PY'
+import os
+from pathlib import Path
+
+allowed = {
+    line
+    for line in Path(os.environ["ALLOWED_PATHS_FILE"]).read_text(encoding="utf-8").splitlines()
+    if line
+}
+raw_paths = Path(os.environ["CHANGED_PATHS_FILE"]).read_bytes()
+try:
+    changed = {
+        value.decode("utf-8")
+        for value in raw_paths.split(b"\0")
+        if value
+    }
+except UnicodeDecodeError as error:
+    raise SystemExit(f"Changed repository path is not UTF-8: {error}") from error
+
+unexpected = sorted(changed - allowed)
+if unexpected:
+    detail = ", ".join(repr(path) for path in unexpected)
+    raise SystemExit(f"Refusing to export changes outside the validated plan: {detail}")
+PY
+else
+  patch_git add -A -- "${pathspecs[@]}"
+fi
 
 if patch_git diff --cached --quiet --no-ext-diff HEAD -- "${pathspecs[@]}"; then
   printf '%s\n' '{"has_changes":false,"patch_gzip_base64":""}'

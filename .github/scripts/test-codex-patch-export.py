@@ -75,11 +75,18 @@ class CodexPatchExportTest(unittest.TestCase):
         self.root = Path(self.temporary_directory.name)
 
     def export(
-        self, repo: Path, *, paths_file: Path | None = None, check: bool = True
+        self,
+        repo: Path,
+        *,
+        paths_file: Path | None = None,
+        strict_paths: bool = False,
+        check: bool = True,
     ) -> subprocess.CompletedProcess[str]:
         command = ["bash", str(SCRIPT)]
         if paths_file is not None:
             command.extend(["--paths-file", str(paths_file)])
+        if strict_paths:
+            command.append("--strict-paths")
         return run(command, cwd=repo, check=check)
 
     def test_full_export_and_collector_handoff_with_read_only_git_metadata(self) -> None:
@@ -242,6 +249,27 @@ class CodexPatchExportTest(unittest.TestCase):
         git(target, "apply", "--binary", str(patch_path))
         self.assertEqual((target / "literal[1].txt").read_text(encoding="utf-8"), "allowed new\n")
         self.assertEqual((target / "literal1.txt").read_text(encoding="utf-8"), "decoy old\n")
+
+    def test_strict_scoped_export_rejects_out_of_plan_change(self) -> None:
+        source = self.root / "strict-source"
+        initialise_repository(source)
+        (source / "planned.txt").write_text("old\n", encoding="utf-8")
+        (source / "outside.txt").write_text("old\n", encoding="utf-8")
+        git(source, "add", "-A")
+        git(source, "commit", "--quiet", "-m", "base")
+
+        (source / "planned.txt").write_text("new\n", encoding="utf-8")
+        (source / "outside.txt").write_text("not approved\n", encoding="utf-8")
+        paths_file = self.root / "planned-files.txt"
+        paths_file.write_text("planned.txt\n", encoding="utf-8")
+
+        completed = self.export(
+            source, paths_file=paths_file, strict_paths=True, check=False
+        )
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("outside the validated plan", completed.stderr)
+        self.assertIn("outside.txt", completed.stderr)
+        self.assertEqual(completed.stdout, "")
 
     def test_no_change_export(self) -> None:
         source = self.root / "clean"

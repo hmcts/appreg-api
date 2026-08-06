@@ -10,28 +10,39 @@ required_env() {
   fi
 }
 
-for name in CODEX_RESULT CODEX_OPERATION OUTPUT_DIR BRANCH_NAME; do
+for name in CODEX_RESULT CODEX_OPERATION OUTPUT_DIR BRANCH_NAME PLAN_DIR; do
   required_env "${name}"
 done
 
 output_dir="${OUTPUT_DIR}"
-final_message_path="${output_dir}/codex-final-message.md"
 pr_body_path="${output_dir}/codex-pr-body.md"
 metadata_path="${output_dir}/metadata.env"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=.github/scripts/codex-action-runtime.sh
+source "${script_dir}/codex-action-runtime.sh"
+
 mkdir -p "${output_dir}"
-REQUIRE_CHANGES=true python3 "${script_dir}/collect-codex-patch-result.py"
+validated_codex_plan_path "${PLAN_DIR}" >/dev/null
+allowed_paths_file="${PLAN_DIR}/allowed-paths.txt"
+ALLOWED_PATHS_FILE="${allowed_paths_file}" REQUIRE_CHANGES=true WRITE_PR_DETAIL_FILES=true \
+  python3 "${script_dir}/collect-codex-patch-result.py"
+summary_path="${output_dir}/codex-summary.txt"
+testing_path="${output_dir}/codex-testing.txt"
 
 case "${CODEX_OPERATION}" in
   jira-generate)
     for name in ISSUE_KEY ISSUE_SUMMARY ISSUE_URL; do
       required_env "${name}"
     done
-    PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
+    PR_BODY_PATH="${pr_body_path}" PLAN_SHA_PATH="${PLAN_DIR}/plan.sha256" \
+      SUMMARY_PATH="${summary_path}" TESTING_PATH="${testing_path}" python3 -I - <<'PY'
 import os
 from pathlib import Path
 
+plan_sha = Path(os.environ["PLAN_SHA_PATH"]).read_text(encoding="ascii").strip()
+summary = Path(os.environ["SUMMARY_PATH"]).read_text(encoding="utf-8")
+testing = Path(os.environ["TESTING_PATH"]).read_text(encoding="utf-8")
 body = f"""### Jira link
 
 See [{os.environ['ISSUE_KEY']}]({os.environ['ISSUE_URL']})
@@ -40,11 +51,24 @@ See [{os.environ['ISSUE_KEY']}]({os.environ['ISSUE_URL']})
 
 Implements Jira issue {os.environ['ISSUE_KEY']}: {os.environ['ISSUE_SUMMARY']}
 
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context. See the Codex final message below for the implementation summary.
+Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context.
+
+#### Model-generated implementation summary
+
+{summary}
 
 ### Testing done
 
-Codex may run lightweight targeted checks during generation. This workflow verifies the generated patch in a separate no-write job before the trusted publish job opens the pull request. See the Codex final message below and workflow logs for details.
+#### Model-generated testing details
+
+{testing}
+
+The workflow independently verifies the generated patch in a credential-free job before the trusted publish job opens the pull request. See the workflow checks for the independent verification result.
+
+### Planning audit
+
+- Validated plan SHA-256: `{plan_sha}`
+- Plan approval: automatic after trusted validation
 
 ### Security Vulnerability Assessment ###
 
@@ -77,6 +101,21 @@ PY
         echo "See [${ISSUE_KEY}](${ISSUE_URL})"
       } >"${pr_body_path}"
     fi
+    PR_BODY_PATH="${pr_body_path}" SUMMARY_PATH="${summary_path}" TESTING_PATH="${testing_path}" \
+      REPAIR_ATTEMPT="${REPAIR_ATTEMPT}" python3 -I - <<'PY'
+import os
+from pathlib import Path
+
+pr_body_path = Path(os.environ["PR_BODY_PATH"])
+summary = Path(os.environ["SUMMARY_PATH"]).read_text(encoding="utf-8")
+testing = Path(os.environ["TESTING_PATH"]).read_text(encoding="utf-8")
+with pr_body_path.open("a", encoding="utf-8") as body:
+    body.write(
+        f"\n### Model-generated repair details (attempt {os.environ['REPAIR_ATTEMPT']})\n\n"
+        f"#### Implementation summary\n\n{summary}\n\n"
+        f"#### Testing details\n\n{testing}\n"
+    )
+PY
     ;;
   *)
     echo "Unsupported Codex Jira operation: ${CODEX_OPERATION}" >&2
@@ -84,16 +123,10 @@ PY
     ;;
 esac
 
-{
-  echo
-  if [[ "${CODEX_OPERATION}" == "jira-repair" ]]; then
-    echo "## Codex Repair Attempt ${REPAIR_ATTEMPT}"
-  else
-    echo "## Codex Final Message"
-  fi
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >>"${pr_body_path}"
+rm -f \
+  "${output_dir}/codex-final-message.md" \
+  "${summary_path}" \
+  "${testing_path}"
 
 {
   echo "branch_name=${BRANCH_NAME}"

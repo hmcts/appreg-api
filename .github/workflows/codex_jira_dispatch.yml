@@ -29,13 +29,12 @@ on:
         type: string
 
 jobs:
-  codex-generate-action:
+  codex-plan-action:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
     permissions:
       contents: read
     outputs:
-      branch_name: ${{ steps.prepare.outputs.branch_name }}
       codex_result: ${{ steps.codex-action.outputs.final-message }}
       trusted_sha: ${{ steps.trusted.outputs.sha }}
     env:
@@ -62,11 +61,11 @@ jobs:
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
-      - name: Prepare Codex prompt
+      - name: Prepare read-only planning prompt
         id: prepare
-        run: ./.github/scripts/codex-jira-implement.sh
+        run: ./.github/scripts/codex-jira-plan.sh
 
-      - name: Run Codex
+      - name: Plan implementation
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
@@ -78,13 +77,202 @@ jobs:
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
+          permission-profile: ":read-only"
+          safety-strategy: unprivileged-user
+          codex-user: codex
+          codex-args: '["--ephemeral"]'
+
+  validate-codex-plan:
+    needs: codex-plan-action
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      ready_to_implement: ${{ steps.validate.outputs.ready_to_implement }}
+      plan_sha256: ${{ steps.validate.outputs.plan_sha256 }}
+      plan_payload: ${{ steps.validate.outputs.plan_payload }}
+      planned_path_count: ${{ steps.validate.outputs.planned_path_count }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
+
+    steps:
+      - name: Checkout trusted plan validator
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Confirm trusted checkout SHA
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
+
+      - name: Validate and normalise Codex plan
+        id: validate
+        env:
+          CODEX_PLAN_RESULT: ${{ needs.codex-plan-action.outputs.codex_result }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py
+
+      - name: Record non-sensitive planning audit
+        env:
+          READY_TO_IMPLEMENT: ${{ steps.validate.outputs.ready_to_implement }}
+          PLAN_SHA256: ${{ steps.validate.outputs.plan_sha256 }}
+          PLANNED_PATH_COUNT: ${{ steps.validate.outputs.planned_path_count }}
+        run: |
+          {
+            echo "### Codex planning audit"
+            echo
+            echo "- Ready to implement: \`${READY_TO_IMPLEMENT}\`"
+            echo "- Plan approval: \`automatic after trusted validation\`"
+            echo "- Planned file count: \`${PLANNED_PATH_COUNT}\`"
+            echo "- Plan SHA-256: \`${PLAN_SHA256}\`"
+          } >>"${GITHUB_STEP_SUMMARY}"
+
+  codex-plan-blocked:
+    needs: validate-codex-plan
+    if: needs.validate-codex-plan.outputs.ready_to_implement == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - name: Stop workflow with terminal blocked result
+        env:
+          PLAN_SHA256: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+        run: |
+          {
+            echo "### Codex planning blocked"
+            echo
+            echo "No implementation or pull request was created. Review the Jira ticket and this workflow run."
+            echo
+            echo "Plan SHA-256: \`${PLAN_SHA256}\`"
+          } >>"${GITHUB_STEP_SUMMARY}"
+          echo "::error title=Codex plan blocked::The validated plan is not ready to implement; no implementation or pull request was created."
+          exit 1
+
+  prepare-codex-verification-source:
+    needs: [codex-plan-action, validate-codex-plan]
+    if: >-
+      ${{
+        needs.validate-codex-plan.result == 'success' &&
+        needs.validate-codex-plan.outputs.ready_to_implement == 'true'
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      artifact: codex-verification-source
+      source_sha: ${{ steps.source.outputs.sha }}
+
+    steps:
+      - name: Checkout planned repository revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build credential-free verification source
+        id: source
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${EXPECTED_TRUSTED_SHA}" >>"$GITHUB_OUTPUT"
+          test -z "$(git config --local --get-all http.https://github.com/.extraheader || true)"
+          test -z "$(git config --local --get-all credential.helper || true)"
+          tar -czf "$RUNNER_TEMP/codex-verification-source.tar.gz" .
+
+      - name: Upload credential-free verification source
+        uses: actions/upload-artifact@v7
+        with:
+          name: codex-verification-source
+          path: ${{ runner.temp }}/codex-verification-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  codex-generate-action:
+    needs: [codex-plan-action, validate-codex-plan]
+    if: >-
+      ${{
+        needs.validate-codex-plan.result == 'success' &&
+        needs.validate-codex-plan.outputs.ready_to_implement == 'true'
+      }}
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      branch_name: ${{ steps.prepare.outputs.branch_name }}
+      codex_result: ${{ steps.codex-action.outputs.final-message }}
+      trusted_sha: ${{ steps.trusted.outputs.sha }}
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+
+    steps:
+      - name: Checkout planned repository revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Confirm planned repository revision
+        id: trusted
+        env:
+          EXPECTED_TRUSTED_SHA: ${{ needs.codex-plan-action.outputs.trusted_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
+          echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
+
+      - name: Verify runner toolchain
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
+      - name: Prepare Codex prompt
+        id: prepare
+        env:
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/codex-jira-implement.sh
+
+      - name: Run Codex
+        id: codex-action
+        uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          responses-api-endpoint: https://eu.api.openai.com/v1/responses
+          codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: medium
+          prompt-file: ${{ steps.prepare.outputs.prompt_path }}
+          output-schema-file: ${{ steps.prepare.outputs.schema_path }}
+          working-directory: .
           permission-profile: ":workspace"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
   codex-generate:
-    needs: codex-generate-action
+    needs: [codex-generate-action, validate-codex-plan]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -115,6 +303,13 @@ jobs:
           test "${actual_sha}" = "${EXPECTED_TRUSTED_SHA}"
           echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Materialise Codex patch result
         id: codex
         env:
@@ -122,6 +317,7 @@ jobs:
           CODEX_OPERATION: jira-generate
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           BRANCH_NAME: ${{ needs.codex-generate-action.outputs.branch_name }}
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-collect.sh
 
       - name: Upload Codex output
@@ -133,12 +329,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output:
-    needs: codex-generate
+    needs: [codex-generate, prepare-codex-verification-source, validate-codex-plan]
     if: needs.codex-generate.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output
@@ -147,20 +342,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-0
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-0
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -215,7 +410,7 @@ jobs:
           retention-days: 1
 
   repair-codex-output-1-action:
-    needs: [codex-generate, verify-codex-output]
+    needs: [codex-generate, verify-codex-output, validate-codex-plan]
     if: needs.codex-generate.outputs.has_changes == 'true' && needs.verify-codex-output.outputs.passed != 'true'
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
@@ -261,11 +456,19 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Prepare Codex repair prompt
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -276,7 +479,7 @@ jobs:
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
           model: gpt-5.6-sol
-          effort: ultra
+          effort: medium
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
@@ -286,7 +489,7 @@ jobs:
           codex-args: '["--ephemeral"]'
 
   repair-codex-output-1:
-    needs: [codex-generate, verify-codex-output, repair-codex-output-1-action]
+    needs: [codex-generate, verify-codex-output, repair-codex-output-1-action, validate-codex-plan]
     if: needs.verify-codex-output.outputs.passed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -316,6 +519,13 @@ jobs:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Materialise repaired Codex patch
         id: repair
         env:
@@ -323,6 +533,7 @@ jobs:
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
           BRANCH_NAME: ${{ needs.repair-codex-output-1-action.outputs.branch_name }}
           REPAIR_ATTEMPT: '1'
         run: ./.github/scripts/codex-jira-collect.sh
@@ -336,12 +547,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output-1:
-    needs: [codex-generate, repair-codex-output-1]
+    needs: [codex-generate, repair-codex-output-1, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-codex-output-1.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output-repair-1
@@ -350,20 +560,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-1
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-1
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -418,7 +628,7 @@ jobs:
           retention-days: 1
 
   repair-codex-output-2-action:
-    needs: [codex-generate, verify-codex-output-1]
+    needs: [codex-generate, verify-codex-output-1, validate-codex-plan]
     if: needs.verify-codex-output-1.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
@@ -464,11 +674,19 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Prepare Codex repair prompt
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -479,7 +697,7 @@ jobs:
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
           model: gpt-5.6-sol
-          effort: ultra
+          effort: medium
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
@@ -489,7 +707,7 @@ jobs:
           codex-args: '["--ephemeral"]'
 
   repair-codex-output-2:
-    needs: [codex-generate, verify-codex-output-1, repair-codex-output-2-action]
+    needs: [codex-generate, verify-codex-output-1, repair-codex-output-2-action, validate-codex-plan]
     if: needs.verify-codex-output-1.outputs.passed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -519,6 +737,13 @@ jobs:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Materialise repaired Codex patch
         id: repair
         env:
@@ -526,6 +751,7 @@ jobs:
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
           BRANCH_NAME: ${{ needs.repair-codex-output-2-action.outputs.branch_name }}
           REPAIR_ATTEMPT: '2'
         run: ./.github/scripts/codex-jira-collect.sh
@@ -539,12 +765,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output-2:
-    needs: [codex-generate, repair-codex-output-2]
+    needs: [codex-generate, repair-codex-output-2, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-codex-output-2.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output-repair-2
@@ -553,20 +778,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-2
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-2
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -621,7 +846,7 @@ jobs:
           retention-days: 1
 
   repair-codex-output-3-action:
-    needs: [codex-generate, verify-codex-output-2]
+    needs: [codex-generate, verify-codex-output-2, validate-codex-plan]
     if: needs.verify-codex-output-2.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
@@ -667,11 +892,19 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Prepare Codex repair prompt
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -682,7 +915,7 @@ jobs:
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
           model: gpt-5.6-sol
-          effort: ultra
+          effort: medium
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
@@ -692,7 +925,7 @@ jobs:
           codex-args: '["--ephemeral"]'
 
   repair-codex-output-3:
-    needs: [codex-generate, verify-codex-output-2, repair-codex-output-3-action]
+    needs: [codex-generate, verify-codex-output-2, repair-codex-output-3-action, validate-codex-plan]
     if: needs.verify-codex-output-2.outputs.passed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -722,6 +955,13 @@ jobs:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Materialise repaired Codex patch
         id: repair
         env:
@@ -729,6 +969,7 @@ jobs:
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
           BRANCH_NAME: ${{ needs.repair-codex-output-3-action.outputs.branch_name }}
           REPAIR_ATTEMPT: '3'
         run: ./.github/scripts/codex-jira-collect.sh
@@ -742,12 +983,11 @@ jobs:
           retention-days: 1
 
   verify-codex-output-3:
-    needs: [codex-generate, repair-codex-output-3]
+    needs: [codex-generate, repair-codex-output-3, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-codex-output-3.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: codex-jira-output-repair-3
@@ -756,20 +996,20 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
       CODEX_VERIFIED_ARTIFACT: codex-jira-verified-3
       CODEX_FAILURE_ARTIFACT: codex-jira-verification-failure-3
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -826,6 +1066,7 @@ jobs:
   publish-pr:
     needs:
       - codex-generate
+      - prepare-codex-verification-source
       - verify-codex-output
       - verify-codex-output-1
       - verify-codex-output-2
@@ -859,6 +1100,8 @@ jobs:
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
+      JIRA_PUBLISH_MODE: initial
       CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.output_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.output_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.output_artifact || needs.verify-codex-output.outputs.output_artifact }}
       CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.verified_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.verified_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.verified_artifact || needs.verify-codex-output.outputs.verified_artifact }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
@@ -913,13 +1156,12 @@ jobs:
             echo "- Pull request: ${{ steps.publish.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
 
-  verify-published-pr:
-    needs: [codex-generate, publish-pr]
+  verify-published-pr-patch:
+    needs: [publish-pr, prepare-codex-verification-source, validate-codex-plan]
     if: always() && needs.publish-pr.outputs.pr_number != ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
@@ -927,19 +1169,7 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.publish-pr.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
-      SONAR_PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
-      SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
-      PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
-      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
-      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
-      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-pr.outputs.output_artifact }}
       CODEX_FAILURE_ARTIFACT: codex-jira-pr-verification-failure-0
 
@@ -950,12 +1180,14 @@ jobs:
           echo "output_artifact=${CODEX_OUTPUT_ARTIFACT}" >>"$GITHUB_OUTPUT"
           echo "failure_artifact=${CODEX_FAILURE_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -969,28 +1201,16 @@ jobs:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
 
-      - name: Verify published PR with Sonar
+      - name: Verify published PR patch without credentials
         id: verify
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
           set +e
-          (
-            ./.github/scripts/codex-jira-verify.sh
-            status=$?
-            if [[ "${status}" -eq 0 ]]; then
-              ./.github/scripts/codex-check-sonar-quality-gate.sh
-              status=$?
-            fi
-            if [[ "${status}" -eq 0 ]]; then
-              ./.github/scripts/codex-wait-pr-status.sh
-              status=$?
-            fi
-            exit "${status}"
-          ) >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-pr-verification.log" 2>&1
           status=$?
           cat "$RUNNER_TEMP/codex-pr-verification.log"
-          if [[ "${status}" -eq 0 ]]; then
+          if [[ "$status" -eq 0 ]]; then
             echo "passed=true" >>"$GITHUB_OUTPUT"
           else
             mkdir -p "$RUNNER_TEMP/codex-pr-verification-failure"
@@ -1009,8 +1229,80 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  verify-published-pr:
+    needs: [codex-generate, publish-pr, verify-published-pr-patch]
+    if: always() && needs.publish-pr.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+      output_artifact: ${{ needs.verify-published-pr-patch.outputs.output_artifact }}
+      failure_artifact: ${{ steps.verify.outputs.failure_artifact }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+      STATUS_FAILURE_ARTIFACT: codex-jira-pr-status-failure-0
+    steps:
+      - name: Checkout trusted status scripts
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+      - name: Check external PR status and Sonar quality gate
+        id: verify
+        env:
+          LOCAL_VERIFICATION_PASSED: ${{ needs.verify-published-pr-patch.outputs.passed }}
+          LOCAL_FAILURE_ARTIFACT: ${{ needs.verify-published-pr-patch.outputs.failure_artifact }}
+        run: |
+          if [[ "$LOCAL_VERIFICATION_PASSED" != "true" ]]; then
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+            echo "failure_artifact=$LOCAL_FAILURE_ARTIFACT" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
+          {
+            ./.github/scripts/codex-wait-pr-status.sh
+            status=$?
+            if [[ "$status" -eq 0 ]]; then
+              ./.github/scripts/codex-check-sonar-quality-gate.sh
+              status=$?
+            fi
+            exit "$status"
+          } >"$RUNNER_TEMP/codex-pr-status.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-pr-status.log"
+          echo "failure_artifact=$STATUS_FAILURE_ARTIFACT" >>"$GITHUB_OUTPUT"
+          if [[ "$status" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            mkdir -p "$RUNNER_TEMP/codex-pr-status-failure"
+            cp "$RUNNER_TEMP/codex-pr-status.log" "$RUNNER_TEMP/codex-pr-status-failure/verification-failure.log"
+            tail -n 240 "$RUNNER_TEMP/codex-pr-status.log" >"$RUNNER_TEMP/codex-pr-status-failure/verification-failure-summary.log"
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+      - name: Upload external status failure
+        if: >-
+          steps.verify.outputs.passed != 'true' &&
+          needs.verify-published-pr-patch.outputs.passed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.STATUS_FAILURE_ARTIFACT }}
+          path: ${{ runner.temp }}/codex-pr-status-failure
+          if-no-files-found: error
+          retention-days: 1
+
   repair-published-pr-1-action:
-    needs: [codex-generate, publish-pr, verify-published-pr]
+    needs: [codex-generate, publish-pr, verify-published-pr, validate-codex-plan]
     if: always() && needs.verify-published-pr.outputs.passed == 'false'
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
@@ -1056,11 +1348,19 @@ jobs:
           name: ${{ env.CODEX_FAILURE_ARTIFACT }}
           path: ${{ runner.temp }}/codex-failure
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Prepare Codex repair prompt from PR verification
         id: prepare
         env:
           INPUT_DIR: ${{ runner.temp }}/codex-input
           FAILURE_DIR: ${{ runner.temp }}/codex-failure
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
         run: ./.github/scripts/codex-jira-repair.sh
 
       - name: Run Codex repair
@@ -1071,7 +1371,7 @@ jobs:
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
           model: gpt-5.6-sol
-          effort: ultra
+          effort: medium
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
@@ -1081,7 +1381,7 @@ jobs:
           codex-args: '["--ephemeral"]'
 
   repair-published-pr-1:
-    needs: [codex-generate, verify-published-pr, repair-published-pr-1-action]
+    needs: [codex-generate, verify-published-pr, repair-published-pr-1-action, validate-codex-plan]
     if: always() && needs.verify-published-pr.outputs.passed == 'false' && needs.repair-published-pr-1-action.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -1111,6 +1411,13 @@ jobs:
           name: ${{ env.CODEX_INPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-input
 
+      - name: Materialise validated Codex plan
+        env:
+          CODEX_PLAN_PAYLOAD: ${{ needs.validate-codex-plan.outputs.plan_payload }}
+          EXPECTED_PLAN_SHA: ${{ needs.validate-codex-plan.outputs.plan_sha256 }}
+          OUTPUT_DIR: ${{ runner.temp }}/codex-plan
+        run: ./.github/scripts/validate-codex-plan.py --materialize
+
       - name: Materialise repaired Codex patch
         id: repair
         env:
@@ -1118,6 +1425,7 @@ jobs:
           CODEX_OPERATION: jira-repair
           INPUT_DIR: ${{ runner.temp }}/codex-input
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          PLAN_DIR: ${{ runner.temp }}/codex-plan
           BRANCH_NAME: ${{ needs.repair-published-pr-1-action.outputs.branch_name }}
           REPAIR_ATTEMPT: '1'
         run: ./.github/scripts/codex-jira-collect.sh
@@ -1131,12 +1439,11 @@ jobs:
           retention-days: 1
 
   verify-published-pr-repair-1:
-    needs: [codex-generate, repair-published-pr-1]
+    needs: [codex-generate, repair-published-pr-1, prepare-codex-verification-source, validate-codex-plan]
     if: needs.repair-published-pr-1.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
       output_artifact: ${{ steps.selected-artifacts.outputs.output_artifact }}
@@ -1145,9 +1452,7 @@ jobs:
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'false'
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
       CODEX_VERIFIED_ARTIFACT: codex-jira-pr-repair-verified-1
       CODEX_FAILURE_ARTIFACT: codex-jira-pr-repair-verification-failure-1
@@ -1160,12 +1465,14 @@ jobs:
           echo "verified_artifact=${CODEX_VERIFIED_ARTIFACT}" >>"$GITHUB_OUTPUT"
           echo "failure_artifact=${CODEX_FAILURE_ARTIFACT}" >>"$GITHUB_OUTPUT"
 
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -1220,7 +1527,7 @@ jobs:
           retention-days: 1
 
   publish-published-pr-repair-1:
-    needs: [codex-generate, publish-pr, verify-published-pr-repair-1]
+    needs: [codex-generate, publish-pr, verify-published-pr-repair-1, prepare-codex-verification-source]
     if: always() && needs.verify-published-pr-repair-1.outputs.passed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1242,6 +1549,9 @@ jobs:
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
+      JIRA_PUBLISH_MODE: repair
+      EXPECTED_BRANCH_HEAD_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.output_artifact }}
       CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.verified_artifact }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
@@ -1285,40 +1595,29 @@ jobs:
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-jira-publish.sh"
 
-  verify-published-pr-1:
-    needs: [codex-generate, publish-pr, publish-published-pr-repair-1]
+  verify-published-pr-1-patch:
+    needs: [publish-published-pr-repair-1, prepare-codex-verification-source, validate-codex-plan]
     if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    permissions:
-      contents: read
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       EXPECTED_BRANCH_NAME: ${{ needs.publish-published-pr-repair-1.outputs.branch_name }}
-      GH_TOKEN: ${{ github.token }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
-      SONAR_PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
-      SONAR_PR_BASE: ${{ github.event.repository.default_branch }}
-      PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
-      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
-      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
-      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.publish-published-pr-repair-1.outputs.output_artifact }}
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free verification source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-codex-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-verification-source
+
+      - name: Restore credential-free verification source
+        run: tar -xzf "$RUNNER_TEMP/codex-verification-source/codex-verification-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -1332,15 +1631,68 @@ jobs:
           name: ${{ env.CODEX_OUTPUT_ARTIFACT }}
           path: ${{ runner.temp }}/codex-output
 
-      - name: Verify repaired published PR with Sonar
+      - name: Verify repaired published PR patch without credentials
         id: verify
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
         run: |
-          ./.github/scripts/codex-jira-verify.sh
-          ./.github/scripts/codex-check-sonar-quality-gate.sh
+          set +e
+          ./.github/scripts/codex-jira-verify.sh >"$RUNNER_TEMP/codex-repaired-pr-verification.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/codex-repaired-pr-verification.log"
+          if [[ "$status" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+  verify-published-pr-1:
+    needs: [codex-generate, publish-published-pr-repair-1, verify-published-pr-1-patch]
+    if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.verify.outputs.passed }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+    steps:
+      - name: Checkout trusted status scripts
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          persist-credentials: false
+      - name: Check repaired external PR status and Sonar quality gate
+        id: verify
+        env:
+          LOCAL_VERIFICATION_PASSED: ${{ needs.verify-published-pr-1-patch.outputs.passed }}
+        run: |
+          if [[ "$LOCAL_VERIFICATION_PASSED" != "true" ]]; then
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
           ./.github/scripts/codex-wait-pr-status.sh
-          echo "passed=true" >>"$GITHUB_OUTPUT"
+          status=$?
+          if [[ "$status" -eq 0 ]]; then
+            ./.github/scripts/codex-check-sonar-quality-gate.sh
+            status=$?
+          fi
+          if [[ "$status" -eq 0 ]]; then
+            echo "passed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
 
   codex-published-pr-verification-failed:
     needs:
