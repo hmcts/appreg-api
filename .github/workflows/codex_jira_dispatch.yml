@@ -1101,6 +1101,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
+      JIRA_PUBLISH_MODE: initial
       CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.output_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.output_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.output_artifact || needs.verify-codex-output.outputs.output_artifact }}
       CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-codex-output-3.outputs.passed == 'true' && needs.verify-codex-output-3.outputs.verified_artifact || needs.verify-codex-output-2.outputs.passed == 'true' && needs.verify-codex-output-2.outputs.verified_artifact || needs.verify-codex-output-1.outputs.passed == 'true' && needs.verify-codex-output-1.outputs.verified_artifact || needs.verify-codex-output.outputs.verified_artifact }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
@@ -1549,6 +1550,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
+      JIRA_PUBLISH_MODE: repair
+      EXPECTED_BRANCH_HEAD_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
       CODEX_OUTPUT_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.output_artifact }}
       CODEX_VERIFIED_ARTIFACT: ${{ needs.verify-published-pr-repair-1.outputs.verified_artifact }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}

@@ -456,15 +456,44 @@ end
 jira_publish_source = File.read(".github/scripts/codex-jira-publish.sh")
 review_publish_source = File.read(".github/scripts/codex-pr-review-publish.sh")
 conflict_publish_source = File.read(".github/scripts/codex-merge-conflict-publish.sh")
-unless jira_publish_source.include?("EXPECTED_BASE_SHA") && jira_publish_source.include?("ls-remote --heads")
+initial_jira_publisher = jira_jobs.fetch("publish-pr", {})
+initial_jira_env = initial_jira_publisher.fetch("env", {})
+unless initial_jira_env["JIRA_PUBLISH_MODE"] == "initial" &&
+       !initial_jira_env.key?("EXPECTED_BRANCH_HEAD_SHA")
+  errors << ".github/workflows/codex_jira_dispatch.yml:publish-pr must require an absent generated branch"
+end
+
+jira_republishers = jira_jobs.select { |name, _job| name.match?(/^publish-published-pr-repair-\d+$/) }
+if jira_republishers.empty?
+  errors << ".github/workflows/codex_jira_dispatch.yml must contain a trusted Jira repair republisher"
+end
+jira_republishers.each do |job_name, job|
+  env = job.fetch("env", {})
+  unless Array(job.fetch("needs", [])).include?("publish-pr") &&
+         env["JIRA_PUBLISH_MODE"] == "repair" &&
+         env["EXPECTED_BRANCH_HEAD_SHA"] == "${{ needs.publish-pr.outputs.commit_sha }}"
+    errors << ".github/workflows/codex_jira_dispatch.yml:#{job_name} must lease against the exact trusted original publish SHA"
+  end
+end
+
+unless jira_publish_source.include?("EXPECTED_BASE_SHA") &&
+       jira_publish_source.include?('required_env "JIRA_PUBLISH_MODE"') &&
+       jira_publish_source.include?('required_env "EXPECTED_BRANCH_HEAD_SHA"') &&
+       jira_publish_source.include?('--force-with-lease="refs/heads/${branch_name}:"') &&
+       jira_publish_source.include?('--force-with-lease="refs/heads/${branch_name}:${expected_branch_head_sha}"') &&
+       !jira_publish_source.include?('--force-with-lease="refs/heads/${branch_name}:${remote_branch_sha}"')
   errors << ".github/scripts/codex-jira-publish.sh must reject a moved default branch before applying a verified patch"
 end
 unless review_publish_source.include?("EXPECTED_HEAD_SHA") && review_publish_source.include?("ls-remote --heads") &&
        review_publish_source.include?("--force-with-lease")
   errors << ".github/scripts/codex-pr-review-publish.sh must reject a moved PR branch before applying a verified patch"
 end
-unless conflict_publish_source.include?("actual_head_sha") && conflict_publish_source.include?("actual_base_sha")
-  errors << ".github/scripts/codex-merge-conflict-publish.sh must reject moved head and base branches"
+unless conflict_publish_source.include?("actual_head_sha") &&
+       conflict_publish_source.include?("actual_base_sha") &&
+       conflict_publish_source.include?("latest_head_sha") &&
+       conflict_publish_source.include?("latest_base_sha") &&
+       conflict_publish_source.include?('--force-with-lease="refs/heads/${head_ref}:${head_sha}"')
+  errors << ".github/scripts/codex-merge-conflict-publish.sh must recheck moved head and base branches immediately before an exact-lease push"
 end
 
 {

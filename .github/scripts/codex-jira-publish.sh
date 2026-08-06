@@ -19,6 +19,25 @@ required_env "OUTPUT_DIR"
 required_env "VERIFICATION_DIR"
 required_env "EXPECTED_BRANCH_NAME"
 required_env "EXPECTED_BASE_SHA"
+required_env "JIRA_PUBLISH_MODE"
+
+case "${JIRA_PUBLISH_MODE}" in
+  initial)
+    expected_branch_head_sha=""
+    ;;
+  repair)
+    required_env "EXPECTED_BRANCH_HEAD_SHA"
+    expected_branch_head_sha="${EXPECTED_BRANCH_HEAD_SHA}"
+    if [[ ! "${expected_branch_head_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+      echo "Invalid expected Jira repair branch SHA: ${expected_branch_head_sha}" >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "JIRA_PUBLISH_MODE must be either initial or repair." >&2
+    exit 1
+    ;;
+esac
 
 default_branch="${DEFAULT_BRANCH:-master}"
 output_dir="${OUTPUT_DIR}"
@@ -178,6 +197,17 @@ if [[ -z "${remote_base_sha}" || "${remote_base_sha}" != "${verified_base_sha}" 
   echo "::error title=Source revision moved::The remote ${default_branch} branch moved after credential-free verification. Re-run the workflow; the verified patch will not be applied to a newer base." >&2
   exit 1
 fi
+
+remote_branch_sha="$(git_authenticated ls-remote --heads origin "refs/heads/${branch_name}" | awk '{print $1}')"
+if [[ "${JIRA_PUBLISH_MODE}" == "initial" && -n "${remote_branch_sha}" ]]; then
+  echo "::error title=Generated branch already exists::Initial publication requires refs/heads/${branch_name} to be absent. Re-run with a new generated branch or intervene manually." >&2
+  exit 1
+fi
+if [[ "${JIRA_PUBLISH_MODE}" == "repair" && "${remote_branch_sha}" != "${expected_branch_head_sha}" ]]; then
+  echo "::error title=Generated branch moved::The remote ${branch_name} branch no longer matches the trusted published commit ${expected_branch_head_sha}. Re-run the workflow or intervene manually; the repaired patch was not published." >&2
+  exit 1
+fi
+
 git_authenticated fetch origin "${verified_base_sha}:refs/remotes/origin/${default_branch}"
 git_authenticated checkout -B "${default_branch}" "${verified_base_sha}"
 git_authenticated checkout -B "${branch_name}"
@@ -197,13 +227,23 @@ if [[ "${latest_base_sha}" != "${verified_base_sha}" ]]; then
   exit 1
 fi
 
-remote_branch_sha="$(git_authenticated ls-remote --heads origin "${branch_name}" | awk '{print $1}')"
-if [[ -n "${remote_branch_sha}" ]]; then
+latest_branch_sha="$(git_authenticated ls-remote --heads origin "refs/heads/${branch_name}" | awk '{print $1}')"
+if [[ "${JIRA_PUBLISH_MODE}" == "initial" ]]; then
+  if [[ -n "${latest_branch_sha}" ]]; then
+    echo "::error title=Generated branch appeared::The remote ${branch_name} branch was created while the verified commit was being prepared. Re-run with a new generated branch or intervene manually." >&2
+    exit 1
+  fi
   git_authenticated push \
-    --force-with-lease="refs/heads/${branch_name}:${remote_branch_sha}" \
+    --force-with-lease="refs/heads/${branch_name}:" \
     --set-upstream origin "${branch_name}"
 else
-  git_authenticated push --set-upstream origin "${branch_name}"
+  if [[ "${latest_branch_sha}" != "${expected_branch_head_sha}" ]]; then
+    echo "::error title=Generated branch moved::The remote ${branch_name} branch moved while the repaired commit was being prepared. Re-run the workflow or intervene manually; the repaired patch was not published." >&2
+    exit 1
+  fi
+  git_authenticated push \
+    --force-with-lease="refs/heads/${branch_name}:${expected_branch_head_sha}" \
+    --set-upstream origin "${branch_name}"
 fi
 
 pr_url="$(gh_authenticated pr list --repo "${GITHUB_REPOSITORY}" --head "${branch_name}" --state open --json url --jq '.[0].url // empty')"
