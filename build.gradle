@@ -24,7 +24,7 @@ plugins {
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.0'
-  id 'com.github.ben-manes.versions' version '0.56.0'
+  id 'com.github.ben-manes.versions' version '0.59.0'
   id 'org.sonarqube' version '7.3.1.8318'
   id 'org.openapi.generator' version '7.23.0'
   id 'io.freefair.lombok' version '9.5.0'
@@ -588,8 +588,13 @@ tasks.named('openApiGenerate') {
 // Add a new jar that will be published to maven with the classifier -openapi
 tasks.register('openapiJarArtefact', Jar) {
   archiveClassifier = 'openapi'
+  from(layout.buildDirectory.file('specmerge/yaml/openapi.yaml')) {
+    rename { 'bundledOpenApi.yaml' }
+  }
   from new File("$rootDir/src/main/resources/openapi")
+  dependsOn tasks.named('bundleOpenApiYaml')
 }
+
 
 // Add a new jar that will be published to maven with the classifier -flyway
 tasks.register('flywayArtefact', Jar) {
