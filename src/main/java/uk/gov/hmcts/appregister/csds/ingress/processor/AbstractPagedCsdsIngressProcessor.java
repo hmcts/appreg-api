@@ -243,7 +243,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     protected final Long requiredLong(JsonNode node, String fieldName) {
         val value = nullableLong(node, fieldName);
         if (value == null) {
-            throw invalidField(fieldName);
+            throw invalidField(node, fieldName);
         }
 
         return value;
@@ -261,7 +261,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     protected final String requiredText(JsonNode node, String fieldName) {
         val value = nullableText(node, fieldName);
         if (value == null) {
-            throw invalidField(fieldName);
+            throw invalidField(node, fieldName);
         }
 
         return value;
@@ -279,7 +279,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     protected final BigDecimal requiredBigDecimal(JsonNode node, String fieldName) {
         val value = nullableBigDecimal(node, fieldName);
         if (value == null) {
-            throw invalidField(fieldName);
+            throw invalidField(node, fieldName);
         }
 
         return value;
@@ -305,7 +305,9 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                     "CSDS field "
                             + fieldName
                             + " contained an invalid decimal value for "
-                            + datasetName(),
+                            + datasetName()
+                            + ". Record: "
+                            + node,
                     ex);
         }
     }
@@ -313,7 +315,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     protected final YesOrNo requiredYesOrNo(JsonNode node, String fieldName) {
         val value = nullableText(node, fieldName);
         if (value == null) {
-            throw invalidField(fieldName);
+            throw invalidField(node, fieldName);
         }
 
         try {
@@ -324,7 +326,9 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                     "CSDS field "
                             + fieldName
                             + " contained an unknown YesOrNo value for "
-                            + datasetName(),
+                            + datasetName()
+                            + ". Record: "
+                            + node,
                     ex);
         }
     }
@@ -332,7 +336,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     protected final LocalDate requiredLocalDate(JsonNode node, String fieldName) {
         val value = nullableLocalDate(node, fieldName);
         if (value == null) {
-            throw invalidField(fieldName);
+            throw invalidField(node, fieldName);
         }
 
         return value;
@@ -349,7 +353,12 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         } catch (DateTimeParseException ex) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR,
-                    "CSDS field " + fieldName + " contained an invalid date for " + datasetName(),
+                    "CSDS field "
+                            + fieldName
+                            + " contained an invalid date for "
+                            + datasetName()
+                            + ". Record: "
+                            + node,
                     ex);
         }
     }
@@ -358,6 +367,17 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         return new AppRegistryException(
                 CommonAppError.INTERNAL_SERVER_ERROR,
                 "CSDS field " + fieldName + " was missing or invalid for " + datasetName());
+    }
+
+    protected final AppRegistryException invalidField(JsonNode node, String fieldName) {
+        return new AppRegistryException(
+                CommonAppError.INTERNAL_SERVER_ERROR,
+                "CSDS field "
+                        + fieldName
+                        + " was missing or invalid for "
+                        + datasetName()
+                        + ". Record: "
+                        + node);
     }
 
     protected final void validateExpectedFields(JsonNode node, List<String> expectedFields) {
