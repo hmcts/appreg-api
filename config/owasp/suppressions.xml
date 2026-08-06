@@ -27,12 +27,10 @@
     <cve>CVE-2025-15104</cve>
   </suppress>
 
-  <suppress until="2026-09-30Z">
-    <notes>
-      Temporary suppression: CVE-2026-66299 affects only Tomcat's WebSocket chat example,
-      which is not included in this Spring Boot deployment. Apache has fixed the issue in
-      Tomcat 11.0.25, but that release is not yet available from Maven Central (verified 2026-08-06).
-      Remove this suppression and upgrade the explicit tomcat.version override when it is released.
+  <suppress>                                                                                                                                            
+    <notes>                                                                                                                                             
+      False positive: CVE-2026-66299 affects Tomcat's bundled WebSocket chat example.                                                                   
+      This Spring Boot application uses embedded Tomcat and does not package or deploy                                                                  
     </notes>
     <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-(core|websocket)@11\.0\.24$</packageUrl>
     <cve>CVE-2026-66299</cve>

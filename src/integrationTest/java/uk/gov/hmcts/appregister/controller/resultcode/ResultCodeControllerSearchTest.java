@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.resultcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
@@ -22,6 +23,7 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
@@ -792,7 +794,13 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         try {
-            persistance.save(createResolutionCode(code, title, startDate, endDate));
+            ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
+            resolutionCode.setResultCode(code);
+            resolutionCode.setTitle(title);
+            resolutionCode.setWording("Seeded duplicate wording");
+            resolutionCode.setStartDate(startDate);
+            resolutionCode.setEndDate(endDate);
+            persistance.save(resolutionCode);
         } finally {
             SecurityContextHolder.clearContext();
         }

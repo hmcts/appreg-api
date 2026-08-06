@@ -25,10 +25,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -848,6 +851,17 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                     throws Exception {
 
         // Arrange
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR003");
+        applicationCode.setTitle("Bulk respondent allowed update test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.setNumberOfRespondents(null);
@@ -855,7 +869,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setStandardApplicantCode(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryUpdateDto.setApplicationCode("CT99001");
+        entryUpdateDto.setApplicationCode("ZZBR003");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
@@ -864,7 +878,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setStandardApplicantCode(null);
-        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setApplicationCode("ZZBR003");
         entryCreateDto.setWordingFields(List.of(templateSubstitution));
 
         var tokenGenerator = createAdminToken();
@@ -894,15 +908,27 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void
             givenAnInvalidUpdateEntryRequest_whenFeeStatusProvidedForApplicationCodeWithoutFee_then400IsReturned()
                     throws Exception {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZNF004");
+        applicationCode.setTitle("No fee update test");
+        applicationCode.setWording("Test wording");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         var feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(PaymentStatus.PAID);
         feeStatus.setStatusDate(LocalDate.now(java.time.ZoneOffset.UTC));
         entryUpdateDto.setFeeStatuses(List.of(feeStatus));
-        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setApplicationCode("ZZNF004");
+        entryUpdateDto.setHasOffsiteFee(false);
         entryUpdateDto.setNumberOfRespondents(null);
         entryUpdateDto.setStandardApplicantCode(null);
-        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+        entryUpdateDto.setWordingFields(List.of());
 
         var tokenGenerator = createAdminToken();
         val responseSpecCreate = createListEntryWithAllData();
@@ -923,12 +949,24 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     @Test
     void givenUpdate_whenFeeStatusWouldBePreservedForNonFeeCode_then200IsReturned()
             throws Exception {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZNF002");
+        applicationCode.setTitle("No fee update test");
+        applicationCode.setWording("Test wording");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setHasOffsiteFee(false);
         entryUpdateDto.setFeeStatuses(null);
-        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setApplicationCode("ZZNF002");
         entryUpdateDto.setNumberOfRespondents(null);
         entryUpdateDto.setStandardApplicantCode(null);
-        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+        entryUpdateDto.setWordingFields(List.of());
 
         var tokenGenerator = createAdminToken();
         val responseSpecCreate = createListEntryWithAllData();
@@ -942,23 +980,35 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecUpdate.then().statusCode(200);
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
 
-        Assertions.assertEquals("CT99002", updatedDto.getApplicationCode());
+        Assertions.assertEquals("ZZNF002", updatedDto.getApplicationCode());
         assertFeeStatusesMatch(createdDto.getFeeStatuses(), updatedDto.getFeeStatuses());
     }
 
     @Test
     void givenUpdate_whenExistingFeeStatusesAreSentForNonFeeCode_then200IsReturned()
             throws Exception {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZNF002");
+        applicationCode.setTitle("No fee update test");
+        applicationCode.setWording("Test wording");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         var tokenGenerator = createAdminToken();
         val responseSpecCreate = createListEntryWithAllData();
         EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
 
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setFeeStatuses(createdDto.getFeeStatuses());
-        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setApplicationCode("ZZNF002");
         entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setHasOffsiteFee(false);
         entryUpdateDto.setStandardApplicantCode(null);
-        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+        entryUpdateDto.setWordingFields(List.of());
 
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
@@ -968,8 +1018,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         responseSpecUpdate.then().statusCode(200);
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
-
-        Assertions.assertEquals("CT99002", updatedDto.getApplicationCode());
+        Assertions.assertEquals("ZZNF002", updatedDto.getApplicationCode());
         assertFeeStatusesMatch(createdDto.getFeeStatuses(), updatedDto.getFeeStatuses());
     }
 
@@ -977,12 +1026,24 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void
             givenAnInvalidUpdateEntryRequest_whenFeeStatusesAreClearedForApplicationCodeWithoutFee_then400IsReturned()
                     throws Exception {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZNF003");
+        applicationCode.setTitle("No fee cleared fee statuses update test");
+        applicationCode.setWording("Test wording");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setFeeStatuses(List.of());
-        entryUpdateDto.setApplicationCode("CT99002");
+        entryUpdateDto.setHasOffsiteFee(false);
+        entryUpdateDto.setApplicationCode("ZZNF003");
         entryUpdateDto.setNumberOfRespondents(null);
         entryUpdateDto.setStandardApplicantCode(null);
-        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Reference", "REF-123")));
+        entryUpdateDto.setWordingFields(List.of());
 
         var tokenGenerator = createAdminToken();
         val responseSpecCreate = createListEntryWithAllData();
@@ -1005,6 +1066,17 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
             givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenNumberOfRespondentsProvided_thenReturn200()
                     throws Exception {
         // Arrange
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR006");
+        applicationCode.setTitle("Bulk respondent allowed update test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setRespondent(null);
         entryUpdateDto.setStandardApplicantCode(null);
@@ -1012,18 +1084,18 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setFeeStatuses(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryUpdateDto.setApplicationCode("CT99001");
+        entryUpdateDto.setApplicationCode("ZZBR006");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
         var tokenGenerator = createAdminToken();
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setApplicationCode("ZZBR006");
+        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
         entryCreateDto.setRespondent(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(5);
         entryCreateDto.setFeeStatuses(null);
-        entryCreateDto.setApplicationCode("CT99001");
-        entryCreateDto.setWordingFields(List.of(templateSubstitution));
 
         Response responseSpecCreate =
                 restAssuredClient.executePostRequest(
@@ -1036,6 +1108,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         entryCreateDto);
 
         // Act
+        responseSpecCreate.then().statusCode(201);
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
@@ -1052,12 +1125,23 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void givenBulkRespondentUpdate_whenUpdated_thenPersistWriteAuditRows() throws Exception {
         // Seed an entry with explicit starting values so the update assertions can check old and
         // new audit values directly from DATA_AUDIT.
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR004");
+        applicationCode.setTitle("Bulk respondent allowed audit update test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
         val entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setRespondent(null);
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.setNumberOfRespondents(5);
         entryUpdateDto.setFeeStatuses(null);
-        entryUpdateDto.setApplicationCode("CT99001");
+        entryUpdateDto.setApplicationCode("ZZBR004");
         entryUpdateDto.setCaseReference("CASE-UPD-001");
         entryUpdateDto.setNotes("Updated audit notes");
         entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
@@ -1068,7 +1152,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(5);
         entryCreateDto.setFeeStatuses(null);
-        entryCreateDto.setApplicationCode("CT99001");
+        entryCreateDto.setApplicationCode("ZZBR004");
         entryCreateDto.setNotes("Original audit notes");
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
 
@@ -1097,7 +1181,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         val updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
         Assertions.assertEquals("Updated audit notes", updatedDto.getNotes());
         Assertions.assertEquals(JsonNullable.of(5), updatedDto.getNumberOfRespondents());
-        Assertions.assertEquals("CT99001", updatedDto.getApplicationCode());
+        Assertions.assertEquals("ZZBR004", updatedDto.getApplicationCode());
         Assertions.assertEquals("CASE-UPD-001", updatedDto.getCaseReference());
 
         // Notes changed from the seeded value to the update payload value.
@@ -1143,7 +1227,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                                 TableNames.APPLICATION_CODES,
                                 "application_code",
                                 originalApplicationCode,
-                                "CT99001")
+                                "ZZBR004")
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
@@ -1434,23 +1518,29 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     @Test
     void givenACNotRequireRespondent_BulkRespondentAllowed_NoRespondentAndNoNumber_thenReturn200()
             throws Exception {
-        Response responseSpecCreate = createListEntryWithAllData();
-
-        // Arrange
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setRespondent(null);
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.setNumberOfRespondents(null);
         entryUpdateDto.setFeeStatuses(null);
 
-        // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryUpdateDto.setApplicationCode("CT99001");
-        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
-        entryUpdateDto.setWordingFields(List.of(templateSubstitution));
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR002");
+        applicationCode.setTitle("Bulk respondent allowed update test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
+        entryUpdateDto.setApplicationCode("ZZBR002");
+        entryUpdateDto.setWordingFields(List.of(new TemplateSubstitution("Number", "5")));
 
         var tokenGenerator = createAdminToken();
+        Response responseSpecCreate = createListEntryWithAllData();
 
-        // Act
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
@@ -1467,8 +1557,6 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     void
             givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
                     throws Exception {
-        Response responseSpecCreate = createListEntryWithAllData();
-
         // Arrange
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setStandardApplicantCode(null);
@@ -1476,11 +1564,23 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         entryUpdateDto.setFeeStatuses(null);
 
         // Use an app code which does NOT require a respondent but allows bulk respondent number
-        entryUpdateDto.setApplicationCode("CT99001");
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode("ZZBR005");
+        applicationCode.setTitle("Bulk respondent mutually exclusive update test");
+        applicationCode.setWording("Application for {TEXT|Number|5}");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.of(2000, 1, 1));
+        applicationCode.setEndDate(null);
+        persistance.save(applicationCode);
+
+        entryUpdateDto.setApplicationCode("ZZBR005");
         TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
         entryUpdateDto.setWordingFields(List.of(templateSubstitution));
 
         var tokenGenerator = createAdminToken();
+        Response responseSpecCreate = createListEntryWithAllData();
 
         // Act
         Response responseSpecUpdate =
@@ -1504,7 +1604,6 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
     @Test
     void givenTooManyMagistrates_whenUpdateEntry_thenReturn400() throws Exception {
-        Response responseSpecCreate = createListEntryWithAllData();
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setOfficials(
                 List.of(
@@ -1513,6 +1612,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                         buildOfficial("Mrs", "Mina", "Three", OfficialType.MAGISTRATE),
                         buildOfficial("Mr", "Marco", "Four", OfficialType.MAGISTRATE)));
 
+        Response responseSpecCreate = createListEntryWithAllData();
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
