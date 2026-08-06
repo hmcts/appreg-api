@@ -56,7 +56,7 @@ Codex may run lightweight targeted checks during generation. This workflow verif
 ### Planning audit
 
 - Validated plan SHA-256: `{plan_sha}`
-- Human approval: required
+- Plan approval: automatic after trusted validation
 
 ### Security Vulnerability Assessment ###
 

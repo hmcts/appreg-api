@@ -157,6 +157,7 @@ class CodexPlanHandoffTest(unittest.TestCase):
         self.assertNotIn(PLAN_DETAIL, pr_body)
         self.assertNotIn("Updated the shared validator.", pr_body)
         self.assertIn("Validated plan SHA-256", pr_body)
+        self.assertIn("Plan approval: automatic after trusted validation", pr_body)
         self.assertFalse((output_dir / "plan.json").exists())
         self.assertFalse((output_dir / "allowed-paths.txt").exists())
         self.assertFalse((output_dir / "codex-final-message.md").exists())

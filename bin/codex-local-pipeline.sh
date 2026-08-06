@@ -261,41 +261,30 @@ unless blocked.fetch("needs", "") == "validate-codex-plan" &&
   errors << "#{jira_path}:codex-plan-blocked must expose a terminal failure for plans that are not ready"
 end
 
-approval = jira_jobs.fetch("approve-codex-plan", {})
-approval_environment = approval.fetch("environment", {})
-approval_environment_name = approval_environment.is_a?(Hash) ? approval_environment.fetch("name", "") : approval_environment
-approval_steps = approval.fetch("steps", [])
-approval_check = approval_steps.first || {}
-approval_check_source = approval_check.fetch("run", "")
-unless approval_environment_name == "codex-plan-approval" &&
-       approval.fetch("if", "") == "needs.validate-codex-plan.outputs.ready_to_implement == 'true'"
-  errors << "#{jira_path}:every ready plan must use the codex-plan-approval environment"
-end
-unless approval_check_source.include?("/environments/") &&
-       approval_check_source.include?("required_reviewers") &&
-       approval_check_source.include?("protection_rules")
-  errors << "#{jira_path}:approve-codex-plan must first fail closed on missing required-reviewer protection"
-end
-if approval_check_source.match?(/Authorization|GH_TOKEN|github\.token/) ||
-   approval_check.inspect.include?("actions/checkout@")
-  errors << "#{jira_path}:approval environment protection check must not expose a token or checkout code"
+if jira_jobs.key?("approve-codex-plan")
+  errors << "#{jira_path}:ready plans must proceed automatically without a plan-approval job"
 end
 
 implementation = jira_jobs.fetch("codex-generate-action", {})
 implementation_needs = Array(implementation.fetch("needs", []))
-unless %w[codex-plan-action validate-codex-plan approve-codex-plan].all? { |name| implementation_needs.include?(name) }
-  errors << "#{jira_path}:codex-generate-action must wait for validation and mandatory approval"
+unless implementation_needs.sort == %w[codex-plan-action validate-codex-plan].sort
+  errors << "#{jira_path}:codex-generate-action must follow planning and trusted validation directly"
 end
-unless implementation.fetch("if", "").include?("needs.approve-codex-plan.result == 'success'") &&
-       !implementation.fetch("if", "").include?("skipped") &&
+implementation_condition = implementation.fetch("if", "")
+unless implementation_condition.include?("needs.validate-codex-plan.result == 'success'") &&
+       implementation_condition.include?("needs.validate-codex-plan.outputs.ready_to_implement == 'true'") &&
+       !implementation_condition.include?("approve-codex-plan") &&
        implementation.inspect.include?("needs.codex-plan-action.outputs.trusted_sha") &&
        implementation.inspect.include?("CODEX_PLAN_PAYLOAD") &&
        implementation.inspect.include?("--materialize") &&
        implementation.inspect.include?("PLAN_DIR")
-  errors << "#{jira_path}:codex-generate-action must use only the approved bounded plan hand-off"
+  errors << "#{jira_path}:codex-generate-action must auto-start only from the validated ready-plan hand-off"
 end
 
 jira_source = File.read(jira_path)
+if jira_source.include?("codex-plan-approval") || jira_source.include?("required_reviewers")
+  errors << "#{jira_path}:automatic plan approval must not retain a GitHub environment approval gate"
+end
 if jira_source.match?(/^\s+name:\s+codex-jira-plan\s*$/) ||
    jira_source.include?("plan.md") ||
    jira_source.match?(/cat .*plan\.json.*GITHUB_STEP_SUMMARY/)

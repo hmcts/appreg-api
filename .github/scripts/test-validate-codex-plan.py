@@ -98,20 +98,22 @@ class ValidateCodexPlanTest(unittest.TestCase):
         )
 
         outputs = self.outputs(root)
-        self.assertEqual(outputs["approval_required"], "true")
+        self.assertNotIn("approval_required", outputs)
         self.assertEqual(outputs["planned_path_count"], "1")
         decoded = base64.b64decode(outputs["plan_payload"], validate=True)
         self.assertEqual(decoded, normalised_path.read_bytes())
         self.assertEqual(hashlib.sha256(decoded).hexdigest(), outputs["plan_sha256"])
         self.assertLessEqual(len(decoded), 32 * 1024)
 
-    def test_low_risk_ready_plan_still_requires_approval(self) -> None:
+    def test_ready_high_risk_cross_system_plan_has_no_approval_requirement(self) -> None:
         plan = valid_plan()
-        plan["risk_level"] = "low"
-        plan["cross_system_change"] = False
+        plan["risk_level"] = "high"
+        plan["cross_system_change"] = True
         result, root = self.run_validator(plan)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.outputs(root)["approval_required"], "true")
+        outputs = self.outputs(root)
+        self.assertEqual(outputs["ready_to_implement"], "true")
+        self.assertNotIn("approval_required", outputs)
 
     def test_blocked_plan_is_valid_but_cannot_request_implementation(self) -> None:
         plan = valid_plan()
@@ -124,7 +126,7 @@ class ValidateCodexPlanTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         outputs = self.outputs(root)
         self.assertEqual(outputs["ready_to_implement"], "false")
-        self.assertEqual(outputs["approval_required"], "false")
+        self.assertNotIn("approval_required", outputs)
 
         materialized, _ = self.run_materializer(
             outputs["plan_payload"], outputs["plan_sha256"]

@@ -201,7 +201,6 @@ def validate_action_result() -> int:
 
     plan_sha256 = write_plan_bundle(Path(output_dir_value), plan, plan_bytes)
     write_output("ready_to_implement", str(plan["ready_to_implement"]).lower())
-    write_output("approval_required", str(plan["ready_to_implement"]).lower())
     write_output("plan_sha256", plan_sha256)
     write_output("plan_payload", base64.b64encode(plan_bytes).decode("ascii"))
     write_output("planned_path_count", str(len(plan["implementation_steps"])))
