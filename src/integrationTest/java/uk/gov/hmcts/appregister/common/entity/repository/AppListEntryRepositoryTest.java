@@ -880,6 +880,7 @@ class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     private void saveResolution(ApplicationListEntry entry, String resultCode) {
         ResolutionCode code = new ResolutionCode();
+        code.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
         code.setResultCode(resultCode);
         code.setTitle(resultCode + " title");
         code.setWording(resultCode + " wording");

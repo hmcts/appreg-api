@@ -164,7 +164,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             "Request to copy documents",
                             List.of(),
-                            2);
+                            1);
 
                     Fee offsiteFee = null;
                     for (AppListEntryFeeId entryFeeId : applicationListEntry.getEntryFeeIds()) {
@@ -278,7 +278,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         assertThat(offsiteFee.getEndDate())
                                 .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
                     }
-                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("155.00"));
+                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("29.00"));
                 });
     }
 
@@ -338,37 +338,18 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListRepository
                                     .findAll(Sort.by(Sort.Direction.ASC, "id"))
                                     .getFirst();
-                    List<ApplicationListEntry> entries =
-                            applicationListEntryRepository.findByApplicationListId(
-                                    applicationList.getId());
-
-                    // gets the last added entry
-                    ApplicationListEntry applicationListEntry = entries.getLast();
+                    ApplicationListEntry applicationListEntry =
+                            applicationListEntryRepository
+                                    .findByUuid(response.getPayload().getId())
+                                    .orElseThrow();
 
                     // validate the database based on the request data and the response
                     // based on the database contents
-                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
-                            new ApplicationListEntryWrapperDto(entryCreateDto),
-                            applicationListEntry,
-                            response.getPayload(),
+                    Assertions.assertEquals("AD99001", response.getPayload().getApplicationCode());
+                    Assertions.assertEquals(
                             "Request to copy documents",
-                            "Request to copy documents",
-                            List.of(),
-                            1);
-
-                    Assertions.assertEquals(1, applicationListEntry.getEntryFeeIds().size());
-
-                    Optional<Fee> fee =
-                            feeRepository.findById(
-                                    applicationListEntry.getEntryFeeIds().getFirst().getFeeId());
-                    Assertions.assertTrue(fee.isPresent());
-                    assertThat(fee.get().getStartDate())
-                            .isBeforeOrEqualTo(applicationListEntry.getLodgementDate());
-                    if (fee.get().getEndDate() != null) {
-                        assertThat(fee.get().getEndDate())
-                                .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
-                    }
-                    assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("50.00"));
+                            applicationListEntry.getApplicationListEntryWording());
+                    Assertions.assertTrue(applicationListEntry.getEntryFeeIds().isEmpty());
                 });
     }
 
@@ -457,7 +438,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
                     // to make sure it's the current fee and not a historic fee
                     Assertions.assertNull(fee.get().getEndDate());
-                    assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("200.00"));
+                    assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("11.00"));
                 });
     }
 
@@ -466,10 +447,6 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.now(java.time.ZoneOffset.UTC));
-
-        TemplateSubstitution substitution = new TemplateSubstitution();
-        substitution.setKey("Reference");
-        substitution.setValue("test wording");
 
         // set the organisation and person applicant to null so we use the standard applicant
         entryCreateDto.getApplicant().setOrganisation(null);
@@ -480,12 +457,15 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setNumberOfRespondents(0);
-        entryCreateDto.setWordingFields(List.of(substitution));
 
         // use the applicant standard applicant
         entryCreateDto.setStandardApplicantCode("APP001");
         entryCreateDto.setNumberOfRespondents(null);
-        entryCreateDto.setApplicationCode("CT99002");
+        entryCreateDto.setApplicationCode("MX99010");
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Summarise offence title(s)");
+        substitution.setValue("test wording");
+
         entryCreateDto.setWordingFields(List.of(substitution));
 
         MatchResponse<EntryGetDetailDto> response;
@@ -526,12 +506,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
-                            "Attends to swear a complaint for the issue of a summons for "
-                                    + "the debtor to answer an application for a liability order in relation to unpaid "
-                                    + "council tax (reference {test wording})",
-                            "Attends to swear a complaint for the issue of a summons"
-                                    + " for the debtor to answer an application for a liability order in"
-                                    + " relation to unpaid council tax (reference {{Reference}})",
+                            "Application for the issue of a summons on an information laid in a private "
+                                    + "prosecution alleging {test wording}",
+                            "Application for the issue of a summons on an information laid in a private "
+                                    + "prosecution alleging {{Summarise offence title(s)}}",
                             List.of(substitution),
                             2);
                 });
@@ -639,21 +617,14 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         });
 
         // make the assertions
+        // make the assertions
         unitOfWork.inTransaction(
                 () -> {
-                    ApplicationList applicationList =
-                            applicationListRepository
-                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
-                                    .getFirst();
-                    List<ApplicationListEntry> entries =
-                            applicationListEntryRepository.findByApplicationListId(
-                                    applicationList.getId());
+                    ApplicationListEntry applicationListEntry =
+                            applicationListEntryRepository
+                                    .findByUuid(response.getPayload().getId())
+                                    .orElseThrow();
 
-                    // gets the last added entry
-                    ApplicationListEntry applicationListEntry = entries.getLast();
-
-                    // validate the database based on the request data and the response
-                    // based on the database contents
                     applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
@@ -728,8 +699,8 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 .setEmail(JsonNullable.of("test@test.com"));
 
         // no respondent for this code
-
-        entryCreateDto.setApplicationCode("ZS99007");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setApplicationCode("AD99002");
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setHasOffsiteFee(true);
 
@@ -741,7 +712,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         substitution1.setKey("Premises Date");
         substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
-        entryCreateDto.setWordingFields(List.of(substitution, substitution1));
+        entryCreateDto.setWordingFields(null);
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -783,7 +754,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                                     applicationList.getId());
 
                     // gets the last added entry
-                    ApplicationListEntry applicationListEntry = entries.getLast();
+                    ApplicationListEntry applicationListEntry =
+                            applicationListEntryRepository
+                                    .findByUuid(response.getPayload().getId())
+                                    .orElseThrow();
 
                     // validate the database based on the request data and the response
                     // based on the database contents
@@ -791,12 +765,10 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
-                            "Application for a warrant to enter premises at {%s} for date {%s}"
-                                    .formatted(substitution.getValue(), substitution1.getValue()),
-                            "Application for a warrant to enter premises at {{Premises Address}}"
-                                    + " for date {{Premises Date}}",
-                            List.of(substitution, substitution1),
-                            1);
+                            "Request for copy documents on computer disc or in electronic form",
+                            "Request for copy documents on computer disc or in electronic form",
+                            List.of(),
+                            2);
                 });
     }
 
@@ -1011,7 +983,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 List.of(),
                 List.of(),
-                2);
+                1);
 
         // validate that the fee records have not changed except for the offsite fee being added
         for (AppListEntryFeeId entryFeeID : applicationListEntry.get().getEntryFeeIds()) {
@@ -1117,7 +1089,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         // make sure the fee is mapped correctly to the entry
         List<Fee> fees =
                 appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.get().getId());
-        Assertions.assertEquals(1, fees.size());
+        Assertions.assertEquals(2, fees.size());
         Assertions.assertTrue(
                 fees.stream()
                         .anyMatch(
@@ -1151,7 +1123,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + "for date {{Premises Date}}",
                 entryUpdateDto.getWordingFields(),
                 List.of(),
-                1);
+                2);
     }
 
     @Test
@@ -1193,7 +1165,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getRespondent().getPerson().getName().setMiddleName(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
-        updateDto.setHasOffsiteFee(false);
+        updateDto.setHasOffsiteFee(true);
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("MS99007");
         updateDto.setStandardApplicantCode(null);
@@ -1298,11 +1270,11 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         // use the applicant standard applicant
         updateDto.setStandardApplicantCode("APP001");
         updateDto.setNumberOfRespondents(null);
-        updateDto.setApplicationCode("CT99002");
-        updateDto.setHasOffsiteFee(true);
+        updateDto.setApplicationCode("MX99010");
+        updateDto.setHasOffsiteFee(false);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
-        substitution.setKey("Reference");
+        substitution.setKey("Summarise offence title(s)");
         substitution.setValue("test wording");
 
         updateDto.setWordingFields(List.of(substitution));
@@ -1318,7 +1290,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         entityManager.clear();
 
-        Assertions.assertEquals("CT99002", response.getPayload().getApplicationCode());
+        Assertions.assertEquals("MX99010", response.getPayload().getApplicationCode());
         Assertions.assertEquals("APP001", response.getPayload().getStandardApplicantCode());
 
         final List<AppListEntryFeeStatus> feeStatusesUpdated =
@@ -1457,7 +1429,8 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setNumberOfRespondents(null);
 
         // no respondent for this code
-        entryUpdateDto.setApplicationCode("ZS99007");
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setApplicationCode("AD99002");
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.setHasOffsiteFee(true);
 
@@ -1469,7 +1442,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         substitution1.setKey("Premises Date");
         substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
-        entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
+        entryUpdateDto.setWordingFields(null);
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
 
@@ -1543,13 +1516,11 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 new ApplicationListEntryWrapperDto(entryUpdateDto),
                 applicationListEntry.get(),
                 update.getPayload(),
-                "Application for a warrant to enter premises at {%s} for date {%s}"
-                        .formatted(substitution.getValue(), substitution1.getValue()),
-                "Application for a warrant to enter premises at"
-                        + " {{Premises Address}} for date {{Premises Date}}",
-                List.of(substitution, substitution1),
+                "Request for copy documents on computer disc or in electronic form",
+                "Request for copy documents on computer disc or in electronic form",
+                List.of(),
                 feeStatusBeforeUpdate,
-                1);
+                2);
     }
 
     @Test
@@ -1798,7 +1769,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Application for a warrant to enter premises at "
                                     + "{{Premises Address}} for date {{Premises Date}}",
                             entryCreateDto.getWordingFields(),
-                            2);
+                            1);
                 });
 
         return response.getPayload().getId();

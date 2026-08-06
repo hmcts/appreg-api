@@ -56,6 +56,7 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
+import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -792,7 +793,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
-        ResolutionCode resolutionCode = new ResolutionCode();
+        ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
         resolutionCode.setResultCode(resultCode);
         resolutionCode.setTitle(resultCode + " title");
         resolutionCode.setWording(resultCode + " wording");
@@ -874,7 +875,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public ApplicationCode buildApplicationCode(String code) {
-        ApplicationCode applicationCode = new ApplicationCode();
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         applicationCode.setCode(code);
         applicationCode.setTitle("Test title");
         applicationCode.setWording("Test wording");
@@ -883,6 +884,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         applicationCode.setRequiresRespondent(NO);
         applicationCode.setBulkRespondentAllowed(NO);
         applicationCode.setStartDate(TEST_DATE);
+        applicationCode.setEndDate(null);
         applicationCode.setChangedBy(1L);
         applicationCode.setChangedDate(TEST_OFFSET_DATE_TIME);
         applicationCode.setCreatedUser("email");
@@ -907,7 +909,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public void addResolution(ApplicationListEntry entry, String resultCode) {
-        ResolutionCode resolutionCode = new ResolutionCode();
+        ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
         resolutionCode.setResultCode(resultCode);
         resolutionCode.setTitle(resultCode + " title");
         resolutionCode.setWording(resultCode + " wording");

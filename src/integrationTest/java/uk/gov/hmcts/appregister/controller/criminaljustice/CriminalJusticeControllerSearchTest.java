@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +16,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
-import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -803,13 +804,11 @@ class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest
         }
     }
 
-    private void createCriminalJusticeArea(String code, String description) {
-        var criminalJusticeArea =
-                new CriminalJusticeTestData()
-                        .someMinimal()
-                        .code(code)
-                        .description(description)
-                        .build();
-        persistance.save(criminalJusticeArea);
+    private CriminalJusticeArea createCriminalJusticeArea(String code, String description) {
+        CriminalJusticeArea cja = new CriminalJusticeArea();
+        cja.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+        cja.setCode(code);
+        cja.setDescription(description);
+        return persistance.save(cja);
     }
 }
