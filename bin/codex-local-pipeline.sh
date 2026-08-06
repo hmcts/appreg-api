@@ -357,6 +357,75 @@ end
   end
 end
 
+verification_specs = [
+  {
+    path: ".github/workflows/codex_pr_review_feedback.yml",
+    source_job: "prepare-review-verification-source",
+    verifier_marker: "trusted-codex-pr-review-verify.sh",
+    expected_count: File.exist?(".github/scripts/codex-pr-review-repair.sh") ? 4 : 1,
+    restore_marker: "Restore credential-free review source",
+  },
+  {
+    path: ".github/workflows/codex_merge_conflict_resolution.yml",
+    source_job: "prepare-conflict-verification-source",
+    verifier_marker: "trusted-codex-merge-conflict-verify.sh",
+    expected_count: 1,
+    restore_marker: "Restore credential-free conflict source",
+  },
+]
+
+verification_specs.each do |spec|
+  workflow = YAML.load_file(spec.fetch(:path))
+  jobs = workflow.fetch("jobs", {})
+  source_job = jobs.fetch(spec.fetch(:source_job), {})
+  source_commands = Array(source_job.fetch("steps", [])).map { |step| step.is_a?(Hash) ? step.fetch("run", nil) : nil }.compact.join("\n")
+  unless source_job.fetch("permissions", {}) == { "contents" => "read" } &&
+         source_job.inspect.include?("fetch-depth") &&
+         source_job.inspect.include?("persist-credentials") &&
+         source_job.inspect.include?("credential-free") &&
+         !source_commands.match?(/bash .*codex-(?:pr-review|merge-conflict)-verify\.sh|codex-local-pipeline\.sh (?:checks-only|fast|full)|gradlew|yarn (?:lint|cichecks)/)
+    errors << "#{spec.fetch(:path)}:#{spec.fetch(:source_job)} must archive exact trusted source without executing repository tooling"
+  end
+
+  verifiers = jobs.select do |_job_name, job|
+    Array(job.fetch("steps", [])).any? do |step|
+      step.is_a?(Hash) && step.fetch("run", "").match?(/bash .*#{Regexp.escape(spec.fetch(:verifier_marker))}/)
+    end
+  end
+  unless verifiers.length == spec.fetch(:expected_count)
+    errors << "#{spec.fetch(:path)}:expected #{spec.fetch(:expected_count)} credential-free patch verifier paths"
+  end
+  verifiers.each do |job_name, job|
+    needs = Array(job.fetch("needs", []))
+    if job.fetch("permissions", nil) != {} ||
+       !needs.include?(spec.fetch(:source_job)) ||
+       job.inspect.match?(/GH_TOKEN|SONAR_TOKEN|secrets\.|github\.token/) ||
+       job.inspect.include?("actions/checkout@") ||
+       !job.inspect.include?(spec.fetch(:restore_marker)) ||
+       !job.inspect.include?("TRUSTED_PIPELINE_PATH")
+      errors << "#{spec.fetch(:path)}:#{job_name} must restore trusted source and execute generated code without permissions or credentials"
+    end
+  end
+end
+
+review_workflow = YAML.load_file(".github/workflows/codex_pr_review_feedback.yml")
+review_status = review_workflow.fetch("jobs", {}).fetch("verify-review-status", {})
+if review_status.inspect.match?(/trusted-codex-pr-review-verify|codex-local-pipeline|gradlew|yarn (?:lint|cichecks)/) ||
+   !review_status.inspect.include?("codex-wait-pr-status.sh") ||
+   !review_status.inspect.include?("codex-check-sonar-quality-gate.sh")
+  errors << ".github/workflows/codex_pr_review_feedback.yml:verify-review-status must query external status without executing model-writable content"
+end
+
+{
+  ".github/scripts/codex-pr-review-verify.sh" => "TRUSTED_PIPELINE_PATH",
+  ".github/scripts/codex-merge-conflict-verify.sh" => "TRUSTED_PIPELINE_PATH",
+}.each do |path, trusted_marker|
+  source = File.read(path)
+  if source.match?(/GH_TOKEN|SONAR_TOKEN/) || !source.include?(trusted_marker)
+    errors << "#{path} must run only from credential-free source with a separately captured trusted pipeline"
+  end
+end
+
 jira_collector = File.read(".github/scripts/codex-jira-collect.sh")
 if jira_collector.include?("## Codex Plan") || jira_collector.include?("plan.md")
   errors << ".github/scripts/codex-jira-collect.sh must not copy raw plan content into public PR bodies"
@@ -432,7 +501,7 @@ revision_pinned_workflows.each do |workflow_name|
       next false unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      !ref.include?("outputs.trusted_sha")
+      !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha)/)
     end
 
     declared_needs = Array(job.fetch("needs", []))
@@ -440,10 +509,11 @@ revision_pinned_workflows.each do |workflow_name|
       next unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      trusted_source = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.trusted_sha/)&.captures&.first
-      if trusted_source
+      pinned_ref = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.(trusted_sha|head_sha|base_sha)/)
+      if pinned_ref
+        trusted_source, output_name = pinned_ref.captures
         producer = workflow.fetch("jobs", {}).fetch(trusted_source, {})
-        producer_output = (producer.fetch("outputs", {}) || {}).fetch("trusted_sha", "")
+        producer_output = (producer.fetch("outputs", {}) || {}).fetch(output_name, "")
         if producer_output.empty?
           errors << "#{path}:#{trusted_source} must expose the trusted SHA consumed by #{job_name}"
         end

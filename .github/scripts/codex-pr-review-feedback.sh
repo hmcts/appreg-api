@@ -324,6 +324,8 @@ PY
 git_read_authenticated fetch origin "${HEAD_REF}:refs/remotes/origin/${HEAD_REF}"
 git_read_authenticated fetch origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"
 git_sanitized checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
+HEAD_SHA="$(git_sanitized rev-parse "refs/remotes/origin/${HEAD_REF}")"
+BASE_SHA="$(git_sanitized rev-parse "refs/remotes/origin/${BASE_REF}")"
 
 unset GH_TOKEN
 
@@ -338,6 +340,8 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "pr_number=${PR_NUMBER}"
     echo "head_ref=${HEAD_REF}"
     echo "base_ref=${BASE_REF}"
+    echo "head_sha=${HEAD_SHA}"
+    echo "base_sha=${BASE_SHA}"
     echo "comment_author=${COMMENT_AUTHOR}"
     echo "comment_url=${COMMENT_URL}"
   } >>"${GITHUB_OUTPUT}"

@@ -149,6 +149,8 @@ jobs:
       pr_number: ${{ steps.prepare.outputs.pr_number }}
       head_ref: ${{ steps.prepare.outputs.head_ref }}
       base_ref: ${{ steps.prepare.outputs.base_ref }}
+      head_sha: ${{ steps.prepare.outputs.head_sha }}
+      base_sha: ${{ steps.prepare.outputs.base_sha }}
       comment_author: ${{ steps.prepare.outputs.comment_author }}
       comment_url: ${{ steps.prepare.outputs.comment_url }}
       codex_result: ${{ steps.codex-action.outputs.final-message }}
@@ -255,6 +257,9 @@ jobs:
       pull-requests: write
       issues: write
     timeout-minutes: 30
+    outputs:
+      pr_number: ${{ steps.publish.outputs.pr_number }}
+      commit_sha: ${{ steps.publish.outputs.commit_sha }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       GH_TOKEN: ${{ github.token }}
@@ -305,31 +310,113 @@ jobs:
             echo "- Commit: ${{ steps.publish.outputs.commit_sha }}"
           } >>"$GITHUB_STEP_SUMMARY"
 
-  codex-review-verify:
-    needs: [detect-codex-pr, codex-review-generate]
-    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
+  verify-review-status:
+    needs: [codex-review-generate, codex-review-publish]
+    if: always() && needs.codex-review-publish.outputs.commit_sha != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
-      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      PR_NUMBER: ${{ needs.codex-review-publish.outputs.pr_number }}
+      PUBLISHED_COMMIT_SHA: ${{ needs.codex-review-publish.outputs.commit_sha }}
+      REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
+      REQUIRED_STATUS_TIMEOUT_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_TIMEOUT_SECONDS || '2700' }}
+      REQUIRED_STATUS_POLL_SECONDS: ${{ vars.CODEX_REQUIRED_STATUS_POLL_SECONDS || '30' }}
+    steps:
+      - name: Checkout trusted status scripts
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Check external PR status and Sonar quality gate
+        run: |
+          ./.github/scripts/codex-wait-pr-status.sh
+          ./.github/scripts/codex-check-sonar-quality-gate.sh
+
+  prepare-review-verification-source:
+    needs: [codex-review-generate-action, codex-review-generate]
+    if: needs.codex-review-generate-action.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      artifact: codex-review-verification-source
+
+    steps:
+      - name: Checkout trusted verifier tools
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
+          path: trusted
+          persist-credentials: false
+
+      - name: Checkout exact PR source revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-review-generate-action.outputs.head_sha }}
+          fetch-depth: 0
+          path: source
+          persist-credentials: false
+
+      - name: Build credential-free review source
+        env:
+          HEAD_REF: ${{ needs.codex-review-generate-action.outputs.head_ref }}
+          BASE_REF: ${{ needs.codex-review-generate-action.outputs.base_ref }}
+          HEAD_SHA: ${{ needs.codex-review-generate-action.outputs.head_sha }}
+          BASE_SHA: ${{ needs.codex-review-generate-action.outputs.base_sha }}
+        run: |
+          cd source
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git update-ref "refs/remotes/origin/${HEAD_REF}" "$HEAD_SHA"
+          git update-ref "refs/remotes/origin/${BASE_REF}" "$BASE_SHA"
+          test -z "$(git config --local --get-all http.https://github.com/.extraheader || true)"
+          test -z "$(git config --local --get-all credential.helper || true)"
+          tar -czf "$RUNNER_TEMP/codex-review-source.tar.gz" .
+          cp ../trusted/.github/scripts/codex-pr-review-verify.sh "$RUNNER_TEMP/trusted-codex-pr-review-verify.sh"
+          cp ../trusted/bin/codex-local-pipeline.sh "$RUNNER_TEMP/trusted-codex-local-pipeline.sh"
+
+      - name: Upload credential-free review source
+        uses: actions/upload-artifact@v7
+        with:
+          name: codex-review-verification-source
+          path: |
+            ${{ runner.temp }}/codex-review-source.tar.gz
+            ${{ runner.temp }}/trusted-codex-pr-review-verify.sh
+            ${{ runner.temp }}/trusted-codex-local-pipeline.sh
+          if-no-files-found: error
+          retention-days: 1
+
+  codex-review-verify:
+    needs: [detect-codex-pr, codex-review-generate-action, codex-review-generate, prepare-review-verification-source]
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
+    runs-on: ubuntu-latest
+    permissions: {}
     timeout-minutes: 60
     env:
       EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
-      GH_TOKEN: ${{ github.token }}
+      EXPECTED_BASE_REF: ${{ needs.codex-review-generate-action.outputs.base_ref }}
+      EXPECTED_HEAD_SHA: ${{ needs.codex-review-generate-action.outputs.head_sha }}
+      EXPECTED_BASE_SHA: ${{ needs.codex-review-generate-action.outputs.base_sha }}
       LOCAL_PIPELINE_MODE: fast
-      RUN_SONAR: 'true'
-      SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'hmcts' }}
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free review source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-review-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-review-verification-source
+
+      - name: Restore credential-free review source
+        run: tar -xzf "$RUNNER_TEMP/codex-review-verification-source/codex-review-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -347,7 +434,8 @@ jobs:
         id: verify
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
-        run: ./.github/scripts/codex-pr-review-verify.sh
+          TRUSTED_PIPELINE_PATH: ${{ runner.temp }}/codex-review-verification-source/trusted-codex-local-pipeline.sh
+        run: bash "$RUNNER_TEMP/codex-review-verification-source/trusted-codex-pr-review-verify.sh"
 
       - name: Upload verified Codex review output
         uses: actions/upload-artifact@v7
