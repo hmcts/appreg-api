@@ -1269,7 +1269,7 @@ jobs:
             exit 0
           fi
           set +e
-          {
+          (
             ./.github/scripts/codex-wait-pr-status.sh
             status=$?
             if [[ "$status" -eq 0 ]]; then
@@ -1277,7 +1277,7 @@ jobs:
               status=$?
             fi
             exit "$status"
-          } >"$RUNNER_TEMP/codex-pr-status.log" 2>&1
+          ) >"$RUNNER_TEMP/codex-pr-status.log" 2>&1
           status=$?
           cat "$RUNNER_TEMP/codex-pr-status.log"
           echo "failure_artifact=$STATUS_FAILURE_ARTIFACT" >>"$GITHUB_OUTPUT"
