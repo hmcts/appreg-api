@@ -9,7 +9,7 @@ Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/displ
 - HMCTS.NET account
 - GitHub account linked to HMCTS.NET, and Git installed
 - Access to required GitHub repositories (see internal guide)
-- Postgres database (local or remote) - see [Database setup]#DatabaseSetup) below
+- Postgres database (local or remote) - see [Database setup](#database-setup) below
 
 ## Guide
 
