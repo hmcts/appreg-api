@@ -41,6 +41,8 @@ class CodexPrReviewHandoffTest(unittest.TestCase):
                 "PR_NUMBER": "42",
                 "HEAD_REF": "codex/example",
                 "BASE_REF": "master",
+                "HEAD_SHA": "a" * 40,
+                "BASE_SHA": "b" * 40,
                 "COMMENT_AUTHOR": "reviewer",
                 "COMMENT_URL": "https://example.invalid/review/1",
             }
@@ -57,7 +59,7 @@ class CodexPrReviewHandoffTest(unittest.TestCase):
             self.assertFalse((output_dir / "codex-comment.md").exists())
             (verification_dir / "codex-review-comment.md").write_bytes(comment_path.read_bytes())
             (verification_dir / "verification.env").write_text(
-                "has_changes=false\npr_number=42\nhead_ref=codex/example\nbase_ref=master\n",
+                f"has_changes=false\npr_number=42\nhead_ref=codex/example\nbase_ref=master\nhead_sha={'a' * 40}\nbase_sha={'b' * 40}\n",
                 encoding="utf-8",
             )
 
@@ -84,6 +86,7 @@ class CodexPrReviewHandoffTest(unittest.TestCase):
                 "VERIFICATION_DIR": str(verification_dir),
                 "EXPECTED_PR_NUMBER": "42",
                 "EXPECTED_HEAD_REF": "codex/example",
+                "EXPECTED_HEAD_SHA": "a" * 40,
                 "RUNNER_TEMP": str(root / "runner-temp"),
             }
             published = subprocess.run(

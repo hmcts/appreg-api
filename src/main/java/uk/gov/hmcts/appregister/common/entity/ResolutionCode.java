@@ -2,10 +2,7 @@ package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.LocalDate;
@@ -64,8 +61,6 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
     // Primary key identifier (maps to {@code rc_id}).
     @Id
     @Column(name = "rc_id", nullable = false, updatable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rc_gen")
-    @SequenceGenerator(name = "rc_gen", sequenceName = "rc_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
     private Long id;
 

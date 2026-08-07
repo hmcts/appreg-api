@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.standardapplicant.model.StandardApplicantCsvRow;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
@@ -206,7 +207,7 @@ public class StandardApplicantControllerExportTest
     }
 
     private StandardApplicant insertStandardApplicant() {
-        StandardApplicant sa = new StandardApplicant();
+        StandardApplicant sa = new StandardApplicantTestData().someComplete();
         sa.setApplicantCode("TEST001");
         sa.setApplicantTitle("Mr");
         sa.setName("Test Organisation");

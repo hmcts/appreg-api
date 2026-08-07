@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.courtlocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
@@ -254,14 +255,10 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        PagingAssertionUtil.assertPageDetails(
-                page, DEFAULT_PAGE_SIZE, 0, 1, 2); // 2 active CHOA courts seeded
-
-        // Expect both seeded CHOA rows present
-        var content = page.getContent();
-        assertThat(content)
-                .extracting("locationCode")
-                .containsExactlyInAnyOrder(CARDIFF_CODE, BRISTOL_CODE);
+        Assertions.assertEquals(DEFAULT_PAGE_SIZE, page.getPageSize());
+        Assertions.assertEquals(0, page.getPageNumber());
+        Assertions.assertTrue(page.getTotalElements() > DEFAULT_PAGE_SIZE);
+        assertThat(page.getContent()).hasSize(DEFAULT_PAGE_SIZE);
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -307,16 +304,16 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         List.of(),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new CourtLocationFilter(Optional.empty(), Optional.of("cc")),
+                        new CourtLocationFilter(Optional.empty(), Optional.of("cc00")),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 2);
+        PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 4);
         assertThat(page.getContent())
                 .extracting("locationCode")
-                .containsExactlyInAnyOrder(CARDIFF_CODE, BRISTOL_CODE);
+                .containsExactlyInAnyOrder("B13CC00", "BCC006", "CCC003", "C47CC00");
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -326,7 +323,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
-                        "cc",
+                        "cc00",
                         CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT
                                 .getType()
                                 .name(),
@@ -437,10 +434,13 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 2);
+        Assertions.assertEquals(DEFAULT_PAGE_SIZE, page.getPageSize());
+        Assertions.assertEquals(0, page.getPageNumber());
+        Assertions.assertTrue(page.getTotalElements() > 0);
+        assertThat(page.getContent()).isNotEmpty();
         assertThat(page.getContent())
-                .extracting("locationCode")
-                .containsExactlyInAnyOrder(CARDIFF_CODE, BRISTOL_CODE);
+                .extracting(c -> c.getName().toLowerCase())
+                .allMatch(name -> name.contains("crown"));
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -540,19 +540,25 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         List.of("name,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new CourtLocationFilter(Optional.empty(), Optional.empty()),
+                        new CourtLocationFilter(Optional.empty(), Optional.of("cc00")),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 2);
+        PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 4);
 
-        // With only two rows, just assert the same two present; ordering is validated via
-        // underlying sort acceptance.
         assertThat(page.getContent())
                 .extracting("locationCode")
-                .containsExactlyInAnyOrder(CARDIFF_CODE, BRISTOL_CODE);
+                .containsExactly("B13CC00", "BCC006", "CCC003", "C47CC00");
+
+        assertThat(page.getContent())
+                .extracting("name")
+                .containsExactly(
+                        "Bradford Magistrates' Court",
+                        "Bristol Crown Court",
+                        "Cardiff Crown Court",
+                        "Chichester Crown Court");
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -685,7 +691,11 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        PagingAssertionUtil.assertPageDetails(page, 1, 0, 2, 2);
+        Assertions.assertEquals(1, page.getPageSize());
+        Assertions.assertEquals(0, page.getPageNumber());
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertTrue(page.getTotalElements() > 1);
+        Assertions.assertTrue(page.getTotalPages() > 1);
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));

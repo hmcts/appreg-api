@@ -234,6 +234,8 @@ jobs:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
+          model: gpt-5.6-sol
+          effort: medium
           prompt-file: ${{ steps.prepare.outputs.prompt_path }}
           output-schema-file: ${{ steps.prepare.outputs.schema_path }}
           working-directory: .
@@ -290,19 +292,71 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  verify-conflict-resolution:
+  prepare-conflict-verification-source:
     needs: [detect-conflicted-pr, codex-conflict-generate]
     if: needs.detect-conflicted-pr.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: read
+    outputs:
+      artifact: codex-conflict-verification-source
+
+    steps:
+      - name: Checkout trusted verifier tools
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
+          path: trusted
+          persist-credentials: false
+
+      - name: Checkout exact conflict source revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+          fetch-depth: 0
+          path: source
+          persist-credentials: false
+
+      - name: Build credential-free conflict source
+        env:
+          HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
+          BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
+          HEAD_SHA: ${{ needs.detect-conflicted-pr.outputs.head_sha }}
+          BASE_SHA: ${{ needs.detect-conflicted-pr.outputs.base_sha }}
+        run: |
+          cd source
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git update-ref "refs/remotes/origin/${HEAD_REF}" "$HEAD_SHA"
+          git update-ref "refs/remotes/origin/${BASE_REF}" "$BASE_SHA"
+          test -z "$(git config --local --get-all http.https://github.com/.extraheader || true)"
+          test -z "$(git config --local --get-all credential.helper || true)"
+          tar -czf "$RUNNER_TEMP/codex-conflict-source.tar.gz" .
+          cp ../trusted/.github/scripts/codex-merge-conflict-verify.sh "$RUNNER_TEMP/trusted-codex-merge-conflict-verify.sh"
+          cp ../trusted/bin/codex-local-pipeline.sh "$RUNNER_TEMP/trusted-codex-local-pipeline.sh"
+
+      - name: Upload credential-free conflict source
+        uses: actions/upload-artifact@v7
+        with:
+          name: codex-conflict-verification-source
+          path: |
+            ${{ runner.temp }}/codex-conflict-source.tar.gz
+            ${{ runner.temp }}/trusted-codex-merge-conflict-verify.sh
+            ${{ runner.temp }}/trusted-codex-local-pipeline.sh
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-conflict-resolution:
+    needs: [detect-conflicted-pr, codex-conflict-generate, prepare-conflict-verification-source]
+    if: needs.detect-conflicted-pr.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions: {}
     outputs:
       passed: ${{ steps.verify.outputs.passed }}
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_TOKEN: ${{ github.token }}
       EXPECTED_PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
       EXPECTED_BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
@@ -311,12 +365,14 @@ jobs:
       LOCAL_PIPELINE_MODE: fast
 
     steps:
-      - name: Checkout default branch
-        uses: actions/checkout@v7
+      - name: Download credential-free conflict source
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+          name: ${{ needs.prepare-conflict-verification-source.outputs.artifact }}
+          path: ${{ runner.temp }}/codex-conflict-verification-source
+
+      - name: Restore credential-free conflict source
+        run: tar -xzf "$RUNNER_TEMP/codex-conflict-verification-source/codex-conflict-source.tar.gz" -C "$GITHUB_WORKSPACE"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -334,9 +390,10 @@ jobs:
         id: verify
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
+          TRUSTED_PIPELINE_PATH: ${{ runner.temp }}/codex-conflict-verification-source/trusted-codex-local-pipeline.sh
         run: |
           set +e
-          ./.github/scripts/codex-merge-conflict-verify.sh >"$RUNNER_TEMP/codex-conflict-verification.log" 2>&1
+          bash "$RUNNER_TEMP/codex-conflict-verification-source/trusted-codex-merge-conflict-verify.sh" >"$RUNNER_TEMP/codex-conflict-verification.log" 2>&1
           status=$?
           cat "$RUNNER_TEMP/codex-conflict-verification.log"
           if [[ "${status}" -eq 0 ]]; then

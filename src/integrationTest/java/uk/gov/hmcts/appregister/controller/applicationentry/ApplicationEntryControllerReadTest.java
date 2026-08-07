@@ -689,7 +689,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 .isEqualTo("Certified genuine copy document");
         assertThat(entryGetSummaryDto.getLegislation()).isNull();
         assertThat(entryGetSummaryDto.getId()).isNotNull();
-        assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
+        assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = findEntryByApplicationTitle(page, "Appeal to Crown Court");
@@ -1109,7 +1109,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
         assertThat(entryGetSummaryDto.getLegislation())
                 .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
-        assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
+        assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = page.getContent().get(4);

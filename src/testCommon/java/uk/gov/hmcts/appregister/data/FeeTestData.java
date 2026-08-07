@@ -6,8 +6,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.util.StringUtil;
 
@@ -28,12 +26,13 @@ public class FeeTestData
 
     @Override
     public Fee someComplete() {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        Fee fee =
+                Instancio.of(Fee.class)
+                        .ignore(field(Fee::getId))
+                        .ignore(field(Fee::getVersion))
+                        .create();
 
-        return Instancio.of(Fee.class)
-                .ignore(field(Fee::getId))
-                .ignore(field(Fee::getVersion))
-                .withSettings(settings)
-                .create();
+        fee.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+        return fee;
     }
 }
