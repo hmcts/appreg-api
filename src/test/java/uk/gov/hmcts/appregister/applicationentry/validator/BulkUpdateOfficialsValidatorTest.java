@@ -77,6 +77,35 @@ class BulkUpdateOfficialsValidatorTest {
     }
 
     @Test
+    void validate_whenOfficialTitleIsOmitted_thenCompletes() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(
+                                        List.of(
+                                                new Official()
+                                                        .forename("Ada")
+                                                        .surname("Bench")
+                                                        .type(OfficialType.MAGISTRATE))));
+
+        validator.validate(payload);
+    }
+
+    @Test
+    void validate_whenOfficialTitleIsNull_thenCompletes() {
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entryId))
+                                .officials(List.of(official(OfficialType.MAGISTRATE).title(null))));
+
+        validator.validate(payload);
+    }
+
+    @Test
     void validate_whenApplicationListDoesNotExist_thenThrowsApplicationListDoesNotExist() {
         UUID missingListId = UUID.randomUUID();
         when(applicationListRepository.findByUuidIncludingDelete(missingListId))
@@ -157,20 +186,6 @@ class BulkUpdateOfficialsValidatorTest {
     }
 
     @Test
-    void validate_whenOfficialTitleIsBlank_thenThrowsOfficialTitleRequired() {
-        BulkUpdateOfficialsPayload payload =
-                new BulkUpdateOfficialsPayload(
-                        listId,
-                        new BulkOfficialsUpdateDto()
-                                .entryIds(List.of(entryId))
-                                .officials(List.of(official(OfficialType.MAGISTRATE).title(" "))));
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
-    }
-
-    @Test
     void validate_whenOfficialForenameIsBlank_thenThrowsOfficialForenameRequired() {
         BulkUpdateOfficialsPayload payload =
                 new BulkUpdateOfficialsPayload(
@@ -198,39 +213,6 @@ class BulkUpdateOfficialsValidatorTest {
         AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_SURNAME_REQUIRED);
-    }
-
-    @Test
-    void validate_whenMultipleOfficialsHaveBlankTitle_thenReportsAllInvalidIndexes() {
-        BulkUpdateOfficialsPayload payload =
-                new BulkUpdateOfficialsPayload(
-                        listId,
-                        new BulkOfficialsUpdateDto()
-                                .entryIds(List.of(entryId))
-                                .officials(
-                                        List.of(
-                                                official(OfficialType.MAGISTRATE).title(" "),
-                                                official(OfficialType.CLERK),
-                                                official(OfficialType.MAGISTRATE).title(" "))));
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
-        assertThat(exception.getMessage()).contains("[0, 2]");
-    }
-
-    @Test
-    void validate_whenOfficialTitleIsNull_thenThrowsOfficialTitleRequired() {
-        BulkUpdateOfficialsPayload payload =
-                new BulkUpdateOfficialsPayload(
-                        listId,
-                        new BulkOfficialsUpdateDto()
-                                .entryIds(List.of(entryId))
-                                .officials(List.of(official(OfficialType.MAGISTRATE).title(null))));
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TITLE_REQUIRED);
     }
 
     @Test
