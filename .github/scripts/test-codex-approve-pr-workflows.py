@@ -75,6 +75,7 @@ def workflow_run(
     path: str = ".github/workflows/checks.yml",
     conclusion: str | None = "action_required",
     actor: str = "github-actions[bot]",
+    triggering_actor: str | None = None,
 ) -> dict[str, Any]:
     repo_url = f"https://api.github.com/repos/{REPOSITORY}"
     return {
@@ -86,7 +87,7 @@ def workflow_run(
         "head_sha": SHA,
         "head_repository": {"full_name": REPOSITORY},
         "actor": {"login": actor},
-        "triggering_actor": {"login": actor},
+        "triggering_actor": {"login": triggering_actor or actor},
         "conclusion": conclusion,
         "pull_requests": [
             {
@@ -195,6 +196,15 @@ class ApproveCodexPrWorkflowsTest(unittest.TestCase):
     def test_rejects_run_from_different_actor(self) -> None:
         with self.assertRaisesRegex(MODULE.ApprovalError, "unexpected actor"):
             MODULE.validate_workflow_run(workflow_run(actor="external-user"), config())
+
+    def test_rejects_unapproved_run_from_different_triggering_actor(self) -> None:
+        run = workflow_run(triggering_actor="external-user")
+        with self.assertRaisesRegex(MODULE.ApprovalError, "unexpected triggering actor"):
+            MODULE.validate_workflow_run(run, config())
+
+    def test_accepts_manually_approved_run_with_maintainer_trigger(self) -> None:
+        run = workflow_run(conclusion="success", triggering_actor="maintainer")
+        self.assertEqual(MODULE.validate_workflow_run(run, config()), 456)
 
     def test_approves_only_action_required_runs(self) -> None:
         client = FakeClient(

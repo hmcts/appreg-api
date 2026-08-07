@@ -288,10 +288,6 @@ def validate_workflow_run(run: dict[str, Any], config: Config) -> int:
         "head SHA": (run.get("head_sha"), config.expected_commit_sha),
         "head repository": (nested(run, "head_repository", "full_name"), config.repository),
         "actor": (nested(run, "actor", "login"), config.expected_author),
-        "triggering actor": (
-            nested(run, "triggering_actor", "login"),
-            config.expected_author,
-        ),
     }
     for label, (actual, expected) in checks.items():
         if actual != expected:
@@ -299,6 +295,16 @@ def validate_workflow_run(run: dict[str, Any], config: Config) -> int:
                 f"Workflow run {run_id} has unexpected {label}: "
                 f"expected {expected!r}, got {actual!r}"
             )
+
+    if (
+        run.get("conclusion") == "action_required"
+        and nested(run, "triggering_actor", "login") != config.expected_author
+    ):
+        raise ApprovalError(
+            f"Workflow run {run_id} awaiting approval has unexpected triggering actor: "
+            f"expected {config.expected_author!r}, got "
+            f"{nested(run, 'triggering_actor', 'login')!r}"
+        )
 
     workflow_path = run.get("path")
     if workflow_path not in config.allowed_workflow_paths:
