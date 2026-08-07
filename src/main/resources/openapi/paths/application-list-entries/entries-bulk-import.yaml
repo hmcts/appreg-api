@@ -14,7 +14,9 @@ post:
     Validates the target application list and CSV structure up front, then enqueues a
     background job that validates the uploaded rows and, if valid, automatically inserts
     all rows in a single transaction. If row validation or commit fails, the entire
-    transaction is rolled back and the job ends in `FAILED`. There is a file size limitation of 5MB.
+    transaction is rolled back and the job ends in `FAILED`. Row-validation failures provide
+    actionable input feedback; unexpected processing failures return only a generic message and
+    the job reference to quote to support. There is a file size limitation of 5MB.
   requestBody:
     required: true
     content:

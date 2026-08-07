@@ -2522,7 +2522,7 @@ paths:
   /application-lists/{listId}/entries/bulk-import:
     post:
       description: |
-        Validates the target application list and CSV structure up front, then enqueues a background job that validates the uploaded rows and, if valid, automatically inserts all rows in a single transaction. If row validation or commit fails, the entire transaction is rolled back and the job ends in `FAILED`. There is a file size limitation of 5MB.
+        Validates the target application list and CSV structure up front, then enqueues a background job that validates the uploaded rows and, if valid, automatically inserts all rows in a single transaction. If row validation or commit fails, the entire transaction is rolled back and the job ends in `FAILED`. Row-validation failures provide actionable input feedback; unexpected processing failures return only a generic message and the job reference to quote to support. There is a file size limitation of 5MB.
       operationId: bulkUploadApplicationListEntries
       parameters:
       - description: ID of the Application List receiving the uploaded entries.
@@ -6922,8 +6922,8 @@ components:
         status:
           $ref: "#/components/schemas/job-status"
         error_description:
-          description: A description of the errorneous outcome of the job. Typically
-            used for error messages.
+          description: |
+            Details of a failed job. Bulk-upload validation failures may include actionable input errors; unexpected bulk-upload processing failures use a generic message and identify the job reference to quote to support.
           type: string
       required:
       - id

@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
@@ -19,7 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationentry.service.BulkImportService;
 import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -70,6 +74,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
     @Autowired private AsyncJobAppListEntryRepository asyncJobAppListEntryRepository;
     @Autowired private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    @MockitoSpyBean private BulkImportService bulkImportService;
 
     @Test
     void givenCsv_whenBulkUploadApplicationListEntries_thenCreatesEntries() throws Exception {
@@ -184,6 +189,45 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
             Assertions.assertFalse(errorCSV.isBlank());
             Assertions.assertTrue(errorCSV.contains("No valid code can be found ZZ99999"));
         }
+    }
+
+    @Test
+    void givenInternalProcessingFailure_whenJobStatusIsPolled_thenReturnsSafeJobReference()
+            throws Exception {
+        var internalError =
+                "ERROR: relation appreg.application_list does not exist [select * from secret]";
+        doThrow(new IllegalStateException(internalError))
+                .when(bulkImportService)
+                .persistPage(any(), any());
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                        token,
+                        "file",
+                        csvFile(),
+                        "text/csv");
+
+        response.then().statusCode(202);
+        JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+        JobAcknowledgement failedJob =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient,
+                        getLocalUrl("jobs/" + acknowledgement.getId()),
+                        tokenGenerator.fetchTokenForRole());
+
+        assertThat(failedJob.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failedJob.getErrorDescription())
+                .isEqualTo(
+                        "Bulk upload processing failed. Contact support quoting job reference "
+                                + acknowledgement.getId()
+                                + ".")
+                .doesNotContain(
+                        "ERROR", "relation", "appreg", "application_list", "select", "secret");
+        assertThat(countEntriesForList(listId)).isZero();
     }
 
     @Test
