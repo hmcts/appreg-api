@@ -62,6 +62,51 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
     }
 
     @Test
+    void givenOfficialWithoutTitle_whenReplaceOfficials_thenOfficialsAreReplaced()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(List.of(official("Mr", "Original", "NoTitle", OfficialType.CLERK)));
+
+        Official replacementOfficial =
+                new Official().forename("Ada").surname("Bench").type(OfficialType.MAGISTRATE);
+
+        Response response =
+                replaceOfficials(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entry.getId()))
+                                .officials(List.of(replacementOfficial)));
+
+        response.then().statusCode(204);
+        assertThat(getEntry(tokenGenerator, entry.getListId(), entry.getId()).getOfficials())
+                .containsExactly(replacementOfficial);
+    }
+
+    @Test
+    void givenOfficialWithNullTitle_whenReplaceOfficials_thenOfficialsAreReplaced()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(List.of(official("Mr", "Original", "NullTitle", OfficialType.CLERK)));
+
+        Official replacementOfficial = official(null, "Ada", "Bench", OfficialType.MAGISTRATE);
+
+        Response response =
+                replaceOfficials(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(List.of(entry.getId()))
+                                .officials(List.of(replacementOfficial)));
+
+        response.then().statusCode(204);
+        assertThat(getEntry(tokenGenerator, entry.getListId(), entry.getId()).getOfficials())
+                .containsExactly(replacementOfficial);
+    }
+
+    @Test
     void givenValidEntries_whenReplaceOfficials_thenBulkAuditRowIsPersisted() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         EntryGetDetailDto firstEntry =
