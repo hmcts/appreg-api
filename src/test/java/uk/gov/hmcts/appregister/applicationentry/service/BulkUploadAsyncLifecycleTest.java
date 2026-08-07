@@ -172,6 +172,28 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenUnexpectedFailureWithoutClientDetails_whenFailed_thenAddsSafeJobReference()
+            throws IOException {
+        UUID jobId = UUID.randomUUID();
+        JobContext context = new JobContext();
+        var response =
+                JobStatusResponse.builder()
+                        .uuid(jobId)
+                        .type(JobType.BULK_UPLOAD_ENTRIES)
+                        .status(JobStatus.FAILED)
+                        .userName("user")
+                        .build();
+
+        lifecycle.failed(new AsyncJobLifecycleEvent<>(response, null, context, JobStatus.FAILED));
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        "Bulk upload processing failed. Contact support quoting job reference "
+                                + jobId
+                                + ".");
+    }
+
+    @Test
     void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure(
             CapturedOutput output) throws IOException {
         BulkUploadRow row = validOrganisationRow();
@@ -663,26 +685,51 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenPagePersistenceFailure_whenProcessing_thenFailsJobWithPageRowNumber()
-            throws IOException {
+    void givenPagePersistenceFailure_whenProcessing_thenReturnsSafeJobReferenceAndLogsDetails(
+            CapturedOutput output) throws IOException {
+        UUID jobId = UUID.randomUUID();
         BulkUploadRow firstRow = validOrganisationRow();
         BulkUploadRow secondRow = validOrganisationRow();
         JobContext context = new JobContext();
+        var response =
+                JobStatusResponse.builder()
+                        .uuid(jobId)
+                        .type(JobType.BULK_UPLOAD_ENTRIES)
+                        .status(JobStatus.PROCESSING)
+                        .userName("user")
+                        .build();
         lifecycle.validating(
                 new AsyncJobLifecycleEvent<>(
-                        null, List.of(firstRow, secondRow), context, JobStatus.VALIDATING));
+                        response, List.of(firstRow, secondRow), context, JobStatus.VALIDATING));
         AsyncJobLifecycleEvent<BulkUploadRow> event =
                 new AsyncJobLifecycleEvent<>(
-                        null, List.of(firstRow, secondRow), context, JobStatus.PROCESSING);
+                        response, List.of(firstRow, secondRow), context, JobStatus.PROCESSING);
+        var internalError =
+                "ERROR: relation appreg.application_list does not exist [select * from secret]";
         when(bulkImportService.persistPage(any(), any()))
-                .thenThrow(new IllegalStateException("boom"));
+                .thenThrow(new IllegalStateException(internalError));
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.processing(event));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED);
+        var expectedMessage =
+                "Bulk upload processing failed. Contact support quoting job reference "
+                        + jobId
+                        + ".";
+        assertThat(exception.getMessage()).isEqualTo(expectedMessage);
+        assertThat(exception.getCause()).hasMessage(internalError);
         assertThat(context.getValidationFailureMessages())
-                .containsExactly("Processing failed for page starting at row 2: boom");
+                .containsExactly(expectedMessage)
+                .allSatisfy(
+                        message ->
+                                assertThat(message)
+                                        .doesNotContain(
+                                                "ERROR", "relation", "appreg", "select", "secret"));
+        assertThat(output)
+                .contains("Failed to process bulk-import page")
+                .contains("jobId=" + jobId)
+                .contains(internalError);
         verify(bulkImportService).persistPage(any(), any());
     }
 
@@ -768,6 +815,8 @@ class BulkUploadAsyncLifecycleTest {
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
         lifecycle.setCSVFile(csvFile);
+        var event = event(row, context);
+        var jobId = event.getResponse().getJobId().getId();
 
         try (MockedConstruction<ObjectMapper> mockedObjectMappers =
                 mockConstruction(
@@ -777,9 +826,7 @@ class BulkUploadAsyncLifecycleTest {
                                         .thenThrow(new JsonProcessingException("boom") {}))) {
 
             AppRegistryException exception =
-                    assertThrows(
-                            AppRegistryException.class,
-                            () -> lifecycle.validating(event(row, context)));
+                    assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
             assertThat(mockedObjectMappers.constructed()).hasSize(1);
 
             assertThat(exception.getCode())
@@ -787,7 +834,10 @@ class BulkUploadAsyncLifecycleTest {
         }
 
         assertThat(context.getValidationFailureMessages())
-                .containsExactly("Bulk upload validation failure for list " + listId + ": boom");
+                .containsExactly(
+                        "Bulk upload processing failed. Contact support quoting job reference "
+                                + jobId
+                                + ".");
 
         assertThat(output)
                 .contains("Failed to serialize bulk upload errors to JSON for list")
@@ -1073,7 +1123,11 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(exception).isNotNull();
         verify(persistenceService, times(0)).writeClob(any(), any());
 
-        assertThat(exception.getMessage()).contains("Failed to save error CSV");
+        assertThat(exception.getMessage())
+                .isEqualTo(
+                        "Bulk upload processing failed. Contact support quoting job reference "
+                                + event.getResponse().getJobId().getId()
+                                + ".");
     }
 
     @Test
@@ -1096,12 +1150,14 @@ class BulkUploadAsyncLifecycleTest {
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
 
         assertThat(exception.getMessage())
-                .contains("Failed to save error CSV")
-                .contains("write failed");
+                .isEqualTo(
+                        "Bulk upload processing failed. Contact support quoting job reference "
+                                + event.getResponse().getJobId().getId()
+                                + ".")
+                .doesNotContain("write failed");
+        assertThat(exception.getCause()).hasMessage("write failed");
 
         verify(persistenceService, times(1)).writeClob(any(), any());
-
-        assertThat(exception.getMessage()).contains("Failed to save error CSV");
     }
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
