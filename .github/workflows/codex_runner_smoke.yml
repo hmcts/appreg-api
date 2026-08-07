@@ -83,8 +83,8 @@ jobs:
 
       - name: Verify trusted publisher credentials
         env:
-          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
-          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          BOT_PUBLISHER_LOGIN: ${{ vars.BOT_PUBLISHER_LOGIN }}
         run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Verify runner toolchain
@@ -92,14 +92,14 @@ jobs:
 
       - name: Configure Git identity
         run: |
-          git config user.name "${{ vars.CODEX_PUBLISHER_LOGIN }}"
-          git config user.email "${{ vars.CODEX_PUBLISHER_LOGIN }}@users.noreply.github.com"
+          git config user.name "${{ vars.BOT_PUBLISHER_LOGIN }}"
+          git config user.email "${{ vars.BOT_PUBLISHER_LOGIN }}@users.noreply.github.com"
 
       - name: Create, commit, and push a smoke-test branch
         id: smoke
         env:
-          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
-          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          BOT_PUBLISHER_LOGIN: ${{ vars.BOT_PUBLISHER_LOGIN }}
         run: ./.github/scripts/codex-runner-branch-smoke.sh
 
       - name: Write workflow summary

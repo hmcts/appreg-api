@@ -596,8 +596,8 @@ revision_pinned_workflows.each do |workflow_name|
   end
 end
 
-publisher_token = "${{ secrets.CODEX_GITHUB_TOKEN }}"
-publisher_login = "${{ vars.CODEX_PUBLISHER_LOGIN }}"
+publisher_token = "${{ secrets.BOT_GITHUB_TOKEN }}"
+publisher_login = "${{ vars.BOT_PUBLISHER_LOGIN }}"
 publisher_specs = [
   [".github/workflows/codex_jira_dispatch.yml", "publish-pr", "publish"],
   [".github/workflows/codex_jira_dispatch.yml", "publish-published-pr-repair-1", "publish"],
@@ -617,7 +617,7 @@ publisher_specs.each do |path, job_name, publish_step_id|
   end
 
   job_env = job.fetch("env", {}) || {}
-  if job_env.key?("GH_TOKEN") || job_env.key?("CODEX_PUBLISHER_LOGIN")
+  if job_env.key?("GH_TOKEN") || job_env.key?("BOT_PUBLISHER_LOGIN")
     errors << "#{path}:#{job_name} must not expose publisher credentials at job scope"
   end
 
@@ -638,7 +638,7 @@ publisher_specs.each do |path, job_name, publish_step_id|
   [verify_index, publish_index].each do |index|
     env = steps.fetch(index).fetch("env", {}) || {}
     unless env.fetch("GH_TOKEN", "") == publisher_token &&
-           env.fetch("CODEX_PUBLISHER_LOGIN", "") == publisher_login
+           env.fetch("BOT_PUBLISHER_LOGIN", "") == publisher_login
       errors << "#{path}:#{job_name} must scope the trusted publisher secret and login to verifier/publisher steps"
     end
   end
@@ -646,7 +646,7 @@ publisher_specs.each do |path, job_name, publish_step_id|
   steps.each_with_index do |step, index|
     next unless step.is_a?(Hash)
     next if [verify_index, publish_index].include?(index)
-    if step.inspect.include?("CODEX_GITHUB_TOKEN")
+    if step.inspect.include?("BOT_GITHUB_TOKEN")
       errors << "#{path}:#{job_name} exposes the publisher token outside verifier/publisher steps"
     end
   end
@@ -655,7 +655,7 @@ end
 Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
   workflow = YAML.load_file(path)
   workflow.fetch("jobs", {}).each do |job_name, job|
-    if job.inspect.include?("CODEX_GITHUB_TOKEN") &&
+    if job.inspect.include?("BOT_GITHUB_TOKEN") &&
        !publisher_job_keys.include?([path, job_name])
       errors << "#{path}:#{job_name} must not receive the trusted publisher token"
     end
@@ -687,7 +687,7 @@ end
   unless workflow.fetch("permissions", {}) == { "contents" => "read" }
     errors << "#{path} must use contents: read permissions"
   end
-  if File.read(path).include?("CODEX_GITHUB_TOKEN")
+  if File.read(path).include?("BOT_GITHUB_TOKEN")
     errors << "#{path} must not receive the trusted publisher token"
   end
   workflow.fetch("jobs", {}).each do |job_name, job|

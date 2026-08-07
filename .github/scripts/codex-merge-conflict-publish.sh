@@ -12,7 +12,7 @@ required_env() {
 }
 
 required_env "GH_TOKEN"
-required_env "CODEX_PUBLISHER_LOGIN"
+required_env "BOT_PUBLISHER_LOGIN"
 required_env "GITHUB_REPOSITORY"
 required_env "OUTPUT_DIR"
 required_env "VERIFICATION_DIR"
@@ -23,7 +23,7 @@ required_env "EXPECTED_HEAD_SHA"
 required_env "EXPECTED_BASE_SHA"
 
 output_dir="${OUTPUT_DIR}"
-publisher_login="${CODEX_PUBLISHER_LOGIN}"
+publisher_login="${BOT_PUBLISHER_LOGIN}"
 publisher_email="${publisher_login}@users.noreply.github.com"
 verification_dir="${VERIFICATION_DIR}"
 metadata_path="${output_dir}/metadata.env"

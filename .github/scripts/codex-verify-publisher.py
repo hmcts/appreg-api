@@ -66,7 +66,7 @@ def validate_publisher(
     if expected_login.casefold() == "github-actions[bot]":
         raise PublisherVerificationError("The default GitHub Actions identity cannot publish Codex PRs")
     if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?", expected_login):
-        raise PublisherVerificationError("CODEX_PUBLISHER_LOGIN is not a valid GitHub login")
+        raise PublisherVerificationError("BOT_PUBLISHER_LOGIN is not a valid GitHub login")
 
     repository_parts = repository.split("/")
     if (
@@ -103,7 +103,7 @@ def validate_publisher(
 def main() -> int:
     try:
         token = required_environment("GH_TOKEN")
-        expected_login = required_environment("CODEX_PUBLISHER_LOGIN")
+        expected_login = required_environment("BOT_PUBLISHER_LOGIN")
         repository = required_environment("GITHUB_REPOSITORY")
         api_url = os.environ.get("GITHUB_API_URL", "https://api.github.com")
         client = GitHubClient(api_url, token)

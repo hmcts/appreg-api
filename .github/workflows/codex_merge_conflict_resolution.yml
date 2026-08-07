@@ -440,8 +440,8 @@ jobs:
 
       - name: Verify trusted publisher credentials
         env:
-          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
-          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          BOT_PUBLISHER_LOGIN: ${{ vars.BOT_PUBLISHER_LOGIN }}
         run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Download Codex conflict-resolution output
@@ -464,8 +464,8 @@ jobs:
       - name: Publish conflict-resolution commit
         id: publish
         env:
-          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
-          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          BOT_PUBLISHER_LOGIN: ${{ vars.BOT_PUBLISHER_LOGIN }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-conflict-verified
         run: "$RUNNER_TEMP/codex-merge-conflict-publish.sh"

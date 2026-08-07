@@ -15,7 +15,7 @@ required_env "ISSUE_KEY"
 required_env "ISSUE_SUMMARY"
 required_env "ISSUE_URL"
 required_env "GH_TOKEN"
-required_env "CODEX_PUBLISHER_LOGIN"
+required_env "BOT_PUBLISHER_LOGIN"
 required_env "OUTPUT_DIR"
 required_env "VERIFICATION_DIR"
 required_env "EXPECTED_BRANCH_NAME"
@@ -41,7 +41,7 @@ case "${JIRA_PUBLISH_MODE}" in
 esac
 
 default_branch="${DEFAULT_BRANCH:-master}"
-publisher_login="${CODEX_PUBLISHER_LOGIN}"
+publisher_login="${BOT_PUBLISHER_LOGIN}"
 publisher_email="${publisher_login}@users.noreply.github.com"
 output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"

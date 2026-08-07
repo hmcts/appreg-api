@@ -81,7 +81,7 @@ class CodexPrReviewHandoffTest(unittest.TestCase):
                 **os.environ,
                 "PATH": f"{fake_bin}:{os.environ['PATH']}",
                 "GH_TOKEN": "test-token",
-                "CODEX_PUBLISHER_LOGIN": "appreg-codex-bot",
+                "BOT_PUBLISHER_LOGIN": "appreg-codex-bot",
                 "GITHUB_REPOSITORY": "hmcts/example",
                 "OUTPUT_DIR": str(output_dir),
                 "VERIFICATION_DIR": str(verification_dir),
