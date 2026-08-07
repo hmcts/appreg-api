@@ -12,6 +12,7 @@ required_env() {
 }
 
 required_env "GH_TOKEN"
+required_env "CODEX_PUBLISHER_LOGIN"
 required_env "GITHUB_REPOSITORY"
 required_env "OUTPUT_DIR"
 required_env "VERIFICATION_DIR"
@@ -20,6 +21,8 @@ required_env "EXPECTED_HEAD_REF"
 required_env "EXPECTED_HEAD_SHA"
 
 output_dir="${OUTPUT_DIR}"
+publisher_login="${CODEX_PUBLISHER_LOGIN}"
+publisher_email="${publisher_login}@users.noreply.github.com"
 metadata_path="${output_dir}/metadata.env"
 patch_path="${output_dir}/changes.patch"
 final_message_path="${output_dir}/codex-final-message.md"
@@ -174,8 +177,8 @@ comment_url="$(metadata_value comment_url)"
 comment_author="$(metadata_value comment_author)"
 
 git_authenticated \
-  -c user.name="github-actions[bot]" \
-  -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+  -c user.name="${publisher_login}" \
+  -c user.email="${publisher_email}" \
   commit \
   -m "${commit_subject}" \
   -m "Feedback: ${comment_url}" \

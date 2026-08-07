@@ -2,6 +2,24 @@
 
 set -euo pipefail
 
+if [[ -z "${GH_TOKEN:-}" ]]; then
+  echo "Missing required environment variable: GH_TOKEN" >&2
+  exit 1
+fi
+
+git_authenticated() {
+  GIT_CONFIG_GLOBAL=/dev/null \
+    GIT_CONFIG_NOSYSTEM=1 \
+    GIT_TERMINAL_PROMPT=0 \
+    GH_TOKEN="${GH_TOKEN}" \
+    git \
+    -c core.hooksPath=/dev/null \
+    -c credential.helper= \
+    -c credential.helper='!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f' \
+    -c protocol.file.allow=never \
+    "$@"
+}
+
 default_branch="${DEFAULT_BRANCH:-master}"
 branch_prefix="${BRANCH_PREFIX:-codex-runner-smoke}"
 timestamp="$(date -u +"%Y%m%d%H%M%S")"
@@ -9,7 +27,8 @@ run_id="${GITHUB_RUN_ID:-manual}"
 branch_name="${branch_prefix}-${timestamp}-${run_id}"
 branch_name="${branch_name//[^A-Za-z0-9._-]/-}"
 
-git fetch origin "$default_branch"
+git_authenticated fetch --no-tags --prune origin \
+  "+refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
 git checkout -B "$default_branch" "origin/$default_branch"
 git checkout -b "$branch_name"
 
@@ -33,7 +52,7 @@ EOF
 
 git add "$smoke_file"
 git commit -m "chore: codex runner smoke test ${branch_name}"
-git push --set-upstream origin "$branch_name"
+git_authenticated push --set-upstream origin "$branch_name"
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {

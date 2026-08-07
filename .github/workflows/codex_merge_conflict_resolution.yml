@@ -421,16 +421,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    outputs:
-      branch_name: ${{ steps.publish.outputs.branch_name }}
-      commit_sha: ${{ steps.publish.outputs.commit_sha }}
-      pr_number: ${{ steps.publish.outputs.pr_number }}
+      contents: read
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_TOKEN: ${{ github.token }}
       EXPECTED_PR_NUMBER: ${{ needs.detect-conflicted-pr.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.detect-conflicted-pr.outputs.head_ref }}
       EXPECTED_BASE_REF: ${{ needs.detect-conflicted-pr.outputs.base_ref }}
@@ -444,6 +437,12 @@ jobs:
           ref: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Verify trusted publisher credentials
+        env:
+          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
+          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
+        run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Download Codex conflict-resolution output
         uses: actions/download-artifact@v8
@@ -465,6 +464,8 @@ jobs:
       - name: Publish conflict-resolution commit
         id: publish
         env:
+          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
+          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-conflict-verified
         run: "$RUNNER_TEMP/codex-merge-conflict-publish.sh"
@@ -480,24 +481,8 @@ jobs:
             echo "- Commit: ${{ steps.publish.outputs.commit_sha }}"
           } >>"$GITHUB_STEP_SUMMARY"
 
-  approve-conflict-pr-workflows:
-    needs: [codex-conflict-generate, publish-conflict-resolution]
-    if: always() && needs.publish-conflict-resolution.outputs.commit_sha != ''
-    uses: ./.github/workflows/codex_approve_pr_workflows.yml
-    permissions:
-      actions: write
-      contents: read
-      pull-requests: read
-    with:
-      pr_number: ${{ needs.publish-conflict-resolution.outputs.pr_number }}
-      head_ref: ${{ needs.publish-conflict-resolution.outputs.branch_name }}
-      head_sha: ${{ needs.publish-conflict-resolution.outputs.commit_sha }}
-      base_ref: ${{ github.event.repository.default_branch }}
-      trusted_sha: ${{ needs.codex-conflict-generate.outputs.trusted_sha }}
-
   conflict-resolution-failed:
     needs:
-      - approve-conflict-pr-workflows
       - detect-conflicted-pr
       - codex-conflict-generate
       - verify-conflict-resolution
@@ -508,8 +493,7 @@ jobs:
       (
         needs.codex-conflict-generate.result == 'failure' ||
         needs.verify-conflict-resolution.outputs.passed != 'true' ||
-        needs.publish-conflict-resolution.result == 'failure' ||
-        needs.approve-conflict-pr-workflows.result == 'failure'
+        needs.publish-conflict-resolution.result == 'failure'
       )
     runs-on: ubuntu-latest
     permissions:

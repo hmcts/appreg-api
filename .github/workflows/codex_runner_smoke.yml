@@ -68,32 +68,38 @@ jobs:
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 30
     permissions:
-      contents: write
+      contents: read
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       BRANCH_PREFIX: ${{ inputs.branch_prefix }}
-      GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN || github.token }}
 
     steps:
       - name: Checkout default branch
-        run: |
-          git init .
-          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          git config --local credential.helper \
-            '!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f'
-          git fetch --prune --no-tags origin "${DEFAULT_BRANCH}"
-          git checkout -B "${DEFAULT_BRANCH}" FETCH_HEAD
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify trusted publisher credentials
+        env:
+          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
+          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
+        run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Verify runner toolchain
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Configure Git identity
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ vars.CODEX_PUBLISHER_LOGIN }}"
+          git config user.email "${{ vars.CODEX_PUBLISHER_LOGIN }}@users.noreply.github.com"
 
       - name: Create, commit, and push a smoke-test branch
         id: smoke
+        env:
+          GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN }}
+          CODEX_PUBLISHER_LOGIN: ${{ vars.CODEX_PUBLISHER_LOGIN }}
         run: ./.github/scripts/codex-runner-branch-smoke.sh
 
       - name: Write workflow summary

@@ -15,6 +15,7 @@ required_env "ISSUE_KEY"
 required_env "ISSUE_SUMMARY"
 required_env "ISSUE_URL"
 required_env "GH_TOKEN"
+required_env "CODEX_PUBLISHER_LOGIN"
 required_env "OUTPUT_DIR"
 required_env "VERIFICATION_DIR"
 required_env "EXPECTED_BRANCH_NAME"
@@ -40,6 +41,8 @@ case "${JIRA_PUBLISH_MODE}" in
 esac
 
 default_branch="${DEFAULT_BRANCH:-master}"
+publisher_login="${CODEX_PUBLISHER_LOGIN}"
+publisher_email="${publisher_login}@users.noreply.github.com"
 output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
 patch_path="${output_dir}/changes.patch"
@@ -214,8 +217,8 @@ git_authenticated checkout -B "${branch_name}"
 git_local apply --index --binary "${patch_path}"
 
 git_authenticated \
-  -c user.name="github-actions[bot]" \
-  -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+  -c user.name="${publisher_login}" \
+  -c user.email="${publisher_email}" \
   commit \
   -m "${commit_subject}" \
   -m "Jira: ${ISSUE_URL}" \
