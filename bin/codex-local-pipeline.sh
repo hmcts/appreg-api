@@ -596,8 +596,12 @@ revision_pinned_workflows.each do |workflow_name|
   end
 end
 
-publisher_token = "${{ secrets.BOT_GITHUB_TOKEN }}"
-publisher_login = "${{ vars.BOT_PUBLISHER_LOGIN }}"
+github_app_action = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
+github_app_client_id = "${{ vars.CODEX_GITHUB_APP_CLIENT_ID }}"
+github_app_private_key = "${{ secrets.CODEX_GITHUB_APP_PRIVATE_KEY }}"
+publisher_token = "${{ steps.app-token.outputs.token }}"
+publisher_login = "${{ steps.publisher.outputs.publisher_login }}"
+publisher_email = "${{ steps.publisher.outputs.publisher_email }}"
 publisher_specs = [
   [".github/workflows/codex_jira_dispatch.yml", "publish-pr", "publish"],
   [".github/workflows/codex_jira_dispatch.yml", "publish-published-pr-repair-1", "publish"],
@@ -617,11 +621,16 @@ publisher_specs.each do |path, job_name, publish_step_id|
   end
 
   job_env = job.fetch("env", {}) || {}
-  if job_env.key?("GH_TOKEN") || job_env.key?("BOT_PUBLISHER_LOGIN")
+  if job_env.key?("GH_TOKEN") || job_env.key?("BOT_PUBLISHER_LOGIN") || job_env.key?("BOT_PUBLISHER_EMAIL")
     errors << "#{path}:#{job_name} must not expose publisher credentials at job scope"
   end
 
   steps = job.fetch("steps", [])
+  token_index = steps.index do |step|
+    step.is_a?(Hash) &&
+      step.fetch("id", "") == "app-token" &&
+      step.fetch("uses", "") == github_app_action
+  end
   verify_index = steps.index do |step|
     step.is_a?(Hash) &&
       step.fetch("run", "") == "python3 -I .github/scripts/codex-verify-publisher.py"
@@ -630,24 +639,50 @@ publisher_specs.each do |path, job_name, publish_step_id|
     step.is_a?(Hash) && step.fetch("id", "") == publish_step_id
   end
 
-  if verify_index.nil? || publish_index.nil? || verify_index >= publish_index
-    errors << "#{path}:#{job_name} must verify the trusted publisher before publishing"
+  if token_index.nil? || verify_index.nil? || publish_index.nil? ||
+     token_index >= verify_index || verify_index >= publish_index
+    errors << "#{path}:#{job_name} must mint and verify a GitHub App token before publishing"
     next
   end
 
-  [verify_index, publish_index].each do |index|
-    env = steps.fetch(index).fetch("env", {}) || {}
-    unless env.fetch("GH_TOKEN", "") == publisher_token &&
-           env.fetch("BOT_PUBLISHER_LOGIN", "") == publisher_login
-      errors << "#{path}:#{job_name} must scope the trusted publisher secret and login to verifier/publisher steps"
-    end
+  token_inputs = steps.fetch(token_index).fetch("with", {}) || {}
+  required_token_inputs = {
+    "client-id" => github_app_client_id,
+    "private-key" => github_app_private_key,
+    "owner" => "${{ github.repository_owner }}",
+    "repositories" => "${{ github.event.repository.name }}",
+    "permission-contents" => "write",
+    "permission-issues" => "write",
+    "permission-pull-requests" => "write",
+    "permission-workflows" => "write",
+  }
+  unless required_token_inputs.all? { |key, value| token_inputs.fetch(key, "") == value }
+    errors << "#{path}:#{job_name} must mint a repository-scoped GitHub App token with explicit permissions"
+  end
+
+  verify_env = steps.fetch(verify_index).fetch("env", {}) || {}
+  unless verify_env.fetch("GH_TOKEN", "") == publisher_token &&
+         verify_env.fetch("GITHUB_APP_SLUG", "") == "${{ steps.app-token.outputs.app-slug }}" &&
+         verify_env.fetch("GITHUB_APP_INSTALLATION_ID", "") == "${{ steps.app-token.outputs.installation-id }}"
+    errors << "#{path}:#{job_name} must verify the minted GitHub App installation token"
+  end
+
+  publish_env = steps.fetch(publish_index).fetch("env", {}) || {}
+  unless publish_env.fetch("GH_TOKEN", "") == publisher_token
+    errors << "#{path}:#{job_name} must publish with the minted GitHub App token"
+  end
+  unless publish_step_id == "smoke" ||
+         (publish_env.fetch("BOT_PUBLISHER_LOGIN", "") == publisher_login &&
+          publish_env.fetch("BOT_PUBLISHER_EMAIL", "") == publisher_email)
+    errors << "#{path}:#{job_name} must use the verified GitHub App bot commit identity"
   end
 
   steps.each_with_index do |step, index|
     next unless step.is_a?(Hash)
-    next if [verify_index, publish_index].include?(index)
-    if step.inspect.include?("BOT_GITHUB_TOKEN")
-      errors << "#{path}:#{job_name} exposes the publisher token outside verifier/publisher steps"
+    next if [token_index, verify_index, publish_index].include?(index)
+    if step.inspect.include?("CODEX_GITHUB_APP_PRIVATE_KEY") ||
+       step.inspect.include?("steps.app-token.outputs.token")
+      errors << "#{path}:#{job_name} exposes GitHub App credentials outside token, verifier or publisher steps"
     end
   end
 end
@@ -655,10 +690,15 @@ end
 Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
   workflow = YAML.load_file(path)
   workflow.fetch("jobs", {}).each do |job_name, job|
-    if job.inspect.include?("BOT_GITHUB_TOKEN") &&
+    if (job.inspect.include?("CODEX_GITHUB_APP_PRIVATE_KEY") ||
+        job.inspect.include?("steps.app-token.outputs.token")) &&
        !publisher_job_keys.include?([path, job_name])
-      errors << "#{path}:#{job_name} must not receive the trusted publisher token"
+      errors << "#{path}:#{job_name} must not receive GitHub App publisher credentials"
     end
+  end
+  source = File.read(path)
+  if source.include?("BOT_GITHUB_TOKEN") || source.include?("vars.BOT_PUBLISHER_LOGIN")
+    errors << "#{path} must not reference the retired machine-user publisher configuration"
   end
 end
 
@@ -687,8 +727,8 @@ end
   unless workflow.fetch("permissions", {}) == { "contents" => "read" }
     errors << "#{path} must use contents: read permissions"
   end
-  if File.read(path).include?("BOT_GITHUB_TOKEN")
-    errors << "#{path} must not receive the trusted publisher token"
+  if File.read(path).include?("CODEX_GITHUB_APP_PRIVATE_KEY")
+    errors << "#{path} must not receive the GitHub App private key"
   end
   workflow.fetch("jobs", {}).each do |job_name, job|
     checkouts = job.fetch("steps", []).select do |step|
