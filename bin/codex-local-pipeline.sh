@@ -662,6 +662,19 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
   end
 end
 
+publication_paths = Dir[
+  ".github/scripts/*publish*.sh",
+  ".github/workflows/codex*.yml",
+  ".github/workflows/codex*.yaml",
+]
+publication_paths.each do |path|
+  source = File.read(path)
+  if source.match?(/\bworkflow\s+run\s+on-pr\.ya?ml\b/) ||
+     source.match?(%r{/actions/workflows/on-pr\.ya?ml/dispatches})
+    errors << "#{path} must not manually dispatch PR Tasks"
+  end
+end
+
 if File.exist?(".github/workflows/codex_approve_pr_workflows.yml") ||
    Dir[".github/workflows/*"].any? { |path| File.read(path).include?("codex_approve_pr_workflows") }
   errors << "unsupported pull-request workflow auto-approval machinery must not be present"

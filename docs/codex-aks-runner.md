@@ -111,10 +111,10 @@ external API and Jira Automation rule are extended.
 Codex branches, pull requests, review updates and conflict-resolution commits
 are published with a fine-grained token belonging to a dedicated HMCTS machine
 user. The machine user must be a trusted collaborator on this repository, and
-the token must be limited to `appreg-api` with read/write access to Actions,
-Contents, Pull requests and Issues. Actions write access is required only
-because the trusted publisher dispatches the existing PR task workflow after
-opening a PR. The default GitHub Actions identity is not used for publication.
+the token must be limited to `appreg-api` with read/write access to Contents,
+Pull requests and Issues. The publisher does not dispatch workflows, so the
+token does not require Actions write access. The default GitHub Actions identity
+is not used for publication.
 
 Publisher credentials are exposed only to the trusted identity-verification and
 publication steps. Before each push, `.github/scripts/codex-verify-publisher.py`
