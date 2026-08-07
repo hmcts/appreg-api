@@ -315,9 +315,28 @@ jobs:
             echo "- Commit: ${{ steps.publish.outputs.commit_sha }}"
           } >>"$GITHUB_STEP_SUMMARY"
 
-  verify-review-status:
-    needs: [codex-review-generate, codex-review-publish]
+  approve-review-pr-workflows:
+    needs: [codex-review-generate, codex-review-publish, detect-codex-pr]
     if: always() && needs.codex-review-publish.outputs.commit_sha != ''
+    uses: ./.github/workflows/codex_approve_pr_workflows.yml
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    with:
+      pr_number: ${{ needs.codex-review-publish.outputs.pr_number }}
+      head_ref: ${{ needs.detect-codex-pr.outputs.head_ref }}
+      head_sha: ${{ needs.codex-review-publish.outputs.commit_sha }}
+      base_ref: ${{ github.event.repository.default_branch }}
+      trusted_sha: ${{ needs.codex-review-generate.outputs.trusted_sha }}
+
+  verify-review-status:
+    needs:
+      [approve-review-pr-workflows, codex-review-generate, codex-review-publish]
+    if: |
+      always() &&
+      needs.codex-review-publish.outputs.commit_sha != '' &&
+      needs.approve-review-pr-workflows.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -729,9 +748,37 @@ jobs:
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-pr-review-publish.sh"
 
-  verify-review-status-repair:
-    needs: [codex-review-generate, codex-review-external-republish]
+  approve-repaired-review-pr-workflows:
+    needs:
+      [
+        codex-review-external-republish,
+        codex-review-generate,
+        codex-review-generate-action,
+      ]
     if: always() && needs.codex-review-external-republish.outputs.commit_sha != ''
+    uses: ./.github/workflows/codex_approve_pr_workflows.yml
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    with:
+      pr_number: ${{ needs.codex-review-external-republish.outputs.pr_number }}
+      head_ref: ${{ needs.codex-review-generate-action.outputs.head_ref }}
+      head_sha: ${{ needs.codex-review-external-republish.outputs.commit_sha }}
+      base_ref: ${{ github.event.repository.default_branch }}
+      trusted_sha: ${{ needs.codex-review-generate.outputs.trusted_sha }}
+
+  verify-review-status-repair:
+    needs:
+      [
+        approve-repaired-review-pr-workflows,
+        codex-review-generate,
+        codex-review-external-republish,
+      ]
+    if: |
+      always() &&
+      needs.codex-review-external-republish.outputs.commit_sha != '' &&
+      needs.approve-repaired-review-pr-workflows.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -773,6 +820,8 @@ jobs:
   codex-review-external-verification-failed:
     needs:
       [
+        approve-repaired-review-pr-workflows,
+        approve-review-pr-workflows,
         codex-review-publish,
         verify-review-status,
         codex-review-external-repair-action,
@@ -783,6 +832,11 @@ jobs:
     if: |
       always() &&
       needs.codex-review-publish.outputs.commit_sha != '' &&
+      needs.approve-review-pr-workflows.result == 'success' &&
+      (
+        needs.codex-review-external-republish.outputs.commit_sha == '' ||
+        needs.approve-repaired-review-pr-workflows.result == 'success'
+      ) &&
       needs.verify-review-status.outputs.passed != 'true' &&
       needs.verify-review-status-repair.outputs.passed != 'true'
     runs-on: ubuntu-latest

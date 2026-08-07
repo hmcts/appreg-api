@@ -1156,6 +1156,21 @@ jobs:
             echo "- Pull request: ${{ steps.publish.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
 
+  approve-published-pr-workflows:
+    needs: [codex-generate, publish-pr]
+    if: always() && needs.publish-pr.outputs.pr_number != ''
+    uses: ./.github/workflows/codex_approve_pr_workflows.yml
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    with:
+      pr_number: ${{ needs.publish-pr.outputs.pr_number }}
+      head_ref: ${{ needs.publish-pr.outputs.branch_name }}
+      head_sha: ${{ needs.publish-pr.outputs.commit_sha }}
+      base_ref: ${{ github.event.repository.default_branch }}
+      trusted_sha: ${{ needs.codex-generate.outputs.trusted_sha }}
+
   verify-published-pr-patch:
     needs: [publish-pr, prepare-codex-verification-source, validate-codex-plan]
     if: always() && needs.publish-pr.outputs.pr_number != ''
@@ -1230,8 +1245,17 @@ jobs:
           retention-days: 1
 
   verify-published-pr:
-    needs: [codex-generate, publish-pr, verify-published-pr-patch]
-    if: always() && needs.publish-pr.outputs.pr_number != ''
+    needs:
+      [
+        approve-published-pr-workflows,
+        codex-generate,
+        publish-pr,
+        verify-published-pr-patch,
+      ]
+    if: |
+      always() &&
+      needs.publish-pr.outputs.pr_number != '' &&
+      needs.approve-published-pr-workflows.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -1595,6 +1619,21 @@ jobs:
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-jira-publish.sh"
 
+  approve-repaired-pr-workflows:
+    needs: [codex-generate, publish-published-pr-repair-1]
+    if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
+    uses: ./.github/workflows/codex_approve_pr_workflows.yml
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    with:
+      pr_number: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
+      head_ref: ${{ needs.publish-published-pr-repair-1.outputs.branch_name }}
+      head_sha: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
+      base_ref: ${{ github.event.repository.default_branch }}
+      trusted_sha: ${{ needs.codex-generate.outputs.trusted_sha }}
+
   verify-published-pr-1-patch:
     needs: [publish-published-pr-repair-1, prepare-codex-verification-source, validate-codex-plan]
     if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
@@ -1647,8 +1686,17 @@ jobs:
           fi
           exit 0
   verify-published-pr-1:
-    needs: [codex-generate, publish-published-pr-repair-1, verify-published-pr-1-patch]
-    if: always() && needs.publish-published-pr-repair-1.outputs.pr_number != ''
+    needs:
+      [
+        approve-repaired-pr-workflows,
+        codex-generate,
+        publish-published-pr-repair-1,
+        verify-published-pr-1-patch,
+      ]
+    if: |
+      always() &&
+      needs.publish-published-pr-repair-1.outputs.pr_number != '' &&
+      needs.approve-repaired-pr-workflows.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -1696,6 +1744,8 @@ jobs:
 
   codex-published-pr-verification-failed:
     needs:
+      - approve-published-pr-workflows
+      - approve-repaired-pr-workflows
       - publish-pr
       - verify-published-pr
       - repair-published-pr-1
@@ -1705,6 +1755,11 @@ jobs:
     if: |
       always() &&
       needs.publish-pr.outputs.pr_number != '' &&
+      needs.approve-published-pr-workflows.result == 'success' &&
+      (
+        needs.publish-published-pr-repair-1.outputs.pr_number == '' ||
+        needs.approve-repaired-pr-workflows.result == 'success'
+      ) &&
       needs.verify-published-pr.outputs.passed != 'true' &&
       needs.verify-published-pr-1.outputs.passed != 'true'
     runs-on: ubuntu-latest

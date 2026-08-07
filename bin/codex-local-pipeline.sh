@@ -137,6 +137,7 @@ PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-publish
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-codex-plan.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-handoff.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-approve-pr-workflows.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then

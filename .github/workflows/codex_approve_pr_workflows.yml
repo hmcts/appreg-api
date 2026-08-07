@@ -1,0 +1,72 @@
+name: Approve trusted Codex PR workflows
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: Pull request number created or updated by the trusted Codex publisher
+        required: true
+        type: string
+      head_ref:
+        description: Exact Codex pull request branch
+        required: true
+        type: string
+      head_sha:
+        description: Exact independently verified commit published to the pull request
+        required: true
+        type: string
+      base_ref:
+        description: Expected pull request base branch
+        required: true
+        type: string
+      trusted_sha:
+        description: Trusted repository revision containing the approval validator
+        required: true
+        type: string
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_PR_NUMBER: ${{ inputs.pr_number }}
+      EXPECTED_HEAD_REF: ${{ inputs.head_ref }}
+      EXPECTED_HEAD_SHA: ${{ inputs.head_sha }}
+      EXPECTED_BASE_REF: ${{ inputs.base_ref }}
+      CODEX_PR_AUTHOR: github-actions[bot]
+      CODEX_BRANCH_PREFIX: codex/
+      CODEX_APPROVAL_MAX_CHANGED_FILES: '30'
+      CODEX_APPROVAL_TIMEOUT_SECONDS: '120'
+      CODEX_APPROVAL_POLL_SECONDS: '5'
+      CODEX_APPROVAL_QUIET_POLLS: '3'
+      CODEX_APPROVAL_WORKFLOW_PATHS: |
+        .github/workflows/existing_flyway_change_prevention.yml
+        .github/workflows/flyway-dupe-checker.yml
+        .github/workflows/portal_redirect_pr.yml
+      CODEX_APPROVAL_BLOCKED_PATHS: |
+        .github/
+        .gitmodules
+        bin/codex-local-pipeline.sh
+        build.gradle
+        settings.gradle
+        gradle.properties
+        gradle/
+        gradlew
+        gradlew.bat
+        init.gradle
+        buildSrc/
+
+    steps:
+      - name: Checkout trusted approval validator
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.trusted_sha }}
+          persist-credentials: false
+
+      - name: Validate and approve Codex PR workflows
+        run: python3 -I .github/scripts/codex-approve-pr-workflows.py
