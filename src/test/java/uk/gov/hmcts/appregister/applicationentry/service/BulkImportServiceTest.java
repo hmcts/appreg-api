@@ -244,6 +244,22 @@ class BulkImportServiceTest {
     }
 
     @Test
+    void givenMultipleWordingLengthFailures_whenPersisting_thenCollectsEachRowFailure() {
+        var first = wordingLengthValidatedEntry(7);
+        var second = wordingLengthValidatedEntry(8);
+
+        var exception =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        BulkUploadValidationFailuresException.class,
+                        () -> service.persistPage(UUID.randomUUID(), List.of(first, second)));
+
+        assertThat(exception.failures())
+                .extracting(BulkUploadValidationException::rowNumber)
+                .containsExactly(7, 8);
+        verify(entryRepository, never()).saveAll(any());
+    }
+
+    @Test
     void givenUnknownWordingFailure_whenPersisting_thenPreservesInternalException() {
         var dto = new EntryCreateDto();
         dto.setWordingFields(List.of());
@@ -285,6 +301,21 @@ class BulkImportServiceTest {
                         .fee(new FeePair(mainFee, null))
                         .build();
         return new ValidatedBulkImportEntry(2, dto, validation);
+    }
+
+    private ValidatedBulkImportEntry wordingLengthValidatedEntry(int rowNumber) {
+        var dto = new EntryCreateDto();
+        dto.setWordingFields(
+                List.of(new TemplateSubstitution("Applicants name", "four characters")));
+        var validation =
+                CreateApplicationEntryValidationSuccess.builder()
+                        .wordingSentence(
+                                WordingTemplateSentence.with(
+                                        "Application by {TEXT|Applicants name|4}"))
+                        .applicationCode(new ApplicationCode())
+                        .applicationList(applicationList)
+                        .build();
+        return new ValidatedBulkImportEntry(rowNumber, dto, validation);
     }
 
     private ApplicationListEntryRepository.EntryIdAndUuid generatedUuid(Long id) {

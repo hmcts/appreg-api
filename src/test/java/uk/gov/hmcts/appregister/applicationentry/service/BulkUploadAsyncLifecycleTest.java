@@ -736,6 +736,56 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenMultipleRecognisedProcessingValidationFailures_thenWritesEachRowError()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+        var writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+        var context = new JobContext();
+        var event = event(List.of(validOrganisationRow(), validOrganisationRow()), context);
+        lifecycle.setCSVFile(csvFile);
+        lifecycle.validating(event);
+        when(bulkImportService.persistPage(any(), any()))
+                .thenThrow(
+                        new BulkUploadValidationFailuresException(
+                                List.of(
+                                        new BulkUploadValidationException(
+                                                2,
+                                                "APPLICATION_TEXT",
+                                                "Invalid length type in template: expected 70 but got 80",
+                                                new AppRegistryException(
+                                                        CommonAppError.WORDING_LENGTH_FAILURE,
+                                                        "internal validation detail")),
+                                        new BulkUploadValidationException(
+                                                3,
+                                                "APPLICATION_TEXT",
+                                                "Invalid length type in template: expected 70 but got 81",
+                                                new AppRegistryException(
+                                                        CommonAppError.WORDING_LENGTH_FAILURE,
+                                                        "internal validation detail")))));
+
+        assertThrows(AppRegistryException.class, () -> lifecycle.processing(event));
+
+        assertThat(context.getValidationFailureMessages())
+                .singleElement()
+                .asString()
+                .contains("\"rowNumber\":2", "\"rowNumber\":3")
+                .doesNotContain("internal validation detail");
+        assertThat(writtenCsv.toString())
+                .contains(
+                        "row-two|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80",
+                        "row-three|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 81");
+        verify(persistenceService).writeClob(any(), any());
+    }
+
+    @Test
     void
             givenDuplicateRowsAcrossPage_whenProcessingAndCompleting_thenPreservesCountsAndLogsDuration(
                     CapturedOutput output) throws IOException {
@@ -1164,6 +1214,11 @@ class BulkUploadAsyncLifecycleTest {
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
+        return event(List.of(row), context);
+    }
+
+    private static AsyncJobLifecycleEvent<BulkUploadRow> event(
+            List<BulkUploadRow> rows, JobContext context) {
         return new AsyncJobLifecycleEvent<>(
                 new JobStatusResponse(
                         UUID.randomUUID(),
@@ -1172,7 +1227,7 @@ class BulkUploadAsyncLifecycleTest {
                         "user",
                         "error",
                         persistenceService),
-                List.of(row),
+                rows,
                 context,
                 JobStatus.VALIDATING);
     }

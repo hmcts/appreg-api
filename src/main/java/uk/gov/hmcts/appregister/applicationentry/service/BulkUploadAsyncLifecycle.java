@@ -401,6 +401,20 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         try {
             prepareValidatedPage(event.getData());
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
+        } catch (BulkUploadValidationFailuresException exception) {
+            log.warn(
+                    "Recognised bulk-upload validation failures listId={} jobId={} rowNumbers={}",
+                    listId,
+                    jobId,
+                    exception.failures().stream()
+                            .map(BulkUploadValidationException::rowNumber)
+                            .toList(),
+                    exception);
+            recordProcessingValidationFailures(
+                    event,
+                    context,
+                    exception.failures().stream().map(this::toProcessingBulkUploadError).toList(),
+                    exception);
         } catch (BulkUploadValidationException exception) {
             log.warn(
                     "Recognised bulk-upload validation failure listId={} jobId={} rowNumber={}",
@@ -408,14 +422,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     jobId,
                     exception.rowNumber(),
                     exception);
-            var errors = List.of(toProcessingBulkUploadError(exception));
-            sanitiseErrorMessages(errors);
-            logValidationFailure(event, context, errors);
-            saveErrorCSV(errors, event, context);
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                    "One or more rows failed validation during bulk upload",
-                    exception);
+            recordProcessingValidationFailures(
+                    event, context, List.of(toProcessingBulkUploadError(exception)), exception);
         } catch (Exception ex) {
             log.error(
                     "Failed to process bulk-import page listId={} jobId={} firstRowNumber={}",
@@ -434,6 +442,21 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 "Bulk upload page processed listId={} importedEntryCount={}",
                 listId,
                 importedEntryCount);
+    }
+
+    private void recordProcessingValidationFailures(
+            AsyncJobLifecycleEvent<BulkUploadRow> event,
+            JobContext context,
+            List<BulkUploadError> errors,
+            RuntimeException exception)
+            throws IOException {
+        sanitiseErrorMessages(errors);
+        logValidationFailure(event, context, errors);
+        saveErrorCSV(errors, event, context);
+        throw new AppRegistryException(
+                AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                "One or more rows failed validation during bulk upload",
+                exception);
     }
 
     private BulkUploadError toProcessingBulkUploadError(BulkUploadValidationException exception) {

@@ -94,11 +94,22 @@ public class BulkImportService {
                         validatedEntries.size());
         var names = new ArrayList<NameAddress>();
         var entries = new ArrayList<ApplicationListEntry>(validatedEntries.size());
+        var validationFailures = new ArrayList<BulkUploadValidationException>();
 
         for (var index = 0; index < validatedEntries.size(); index++) {
             var validatedEntry = validatedEntries.get(index);
-            var entry = createEntry(validatedEntry, names, firstSequence + index);
-            entries.add(entry);
+            try {
+                entries.add(createEntry(validatedEntry, names, firstSequence + index));
+            } catch (BulkUploadValidationException exception) {
+                validationFailures.add(exception);
+            }
+        }
+
+        if (!validationFailures.isEmpty()) {
+            if (validationFailures.size() == 1) {
+                throw validationFailures.getFirst();
+            }
+            throw new BulkUploadValidationFailuresException(validationFailures);
         }
 
         nameAddressRepository.saveAll(names);
