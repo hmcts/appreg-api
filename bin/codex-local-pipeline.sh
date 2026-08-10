@@ -126,14 +126,17 @@ bash -n \
   .github/scripts/*.sh \
   bin/*.sh
 
-log "Validating parity result collector"
+log "Validating Python scripts"
 python_cache="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codex-pycache"
 mkdir -p "${python_cache}"
 PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
-PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parity-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-patch-export.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-check-sonar-quality-gate.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-publish-revision.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-codex-plan.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-handoff.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
@@ -166,6 +169,12 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
       version = inputs.fetch("codex-version", "")
       errors << "#{path}:#{job_name} must pin codex-version to #{expected_codex_version}" unless version == expected_codex_version
 
+      if File.basename(path) == "codex_jira_dispatch.yml" && job_name == "codex-plan-action"
+        unless inputs.fetch("model", "") == "gpt-5.6-sol" && inputs.fetch("effort", "") == "ultra"
+          errors << "#{path}:#{job_name} must plan with gpt-5.6-sol and ultra effort"
+        end
+      end
+
       if inputs.fetch("permission-profile", "") == ":workspace"
         action_index = steps.index(step)
         unless action_index == steps.length - 1
@@ -173,6 +182,9 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
         end
         unless inputs.key?("output-schema-file") && !inputs.key?("output-file")
           errors << "#{path}:#{job_name} must return a structured patch without a post-Action output file"
+        end
+        unless inputs.fetch("model", "") == "gpt-5.6-sol" && inputs.fetch("effort", "") == "medium"
+          errors << "#{path}:#{job_name} must implement with gpt-5.6-sol and medium effort"
         end
       end
 
@@ -184,30 +196,305 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
     end
   end
 
-  next unless File.basename(path) == "appreg_parity_check.yml"
+end
 
-  parity_job = workflow.fetch("jobs", {}).fetch("parity-check", {})
-  parity_steps = parity_job.fetch("steps", [])
-  action_index = parity_steps.index do |step|
-    step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
+jira_path = ".github/workflows/codex_jira_dispatch.yml"
+jira_workflow = YAML.load_file(jira_path)
+jira_jobs = jira_workflow.fetch("jobs", {})
+
+planner = jira_jobs.fetch("codex-plan-action", {})
+planner_steps = planner.fetch("steps", [])
+planner_action = planner_steps.find do |step|
+  step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
+end
+if planner_action.nil?
+  errors << "#{jira_path}:codex-plan-action must invoke the Codex Action"
+else
+  planner_inputs = planner_action.fetch("with", {})
+  unless planner_inputs.fetch("model", "") == "gpt-5.6-sol" &&
+         planner_inputs.fetch("effort", "") == "ultra"
+    errors << "#{jira_path}:codex-plan-action must use gpt-5.6-sol with ultra effort"
   end
-  unless action_index == parity_steps.length - 1
-    errors << "#{path}:parity-check must end with the Codex Action"
+  unless planner_inputs.fetch("permission-profile", "") == ":read-only"
+    errors << "#{jira_path}:codex-plan-action must use the read-only permission profile"
   end
-  if parity_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
-    errors << "#{path}:parity-check must not receive the Jira notification secret"
+  unless planner_steps.last == planner_action
+    errors << "#{jira_path}:codex-plan-action must end with the Codex Action"
+  end
+end
+
+validator = jira_jobs.fetch("validate-codex-plan", {})
+validator_outputs = validator.fetch("outputs", {}) || {}
+unless validator.fetch("needs", "") == "codex-plan-action" &&
+       %w[ready_to_implement plan_sha256 plan_payload planned_path_count].all? { |name| validator_outputs.key?(name) }
+  errors << "#{jira_path}:validate-codex-plan must expose the bounded validated plan hand-off"
+end
+
+blocked = jira_jobs.fetch("codex-plan-blocked", {})
+unless blocked.fetch("needs", "") == "validate-codex-plan" &&
+       blocked.fetch("if", "") == "needs.validate-codex-plan.outputs.ready_to_implement == 'false'" &&
+       blocked.inspect.include?("exit 1")
+  errors << "#{jira_path}:codex-plan-blocked must expose a terminal failure for plans that are not ready"
+end
+
+if jira_jobs.key?("approve-codex-plan")
+  errors << "#{jira_path}:ready plans must proceed automatically without a plan-approval job"
+end
+
+implementation = jira_jobs.fetch("codex-generate-action", {})
+implementation_needs = Array(implementation.fetch("needs", []))
+unless implementation_needs.sort == %w[codex-plan-action validate-codex-plan].sort
+  errors << "#{jira_path}:codex-generate-action must follow planning and trusted validation directly"
+end
+implementation_condition = implementation.fetch("if", "")
+unless implementation_condition.include?("needs.validate-codex-plan.result == 'success'") &&
+       implementation_condition.include?("needs.validate-codex-plan.outputs.ready_to_implement == 'true'") &&
+       !implementation_condition.include?("approve-codex-plan") &&
+       implementation.inspect.include?("needs.codex-plan-action.outputs.trusted_sha") &&
+       implementation.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+       implementation.inspect.include?("--materialize") &&
+       implementation.inspect.include?("PLAN_DIR")
+  errors << "#{jira_path}:codex-generate-action must auto-start only from the validated ready-plan hand-off"
+end
+
+jira_source = File.read(jira_path)
+if jira_source.include?("codex-plan-approval") || jira_source.include?("required_reviewers")
+  errors << "#{jira_path}:automatic plan approval must not retain a GitHub environment approval gate"
+end
+if jira_source.match?(/^\s+name:\s+codex-jira-plan\s*$/) ||
+   jira_source.include?("plan.md") ||
+   jira_source.match?(/cat .*plan\.json.*GITHUB_STEP_SUMMARY/)
+  errors << "#{jira_path}:raw validated plans must not be published as artifacts or summaries"
+end
+
+generation_collector = jira_jobs.fetch("codex-generate", {})
+unless Array(generation_collector.fetch("needs", [])).include?("validate-codex-plan") &&
+       generation_collector.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+       generation_collector.inspect.include?("--materialize") &&
+       generation_collector.inspect.include?("PLAN_DIR")
+  errors << "#{jira_path}:codex-generate must freshly materialise the validated plan before collecting"
+end
+
+repair_actions = jira_jobs.select { |name, _job| name.match?(/^repair-codex-output-\d+-action$|^repair-published-pr-\d+-action$/) }
+unless repair_actions.length == 4
+  errors << "#{jira_path}:expected four Jira repair Action jobs"
+end
+repair_actions.each do |job_name, job|
+  unless Array(job.fetch("needs", [])).include?("validate-codex-plan") &&
+         job.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+         job.inspect.include?("--materialize") &&
+         job.inspect.include?("PLAN_DIR")
+    errors << "#{jira_path}:#{job_name} must reuse the original bounded validated plan"
+  end
+end
+
+repair_collectors = jira_jobs.select { |name, _job| name.match?(/^repair-codex-output-\d+$|^repair-published-pr-\d+$/) }
+unless repair_collectors.length == 4
+  errors << "#{jira_path}:expected four fresh Jira repair collector jobs"
+end
+repair_collectors.each do |job_name, job|
+  unless Array(job.fetch("needs", [])).include?("validate-codex-plan") &&
+         job.inspect.include?("CODEX_PLAN_PAYLOAD") &&
+         job.inspect.include?("--materialize") &&
+         job.inspect.include?("PLAN_DIR")
+    errors << "#{jira_path}:#{job_name} must enforce the original plan in the fresh collector"
+  end
+end
+
+verification_source = jira_jobs.fetch("prepare-codex-verification-source", {})
+unless verification_source.fetch("permissions", {}) == { "contents" => "read" } &&
+       verification_source.inspect.include?("codex-verification-source.tar.gz") &&
+       !verification_source.inspect.match?(/codex-jira-verify|codex-local-pipeline|gradlew/)
+  errors << "#{jira_path}:prepare-codex-verification-source must only archive the trusted checkout"
+end
+
+jira_verifiers = jira_jobs.select { |_job_name, job| job.inspect.include?("codex-jira-verify.sh") }
+unless jira_verifiers.length == 7
+  errors << "#{jira_path}:expected seven credential-free Jira verifier paths"
+end
+jira_verifiers.each do |job_name, job|
+  needs = Array(job.fetch("needs", []))
+  if job.fetch("permissions", nil) != {} ||
+     !needs.include?("prepare-codex-verification-source") ||
+     job.inspect.match?(/GH_TOKEN|SONAR_TOKEN|secrets\./) ||
+     job.inspect.include?("actions/checkout@") ||
+     !job.inspect.include?("Download credential-free verification source")
+    errors << "#{jira_path}:#{job_name} must execute the patch without permissions or credentials"
+  end
+end
+
+%w[verify-published-pr verify-published-pr-1].each do |job_name|
+  status_job = jira_jobs.fetch(job_name, {})
+  if status_job.inspect.include?("codex-jira-verify.sh") ||
+     status_job.inspect.include?("codex-local-pipeline.sh") ||
+     !status_job.inspect.include?("codex-wait-pr-status.sh") ||
+     !status_job.inspect.include?("codex-check-sonar-quality-gate.sh")
+    errors << "#{jira_path}:#{job_name} must query external status without executing the generated patch"
+  end
+end
+
+verification_specs = [
+  {
+    path: ".github/workflows/codex_pr_review_feedback.yml",
+    source_job: "prepare-review-verification-source",
+    verifier_marker: "trusted-codex-pr-review-verify.sh",
+    expected_count: File.read(".github/workflows/codex_pr_review_feedback.yml").include?("codex-review-verify-3:") ? 4 : 1,
+    restore_marker: "Restore credential-free review source",
+  },
+  {
+    path: ".github/workflows/codex_pr_review_feedback.yml",
+    source_job: "prepare-published-review-repair-source",
+    verifier_marker: "trusted-codex-pr-review-verify.sh",
+    expected_count: 1,
+    restore_marker: "Restore credential-free published review source",
+  },
+  {
+    path: ".github/workflows/codex_merge_conflict_resolution.yml",
+    source_job: "prepare-conflict-verification-source",
+    verifier_marker: "trusted-codex-merge-conflict-verify.sh",
+    expected_count: 1,
+    restore_marker: "Restore credential-free conflict source",
+  },
+]
+
+verification_specs.each do |spec|
+  workflow = YAML.load_file(spec.fetch(:path))
+  jobs = workflow.fetch("jobs", {})
+  source_job = jobs.fetch(spec.fetch(:source_job), {})
+  source_commands = Array(source_job.fetch("steps", [])).map { |step| step.is_a?(Hash) ? step.fetch("run", nil) : nil }.compact.join("\n")
+  unless source_job.fetch("permissions", {}) == { "contents" => "read" } &&
+         source_job.inspect.include?("fetch-depth") &&
+         source_job.inspect.include?("persist-credentials") &&
+         source_job.inspect.include?("credential-free") &&
+         !source_commands.match?(/bash .*codex-(?:pr-review|merge-conflict)-verify\.sh|codex-local-pipeline\.sh (?:checks-only|fast|full)|gradlew|yarn (?:lint|cichecks)/)
+    errors << "#{spec.fetch(:path)}:#{spec.fetch(:source_job)} must archive exact trusted source without executing repository tooling"
   end
 
-  notify_job = workflow.fetch("jobs", {}).fetch("parity-notify", {})
-  unless notify_job.fetch("needs", "") == "parity-check"
-    errors << "#{path}:parity-notify must depend on parity-check"
+  verifiers = jobs.select do |_job_name, job|
+    Array(job.fetch("needs", [])).include?(spec.fetch(:source_job)) &&
+      Array(job.fetch("steps", [])).any? do |step|
+      step.is_a?(Hash) && step.fetch("run", "").match?(/bash .*#{Regexp.escape(spec.fetch(:verifier_marker))}/)
+      end
   end
-  expected_notify_condition = "${{ always() && inputs.workflowType == 'parity-check' && needs.parity-check.outputs.trusted_sha != '' }}"
-  unless notify_job.fetch("if", "") == expected_notify_condition
-    errors << "#{path}:parity-notify must require a non-empty trusted SHA before checking out repository code"
+  unless verifiers.length == spec.fetch(:expected_count)
+    errors << "#{spec.fetch(:path)}:expected #{spec.fetch(:expected_count)} credential-free patch verifier paths"
   end
-  unless notify_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
-    errors << "#{path}:parity-notify must own the Jira notification secret"
+  verifiers.each do |job_name, job|
+    needs = Array(job.fetch("needs", []))
+    if job.fetch("permissions", nil) != {} ||
+       !needs.include?(spec.fetch(:source_job)) ||
+       job.inspect.match?(/GH_TOKEN|SONAR_TOKEN|secrets\.|github\.token/) ||
+       job.inspect.include?("actions/checkout@") ||
+       !job.inspect.include?(spec.fetch(:restore_marker)) ||
+       !job.inspect.include?("TRUSTED_PIPELINE_PATH")
+      errors << "#{spec.fetch(:path)}:#{job_name} must restore trusted source and execute generated code without permissions or credentials"
+    end
+  end
+end
+
+review_workflow = YAML.load_file(".github/workflows/codex_pr_review_feedback.yml")
+%w[verify-review-status verify-review-status-repair].each do |job_name|
+  review_status = review_workflow.fetch("jobs", {}).fetch(job_name, {})
+  if review_status.inspect.match?(/trusted-codex-pr-review-verify|codex-local-pipeline|gradlew|yarn (?:lint|cichecks)/) ||
+     !review_status.inspect.include?("codex-wait-pr-status.sh") ||
+     !review_status.inspect.include?("codex-check-sonar-quality-gate.sh")
+    errors << ".github/workflows/codex_pr_review_feedback.yml:#{job_name} must query external status without executing model-writable content"
+  end
+end
+
+review_jobs = review_workflow.fetch("jobs", {})
+initial_status = review_jobs.fetch("verify-review-status", {})
+external_repair = review_jobs.fetch("codex-review-external-repair-action", {})
+external_verify = review_jobs.fetch("codex-review-external-repair-verify", {})
+external_republish = review_jobs.fetch("codex-review-external-republish", {})
+repaired_status = review_jobs.fetch("verify-review-status-repair", {})
+unless initial_status.inspect.include?("verification-failure.log") &&
+       initial_status.inspect.include?("actions/upload-artifact@") &&
+       Array(external_repair.fetch("needs", [])).include?("verify-review-status") &&
+       external_repair.inspect.include?("failure_artifact") &&
+       external_repair.fetch("steps", []).last.fetch("uses", "").start_with?("openai/codex-action@") &&
+       external_verify.fetch("permissions", nil) == {} &&
+       Array(external_republish.fetch("needs", [])).include?("codex-review-external-repair-verify") &&
+       Array(repaired_status.fetch("needs", [])).include?("codex-review-external-republish")
+  errors << ".github/workflows/codex_pr_review_feedback.yml:external status failure must feed one bounded repair, credential-free verification, re-publication, and status cycle"
+end
+
+sonar_source = File.read(".github/scripts/codex-check-sonar-quality-gate.sh")
+unless sonar_source.include?("PUBLISHED_COMMIT_SHA") &&
+       sonar_source.include?("/api/project_analyses/search") &&
+       sonar_source.include?("analysisId=") &&
+       !sonar_source.match?(/project_status.*projectKey=.*pullRequest=/)
+  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published commit's exact analysis ID"
+end
+
+jira_publish_source = File.read(".github/scripts/codex-jira-publish.sh")
+review_publish_source = File.read(".github/scripts/codex-pr-review-publish.sh")
+conflict_publish_source = File.read(".github/scripts/codex-merge-conflict-publish.sh")
+initial_jira_publisher = jira_jobs.fetch("publish-pr", {})
+initial_jira_env = initial_jira_publisher.fetch("env", {})
+unless initial_jira_env["JIRA_PUBLISH_MODE"] == "initial" &&
+       !initial_jira_env.key?("EXPECTED_BRANCH_HEAD_SHA")
+  errors << ".github/workflows/codex_jira_dispatch.yml:publish-pr must require an absent generated branch"
+end
+
+jira_republishers = jira_jobs.select { |name, _job| name.match?(/^publish-published-pr-repair-\d+$/) }
+if jira_republishers.empty?
+  errors << ".github/workflows/codex_jira_dispatch.yml must contain a trusted Jira repair republisher"
+end
+jira_republishers.each do |job_name, job|
+  env = job.fetch("env", {})
+  unless Array(job.fetch("needs", [])).include?("publish-pr") &&
+         env["JIRA_PUBLISH_MODE"] == "repair" &&
+         env["EXPECTED_BRANCH_HEAD_SHA"] == "${{ needs.publish-pr.outputs.commit_sha }}"
+    errors << ".github/workflows/codex_jira_dispatch.yml:#{job_name} must lease against the exact trusted original publish SHA"
+  end
+end
+
+unless jira_publish_source.include?("EXPECTED_BASE_SHA") &&
+       jira_publish_source.include?('required_env "JIRA_PUBLISH_MODE"') &&
+       jira_publish_source.include?('required_env "EXPECTED_BRANCH_HEAD_SHA"') &&
+       jira_publish_source.include?('--force-with-lease="refs/heads/${branch_name}:"') &&
+       jira_publish_source.include?('--force-with-lease="refs/heads/${branch_name}:${expected_branch_head_sha}"') &&
+       !jira_publish_source.include?('--force-with-lease="refs/heads/${branch_name}:${remote_branch_sha}"')
+  errors << ".github/scripts/codex-jira-publish.sh must reject a moved default branch before applying a verified patch"
+end
+unless review_publish_source.include?("EXPECTED_HEAD_SHA") && review_publish_source.include?("ls-remote --heads") &&
+       review_publish_source.include?("--force-with-lease")
+  errors << ".github/scripts/codex-pr-review-publish.sh must reject a moved PR branch before applying a verified patch"
+end
+unless conflict_publish_source.include?("actual_head_sha") &&
+       conflict_publish_source.include?("actual_base_sha") &&
+       conflict_publish_source.include?("latest_head_sha") &&
+       conflict_publish_source.include?("latest_base_sha") &&
+       conflict_publish_source.include?('--force-with-lease="refs/heads/${head_ref}:${head_sha}"')
+  errors << ".github/scripts/codex-merge-conflict-publish.sh must recheck moved head and base branches immediately before an exact-lease push"
+end
+
+{
+  ".github/scripts/codex-pr-review-verify.sh" => "TRUSTED_PIPELINE_PATH",
+  ".github/scripts/codex-merge-conflict-verify.sh" => "TRUSTED_PIPELINE_PATH",
+}.each do |path, trusted_marker|
+  source = File.read(path)
+  if source.match?(/GH_TOKEN|SONAR_TOKEN/) || !source.include?(trusted_marker)
+    errors << "#{path} must run only from credential-free source with a separately captured trusted pipeline"
+  end
+end
+
+jira_collector = File.read(".github/scripts/codex-jira-collect.sh")
+if jira_collector.include?("## Codex Plan") || jira_collector.include?("plan.md")
+  errors << ".github/scripts/codex-jira-collect.sh must not copy raw plan content into public PR bodies"
+end
+unless jira_collector.include?("ALLOWED_PATHS_FILE") && jira_collector.include?("validated_codex_plan_path")
+  errors << ".github/scripts/codex-jira-collect.sh must enforce planned paths in every fresh collector"
+end
+unless jira_collector.include?("Model-generated implementation summary") &&
+       jira_collector.include?("Model-generated testing details")
+  errors << ".github/scripts/codex-jira-collect.sh must retain bounded model-generated PR details"
+end
+%w[.github/scripts/codex-jira-implement.sh .github/scripts/codex-jira-repair.sh].each do |path|
+  source = File.read(path)
+  unless source.include?("planned-files") && source.include?("allowed-paths.txt")
+    errors << "#{path} must constrain the trusted exporter to exact planned files"
   end
 end
 
@@ -238,15 +525,16 @@ contract_capture_checks.each do |path, untrusted_operation|
 end
 
 runtime = File.read(".github/scripts/codex-action-runtime.sh")
-unless runtime.include?("capture_codex_patch_exporter") && runtime.include?("--paths-file")
-  errors << ".github/scripts/codex-action-runtime.sh must use the captured exporter for full and conflict-scoped patches"
+unless runtime.include?("capture_codex_patch_exporter") &&
+       runtime.include?("--paths-file") &&
+       runtime.include?("--strict-paths")
+  errors << ".github/scripts/codex-action-runtime.sh must use the captured exporter for full and strictly scoped patches"
 end
 if runtime.match?(/git add (?:-A|--)/)
   errors << ".github/scripts/codex-action-runtime.sh must not instruct the workspace-scoped Action to write the real Git index"
 end
 
 revision_pinned_workflows = %w[
-  appreg_parity_check.yml
   codex_jira_dispatch.yml
   codex_merge_conflict_resolution.yml
   codex_pr_review_feedback.yml
@@ -266,18 +554,24 @@ revision_pinned_workflows.each do |workflow_name|
       next false unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      !ref.include?("outputs.trusted_sha")
+      !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha|commit_sha)/)
     end
 
     declared_needs = Array(job.fetch("needs", []))
+    referenced_needs = job.inspect.scan(/needs\.([A-Za-z0-9_-]+)\./).flatten.uniq
+    missing_needs = referenced_needs - declared_needs
+    unless missing_needs.empty?
+      errors << "#{path}:#{job_name} references jobs not declared in needs: #{missing_needs.join(", ")}"
+    end
     steps.each do |step|
       next unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      trusted_source = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.trusted_sha/)&.captures&.first
-      if trusted_source
+      pinned_ref = ref.match(/needs\.([A-Za-z0-9_-]+)\.outputs\.(trusted_sha|head_sha|base_sha|commit_sha)/)
+      if pinned_ref
+        trusted_source, output_name = pinned_ref.captures
         producer = workflow.fetch("jobs", {}).fetch(trusted_source, {})
-        producer_output = (producer.fetch("outputs", {}) || {}).fetch("trusted_sha", "")
+        producer_output = (producer.fetch("outputs", {}) || {}).fetch(output_name, "")
         if producer_output.empty?
           errors << "#{path}:#{trusted_source} must expose the trusted SHA consumed by #{job_name}"
         end

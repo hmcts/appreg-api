@@ -9,6 +9,9 @@ Jira Automation
   -> Azure Function webhook
   -> GitHub workflow_dispatch: codex_jira_dispatch.yml
   -> ARC runner scale set: codex-pilot-azure-aks
+  -> read-only Codex planning and trusted plan validation
+  -> automatic eligibility gate for small, single-repository plans
+  -> Codex implementation and isolated verification
   -> Codex creates a codex/* branch and pull request
   -> Azure Function notifies Jira Automation
   -> Jira Automation transitions the issue to Dev Review
@@ -25,7 +28,7 @@ The flow is not tied to one Jira board. Each board needs its own Automation rule
 ## Workflows
 
 - `.github/workflows/codex_runner_smoke.yml`: validates the AKS runner can start, authenticate Codex, create a branch, commit, and push.
-- `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
+- `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, plans the implementation, validates and gates the plan, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
 - `.github/workflows/codex_pr_review_feedback.yml`: sends PR review feedback back to Codex for follow-up changes on the same `codex/*` branch.
 
 All Codex workflows target:
@@ -53,12 +56,55 @@ and materialises that untrusted patch, and passes it to the existing
 credential-free verification and trusted publication stages. Before loading
 untrusted repository content, the runner captures a read-only patch exporter;
 it builds the patch with a temporary Git index and object store because the
-`:workspace` profile keeps the real `.git` metadata read-only. The report-only
-parity workflow follows the same final-step boundary and gives its Jira
-notification secret only to a fresh dependent job.
+`:workspace` profile keeps the real `.git` metadata read-only.
 
 The regional Responses endpoint is
 `https://eu.api.openai.com/v1/responses`.
+
+## Planning and eligibility
+
+Each Jira dispatch starts with a separate read-only Codex invocation. Planning
+uses `gpt-5.6-sol` with `ultra` effort, while the Action commit, CLI version,
+regional endpoint, unprivileged user and `:read-only` permission profile also
+remain pinned. The planner returns structured JSON containing the root cause,
+scope decision, alternatives, implementation paths, tests, acceptance criteria, risks,
+assumptions and blockers.
+
+A fresh GitHub-hosted job validates and size-limits the untrusted JSON, rejects
+protected automation paths, and emits a canonical plan plus its SHA-256 hash as
+a bounded private job output. Raw plan content is not uploaded as an artefact,
+written to a workflow summary, or copied into the generated PR body. Tickets
+that are not ready produce an explicit terminal `codex-plan-blocked` failure
+before any workspace-writing model invocation.
+
+Eligible validated plans marked ready proceed automatically to implementation;
+no GitHub environment approval is required. High-risk and cross-system plans
+are normalised to a blocked result and stop before implementation, as do plans
+that the planner marks not ready. This keeps the small-bug workflow moving
+without silently extending it into broader or higher-risk work.
+
+Planning uses `gpt-5.6-sol` with `ultra` effort. Implementation checks out the
+exact commit inspected by the planner and uses `gpt-5.6-sol` with `medium`
+effort; repair, PR-feedback, and conflict-resolution invocations use the same
+implementation configuration. The validated plan is included only in the
+implementation and repair prompts. Its exact file paths constrain both the
+captured patch exporter and every fresh trusted collector; any other changed
+path is rejected. Verification repairs reuse the original plan and stop for a
+new planning run when repository evidence invalidates its scope.
+
+The workflow rejects plans that target Gradle, runner, workflow or verification
+tooling. A trusted preparation job archives the exact planned repository
+revision without executing it. Patch application, formatting, Gradle and all
+repository tests then run from that archive in jobs with `permissions: {}` and
+no GitHub or Sonar credentials. Authenticated publication and status/Sonar API
+checks run later in separate trusted jobs that never apply or execute the
+model-generated patch.
+
+The current Azure Function implementation callback accepts only genuine
+PR-created payloads and transitions Jira to Dev Review. It has no blocker or
+failure result contract, so a blocked plan cannot truthfully notify Jira from
+this workflow; the failed job and audit hash are the terminal result until that
+external API and Jira Automation rule are extended.
 
 ## Cost and usage monitoring
 
@@ -93,13 +139,11 @@ and [organisation usage dashboard](https://platform.openai.com/settings/organiza
 
 - `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
-- `CODEX_JIRA_PARITY_NOTIFY_URL`: Azure Function URL, including its function key, for parity-result notifications.
 
 ## Optional Repository Variables
 
 - `CODEX_REVIEWER`: GitHub username to request for review on Codex PRs.
 - `CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after PR creation. Defaults to `10`.
-- `CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after a parity check. Defaults to `10`.
 
 ## Jira Automation
 

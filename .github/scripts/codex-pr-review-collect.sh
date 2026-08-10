@@ -26,7 +26,7 @@ if [[ "${CODEX_SHOULD_RUN:-true}" != "true" ]]; then
   exit 0
 fi
 
-for name in CODEX_RESULT PR_NUMBER HEAD_REF BASE_REF COMMENT_AUTHOR COMMENT_URL; do
+for name in CODEX_RESULT PR_NUMBER HEAD_REF BASE_REF HEAD_SHA BASE_SHA COMMENT_AUTHOR COMMENT_URL; do
   required_env "${name}"
 done
 
@@ -50,6 +50,8 @@ fi
   echo "pr_number=${PR_NUMBER}"
   echo "head_ref=${HEAD_REF}"
   echo "base_ref=${BASE_REF}"
+  echo "head_sha=${HEAD_SHA}"
+  echo "base_sha=${BASE_SHA}"
   echo "comment_author=${COMMENT_AUTHOR}"
   echo "comment_url=${COMMENT_URL}"
 } >"${metadata_path}"

@@ -359,6 +359,13 @@ def main() -> None:
         f"## Testing\n\n{testing or 'No lightweight checks were reported.'}\n",
         encoding="utf-8",
     )
+    if os.environ.get("WRITE_PR_DETAIL_FILES", "false").lower() == "true":
+        (output_dir / "codex-summary.txt").write_text(
+            summary or "No summary supplied.", encoding="utf-8"
+        )
+        (output_dir / "codex-testing.txt").write_text(
+            testing or "No lightweight checks were reported.", encoding="utf-8"
+        )
     (output_dir / "codex-result.env").write_text(
         f"has_changes={'true' if has_changes else 'false'}\n", encoding="utf-8"
     )

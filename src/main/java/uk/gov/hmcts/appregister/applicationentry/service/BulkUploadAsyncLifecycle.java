@@ -54,6 +54,9 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 @Slf4j
 @RequiredArgsConstructor
 public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow> {
+
+    private static final String CLIENT_FAILURE_MESSAGE =
+            "Bulk upload processing failed. Contact support quoting job reference %s.";
     private static final int FIRST_DATA_ROW_NUMBER = 2;
     private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
     private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
@@ -164,7 +167,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         if (!allErrors.isEmpty()) {
             sanitiseErrorMessages(allErrors);
-            logValidationFailure(context, allErrors);
+            logValidationFailure(event, context, allErrors);
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
             saveErrorCSV(allErrors, event, context);
             throw new AppRegistryException(
@@ -191,14 +194,18 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 durationMs());
 
         JobContext context = event.getContext();
-        if (!context.isFieldCountMismatch() || !context.hasFailure()) {
+        if (!context.hasFailure()) {
+            context.logFailure(clientFailureMessage(event));
+            return;
+        }
+        if (!context.isFieldCountMismatch()) {
             return;
         }
 
         List<BulkUploadError> errors = new ArrayList<>();
         addHeaderErrors(context, errors);
         sanitiseErrorMessages(errors);
-        logValidationFailure(context, errors);
+        logValidationFailure(event, context, errors);
         saveErrorCSV(errors, event, context);
     }
 
@@ -348,7 +355,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         return BUSINESS_RULE_LOCATIONS.getOrDefault(exception.getCode(), BULK_UPLOAD_ROW);
     }
 
-    private void logValidationFailure(JobContext context, List<BulkUploadError> error) {
+    private void logValidationFailure(
+            AsyncJobLifecycleEvent<BulkUploadRow> event,
+            JobContext context,
+            List<BulkUploadError> error) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(error);
@@ -360,8 +370,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     listId,
                     e.getMessage(),
                     e);
-            context.logFailure(
-                    "Bulk upload validation failure for list " + listId + ": " + e.getMessage());
+            context.logFailure(clientFailureMessage(event));
         }
     }
 
@@ -384,23 +393,25 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         log.debug("Processing bulk-upload page for list {}", listId);
 
+        var jobId = event.getResponse().getJobId().getId();
         var firstRowNumber =
                 processingIndex < validatedRows.size()
                         ? validatedRows.get(processingIndex).rowNumber()
                         : FIRST_DATA_ROW_NUMBER;
         try {
             prepareValidatedPage(event.getData());
-            var jobId = event.getResponse() == null ? null : event.getResponse().getJobId().getId();
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
         } catch (Exception ex) {
-            log.error("Failed to process bulk-import page starting at row {}", firstRowNumber, ex);
-            context.logFailure(
-                    "Processing failed for page starting at row "
-                            + firstRowNumber
-                            + ": "
-                            + ex.getMessage());
+            log.error(
+                    "Failed to process bulk-import page listId={} jobId={} firstRowNumber={}",
+                    listId,
+                    jobId,
+                    firstRowNumber,
+                    ex);
+            var clientFailureMessage = clientFailureMessage(event);
+            context.logFailure(clientFailureMessage);
             throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED, ex.getMessage());
+                    AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED, clientFailureMessage, ex);
         } finally {
             validatedPage.clear();
         }
@@ -429,6 +440,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     @Override
     public void completed(AsyncJobLifecycleEvent<BulkUploadRow> event) {
         if (processingIndex != validatedRows.size()) {
+            event.getContext().logFailure(clientFailureMessage(event));
             throw new AppRegistryException(
                     AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED,
                     "Processing pass did not contain every validated CSV row");
@@ -471,18 +483,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             InputStream inputStream =
                     new ByteArrayInputStream(builder.toString().getBytes(StandardCharsets.UTF_8));
             event.getResponse().write(inputStream);
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             log.error("Failed to save error CSV for list {}: {}", listId, e.getMessage(), e);
-            context.logFailure(
-                    "Failed to save error CSV for list " + listId + ": " + e.getMessage());
+            var clientFailureMessage = clientFailureMessage(event);
+            context.logFailure(clientFailureMessage);
             throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                    "Failed to save error CSV for list " + listId + ": " + e.getMessage());
-        } catch (NullPointerException e) {
-            log.error("Failed to save error CSV for list {}: {}", listId, e.getMessage(), e);
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                    "Failed to save error CSV for list " + listId + ": " + e.getMessage());
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED, clientFailureMessage, e);
         } finally {
             if (csvFile != null && csvFile.exists()) {
                 Files.delete(csvFile.getAbsoluteFile().toPath());
@@ -585,5 +591,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         error.setMessage("Field has been rejected");
                     }
                 });
+    }
+
+    private static String clientFailureMessage(AsyncJobLifecycleEvent<?> event) {
+        return CLIENT_FAILURE_MESSAGE.formatted(event.getResponse().getJobId().getId());
     }
 }

@@ -17,7 +17,7 @@ required_env "EXPECTED_HEAD_REF"
 required_env "EXPECTED_BASE_REF"
 required_env "EXPECTED_HEAD_SHA"
 required_env "EXPECTED_BASE_SHA"
-required_env "GH_TOKEN"
+required_env "TRUSTED_PIPELINE_PATH"
 
 output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
@@ -68,29 +68,6 @@ git_sanitized() {
   run_sanitized git \
     -c core.hooksPath=/dev/null \
     -c credential.helper= \
-    -c protocol.file.allow=never \
-    "$@"
-}
-
-git_read_authenticated() {
-  env -i \
-    "HOME=${sanitized_home}" \
-    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
-    "SHELL=${SHELL:-/bin/bash}" \
-    "USER=${USER:-runner}" \
-    "LOGNAME=${LOGNAME:-${USER:-runner}}" \
-    "LANG=${LANG:-C.UTF-8}" \
-    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
-    "TERM=${TERM:-xterm}" \
-    "TMPDIR=${sanitized_tmp}" \
-    "GIT_CONFIG_GLOBAL=/dev/null" \
-    "GIT_CONFIG_NOSYSTEM=1" \
-    "GIT_TERMINAL_PROMPT=0" \
-    "GH_TOKEN=${GH_TOKEN}" \
-    git \
-    -c core.hooksPath=/dev/null \
-    -c credential.helper= \
-    -c credential.helper='!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f' \
     -c protocol.file.allow=never \
     "$@"
 }
@@ -168,22 +145,18 @@ if [[ ! -s "${patch_path}" ]]; then
 fi
 
 read_conflicted_files
-cp bin/codex-local-pipeline.sh "${trusted_pipeline_path}"
+cp "${TRUSTED_PIPELINE_PATH}" "${trusted_pipeline_path}"
 chmod +x "${trusted_pipeline_path}"
 trusted_pipeline_sha="$(file_sha256 "${trusted_pipeline_path}")"
 
-git_read_authenticated fetch origin "${base_ref}:refs/remotes/origin/${base_ref}"
-git_read_authenticated fetch origin "${head_ref}:refs/remotes/origin/${head_ref}"
-unset GH_TOKEN
-
-actual_head_sha="$(git_sanitized rev-parse "refs/remotes/origin/${head_ref}")"
+actual_head_sha="$(git_sanitized rev-parse HEAD)"
 actual_base_sha="$(git_sanitized rev-parse "refs/remotes/origin/${base_ref}")"
 if [[ "${actual_head_sha}" != "${head_sha}" || "${actual_base_sha}" != "${base_sha}" ]]; then
-  echo "PR branch or base branch moved after conflict generation; rerun /codex-resolve-conflicts." >&2
+  echo "Credential-free verification source does not match the trusted conflict revisions." >&2
   exit 1
 fi
 
-git_sanitized checkout -B "${head_ref}" "refs/remotes/origin/${head_ref}"
+git_sanitized checkout -B "${head_ref}" "${head_sha}"
 
 set +e
 git_sanitized merge --no-commit --no-ff "refs/remotes/origin/${base_ref}"

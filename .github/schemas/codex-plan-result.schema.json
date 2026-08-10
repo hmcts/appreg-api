@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex Jira implementation plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ready_to_implement",
+    "problem_analysis",
+    "root_cause",
+    "scope_decision",
+    "risk_level",
+    "cross_system_change",
+    "alternatives_considered",
+    "implementation_steps",
+    "tests_required",
+    "acceptance_criteria",
+    "risks",
+    "assumptions",
+    "blockers"
+  ],
+  "properties": {
+    "ready_to_implement": {
+      "type": "boolean"
+    },
+    "problem_analysis": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "root_cause": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "scope_decision": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "cross_system_change": {
+      "type": "boolean"
+    },
+    "alternatives_considered": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "implementation_steps": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "change", "reason"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "change": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 3000
+          }
+        }
+      }
+    },
+    "tests_required": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "risks": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 2000
+      }
+    }
+  }
+}
