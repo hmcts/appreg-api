@@ -106,7 +106,6 @@ class CsvReaderTest extends AbstractAsyncTest {
         }
 
         Assertions.assertEquals(
-                "Conversion of notanumber to int failed.",
-                jobContext.getCommaDelimitedFailureMessage());
+                "Uploaded file could not be parsed.", jobContext.getCommaDelimitedFailureMessage());
     }
 }

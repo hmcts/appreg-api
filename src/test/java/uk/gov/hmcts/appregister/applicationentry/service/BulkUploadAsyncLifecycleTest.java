@@ -621,16 +621,13 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenUnknownBusinessRuleFailureForPersonRespondent_whenValidating_thenUsesMiddleName()
+    void givenUnknownBusinessRuleFailure_whenValidating_thenDoesNotExposeItAsRowError()
             throws IOException {
         BulkUploadRow row = validRespondentRow();
-        row.setRespondentMiddleName("Byron");
-        doThrow(
-                        new AppRegistryException(
-                                CommonAppError.INTERNAL_SERVER_ERROR,
-                                "Unexpected validation failure"))
-                .when(validationSession)
-                .validate(any(), any());
+        var internalFailure =
+                new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR, "Unexpected validation failure");
+        doThrow(internalFailure).when(validationSession).validate(any(), any());
         JobContext context = new JobContext();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
         lifecycle.setCSVFile(csvFile);
@@ -638,50 +635,9 @@ class BulkUploadAsyncLifecycleTest {
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
-        assertThat(context.getValidationFailureMessages())
-                .containsExactly(
-                        createErrorDescription(
-                                List.of(
-                                        new BulkUploadError(
-                                                2,
-                                                "BULK_UPLOAD_ROW",
-                                                null,
-                                                "Unexpected validation failure",
-                                                row.getRespondentAddressLine1(),
-                                                row.getApplicantCode(),
-                                                "DATA_ERROR"))));
-
-        BulkUploadRow respondentRow = validRespondentRow();
-        doThrow(
-                        new AppRegistryException(
-                                CommonAppError.INTERNAL_SERVER_ERROR,
-                                "Unexpected validation failure"))
-                .when(validationSession)
-                .validate(any(), any());
-        context = new JobContext();
-        var respondentEvent = event(respondentRow, context);
-
-        lifecycle.setCSVFile(csvFile);
-        exception =
-                assertThrows(
-                        AppRegistryException.class, () -> lifecycle.validating(respondentEvent));
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
-        assertThat(context.getValidationFailureMessages())
-                .containsExactly(
-                        createErrorDescription(
-                                List.of(
-                                        new BulkUploadError(
-                                                3,
-                                                "BULK_UPLOAD_ROW",
-                                                null,
-                                                "Unexpected validation failure",
-                                                row.getRespondentAddressLine1(),
-                                                row.getApplicantCode(),
-                                                "DATA_ERROR"))));
+        assertThat(exception).isSameAs(internalFailure);
+        assertThat(context.getValidationFailureMessages()).isEmpty();
+        verify(persistenceService, times(0)).writeClob(any(), any());
     }
 
     @Test
@@ -731,6 +687,52 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("jobId=" + jobId)
                 .contains(internalError);
         verify(bulkImportService).persistPage(any(), any());
+    }
+
+    @Test
+    void givenRecognisedProcessingValidationFailure_thenWritesRowErrorJsonAndCsv()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\n".getBytes());
+        var writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+        var row = validOrganisationRow();
+        var context = new JobContext();
+        var event = event(row, context);
+        lifecycle.setCSVFile(csvFile);
+        lifecycle.validating(event);
+        when(bulkImportService.persistPage(any(), any()))
+                .thenThrow(
+                        new BulkUploadValidationException(
+                                2,
+                                "APPLICATION_TEXT",
+                                "Invalid length type in template: expected 70 but got 80",
+                                new AppRegistryException(
+                                        CommonAppError.WORDING_LENGTH_FAILURE,
+                                        "internal validation detail")));
+
+        var exception = assertThrows(AppRegistryException.class, () -> lifecycle.processing(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .singleElement()
+                .asString()
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"APPLICATION_TEXT\"")
+                .contains("Invalid length type in template: expected 70 but got 80")
+                .doesNotContain("internal validation detail");
+        assertThat(writtenCsv.toString())
+                .contains(
+                        "row-two|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80")
+                .doesNotContain("internal validation detail");
+        verify(persistenceService).writeClob(any(), any());
     }
 
     @Test

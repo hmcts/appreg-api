@@ -294,6 +294,31 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
+    void givenApplicationTextExceedsTemplateLength_whenBulkUpload_thenJsonAndCsvContainError()
+            throws Exception {
+        var row =
+                "APP001||Greenfield Finance 037194 Ltd|||||037194 High Street|Walsall|Darlaston"
+                        + "|Walsall|West Midlands|WS1 1SY|greenfield-finance-037194@test.cgi.com"
+                        + "|0207 1234567|07700 900001|AC-037194-1|SW99062|Long Value of"
+                        + " Application Text1 Exceeding Required Length which is 70 Characters|";
+
+        FailedBulkUpload failure = submitBulkUploadExpectingFailure(LEGACY_BULK_UPLOAD_HEADER, row);
+
+        assertThat(failure.completedJob().getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failure.completedJob().getErrorDescription())
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"APPLICATION_TEXT\"")
+                .contains("Invalid length type in template: expected 70 but got 80")
+                .doesNotContain("Bulk upload processing failed");
+        assertThat(failure.errorCsv())
+                .contains(
+                        row
+                                + "|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80")
+                .doesNotContain("Bulk upload processing failed");
+        assertThat(countEntriesForList(failure.listId())).isZero();
+    }
+
+    @Test
     void givenBlankOptionalContactDetails_whenBulkUpload_thenCreatesEntryWithNullValues()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();

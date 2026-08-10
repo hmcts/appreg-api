@@ -66,7 +66,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     "postcode", "Provide a valid UK postcode.",
                     "mobile", "Provide a valid UK mobile number.",
                     "phone", "Provide a valid UK telephone number.");
-    private static final Map<ErrorCodeEnum, String> BUSINESS_RULE_LOCATIONS =
+    private static final Map<ErrorCodeEnum, String> CLIENT_SAFE_BUSINESS_RULE_LOCATIONS =
             Map.ofEntries(
                     Map.entry(
                             CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
@@ -196,9 +196,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         JobContext context = event.getContext();
         if (!context.hasFailure()) {
             context.logFailure(clientFailureMessage(event));
+            deleteCsvFile();
             return;
         }
         if (!context.isFieldCountMismatch()) {
+            deleteCsvFile();
             return;
         }
 
@@ -283,6 +285,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                             });
             return List.of();
         } catch (AppRegistryException exception) {
+            if (!CLIENT_SAFE_BUSINESS_RULE_LOCATIONS.containsKey(exception.getCode())) {
+                throw exception;
+            }
             return List.of(
                     new BulkUploadError(
                             rowNumber,
@@ -352,7 +357,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private static String locationForBusinessRule(AppRegistryException exception) {
-        return BUSINESS_RULE_LOCATIONS.getOrDefault(exception.getCode(), BULK_UPLOAD_ROW);
+        return CLIENT_SAFE_BUSINESS_RULE_LOCATIONS.getOrDefault(
+                exception.getCode(), BULK_UPLOAD_ROW);
     }
 
     private void logValidationFailure(
@@ -383,12 +389,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
-        // We can safely delete the temporary CSV file after the first processing pass, as the
-        // validated rows are already stored in memory.
-        if (csvFile != null && csvFile.exists()) {
-            Files.delete(csvFile.getAbsoluteFile().toPath());
-        }
-
         JobContext context = event.getContext();
 
         log.debug("Processing bulk-upload page for list {}", listId);
@@ -401,6 +401,21 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         try {
             prepareValidatedPage(event.getData());
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
+        } catch (BulkUploadValidationException exception) {
+            log.warn(
+                    "Recognised bulk-upload validation failure listId={} jobId={} rowNumber={}",
+                    listId,
+                    jobId,
+                    exception.rowNumber(),
+                    exception);
+            var errors = List.of(toProcessingBulkUploadError(exception));
+            sanitiseErrorMessages(errors);
+            logValidationFailure(event, context, errors);
+            saveErrorCSV(errors, event, context);
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                    "One or more rows failed validation during bulk upload",
+                    exception);
         } catch (Exception ex) {
             log.error(
                     "Failed to process bulk-import page listId={} jobId={} firstRowNumber={}",
@@ -419,6 +434,33 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 "Bulk upload page processed listId={} importedEntryCount={}",
                 listId,
                 importedEntryCount);
+    }
+
+    private BulkUploadError toProcessingBulkUploadError(BulkUploadValidationException exception) {
+        var entry =
+                validatedPage.stream()
+                        .filter(candidate -> candidate.rowNumber() == exception.rowNumber())
+                        .findFirst()
+                        .orElseThrow();
+        var dto = entry.entry();
+        String addressLine1 = null;
+        if (dto.getRespondent() != null) {
+            if (dto.getRespondent().getOrganisation() != null) {
+                addressLine1 =
+                        dto.getRespondent().getOrganisation().getContactDetails().getAddressLine1();
+            } else if (dto.getRespondent().getPerson() != null) {
+                addressLine1 =
+                        dto.getRespondent().getPerson().getContactDetails().getAddressLine1();
+            }
+        }
+        return new BulkUploadError(
+                exception.rowNumber(),
+                exception.location(),
+                null,
+                exception.clientMessage(),
+                addressLine1,
+                dto.getStandardApplicantCode(),
+                "DATA_ERROR");
     }
 
     private void prepareValidatedPage(List<BulkUploadRow> rows) {
@@ -455,6 +497,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 importedEntryCount,
                 durationMs());
         validatedRows.clear();
+        deleteCsvFile();
     }
 
     private long durationMs() {
@@ -595,5 +638,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private static String clientFailureMessage(AsyncJobLifecycleEvent<?> event) {
         return CLIENT_FAILURE_MESSAGE.formatted(event.getResponse().getJobId().getId());
+    }
+
+    private void deleteCsvFile() {
+        if (csvFile == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(csvFile.getAbsoluteFile().toPath());
+        } catch (IOException exception) {
+            log.warn("Failed to delete bulk-upload temporary CSV for list {}", listId, exception);
+        }
     }
 }
