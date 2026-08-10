@@ -126,11 +126,10 @@ bash -n \
   .github/scripts/*.sh \
   bin/*.sh
 
-log "Validating parity result collector"
+log "Validating Python scripts"
 python_cache="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codex-pycache"
 mkdir -p "${python_cache}"
 PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
-PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-parity-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-patch-export.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-check-sonar-quality-gate.py
@@ -197,31 +196,6 @@ Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
     end
   end
 
-  next unless File.basename(path) == "appreg_parity_check.yml"
-
-  parity_job = workflow.fetch("jobs", {}).fetch("parity-check", {})
-  parity_steps = parity_job.fetch("steps", [])
-  action_index = parity_steps.index do |step|
-    step.is_a?(Hash) && step.fetch("uses", "").start_with?("openai/codex-action@")
-  end
-  unless action_index == parity_steps.length - 1
-    errors << "#{path}:parity-check must end with the Codex Action"
-  end
-  if parity_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
-    errors << "#{path}:parity-check must not receive the Jira notification secret"
-  end
-
-  notify_job = workflow.fetch("jobs", {}).fetch("parity-notify", {})
-  unless notify_job.fetch("needs", "") == "parity-check"
-    errors << "#{path}:parity-notify must depend on parity-check"
-  end
-  expected_notify_condition = "${{ always() && inputs.workflowType == 'parity-check' && needs.parity-check.outputs.trusted_sha != '' }}"
-  unless notify_job.fetch("if", "") == expected_notify_condition
-    errors << "#{path}:parity-notify must require a non-empty trusted SHA before checking out repository code"
-  end
-  unless notify_job.inspect.include?("CODEX_JIRA_PARITY_NOTIFY_URL")
-    errors << "#{path}:parity-notify must own the Jira notification secret"
-  end
 end
 
 jira_path = ".github/workflows/codex_jira_dispatch.yml"
@@ -561,7 +535,6 @@ if runtime.match?(/git add (?:-A|--)/)
 end
 
 revision_pinned_workflows = %w[
-  appreg_parity_check.yml
   codex_jira_dispatch.yml
   codex_merge_conflict_resolution.yml
   codex_pr_review_feedback.yml

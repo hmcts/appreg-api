@@ -110,7 +110,6 @@ public class BulkUpdateOfficialsValidator
 
     private void validateOfficialFields(List<Official> officials) {
         List<Integer> invalidTypeIndexes = new ArrayList<>();
-        List<Integer> invalidTitleIndexes = new ArrayList<>();
         List<Integer> invalidForenameIndexes = new ArrayList<>();
         List<Integer> invalidSurnameIndexes = new ArrayList<>();
 
@@ -122,9 +121,6 @@ public class BulkUpdateOfficialsValidator
                 continue;
             }
 
-            if (StringUtils.isBlank(official.getTitle())) {
-                invalidTitleIndexes.add(i);
-            }
             if (StringUtils.isBlank(official.getForename())) {
                 invalidForenameIndexes.add(i);
             }
@@ -137,12 +133,6 @@ public class BulkUpdateOfficialsValidator
             throw new AppRegistryException(
                     AppListEntryError.OFFICIAL_TYPE_REQUIRED,
                     "Officials must include a type at indexes %s".formatted(invalidTypeIndexes));
-        }
-
-        if (!invalidTitleIndexes.isEmpty()) {
-            throw new AppRegistryException(
-                    AppListEntryError.OFFICIAL_TITLE_REQUIRED,
-                    "Officials must include a title at indexes %s".formatted(invalidTitleIndexes));
         }
 
         if (!invalidForenameIndexes.isEmpty()) {

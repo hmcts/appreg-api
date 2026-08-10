@@ -56,9 +56,7 @@ and materialises that untrusted patch, and passes it to the existing
 credential-free verification and trusted publication stages. Before loading
 untrusted repository content, the runner captures a read-only patch exporter;
 it builds the patch with a temporary Git index and object store because the
-`:workspace` profile keeps the real `.git` metadata read-only. The report-only
-parity workflow follows the same final-step boundary and gives its Jira
-notification secret only to a fresh dependent job.
+`:workspace` profile keeps the real `.git` metadata read-only.
 
 The regional Responses endpoint is
 `https://eu.api.openai.com/v1/responses`.
@@ -141,13 +139,11 @@ and [organisation usage dashboard](https://platform.openai.com/settings/organiza
 
 - `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
-- `CODEX_JIRA_PARITY_NOTIFY_URL`: Azure Function URL, including its function key, for parity-result notifications.
 
 ## Optional Repository Variables
 
 - `CODEX_REVIEWER`: GitHub username to request for review on Codex PRs.
 - `CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after PR creation. Defaults to `10`.
-- `CODEX_JIRA_PARITY_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after a parity check. Defaults to `10`.
 
 ## Jira Automation
 

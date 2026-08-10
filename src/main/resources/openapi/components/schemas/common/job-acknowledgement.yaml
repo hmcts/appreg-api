@@ -20,6 +20,8 @@ properties:
     $ref: './job-status.yaml'
 
   error_description:
-    description: A description of the errorneous outcome of the job. Typically used for error messages.
+    description: >
+      Details of a failed job. Bulk-upload validation failures may include actionable input errors;
+      unexpected bulk-upload processing failures use a generic message and identify the job
+      reference to quote to support.
     type: string
-

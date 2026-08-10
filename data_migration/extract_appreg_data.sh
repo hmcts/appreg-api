@@ -27,6 +27,8 @@
 #						table
 # 8.0		09/07/2026	Matthew Harman	Added ability to mask data as
 #						per ARCPOC-1540
+# 9.0		07/08/2026	Matthew Harman	Remove UTC date as per 
+#						ARCPOC-1681
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -40,7 +42,7 @@ operation_mode='FULL';
 # mask_mode			Masking mode, NO for no masking of PII,
 #				YES for masking of PII data
 
-mask_mode='YES';
+mask_mode='NO';
 
 # retention_mode		Retention mode, YES to implement retention policy
 #					i.e. we won't migrate data out of retention
@@ -1645,16 +1647,16 @@ echo "sql_string456: ${sql_script}";
 				DATE)
 echo $field_name
 					echo "field is a date: ${field_name}";
-					sql1_script="${sql1_script}($field_name AT TIME ZONE 'UTC') AS ${field_name}_utc,${NEWLINE}";
+					sql1_script="${sql1_script}$field_name,${NEWLINE}";
 					if [ $mask_mode == "YES" ] && [ $masked_function != "NONE" ]
 					then
-						sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${masked_function}_utc,'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
+						sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${masked_function},'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
 					else
 						if [[ $field_nullable == "Y" ]]
 						then
-							sql2_script="${sql2_script}TO_CLOB(NVL(TO_CHAR(b.${field_name}_utc,'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"')),'')"
+							sql2_script="${sql2_script}TO_CLOB(NVL(TO_CHAR(b.${field_name},'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"')),'')"
 						else
-							sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${field_name}_utc,'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
+							sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${field_name},'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
 						fi
 					fi
 					if [[ $field_count -eq $counter ]]
@@ -1684,16 +1686,16 @@ echo $field_name
 					;;
 				TIMESTAMP)
 					echo "field is a timestamp ${field_name}";
-					sql1_script="${sql1_script}(${field_name} AT TIME ZONE 'UTC') AS ${field_name}_utc,${NEWLINE}";
+					sql1_script="${sql1_script}${field_name},${NEWLINE}";
 					if [ $mask_mode == "YES" ] && [ $masked_function != "NONE" ]
 					then
-						sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${masked_function}_utc,'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
+						sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${masked_function},'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
 					else
 						if [[ $field_nullable == "Y" ]]
 						then
-							sql2_script="${sql2_script}TO_CLOB(NVL(TO_CHAR(b.${field_name}_utc,'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"')),'')"
+							sql2_script="${sql2_script}TO_CLOB(NVL(TO_CHAR(b.${field_name},'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"')),'')"
 						else
-							sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${field_name}_utc,'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
+							sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${field_name},'YYYY-MM-DD\"T\"HH24:MI:SS.FF6\"Z\"'))"
 						fi
 					fi
 					if [[ $field_count -eq $counter ]]
