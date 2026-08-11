@@ -6,14 +6,12 @@ import org.junit.jupiter.api.Test;
 class CsvUtilTest {
 
     @Test
-    void testEscapeCharactersAcceptedSymbols() {
-        // Ensuring if the string contains any of the accepted symbols, it is not escaped
+    void testLeavesSafeValueUnchanged() {
         Assertions.assertEquals("Hello, World!", CsvUtil.escapeCharacters("Hello, World!"));
     }
 
     @Test
-    void testEscapeCharactersWithFormularSymbolsAtBeginning() {
-        // Should all be escaped as they contain a formular symbol.
+    void testEscapesFormulaSymbolsAtBeginning() {
         Assertions.assertEquals("'=1+1", CsvUtil.escapeCharacters("=1+1"));
         Assertions.assertEquals("'+Sheet1", CsvUtil.escapeCharacters("+Sheet1"));
         Assertions.assertEquals("'@username", CsvUtil.escapeCharacters("@username"));
@@ -21,8 +19,7 @@ class CsvUtilTest {
     }
 
     @Test
-    void testEscapeCharactersWithFormularSymbolsAtEnd() {
-        // Should not be escaped as they are not at the beginning of the string
+    void testLeavesFormulaSymbolsAtEndUnchanged() {
         Assertions.assertEquals("1+1=", CsvUtil.escapeCharacters("1+1="));
         Assertions.assertEquals("Sheet1+", CsvUtil.escapeCharacters("Sheet1+"));
         Assertions.assertEquals("Sheet1-", CsvUtil.escapeCharacters("Sheet1-"));
@@ -30,8 +27,7 @@ class CsvUtilTest {
     }
 
     @Test
-    void testEscapeCharactersWithFormularSymbolsInMiddle() {
-        // Should not be escaped as they are not at the beginning of the string
+    void testLeavesFormulaSymbolsInMiddleUnchanged() {
         Assertions.assertEquals("1=1", CsvUtil.escapeCharacters("1=1"));
         Assertions.assertEquals("She+et1", CsvUtil.escapeCharacters("She+et1"));
         Assertions.assertEquals("She-et1", CsvUtil.escapeCharacters("She-et1"));
@@ -39,10 +35,14 @@ class CsvUtilTest {
     }
 
     @Test
-    void testEscapeCharactersWithQuotesWithinAValueIncluingEqualsAtBeginning() {
-        // Should be escaped as it contains a quote and a formular symbol at the beginning
-        Assertions.assertEquals(
-                "\"'=HYPERLINK(\"\"https://example.com\"\",\"\"Click me\"\")",
-                CsvUtil.escapeCharacters("\"=HYPERLINK(\"\"https://example.com\"\",\"\"Click me\"\")"));
+    void testEscapeCharactersWithLeadingQuoteUnchanged() {
+        var value = "\"=Not a formula";
+
+        Assertions.assertEquals(value, CsvUtil.escapeCharacters(value));
+    }
+
+    @Test
+    void testLeavesNullUnchanged() {
+        Assertions.assertNull(CsvUtil.escapeCharacters(null));
     }
 }

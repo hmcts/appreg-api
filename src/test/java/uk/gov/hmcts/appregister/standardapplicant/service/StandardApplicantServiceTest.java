@@ -598,13 +598,17 @@ class StandardApplicantServiceTest {
         sa.setApplicantForename1("John");
 
         when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any()))
-            .thenReturn(List.of(sa));
+                .thenReturn(List.of(sa));
         String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null);
 
-        Assertions.assertTrue(csv.contains("'=1+1"),
-                              "CSV should escape formula values to prevent execution when imported into Excel");
-        Assertions.assertTrue(csv.contains("'@Test Org"),
-                              "CSV should escape formula values to prevent execution when imported into Excel");
+        Assertions.assertTrue(
+                csv.contains("'=1+1"),
+                "CSV should escape formula values to prevent execution when imported into Excel");
+        Assertions.assertTrue(
+                csv.contains("'@Test Org"),
+                "CSV should escape formula values to prevent execution when imported into Excel");
+        Assertions.assertEquals("=1+1", sa.getApplicantCode());
+        Assertions.assertEquals("@Test Org", sa.getName());
     }
 
     private void dataComparison(StandardApplicantCsvRow row, StandardApplicant expected) {
