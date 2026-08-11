@@ -40,37 +40,37 @@ class CsvUtilTest {
 
     @Test
     void testEscapeCsvRowsContainingFormularSymbols() {
-        String csv = "Name,Value\n=1+1,10\n+Sheet1,20\n@username,30\n-comment,40";
+        String csv = "Name|Value\n=1+1|10\n+Sheet1|20\n@username|30\n-comment|40";
         String expectedEscapedCsv =
-                "Name,Value\n'=1+1,10\n'+Sheet1,20\n'@username,30\n'-comment,40";
+                "Name|Value\n'=1+1|10\n'+Sheet1|20\n'@username|30\n'-comment|40";
         Assertions.assertEquals(expectedEscapedCsv, CsvUtil.escapeCSV(csv));
     }
 
     @Test
     void testEscapeCsvRowsWithoutFormularSymbols() {
-        String csv = "Name,Value\nHello,10\nWorld,20";
-        String expectedEscapedCsv = "Name,Value\nHello,10\nWorld,20";
+        String csv = "Name|Value\nHello|10\nWorld|20";
+        String expectedEscapedCsv = "Name|Value\nHello|10\nWorld|20";
         Assertions.assertEquals(expectedEscapedCsv, CsvUtil.escapeCSV(csv));
     }
 
     @Test
     void testEscapeCsvRowsWithEmptyRows() {
-        String csv = "Name,Value\nHello,10\n\nWorld,20";
-        String expectedEscapedCsv = "Name,Value\nHello,10\n\nWorld,20";
+        String csv = "Name|Value\nHello|10\n\nWorld|20";
+        String expectedEscapedCsv = "Name|Value\nHello|10\n\nWorld|20";
         Assertions.assertEquals(expectedEscapedCsv, CsvUtil.escapeCSV(csv));
     }
 
     @Test
     void testEscapeCsvRowsWithEmptyColumns() {
-        String csv = "Name,Value\nHello,,20";
-        String expectedEscapedCsv = "Name,Value\nHello,,20";
+        String csv = "Name|Value\nHello||20";
+        String expectedEscapedCsv = "Name|Value\nHello||20";
         Assertions.assertEquals(expectedEscapedCsv, CsvUtil.escapeCSV(csv));
     }
 
     @Test
     void testEscapeCsvRowsWithEmptyRowsAndColumns() {
-        String csv = "Name,Value\nHello,,\n\nWorld,20";
-        String expectedEscapedCsv = "Name,Value\nHello,,\n\nWorld,20";
+        String csv = "Name|Value\nHello||\n\nWorld|20";
+        String expectedEscapedCsv = "Name|Value\nHello||\n\nWorld|20";
         Assertions.assertEquals(expectedEscapedCsv, CsvUtil.escapeCSV(csv));
     }
 }

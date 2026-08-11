@@ -3,8 +3,13 @@ package uk.gov.hmcts.appregister.common.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class CsvUtil {
+
+    // String split uses a regular expression, so need to escape the pipe character
+    private static final String DEFAULT_DELIMITER = "|";
+
     private CsvUtil() {
         // Private constructor to prevent instantiation
     }
@@ -23,9 +28,9 @@ public class CsvUtil {
                 || trimmedValue.startsWith("@")) {
 
             // Prepend a single quote to force the spreadsheet to treat it as raw text
-            return "'" + trimmedValue;
+            return "'" + value;
         }
-        return trimmedValue;
+        return value;
     }
 
     public static String escapeCSV(String csv) {
@@ -33,12 +38,15 @@ public class CsvUtil {
         List<String> escapedCsv = new ArrayList<>();
         escapedCsv.add(rows.getFirst()); // Adding header
 
-        for (int i = 1; i < rows.size(); i++) { // Start from 1 to skip the header row
-            String[] columns = rows.get(i).split(",", -1); // -1 to include trailing empty strings
+        // Start from 1 to skip the header row
+        for (int i = 1; i < rows.size(); i++) {
+            // -1 to include trailing empty strings, using pattern.quote to escape the delimiter for
+            // regex
+            String[] columns = rows.get(i).split(Pattern.quote(DEFAULT_DELIMITER), -1);
             for (int j = 0; j < columns.length; j++) {
                 columns[j] = escapeCharacters(columns[j]);
             }
-            escapedCsv.add(String.join(",", columns));
+            escapedCsv.add(String.join(DEFAULT_DELIMITER, columns));
         }
         return String.join("\n", escapedCsv);
     }
