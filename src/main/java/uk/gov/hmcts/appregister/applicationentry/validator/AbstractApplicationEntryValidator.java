@@ -460,7 +460,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                         || getAccountNumber(validatable).isEmpty())) {
             throw new AppRegistryException(
                     AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
-                    "Application number required for application code %s"
+                    "Account number required for application code %s"
                             .formatted(getApplicationCode(validatable)));
         }
     }

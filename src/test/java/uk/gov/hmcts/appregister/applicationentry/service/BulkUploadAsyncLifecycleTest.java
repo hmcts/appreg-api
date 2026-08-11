@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -20,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import lombok.val;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -48,9 +50,11 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(OutputCaptureExtension.class)
 class BulkUploadAsyncLifecycleTest {
@@ -89,14 +93,13 @@ class BulkUploadAsyncLifecycleTest {
                         invocation -> {
                             PayloadForCreate<EntryCreateDto> validatable =
                                     invocation.getArgument(0);
+                            validatable.getData().setWordingFields(List.of());
                             BiFunction<
                                             PayloadForCreate<EntryCreateDto>,
                                             CreateApplicationEntryValidationSuccess,
                                             ?>
                                     callback = invocation.getArgument(1);
-                            return callback.apply(
-                                    validatable,
-                                    mock(CreateApplicationEntryValidationSuccess.class));
+                            return callback.apply(validatable, validationResult("Wording"));
                         })
                 .when(validationSession)
                 .validate(any(), any());
@@ -121,6 +124,19 @@ class BulkUploadAsyncLifecycleTest {
         val exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_EMPTY_FILE);
+    }
+
+    @Test
+    void givenNonEnforcementApplicationWithBlankAccountNumber_whenValidating_thenSucceeds()
+            throws IOException {
+        var row = validOrganisationRow();
+        row.setApplicationCode("SW99063");
+        row.setAccountNumber("");
+
+        lifecycle.validating(event(row, new JobContext()));
+
+        verify(validationSession)
+                .validate(argThat(payload -> payload.getData().getAccountNumber() == null), any());
     }
 
     @Test
@@ -621,16 +637,13 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenUnknownBusinessRuleFailureForPersonRespondent_whenValidating_thenUsesMiddleName()
+    void givenUnknownBusinessRuleFailure_whenValidating_thenDoesNotExposeItAsRowError()
             throws IOException {
         BulkUploadRow row = validRespondentRow();
-        row.setRespondentMiddleName("Byron");
-        doThrow(
-                        new AppRegistryException(
-                                CommonAppError.INTERNAL_SERVER_ERROR,
-                                "Unexpected validation failure"))
-                .when(validationSession)
-                .validate(any(), any());
+        var internalFailure =
+                new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR, "Unexpected validation failure");
+        doThrow(internalFailure).when(validationSession).validate(any(), any());
         JobContext context = new JobContext();
         AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
         lifecycle.setCSVFile(csvFile);
@@ -638,50 +651,9 @@ class BulkUploadAsyncLifecycleTest {
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
-        assertThat(context.getValidationFailureMessages())
-                .containsExactly(
-                        createErrorDescription(
-                                List.of(
-                                        new BulkUploadError(
-                                                2,
-                                                "BULK_UPLOAD_ROW",
-                                                null,
-                                                "Unexpected validation failure",
-                                                row.getRespondentAddressLine1(),
-                                                row.getApplicantCode(),
-                                                "DATA_ERROR"))));
-
-        BulkUploadRow respondentRow = validRespondentRow();
-        doThrow(
-                        new AppRegistryException(
-                                CommonAppError.INTERNAL_SERVER_ERROR,
-                                "Unexpected validation failure"))
-                .when(validationSession)
-                .validate(any(), any());
-        context = new JobContext();
-        var respondentEvent = event(respondentRow, context);
-
-        lifecycle.setCSVFile(csvFile);
-        exception =
-                assertThrows(
-                        AppRegistryException.class, () -> lifecycle.validating(respondentEvent));
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
-        assertThat(context.getValidationFailureMessages())
-                .containsExactly(
-                        createErrorDescription(
-                                List.of(
-                                        new BulkUploadError(
-                                                3,
-                                                "BULK_UPLOAD_ROW",
-                                                null,
-                                                "Unexpected validation failure",
-                                                row.getRespondentAddressLine1(),
-                                                row.getApplicantCode(),
-                                                "DATA_ERROR"))));
+        assertThat(exception).isSameAs(internalFailure);
+        assertThat(context.getValidationFailureMessages()).isEmpty();
+        verify(persistenceService, times(0)).writeClob(any(), any());
     }
 
     @Test
@@ -731,6 +703,121 @@ class BulkUploadAsyncLifecycleTest {
                 .contains("jobId=" + jobId)
                 .contains(internalError);
         verify(bulkImportService).persistPage(any(), any());
+    }
+
+    @Test
+    void givenRecognisedWordingValidationFailure_thenWritesRowErrorJsonAndCsv() throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\n".getBytes());
+        var writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+        var row = validOrganisationRow();
+        var applicationTexts = new ArrayListValuedHashMap<String, String>();
+        applicationTexts.put("APPLICATION_TEXT1", "four characters");
+        row.setApplicationTexts(applicationTexts);
+        var context = new JobContext();
+        var event = event(row, context);
+        lifecycle.setCSVFile(csvFile);
+        doAnswer(
+                        invocation -> {
+                            PayloadForCreate<EntryCreateDto> validatable =
+                                    invocation.getArgument(0);
+                            keyWordingFields(validatable);
+                            BiFunction<
+                                            PayloadForCreate<EntryCreateDto>,
+                                            CreateApplicationEntryValidationSuccess,
+                                            ?>
+                                    callback = invocation.getArgument(1);
+                            return callback.apply(
+                                    validatable,
+                                    validationResult("Application by {TEXT|Applicants name|4}"));
+                        })
+                .when(validationSession)
+                .validate(any(), any());
+
+        var exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .singleElement()
+                .asString()
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"APPLICATION_TEXT\"")
+                .contains("Invalid length type in template: expected 4 but got 15");
+        assertThat(writtenCsv.toString())
+                .contains(
+                        "row-two|APPLICATION_TEXT: Invalid length type in template: expected 4 but got 15");
+        verify(persistenceService).writeClob(any(), any());
+        verify(bulkImportService, times(0)).persistPage(any(), any());
+    }
+
+    @Test
+    void givenAccountAndWordingValidationFailuresOnDifferentRows_thenWritesEachRowError()
+            throws IOException {
+        when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
+        var writtenCsv = new StringBuilder();
+        doAnswer(
+                        invocation -> {
+                            ByteArrayInputStream inputStream = invocation.getArgument(1);
+                            writtenCsv.append(new String(inputStream.readAllBytes()));
+                            return null;
+                        })
+                .when(persistenceService)
+                .writeClob(any(), any());
+        var firstRow = validOrganisationRow();
+        var secondRow = validOrganisationRow();
+        var secondApplicationTexts = new ArrayListValuedHashMap<String, String>();
+        secondApplicationTexts.put("APPLICATION_TEXT1", "four characters");
+        secondRow.setApplicationTexts(secondApplicationTexts);
+        var context = new JobContext();
+        var event = event(List.of(firstRow, secondRow), context);
+        lifecycle.setCSVFile(csvFile);
+        var validationCount = new AtomicInteger();
+        doAnswer(
+                        invocation -> {
+                            if (validationCount.getAndIncrement() == 0) {
+                                throw new AppRegistryException(
+                                        AppListEntryError
+                                                .ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                                        "Account number required for application code AP99001");
+                            }
+                            PayloadForCreate<EntryCreateDto> validatable =
+                                    invocation.getArgument(0);
+                            keyWordingFields(validatable);
+                            BiFunction<
+                                            PayloadForCreate<EntryCreateDto>,
+                                            CreateApplicationEntryValidationSuccess,
+                                            ?>
+                                    callback = invocation.getArgument(1);
+                            return callback.apply(
+                                    validatable,
+                                    validationResult("Application by {TEXT|Applicants name|4}"));
+                        })
+                .when(validationSession)
+                .validate(any(), any());
+
+        assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
+
+        assertThat(context.getValidationFailureMessages())
+                .singleElement()
+                .asString()
+                .contains("\"rowNumber\":2", "\"rowNumber\":3")
+                .contains(
+                        "Account number required for application code AP99001",
+                        "Invalid length type in template: expected 4 but got 15");
+        assertThat(writtenCsv.toString())
+                .contains(
+                        "row-two|ACCOUNT_NUMBER: Account number required for application code AP99001",
+                        "row-three|APPLICATION_TEXT: Invalid length type in template: expected 4 but got 15");
+        verify(persistenceService).writeClob(any(), any());
+        verify(bulkImportService, times(0)).persistPage(any(), any());
     }
 
     @Test
@@ -1162,6 +1249,11 @@ class BulkUploadAsyncLifecycleTest {
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
+        return event(List.of(row), context);
+    }
+
+    private static AsyncJobLifecycleEvent<BulkUploadRow> event(
+            List<BulkUploadRow> rows, JobContext context) {
         return new AsyncJobLifecycleEvent<>(
                 new JobStatusResponse(
                         UUID.randomUUID(),
@@ -1170,7 +1262,7 @@ class BulkUploadAsyncLifecycleTest {
                         "user",
                         "error",
                         persistenceService),
-                List.of(row),
+                rows,
                 context,
                 JobStatus.VALIDATING);
     }
@@ -1238,5 +1330,21 @@ class BulkUploadAsyncLifecycleTest {
         } catch (IOException e) {
             throw new RuntimeException("Failed to serialize errors", e);
         }
+    }
+
+    private static CreateApplicationEntryValidationSuccess validationResult(String wording) {
+        return CreateApplicationEntryValidationSuccess.builder()
+                .wordingSentence(WordingTemplateSentence.with(wording))
+                .build();
+    }
+
+    private static void keyWordingFields(PayloadForCreate<EntryCreateDto> validatable) {
+        var wordingFields = validatable.getData().getWordingFields();
+        validatable
+                .getData()
+                .setWordingFields(
+                        List.of(
+                                new TemplateSubstitution(
+                                        "Applicants name", wordingFields.getFirst().getValue())));
     }
 }

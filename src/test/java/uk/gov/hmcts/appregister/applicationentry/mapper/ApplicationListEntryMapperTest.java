@@ -150,6 +150,19 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void givenBlankAccountNumber_whenMappingBulkUpload_thenMapsItToNull() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("SW99063");
+        row.setAccountNumber("");
+        row.setRespondentOrganisationName("Respondent organisation");
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        assertThat(dto.getAccountNumber()).isNull();
+    }
+
+    @Test
     void testToEntryCreateDto_mapsBlankBulkUploadOrganisationAsPersonRespondent() {
         BulkUploadRow row = new BulkUploadRow();
         row.setApplicantCode("APP001");

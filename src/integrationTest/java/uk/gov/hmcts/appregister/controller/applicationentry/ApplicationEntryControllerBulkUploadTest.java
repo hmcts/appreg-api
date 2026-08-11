@@ -294,6 +294,61 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
+    void givenApplicationTextExceedsTemplateLength_whenBulkUpload_thenJsonAndCsvContainError()
+            throws Exception {
+        var row =
+                "APP001||Greenfield Finance 037194 Ltd|||||037194 High Street|Walsall|Darlaston"
+                        + "|Walsall|West Midlands|WS1 1SY|greenfield-finance-037194@test.cgi.com"
+                        + "|0207 1234567|07700 900001|AC-037194-1|SW99062|Long Value of"
+                        + " Application Text1 Exceeding Required Length which is 70 Characters|";
+
+        FailedBulkUpload failure = submitBulkUploadExpectingFailure(LEGACY_BULK_UPLOAD_HEADER, row);
+
+        assertThat(failure.completedJob().getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failure.completedJob().getErrorDescription())
+                .contains("\"rowNumber\":2")
+                .contains("\"location\":\"APPLICATION_TEXT\"")
+                .contains("Invalid length type in template: expected 70 but got 80")
+                .doesNotContain("Bulk upload processing failed");
+        assertThat(failure.errorCsv())
+                .contains(
+                        row
+                                + "|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80")
+                .doesNotContain("Bulk upload processing failed");
+        assertThat(countEntriesForList(failure.listId())).isZero();
+    }
+
+    @Test
+    void givenMultipleApplicationTextLengthFailures_whenBulkUpload_thenJsonAndCsvContainEachError()
+            throws Exception {
+        var firstRow =
+                "APP001||Greenfield Finance 037194 Ltd|||||037194 High Street|Walsall|Darlaston"
+                        + "|Walsall|West Midlands|WS1 1SY|greenfield-finance-037194@test.cgi.com"
+                        + "|0207 1234567|07700 900001|AC-037194-1|SW99062|Long Value of"
+                        + " Application Text1 Exceeding Required Length which is 70 Characters|";
+        var secondRow = firstRow.replace("Characters|", "Characters!|");
+
+        FailedBulkUpload failure =
+                submitBulkUploadExpectingFailure(LEGACY_BULK_UPLOAD_HEADER, firstRow, secondRow);
+
+        assertThat(failure.completedJob().getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failure.completedJob().getErrorDescription())
+                .contains("\"rowNumber\":2", "\"rowNumber\":3")
+                .contains(
+                        "Invalid length type in template: expected 70 but got 80",
+                        "Invalid length type in template: expected 70 but got 81")
+                .doesNotContain("Bulk upload processing failed");
+        assertThat(failure.errorCsv())
+                .contains(
+                        firstRow
+                                + "|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80",
+                        secondRow
+                                + "|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 81")
+                .doesNotContain("Bulk upload processing failed");
+        assertThat(countEntriesForList(failure.listId())).isZero();
+    }
+
+    @Test
     void givenBlankOptionalContactDetails_whenBulkUpload_thenCreatesEntryWithNullValues()
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
@@ -682,13 +737,13 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         return response.as(ApplicationListGetDetailDto.class).getId();
     }
 
-    private FailedBulkUpload submitBulkUploadExpectingFailure(String header, String row)
+    private FailedBulkUpload submitBulkUploadExpectingFailure(String header, String... rows)
             throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
         UUID listId = createNewApplicationList(token);
 
-        try (var file = tempCsv(header + "\n" + row + "\n")) {
+        try (var file = tempCsv(header + "\n" + String.join("\n", rows) + "\n")) {
             Response response =
                     restAssuredClient.executePostRequest(
                             getLocalUrl(

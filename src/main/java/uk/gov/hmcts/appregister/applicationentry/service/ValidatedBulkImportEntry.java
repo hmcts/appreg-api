@@ -9,4 +9,5 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 public record ValidatedBulkImportEntry(
         int rowNumber,
         EntryCreateDto entry,
-        CreateApplicationEntryValidationSuccess validationResult) {}
+        CreateApplicationEntryValidationSuccess validationResult,
+        String substitutedWording) {}
