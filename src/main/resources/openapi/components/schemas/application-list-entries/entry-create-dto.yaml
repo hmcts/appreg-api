@@ -61,7 +61,7 @@ properties:
   accountNumber:
     type: string
     maxLength: 20
-    description: The Applicants account number (maximum 20 characters).
+    description: The Applicant's account number (maximum 20 characters). Required when the Application Code starts with EF.
     example: "APP-001"
     minLength: 1
 

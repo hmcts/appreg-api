@@ -89,8 +89,7 @@ public class BulkImportService {
 
         for (var index = 0; index < validatedEntries.size(); index++) {
             var validatedEntry = validatedEntries.get(index);
-            var entry = createEntry(validatedEntry, names, firstSequence + index);
-            entries.add(entry);
+            entries.add(createEntry(validatedEntry, names, firstSequence + index));
         }
 
         nameAddressRepository.saveAll(names);
@@ -159,10 +158,7 @@ public class BulkImportService {
         var entry =
                 entryMapper.toApplicationListEntry(
                         dto,
-                        validation
-                                .getWordingSentence()
-                                .substitute(dto.getWordingFields())
-                                .getSubstitutedString(),
+                        validatedEntry.substitutedWording(),
                         validation.getSa(),
                         applicant,
                         respondent,

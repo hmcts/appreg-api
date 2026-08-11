@@ -47,6 +47,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
 
     private static final String FIELD_COUNT_MISMATCH_MESSAGE =
             "Number of data fields does not match number of headers.";
+    private static final String CSV_PARSE_FAILURE_MESSAGE = "Uploaded file could not be parsed.";
 
     public CsvReader(MultipartFile file, Class<T> cls) throws IOException {
         this(file.getInputStream(), cls);
@@ -139,7 +140,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
                 if (FIELD_COUNT_MISMATCH_MESSAGE.equals(e.getMessage())) {
                     jobContext.logFieldCountMismatch(e.getMessage());
                 } else {
-                    jobContext.logFailure(e.getMessage());
+                    jobContext.logFailure(CSV_PARSE_FAILURE_MESSAGE);
                 }
                 // ignore the exception from being thrown
                 return null;

@@ -66,7 +66,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     "postcode", "Provide a valid UK postcode.",
                     "mobile", "Provide a valid UK mobile number.",
                     "phone", "Provide a valid UK telephone number.");
-    private static final Map<ErrorCodeEnum, String> BUSINESS_RULE_LOCATIONS =
+    private static final Map<ErrorCodeEnum, String> CLIENT_SAFE_BUSINESS_RULE_LOCATIONS =
             Map.ofEntries(
                     Map.entry(
                             CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
@@ -196,9 +196,11 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         JobContext context = event.getContext();
         if (!context.hasFailure()) {
             context.logFailure(clientFailureMessage(event));
+            deleteCsvFile();
             return;
         }
         if (!context.isFieldCountMismatch()) {
+            deleteCsvFile();
             return;
         }
 
@@ -272,17 +274,23 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     .validate(
                             PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
                             (validatable, result) -> {
+                                var wordingFields =
+                                        dto.getWordingFields() == null
+                                                ? List.<TemplateSubstitution>of()
+                                                : List.copyOf(dto.getWordingFields());
+                                var substitutedWording =
+                                        result.getWordingSentence()
+                                                .substitute(wordingFields)
+                                                .getSubstitutedString();
                                 validatedRows.add(
-                                        new ValidatedRow(
-                                                rowNumber,
-                                                dto.getWordingFields() == null
-                                                        ? List.of()
-                                                        : List.copyOf(dto.getWordingFields()),
-                                                result));
+                                        new ValidatedRow(rowNumber, result, substitutedWording));
                                 return result;
                             });
             return List.of();
         } catch (AppRegistryException exception) {
+            if (!CLIENT_SAFE_BUSINESS_RULE_LOCATIONS.containsKey(exception.getCode())) {
+                throw exception;
+            }
             return List.of(
                     new BulkUploadError(
                             rowNumber,
@@ -352,7 +360,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private static String locationForBusinessRule(AppRegistryException exception) {
-        return BUSINESS_RULE_LOCATIONS.getOrDefault(exception.getCode(), BULK_UPLOAD_ROW);
+        return CLIENT_SAFE_BUSINESS_RULE_LOCATIONS.getOrDefault(
+                exception.getCode(), BULK_UPLOAD_ROW);
     }
 
     private void logValidationFailure(
@@ -383,12 +392,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
      */
     @Override
     public void processing(AsyncJobLifecycleEvent<BulkUploadRow> event) throws IOException {
-        // We can safely delete the temporary CSV file after the first processing pass, as the
-        // validated rows are already stored in memory.
-        if (csvFile != null && csvFile.exists()) {
-            Files.delete(csvFile.getAbsoluteFile().toPath());
-        }
-
         JobContext context = event.getContext();
 
         log.debug("Processing bulk-upload page for list {}", listId);
@@ -430,10 +433,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             var validatedRow = validatedRows.get(processingIndex++);
             var dto = mapper.toEntryCreateDto(row);
-            dto.setWordingFields(validatedRow.wordingFields());
             validatedPage.add(
                     new ValidatedBulkImportEntry(
-                            validatedRow.rowNumber(), dto, validatedRow.validationResult()));
+                            validatedRow.rowNumber(),
+                            dto,
+                            validatedRow.validationResult(),
+                            validatedRow.substitutedWording()));
         }
     }
 
@@ -455,6 +460,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 importedEntryCount,
                 durationMs());
         validatedRows.clear();
+        deleteCsvFile();
     }
 
     private long durationMs() {
@@ -465,8 +471,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private record ValidatedRow(
             int rowNumber,
-            List<TemplateSubstitution> wordingFields,
-            CreateApplicationEntryValidationSuccess validationResult) {}
+            CreateApplicationEntryValidationSuccess validationResult,
+            String substitutedWording) {}
 
     private void saveErrorCSV(
             List<BulkUploadError> errors,
@@ -595,5 +601,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private static String clientFailureMessage(AsyncJobLifecycleEvent<?> event) {
         return CLIENT_FAILURE_MESSAGE.formatted(event.getResponse().getJobId().getId());
+    }
+
+    private void deleteCsvFile() {
+        if (csvFile == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(csvFile.getAbsoluteFile().toPath());
+        } catch (IOException exception) {
+            log.warn("Failed to delete bulk-upload temporary CSV for list {}", listId, exception);
+        }
     }
 }
