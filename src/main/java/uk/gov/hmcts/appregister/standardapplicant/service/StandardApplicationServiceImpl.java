@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
@@ -229,10 +230,15 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         try {
             try (CsvWriter<StandardApplicantCsvRow> writer =
                     new CsvWriter<>(StandardApplicantCsvRow.class)) {
+                var rows = mapper.toEntity(filteredList);
+                rows.forEach(
+                        row -> {
+                            row.setApplicantCode(CsvUtil.escapeCharacters(row.getApplicantCode()));
+                            row.setName(CsvUtil.escapeCharacters(row.getName()));
+                        });
+
                 return writer.writeToString(
-                        mapper.toEntity(filteredList),
-                        StandardApplicantCsvRow.class,
-                        StandardApplicantCsvRow.Header);
+                        rows, StandardApplicantCsvRow.class, StandardApplicantCsvRow.Header);
             }
         } catch (IOException io) {
             throw new AppRegistryException(
