@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
 class DurationReportLifecycle extends ReportCsvLifecycle<DurationReportRow> {
@@ -27,12 +28,12 @@ class DurationReportLifecycle extends ReportCsvLifecycle<DurationReportRow> {
     protected String[] toCsvRow(DurationReportRow row) {
         return new String[] {
             formatListDate(row.getListDate()),
-            Objects.toString(row.getCourthouseName(), ""),
-            Objects.toString(row.getOtherCourthouse(), ""),
-            Objects.toString(row.getCjaCode(), ""),
-            Objects.toString(row.getListDescription(), ""),
-            Objects.toString(row.getDurationHours(), ""),
-            Objects.toString(row.getDurationMinutes(), "")
+            CsvUtil.escapeCharacters(Objects.toString(row.getCourthouseName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getOtherCourthouse(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getCjaCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getListDescription(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getDurationHours(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getDurationMinutes(), ""))
         };
     }
 
