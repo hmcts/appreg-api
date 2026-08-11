@@ -8,13 +8,18 @@
 #			database, to proove that the data has been populated
 #			correctly
 #
-# Usage:		sh ./extract_metadata.sh
+# Usage:		sh ./extract_metadata.sh [scn]
+#
+# Note:			scn is optional - if not set no as of scn will be used
 #
 # Version History:
 # Version	Date		Who		Purpose
 # 1.0		29/08/2025	Matthew Harman	Initial Version
 # 2.0		24/03/2026	Matthew Harman	Remove redundant tables
 #						Add retention policy
+# 3.0		11/08/2026	Matthew Harman	Add ability to pass scn to the
+#						script, to extract data as of
+#						that SCN.  ARCPOC-1685
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -72,6 +77,16 @@ calling_script="";
 FIELD_SEPARATOR=$IFS
 IFS=','
 NEWLINE=$'\n'
+
+# Populate the scn if it has been passed in as a parameter
+SCN_VALUE="${1:-}"
+if [[ -n "$SCN_VALUE" ]]; then
+echo "SCN passed";
+	HAVE_SCN="Y";
+else
+echo "SCN not passed";
+	HAVE_SCN="N";
+fi
 
 # Loop through the TABLES
 >${spool_location}/oracle_metadata.csv
@@ -200,7 +215,11 @@ echo "sql2: $sql_script"
 	sql_script="${sql_script}spool ${spool_location}/oracle_rowcounts.csv append;${NEWLINE}";
 	sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 	sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
-	sql_script="${sql_script}count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
+	if [[ ${HAVE_SCN} == "Y" ]]; then
+		sql_script="${sql_script}count(*) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+	else
+		sql_script="${sql_script}count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
+	fi
 	# Do we need to add in retention clause
 	if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 	then
@@ -219,7 +238,11 @@ echo "sql2: $sql_script"
 		sql_script="${sql_script}spool ${spool_location}/oracle_counts_by_date.csv append;${NEWLINE}";
 		sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 		sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
-		sql_script="${sql_script}TO_CHAR(TRUNC(${changed_date_field}),'YYYY-MM-DD')||','||count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
+		if [[ ${HAVE_SCN} == "Y" ]]; then
+			sql_script="${sql_script}TO_CHAR(TRUNC(${changed_date_field}),'YYYY-MM-DD')||','||count(*) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+		else
+			sql_script="${sql_script}TO_CHAR(TRUNC(${changed_date_field}),'YYYY-MM-DD')||','||count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
+		fi
 		if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 		then
 			sql_script="${sql_script} WHERE ${retention_clause}${NEWLINE}";
@@ -246,7 +269,11 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
 					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
@@ -263,7 +290,11 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
 					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
@@ -282,7 +313,11 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
 					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
@@ -299,7 +334,11 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
 					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
@@ -318,7 +357,11 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
 					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
@@ -337,7 +380,11 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
 					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
