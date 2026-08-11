@@ -274,13 +274,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     .validate(
                             PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
                             (validatable, result) -> {
+                                var wordingFields =
+                                        dto.getWordingFields() == null
+                                                ? List.<TemplateSubstitution>of()
+                                                : List.copyOf(dto.getWordingFields());
+                                var substitutedWording =
+                                        result.getWordingSentence()
+                                                .substitute(wordingFields)
+                                                .getSubstitutedString();
                                 validatedRows.add(
-                                        new ValidatedRow(
-                                                rowNumber,
-                                                dto.getWordingFields() == null
-                                                        ? List.of()
-                                                        : List.copyOf(dto.getWordingFields()),
-                                                result));
+                                        new ValidatedRow(rowNumber, result, substitutedWording));
                                 return result;
                             });
             return List.of();
@@ -401,29 +404,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         try {
             prepareValidatedPage(event.getData());
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
-        } catch (BulkUploadValidationFailuresException exception) {
-            log.warn(
-                    "Recognised bulk-upload validation failures listId={} jobId={} rowNumbers={}",
-                    listId,
-                    jobId,
-                    exception.failures().stream()
-                            .map(BulkUploadValidationException::rowNumber)
-                            .toList(),
-                    exception);
-            recordProcessingValidationFailures(
-                    event,
-                    context,
-                    exception.failures().stream().map(this::toProcessingBulkUploadError).toList(),
-                    exception);
-        } catch (BulkUploadValidationException exception) {
-            log.warn(
-                    "Recognised bulk-upload validation failure listId={} jobId={} rowNumber={}",
-                    listId,
-                    jobId,
-                    exception.rowNumber(),
-                    exception);
-            recordProcessingValidationFailures(
-                    event, context, List.of(toProcessingBulkUploadError(exception)), exception);
         } catch (Exception ex) {
             log.error(
                     "Failed to process bulk-import page listId={} jobId={} firstRowNumber={}",
@@ -444,48 +424,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 importedEntryCount);
     }
 
-    private void recordProcessingValidationFailures(
-            AsyncJobLifecycleEvent<BulkUploadRow> event,
-            JobContext context,
-            List<BulkUploadError> errors,
-            RuntimeException exception)
-            throws IOException {
-        sanitiseErrorMessages(errors);
-        logValidationFailure(event, context, errors);
-        saveErrorCSV(errors, event, context);
-        throw new AppRegistryException(
-                AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                "One or more rows failed validation during bulk upload",
-                exception);
-    }
-
-    private BulkUploadError toProcessingBulkUploadError(BulkUploadValidationException exception) {
-        var entry =
-                validatedPage.stream()
-                        .filter(candidate -> candidate.rowNumber() == exception.rowNumber())
-                        .findFirst()
-                        .orElseThrow();
-        var dto = entry.entry();
-        String addressLine1 = null;
-        if (dto.getRespondent() != null) {
-            if (dto.getRespondent().getOrganisation() != null) {
-                addressLine1 =
-                        dto.getRespondent().getOrganisation().getContactDetails().getAddressLine1();
-            } else if (dto.getRespondent().getPerson() != null) {
-                addressLine1 =
-                        dto.getRespondent().getPerson().getContactDetails().getAddressLine1();
-            }
-        }
-        return new BulkUploadError(
-                exception.rowNumber(),
-                exception.location(),
-                null,
-                exception.clientMessage(),
-                addressLine1,
-                dto.getStandardApplicantCode(),
-                "DATA_ERROR");
-    }
-
     private void prepareValidatedPage(List<BulkUploadRow> rows) {
         validatedPage.clear();
         for (var row : rows) {
@@ -495,10 +433,12 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             var validatedRow = validatedRows.get(processingIndex++);
             var dto = mapper.toEntryCreateDto(row);
-            dto.setWordingFields(validatedRow.wordingFields());
             validatedPage.add(
                     new ValidatedBulkImportEntry(
-                            validatedRow.rowNumber(), dto, validatedRow.validationResult()));
+                            validatedRow.rowNumber(),
+                            dto,
+                            validatedRow.validationResult(),
+                            validatedRow.substitutedWording()));
         }
     }
 
@@ -531,8 +471,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private record ValidatedRow(
             int rowNumber,
-            List<TemplateSubstitution> wordingFields,
-            CreateApplicationEntryValidationSuccess validationResult) {}
+            CreateApplicationEntryValidationSuccess validationResult,
+            String substitutedWording) {}
 
     private void saveErrorCSV(
             List<BulkUploadError> errors,

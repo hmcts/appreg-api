@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import lombok.val;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -48,9 +49,11 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(OutputCaptureExtension.class)
 class BulkUploadAsyncLifecycleTest {
@@ -89,14 +92,13 @@ class BulkUploadAsyncLifecycleTest {
                         invocation -> {
                             PayloadForCreate<EntryCreateDto> validatable =
                                     invocation.getArgument(0);
+                            validatable.getData().setWordingFields(List.of());
                             BiFunction<
                                             PayloadForCreate<EntryCreateDto>,
                                             CreateApplicationEntryValidationSuccess,
                                             ?>
                                     callback = invocation.getArgument(1);
-                            return callback.apply(
-                                    validatable,
-                                    mock(CreateApplicationEntryValidationSuccess.class));
+                            return callback.apply(validatable, validationResult("Wording"));
                         })
                 .when(validationSession)
                 .validate(any(), any());
@@ -690,8 +692,7 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenRecognisedProcessingValidationFailure_thenWritesRowErrorJsonAndCsv()
-            throws IOException {
+    void givenRecognisedWordingValidationFailure_thenWritesRowErrorJsonAndCsv() throws IOException {
         when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\n".getBytes());
         var writtenCsv = new StringBuilder();
         doAnswer(
@@ -703,21 +704,30 @@ class BulkUploadAsyncLifecycleTest {
                 .when(persistenceService)
                 .writeClob(any(), any());
         var row = validOrganisationRow();
+        var applicationTexts = new ArrayListValuedHashMap<String, String>();
+        applicationTexts.put("APPLICATION_TEXT1", "four characters");
+        row.setApplicationTexts(applicationTexts);
         var context = new JobContext();
         var event = event(row, context);
         lifecycle.setCSVFile(csvFile);
-        lifecycle.validating(event);
-        when(bulkImportService.persistPage(any(), any()))
-                .thenThrow(
-                        new BulkUploadValidationException(
-                                2,
-                                "APPLICATION_TEXT",
-                                "Invalid length type in template: expected 70 but got 80",
-                                new AppRegistryException(
-                                        CommonAppError.WORDING_LENGTH_FAILURE,
-                                        "internal validation detail")));
+        doAnswer(
+                        invocation -> {
+                            PayloadForCreate<EntryCreateDto> validatable =
+                                    invocation.getArgument(0);
+                            keyWordingFields(validatable);
+                            BiFunction<
+                                            PayloadForCreate<EntryCreateDto>,
+                                            CreateApplicationEntryValidationSuccess,
+                                            ?>
+                                    callback = invocation.getArgument(1);
+                            return callback.apply(
+                                    validatable,
+                                    validationResult("Application by {TEXT|Applicants name|4}"));
+                        })
+                .when(validationSession)
+                .validate(any(), any());
 
-        var exception = assertThrows(AppRegistryException.class, () -> lifecycle.processing(event));
+        var exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
@@ -726,17 +736,16 @@ class BulkUploadAsyncLifecycleTest {
                 .asString()
                 .contains("\"rowNumber\":2")
                 .contains("\"location\":\"APPLICATION_TEXT\"")
-                .contains("Invalid length type in template: expected 70 but got 80")
-                .doesNotContain("internal validation detail");
+                .contains("Invalid length type in template: expected 4 but got 15");
         assertThat(writtenCsv.toString())
                 .contains(
-                        "row-two|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80")
-                .doesNotContain("internal validation detail");
+                        "row-two|APPLICATION_TEXT: Invalid length type in template: expected 4 but got 15");
         verify(persistenceService).writeClob(any(), any());
+        verify(bulkImportService, times(0)).persistPage(any(), any());
     }
 
     @Test
-    void givenMultipleRecognisedProcessingValidationFailures_thenWritesEachRowError()
+    void givenAccountAndWordingValidationFailuresOnDifferentRows_thenWritesEachRowError()
             throws IOException {
         when(csvFile.getBytes()).thenReturn("HEADER\nrow-two\nrow-three\n".getBytes());
         var writtenCsv = new StringBuilder();
@@ -748,41 +757,53 @@ class BulkUploadAsyncLifecycleTest {
                         })
                 .when(persistenceService)
                 .writeClob(any(), any());
+        var firstRow = validOrganisationRow();
+        var secondRow = validOrganisationRow();
+        var secondApplicationTexts = new ArrayListValuedHashMap<String, String>();
+        secondApplicationTexts.put("APPLICATION_TEXT1", "four characters");
+        secondRow.setApplicationTexts(secondApplicationTexts);
         var context = new JobContext();
-        var event = event(List.of(validOrganisationRow(), validOrganisationRow()), context);
+        var event = event(List.of(firstRow, secondRow), context);
         lifecycle.setCSVFile(csvFile);
-        lifecycle.validating(event);
-        when(bulkImportService.persistPage(any(), any()))
-                .thenThrow(
-                        new BulkUploadValidationFailuresException(
-                                List.of(
-                                        new BulkUploadValidationException(
-                                                2,
-                                                "APPLICATION_TEXT",
-                                                "Invalid length type in template: expected 70 but got 80",
-                                                new AppRegistryException(
-                                                        CommonAppError.WORDING_LENGTH_FAILURE,
-                                                        "internal validation detail")),
-                                        new BulkUploadValidationException(
-                                                3,
-                                                "APPLICATION_TEXT",
-                                                "Invalid length type in template: expected 70 but got 81",
-                                                new AppRegistryException(
-                                                        CommonAppError.WORDING_LENGTH_FAILURE,
-                                                        "internal validation detail")))));
+        var validationCount = new AtomicInteger();
+        doAnswer(
+                        invocation -> {
+                            if (validationCount.getAndIncrement() == 0) {
+                                throw new AppRegistryException(
+                                        AppListEntryError
+                                                .ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                                        "Account number required for application code AP99001");
+                            }
+                            PayloadForCreate<EntryCreateDto> validatable =
+                                    invocation.getArgument(0);
+                            keyWordingFields(validatable);
+                            BiFunction<
+                                            PayloadForCreate<EntryCreateDto>,
+                                            CreateApplicationEntryValidationSuccess,
+                                            ?>
+                                    callback = invocation.getArgument(1);
+                            return callback.apply(
+                                    validatable,
+                                    validationResult("Application by {TEXT|Applicants name|4}"));
+                        })
+                .when(validationSession)
+                .validate(any(), any());
 
-        assertThrows(AppRegistryException.class, () -> lifecycle.processing(event));
+        assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(context.getValidationFailureMessages())
                 .singleElement()
                 .asString()
                 .contains("\"rowNumber\":2", "\"rowNumber\":3")
-                .doesNotContain("internal validation detail");
+                .contains(
+                        "Account number required for application code AP99001",
+                        "Invalid length type in template: expected 4 but got 15");
         assertThat(writtenCsv.toString())
                 .contains(
-                        "row-two|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 80",
-                        "row-three|APPLICATION_TEXT: Invalid length type in template: expected 70 but got 81");
+                        "row-two|ACCOUNT_NUMBER: Account number required for application code AP99001",
+                        "row-three|APPLICATION_TEXT: Invalid length type in template: expected 4 but got 15");
         verify(persistenceService).writeClob(any(), any());
+        verify(bulkImportService, times(0)).persistPage(any(), any());
     }
 
     @Test
@@ -1295,5 +1316,21 @@ class BulkUploadAsyncLifecycleTest {
         } catch (IOException e) {
             throw new RuntimeException("Failed to serialize errors", e);
         }
+    }
+
+    private static CreateApplicationEntryValidationSuccess validationResult(String wording) {
+        return CreateApplicationEntryValidationSuccess.builder()
+                .wordingSentence(WordingTemplateSentence.with(wording))
+                .build();
+    }
+
+    private static void keyWordingFields(PayloadForCreate<EntryCreateDto> validatable) {
+        var wordingFields = validatable.getData().getWordingFields();
+        validatable
+                .getData()
+                .setWordingFields(
+                        List.of(
+                                new TemplateSubstitution(
+                                        "Applicants name", wordingFields.getFirst().getValue())));
     }
 }

@@ -6,7 +6,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +36,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -51,10 +47,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 @RequiredArgsConstructor
 @Slf4j
 public class BulkImportService {
-
-    private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
-    private static final Set<ErrorCodeEnum> CLIENT_SAFE_WORDING_ERRORS =
-            Set.of(CommonAppError.WORDING_DATA_TYPE_FAILURE, CommonAppError.WORDING_LENGTH_FAILURE);
 
     @Value("${appreg.bulk-import.write-audit-mode:BULK}")
     private BulkImportWriteAuditMode writeAuditMode = BulkImportWriteAuditMode.BULK;
@@ -94,22 +86,10 @@ public class BulkImportService {
                         validatedEntries.size());
         var names = new ArrayList<NameAddress>();
         var entries = new ArrayList<ApplicationListEntry>(validatedEntries.size());
-        var validationFailures = new ArrayList<BulkUploadValidationException>();
 
         for (var index = 0; index < validatedEntries.size(); index++) {
             var validatedEntry = validatedEntries.get(index);
-            try {
-                entries.add(createEntry(validatedEntry, names, firstSequence + index));
-            } catch (BulkUploadValidationException exception) {
-                validationFailures.add(exception);
-            }
-        }
-
-        if (!validationFailures.isEmpty()) {
-            if (validationFailures.size() == 1) {
-                throw validationFailures.getFirst();
-            }
-            throw new BulkUploadValidationFailuresException(validationFailures);
+            entries.add(createEntry(validatedEntry, names, firstSequence + index));
         }
 
         nameAddressRepository.saveAll(names);
@@ -178,7 +158,7 @@ public class BulkImportService {
         var entry =
                 entryMapper.toApplicationListEntry(
                         dto,
-                        substituteWording(validatedEntry),
+                        validatedEntry.substitutedWording(),
                         validation.getSa(),
                         applicant,
                         respondent,
@@ -194,25 +174,6 @@ public class BulkImportService {
         }
         entry.setSequenceNumber((short) sequenceNumber);
         return entry;
-    }
-
-    private static String substituteWording(ValidatedBulkImportEntry validatedEntry) {
-        try {
-            return validatedEntry
-                    .validationResult()
-                    .getWordingSentence()
-                    .substitute(validatedEntry.entry().getWordingFields())
-                    .getSubstitutedString();
-        } catch (AppRegistryException exception) {
-            if (!CLIENT_SAFE_WORDING_ERRORS.contains(exception.getCode())) {
-                throw exception;
-            }
-            throw new BulkUploadValidationException(
-                    validatedEntry.rowNumber(),
-                    APPLICATION_TEXT_COLUMNS,
-                    exception.getMessage(),
-                    exception);
-        }
     }
 
     private NameAddress createApplicant(EntryCreateDto dto, List<NameAddress> names) {

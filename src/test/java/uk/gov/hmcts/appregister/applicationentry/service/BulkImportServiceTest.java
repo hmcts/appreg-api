@@ -50,13 +50,10 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMap
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -138,6 +135,9 @@ class BulkImportServiceTest {
         assertThat(entries)
                 .extracting(ApplicationListEntry::getSequenceNumber)
                 .containsExactly((short) 1, (short) 2);
+        verify(entryMapper, times(2))
+                .toApplicationListEntry(
+                        any(), eq("Wording"), any(), any(), any(), any(), any(), any());
         verify(feeStatusRepository).saveAll(anyList());
         verify(entryFeeRepository).saveAll(anyList());
         var jobsCaptor = ArgumentCaptor.<Iterable<AsyncJobsAppListEntry>>captor();
@@ -215,78 +215,6 @@ class BulkImportServiceTest {
         verify(entryRepository, never()).saveAll(any());
     }
 
-    @Test
-    void givenWordingLengthFailure_whenPersisting_thenThrowsRowAwareValidationException() {
-        var dto = new EntryCreateDto();
-        dto.setWordingFields(
-                List.of(new TemplateSubstitution("Applicants name", "four characters")));
-        var validation =
-                CreateApplicationEntryValidationSuccess.builder()
-                        .wordingSentence(
-                                WordingTemplateSentence.with(
-                                        "Application by {TEXT|Applicants name|4}"))
-                        .applicationCode(new ApplicationCode())
-                        .applicationList(applicationList)
-                        .build();
-        var validatedEntry = new ValidatedBulkImportEntry(7, dto, validation);
-
-        var exception =
-                org.junit.jupiter.api.Assertions.assertThrows(
-                        BulkUploadValidationException.class,
-                        () -> service.persistPage(UUID.randomUUID(), List.of(validatedEntry)));
-
-        assertThat(exception.rowNumber()).isEqualTo(7);
-        assertThat(exception.location()).isEqualTo("APPLICATION_TEXT");
-        assertThat(exception.clientMessage())
-                .isEqualTo("Invalid length type in template: expected 4 but got 15");
-        assertThat(exception.getCause()).isInstanceOf(AppRegistryException.class);
-        verify(entryRepository, never()).saveAll(any());
-    }
-
-    @Test
-    void givenMultipleWordingLengthFailures_whenPersisting_thenCollectsEachRowFailure() {
-        var first = wordingLengthValidatedEntry(7);
-        var second = wordingLengthValidatedEntry(8);
-
-        var exception =
-                org.junit.jupiter.api.Assertions.assertThrows(
-                        BulkUploadValidationFailuresException.class,
-                        () -> service.persistPage(UUID.randomUUID(), List.of(first, second)));
-
-        assertThat(exception.failures())
-                .extracting(BulkUploadValidationException::rowNumber)
-                .containsExactly(7, 8);
-        verify(entryRepository, never()).saveAll(any());
-    }
-
-    @Test
-    void givenUnknownWordingFailure_whenPersisting_thenPreservesInternalException() {
-        var dto = new EntryCreateDto();
-        dto.setWordingFields(List.of());
-        var wordingSentence = mock(WordingTemplateSentence.class);
-        var internalFailure =
-                new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR, "internal persistence detail");
-        when(wordingSentence.substitute(any())).thenThrow(internalFailure);
-        var validation =
-                CreateApplicationEntryValidationSuccess.builder()
-                        .wordingSentence(wordingSentence)
-                        .applicationCode(new ApplicationCode())
-                        .applicationList(applicationList)
-                        .build();
-
-        var exception =
-                org.junit.jupiter.api.Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                service.persistPage(
-                                        UUID.randomUUID(),
-                                        List.of(new ValidatedBulkImportEntry(7, dto, validation))));
-
-        assertThat(exception).isSameAs(internalFailure);
-        verify(entryRepository, never()).saveAll(any());
-    }
-
     private ValidatedBulkImportEntry validatedEntry() {
         var dto = new EntryCreateDto();
         dto.setWordingFields(List.of());
@@ -300,22 +228,7 @@ class BulkImportServiceTest {
                         .applicationList(applicationList)
                         .fee(new FeePair(mainFee, null))
                         .build();
-        return new ValidatedBulkImportEntry(2, dto, validation);
-    }
-
-    private ValidatedBulkImportEntry wordingLengthValidatedEntry(int rowNumber) {
-        var dto = new EntryCreateDto();
-        dto.setWordingFields(
-                List.of(new TemplateSubstitution("Applicants name", "four characters")));
-        var validation =
-                CreateApplicationEntryValidationSuccess.builder()
-                        .wordingSentence(
-                                WordingTemplateSentence.with(
-                                        "Application by {TEXT|Applicants name|4}"))
-                        .applicationCode(new ApplicationCode())
-                        .applicationList(applicationList)
-                        .build();
-        return new ValidatedBulkImportEntry(rowNumber, dto, validation);
+        return new ValidatedBulkImportEntry(2, dto, validation, "Wording");
     }
 
     private ApplicationListEntryRepository.EntryIdAndUuid generatedUuid(Long id) {
