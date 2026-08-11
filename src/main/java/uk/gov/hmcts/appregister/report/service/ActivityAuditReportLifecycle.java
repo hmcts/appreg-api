@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.report.service;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Objects;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 
 class ActivityAuditReportLifecycle extends ReportCsvLifecycle<ActivityAuditReportRow> {
@@ -23,13 +24,13 @@ class ActivityAuditReportLifecycle extends ReportCsvLifecycle<ActivityAuditRepor
     @Override
     protected String[] toCsvRow(ActivityAuditReportRow row) {
         return new String[] {
-            Objects.toString(row.getEventName(), ""),
-            Objects.toString(row.getTableName(), ""),
-            Objects.toString(row.getColumnName(), ""),
-            Objects.toString(row.getOldValue(), ""),
-            Objects.toString(row.getNewValue(), ""),
+            CsvUtil.escapeCharacters(Objects.toString(row.getEventName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getTableName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getColumnName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getOldValue(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getNewValue(), "")),
             formatDate(row.getCreatedDate()),
-            Objects.toString(row.getUserName(), "")
+            CsvUtil.escapeCharacters(Objects.toString(row.getUserName(), ""))
         };
     }
 

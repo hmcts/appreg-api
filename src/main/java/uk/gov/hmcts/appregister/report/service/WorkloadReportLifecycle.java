@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
 class WorkloadReportLifecycle extends ReportCsvLifecycle<WorkloadReportRow> {
@@ -35,19 +36,19 @@ class WorkloadReportLifecycle extends ReportCsvLifecycle<WorkloadReportRow> {
     protected String[] toCsvRow(WorkloadReportRow row) {
         return new String[] {
             formatListDate(row.getListDate()),
-            Objects.toString(row.getListCourtHouseName(), ""),
-            Objects.toString(row.getListOtherLocation(), ""),
-            Objects.toString(row.getCjaCode(), ""),
-            Objects.toString(row.getListDescription(), ""),
-            Objects.toString(row.getStandardApplicantCode(), ""),
-            Objects.toString(row.getApplicantNameSurname(), ""),
-            Objects.toString(row.getApplicationCode(), ""),
-            Objects.toString(row.getApplicationCodeTitle(), ""),
-            Objects.toString(row.getResults(), ""),
-            Objects.toString(row.getJp1(), ""),
-            Objects.toString(row.getJp2(), ""),
-            Objects.toString(row.getJp3(), ""),
-            Objects.toString(row.getOfficial(), "")
+            CsvUtil.escapeCharacters(Objects.toString(row.getListCourtHouseName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getListOtherLocation(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getCjaCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getListDescription(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getStandardApplicantCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicantNameSurname(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicationCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicationCodeTitle(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getResults(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getJp1(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getJp2(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getJp3(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getOfficial(), ""))
         };
     }
 

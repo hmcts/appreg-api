@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.report.model.SearchWarrantsReportRow;
 
 class SearchWarrantsReportLifecycle extends ReportCsvLifecycle<SearchWarrantsReportRow> {
@@ -28,13 +29,13 @@ class SearchWarrantsReportLifecycle extends ReportCsvLifecycle<SearchWarrantsRep
     protected String[] toCsvRow(SearchWarrantsReportRow row) {
         return new String[] {
             formatListDate(row.getListDate()),
-            Objects.toString(row.getCourthouseName(), ""),
-            Objects.toString(row.getOtherCourthouse(), ""),
-            Objects.toString(row.getCjaCode(), ""),
-            Objects.toString(row.getStandardApplicantCode(), ""),
-            Objects.toString(row.getApplicantFullName(), ""),
-            Objects.toString(row.getApplicationCode(), ""),
-            Objects.toString(row.getApplicationCodeWording(), "")
+            CsvUtil.escapeCharacters(Objects.toString(row.getCourthouseName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getOtherCourthouse(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getCjaCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getStandardApplicantCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicantFullName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicationCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicationCodeWording(), ""))
         };
     }
 

@@ -6,6 +6,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
 class FeesReportLifecycle extends ReportCsvLifecycle<FeesReportRow> {
@@ -36,19 +37,19 @@ class FeesReportLifecycle extends ReportCsvLifecycle<FeesReportRow> {
     protected String[] toCsvRow(FeesReportRow row) {
         return new String[] {
             formatListDate(row.getListDate()),
-            Objects.toString(row.getCourthouseName(), ""),
-            Objects.toString(row.getOtherCourthouse(), ""),
-            Objects.toString(row.getCjaCode(), ""),
-            Objects.toString(row.getStandardApplicantCode(), ""),
-            Objects.toString(row.getApplicantFullName(), ""),
-            Objects.toString(row.getApplicationCode(), ""),
-            Objects.toString(row.getApplicationCodeTitle(), ""),
+            CsvUtil.escapeCharacters(Objects.toString(row.getCourthouseName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getOtherCourthouse(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getCjaCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getStandardApplicantCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicantFullName(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicationCode(), "")),
+            CsvUtil.escapeCharacters(Objects.toString(row.getApplicationCodeTitle(), "")),
             formatMoney(row.getFeeValue()),
             formatMoney(row.getOffSiteFeeValue()),
             formatMoney(row.getTotalFeeValue()),
-            Objects.toString(row.getFeeStatus(), ""),
+            CsvUtil.escapeCharacters(Objects.toString(row.getFeeStatus(), "")),
             formatIsoDate(row.getFeeStatusDate()),
-            Objects.toString(row.getPaymentReference(), "")
+            CsvUtil.escapeCharacters(Objects.toString(row.getPaymentReference(), ""))
         };
     }
 

@@ -575,6 +575,42 @@ class StandardApplicantServiceTest {
                 exception.getCode());
     }
 
+    @Test
+    void testExportToCsv_formulaIsInField_shouldReturnFormulaValueEscaped() {
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        val sa = new StandardApplicant();
+        sa.setApplicantCode("=1+1");
+        sa.setName("@Test Org");
+        sa.setApplicantStartDate(LocalDate.now(clock));
+        sa.setApplicantEndDate(null);
+        sa.setPostcode("AB12 3CD");
+        sa.setAddressLine1("=1+1");
+        sa.setAddressLine2("Test Area");
+        sa.setAddressLine3("Test City");
+        sa.setAddressLine4("Test County");
+        sa.setEmailAddress("test@test.com");
+        sa.setTelephoneNumber("0123456789");
+        sa.setMobileNumber("0987654321");
+        sa.setApplicantTitle("Mr");
+        sa.setApplicantSurname("Smith");
+        sa.setApplicantForename1("John");
+
+        when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any()))
+                .thenReturn(List.of(sa));
+        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null);
+
+        Assertions.assertTrue(
+                csv.contains("'=1+1"),
+                "CSV should escape formula values to prevent execution when imported into Excel");
+        Assertions.assertTrue(
+                csv.contains("'@Test Org"),
+                "CSV should escape formula values to prevent execution when imported into Excel");
+        Assertions.assertEquals("=1+1", sa.getApplicantCode());
+        Assertions.assertEquals("@Test Org", sa.getName());
+    }
+
     private void dataComparison(StandardApplicantCsvRow row, StandardApplicant expected) {
         Assertions.assertEquals(row.getApplicantCode(), expected.getApplicantCode());
         Assertions.assertEquals(
