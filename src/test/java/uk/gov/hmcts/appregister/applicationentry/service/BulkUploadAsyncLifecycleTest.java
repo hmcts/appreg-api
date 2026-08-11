@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -123,6 +124,19 @@ class BulkUploadAsyncLifecycleTest {
         val exception = assertThrows(AppRegistryException.class, () -> lifecycle.validating(event));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_EMPTY_FILE);
+    }
+
+    @Test
+    void givenNonEnforcementApplicationWithBlankAccountNumber_whenValidating_thenSucceeds()
+            throws IOException {
+        var row = validOrganisationRow();
+        row.setApplicationCode("SW99063");
+        row.setAccountNumber("");
+
+        lifecycle.validating(event(row, new JobContext()));
+
+        verify(validationSession)
+                .validate(argThat(payload -> payload.getData().getAccountNumber() == null), any());
     }
 
     @Test
