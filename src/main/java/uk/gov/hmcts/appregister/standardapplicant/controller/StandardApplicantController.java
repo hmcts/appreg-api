@@ -103,6 +103,7 @@ public class StandardApplicantController implements StandardApplicantsApi {
     }
 
     @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<String> standardApplicantsExport(
             @Nullable String code, @Nullable String name) {
         return ResponseEntity.ok(CsvUtil.escapeCSV(service.generateCsv(code, name)));
