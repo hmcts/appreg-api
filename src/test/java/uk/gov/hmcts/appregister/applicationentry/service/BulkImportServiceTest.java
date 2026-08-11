@@ -135,6 +135,9 @@ class BulkImportServiceTest {
         assertThat(entries)
                 .extracting(ApplicationListEntry::getSequenceNumber)
                 .containsExactly((short) 1, (short) 2);
+        verify(entryMapper, times(2))
+                .toApplicationListEntry(
+                        any(), eq("Wording"), any(), any(), any(), any(), any(), any());
         verify(feeStatusRepository).saveAll(anyList());
         verify(entryFeeRepository).saveAll(anyList());
         var jobsCaptor = ArgumentCaptor.<Iterable<AsyncJobsAppListEntry>>captor();
@@ -225,7 +228,7 @@ class BulkImportServiceTest {
                         .applicationList(applicationList)
                         .fee(new FeePair(mainFee, null))
                         .build();
-        return new ValidatedBulkImportEntry(2, dto, validation);
+        return new ValidatedBulkImportEntry(2, dto, validation, "Wording");
     }
 
     private ApplicationListEntryRepository.EntryIdAndUuid generatedUuid(Long id) {
