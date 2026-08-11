@@ -806,6 +806,8 @@ public abstract class ApplicationListEntryMapper {
 
     @AfterMapping
     protected void mapBulkUploadFields(BulkUploadRow row, @MappingTarget EntryCreateDto dto) {
+        dto.setAccountNumber(OutgoingDtoSanitiser.emptyToNull(row.getAccountNumber()));
+
         // --- Respondent ---
         dto.setRespondent(toBulkUploadRespondent(row));
 

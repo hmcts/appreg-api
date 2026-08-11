@@ -6557,7 +6557,8 @@ components:
           minLength: 1
           type: string
         accountNumber:
-          description: The Applicants account number (maximum 20 characters).
+          description: The Applicant's account number (maximum 20 characters). Required
+            when the Application Code starts with EF.
           example: APP-001
           maxLength: 20
           minLength: 1
@@ -6886,7 +6887,8 @@ components:
           minLength: 1
           type: string
         accountNumber:
-          description: The Applicants account number (maximum 20 characters).
+          description: The Applicant's account number (maximum 20 characters). Required
+            when the Application Code starts with EF.
           example: ACC-001
           maxLength: 20
           minLength: 1
