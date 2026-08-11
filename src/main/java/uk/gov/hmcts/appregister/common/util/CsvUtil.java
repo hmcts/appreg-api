@@ -1,10 +1,5 @@
 package uk.gov.hmcts.appregister.common.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Pattern;
-
 public class CsvUtil {
 
     // String split uses a regular expression, so need to escape the pipe character
@@ -21,6 +16,18 @@ public class CsvUtil {
         // check
         var trimmedValue = value.trim();
 
+        if(trimmedValue.startsWith("\"")) {
+            // remove beginning quote and then check for formula symbols
+            var unquotedValue = trimmedValue.substring(1);
+            if(unquotedValue.startsWith("=") ||
+                unquotedValue.startsWith("+") ||
+                unquotedValue.startsWith("-") ||
+                unquotedValue.startsWith("@")) {
+
+                return value.charAt(0) + "'" + unquotedValue;
+            }
+        }
+
         // Check if the cell starts with a formula trigger
         if (trimmedValue.startsWith("=")
                 || trimmedValue.startsWith("+")
@@ -31,23 +38,5 @@ public class CsvUtil {
             return "'" + value;
         }
         return value;
-    }
-
-    public static String escapeCSV(String csv) {
-        List<String> rows = Arrays.asList(csv.split("\n"));
-        List<String> escapedCsv = new ArrayList<>();
-        escapedCsv.add(rows.getFirst()); // Adding header
-
-        // Start from 1 to skip the header row
-        for (int i = 1; i < rows.size(); i++) {
-            // -1 to include trailing empty strings, using pattern.quote to escape the delimiter for
-            // regex
-            String[] columns = rows.get(i).split(Pattern.quote(DEFAULT_DELIMITER), -1);
-            for (int j = 0; j < columns.length; j++) {
-                columns[j] = escapeCharacters(columns[j]);
-            }
-            escapedCsv.add(String.join(DEFAULT_DELIMITER, columns));
-        }
-        return String.join("\n", escapedCsv);
     }
 }

@@ -14,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
-import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.StandardApplicantsApi;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
@@ -105,6 +104,6 @@ public class StandardApplicantController implements StandardApplicantsApi {
     @Override
     public ResponseEntity<String> standardApplicantsExport(
             @Nullable String code, @Nullable String name) {
-        return ResponseEntity.ok(CsvUtil.escapeCSV(service.generateCsv(code, name)));
+        return ResponseEntity.ok(service.generateCsv(code, name));
     }
 }

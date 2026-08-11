@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
+import uk.gov.hmcts.appregister.common.util.CsvUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
@@ -219,6 +220,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         }
 
         List<StandardApplicant> filteredList = repository.findByCodeAndName(code, name);
+        sanitiseApplicantList(filteredList);
 
         if (filteredList.isEmpty()) {
             throw new AppRegistryException(
@@ -238,6 +240,34 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
             throw new AppRegistryException(
                     StandardApplicantCodeError.CANNOT_GENERATE_CSV,
                     "Unable to generate CSV for Standard Applicants.");
+        }
+    }
+
+    private void sanitiseApplicantList(List<StandardApplicant> applicants) {
+        for (var applicant : applicants) {
+            applicant.setApplicantTitle(CsvUtil.escapeCharacters(applicant.getApplicantTitle()));
+            applicant.setApplicantForename1(
+                    CsvUtil.escapeCharacters(applicant.getApplicantForename1()));
+            applicant.setApplicantForename2(
+                    CsvUtil.escapeCharacters(applicant.getApplicantForename2()));
+            applicant.setApplicantForename3(
+                    CsvUtil.escapeCharacters(applicant.getApplicantForename3()));
+            applicant.setApplicantSurname(
+                    CsvUtil.escapeCharacters(applicant.getApplicantSurname()));
+
+            applicant.setAddressLine1(CsvUtil.escapeCharacters(applicant.getAddressLine1()));
+            applicant.setAddressLine2(CsvUtil.escapeCharacters(applicant.getAddressLine2()));
+            applicant.setAddressLine3(CsvUtil.escapeCharacters(applicant.getAddressLine3()));
+            applicant.setAddressLine4(CsvUtil.escapeCharacters(applicant.getAddressLine4()));
+            applicant.setAddressLine5(CsvUtil.escapeCharacters(applicant.getAddressLine5()));
+            applicant.setPostcode(CsvUtil.escapeCharacters(applicant.getPostcode()));
+
+            applicant.setTelephoneNumber(CsvUtil.escapeCharacters(applicant.getTelephoneNumber()));
+            applicant.setMobileNumber(CsvUtil.escapeCharacters(applicant.getMobileNumber()));
+            applicant.setEmailAddress(CsvUtil.escapeCharacters(applicant.getEmailAddress()));
+
+            applicant.setName(CsvUtil.escapeCharacters(applicant.getName()));
+            applicant.setCreatedUser(CsvUtil.escapeCharacters(applicant.getCreatedUser()));
         }
     }
 
