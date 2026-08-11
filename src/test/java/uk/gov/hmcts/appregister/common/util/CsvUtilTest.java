@@ -39,7 +39,7 @@ class CsvUtilTest {
     }
 
     @Test
-    void testEsapeCharactersWithQuotesWithinAValueIncluingEqualsAtBeginning() {
+    void testEscapeCharactersWithQuotesWithinAValueIncluingEqualsAtBeginning() {
         // Should be escaped as it contains a quote and a formular symbol at the beginning
         Assertions.assertEquals(
                 "\"'=HYPERLINK(\"\"https://example.com\"\",\"\"Click me\"\")",

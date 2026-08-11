@@ -14,6 +14,11 @@ public class CsvUtil {
 
         // We trim the value to ensure there isn't a leading space that could affect the startsWith
         // check
+
+        if(value == null) {
+            return null;
+        }
+
         var trimmedValue = value.trim();
 
         if(trimmedValue.startsWith("\"")) {

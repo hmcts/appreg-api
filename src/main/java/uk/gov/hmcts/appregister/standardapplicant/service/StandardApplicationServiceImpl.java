@@ -245,6 +245,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
     private void sanitiseApplicantList(List<StandardApplicant> applicants) {
         for (var applicant : applicants) {
+            applicant.setApplicantCode(CsvUtil.escapeCharacters(applicant.getApplicantCode()));
             applicant.setApplicantTitle(CsvUtil.escapeCharacters(applicant.getApplicantTitle()));
             applicant.setApplicantForename1(
                     CsvUtil.escapeCharacters(applicant.getApplicantForename1()));
