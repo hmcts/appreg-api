@@ -20,7 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(StabilityTestExtension.class)
 @TestTemplate
 public @interface StabilityTest {
-    int DEFAULT_TIMES = 4;
+    int DEFAULT_TIMES = 5;
 
     /** Number of times to repeat each test. Defaults to 5. */
     int times() default DEFAULT_TIMES;
