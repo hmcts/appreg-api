@@ -215,6 +215,27 @@ class BulkImportServiceTest {
         verify(entryRepository, never()).saveAll(any());
     }
 
+    @Test
+    void givenNullRespondent_whenPersistingPage_thenDoesNotCreateRespondent() {
+        var validatedEntry = validatedEntry();
+        validatedEntry.entry().setRespondent(null);
+
+        service.persistPage(UUID.randomUUID(), List.of(validatedEntry));
+
+        verify(applicantMapper, never()).toRespondent(any());
+        verify(nameAddressRepository).saveAll(anyList());
+        verify(entryMapper)
+                .toApplicationListEntry(
+                        eq(validatedEntry.entry()),
+                        eq("Wording"),
+                        any(),
+                        any(),
+                        eq(null),
+                        any(),
+                        any(),
+                        any());
+    }
+
     private ValidatedBulkImportEntry validatedEntry() {
         var dto = new EntryCreateDto();
         dto.setWordingFields(List.of());

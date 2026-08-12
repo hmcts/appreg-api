@@ -851,6 +851,10 @@ public abstract class ApplicationListEntryMapper {
     }
 
     private Respondent toBulkUploadRespondent(BulkUploadRow row) {
+        if (!BulkUploadRow.hasAnyRespondentDetails(row)) {
+            return null;
+        }
+
         Respondent respondent = new Respondent();
 
         ContactDetails contactDetails = toRespondentContactDetails(row);
