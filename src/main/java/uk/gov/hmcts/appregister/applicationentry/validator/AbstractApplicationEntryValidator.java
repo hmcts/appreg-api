@@ -26,6 +26,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
@@ -279,7 +280,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             throw new AppRegistryException(
                     AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
                     "The applicant type can only be an organisation or person %s"
-                            .formatted(getApplicant(dto)));
+                            .formatted(ObfuscationUtil.getObfuscatedString(getApplicant(dto))));
         }
 
         log.debug("Validated applicant mutual exclusivity");
@@ -414,8 +415,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                         ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
             throw new AppRegistryException(
                     AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
-                    "The respondent type can only be an organsisation or person %s"
-                            .formatted(getRespondent(dto)));
+                    "The respondent type can only be an organisation or person %s"
+                            .formatted(ObfuscationUtil.getObfuscatedString(getRespondent(dto))));
         }
 
         log.debug("Validated respondent mutual exclusivity");

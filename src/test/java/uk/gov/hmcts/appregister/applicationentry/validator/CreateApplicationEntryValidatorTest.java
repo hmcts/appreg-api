@@ -49,7 +49,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class})
 @MockitoSettings(strictness = Strictness.LENIENT)
 class CreateApplicationEntryValidatorTest {
     private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
@@ -232,6 +232,10 @@ class CreateApplicationEntryValidatorTest {
                         .getCode()
                         .getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+        Assertions.assertEquals(
+                "The respondent type can only be an organisation or person "
+                        + "{\"person\":\"[REDACTED]\",\"organisation\":\"[REDACTED]\"}",
+                appRegistryException.getMessage());
     }
 
     @Test
@@ -254,6 +258,10 @@ class CreateApplicationEntryValidatorTest {
                         .getCode()
                         .getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+        Assertions.assertEquals(
+                "The applicant type can only be an organisation or person "
+                        + "{\"person\":\"[REDACTED]\",\"organisation\":\"[REDACTED]\"}",
+                appRegistryException.getMessage());
     }
 
     @Test
