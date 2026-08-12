@@ -415,7 +415,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                         ^ (getRespondent(dto) != null && getRespondent(dto).getPerson() != null)) {
             throw new AppRegistryException(
                     AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
-                    "The respondent type can only be an organsisation or person %s"
+                    "The respondent type can only be an organisation or person %s"
                             .formatted(ObfuscationUtil.getObfuscatedString(getRespondent(dto))));
         }
 

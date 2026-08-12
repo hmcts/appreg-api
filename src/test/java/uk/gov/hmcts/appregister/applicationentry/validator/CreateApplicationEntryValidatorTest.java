@@ -3,27 +3,6 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
-import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
-
-import java.time.LocalDate;
-import java.time.Month;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -47,9 +26,31 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-@ExtendWith(MockitoExtension.class)
+import java.time.LocalDate;
+import java.time.Month;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
+@ExtendWith({MockitoExtension.class})
 @MockitoSettings(strictness = Strictness.LENIENT)
 class CreateApplicationEntryValidatorTest {
     private static final LocalDate TODAY_UK = LocalDate.of(2025, Month.OCTOBER, 7);
@@ -232,6 +233,10 @@ class CreateApplicationEntryValidatorTest {
                         .getCode()
                         .getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+        Assertions.assertEquals(
+                "The respondent type can only be an organisation or person "
+                        + "{\"person\":\"[REDACTED]\",\"organisation\":\"[REDACTED]\"}",
+                appRegistryException.getMessage());
     }
 
     @Test
@@ -254,6 +259,10 @@ class CreateApplicationEntryValidatorTest {
                         .getCode()
                         .getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+        Assertions.assertEquals(
+                "The applicant type can only be an organisation or person "
+                        + "{\"person\":\"[REDACTED]\",\"organisation\":\"[REDACTED]\"}",
+                appRegistryException.getMessage());
     }
 
     @Test
