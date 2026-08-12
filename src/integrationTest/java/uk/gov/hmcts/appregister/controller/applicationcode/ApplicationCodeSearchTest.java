@@ -102,7 +102,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 21, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 22, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size(), "");
 
         TemplateAssertion.assertTemplate(
@@ -163,7 +163,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                         getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 21, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 22, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
@@ -222,7 +222,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 16, 159);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 16, 160);
 
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
@@ -668,8 +668,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
 
         // make the assertions
-        PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 105, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 106, 211);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -782,7 +781,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert the response
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 105, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 106, TOTAL_APP_CODES_COUNT);
 
         // assert records are sorted based on the title of the auth codes
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
@@ -1376,16 +1375,17 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        assertEquals(9, page.getContent().size());
+        assertEquals(10, page.getContent().size());
         assertEquals("AD99001", page.getContent().get(0).getApplicationCode());
         assertEquals("AP99001", page.getContent().get(1).getApplicationCode());
         assertEquals("EF99001", page.getContent().get(2).getApplicationCode());
         assertEquals("EV99001", page.getContent().get(3).getApplicationCode());
-        assertEquals("MS99001", page.getContent().get(4).getApplicationCode());
-        assertEquals("MX99001", page.getContent().get(5).getApplicationCode());
-        assertEquals("RE99001", page.getContent().get(6).getApplicationCode());
-        assertEquals("SB99001", page.getContent().get(7).getApplicationCode());
-        assertEquals("SW99001", page.getContent().get(8).getApplicationCode());
+        assertEquals("MH99001", page.getContent().get(4).getApplicationCode());
+        assertEquals("MS99001", page.getContent().get(5).getApplicationCode());
+        assertEquals("MX99001", page.getContent().get(6).getApplicationCode());
+        assertEquals("RE99001", page.getContent().get(7).getApplicationCode());
+        assertEquals("SB99001", page.getContent().get(8).getApplicationCode());
+        assertEquals("SW99001", page.getContent().get(9).getApplicationCode());
     }
 
     @Test
