@@ -33989,7 +33989,7 @@
                       "key": "file",
                       "type": "file",
                       "uuid": "e38eca6f-ef57-4821-9a09-a9c75626bf45",
-                      "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1582-person.csv"
+                      "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1582/person/person.csv"
                     }
                   ]
                 },
@@ -34243,7 +34243,7 @@
                       "key": "file",
                       "type": "file",
                       "uuid": "0fcbcf41-6684-499f-9f0d-36503cafdd84",
-                      "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1582-organisation.csv"
+                      "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1582/organisation/organisation.csv"
                     }
                   ]
                 },
@@ -34497,7 +34497,7 @@
                       "key": "file",
                       "type": "file",
                       "uuid": "e9e66b70-f513-4f73-823d-5010df7e523d",
-                      "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1582-both.csv"
+                      "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1582/invalid/both.csv"
                     }
                   ]
                 },
@@ -34664,6 +34664,2444 @@
         }
       ],
       "description": "Acceptance tests for canonical bulk-import respondent files. Run the requests in collection order. The job-status requests automatically repeat in Collection Runner until the job reaches a terminal state. For manual execution, resend a job-status request until COMPLETED or FAILED is returned.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{access_token_user}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.expect(pm.variables.get('baseURL'), 'baseURL must be set').to.be.a('string').and.not.empty;",
+              "pm.expect(pm.variables.get('access_token_user'), 'access_token_user must be set').to.be.a('string').and.not.empty;"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ARCPOC-1678 - Bulk Import Dependency Checks",
+      "item": [
+        {
+          "name": "01 - Get two-placeholder application code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Application code returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const constraints = body.wording && (body.wording['substitution-key-constraints'] || body.wording.substitutionKeyConstraints);",
+                  "pm.test('SW99007 has the expected two ordered wording constraints', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
+                  "  pm.expect(body.isFeeDue).to.eql(false);",
+                  "  pm.expect(body.requiresRespondent).to.eql(false);",
+                  "  pm.expect(body.bulkRespondentAllowed).to.eql(false);",
+                  "  pm.expect(constraints).to.be.an('array').with.lengthOf(2);",
+                  "  pm.expect(constraints.map(item => item.key)).to.eql(['Name of Bank', 'Name of Court']);",
+                  "  pm.expect(constraints.map(item => item.constraint.type)).to.eql(['TEXT', 'TEXT']);",
+                  "  pm.expect(constraints.map(item => item.constraint.length)).to.eql([100, 100]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes/SW99007?date=2030-01-15",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes",
+                "SW99007"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2030-01-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Create dependency test application list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Application list created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Open dependency test list returned', () => {",
+                  "  pm.expect(body.id).to.match(/^[0-9a-f-]{36}$/i);",
+                  "  pm.expect(body.description).to.eql('ARCPOC-1678 Bulk Import Dependency Checks');",
+                  "  pm.expect(body.status).to.eql('OPEN');",
+                  "});",
+                  "pm.collectionVariables.set('ARCPOC1678_LIST_ID', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2030-01-15\",\n  \"time\": \"11:00\",\n  \"description\": \"ARCPOC-1678 Bulk Import Dependency Checks\",\n  \"status\": \"OPEN\",\n  \"courtLocationCode\": null,\n  \"otherLocationDescription\": \"ARCPOC-1678 test location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 1,\n  \"durationMinutes\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - Import both required application text values",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Valid text import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.test('Bulk-upload job returned', () => {",
+                  "  pm.expect(body.id).to.match(/^[0-9a-f-]{36}$/i);",
+                  "  pm.expect(body.type).to.eql('BULK_UPLOAD_ENTRIES');",
+                  "});",
+                  "pm.collectionVariables.set('ARCPOC1678_VALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_VALID_JOB_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/application-text/valid-application-text.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Poll valid application text import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_VALID_JOB_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_VALID_JOB_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_VALID_JOB_POLLS');",
+                  "  pm.test('Valid application text import completed', () => {",
+                  "    pm.expect(body.type).to.eql('BULK_UPLOAD_ENTRIES');",
+                  "    pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Get valid application text entry ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Imported entry IDs retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Exactly one entry created', () => {",
+                  "  pm.expect(body).to.be.an('array').with.lengthOf(1);",
+                  "  pm.expect(body[0]).to.match(/^[0-9a-f-]{36}$/i);",
+                  "});",
+                  "pm.collectionVariables.set('ARCPOC1678_VALID_ENTRY_ID', body[0]);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/bulk-import/{{ARCPOC1678_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "bulk-import",
+                "{{ARCPOC1678_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - Verify both application text values",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Imported entry retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const constraints = body.wording && (body.wording['substitution-key-constraints'] || body.wording.substitutionKeyConstraints);",
+                  "pm.test('Both application text values were applied in order', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
+                  "  pm.expect(body.accountNumber).to.eql('ARC1678-VALID');",
+                  "  pm.expect(constraints).to.be.an('array').with.lengthOf(2);",
+                  "  pm.expect(constraints.map(item => item.key)).to.eql(['Name of Bank', 'Name of Court']);",
+                  "  pm.expect(constraints.map(item => item.value)).to.eql(['Epsilon Bank', 'Bristol Court']);",
+                  "  pm.expect(body.feeStatuses).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/{{ARCPOC1678_VALID_ENTRY_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "{{ARCPOC1678_VALID_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Import with APPLICATION_TEXT1 missing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Missing APPLICATION_TEXT1 import accepted for processing', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_MISSING_TEXT1_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_MISSING_TEXT1_JOB_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/application-text/missing-application-text1.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Poll missing APPLICATION_TEXT1 import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_MISSING_TEXT1_JOB_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_MISSING_TEXT1_JOB_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_MISSING_TEXT1_JOB_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('Missing APPLICATION_TEXT1 is rejected', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('APPLICATION_TEXT1 is required for code SW99007');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_MISSING_TEXT1_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_MISSING_TEXT1_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Import with APPLICATION_TEXT2 missing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Missing APPLICATION_TEXT2 import accepted for processing', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_MISSING_TEXT2_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_MISSING_TEXT2_JOB_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/application-text/missing-application-text2.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 - Poll missing APPLICATION_TEXT2 import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_MISSING_TEXT2_JOB_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_MISSING_TEXT2_JOB_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_MISSING_TEXT2_JOB_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('Missing APPLICATION_TEXT2 is rejected', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('APPLICATION_TEXT2 is required for code SW99007');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_MISSING_TEXT2_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_MISSING_TEXT2_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 - Get application code with no placeholders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Application code returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const constraints = body.wording && (body.wording['substitution-key-constraints'] || body.wording.substitutionKeyConstraints) || [];",
+                  "pm.test('AD99001 has no wording placeholders', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('AD99001');",
+                  "  pm.expect(constraints).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes/AD99001?date=2030-01-15",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes",
+                "AD99001"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2030-01-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12 - Import blank application text when not required",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No-placeholder import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_NO_TEXT_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_NO_TEXT_JOB_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/application-text/application-text-not-required.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13 - Poll no-placeholder import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_NO_TEXT_JOB_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_NO_TEXT_JOB_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_NO_TEXT_JOB_POLLS');",
+                  "  pm.test('Blank optional application text import completed', () => {",
+                  "    pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_NO_TEXT_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_NO_TEXT_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14 - Get no-placeholder entry ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Imported entry IDs retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Exactly one entry created', () => pm.expect(body).to.be.an('array').with.lengthOf(1));",
+                  "pm.collectionVariables.set('ARCPOC1678_NO_TEXT_ENTRY_ID', body[0]);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/bulk-import/{{ARCPOC1678_NO_TEXT_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "bulk-import",
+                "{{ARCPOC1678_NO_TEXT_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15 - Verify blank application text was accepted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Imported entry retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const constraints = body.wording && (body.wording['substitution-key-constraints'] || body.wording.substitutionKeyConstraints) || [];",
+                  "pm.test('Entry created without application text substitutions', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('AD99001');",
+                  "  pm.expect(body.accountNumber).to.eql('ARC1678-NONE');",
+                  "  pm.expect(constraints).to.be.an('array').that.is.empty;",
+                  "  pm.expect(body.feeStatuses).to.be.an('array').with.lengthOf(1);",
+                  "  pm.expect(body.feeStatuses[0].paymentStatus).to.eql('DUE');",
+                  "  pm.expect(body.feeStatuses[0].paymentReference).to.be.oneOf([null, undefined]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/{{ARCPOC1678_NO_TEXT_ENTRY_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "{{ARCPOC1678_NO_TEXT_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16 - Get EF account application code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EF application code returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('EF99001 requires a respondent and has one wording constraint', () => {",
+                  "  const constraints = body.wording['substitution-key-constraints'] || body.wording.substitutionKeyConstraints;",
+                  "  pm.expect(body.applicationCode).to.eql('EF99001');",
+                  "  pm.expect(body.requiresRespondent).to.eql(true);",
+                  "  pm.expect(constraints).to.be.an('array').with.lengthOf(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes/EF99001?date=2030-01-15",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes",
+                "EF99001"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2030-01-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17 - Import EF application with account number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Valid EF import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_EF_VALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_EF_VALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/account-number/ef-account-valid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18 - Poll valid EF account import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_EF_VALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_EF_VALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_EF_VALID_POLLS');",
+                  "  pm.test('Valid EF import completed', () => pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_EF_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_EF_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19 - Get valid EF entry ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EF entry ID returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Exactly one EF entry created', () => pm.expect(body).to.be.an('array').with.lengthOf(1));",
+                  "pm.collectionVariables.set('ARCPOC1678_EF_VALID_ENTRY_ID', body[0]);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/bulk-import/{{ARCPOC1678_EF_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "bulk-import",
+                "{{ARCPOC1678_EF_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20 - Verify EF account number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EF entry returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('EF account number persisted', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('EF99001');",
+                  "  pm.expect(body.accountNumber).to.eql('EF-ARC1678-001');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/{{ARCPOC1678_EF_VALID_ENTRY_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "{{ARCPOC1678_EF_VALID_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21 - Import EF application without account number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Missing EF account import accepted for processing', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_EF_MISSING_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_EF_MISSING_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/account-number/ef-account-missing.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22 - Poll missing EF account import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_EF_MISSING_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_EF_MISSING_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_EF_MISSING_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('Missing EF account number is rejected', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('Account number required for application code EF99001');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_EF_MISSING_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_EF_MISSING_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23 - Import non-EF application without account number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-EF blank account import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_NON_EF_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_NON_EF_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/account-number/non-ef-account-blank.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24 - Poll non-EF blank account import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_NON_EF_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_NON_EF_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_NON_EF_POLLS');",
+                  "  pm.test('Non-EF blank account import completed', () => pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_NON_EF_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_NON_EF_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25 - Get non-EF blank account entry ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-EF entry ID returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Exactly one non-EF entry created', () => pm.expect(body).to.be.an('array').with.lengthOf(1));",
+                  "pm.collectionVariables.set('ARCPOC1678_NON_EF_ENTRY_ID', body[0]);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/bulk-import/{{ARCPOC1678_NON_EF_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "bulk-import",
+                "{{ARCPOC1678_NON_EF_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "26 - Verify non-EF account number is absent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-EF entry returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Blank account accepted for non-EF code', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
+                  "  pm.expect(body.accountNumber).to.be.oneOf([null, undefined]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/{{ARCPOC1678_NON_EF_ENTRY_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "{{ARCPOC1678_NON_EF_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "27 - Import valid Person and Organisation respondents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Valid respondent import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_VALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_RESP_VALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/respondent/respondent-valid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28 - Poll valid respondent import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_RESP_VALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_VALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_RESP_VALID_POLLS');",
+                  "  pm.test('Valid respondent import completed', () => pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_RESP_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_RESP_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29 - Get valid respondent entry IDs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respondent entry IDs returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Two respondent entries created', () => pm.expect(body).to.be.an('array').with.lengthOf(2));",
+                  "pm.collectionVariables.set('ARCPOC1678_PERSON_ENTRY_ID', body[0]);",
+                  "pm.collectionVariables.set('ARCPOC1678_ORG_ENTRY_ID', body[1]);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/entries/bulk-import/{{ARCPOC1678_RESP_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "bulk-import",
+                "{{ARCPOC1678_RESP_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "30 - Verify Person respondent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Person entry returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Person respondent fields persisted', () => {",
+                  "  pm.expect(body.respondent.person.name).to.include({ title: 'Ms', firstName: 'Beatrice', middleName: 'Anne', lastName: 'Baxter' });",
+                  "  pm.expect(body.respondent.person.contactDetails.addressLine1).to.eql('11 Delta Lane');",
+                  "  pm.expect(body.respondent.organisation).to.not.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/{{ARCPOC1678_PERSON_ENTRY_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "{{ARCPOC1678_PERSON_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "31 - Verify Organisation respondent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Organisation entry returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Organisation respondent fields persisted', () => {",
+                  "  pm.expect(body.respondent.organisation.name).to.eql('ARCPOC 1678 Organisation Ltd');",
+                  "  pm.expect(body.respondent.organisation.contactDetails.addressLine1).to.eql('12 Delta Lane');",
+                  "  pm.expect(body.respondent.person).to.not.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/{{ARCPOC1678_ORG_ENTRY_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "{{ARCPOC1678_ORG_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "32 - Import invalid respondent variations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid respondent import accepted for processing', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_INVALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_RESP_INVALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/respondent/respondent-invalid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "33 - Poll invalid respondent import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_RESP_INVALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_INVALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_RESP_INVALID_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('All invalid respondent variations are reported', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('respondent.person.name.firstName');",
+                  "    pm.expect(error).to.include('respondent.person.name.lastName');",
+                  "    pm.expect(error).to.include('respondent.person.contactDetails.addressLine1');",
+                  "    pm.expect(error).to.include('Respondent cannot be both organisation and person');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_RESP_INVALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_RESP_INVALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "34 - Create optional respondent entry without respondent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Optional respondent entry created without respondent', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Respondent is absent', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
+                  "  pm.expect(body.respondent).to.be.oneOf([null, undefined]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"SW99007\",\n  \"wordingFields\": [\n    { \"key\": \"Name of Bank\", \"value\": \"Epsilon Bank\" },\n    { \"key\": \"Name of Court\", \"value\": \"Bristol Court\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-OPT-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "35 - Create optional respondent entry with respondent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Optional respondent entry created with respondent', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Optional Organisation respondent persisted', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
+                  "  pm.expect(body.respondent.organisation.name).to.eql('ARCPOC 1678 Optional Respondent Ltd');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"SW99007\",\n  \"respondent\": {\n    \"organisation\": {\n      \"name\": \"ARCPOC 1678 Optional Respondent Ltd\",\n      \"contactDetails\": {\n        \"addressLine1\": \"16 Delta Lane\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    }\n  },\n  \"wordingFields\": [\n    { \"key\": \"Name of Bank\", \"value\": \"Epsilon Bank\" },\n    { \"key\": \"Name of Court\", \"value\": \"Bristol Court\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-OPT-2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "36 - Reject mandatory respondent entry without respondent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Mandatory respondent omission rejected', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Respondent-required problem returned', () => {",
+                  "  pm.expect(body.type).to.include('ALE-13');",
+                  "  pm.expect(body.detail).to.include('Respondent required for code EF99001');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"EF99001\",\n  \"accountNumber\": \"EF-ARC1678-002\",\n  \"wordingFields\": [\n    { \"key\": \"account balance\", \"value\": \"250.00\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-MAND-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "37 - Create mandatory respondent entry with respondent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Mandatory respondent entry created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mandatory respondent persisted', () => {",
+                  "  pm.expect(body.applicationCode).to.eql('EF99001');",
+                  "  pm.expect(body.respondent.organisation.name).to.eql('ARCPOC 1678 Mandatory Respondent Ltd');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"EF99001\",\n  \"accountNumber\": \"EF-ARC1678-003\",\n  \"respondent\": {\n    \"organisation\": {\n      \"name\": \"ARCPOC 1678 Mandatory Respondent Ltd\",\n      \"contactDetails\": {\n        \"addressLine1\": \"17 Delta Lane\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    }\n  },\n  \"wordingFields\": [\n    { \"key\": \"account balance\", \"value\": \"250.00\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-MAND-2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "38 - Check for a bulk-respondent-enabled application code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Application codes returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const code = (body.content || []).find(item => item.bulkRespondentAllowed === true);",
+                  "pm.test('Bulk respondent reference data evaluated', () => pm.expect(body.content).to.be.an('array'));",
+                  "if (code) {",
+                  "  pm.collectionVariables.set('ARCPOC1678_BULK_CODE_AVAILABLE', 'true');",
+                  "  pm.collectionVariables.set('ARCPOC1678_BULK_CODE', code.applicationCode);",
+                  "} else {",
+                  "  pm.collectionVariables.set('ARCPOC1678_BULK_CODE_AVAILABLE', 'false');",
+                  "  pm.collectionVariables.unset('ARCPOC1678_BULK_CODE');",
+                  "  console.warn('ARCPOC-1678 reference-data blocker: staging returned no active application code with bulkRespondentAllowed=true. Requests 39 and 40 are skipped.');",
+                  "  pm.execution.setNextRequest('41 - Reject bulk respondent count when not permitted');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes?date=2030-01-15&pageNumber=0&pageSize=100&sort=bulkRespondentAllowed,desc",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2030-01-15"
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "0"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "100"
+                },
+                {
+                  "key": "sort",
+                  "value": "bulkRespondentAllowed,desc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "39 - Prepare bulk-respondent-enabled entry",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.expect(pm.collectionVariables.get('ARCPOC1678_BULK_CODE_AVAILABLE'), 'Run request 38 first').to.eql('true');",
+                  "pm.expect(pm.collectionVariables.get('ARCPOC1678_BULK_CODE'), 'A bulk-enabled code must be selected').to.be.a('string').and.not.empty;"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bulk-enabled application code returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const constraints = body.wording && (body.wording['substitution-key-constraints'] || body.wording.substitutionKeyConstraints) || [];",
+                  "const valueFor = (item, index) => {",
+                  "  const type = String(item.constraint.type || '').toUpperCase();",
+                  "  const length = Number(item.constraint.length || 100);",
+                  "  if (type === 'DATE') return '2026-08-11'.slice(0, length);",
+                  "  if (type === 'CURRENCY' || type === 'CUR') return '100.00'.slice(0, length);",
+                  "  return (`Bulk test ${index + 1}`).slice(0, length);",
+                  "};",
+                  "const payload = {",
+                  "  standardApplicantCode: 'APP001',",
+                  "  applicationCode: body.applicationCode,",
+                  "  numberOfRespondents: 2,",
+                  "  wordingFields: constraints.map((item, index) => ({ key: item.key, value: valueFor(item, index) })),",
+                  "  hasOffsiteFee: false,",
+                  "  caseReference: 'ARC1678-BULK'",
+                  "};",
+                  "if (body.requiresRespondent) payload.respondent = { organisation: { name: 'ARCPOC 1678 Bulk Respondent Ltd', contactDetails: { addressLine1: '18 Delta Lane', postcode: 'SW1A 1AA' } } };",
+                  "if (body.isFeeDue) payload.feeStatuses = [{ paymentStatus: 'DUE', statusDate: '2026-08-11' }];",
+                  "if (String(body.applicationCode).toUpperCase().startsWith('EF')) payload.accountNumber = 'EF-ARC1678-BULK';",
+                  "pm.collectionVariables.set('ARCPOC1678_BULK_BODY', JSON.stringify(payload));",
+                  "pm.test('Bulk-enabled payload prepared', () => {",
+                  "  pm.expect(body.applicationCode).to.eql(pm.collectionVariables.get('ARCPOC1678_BULK_CODE'));",
+                  "  pm.expect(body.bulkRespondentAllowed).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes/{{ARCPOC1678_BULK_CODE}}?date=2030-01-15",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes",
+                "{{ARCPOC1678_BULK_CODE}}"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2030-01-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "40 - Create entry with permitted bulk respondent count",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.expect(pm.collectionVariables.get('ARCPOC1678_BULK_CODE_AVAILABLE'), 'Run request 38 first').to.eql('true');",
+                  "const preparedBody = pm.collectionVariables.get('ARCPOC1678_BULK_BODY');",
+                  "pm.expect(preparedBody, 'Run request 39 first').to.be.a('string').and.not.empty;",
+                  "let preparedPayload;",
+                  "try {",
+                  "  preparedPayload = JSON.parse(preparedBody);",
+                  "} catch (error) {",
+                  "  throw new Error(`ARCPOC1678_BULK_BODY is not valid JSON: ${error.message}`);",
+                  "}",
+                  "pm.expect(preparedPayload, 'Prepared bulk request must be a JSON object').to.be.an('object');",
+                  "pm.expect(preparedPayload.applicationCode, 'Prepared application code is required').to.eql(pm.collectionVariables.get('ARCPOC1678_BULK_CODE'));",
+                  "pm.expect(preparedPayload.numberOfRespondents, 'Prepared bulk respondent count').to.eql(2);",
+                  "pm.variables.set('ARCPOC1678_BULK_BODY_RESOLVED', JSON.stringify(preparedPayload));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bulk respondent entry created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Bulk respondent count persisted', () => {",
+                  "  pm.expect(body.applicationCode).to.eql(pm.collectionVariables.get('ARCPOC1678_BULK_CODE'));",
+                  "  pm.expect(body.numberOfRespondents).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{ARCPOC1678_BULK_BODY_RESOLVED}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "41 - Reject bulk respondent count when not permitted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Disallowed bulk respondent count rejected', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Bulk-respondent-not-expected problem returned', () => {",
+                  "  pm.expect(body.type).to.include('ALE-8');",
+                  "  pm.expect(body.detail).to.include('Bulk respondent not required for code SW99007');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"SW99007\",\n  \"numberOfRespondents\": 2,\n  \"wordingFields\": [\n    { \"key\": \"Name of Bank\", \"value\": \"Epsilon Bank\" },\n    { \"key\": \"Name of Court\", \"value\": \"Bristol Court\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-BULK-N\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "42 - Confirm respondent setting representation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Application code returned', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Modernised respondent setting is represented by a boolean', () => {",
+                  "  pm.expect(body.requiresRespondent).to.be.a('boolean');",
+                  "  pm.expect(body).to.not.have.property('respondentSetting');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes/SW99007?date=2030-01-15",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes",
+                "SW99007"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2030-01-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "43 - Import valid mobile number variations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Valid mobile import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_MOBILE_VALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_MOBILE_VALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/contact-details/mobile-valid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "44 - Poll valid mobile number import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_MOBILE_VALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_MOBILE_VALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_MOBILE_VALID_POLLS');",
+                  "  pm.test('All valid mobile variations imported', () => pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_MOBILE_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_MOBILE_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "45 - Import invalid mobile number variations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid mobile import accepted for processing', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_MOBILE_INVALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_MOBILE_INVALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/contact-details/mobile-invalid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "46 - Poll invalid mobile number import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_MOBILE_INVALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_MOBILE_INVALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_MOBILE_INVALID_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('Invalid mobile variations are rejected', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('07123+456789').and.include('07123ABC789').and.include('0712345678').and.include('071234567890123456789');",
+                  "    pm.expect((error.match(/Provide a valid UK mobile number\\./g) || []).length).to.be.at.least(4);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_MOBILE_INVALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_MOBILE_INVALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "47 - Import valid telephone number variations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Valid telephone import accepted', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_TELEPHONE_VALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_TELEPHONE_VALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/contact-details/telephone-valid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "48 - Poll valid telephone number import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_TELEPHONE_VALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_TELEPHONE_VALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_TELEPHONE_VALID_POLLS');",
+                  "  pm.test('All valid telephone variations imported', () => pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_TELEPHONE_VALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_TELEPHONE_VALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "49 - Import invalid telephone number variations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid telephone import accepted for processing', () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('ARCPOC1678_TELEPHONE_INVALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_TELEPHONE_INVALID_POLLS');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/contact-details/telephone-invalid.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{ARCPOC1678_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "50 - Poll invalid telephone number import",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Job status retrieved', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_TELEPHONE_INVALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_TELEPHONE_INVALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_TELEPHONE_INVALID_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('Invalid telephone variations are rejected', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('+44 20 7123 4567').and.include('020ABC4567').and.include('020123456').and.include('020712345678901234567');",
+                  "    pm.expect((error.match(/Provide a valid UK telephone number\\./g) || []).length).to.be.at.least(4);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_TELEPHONE_INVALID_JOB_ID}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "jobs",
+                "{{ARCPOC1678_TELEPHONE_INVALID_JOB_ID}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
       "auth": {
         "type": "bearer",
         "bearer": [
