@@ -186,6 +186,30 @@ class ApplicationListEntryMapperTest {
     }
 
     @Test
+    void givenNoRespondentDetails_whenMappingBulkUpload_thenMapsRespondentToNull() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("MS99001");
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        assertThat(dto.getRespondent()).isNull();
+    }
+
+    @Test
+    void givenOnlyRespondentContactDetails_whenMappingBulkUpload_thenPreservesPartialRespondent() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("MS99001");
+        row.setRespondentAddressLine1("1 Example Street");
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        assertThat(dto.getRespondent().getPerson().getContactDetails().getAddressLine1())
+                .isEqualTo("1 Example Street");
+    }
+
+    @Test
     void givenBlankOptionalContactFields_whenMappingBulkUpload_thenMapsThemToNull() {
         BulkUploadRow row = new BulkUploadRow();
         row.setApplicantCode("APP001");

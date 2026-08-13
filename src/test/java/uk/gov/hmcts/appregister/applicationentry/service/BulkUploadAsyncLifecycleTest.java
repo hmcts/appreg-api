@@ -140,6 +140,44 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenNoRespondentDetails_whenValidating_thenUsesNullRespondent() throws IOException {
+        var row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("MS99001");
+
+        lifecycle.validating(event(row, new JobContext()));
+
+        verify(validationSession)
+                .validate(argThat(payload -> payload.getData().getRespondent() == null), any());
+    }
+
+    @Test
+    void givenRespondentRequiredBusinessFailure_whenRespondentIsNull_thenReturnsRowError()
+            throws IOException {
+        var row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("AP99001");
+        doThrow(
+                        new AppRegistryException(
+                                AppListEntryError.RESPONDENT_REQUIRED,
+                                "Respondent required for code AP99001"))
+                .when(validationSession)
+                .validate(any(), any());
+        var context = new JobContext();
+        lifecycle.setCSVFile(csvFile);
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages().getFirst())
+                .contains("Respondent required for code AP99001");
+    }
+
+    @Test
     void givenFieldCountMismatchAfterFinalRow_whenFailed_thenFormatsHeaderError()
             throws IOException {
         JobContext context = new JobContext();

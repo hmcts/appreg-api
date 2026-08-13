@@ -235,10 +235,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     /**
      * Runs Jakarta Bean Validation against the DTO mapped from a CSV row. This validates generated
      * OpenAPI constraints such as required values, sizes and patterns. Application-specific rules,
-     * including missing respondent details and organisation/person mutual exclusion, are handled by
+     * including partial respondent details and organisation/person mutual exclusion, are handled by
      * {@link BulkUploadApplicationEntryValidator} because they depend on the original CSV fields;
-     * the mapper may create an empty person or select organisation when both respondent types are
-     * supplied, so the mapped DTO no longer preserves enough information to evaluate those rules.
+     * the mapper may select organisation when both respondent types are supplied, so the mapped DTO
+     * no longer preserves enough information to evaluate those rules.
      */
     private List<BulkUploadError> validateMappedDto(
             int rowNumber, BulkUploadRow row, EntryCreateDto dto) {
@@ -262,9 +262,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             return true;
         }
 
-        // The mapper creates an empty person when all respondent name fields are missing. Suppress
+        // The mapper creates an empty person when non-name respondent fields are supplied. Suppress
         // the resulting name constraints because the row validator already reports one actionable
-        // missing-respondent error.
+        // partial-respondent error.
         return !violation.getPropertyPath().toString().startsWith("respondent.person.name");
     }
 
@@ -297,15 +297,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                             locationForBusinessRule(exception),
                             null,
                             exception.getMessage(),
-                            dto.getRespondent().getOrganisation() != null
-                                    ? dto.getRespondent()
-                                            .getOrganisation()
-                                            .getContactDetails()
-                                            .getAddressLine1()
-                                    : dto.getRespondent()
-                                            .getPerson()
-                                            .getContactDetails()
-                                            .getAddressLine1(),
+                            respondentAddressLine1(dto),
                             dto.getStandardApplicantCode(),
                             "DATA_ERROR"));
         }
@@ -331,21 +323,22 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                 violation.getPropertyPath().toString(),
                 rejectedValue(violation),
                 validationMessage(violation),
-                violation.getRootBean().getRespondent().getOrganisation() != null
-                        ? violation
-                                .getRootBean()
-                                .getRespondent()
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getAddressLine1()
-                        : violation
-                                .getRootBean()
-                                .getRespondent()
-                                .getPerson()
-                                .getContactDetails()
-                                .getAddressLine1(),
+                respondentAddressLine1(violation.getRootBean()),
                 violation.getRootBean().getStandardApplicantCode(),
                 "DATA_ERROR");
+    }
+
+    private static String respondentAddressLine1(EntryCreateDto dto) {
+        if (dto.getRespondent() == null) {
+            return null;
+        }
+        if (dto.getRespondent().getOrganisation() != null) {
+            return dto.getRespondent().getOrganisation().getContactDetails().getAddressLine1();
+        }
+        if (dto.getRespondent().getPerson() != null) {
+            return dto.getRespondent().getPerson().getContactDetails().getAddressLine1();
+        }
+        return null;
     }
 
     private static String validationMessage(ConstraintViolation<?> violation) {
