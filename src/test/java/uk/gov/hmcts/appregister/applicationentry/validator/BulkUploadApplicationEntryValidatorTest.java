@@ -80,23 +80,13 @@ class BulkUploadApplicationEntryValidatorTest {
     }
 
     @Test
-    void givenNoRespondentDetails_whenValidateRow_thenReturnsRespondentRequiredError() {
+    void givenNoRespondentDetails_whenValidateRow_thenReturnsNoErrors() {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentOrganisationName(null);
 
         List<BulkUploadError> errors = validator.validateRow(4, row);
 
-        assertThat(errors)
-                .containsExactly(
-                        new BulkUploadError(
-                                4,
-                                "RESPONDENT",
-                                null,
-                                "Respondent details are missing. Enter either Organisation Name, or"
-                                        + " Respondent First Name and Last Name.",
-                                row.getRespondentAddressLine1(),
-                                row.getApplicantCode(),
-                                "DATA_ERROR"));
+        assertThat(errors).isEmpty();
     }
 
     @Test
@@ -121,11 +111,22 @@ class BulkUploadApplicationEntryValidatorTest {
     }
 
     @Test
-    void givenWhitespaceRespondentNames_whenValidateRow_thenReturnsRespondentRequiredError() {
+    void givenWhitespaceRespondentDetails_whenValidateRow_thenReturnsNoErrors() {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentOrganisationName(" ");
         row.setRespondentFirstName(" ");
         row.setRespondentLastName("\t");
+
+        List<BulkUploadError> errors = validator.validateRow(4, row);
+
+        assertThat(errors).isEmpty();
+    }
+
+    @Test
+    void givenContactDetailsWithoutRespondentName_whenValidateRow_thenReturnsRespondentError() {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentOrganisationName(null);
+        row.setRespondentAddressLine1("1 Example Street");
 
         List<BulkUploadError> errors = validator.validateRow(4, row);
 
@@ -150,14 +151,6 @@ class BulkUploadApplicationEntryValidatorTest {
         row.setRespondentOrganisationName(null);
 
         List<BulkUploadError> errors = validator.validateRow(5, row);
-        String name = null;
-        if (row.getRespondentOrganisationName() != null
-                || (row.getRespondentForename1() != null && row.getRespondentSurname() != null)) {
-            name =
-                    row.getRespondentOrganisationName() != null
-                            ? row.getRespondentOrganisationName()
-                            : row.getRespondentForename1() + " " + row.getRespondentSurname();
-        }
         assertThat(errors)
                 .containsExactly(
                         new BulkUploadError(
@@ -166,7 +159,7 @@ class BulkUploadApplicationEntryValidatorTest {
                                 null,
                                 "Applicant code is required",
                                 row.getRespondentAddressLine1(),
-                                name,
+                                row.getApplicantCode(),
                                 "DATA_ERROR"),
                         new BulkUploadError(
                                 5,
@@ -174,16 +167,7 @@ class BulkUploadApplicationEntryValidatorTest {
                                 null,
                                 "Application code is required",
                                 row.getRespondentAddressLine1(),
-                                name,
-                                "DATA_ERROR"),
-                        new BulkUploadError(
-                                5,
-                                "RESPONDENT",
-                                null,
-                                "Respondent details are missing. Enter either Organisation Name, or"
-                                        + " Respondent First Name and Last Name.",
-                                row.getRespondentAddressLine1(),
-                                name,
+                                row.getApplicantCode(),
                                 "DATA_ERROR"));
     }
 
