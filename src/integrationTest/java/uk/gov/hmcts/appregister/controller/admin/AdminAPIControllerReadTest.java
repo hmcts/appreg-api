@@ -52,7 +52,7 @@ class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
         val jobName = AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name();
 
         // Remove earlier rows so the assertions below only inspect this GET request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val responseSpec =
                 restAssuredClient.executeGetRequest(
@@ -60,6 +60,7 @@ class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
                         createAdminToken().fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
+        awaitDataAudits();
 
         // Verify the GET audit row persisted for the requested database job name.
         val persistedAuditRow =

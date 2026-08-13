@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.testutils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
+import java.time.Duration;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import nl.altindag.log.LogCaptor;
@@ -11,6 +12,8 @@ import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.audit.service.DataAuditPersistenceQueue;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.TokenStub;
@@ -30,6 +33,8 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     @Autowired protected TokenStub tokenStub;
 
     @Autowired protected RestAssuredClient restAssuredClient;
+
+    @Autowired private DataAuditPersistenceQueue dataAuditPersistenceQueue;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     protected String issuer;
@@ -112,5 +117,14 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
                 .roles(List.of(RoleEnum.USER))
                 .build()
                 .fetchTokenForRole();
+    }
+
+    protected void clearDataAudits(DataAuditRepository dataAuditRepository) {
+        awaitDataAudits();
+        dataAuditRepository.deleteAll();
+    }
+
+    protected void awaitDataAudits() {
+        dataAuditPersistenceQueue.awaitIdle(Duration.ofSeconds(5));
     }
 }

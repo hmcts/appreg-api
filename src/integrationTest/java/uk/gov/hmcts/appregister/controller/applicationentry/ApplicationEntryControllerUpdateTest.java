@@ -1,18 +1,21 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
@@ -26,6 +29,7 @@ import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -1168,7 +1172,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecCreate.then().statusCode(201);
 
         // Ignore the audit rows produced by the setup create request so we only inspect the update.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val responseSpecUpdate =
                 restAssuredClient.executePutRequest(
@@ -1186,16 +1190,14 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         // Notes changed from the seeded value to the update payload value.
         val notesAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY,
-                                "notes",
-                                "Original audit notes",
-                                "Updated audit notes")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_list_entries.notes update audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository
+                                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                                                TableNames.APPLICATION_LISTS_ENTRY,
+                                                "notes",
+                                                "Original audit notes",
+                                                "Updated audit notes"));
 
         Assertions.assertEquals(
                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName(),
@@ -1203,15 +1205,12 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         // Bulk respondent count is new on update, so we check the new value and the update event.
         val bulkRespondentAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY,
-                                "number_of_bulk_respondents",
-                                "5")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a number_of_bulk_respondents update audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.APPLICATION_LISTS_ENTRY,
+                                        "number_of_bulk_respondents",
+                                        "5"));
 
         Assertions.assertEquals(
                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName(),
@@ -1222,16 +1221,14 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         val originalApplicationCode =
                 responseSpecCreate.as(EntryGetDetailDto.class).getApplicationCode();
         val applicationCodeAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                                TableNames.APPLICATION_CODES,
-                                "application_code",
-                                originalApplicationCode,
-                                "ZZBR004")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_codes.application_code update audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository
+                                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                                                TableNames.APPLICATION_CODES,
+                                                "application_code",
+                                                originalApplicationCode,
+                                                "ZZBR004"));
 
         Assertions.assertEquals(
                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName(),
@@ -1239,18 +1236,17 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         // Case reference is another DB-backed column on APPLICATION_LIST_ENTRIES and should record
         // the old and new values on update.
-        val missingCaseReferenceAuditMessage =
-                "Expected an application_list_entries.case_reference update audit row";
         val originalCaseReference =
                 responseSpecCreate.as(EntryGetDetailDto.class).getCaseReference();
         val caseReferenceAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY,
-                                "case_reference",
-                                originalCaseReference,
-                                "CASE-UPD-001")
-                        .orElseThrow(() -> new AssertionError(missingCaseReferenceAuditMessage));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository
+                                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                                                TableNames.APPLICATION_LISTS_ENTRY,
+                                                "case_reference",
+                                                originalCaseReference,
+                                                "CASE-UPD-001"));
 
         Assertions.assertEquals(
                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName(),
@@ -1271,7 +1267,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         val responseSpecCreate = createListEntryWithAllData();
 
         // Ignore the audit rows produced by the setup create request so we only inspect the update.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Update the entry through the real endpoint so the standard-applicant reassignment goes
         // through the production validator, service and audit listener stack.
@@ -1287,13 +1283,13 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         Assertions.assertEquals("APP002", updatedDto.getStandardApplicantCode());
 
         // The update should record the selected standard applicant code in DATA_AUDIT.
-        val missingAuditMessage =
-                "Expected a standard_applicants.standard_applicant_code update audit row";
         val standardApplicantAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.STANDARD_APPLICANTS, "standard_applicant_code", "APP002")
-                        .orElseThrow(() -> new AssertionError(missingAuditMessage));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.STANDARD_APPLICANTS,
+                                        "standard_applicant_code",
+                                        "APP002"));
 
         Assertions.assertEquals(
                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName(),
@@ -1394,7 +1390,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecCreate.then().statusCode(201);
 
         // Ignore the setup create rows so these assertions only inspect the update request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Drive the real update endpoint so fee-status history is appended while the other child
         // replacements still run through the production delete/create audit operations.
@@ -1408,108 +1404,87 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         // Updating the applicant creates a replacement NAME_ADDRESS row with the new value.
         val createdApplicantAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.NAME_ADDRESS, "name", "Applicant Updated Org")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a created name_address.name applicant audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.NAME_ADDRESS, "name", "Applicant Updated Org"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_APPLICANT.getEventName(),
                 createdApplicantAuditRow.getEventName());
 
         // The old applicant row should also be deleted and audited separately.
         val deletedApplicantAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValue(
-                                TableNames.NAME_ADDRESS, "name", "Applicant Original Org")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a deleted name_address.name applicant audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                        TableNames.NAME_ADDRESS, "name", "Applicant Original Org"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.DELETE_APPLICANT.getEventName(),
                 deletedApplicantAuditRow.getEventName());
 
         // Respondent replacement follows the same create/delete pattern on NAME_ADDRESS.
         val createdRespondentAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.NAME_ADDRESS, "last_name", "RespondentUpdated")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a created name_address.last_name respondent audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.NAME_ADDRESS, "last_name", "RespondentUpdated"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_RESPONDENT.getEventName(),
                 createdRespondentAuditRow.getEventName());
 
         val deletedRespondentAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValue(
-                                TableNames.NAME_ADDRESS, "last_name", "RespondentOriginal")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a deleted name_address.last_name respondent audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                        TableNames.NAME_ADDRESS,
+                                        "last_name",
+                                        "RespondentOriginal"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.DELETE_RESPONDENT.getEventName(),
                 deletedRespondentAuditRow.getEventName());
 
         // Officials are replaced on update, so we expect both delete and create rows.
         val createdOfficialAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
-                                "surname",
-                                "OfficialUpdated")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a created app_list_entry_official.surname audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
+                                        "surname",
+                                        "OfficialUpdated"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY.getEventName(),
                 createdOfficialAuditRow.getEventName());
 
         val deletedOfficialAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValue(
-                                TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
-                                "surname",
-                                "OfficialOriginal")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a deleted app_list_entry_official.surname audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                        TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
+                                        "surname",
+                                        "OfficialOriginal"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY.getEventName(),
                 deletedOfficialAuditRow.getEventName());
 
         // Fee statuses are replaced on the single-entry endpoint, so we expect both delete and
         // create audit rows.
-        val missingCreatedFeeStatusAuditMessage =
-                "Expected a created fee-status payment reference audit row";
         val createdFeeStatusAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_FEE_STATUS,
-                                "alefs_payment_reference",
-                                "PAY-UPD-001")
-                        .orElseThrow(() -> new AssertionError(missingCreatedFeeStatusAuditMessage));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                                        "alefs_payment_reference",
+                                        "PAY-UPD-001"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName(),
                 createdFeeStatusAuditRow.getEventName());
         val deletedFeeStatusAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValue(
-                                TableNames.APPLICATION_LISTS_FEE_STATUS,
-                                "alefs_payment_reference",
-                                "PAY-OLD-001")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a deleted fee-status payment reference audit row"));
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                                        "alefs_payment_reference",
+                                        "PAY-OLD-001"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName(),
                 deletedFeeStatusAuditRow.getEventName());
@@ -2138,5 +2113,11 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                                                 feeStatus.getStatusDate(),
                                                 feeStatus.getPaymentReference()))
                 .toList();
+    }
+
+    private static DataAudit waitForAudit(Callable<Optional<DataAudit>> query) {
+        return await().atMost(Duration.ofSeconds(2))
+                .until(query, Optional::isPresent)
+                .orElseThrow();
     }
 }

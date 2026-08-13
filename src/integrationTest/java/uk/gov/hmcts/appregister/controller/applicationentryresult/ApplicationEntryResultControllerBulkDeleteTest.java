@@ -34,7 +34,7 @@ class ApplicationEntryResultControllerBulkDeleteTest
         var secondResult =
                 createAndSaveResolution(secondEntry, new ResolutionCodeTestData().someComplete());
 
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         deleteBulkResult(
                         getToken(),
@@ -96,6 +96,7 @@ class ApplicationEntryResultControllerBulkDeleteTest
                 response);
 
         assertThat(appListEntryResolutionRepository.findByUuid(result.getUuid())).isPresent();
+        awaitDataAudits();
         assertThat(
                         dataAuditRepository.findAll().stream()
                                 .noneMatch(
@@ -112,6 +113,7 @@ class ApplicationEntryResultControllerBulkDeleteTest
     }
 
     private DataAudit awaitBulkDeleteAuditRow(UUID resultId, UUID resultId1, UUID entryId) {
+        awaitDataAudits();
         for (int attempt = 0; attempt < 10; attempt++) {
             Optional<DataAudit> auditRow =
                     dataAuditRepository.findAll().stream()
@@ -145,6 +147,7 @@ class ApplicationEntryResultControllerBulkDeleteTest
     }
 
     private boolean noPerResultDeleteAuditRows() {
+        awaitDataAudits();
         return dataAuditRepository.findAll().stream()
                 .noneMatch(
                         auditRow ->

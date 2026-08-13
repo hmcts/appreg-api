@@ -62,7 +62,7 @@ class AuditConnectionPoolStarvationIntegrationTest extends BaseIntegration {
         val jobUrl = getLocalUrl("jobs/" + job.getUuid());
         val token = tokenGenerator.fetchTokenForRole();
 
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         try (val executor = Executors.newFixedThreadPool(CONCURRENT_REQUESTS)) {
             val requests =

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
+import uk.gov.hmcts.appregister.audit.service.DataAuditPersistenceQueue;
 import uk.gov.hmcts.appregister.audit.service.NestedAuditPersistenceManager;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
@@ -25,6 +26,8 @@ public class DataAuditLogAsserter {
             LogCaptor.forClass(uk.gov.hmcts.appregister.audit.listener.DataAuditLogger.class);
     protected final LogCaptor nestedAuditPersistenceLogger =
             LogCaptor.forClass(NestedAuditPersistenceManager.class);
+    protected final LogCaptor dataAuditPersistenceQueueLogger =
+            LogCaptor.forClass(DataAuditPersistenceQueue.class);
 
     protected final LogCaptor reflectiveDifferentiator =
             LogCaptor.forClass(ReflectiveAuditor.class);
@@ -177,6 +180,7 @@ public class DataAuditLogAsserter {
     private java.util.List<String> getAuditDebugLogs() {
         var combinedLogs = new java.util.ArrayList<String>(dataAuditLogger.getDebugLogs());
         combinedLogs.addAll(nestedAuditPersistenceLogger.getDebugLogs());
+        combinedLogs.addAll(dataAuditPersistenceQueueLogger.getDebugLogs());
         return combinedLogs;
     }
 
@@ -269,6 +273,7 @@ public class DataAuditLogAsserter {
     public void clearLogs() {
         dataAuditLogger.clearLogs();
         nestedAuditPersistenceLogger.clearLogs();
+        dataAuditPersistenceQueueLogger.clearLogs();
     }
 
     /**

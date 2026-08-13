@@ -5,8 +5,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.NamedThreadLocal;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -21,10 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.DataAudit;
 @Component
 @RequiredArgsConstructor
 public class NestedAuditPersistenceManager {
-    private static final Logger DATA_AUDIT_LOGGER =
-            LoggerFactory.getLogger(NestedAuditPersistenceManager.class);
-
-    private final DataAuditPersistenceService dataAuditPersistenceService;
+    private final DataAuditPersistenceQueue dataAuditPersistenceQueue;
 
     private final ThreadLocal<State> state = new NamedThreadLocal<>("nested-audit-persistence");
 
@@ -58,9 +53,7 @@ public class NestedAuditPersistenceManager {
     public void persistOrBuffer(List<DataAudit> auditsToPersist) {
         val current = state.get();
         if (current == null) {
-            dataAuditPersistenceService.persist(auditsToPersist);
-            auditsToPersist.forEach(
-                    audit -> DATA_AUDIT_LOGGER.debug("Saved data audit entity: {}", audit));
+            dataAuditPersistenceQueue.submit(auditsToPersist);
             return;
         }
 
@@ -74,6 +67,7 @@ public class NestedAuditPersistenceManager {
             return;
         }
 
+        // Defer submission until the business transaction has released its database connection.
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
@@ -97,9 +91,7 @@ public class NestedAuditPersistenceManager {
         }
 
         try {
-            dataAuditPersistenceService.persist(current.bufferedAudits);
-            current.bufferedAudits.forEach(
-                    audit -> DATA_AUDIT_LOGGER.debug("Saved data audit entity: {}", audit));
+            dataAuditPersistenceQueue.submit(current.bufferedAudits);
         } catch (RuntimeException e) {
             logBufferedAuditPersistenceFailure(current.bufferedAudits, e);
         } finally {
