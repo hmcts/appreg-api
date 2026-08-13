@@ -2234,10 +2234,10 @@ class ReportingControllerPostTest extends BaseIntegration {
                 columnName,
                 oldValue,
                 newValue,
-                displayUserName,
+                userId,
                 createdDate,
                 eventName,
-                userId);
+                displayUserName);
     }
 
     private void insertDuplicateCjaRows(String code) {

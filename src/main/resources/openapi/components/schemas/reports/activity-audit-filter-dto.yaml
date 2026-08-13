@@ -28,9 +28,10 @@ properties:
 
   username:
     type: string
-    description: Exact username to audit.
-    example: "jsmith"
+    description: Exact display username to audit, normally the user's email address.
+    example: "jsmith@example.com"
     minLength: 1
+    maxLength: 250
     pattern: '.*\S.*'
 
   activityTypes:
