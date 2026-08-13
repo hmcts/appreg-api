@@ -28,7 +28,6 @@ public class BulkUploadApplicationEntryValidator {
     public List<BulkUploadError> validateRow(int rowNumber, BulkUploadRow row) {
         List<BulkUploadError> errors = new ArrayList<>();
         RespondentNameState respondentNameState = BulkUploadRow.respondentNameState(row);
-        String name = respondentName(row, respondentNameState);
         final String errorType = "DATA_ERROR";
 
         // --- REQUIRED FIELDS ---
@@ -72,8 +71,10 @@ public class BulkUploadApplicationEntryValidator {
                             errorType));
         }
 
-        // Must have at least one
-        if (respondentNameState == RespondentNameState.MISSING) {
+        // Partial respondent details must not be silently discarded when the code does not require
+        // a respondent.
+        if (respondentNameState == RespondentNameState.MISSING
+                && BulkUploadRow.hasAnyRespondentDetails(row)) {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
@@ -86,17 +87,5 @@ public class BulkUploadApplicationEntryValidator {
         }
 
         return errors;
-    }
-
-    private static String respondentName(BulkUploadRow row, RespondentNameState state) {
-        if (state == RespondentNameState.MISSING) {
-            return null;
-        }
-        if (state == RespondentNameState.ORGANISATION || state == RespondentNameState.CONFLICTING) {
-            return row.getRespondentOrganisationName();
-        }
-        return "%s %s"
-                .formatted(row.getRespondentFirstNameValue(), row.getRespondentLastNameValue())
-                .trim();
     }
 }
