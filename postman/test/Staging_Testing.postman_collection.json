@@ -36202,19 +36202,17 @@
           "response": []
         },
         {
-          "name": "34 - Create optional respondent entry without respondent",
+          "name": "34 - Import valid respondent-setting variations",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Optional respondent entry created without respondent', () => pm.response.to.have.status(201));",
+                  "pm.test('Valid respondent-setting variations accepted', () => pm.response.to.have.status(202));",
                   "const body = pm.response.json();",
-                  "pm.test('Respondent is absent', () => {",
-                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
-                  "  pm.expect(body.respondent).to.be.oneOf([null, undefined]);",
-                  "});"
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_SETTINGS_VALID_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_RESP_SETTINGS_VALID_POLLS');"
                 ]
               }
             }
@@ -36225,102 +36223,88 @@
               {
                 "key": "Accept",
                 "value": "application/vnd.hmcts.appreg.v1+json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"SW99007\",\n  \"wordingFields\": [\n    { \"key\": \"Name of Bank\", \"value\": \"Epsilon Bank\" },\n    { \"key\": \"Name of Court\", \"value\": \"Bristol Court\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-OPT-1\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/respondent/respondent-settings-valid.csv"
                 }
-              }
+              ]
             },
             "url": {
-              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
               "host": [
                 "{{baseURL}}"
               ],
               "path": [
                 "application-lists",
                 "{{ARCPOC1678_LIST_ID}}",
-                "entries"
+                "entries",
+                "bulk-import"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "35 - Create optional respondent entry with respondent",
+          "name": "35 - Poll valid respondent-setting import",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Optional respondent entry created with respondent', () => pm.response.to.have.status(201));",
+                  "pm.test('Valid respondent-setting job status retrieved', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
-                  "pm.test('Optional Organisation respondent persisted', () => {",
-                  "  pm.expect(body.applicationCode).to.eql('SW99007');",
-                  "  pm.expect(body.respondent.organisation.name).to.eql('ARCPOC 1678 Optional Respondent Ltd');",
-                  "});"
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_RESP_SETTINGS_VALID_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_SETTINGS_VALID_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_RESP_SETTINGS_VALID_POLLS');",
+                  "  pm.test('Required/provided and not-required provided/blank variations complete', () => pm.expect(body.status, body.error_description || body.errorDescription).to.eql('COMPLETED'));",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
               {
                 "key": "Accept",
                 "value": "application/vnd.hmcts.appreg.v1+json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"SW99007\",\n  \"respondent\": {\n    \"organisation\": {\n      \"name\": \"ARCPOC 1678 Optional Respondent Ltd\",\n      \"contactDetails\": {\n        \"addressLine1\": \"16 Delta Lane\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    }\n  },\n  \"wordingFields\": [\n    { \"key\": \"Name of Bank\", \"value\": \"Epsilon Bank\" },\n    { \"key\": \"Name of Court\", \"value\": \"Bristol Court\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-OPT-2\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_RESP_SETTINGS_VALID_JOB_ID}}",
               "host": [
                 "{{baseURL}}"
               ],
               "path": [
-                "application-lists",
-                "{{ARCPOC1678_LIST_ID}}",
-                "entries"
+                "jobs",
+                "{{ARCPOC1678_RESP_SETTINGS_VALID_JOB_ID}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "36 - Reject mandatory respondent entry without respondent",
+          "name": "36 - Import required-respondent row without respondent",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Mandatory respondent omission rejected', () => pm.response.to.have.status(400));",
+                  "pm.test('Missing required respondent import accepted for asynchronous validation', () => pm.response.to.have.status(202));",
                   "const body = pm.response.json();",
-                  "pm.test('Respondent-required problem returned', () => {",
-                  "  pm.expect(body.type).to.include('ALE-13');",
-                  "  pm.expect(body.detail).to.include('Respondent required for code EF99001');",
-                  "});"
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_REQUIRED_MISSING_JOB_ID', body.id);",
+                  "pm.collectionVariables.unset('ARCPOC1678_RESP_REQUIRED_MISSING_POLLS');"
                 ]
               }
             }
@@ -36331,83 +36315,75 @@
               {
                 "key": "Accept",
                 "value": "application/vnd.hmcts.appreg.v1+json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"EF99001\",\n  \"accountNumber\": \"EF-ARC1678-002\",\n  \"wordingFields\": [\n    { \"key\": \"account balance\", \"value\": \"250.00\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-MAND-1\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/mustafaahmed/Projects/appreg-api/postman/test/ARCPOC-1678/respondent/respondent-required-missing.csv"
                 }
-              }
+              ]
             },
             "url": {
-              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries/bulk-import",
               "host": [
                 "{{baseURL}}"
               ],
               "path": [
                 "application-lists",
                 "{{ARCPOC1678_LIST_ID}}",
-                "entries"
+                "entries",
+                "bulk-import"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "37 - Create mandatory respondent entry with respondent",
+          "name": "37 - Poll missing required respondent import",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Mandatory respondent entry created', () => pm.response.to.have.status(201));",
+                  "pm.test('Missing required respondent job status retrieved', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
-                  "pm.test('Mandatory respondent persisted', () => {",
-                  "  pm.expect(body.applicationCode).to.eql('EF99001');",
-                  "  pm.expect(body.respondent.organisation.name).to.eql('ARCPOC 1678 Mandatory Respondent Ltd');",
-                  "});"
+                  "const polls = Number(pm.collectionVariables.get('ARCPOC1678_RESP_REQUIRED_MISSING_POLLS') || 0) + 1;",
+                  "pm.collectionVariables.set('ARCPOC1678_RESP_REQUIRED_MISSING_POLLS', polls);",
+                  "if (['RECEIVED', 'VALIDATING', 'PROCESSING'].includes(body.status) && polls < 60) {",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset('ARCPOC1678_RESP_REQUIRED_MISSING_POLLS');",
+                  "  const error = body.error_description || body.errorDescription || '';",
+                  "  pm.test('Missing required respondent is rejected', () => {",
+                  "    pm.expect(body.status).to.eql('FAILED');",
+                  "    pm.expect(error).to.include('Respondent required for code EF99001');",
+                  "  });",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
               {
                 "key": "Accept",
                 "value": "application/vnd.hmcts.appreg.v1+json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"EF99001\",\n  \"accountNumber\": \"EF-ARC1678-003\",\n  \"respondent\": {\n    \"organisation\": {\n      \"name\": \"ARCPOC 1678 Mandatory Respondent Ltd\",\n      \"contactDetails\": {\n        \"addressLine1\": \"17 Delta Lane\",\n        \"postcode\": \"SW1A 1AA\"\n      }\n    }\n  },\n  \"wordingFields\": [\n    { \"key\": \"account balance\", \"value\": \"250.00\" }\n  ],\n  \"hasOffsiteFee\": false,\n  \"caseReference\": \"ARC1678-MAND-2\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{baseURL}}/application-lists/{{ARCPOC1678_LIST_ID}}/entries",
+              "raw": "{{baseURL}}/jobs/{{ARCPOC1678_RESP_REQUIRED_MISSING_JOB_ID}}",
               "host": [
                 "{{baseURL}}"
               ],
               "path": [
-                "application-lists",
-                "{{ARCPOC1678_LIST_ID}}",
-                "entries"
+                "jobs",
+                "{{ARCPOC1678_RESP_REQUIRED_MISSING_JOB_ID}}"
               ]
             }
           },
