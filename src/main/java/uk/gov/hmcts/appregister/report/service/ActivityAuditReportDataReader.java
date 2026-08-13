@@ -36,14 +36,14 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                     AS new_value,
                 da.created_date::date AS created_date,
                 da.created_date AS created_date_time,
-                COALESCE(NULLIF(da.user_id, ''), da.user_name) AS user_name
+                COALESCE(NULLIF(da.user_name, ''), da.user_id) AS user_name
             FROM data_audit da
             WHERE da.created_date >= :dateFrom
                 AND da.created_date < (:dateTo + INTERVAL '1 day')
                 AND da.event_name IN (:eventNames)
                 AND (
                     :username IS NULL
-                    OR COALESCE(NULLIF(da.user_id, ''), da.user_name) = :username
+                    OR COALESCE(NULLIF(da.user_name, ''), da.user_id) = :username
                 )
                 AND POSITION('_ID' IN UPPER(da.column_name)) = 0
             )
