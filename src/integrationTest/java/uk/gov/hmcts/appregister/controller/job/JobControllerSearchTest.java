@@ -206,7 +206,7 @@ class JobControllerSearchTest extends BaseIntegration {
         response.getFuture().get();
 
         // Clear out any earlier audit rows so the assertions below only inspect this GET request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val responseSpec =
                 restAssuredClient.executeGetRequest(
@@ -216,6 +216,7 @@ class JobControllerSearchTest extends BaseIntegration {
         responseSpec.then().statusCode(200);
         val jobStatusResponse = responseSpec.as(JobAcknowledgement.class);
         Assertions.assertEquals(response.getJobId().getId(), jobStatusResponse.getId());
+        awaitDataAudits();
 
         // Read the persisted data_audit rows directly and verify the GET audit contains the
         // requested job UUID under the async jobs table.

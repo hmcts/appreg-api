@@ -1,17 +1,20 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.val;
 import org.hamcrest.Matchers;
@@ -31,6 +34,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -2383,7 +2387,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         val tokenGenerator = createAdminToken();
 
         // Clear earlier audit history so these assertions only inspect the create request below.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Exercise the real controller endpoint so the request passes through the mapper, service
         // layer and audit listener before we read the DATA_AUDIT rows back.
@@ -2407,13 +2411,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         // Notes are stored directly on the entry row, so we expect a matching create audit row.
         val noteAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY, "notes", "Create audit notes")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_list_entries.notes audit row"));
+                waitForAudit(TableNames.APPLICATION_LISTS_ENTRY, "notes", "Create audit notes");
 
         Assertions.assertEquals(
                 uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
@@ -2423,15 +2421,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         // Bulk respondent count is another real column on APPLICATION_LIST_ENTRIES.
         val bulkRespondentAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY,
-                                "number_of_bulk_respondents",
-                                "5")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a number_of_bulk_respondents audit row"));
+                waitForAudit(TableNames.APPLICATION_LISTS_ENTRY, "number_of_bulk_respondents", "5");
 
         Assertions.assertEquals(
                 uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
@@ -2442,13 +2432,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         // Application code is stored through the related APPLICATION_CODES row, so write audit
         // should now include that nested DB-backed field as well.
         val applicationCodeAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_CODES, "application_code", "ZZBR001")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_codes.application_code audit row"));
+                waitForAudit(TableNames.APPLICATION_CODES, "application_code", "ZZBR001");
 
         Assertions.assertEquals(
                 uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
@@ -2458,15 +2442,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         // Case reference is stored directly on the entry row and should be recorded on create.
         val caseReferenceAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY,
-                                "case_reference",
-                                "CASE-CRT-001")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_list_entries.case_reference audit row"));
+                waitForAudit(TableNames.APPLICATION_LISTS_ENTRY, "case_reference", "CASE-CRT-001");
 
         Assertions.assertEquals(
                 uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
@@ -2477,13 +2453,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         // Entry rescheduled is defaulted in the mapper, so create audit should persist that DB
         // column as well.
         val entryRescheduledAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_ENTRY, "entry_rescheduled", "N")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an application_list_entries.entry_rescheduled audit row"));
+                waitForAudit(TableNames.APPLICATION_LISTS_ENTRY, "entry_rescheduled", "N");
 
         Assertions.assertEquals(
                 uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
@@ -2504,7 +2474,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         val tokenGenerator = createAdminToken();
 
         // Clear earlier audit history so this test only inspects the create request below.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Use the real endpoint so the standard-applicant selection flows through the validator,
         // mapper and audit listeners before we query DATA_AUDIT.
@@ -2526,13 +2496,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         // The applicant choice is stored through STANDARD_APPLICANTS, so create audit should now
         // include the selected standard applicant code.
         val standardApplicantAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.STANDARD_APPLICANTS, "standard_applicant_code", "APP001")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a standard_applicants.standard_applicant_code audit row"));
+                waitForAudit(TableNames.STANDARD_APPLICANTS, "standard_applicant_code", "APP001");
 
         Assertions.assertEquals(
                 uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
@@ -2592,7 +2556,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         val tokenGenerator = createAdminToken();
 
         // Clear setup rows so the assertions below only inspect the create request under test.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Exercise the real endpoint so the request flows through the mapper, service and audit
         // listeners before we read DATA_AUDIT back.
@@ -2610,13 +2574,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
 
         // Applicant organisation name is stored on NAME_ADDRESS and should be audited on create.
         val applicantAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.NAME_ADDRESS, "name", "Applicant Audit Org")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a name_address.name applicant audit row"));
+                waitForAudit(TableNames.NAME_ADDRESS, "name", "Applicant Audit Org");
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_APPLICANT.getEventName(),
                 applicantAuditRow.getEventName());
@@ -2624,43 +2582,25 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         // Respondent last name is also stored through NAME_ADDRESS and should be audited
         // separately.
         val respondentAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.NAME_ADDRESS, "last_name", "RespondentAudit")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a name_address.last_name respondent audit row"));
+                waitForAudit(TableNames.NAME_ADDRESS, "last_name", "RespondentAudit");
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_RESPONDENT.getEventName(),
                 respondentAuditRow.getEventName());
 
         // Official rows are created as child records and should include the surname value.
         val officialAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
-                                "surname",
-                                "OfficialAudit")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an app_list_entry_official.surname audit row"));
+                waitForAudit(
+                        TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL, "surname", "OfficialAudit");
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY.getEventName(),
                 officialAuditRow.getEventName());
 
         // Fee status rows should record their payment reference when they are created.
         val feeStatusAuditRow =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPLICATION_LISTS_FEE_STATUS,
-                                "alefs_payment_reference",
-                                "PAY-CRT-001")
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected an app_list_entry_fee_status payment reference audit row"));
+                waitForAudit(
+                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                        "alefs_payment_reference",
+                        "PAY-CRT-001");
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName(),
                 feeStatusAuditRow.getEventName());
@@ -2853,5 +2793,19 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         official.setSurname(surname);
         official.setType(type);
         return official;
+    }
+
+    private DataAudit waitForAudit(String tableName, String columnName, String newValue) {
+        return await().atMost(Duration.ofSeconds(2))
+                .until(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        tableName, columnName, newValue),
+                        Optional::isPresent)
+                .orElseThrow(
+                        () ->
+                                new AssertionError(
+                                        "Expected a %s.%s audit row"
+                                                .formatted(tableName, columnName)));
     }
 }

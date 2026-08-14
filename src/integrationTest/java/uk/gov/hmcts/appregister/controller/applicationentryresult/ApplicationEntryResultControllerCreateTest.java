@@ -51,7 +51,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                                         APPC_WORDING_KEY, "The Central Criminal Court")));
 
         // Clear setup rows so the assertions below only inspect the create request under test.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Drive the real endpoint so the result creation passes through validation, persistence
         // and the audit listeners before we inspect DATA_AUDIT directly.
@@ -79,6 +79,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                                 () ->
                                         new AssertionError(
                                                 "Created AppListEntryResolution could not be reloaded"));
+        awaitDataAudits();
 
         // The resolution row itself should record its generated identifier on create.
         val resultIdAuditRow =
@@ -370,7 +371,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                         new TemplateSubstitution("Date", "Date"),
                         new TemplateSubstitution("Courthouse", "ch")));
         bulkResultDto.setResult(createDto);
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val token = getToken();
 
@@ -500,7 +501,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                         new TemplateSubstitution("Date", "Date"),
                         new TemplateSubstitution("Courthouse", "ch")));
         bulkResultDto.setResult(createDto);
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         Response resp = createBulkResult(list.getUuid(), getToken(), bulkResultDto);
 
@@ -777,6 +778,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
     private DataAudit awaitBulkResultAuditRow(
             UUID entryId, UUID entryId1, UUID resultId, UUID resultId1) {
+        awaitDataAudits();
         for (int attempt = 0; attempt < 20; attempt++) {
             for (var auditRow : dataAuditRepository.findAll()) {
                 if (!AppListEntryResultAuditOperation.BULK_CREATE_APP_LIST_ENTRY_RESULT
@@ -804,6 +806,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
     }
 
     private boolean noPerResultCreateAuditRows() {
+        awaitDataAudits();
         return dataAuditRepository.findAll().stream()
                 .noneMatch(
                         auditRow ->

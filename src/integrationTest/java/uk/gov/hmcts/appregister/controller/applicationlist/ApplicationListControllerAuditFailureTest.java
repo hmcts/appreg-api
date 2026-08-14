@@ -1,18 +1,20 @@
 package uk.gov.hmcts.appregister.controller.applicationlist;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.List;
 import lombok.val;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.audit.service.DataAuditPersistenceQueue;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -42,7 +44,7 @@ class ApplicationListControllerAuditFailureTest extends AbstractApplicationListC
                         .durationHours(2)
                         .durationMinutes(30);
 
-        val auditFailureLog = LogCaptor.forClass(AuditOperationServiceImpl.class);
+        val auditFailureLog = LogCaptor.forClass(DataAuditPersistenceQueue.class);
         auditFailureLog.clearLogs();
 
         when(dataAuditRepository.saveAll(any()))
@@ -61,8 +63,12 @@ class ApplicationListControllerAuditFailureTest extends AbstractApplicationListC
         assertThat(fetched.getDescription()).isEqualTo(req.getDescription());
         assertThat(fetched.getCourtCode()).isEqualTo(VALID_COURT_CODE);
 
-        verify(dataAuditRepository, atLeastOnce()).saveAll(any());
-        assertThat(auditFailureLog.getErrorLogs())
-                .anyMatch(log -> log.contains("Audit listener failure suppressed."));
+        await().atMost(Duration.ofSeconds(2))
+                .untilAsserted(
+                        () -> {
+                            verify(dataAuditRepository, atLeastOnce()).saveAll(any());
+                            assertThat(auditFailureLog.getErrorLogs())
+                                    .anyMatch(log -> log.contains("Failed to persist audit field"));
+                        });
     }
 }

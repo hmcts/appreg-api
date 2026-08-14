@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
@@ -8,6 +9,7 @@ import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
@@ -34,7 +36,6 @@ import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -547,7 +548,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         // Remove setup-time audit rows so the assertions below only inspect the rows produced by
         // the GET /application-lists/{listId}/entries request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val token = createAdminToken().fetchTokenForRole();
 
@@ -575,60 +576,49 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
         response.then().statusCode(HttpStatus.OK.value());
         response.as(EntryPage.class);
 
-        val allAuditRows = dataAuditRepository.findAll();
-
         // Assert the persisted rows directly so the vertical slice proves the backend is writing
         // the legacy-style read audit data, not just logging it.
         assertAuditRow(
-                allAuditRows,
                 TableNames.APPLICATION_LISTS,
                 "id",
                 list.getUuid().toString(),
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.APPLICATION_LISTS_ENTRY,
                 "ale_id",
                 "0",
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.NAME_ADDRESS,
                 "name",
                 "Applicant Audit Org",
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.NAME_ADDRESS,
                 "postcode",
                 "ZZ1 1ZZ",
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.APPLICATION_LISTS_ENTRY,
                 "account_number",
                 "ACC-123",
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.APPLICATION_CODES,
                 "application_code_title",
                 "Read audit application title",
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.RESOLUTION_CODES,
                 "resolution_code",
                 "RC1",
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.APPLICATION_CODES,
                 "fee_due",
                 YesOrNo.YES.name(),
                 AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST);
         assertAuditRow(
-                allAuditRows,
                 TableNames.APPLICATION_LISTS_ENTRY,
                 "sequence_number",
                 "7",
@@ -723,19 +713,43 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
     }
 
     private void assertAuditRow(
-            List<DataAudit> auditRows,
             String tableName,
             String columnName,
             String newValue,
             AppListEntryAuditOperation operation) {
         val row =
-                auditRows.stream()
-                        .filter(audit -> tableName.equals(audit.getTableName()))
-                        .filter(audit -> columnName.equals(audit.getColumnName()))
-                        .filter(audit -> newValue.equals(audit.getNewValue()))
-                        .filter(audit -> operation.getType().equals(audit.getUpdateType()))
-                        .filter(audit -> operation.getEventName().equals(audit.getEventName()))
-                        .findFirst()
+                await().atMost(Duration.ofSeconds(2))
+                        .until(
+                                () ->
+                                        dataAuditRepository.findAll().stream()
+                                                .filter(
+                                                        audit ->
+                                                                tableName.equals(
+                                                                        audit.getTableName()))
+                                                .filter(
+                                                        audit ->
+                                                                columnName.equals(
+                                                                        audit.getColumnName()))
+                                                .filter(
+                                                        audit ->
+                                                                newValue.equals(
+                                                                        audit.getNewValue()))
+                                                .filter(
+                                                        audit ->
+                                                                operation
+                                                                        .getType()
+                                                                        .equals(
+                                                                                audit
+                                                                                        .getUpdateType()))
+                                                .filter(
+                                                        audit ->
+                                                                operation
+                                                                        .getEventName()
+                                                                        .equals(
+                                                                                audit
+                                                                                        .getEventName()))
+                                                .findFirst(),
+                                Optional::isPresent)
                         .orElseThrow();
 
         assertThat(row.getOldValue()).isEmpty();

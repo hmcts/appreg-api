@@ -49,6 +49,8 @@ spring:
     username: ${POSTGRES_USER:app_reg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_MAXIMUM_POOL_SIZE:25}
   jpa:
     open-in-view: false
     hibernate:
@@ -101,6 +103,13 @@ appreg:
     global-limit: 2000
     single-list-limit: 1050
   audit:
+    persistence:
+      # Five workers cap audit persistence at five concurrent database connections.
+      worker-count: ${AUDIT_PERSISTENCE_WORKER_COUNT:5}
+      # Capacity is the number of audit batches waiting, not the number of audit rows.
+      queue-capacity: ${AUDIT_PERSISTENCE_QUEUE_CAPACITY:2000}
+      # Graceful shutdown drains queued batches for this long before abandoning them.
+      shutdown-timeout: ${AUDIT_PERSISTENCE_SHUTDOWN_TIMEOUT:PT30S}
     diff:
       enable-complex-diff: true
   csds:
