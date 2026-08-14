@@ -34,6 +34,8 @@
 #						application_lists to 0 when
 #						they are null as per
 #						ARCPOC-1693
+# 11.0		13/08/2026	Matthew Harman	Add filtering of dataset as
+#						per ARCPOC-1712
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -351,6 +353,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APPLICATION_LISTS)
 			echo "in APPLICATION_LISTS"
@@ -386,6 +389,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APPLICATION_LIST_ENTRIES)
 			echo "in APPLICATION_LIST_ENTRIES"
@@ -418,6 +422,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APPLICATION_REGISTER)
 			echo "in APPLICATION_REGISTER"
@@ -450,6 +455,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APPREG_USER_MAPPING)
 			echo "in APPREG_USER_MAPPING"
@@ -482,6 +488,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="NO";
 			use_scn="NO";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
@@ -514,6 +521,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
 			echo "in APP_LIST_ENTRY_FEE_STATUS"
@@ -546,6 +554,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
 			echo "in APP_LIST_ENTRY_OFFICIAL"
@@ -578,6 +587,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
 			echo "in APP_LIST_ENTRY_RESOLUTIONS"
@@ -610,6 +620,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.CRIMINAL_JUSTICE_AREA)
 			echo "in CRIMINAL_JUSTICE_AREA"
@@ -643,6 +654,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.DATA_AUDIT)
 			echo "in DATA_AUDIT"
@@ -676,6 +688,7 @@ w
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.FEE)
 			echo "in FEE"
@@ -708,6 +721,7 @@ w
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="UPDATE appreg.fee SET is_offsite=true WHERE fee_reference='CO1.1';";
+			data_filter="";
 			;;
 		APPREGISTER.NAME_ADDRESS)
 			echo "in NAME_ADDRESS"
@@ -752,6 +766,7 @@ last_name TEXT,";
 			user_mapping="YES";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.RESOLUTION_CODES)
 			echo "in RESOLUTION_CODES"
@@ -784,6 +799,7 @@ last_name TEXT,";
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		APPREGISTER.STANDARD_APPLICANTS)
 			echo "in STANDARD_APPLICANTS"
@@ -816,6 +832,7 @@ last_name TEXT,";
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="";
 			;;
 		LIBRA.NATIONAL_COURT_HOUSES)
 			echo "in NATIONAL_COURT_HOUSES"
@@ -848,6 +865,7 @@ last_name TEXT,";
 			user_mapping="NO";
 			use_scn="YES";
 			additional_postgres_sql="";
+			data_filter="COURT_TYPE='CHOA'";
 			;;
 	esac
 
@@ -1343,6 +1361,12 @@ echo "AE: ${l_have_where}";
 			fi
 			l_have_where="YES";
 
+			# Do we have a data filter?
+			if [[ ! -z "${data_filter}" ]]
+			then
+				sql_script="${sql_script}AND ${data_filter}${NEWLINE}";
+			fi
+
 			# Do we need to add in the retention clause?
 			if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 			then
@@ -1829,6 +1853,12 @@ echo "B3: ${l_have_where}"
 				fi
 				l_have_where="YES";
 echo "B4: ${l_have_where}"
+
+				# Do we have a data filter?
+				if [[ ! -z "${data_filter}" ]]
+				then
+					sql_script="${sql_script}AND ${data_filter}${NEWLINE}";
+				fi
 
 				# Do we need to add in the retention clause?
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]

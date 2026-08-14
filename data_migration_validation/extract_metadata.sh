@@ -20,6 +20,8 @@
 # 3.0		11/08/2026	Matthew Harman	Add ability to pass scn to the
 #						script, to extract data as of
 #						that SCN.  ARCPOC-1685
+# 4.0		14/08/2026	Matthew Harman	Add filtering of dataset as
+#						per ARCPOC-1712
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -107,6 +109,7 @@ do
 	               	echo "in APPLICATION_CODES"
        	        	table_structure=$APPLICATION_CODES_STRUCTURE;
 			retention_clause='';
+			data_filter="";
        	         	;;
         	APPLICATION_LISTS)
 	               	echo "in APPLICATION_LISTS"
@@ -114,66 +117,79 @@ do
 			# No retention of APPLICATION_LISTS, the retention
 			# is on tables that hang off it.
 			retention_clause='';
+			data_filter="";
        	         	;;
         	APPLICATION_LIST_ENTRIES)
 	               	echo "in APPLICATION_LIST_ENTRIES"
        	        	table_structure=$APPLICATION_LIST_ENTRIES_STRUCTURE;
 			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy})))";
+			data_filter="";
        	         	;;
         	APPLICATION_REGISTER)
 	               	echo "in APPLICATION_REGISTER"
        	        	table_structure=$APPLICATION_REGISTER_STRUCTURE;
 			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy})))";
+			data_filter="";
        	         	;;
         	APP_LIST_ENTRY_FEE_ID)
 	               	echo "in APP_LIST_ENTRY_FEE_ID"
        	        	table_structure=$APP_LIST_ENTRY_FEE_ID_STRUCTURE;
 			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			data_filter="";
        	         	;;
         	APP_LIST_ENTRY_FEE_STATUS)
 	               	echo "in APP_LIST_ENTRY_FEE_STATUS"
        	        	table_structure=$APP_LIST_ENTRY_FEE_STATUS_STRUCTURE;
 			retention_clause="ALEFS_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			data_filter="";
        	         	;;
         	APP_LIST_ENTRY_OFFICIAL)
 	               	echo "in APP_LIST_ENTRY_OFFICIAL"
        	        	table_structure=$APP_LIST_ENTRY_OFFICIAL_STRUCTURE;
 			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			data_filter="";
        	         	;;
         	APP_LIST_ENTRY_RESOLUTIONS)
 	               	echo "in APP_LIST_ENTRY_RESOLUTIONS"
        	        	table_structure=$APP_LIST_ENTRY_RESOLUTIONS_STRUCTURE;
 			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			data_filter="";
        	         	;;
         	CRIMINAL_JUSTICE_AREA)
 	               	echo "in CRIMINAL_JUSTICE_AREA"
        	        	table_structure=$CRIMINAL_JUSTICE_AREA_STRUCTURE;
 			retention_clause='';
+			data_filter="";
        	         	;;
         	FEE)
 	               	echo "in FEE"
        	        	table_structure=$FEE_STRUCTURE;
 			retention_clause='';
+			data_filter="";
        	         	;;
         	NAME_ADDRESS)
 	               	echo "in NAME_ADDRESS"
        	        	table_structure=$NAME_ADDRESS_STRUCTURE;
 			retention_clause="(NA_ID IN (SELECT A_NA_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))) OR NA_ID IN (SELECT R_NA_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))))";
+			data_filter="";
        	         	;;
         	RESOLUTION_CODES)
 	               	echo "in RESOLUTION_CODES"
        	        	table_structure=$RESOLUTION_CODES_STRUCTURE;
 			retention_clause='';
+			data_filter="";
        	         	;;
         	STANDARD_APPLICANTS)
 	               	echo "in STANDARD_APPLICANTS"
        	        	table_structure=$STANDARD_APPLICANTS_STRUCTURE;
 			retention_clause='';
+			data_filter="";
        	         	;;
         	NATIONAL_COURT_HOUSES)
 	               	echo "in NATIONAL_COURT_HOUSES"
        	        	table_structure=$NATIONAL_COURT_HOUSES_STRUCTURE;
 			retention_clause='';
+			data_filter="COURT_TYPE='CHOA'";
        	         	;;
 	esac
 
@@ -220,10 +236,19 @@ echo "sql2: $sql_script"
 	else
 		sql_script="${sql_script}count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
 	fi
+
+	# Do we have a data filter?
+	and_clause="WHERE";
+	if [[ ! -z "${data_filter}" ]]
+	then
+		sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+		and_clause="AND";
+	fi
+
 	# Do we need to add in retention clause
 	if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 	then
-		sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+		sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 	else
 		sql_script="${sql_script};${NEWLINE}";
 	fi
@@ -243,9 +268,18 @@ echo "sql2: $sql_script"
 		else
 			sql_script="${sql_script}TO_CHAR(TRUNC(${changed_date_field}),'YYYY-MM-DD')||','||count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
 		fi
+
+		# Do we have a data filter?
+		and_clause="WHERE";
+		if [[ ! -z "${data_filter}" ]]
+		then
+			sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+			and_clause="AND";
+		fi
+
 		if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 		then
-			sql_script="${sql_script} WHERE ${retention_clause}${NEWLINE}";
+			sql_script="${sql_script} ${and_clause} ${retention_clause}${NEWLINE}";
 		fi
 		sql_script="${sql_script}group by TRUNC(${changed_date_field});${NEWLINE}";
 		sql_script="${sql_script}spool off;${NEWLINE}";
@@ -274,9 +308,18 @@ echo "a1";
 				else
 					sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
 				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]]
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="and";
+				fi
+
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
-					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 				else
 					sql_script="${sql_script};${NEWLINE}";
 				fi
@@ -295,9 +338,18 @@ echo "a1";
 				else
 					sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
 				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]]
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
-					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 				else
 					sql_script="${sql_script};${NEWLINE}";
 				fi
@@ -315,12 +367,21 @@ echo "a1";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
 				if [[ ${HAVE_SCN} == "Y" ]]; then
 					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
-				else
-					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+#				else
+#					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
 				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
-					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 				else
 					sql_script="${sql_script};${NEWLINE}";
 				fi
@@ -339,9 +400,18 @@ echo "a1";
 				else
 					sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
 				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
-					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 				else
 					sql_script="${sql_script};${NEWLINE}";
 				fi
@@ -362,9 +432,18 @@ echo "a1";
 				else
 					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
 				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
-					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 				else
 					sql_script="${sql_script};${NEWLINE}";
 				fi
@@ -385,9 +464,17 @@ echo "a1";
 				else
 					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
 				fi
+
+				# Do we have a data filter?
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
 				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
 				then
-					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
 				else
 					sql_script="${sql_script};${NEWLINE}";
 				fi
