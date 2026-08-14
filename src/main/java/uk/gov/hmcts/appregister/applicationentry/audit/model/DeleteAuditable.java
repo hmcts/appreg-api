@@ -52,13 +52,17 @@ public class DeleteAuditable implements Auditable {
                     new AuditableData(
                             TableNames.APPLICATION_LISTS_ENTRY,
                             "a_na_id",
-                            applicationListEntry.getAnamedaddress().getId().toString()));
+                            applicationListEntry.getAnamedaddress() != null
+                                    ? applicationListEntry.getAnamedaddress().getId().toString()
+                                    : null));
 
             auditData.add(
                     new AuditableData(
                             TableNames.APPLICATION_LISTS_ENTRY,
                             "r_na_id",
-                            applicationListEntry.getRnameaddress().getId().toString()));
+                            applicationListEntry.getRnameaddress() != null
+                                    ? applicationListEntry.getRnameaddress().getId().toString()
+                                    : null));
 
             // audit the resolutions
             for (int i = 0; i < applicationListEntry.getResolutions().size(); i++) {
