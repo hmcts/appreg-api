@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 
@@ -25,6 +26,7 @@ class ApplicationListDeletionValidatorTest {
     @Test
     void validationSuccess() {
         ApplicationList applicationList = new AppListTestData().someMinimal().build();
+        applicationList.setStatus(Status.OPEN);
         UUID uuid = UUID.randomUUID();
         when(applicationListRepository.findByUuidIncludingDelete(uuid))
                 .thenReturn(Optional.of(applicationList));
@@ -45,6 +47,7 @@ class ApplicationListDeletionValidatorTest {
     @Test
     void validationFailConflict() {
         ApplicationList applicationList = new AppListTestData().someMinimal().build();
+        applicationList.setStatus(Status.OPEN);
         applicationList.setDeleted(true);
         UUID uuid = UUID.randomUUID();
         when(applicationListRepository.findByUuidIncludingDelete(uuid))
@@ -54,5 +57,18 @@ class ApplicationListDeletionValidatorTest {
                 Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(uuid));
         Assertions.assertEquals(
                 ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE, ex.getCode());
+    }
+
+    @Test
+    void validationFailApplicationListClosed() {
+        ApplicationList applicationList = new AppListTestData().someMinimal().build();
+        applicationList.setStatus(Status.CLOSED);
+        UUID uuid = UUID.randomUUID();
+        when(applicationListRepository.findByUuidIncludingDelete(uuid))
+                .thenReturn(Optional.of(applicationList));
+
+        AppRegistryException ex =
+                Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(uuid));
+        Assertions.assertEquals(ApplicationListError.INVALID_DELETE_LIST_STATUS, ex.getCode());
     }
 }
