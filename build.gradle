@@ -448,7 +448,7 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:13.2.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:13.3.0'
 
   // Future Jackson 2 overrides for CVE-2026-54515.
   // Leave commented until the FasterXML 2.x fixes are actually published to Maven Central.
@@ -456,7 +456,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
   implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:13.2.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:13.3.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
