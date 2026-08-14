@@ -1,9 +1,12 @@
 package uk.gov.hmcts.appregister.service;
 
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,10 +78,10 @@ class AuditOperationServiceImplTest extends BaseIntegration {
 
         // assert that we have logged activity and data audit
         DataAudit dataAudit =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValue(
-                                TableNames.APPICATION_LIST, "id", pkId.toString())
-                        .get();
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                        TableNames.APPICATION_LIST, "id", pkId.toString()));
 
         // assert the data audit table
         Assertions.assertNotNull(dataAudit);
@@ -123,10 +126,10 @@ class AuditOperationServiceImplTest extends BaseIntegration {
 
         // assert that we have logged activity and data audit
         DataAudit dataAudit =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.APPICATION_LIST, "id", pkId.toString())
-                        .get();
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndNewValue(
+                                        TableNames.APPICATION_LIST, "id", pkId.toString()));
 
         // assert the data audit table
         Assertions.assertNotNull(dataAudit);
@@ -182,13 +185,14 @@ class AuditOperationServiceImplTest extends BaseIntegration {
 
         // assert that we have logged activity and data audit
         DataAudit dataAudit =
-                dataAuditRepository
-                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
-                                TableNames.APPICATION_LIST,
-                                "id",
-                                oldPkId.toString(),
-                                newPkId.toString())
-                        .get();
+                waitForAudit(
+                        () ->
+                                dataAuditRepository
+                                        .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                                                TableNames.APPICATION_LIST,
+                                                "id",
+                                                oldPkId.toString(),
+                                                newPkId.toString()));
 
         // assert that we have logged activity and data audit
         Assertions.assertEquals(oldPkId, applicationList.getUuid());
@@ -207,6 +211,12 @@ class AuditOperationServiceImplTest extends BaseIntegration {
                 "test-trace-id",
                 Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
                 "NULL");
+    }
+
+    private static DataAudit waitForAudit(Callable<Optional<DataAudit>> query) {
+        return await().atMost(Duration.ofSeconds(2))
+                .until(query, Optional::isPresent)
+                .orElseThrow();
     }
 
     @RequiredArgsConstructor

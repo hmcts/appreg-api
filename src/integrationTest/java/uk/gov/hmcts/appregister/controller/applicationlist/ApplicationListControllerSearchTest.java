@@ -960,12 +960,13 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         val id = createResp.as(ApplicationListGetDetailDto.class).getId();
 
         // Remove the create-audit rows so this test only inspects the rows produced by the read.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Perform the real read that should write the GET audit rows.
         val getResp =
                 restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
         getResp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        awaitDataAudits();
 
         // Pull back the persisted row directly from the repository and match on the key fields we
         // expect for an application list read.

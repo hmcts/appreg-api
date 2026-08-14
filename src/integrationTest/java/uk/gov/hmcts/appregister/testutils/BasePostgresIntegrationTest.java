@@ -6,6 +6,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.wiremock.spring.ConfigureWireMock;
 import org.wiremock.spring.EnableWireMock;
+import uk.gov.hmcts.appregister.audit.service.DataAuditPersistenceQueue;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
@@ -46,6 +48,8 @@ public abstract class BasePostgresIntegrationTest {
 
     @Autowired private DatabaseReset reset;
 
+    @Autowired private DataAuditPersistenceQueue dataAuditPersistenceQueue;
+
     @Autowired protected DatabasePersistance persistance;
 
     @Value("${wiremock.server.baseUrl}")
@@ -57,6 +61,7 @@ public abstract class BasePostgresIntegrationTest {
     void beforeEachTest() {
         var wireMockUri = URI.create(wireMockBaseUrl);
         configureFor(wireMockUri.getHost(), wireMockUri.getPort());
+        dataAuditPersistenceQueue.awaitIdle(Duration.ofSeconds(5));
         reset.resetDbData();
     }
 

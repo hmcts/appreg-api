@@ -217,7 +217,7 @@ class ReportingControllerGetTest extends BaseIntegration {
         val tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // Remove earlier audit rows so the assertions below only inspect this download request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val responseSpec =
                 restAssuredClient.executeGetRequest(
@@ -236,6 +236,7 @@ class ReportingControllerGetTest extends BaseIntegration {
     }
 
     private void assertDownloadReportJobAuditRow(String columnName, String value) {
+        awaitDataAudits();
         val persistedAuditRow =
                 dataAuditRepository.findAll().stream()
                         .filter(row -> "report_jobs".equals(row.getTableName()))
