@@ -69,8 +69,8 @@ public class DataAudit implements Changeable, Accountable {
     @Size(max = 4000)
     private String newValue;
 
-    @Column(name = "user_id")
-    @Size(max = 32)
+    @Column(name = "user_name")
+    @Size(max = 250)
     private String createdUser;
 
     @Column(name = "link")
@@ -112,7 +112,7 @@ public class DataAudit implements Changeable, Accountable {
     @Size(max = 100)
     private String eventName;
 
-    @Column(name = "user_name")
-    @Size(max = 250)
+    @Column(name = "user_id")
+    @Size(max = 73)
     private String changedBy;
 }

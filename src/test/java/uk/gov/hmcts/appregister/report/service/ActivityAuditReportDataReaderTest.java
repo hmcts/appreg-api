@@ -182,9 +182,9 @@ class ActivityAuditReportDataReaderTest {
         assertThat(query).contains("da.created_date >= :dateFrom");
         assertThat(query).contains("da.event_name IN (:eventNames)");
         Assertions.assertTrue(
-                query.contains("COALESCE(NULLIF(da.user_id, ''), da.user_name) AS user_name"));
+                query.contains("COALESCE(NULLIF(da.user_name, ''), da.user_id) AS user_name"));
         Assertions.assertTrue(
-                query.contains("OR COALESCE(NULLIF(da.user_id, ''), da.user_name) = :username"));
+                query.contains("OR COALESCE(NULLIF(da.user_name, ''), da.user_id) = :username"));
         assertThat(query).contains("POSITION('_ID' IN UPPER(da.column_name)) = 0");
         Assertions.assertTrue(
                 query.contains("Maintains legacy MIS Activity Audit report ordering"));

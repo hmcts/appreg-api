@@ -111,6 +111,46 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
+    void
+            givenApplicationCodeDoesNotRequireRespondent_whenBulkUploadHasNoRespondent_thenCreatesEntry()
+                    throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+        UUID listId = createNewApplicationList(token);
+        String row = "APP001" + "|".repeat(17) + "MS99001||";
+
+        try (var file = tempCsv(LEGACY_BULK_UPLOAD_HEADER + "\n" + row + "\n")) {
+            Response response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+
+            response.then().statusCode(202);
+            JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+            JobAcknowledgement completedJob =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient,
+                            getLocalUrl("jobs/" + acknowledgement.getId()),
+                            tokenGenerator.fetchTokenForRole());
+
+            assertThat(completedJob.getStatus())
+                    .as("Unexpected bulk-upload failure: %s", completedJob.getErrorDescription())
+                    .isEqualTo(JobStatus.COMPLETED);
+            assertThat(persistedEntriesForList(listId))
+                    .singleElement()
+                    .satisfies(
+                            entry -> {
+                                assertThat(entry.applicationCode()).isEqualTo("MS99001");
+                                assertThat(entry.respondent()).isNull();
+                            });
+        }
+    }
+
+    @Test
     void givenInvalidBulkUploadHeader_whenBulkUploadApplicationListEntries_thenReturns400()
             throws Exception {
         TokenAndJwksKey token = createAdminToken().fetchTokenForRole();
@@ -994,6 +1034,9 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     private static PersistedRespondent toPersistedRespondent(NameAddress respondent) {
+        if (respondent == null) {
+            return null;
+        }
         return new PersistedRespondent(
                 respondent.getName(),
                 respondent.getTitle(),

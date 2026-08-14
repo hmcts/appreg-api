@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.MultiValuedMap;
@@ -106,6 +107,30 @@ public class BulkUploadRow implements CsvPojo {
         return row != null
                 && (StringUtils.isNotBlank(row.getRespondentFirstNameValue())
                         || StringUtils.isNotBlank(row.getRespondentLastNameValue()));
+    }
+
+    public static boolean hasAnyRespondentDetails(BulkUploadRow row) {
+        return row != null
+                && Stream.of(
+                                row.respondentTitle,
+                                row.respondentOrganisationName,
+                                row.respondentForename1,
+                                row.respondentForename2,
+                                row.respondentForename3,
+                                row.respondentSurname,
+                                row.respondentFirstName,
+                                row.respondentMiddleName,
+                                row.respondentLastName,
+                                row.respondentAddressLine1,
+                                row.respondentAddressLine2,
+                                row.respondentAddressLine3,
+                                row.respondentAddressLine4,
+                                row.respondentAddressLine5,
+                                row.respondentPostcode,
+                                row.respondentEmail,
+                                row.respondentTelephone,
+                                row.respondentMobile)
+                        .anyMatch(StringUtils::isNotBlank);
     }
 
     public static RespondentNameState respondentNameState(BulkUploadRow row) {

@@ -7160,8 +7160,10 @@ components:
           format: date
           type: string
         username:
-          description: Exact username to audit.
-          example: jsmith
+          description: "Exact display username to audit, normally the user's email\
+            \ address."
+          example: jsmith@example.com
+          maxLength: 250
           minLength: 1
           pattern: .*\S.*
           type: string
