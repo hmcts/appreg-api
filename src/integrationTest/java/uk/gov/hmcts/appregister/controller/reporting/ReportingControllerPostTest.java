@@ -3244,6 +3244,7 @@ class ReportingControllerPostTest extends BaseIntegration {
     }
 
     private Collection<DataAudit> reportAuditRows(ReportAuditOperation operation) {
+        awaitDataAudits();
         return dataAuditRepository.findAll().stream()
                 .filter(row -> operation.getEventName().equals(row.getEventName()))
                 .toList();

@@ -72,7 +72,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
                                         FRO_WORDING_KEY, "Caseworker discretion")));
 
         // Remove the create rows so the assertions below only inspect the update request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         val updateResp =
                 updateResult(
@@ -107,6 +107,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
                                                 "Updated AppListEntryResolution could not be reloaded"));
 
         differenceLogAsserter.assertNoErrors();
+        awaitDataAudits();
 
         // The result code change should be recorded against the rc_rc_id join column.
         val missingResolutionCodeAuditMessage =

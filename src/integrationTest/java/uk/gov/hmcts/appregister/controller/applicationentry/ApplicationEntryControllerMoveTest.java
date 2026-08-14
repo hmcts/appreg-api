@@ -87,6 +87,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         Response resp = moveEntries(sourceList, targetList, Set.of(sourceEntry.getUuid()));
 
         resp.then().statusCode(HttpStatus.OK.value());
+        awaitDataAudits();
 
         Response targetResp =
                 restAssuredClient.executeGetRequest(
@@ -120,10 +121,11 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         val targetList = createOpenTargetList();
 
         // Clear earlier audit rows so these assertions only inspect the move request.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
         val resp = moveEntries(sourceList, targetList, Set.of(sourceEntry.getUuid()));
 
         resp.then().statusCode(HttpStatus.OK.value());
+        awaitDataAudits();
 
         val persistedAfterMove =
                 applicationListEntryRepository.findByUuid(sourceEntry.getUuid()).orElseThrow();
@@ -202,7 +204,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         val targetList = createOpenTargetList();
 
         // Clear earlier audit rows so we only inspect what this failing move attempted to write.
-        dataAuditRepository.deleteAll();
+        clearDataAudits(dataAuditRepository);
 
         // Fail during the batched saveAll call so we can prove the move still rolls back.
         moveEntryFailureSwitch.failOnMoveSave();
@@ -218,6 +220,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         } finally {
             moveEntryFailureSwitch.reset();
         }
+        awaitDataAudits();
 
         // Re-read both entries from the database. If the transaction rolled back correctly they
         // must still belong to the original source list, despite the first save happening before
