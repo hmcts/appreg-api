@@ -41,6 +41,12 @@ public class ApplicationListDeletionValidator
                     "Application list id %s not found".formatted(deletionId));
         }
 
+        if (!entry.get().isOpen()) {
+            throw new AppRegistryException(
+                    ApplicationListError.INVALID_DELETE_LIST_STATUS,
+                    "Application list id %s is not in an open state".formatted(deletionId));
+        }
+
         if (entry.get().isDeleted()) {
             throw new AppRegistryException(
                     ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE,

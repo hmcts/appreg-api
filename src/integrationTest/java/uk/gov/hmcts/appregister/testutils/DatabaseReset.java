@@ -71,7 +71,9 @@ public class DatabaseReset {
                         "SELECT sequence_name FROM information_schema.sequences "
                                 + "WHERE sequence_schema = '"
                                 + sqlInitSchema
-                                + "'");
+                                // The audit generator retains values already reserved with nextval
+                                // across tests, so rewinding its sequence would reuse cached IDs.
+                                + "' AND sequence_name <> 'add_dataaudit_event'");
         final List<?> sequences = query.getResultList();
         for (Object seqName : sequences) {
             entityManager

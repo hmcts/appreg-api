@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.service;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -14,7 +13,6 @@ import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAre
  */
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class LocationLookupService {
 
     private static final int SINGLE_RECORD = 1;

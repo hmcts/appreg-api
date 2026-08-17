@@ -104,6 +104,8 @@ appreg:
     single-list-limit: 1050
   audit:
     persistence:
+      # Audit rows are larger batches than normal entity writes to shorten audit transactions.
+      batch-size: ${AUDIT_PERSISTENCE_BATCH_SIZE:100}
       # Five workers cap audit persistence at five concurrent database connections.
       worker-count: ${AUDIT_PERSISTENCE_WORKER_COUNT:5}
       # Capacity is the number of audit batches waiting, not the number of audit rows.

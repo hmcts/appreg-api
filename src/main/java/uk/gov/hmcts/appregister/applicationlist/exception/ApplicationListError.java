@@ -97,7 +97,12 @@ public enum ApplicationListError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "'listIds' must contain no more than 2000 items",
-                    "AL-24"));
+                    "AL-24")),
+    INVALID_DELETE_LIST_STATUS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot delete application list, as it is not in a deletable state.",
+                    "AL-25"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
