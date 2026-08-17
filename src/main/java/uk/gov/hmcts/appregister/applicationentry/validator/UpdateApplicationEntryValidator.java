@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -16,7 +15,6 @@ import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
@@ -76,9 +74,11 @@ public class UpdateApplicationEntryValidator
                     validateSuccess) {
         final ApplicationList applicationList = validateParentApplicationList(validatable.getId());
 
-        Optional<ApplicationListEntry> entry =
-                applicationListEntryRepository.findByUuid(validatable.getEntryId());
-        if (entry.isEmpty()) {
+        var entry =
+                applicationListEntryRepository.findByEntryUuidWithinListUuid(
+                        validatable.getId(), validatable.getEntryId());
+        if (entry.isEmpty()
+                && applicationListEntryRepository.findByUuid(validatable.getEntryId()).isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.ENTRY_DOES_NOT_EXIST,
                     "The application entry %s does not exist in application list %s"
@@ -88,9 +88,6 @@ public class UpdateApplicationEntryValidator
 
         log.debug(" application list entry is found {}", validatable.getEntryId());
 
-        entry =
-                applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        validatable.getId(), validatable.getEntryId());
         if (entry.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST,
@@ -103,8 +100,9 @@ public class UpdateApplicationEntryValidator
                 validatable.getEntryId(),
                 validatable.getId());
 
+        var resolvedPayload = validatable.withApplicationListEntry(entry.orElseThrow());
         return validateUsingApplicationList(
-                validatable,
+                resolvedPayload,
                 (payload, success) -> {
                     validateFeeStatusTransition(success.getApplicationCode(), payload);
                     return validateSuccess == null ? null : validateSuccess.apply(payload, success);
@@ -216,7 +214,7 @@ public class UpdateApplicationEntryValidator
                 fee,
                 saCode,
                 applicationList,
-                applicationListEntryRepository.findByUuid(payload.getEntryId()).orElse(null));
+                payload.getApplicationListEntry());
     }
 
     @Override
@@ -275,8 +273,6 @@ public class UpdateApplicationEntryValidator
 
     @Override
     protected LocalDate getLodgementDate(PayloadForUpdateEntry validatable) {
-        Optional<ApplicationListEntry> ale =
-                applicationListEntryRepository.findByUuid(validatable.getEntryId());
-        return ale.map(ApplicationListEntry::getLodgementDate).orElse(null);
+        return validatable.getApplicationListEntry().getLodgementDate();
     }
 }

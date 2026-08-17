@@ -80,6 +80,7 @@ class UpdateApplicationEntryValidatorTest {
     private StandardApplicant standardApplicant;
     private Fee fee;
     private ApplicationList applicationList;
+    private ApplicationListEntry applicationListEntry;
     private UUID appListUuid;
     private UUID appListEntryUuid;
 
@@ -126,11 +127,13 @@ class UpdateApplicationEntryValidatorTest {
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
+        applicationListEntry = new ApplicationListEntry();
+        applicationListEntry.setLodgementDate(TODAY_UK);
         when(applicationListEntryRepository.findByUuid(appListEntryUuid))
-                .thenReturn(Optional.of(new ApplicationListEntry()));
+                .thenReturn(Optional.of(applicationListEntry));
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
                         appListUuid, appListEntryUuid))
-                .thenReturn(Optional.of(new ApplicationListEntry()));
+                .thenReturn(Optional.of(applicationListEntry));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
                 .thenReturn(List.of());
     }
@@ -168,8 +171,21 @@ class UpdateApplicationEntryValidatorTest {
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
 
-        // validate the payload
-        updateApplicationEntryValidator.validate(payload);
+        var success =
+                updateApplicationEntryValidator.validate(
+                        payload,
+                        (resolvedPayload, validationSuccess) -> {
+                            Assertions.assertSame(
+                                    applicationListEntry,
+                                    resolvedPayload.getApplicationListEntry());
+                            return validationSuccess;
+                        });
+
+        Assertions.assertSame(applicationListEntry, success.getApplicationEntryId());
+        Mockito.verify(applicationListEntryRepository)
+                .findByEntryUuidWithinListUuid(appListUuid, appListEntryUuid);
+        Mockito.verify(applicationListEntryRepository, Mockito.never())
+                .findByUuid(appListEntryUuid);
     }
 
     @Test
@@ -233,6 +249,9 @@ class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getRespondent().setOrganisation(null);
 
         when(applicationListEntryRepository.findByUuid(appListEntryUuid))
+                .thenReturn(Optional.empty());
+        when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
+                        appListUuid, appListEntryUuid))
                 .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
