@@ -845,6 +845,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertNotNull(respondentBeforeUpdate);
         Assertions.assertNotNull(applicantBeforeUpdate);
 
+        entityManager.flush();
         entityManager.clear();
 
         Assertions.assertTrue(
@@ -953,6 +954,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertNotNull(respondentBeforeUpdate);
         Assertions.assertNotNull(applicantBeforeUpdate);
 
+        entityManager.flush();
         entityManager.clear();
 
         Assertions.assertTrue(
@@ -1065,6 +1067,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         MatchResponse<EntryGetDetailDto> update =
                 applicationEntryService.updateEntry(payloadForCreate);
 
+        entityManager.flush();
         entityManager.clear();
 
         Assertions.assertNotNull(update.getEtag());
@@ -1192,6 +1195,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         MatchResponse<EntryGetDetailDto> update =
                 applicationEntryService.updateEntry(payloadForCreate);
 
+        entityManager.flush();
         entityManager.clear();
 
         // assert that the update was successful
@@ -1288,6 +1292,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         MatchResponse<EntryGetDetailDto> response =
                 applicationEntryService.updateEntry(payloadForCreate);
 
+        entityManager.flush();
         entityManager.clear();
 
         Assertions.assertEquals("MX99010", response.getPayload().getApplicationCode());
@@ -1381,6 +1386,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertNotNull(respondentBeforeUpdate);
         Assertions.assertNotNull(applicantBeforeUpdate);
 
+        entityManager.flush();
         entityManager.clear();
 
         Assertions.assertTrue(
@@ -1495,6 +1501,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertNotNull(respondentBeforeUpdate);
         Assertions.assertNotNull(applicantBeforeUpdate);
 
+        entityManager.flush();
         entityManager.clear();
 
         Assertions.assertTrue(

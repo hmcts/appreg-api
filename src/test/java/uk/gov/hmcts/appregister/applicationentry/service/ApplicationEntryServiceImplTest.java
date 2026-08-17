@@ -3213,8 +3213,10 @@ class ApplicationEntryServiceImplTest {
 
         Fee mainFee = new Fee();
         mainFee.setId(10L);
+        mainFee.setVersion(1L);
         Fee offsiteFee = new Fee();
         offsiteFee.setId(11L);
+        offsiteFee.setVersion(1L);
         FeePair feePair = new FeePair(mainFee, offsiteFee);
 
         updateSuccess =
@@ -3233,6 +3235,18 @@ class ApplicationEntryServiceImplTest {
         when(appListEntryOfficialRepository.getOfficialByEntryUuid(entryId))
                 .thenReturn(List.of(firstOfficial, secondOfficial));
 
+        AppListEntryFeeStatus existingFeeStatus = new AppListEntryFeeStatus();
+        existingFeeStatus.setId(30L);
+        existingFeeStatus.setVersion(1L);
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
+                .thenReturn(List.of(existingFeeStatus));
+
+        Fee existingFee = new Fee();
+        existingFee.setId(9L);
+        existingFee.setVersion(1L);
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(existingFee));
+
         when(applicationListEntryRepository.save(any(ApplicationListEntry.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
@@ -3246,7 +3260,20 @@ class ApplicationEntryServiceImplTest {
         MatchResponse<EntryGetDetailDto> response = service.updateEntry(payload);
 
         Assertions.assertNotNull(response);
+        List<Keyable> expectedEtagEntities = new ArrayList<>();
+        expectedEtagEntities.add(applicationListEntry);
+        expectedEtagEntities.add(existingFeeStatus);
+        expectedEtagEntities.add(mainFee);
+        expectedEtagEntities.add(offsiteFee);
+        Assertions.assertEquals(
+                MatchResponse.of(null, expectedEtagEntities).getEtag(), response.getEtag());
         verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+        verify(appListEntryOfficialRepository).getOfficialByEntryUuid(entryId);
+        verify(appListEntryFeeStatusRepository).getFeeStatusByEntryUuid(entryId);
+        verify(appListEntryFeeRepository).getFeeForEntryId(applicationListEntry.getId());
+        verify(applicationListEntryMapStructMapper)
+                .toEntryGetDetailDto(
+                        applicationListEntry, List.of(existingFeeStatus), feePair, List.of(), null);
         verify(appListEntryOfficialRepository).deleteAllForEntryId(applicationListEntry.getId());
         verify(auditOperationService, times(2))
                 .processAudit(

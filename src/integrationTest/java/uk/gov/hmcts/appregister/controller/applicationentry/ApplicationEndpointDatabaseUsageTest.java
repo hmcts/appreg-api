@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 class ApplicationEndpointDatabaseUsageTest extends AbstractApplicationEntryCrudTest {
     private static final String AUDIT_ROWS_METRIC = "appreg.audit.persistence.rows.submitted";
     private static final long CREATE_ENTRY_STATEMENT_BUDGET = 123;
-    private static final long UPDATE_ENTRY_STATEMENT_BUDGET = 41;
+    private static final long UPDATE_ENTRY_STATEMENT_BUDGET = 35;
     private static final long ENTRY_DETAIL_STATEMENT_BUDGET = 16;
     private static final long LIST_DETAIL_STATEMENT_BUDGET = 6;
 
