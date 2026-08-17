@@ -38,14 +38,35 @@ case "${CODEX_OPERATION}" in
     PR_BODY_PATH="${pr_body_path}" PLAN_SHA_PATH="${PLAN_DIR}/plan.sha256" \
       SUMMARY_PATH="${summary_path}" TESTING_PATH="${testing_path}" python3 -I - <<'PY'
 import os
+import unicodedata
 from pathlib import Path
+
+
+def markdown_escape(value):
+    escaped = value
+    for character in "\\`*_{}[]<>()#+-.!|":
+        escaped = escaped.replace(character, f"\\{character}")
+    return escaped
+
+
+def render_initiator(value):
+    normalized = value.strip()
+    if len(normalized) > 200 or any(unicodedata.category(character) == "Cc" for character in normalized):
+        normalized = ""
+    return markdown_escape(normalized or "Not supplied by Jira Automation")
+
 
 plan_sha = Path(os.environ["PLAN_SHA_PATH"]).read_text(encoding="ascii").strip()
 summary = Path(os.environ["SUMMARY_PATH"]).read_text(encoding="utf-8")
 testing = Path(os.environ["TESTING_PATH"]).read_text(encoding="utf-8")
+initiator = render_initiator(os.environ.get("JIRA_INITIATOR_DISPLAY_NAME", ""))
 body = f"""### Jira link
 
 See [{os.environ['ISSUE_KEY']}]({os.environ['ISSUE_URL']})
+
+### Automation request
+
+Initiated in Jira by: {initiator}
 
 ### Change description
 
@@ -95,11 +116,37 @@ PY
     else
       required_env "ISSUE_KEY"
       required_env "ISSUE_URL"
-      {
-        echo "### Jira link"
-        echo
-        echo "See [${ISSUE_KEY}](${ISSUE_URL})"
-      } >"${pr_body_path}"
+      PR_BODY_PATH="${pr_body_path}" python3 -I - <<'PY'
+import os
+import unicodedata
+from pathlib import Path
+
+
+def markdown_escape(value):
+    escaped = value
+    for character in "\\`*_{}[]<>()#+-.!|":
+        escaped = escaped.replace(character, f"\\{character}")
+    return escaped
+
+
+def render_initiator(value):
+    normalized = value.strip()
+    if len(normalized) > 200 or any(unicodedata.category(character) == "Cc" for character in normalized):
+        normalized = ""
+    return markdown_escape(normalized or "Not supplied by Jira Automation")
+
+
+initiator = render_initiator(os.environ.get("JIRA_INITIATOR_DISPLAY_NAME", ""))
+body = f"""### Jira link
+
+See [{os.environ['ISSUE_KEY']}]({os.environ['ISSUE_URL']})
+
+### Automation request
+
+Initiated in Jira by: {initiator}
+"""
+Path(os.environ["PR_BODY_PATH"]).write_text(body, encoding="utf-8")
+PY
     fi
     PR_BODY_PATH="${pr_body_path}" SUMMARY_PATH="${summary_path}" TESTING_PATH="${testing_path}" \
       REPAIR_ATTEMPT="${REPAIR_ATTEMPT}" python3 -I - <<'PY'

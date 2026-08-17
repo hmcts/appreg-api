@@ -94,14 +94,23 @@ class CodexPlanHandoffTest(unittest.TestCase):
         )
 
     def run_collector(
-        self, plan_dir: Path, operation: str, patch: str
+        self,
+        plan_dir: Path,
+        operation: str,
+        patch: str,
+        *,
+        initiator_display_name: str = "Zac *Healy*",
+        existing_pr_body: bool = True,
     ) -> tuple[subprocess.CompletedProcess[str], Path]:
         output_dir = plan_dir / f"output-{operation}"
         input_dir = plan_dir / "input"
         input_dir.mkdir(exist_ok=True)
-        (input_dir / "codex-pr-body.md").write_text(
-            "### Planning audit\n\nPrivate plan content is omitted.\n", encoding="utf-8"
-        )
+        if existing_pr_body:
+            (input_dir / "codex-pr-body.md").write_text(
+                "### Automation request\n\nInitiated in Jira by: Original Initiator\n\n"
+                "### Planning audit\n\nPrivate plan content is omitted.\n",
+                encoding="utf-8",
+            )
         environment = {
             **os.environ,
             "CODEX_RESULT": self.codex_result(patch),
@@ -111,6 +120,7 @@ class CodexPlanHandoffTest(unittest.TestCase):
             "ISSUE_KEY": "ARCPOC-1",
             "ISSUE_SUMMARY": "Validate requests",
             "ISSUE_URL": "https://example.invalid/ARCPOC-1",
+            "JIRA_INITIATOR_DISPLAY_NAME": initiator_display_name,
             "PLAN_DIR": str(plan_dir),
             "INPUT_DIR": str(input_dir),
             "REPAIR_ATTEMPT": "1",
@@ -165,6 +175,8 @@ class CodexPlanHandoffTest(unittest.TestCase):
         self.assertIn("Added a focused test.", pr_body)
         self.assertIn("Validated plan SHA-256", pr_body)
         self.assertIn("Plan approval: automatic after trusted validation", pr_body)
+        self.assertIn("Initiated in Jira by: Zac \\*Healy\\*", pr_body)
+        self.assertEqual(pr_body.count("### Automation request"), 1)
         self.assertFalse((output_dir / "plan.json").exists())
         self.assertFalse((output_dir / "allowed-paths.txt").exists())
         self.assertFalse((output_dir / "codex-final-message.md").exists())
@@ -219,6 +231,35 @@ class CodexPlanHandoffTest(unittest.TestCase):
         self.assertIn("Model-generated repair details (attempt 1)", pr_body)
         self.assertIn("Updated the shared validator.", pr_body)
         self.assertIn("Added a focused test.", pr_body)
+        self.assertIn("Initiated in Jira by: Original Initiator", pr_body)
+        self.assertEqual(pr_body.count("### Automation request"), 1)
+
+    def test_missing_initiator_and_repair_body_use_explicit_fallback(self) -> None:
+        plan_dir = self.make_plan()
+        completed, output_dir = self.run_collector(
+            plan_dir,
+            "jira-repair",
+            PATCH,
+            initiator_display_name="",
+            existing_pr_body=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        pr_body = (output_dir / "codex-pr-body.md").read_text(encoding="utf-8")
+        self.assertIn("Initiated in Jira by: Not supplied by Jira Automation", pr_body)
+        self.assertEqual(pr_body.count("### Automation request"), 1)
+
+    def test_invalid_manual_dispatch_initiator_uses_explicit_fallback(self) -> None:
+        plan_dir = self.make_plan()
+        completed, output_dir = self.run_collector(
+            plan_dir,
+            "jira-generate",
+            PATCH,
+            initiator_display_name="Untrusted User\n### Injected section",
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        pr_body = (output_dir / "codex-pr-body.md").read_text(encoding="utf-8")
+        self.assertIn("Initiated in Jira by: Not supplied by Jira Automation", pr_body)
+        self.assertNotIn("Injected section", pr_body)
 
     def test_repair_rejects_patch_outside_planned_paths(self) -> None:
         plan_dir = self.make_plan()
