@@ -3193,6 +3193,8 @@ class ApplicationEntryServiceImplTest {
 
         EntryUpdateDto dto = new EntryUpdateDto();
         dto.setWordingFields(List.of());
+        dto.setOfficials(List.of());
+        dto.setHasOffsiteFee(true);
 
         final PayloadForUpdateEntry payload = new PayloadForUpdateEntry(dto, listId, entryId);
 
@@ -3209,27 +3211,76 @@ class ApplicationEntryServiceImplTest {
         when(wordingTemplateSentence.substitute(anyList())).thenReturn(substitutedSentence);
         when(substitutedSentence.getSubstitutedString()).thenReturn("wording");
 
+        Fee mainFee = new Fee();
+        mainFee.setId(10L);
+        mainFee.setVersion(1L);
+        Fee offsiteFee = new Fee();
+        offsiteFee.setId(11L);
+        offsiteFee.setVersion(1L);
+        FeePair feePair = new FeePair(mainFee, offsiteFee);
+
         updateSuccess =
                 new UpdateApplicationEntryValidationSuccess(
                         wordingTemplateSentence,
                         new ApplicationCode(),
-                        null,
+                        feePair,
                         null,
                         applicationList,
                         applicationListEntry);
 
+        AppListEntryOfficial firstOfficial = new AppListEntryOfficial();
+        firstOfficial.setId(20L);
+        AppListEntryOfficial secondOfficial = new AppListEntryOfficial();
+        secondOfficial.setId(21L);
+        when(appListEntryOfficialRepository.getOfficialByEntryUuid(entryId))
+                .thenReturn(List.of(firstOfficial, secondOfficial));
+
+        AppListEntryFeeStatus existingFeeStatus = new AppListEntryFeeStatus();
+        existingFeeStatus.setId(30L);
+        existingFeeStatus.setVersion(1L);
+        when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(entryId))
+                .thenReturn(List.of(existingFeeStatus));
+
+        Fee existingFee = new Fee();
+        existingFee.setId(9L);
+        existingFee.setVersion(1L);
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(existingFee));
+
         when(applicationListEntryRepository.save(any(ApplicationListEntry.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
 
         when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        eq(applicationListEntry), anyList(), eq(null), anyList(), eq(null)))
+                        eq(applicationListEntry), anyList(), eq(feePair), anyList(), eq(null)))
                 .thenReturn(entryGetDetailDto);
 
         MatchResponse<EntryGetDetailDto> response = service.updateEntry(payload);
 
         Assertions.assertNotNull(response);
+        List<Keyable> expectedEtagEntities = new ArrayList<>();
+        expectedEtagEntities.add(applicationListEntry);
+        expectedEtagEntities.add(existingFeeStatus);
+        expectedEtagEntities.add(mainFee);
+        expectedEtagEntities.add(offsiteFee);
+        Assertions.assertEquals(
+                MatchResponse.of(null, expectedEtagEntities).getEtag(), response.getEtag());
         verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+        verify(appListEntryOfficialRepository).getOfficialByEntryUuid(entryId);
+        verify(appListEntryFeeStatusRepository).getFeeStatusByEntryUuid(entryId);
+        verify(appListEntryFeeRepository).getFeeForEntryId(applicationListEntry.getId());
+        verify(applicationListEntryMapStructMapper)
+                .toEntryGetDetailDto(
+                        applicationListEntry, List.of(existingFeeStatus), feePair, List.of(), null);
+        verify(appListEntryOfficialRepository).deleteAllForEntryId(applicationListEntry.getId());
+        verify(auditOperationService, times(2))
+                .processAudit(
+                        any(AppListEntryOfficial.class),
+                        eq(AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY),
+                        any());
+        verify(appListEntryFeeRepository, times(2)).save(any(AppListEntryFeeId.class));
     }
 
     private List<AsyncJobsAppListEntry> createAsyncJobAppListEntries(UUID jobId, int count) {

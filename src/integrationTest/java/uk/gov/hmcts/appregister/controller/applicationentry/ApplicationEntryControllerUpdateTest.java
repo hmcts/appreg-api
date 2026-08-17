@@ -367,6 +367,16 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         responseSpecUpdateWithOldEtag.then().statusCode(412);
         ProblemAssertUtil.assertEquals(
                 CommonAppError.MATCH_ETAG_FAILURE.getCode(), responseSpecUpdateWithOldEtag);
+
+        // 3) The ETag returned by the successful update must match the persisted state
+        Response responseSpecUpdateWithCurrentEtag =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        secondUpdate,
+                        HeaderUtil.getETag(responseSpecUpdate));
+
+        responseSpecUpdateWithCurrentEtag.then().statusCode(200);
     }
 
     @Test
