@@ -388,7 +388,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return a populated {@link ApplicationListPage} with metadata and summary items
      */
     @Override
-    @Transactional(readOnly = true)
     public ApplicationListPage getPage(ApplicationListGetFilterDto dto, PagingWrapper pageable) {
         TimeWindow timeWindow = computeTimeWindow(dto);
 

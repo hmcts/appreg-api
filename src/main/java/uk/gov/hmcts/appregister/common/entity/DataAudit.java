@@ -4,10 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -23,6 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.converter.CrudConverter;
+import uk.gov.hmcts.appregister.common.entity.generator.DataAuditGeneratedId;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
@@ -41,11 +39,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 public class DataAudit implements Changeable, Accountable {
     @Id
     @Column(name = "data_id", nullable = false, updatable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "add_dataaudit_event_gen")
-    @SequenceGenerator(
-            name = "add_dataaudit_event_gen",
-            sequenceName = "add_dataaudit_event",
-            allocationSize = 1)
+    @DataAuditGeneratedId
     @EqualsAndHashCode.Include
     private Long id;
 
