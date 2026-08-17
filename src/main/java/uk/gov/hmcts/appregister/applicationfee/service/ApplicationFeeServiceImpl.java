@@ -10,7 +10,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationfee.service.exception.ApplicationFeeCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -23,7 +22,6 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final FeeRepository feeRepository;
     private final BusinessDateProvider businessDateProvider;

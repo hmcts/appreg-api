@@ -205,7 +205,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final JobExistanceValidator jobExistanceValidator;
 
     @Override
-    @Transactional(readOnly = true)
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         log.debug(
                 "Started find application entries page={} size={}",
@@ -263,7 +262,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<EntryGetSummaryDto> bulkGetApplicationListEntries(
             BulkGetApplicationListEntriesRequestDto request) {
         bulkGetApplicationListEntriesValidator.validate(request);
@@ -295,7 +293,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public BulkActionPreviewResponseDto bulkActionPreview(BulkActionPreviewRequestDto request) {
         bulkActionPreviewValidator.validate(request);
 
@@ -306,7 +303,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public BulkActionPreviewResponseDto bulkActionPreview(
             UUID listId, ApplicationListEntryBulkActionPreviewRequestDto request) {
         bulkActionPreviewValidator.validateApplicationListEntryBulkActionPreview(listId, request);
@@ -1899,7 +1895,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public EntryPage getApplicationListEntries(
             PayloadGetEntryInList payloadForGet,
             PagingWrapper pageable,

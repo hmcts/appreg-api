@@ -16,6 +16,10 @@ import org.springframework.validation.annotation.Validated;
 @Setter
 @ConfigurationProperties(prefix = "appreg.audit.persistence")
 public class DataAuditPersistenceProperties {
+    /** Number of audit inserts grouped into each JDBC batch. */
+    @Min(1)
+    private int batchSize = 100;
+
     /** Maximum concurrent audit transactions and therefore audit database connections. */
     @Min(1)
     private int workerCount = 5;

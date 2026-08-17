@@ -127,6 +127,14 @@ class DataAuditPersistenceQueueTest {
     }
 
     @Test
+    void givenDefaultProperties_whenCreated_thenUsePlannedBatchAndWorkerSizes() {
+        var properties = new DataAuditPersistenceProperties();
+
+        Assertions.assertEquals(100, properties.getBatchSize());
+        Assertions.assertEquals(5, properties.getWorkerCount());
+    }
+
+    @Test
     void givenShutdownTimeoutIsNotPositive_whenValidated_thenItIsInvalid() {
         var properties = new DataAuditPersistenceProperties();
         Assertions.assertTrue(properties.isShutdownTimeoutValid());
