@@ -770,7 +770,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 updateEntry
                                                                         .getData()
                                                                         .getHasOffsiteFee());
-
                                                         return Optional.of(
                                                                 new AuditableResult<>(
                                                                         MatchResponse.of(
