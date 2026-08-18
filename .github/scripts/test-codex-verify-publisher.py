@@ -31,15 +31,8 @@ class PublisherValidationTests(unittest.TestCase):
     def payloads(self) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         return (
             {
-                "id": 12345,
-                "app_slug": "hmcts-codex-agent",
-                "account": {"login": "hmcts"},
-                "permissions": {
-                    "contents": "write",
-                    "pull_requests": "write",
-                    "issues": "write",
-                    "workflows": "write",
-                },
+                "total_count": 1,
+                "repositories": [{"full_name": "hmcts/appreg-api"}],
             },
             {
                 "full_name": "hmcts/appreg-api",
@@ -64,24 +57,10 @@ class PublisherValidationTests(unittest.TestCase):
         self.assertEqual(login, "hmcts-codex-agent[bot]")
         self.assertEqual(email, "98765+hmcts-codex-agent[bot]@users.noreply.github.com")
 
-    def test_rejects_unexpected_app(self) -> None:
-        with self.assertRaisesRegex(MODULE.PublisherVerificationError, "expected another-app"):
-            self.validate(app_slug="another-app")
-
-    def test_rejects_unexpected_installation(self) -> None:
-        with self.assertRaisesRegex(MODULE.PublisherVerificationError, "unexpected App installation"):
-            self.validate(installation_id="54321")
-
-    def test_rejects_installation_owned_by_another_account(self) -> None:
+    def test_rejects_token_without_expected_repository(self) -> None:
         installation, _, _ = self.payloads()
-        installation["account"]["login"] = "another-org"
-        with self.assertRaisesRegex(MODULE.PublisherVerificationError, "not owned by hmcts"):
-            self.validate(installation=installation)
-
-    def test_rejects_missing_installation_permission(self) -> None:
-        installation, _, _ = self.payloads()
-        installation["permissions"]["issues"] = "read"
-        with self.assertRaisesRegex(MODULE.PublisherVerificationError, "lacks required"):
+        installation["repositories"] = [{"full_name": "hmcts/another-repository"}]
+        with self.assertRaisesRegex(MODULE.PublisherVerificationError, "does not include"):
             self.validate(installation=installation)
 
     def test_rejects_token_without_push_permission(self) -> None:
@@ -116,8 +95,8 @@ class PublisherValidationTests(unittest.TestCase):
             return Response(json.dumps({"id": 12345}).encode())
 
         client = MODULE.GitHubClient("https://api.github.test", "test-secret", opener=opener)
-        self.assertEqual(client.get_json("/installation"), {"id": 12345})
-        self.assertEqual(captured["url"], "https://api.github.test/installation")
+        self.assertEqual(client.get_json("/installation/repositories"), {"id": 12345})
+        self.assertEqual(captured["url"], "https://api.github.test/installation/repositories")
         self.assertEqual(captured["authorization"], "Bearer test-secret")
         self.assertEqual(captured["timeout"], 20)
 
