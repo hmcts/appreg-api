@@ -728,44 +728,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                     AppListEntryAuditOperation
                                                             .UPDATE_APP_ENTRY_LIST,
                                                     req -> {
-
-                                                        // save the applicant
-                                                        updateApplicant(updateEntry, success);
-
-                                                        // save the respondent
-                                                        updateRespondent(updateEntry, success);
-
-                                                        // update entry with a standard
-                                                        // applicant
-                                                        updateStandardApplicant(success);
-
-                                                        // save the list
-                                                        ApplicationListEntry listEntryEntity =
-                                                                success.getApplicationEntryId();
-
-                                                        // update the core list data
-                                                        applicationListEntryEntityMapper
-                                                                .toApplicationListEntry(
-                                                                        updateEntry.getData(),
-                                                                        success.getWordingSentence()
-                                                                                .substitute(
-                                                                                        updateEntry
-                                                                                                .getData()
-                                                                                                .getWordingFields())
-                                                                                .getSubstitutedString(),
-                                                                        success.getSa(),
-                                                                        success
-                                                                                .getApplicationCode(),
-                                                                        success
-                                                                                .getApplicationList(),
-                                                                        listEntryEntity);
-
-                                                        // save the core list data
-                                                        listEntryEntity =
-                                                                refreshEntity(
-                                                                        applicationListEntryRepository
-                                                                                .save(
-                                                                                        listEntryEntity));
+                                                        val listEntryEntity =
+                                                                saveUpdatedEntry(
+                                                                        updateEntry, success);
                                                         log.debug(
                                                                 "Created application entry with id: {}",
                                                                 listEntryEntity.getId());
@@ -805,7 +770,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 updateEntry
                                                                         .getData()
                                                                         .getHasOffsiteFee());
-
                                                         return Optional.of(
                                                                 new AuditableResult<>(
                                                                         MatchResponse.of(
@@ -1521,7 +1485,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
      * @param updateEntry the update payload
      * @param success The success validation response
      */
-    private void updateRespondent(
+    private NameAddress updateRespondent(
             PayloadForUpdateEntry updateEntry, UpdateApplicationEntryValidationSuccess success) {
         log.debug("Updating respondent");
 
@@ -1553,23 +1517,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             success.getApplicationEntryId().setRnameaddress(null);
         }
 
-        applicationListEntryRepository.save(success.getApplicationEntryId());
-        applicationListEntryRepository.flush();
-
-        if (existingRespondent != null) {
-            auditService.processAudit(
-                    existingRespondent,
-                    AppListEntryAuditOperation.DELETE_RESPONDENT,
-                    req -> {
-                        // delete the respondent that already exists
-                        nameAddressRepository.deleteForId(req.getOldValue().getId());
-                        log.debug(
-                                "Deleted old respondent with id: {}",
-                                success.getApplicationEntryId().getId());
-
-                        return Optional.empty();
-                    });
-        }
+        return existingRespondent;
     }
 
     /**
@@ -1578,7 +1526,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
      * @param updateEntry the update payload
      * @param success The success validation response
      */
-    private void updateApplicant(
+    private NameAddress updateApplicant(
             PayloadForUpdateEntry updateEntry, UpdateApplicationEntryValidationSuccess success) {
         log.debug("Updating applicant");
 
@@ -1621,20 +1569,59 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             success.getApplicationEntryId().setAnamedaddress(null);
         }
 
-        applicationListEntryRepository.save(success.getApplicationEntryId());
-        applicationListEntryRepository.flush();
+        return existingApplicant;
+    }
 
-        // delete the applicant that already exists
-        if (existingApplicant != null) {
-            auditService.processAudit(
-                    existingApplicant,
-                    AppListEntryAuditOperation.DELETE_APPLICANT,
-                    req -> {
-                        nameAddressRepository.deleteForId(req.getOldValue().getId());
-                        log.debug("Deleted old applicant with id: {}", req.getOldValue().getId());
-                        return Optional.empty();
-                    });
+    private ApplicationListEntry saveUpdatedEntry(
+            PayloadForUpdateEntry updateEntry, UpdateApplicationEntryValidationSuccess success) {
+        // Repoint both FKs first so the old rows can be deleted after a single entry save.
+        val replacedNameAddresses =
+                new ReplacedNameAddresses(
+                        updateApplicant(updateEntry, success),
+                        updateRespondent(updateEntry, success));
+
+        updateStandardApplicant(success);
+
+        applicationListEntryEntityMapper.toApplicationListEntry(
+                updateEntry.getData(),
+                success.getWordingSentence()
+                        .substitute(updateEntry.getData().getWordingFields())
+                        .getSubstitutedString(),
+                success.getSa(),
+                success.getApplicationCode(),
+                success.getApplicationList(),
+                success.getApplicationEntryId());
+
+        val updatedEntry = applicationListEntryRepository.save(success.getApplicationEntryId());
+        deleteNameAddress(
+                replacedNameAddresses.applicant(),
+                AppListEntryAuditOperation.DELETE_APPLICANT,
+                "applicant");
+        deleteNameAddress(
+                replacedNameAddresses.respondent(),
+                AppListEntryAuditOperation.DELETE_RESPONDENT,
+                "respondent");
+        return updatedEntry;
+    }
+
+    private record ReplacedNameAddresses(NameAddress applicant, NameAddress respondent) {}
+
+    private void deleteNameAddress(
+            NameAddress existingNameAddress,
+            AppListEntryAuditOperation deleteOperation,
+            String role) {
+        if (existingNameAddress == null) {
+            return;
         }
+
+        auditService.processAudit(
+                existingNameAddress,
+                deleteOperation,
+                req -> {
+                    nameAddressRepository.deleteForId(req.getOldValue().getId());
+                    log.debug("Deleted old {} with id: {}", role, req.getOldValue().getId());
+                    return Optional.empty();
+                });
     }
 
     /**
