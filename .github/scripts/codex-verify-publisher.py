@@ -93,11 +93,6 @@ def validate_publisher(
     full_name = repository_payload.get("full_name")
     if not isinstance(full_name, str) or full_name.casefold() != repository.casefold():
         raise PublisherVerificationError("Publisher token resolved an unexpected repository")
-    repository_permissions = repository_payload.get("permissions")
-    if not isinstance(repository_permissions, dict) or repository_permissions.get("push") is not True:
-        raise PublisherVerificationError(
-            f"GitHub App {expected_app_slug} does not have push permission for {repository}"
-        )
 
     expected_bot_login = f"{expected_app_slug}[bot]"
     actual_bot_login = bot_payload.get("login")

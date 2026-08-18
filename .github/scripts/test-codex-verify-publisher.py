@@ -63,12 +63,6 @@ class PublisherValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.PublisherVerificationError, "does not include"):
             self.validate(installation=installation)
 
-    def test_rejects_token_without_push_permission(self) -> None:
-        _, repository, _ = self.payloads()
-        repository["permissions"]["push"] = False
-        with self.assertRaisesRegex(MODULE.PublisherVerificationError, "does not have push"):
-            self.validate(repository=repository)
-
     def test_rejects_unexpected_repository(self) -> None:
         _, repository, _ = self.payloads()
         repository["full_name"] = "hmcts/another-repository"
