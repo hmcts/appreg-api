@@ -444,7 +444,7 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.53'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.54'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1'
 
