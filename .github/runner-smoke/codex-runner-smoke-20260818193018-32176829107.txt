@@ -1,0 +1,7 @@
+codex runner smoke test
+runner_name=codex-pilot-azure-aks-2fqx7-runner-vcl82
+runner_os=Linux
+runner_arch=X64
+repository=hmcts/appreg-api
+workflow_url=https://github.com/hmcts/appreg-api/actions/runs/32176829107
+timestamp_utc=2026-08-18T19:30:18Z
