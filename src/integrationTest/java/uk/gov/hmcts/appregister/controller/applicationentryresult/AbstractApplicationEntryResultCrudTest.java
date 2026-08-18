@@ -68,8 +68,8 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
 
     protected static final String CREATE_ENTRY_CONTEXT = "application-lists";
 
-    protected static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
+    protected static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
 
     protected static final String VALID_COURT_CODE = "CCC003";
 
