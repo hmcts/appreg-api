@@ -366,6 +366,8 @@ esac
                     **os.environ,
                     "PATH": f"{fake_bin}:{os.environ['PATH']}",
                     "GH_TOKEN": "test-token",
+                    "BOT_PUBLISHER_LOGIN": "appreg-codex-bot",
+                    "BOT_PUBLISHER_EMAIL": "12345+appreg-codex-bot[bot]@users.noreply.github.com",
                     "GITHUB_REPOSITORY": "hmcts/example",
                     "OUTPUT_DIR": str(output),
                     "VERIFICATION_DIR": str(verified),
@@ -399,6 +401,8 @@ esac
                 **os.environ,
                 "PATH": f"{fake_bin}:{os.environ['PATH']}",
                 "GH_TOKEN": "test-token",
+                "BOT_PUBLISHER_LOGIN": "appreg-codex-bot",
+                "BOT_PUBLISHER_EMAIL": "12345+appreg-codex-bot[bot]@users.noreply.github.com",
                 "GITHUB_REPOSITORY": "hmcts/example",
                 "GITHUB_ACTOR": "tester",
                 "ISSUE_KEY": "ARCPOC-1",
@@ -445,6 +449,8 @@ esac
                     **os.environ,
                     "PATH": f"{fake_bin}:{os.environ['PATH']}",
                     "GH_TOKEN": "test-token",
+                    "BOT_PUBLISHER_LOGIN": "appreg-codex-bot",
+                    "BOT_PUBLISHER_EMAIL": "12345+appreg-codex-bot[bot]@users.noreply.github.com",
                     "GITHUB_REPOSITORY": "hmcts/example",
                     "OUTPUT_DIR": str(output),
                     "VERIFICATION_DIR": str(verified),
@@ -464,6 +470,22 @@ esac
     def test_review_publisher_accepts_exact_verified_head(self) -> None:
         completed, _ = self.run_review(HEAD_SHA)
         self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_publication_code_does_not_dispatch_pr_tasks(self) -> None:
+        publication_paths = [JIRA_PUBLISHER, REVIEW_PUBLISHER, CONFLICT_PUBLISHER]
+        publication_paths.extend(
+            sorted((SCRIPT_DIR.parent / "workflows").glob("codex*.y*ml"))
+        )
+        forbidden_markers = (
+            "workflow run on-pr.yml",
+            "/actions/workflows/on-pr.yml/dispatches",
+        )
+
+        for path in publication_paths:
+            source = path.read_text(encoding="utf-8")
+            for marker in forbidden_markers:
+                with self.subTest(path=path, marker=marker):
+                    self.assertNotIn(marker, source)
 
     def test_review_publisher_rejects_moved_head(self) -> None:
         completed, _ = self.run_review(MOVED_SHA)

@@ -27,6 +27,11 @@ on:
         description: Jira issue URL
         required: true
         type: string
+      initiatorDisplayName:
+        description: Display name of the Jira user who initiated the automation
+        required: false
+        default: ''
+        type: string
 
 jobs:
   codex-plan-action:
@@ -69,6 +74,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -258,6 +264,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -286,6 +293,7 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
+      JIRA_INITIATOR_DISPLAY_NAME: ${{ inputs.initiatorDisplayName }}
 
     steps:
       - name: Checkout trusted collector
@@ -475,6 +483,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -503,6 +512,7 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
+      JIRA_INITIATOR_DISPLAY_NAME: ${{ inputs.initiatorDisplayName }}
       CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output.outputs.output_artifact }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-1
 
@@ -693,6 +703,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -721,6 +732,7 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
+      JIRA_INITIATOR_DISPLAY_NAME: ${{ inputs.initiatorDisplayName }}
       CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-1.outputs.output_artifact }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-2
 
@@ -911,6 +923,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -939,6 +952,7 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
+      JIRA_INITIATOR_DISPLAY_NAME: ${{ inputs.initiatorDisplayName }}
       CODEX_INPUT_ARTIFACT: ${{ needs.verify-codex-output-2.outputs.output_artifact }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-repair-3
 
@@ -1083,9 +1097,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
     outputs:
       branch_name: ${{ steps.publish.outputs.branch_name }}
       commit_sha: ${{ steps.publish.outputs.commit_sha }}
@@ -1098,7 +1110,6 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
-      GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
       JIRA_PUBLISH_MODE: initial
@@ -1114,6 +1125,27 @@ jobs:
           ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Create GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ vars.CODEX_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CODEX_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: Verify GitHub App publisher
+        id: publisher
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GITHUB_APP_INSTALLATION_ID: ${{ steps.app-token.outputs.installation-id }}
+        run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Record selected Codex artifacts
         id: selected-artifacts
@@ -1141,6 +1173,9 @@ jobs:
       - name: Publish pull request and notify Jira
         id: publish
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BOT_PUBLISHER_LOGIN: ${{ steps.publisher.outputs.publisher_login }}
+          BOT_PUBLISHER_EMAIL: ${{ steps.publisher.outputs.publisher_email }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-jira-publish.sh"
@@ -1367,6 +1402,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -1395,6 +1431,7 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
+      JIRA_INITIATOR_DISPLAY_NAME: ${{ inputs.initiatorDisplayName }}
       CODEX_INPUT_ARTIFACT: ${{ needs.verify-published-pr.outputs.output_artifact }}
       CODEX_OUTPUT_ARTIFACT: codex-jira-output-pr-repair-1
 
@@ -1532,9 +1569,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
     outputs:
       branch_name: ${{ steps.publish.outputs.branch_name }}
       commit_sha: ${{ steps.publish.outputs.commit_sha }}
@@ -1547,7 +1582,6 @@ jobs:
       ISSUE_KEY: ${{ inputs.issueKey }}
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
-      GH_TOKEN: ${{ github.token }}
       EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       EXPECTED_BASE_SHA: ${{ needs.prepare-codex-verification-source.outputs.source_sha }}
       JIRA_PUBLISH_MODE: repair
@@ -1564,6 +1598,27 @@ jobs:
           ref: ${{ needs.codex-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Create GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ vars.CODEX_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CODEX_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: Verify GitHub App publisher
+        id: publisher
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GITHUB_APP_INSTALLATION_ID: ${{ steps.app-token.outputs.installation-id }}
+        run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Record selected Codex artifacts
         id: selected-artifacts
@@ -1591,6 +1646,9 @@ jobs:
       - name: Re-publish repaired pull request
         id: publish
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BOT_PUBLISHER_LOGIN: ${{ steps.publisher.outputs.publisher_login }}
+          BOT_PUBLISHER_EMAIL: ${{ steps.publisher.outputs.publisher_email }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-jira-publish.sh"
