@@ -186,6 +186,7 @@ jobs:
         if: steps.prepare.outputs.prompt_path != ''
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -255,9 +256,7 @@ jobs:
     if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
     timeout-minutes: 30
     outputs:
       pr_number: ${{ steps.publish.outputs.pr_number }}
@@ -266,7 +265,6 @@ jobs:
       verified_artifact: codex-review-verified
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_TOKEN: ${{ github.token }}
       EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
       EXPECTED_HEAD_SHA: ${{ needs.codex-review-generate-action.outputs.head_sha }}
@@ -278,6 +276,27 @@ jobs:
           ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Create GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ vars.CODEX_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CODEX_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: Verify GitHub App publisher
+        id: publisher
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GITHUB_APP_INSTALLATION_ID: ${{ steps.app-token.outputs.installation-id }}
+        run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Copy trusted publish script
         run: |
@@ -299,6 +318,9 @@ jobs:
       - name: Publish Codex review feedback
         id: publish
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BOT_PUBLISHER_LOGIN: ${{ steps.publisher.outputs.publisher_login }}
+          BOT_PUBLISHER_EMAIL: ${{ steps.publisher.outputs.publisher_email }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-pr-review-publish.sh"
@@ -509,6 +531,7 @@ jobs:
         id: codex-action
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
+          allow-bot-users: hmcts-pr-publisher[bot]
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           responses-api-endpoint: https://eu.api.openai.com/v1/responses
           codex-version: '0.146.0'
@@ -683,14 +706,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
     outputs:
       pr_number: ${{ steps.publish.outputs.pr_number }}
       commit_sha: ${{ steps.publish.outputs.commit_sha }}
     env:
-      GH_TOKEN: ${{ github.token }}
       EXPECTED_PR_NUMBER: ${{ needs.codex-review-generate-action.outputs.pr_number }}
       EXPECTED_HEAD_REF: ${{ needs.codex-review-generate-action.outputs.head_ref }}
       EXPECTED_HEAD_SHA: ${{ needs.prepare-published-review-repair-source.outputs.head_sha }}
@@ -704,6 +724,27 @@ jobs:
           ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Create GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ vars.CODEX_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CODEX_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: Verify GitHub App publisher
+        id: publisher
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GITHUB_APP_INSTALLATION_ID: ${{ steps.app-token.outputs.installation-id }}
+        run: python3 -I .github/scripts/codex-verify-publisher.py
 
       - name: Copy trusted publish script
         run: |
@@ -725,6 +766,9 @@ jobs:
       - name: Re-publish external-status repair
         id: publish
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BOT_PUBLISHER_LOGIN: ${{ steps.publisher.outputs.publisher_login }}
+          BOT_PUBLISHER_EMAIL: ${{ steps.publisher.outputs.publisher_email }}
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: "$RUNNER_TEMP/codex-pr-review-publish.sh"
