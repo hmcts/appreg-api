@@ -137,6 +137,7 @@ PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-publish
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-codex-plan.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-handoff.py
+PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-verify-publisher.py
 
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
@@ -591,6 +592,150 @@ revision_pinned_workflows.each do |workflow_name|
       end
     elsif moving_checkouts.any?
       errors << "#{path}:#{job_name} must check out the captured trusted SHA"
+    end
+  end
+end
+
+github_app_action = "actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
+github_app_client_id = "${{ vars.CODEX_GITHUB_APP_CLIENT_ID }}"
+github_app_private_key = "${{ secrets.CODEX_GITHUB_APP_PRIVATE_KEY }}"
+publisher_token = "${{ steps.app-token.outputs.token }}"
+publisher_login = "${{ steps.publisher.outputs.publisher_login }}"
+publisher_email = "${{ steps.publisher.outputs.publisher_email }}"
+publisher_specs = [
+  [".github/workflows/codex_jira_dispatch.yml", "publish-pr", "publish"],
+  [".github/workflows/codex_jira_dispatch.yml", "publish-published-pr-repair-1", "publish"],
+  [".github/workflows/codex_pr_review_feedback.yml", "codex-review-publish", "publish"],
+  [".github/workflows/codex_pr_review_feedback.yml", "codex-review-external-republish", "publish"],
+  [".github/workflows/codex_merge_conflict_resolution.yml", "publish-conflict-resolution", "publish"],
+  [".github/workflows/codex_runner_smoke.yml", "branch-smoke", "smoke"],
+]
+publisher_job_keys = publisher_specs.map { |path, job_name, _| [path, job_name] }
+
+publisher_specs.each do |path, job_name, publish_step_id|
+  workflow = YAML.load_file(path)
+  job = workflow.fetch("jobs", {}).fetch(job_name, {})
+  permissions = job.fetch("permissions", {}) || {}
+  unless permissions == { "contents" => "read" }
+    errors << "#{path}:#{job_name} must give the default GITHUB_TOKEN contents: read only"
+  end
+
+  job_env = job.fetch("env", {}) || {}
+  if job_env.key?("GH_TOKEN") || job_env.key?("BOT_PUBLISHER_LOGIN") || job_env.key?("BOT_PUBLISHER_EMAIL")
+    errors << "#{path}:#{job_name} must not expose publisher credentials at job scope"
+  end
+
+  steps = job.fetch("steps", [])
+  token_index = steps.index do |step|
+    step.is_a?(Hash) &&
+      step.fetch("id", "") == "app-token" &&
+      step.fetch("uses", "") == github_app_action
+  end
+  verify_index = steps.index do |step|
+    step.is_a?(Hash) &&
+      step.fetch("run", "") == "python3 -I .github/scripts/codex-verify-publisher.py"
+  end
+  publish_index = steps.index do |step|
+    step.is_a?(Hash) && step.fetch("id", "") == publish_step_id
+  end
+
+  if token_index.nil? || verify_index.nil? || publish_index.nil? ||
+     token_index >= verify_index || verify_index >= publish_index
+    errors << "#{path}:#{job_name} must mint and verify a GitHub App token before publishing"
+    next
+  end
+
+  token_inputs = steps.fetch(token_index).fetch("with", {}) || {}
+  required_token_inputs = {
+    "client-id" => github_app_client_id,
+    "private-key" => github_app_private_key,
+    "owner" => "${{ github.repository_owner }}",
+    "repositories" => "${{ github.event.repository.name }}",
+    "permission-contents" => "write",
+    "permission-issues" => "write",
+    "permission-pull-requests" => "write",
+    "permission-workflows" => "write",
+  }
+  unless required_token_inputs.all? { |key, value| token_inputs.fetch(key, "") == value }
+    errors << "#{path}:#{job_name} must mint a repository-scoped GitHub App token with explicit permissions"
+  end
+
+  verify_env = steps.fetch(verify_index).fetch("env", {}) || {}
+  unless verify_env.fetch("GH_TOKEN", "") == publisher_token &&
+         verify_env.fetch("GITHUB_APP_SLUG", "") == "${{ steps.app-token.outputs.app-slug }}" &&
+         verify_env.fetch("GITHUB_APP_INSTALLATION_ID", "") == "${{ steps.app-token.outputs.installation-id }}"
+    errors << "#{path}:#{job_name} must verify the minted GitHub App installation token"
+  end
+
+  publish_env = steps.fetch(publish_index).fetch("env", {}) || {}
+  unless publish_env.fetch("GH_TOKEN", "") == publisher_token
+    errors << "#{path}:#{job_name} must publish with the minted GitHub App token"
+  end
+  unless publish_step_id == "smoke" ||
+         (publish_env.fetch("BOT_PUBLISHER_LOGIN", "") == publisher_login &&
+          publish_env.fetch("BOT_PUBLISHER_EMAIL", "") == publisher_email)
+    errors << "#{path}:#{job_name} must use the verified GitHub App bot commit identity"
+  end
+
+  steps.each_with_index do |step, index|
+    next unless step.is_a?(Hash)
+    next if [token_index, verify_index, publish_index].include?(index)
+    if step.inspect.include?("CODEX_GITHUB_APP_PRIVATE_KEY") ||
+       step.inspect.include?("steps.app-token.outputs.token")
+      errors << "#{path}:#{job_name} exposes GitHub App credentials outside token, verifier or publisher steps"
+    end
+  end
+end
+
+Dir[".github/workflows/*.yml", ".github/workflows/*.yaml"].each do |path|
+  workflow = YAML.load_file(path)
+  workflow.fetch("jobs", {}).each do |job_name, job|
+    if (job.inspect.include?("CODEX_GITHUB_APP_PRIVATE_KEY") ||
+        job.inspect.include?("steps.app-token.outputs.token")) &&
+       !publisher_job_keys.include?([path, job_name])
+      errors << "#{path}:#{job_name} must not receive GitHub App publisher credentials"
+    end
+  end
+  source = File.read(path)
+  if source.include?("BOT_GITHUB_TOKEN") || source.include?("vars.BOT_PUBLISHER_LOGIN")
+    errors << "#{path} must not reference the retired machine-user publisher configuration"
+  end
+end
+
+publication_paths = Dir[
+  ".github/scripts/*publish*.sh",
+  ".github/workflows/codex*.yml",
+  ".github/workflows/codex*.yaml",
+]
+publication_paths.each do |path|
+  source = File.read(path)
+  if source.match?(/\bworkflow\s+run\s+on-pr\.ya?ml\b/) ||
+     source.match?(%r{/actions/workflows/on-pr\.ya?ml/dispatches})
+    errors << "#{path} must not manually dispatch PR Tasks"
+  end
+end
+
+if File.exist?(".github/workflows/codex_approve_pr_workflows.yml") ||
+   Dir[".github/workflows/*"].any? { |path| File.read(path).include?("codex_approve_pr_workflows") }
+  errors << "unsupported pull-request workflow auto-approval machinery must not be present"
+end
+[
+  ".github/workflows/existing_flyway_change_prevention.yml",
+  ".github/workflows/flyway-dupe-checker.yml",
+].each do |path|
+  workflow = YAML.load_file(path)
+  unless workflow.fetch("permissions", {}) == { "contents" => "read" }
+    errors << "#{path} must use contents: read permissions"
+  end
+  if File.read(path).include?("CODEX_GITHUB_APP_PRIVATE_KEY")
+    errors << "#{path} must not receive the GitHub App private key"
+  end
+  workflow.fetch("jobs", {}).each do |job_name, job|
+    checkouts = job.fetch("steps", []).select do |step|
+      step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
+    end
+    if checkouts.empty? || checkouts.any? { |step| step.fetch("with", {}).fetch("persist-credentials", true) != false }
+      errors << "#{path}:#{job_name} must use checkout without persisted credentials"
     end
   end
 end
