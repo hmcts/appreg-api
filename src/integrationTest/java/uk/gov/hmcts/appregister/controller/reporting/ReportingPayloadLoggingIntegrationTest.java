@@ -37,7 +37,7 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
     }
 
     @Test
-    void givenFeesReportRequest_whenEndpointCalled_thenPayloadLogsAreWritten() throws Exception {
+    void givenFeesReportRequest_whenEndpointCalled_thenPayloadLogsAreNotWritten() throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
         FeesReportFilterDto request =
@@ -56,19 +56,8 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
 
         assertThat(acknowledgement.getType()).isEqualTo(JobType.FEES_REPORT);
         assertThat(acknowledgement.getStatus()).isEqualTo(JobStatus.RECEIVED);
-        assertThat(payloadLogCaptor.getInfoLogs())
-                .anySatisfy(
-                        log ->
-                                assertThat(log)
-                                        .contains("Fees report payload:")
-                                        .contains("\"dateFrom\"")
-                                        .contains("\"dateTo\""))
-                .anySatisfy(
-                        log ->
-                                assertThat(log)
-                                        .contains("Job acknowledgement:")
-                                        .contains("\"type\":\"FEES_REPORT\"")
-                                        .contains("\"status\":\"RECEIVED\""));
+        assertThat(payloadLogCaptor.getInfoLogs()).isEmpty();
+        assertThat(payloadLogCaptor.getDebugLogs()).isEmpty();
 
         JobAcknowledgement terminalStatus =
                 AwaitilityUtil.waitForJobToReachTerminalStatus(
@@ -78,5 +67,7 @@ class ReportingPayloadLoggingIntegrationTest extends BaseIntegration {
                         Duration.ofSeconds(30));
 
         assertThat(terminalStatus.getStatus()).isEqualTo(JobStatus.COMPLETED);
+        assertThat(payloadLogCaptor.getInfoLogs()).isEmpty();
+        assertThat(payloadLogCaptor.getDebugLogs()).isEmpty();
     }
 }
