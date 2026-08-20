@@ -37100,6 +37100,257 @@
           }
         }
       ]
+    },
+    {
+      "name": "ARCPOC-1263 Application List - Write Audit Validation",
+      "item": [
+        {
+          "name": "00 Initialise ARCPOC-1263 variables",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "const marker = Date.now().toString();",
+                  "const traceId = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');",
+                  "const parentId = [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');",
+                  "pm.collectionVariables.set('arcpoc1263_marker', marker);",
+                  "pm.collectionVariables.set('arcpoc1263_test_date', new Date().toISOString().slice(0, 10));",
+                  "pm.collectionVariables.set('arcpoc1263_trace_id', traceId);",
+                  "pm.collectionVariables.set('arcpoc1263_traceparent', `00-${traceId}-${parentId}-01`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                  "pm.test('Health endpoint is available', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/health",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01 POST create list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Application List created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.id, 'created Application List id').to.exist;",
+                  "pm.collectionVariables.set('arcpoc1263_list_id', body.id);",
+                  "pm.collectionVariables.set('arcpoc1263_etag', pm.response.headers.get('ETag'));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "traceparent",
+                "value": "{{arcpoc1263_traceparent}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{arcpoc1263_test_date}}\",\n  \"time\": \"10:30\",\n  \"description\": \"ARCPOC-1263 create {{arcpoc1263_marker}}\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"ARCPOC-1263 Test Location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 1,\n  \"durationMinutes\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 PUT update list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Application List updated', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('arcpoc1263_etag', pm.response.headers.get('ETag'));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "If-Match",
+                "value": "{{arcpoc1263_etag}}",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "traceparent",
+                "value": "{{arcpoc1263_traceparent}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{arcpoc1263_test_date}}\",\n  \"time\": \"11:45\",\n  \"description\": \"ARCPOC-1263 updated {{arcpoc1263_marker}}\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"ARCPOC-1263 Updated Location\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 2,\n  \"durationMinutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1263_list_id}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1263_list_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 DELETE list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Application List deleted', () => pm.response.to.have.status(204));",
+                  "pm.test('Response body is empty', () => pm.expect(pm.response.text()).to.eql(''));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/problem+json",
+                "type": "text"
+              },
+              {
+                "key": "traceparent",
+                "value": "{{arcpoc1263_traceparent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/{{arcpoc1263_list_id}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{arcpoc1263_list_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
