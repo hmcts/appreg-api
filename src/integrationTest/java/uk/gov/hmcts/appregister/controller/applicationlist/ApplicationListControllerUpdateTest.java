@@ -17,6 +17,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -54,7 +56,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         .description("Morning_list_(court)")
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(2)
+                        .durationHours(99)
                         .durationMinutes(30);
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
@@ -76,6 +78,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         assertThat(dto.getTime()).isEqualTo(TEST_TIME); // mapper emits "HH:mm" when seconds = 0
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(dto.getDurationHours()).isEqualTo(99);
 
         // Court populated, CJA null
         assertThat(dto.getCourtCode()).isEqualTo(VALID_COURT_CODE);
@@ -148,6 +151,57 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         null,
                         operation,
                         eventName));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {100, 32768, 65536})
+    void givenUnsupportedDurationHours_whenCreatingOrClosing_then400AndListIsUnchanged(
+            int durationHours) throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+        var request =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Invalid duration")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(durationHours)
+                        .durationMinutes(0);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, request);
+
+        createResponse.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        assertThat(createResponse.jsonPath().getString("errors.durationHours"))
+                .isEqualTo("must be less than or equal to 99");
+
+        String[] createdLocation = createAppListUsingRestApi();
+        UUID listId = UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0]));
+        var updateRequest =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Invalid closing duration")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(durationHours)
+                        .durationMinutes(0);
+
+        Response updateResponse =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(),
+                        token,
+                        updateRequest,
+                        createdLocation[1]);
+
+        updateResponse.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        assertThat(updateResponse.jsonPath().getString("errors.durationHours"))
+                .isEqualTo("must be less than or equal to 99");
+        assertThat(getApplicationListDetail(listId, token).getDurationHours()).isEqualTo(2);
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -588,7 +642,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         .description("Morning_list_(court)_update")
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE2)
-                        .durationHours(4)
+                        .durationHours(99)
                         .durationMinutes(32);
 
         Response resp =
@@ -611,7 +665,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         assertThat(dto.getEntriesCount()).isEqualTo(2);
 
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
-        assertThat(dto.getDurationHours()).isEqualTo(4);
+        assertThat(dto.getDurationHours()).isEqualTo(99);
         assertThat(dto.getDurationMinutes()).isEqualTo(32);
 
         // Court populated, CJA null
@@ -678,7 +732,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         TableNames.APPICATION_LIST,
                         "duration_hour",
                         "2",
-                        "4",
+                        "99",
                         operation,
                         eventName));
 
