@@ -6080,6 +6080,7 @@ components:
           type: string
         durationHours:
           format: int32
+          maximum: 99
           minimum: 0
           type: integer
         durationMinutes:
@@ -6139,6 +6140,7 @@ components:
           description: Duration hours component.
           example: 2
           format: int32
+          maximum: 99
           minimum: 0
           type: integer
         durationMinutes:
@@ -6279,6 +6281,7 @@ components:
           description: Duration hours component.
           example: 2
           format: int32
+          maximum: 99
           minimum: 0
           type: integer
         durationMinutes:

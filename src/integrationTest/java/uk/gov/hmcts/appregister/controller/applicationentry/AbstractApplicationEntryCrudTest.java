@@ -559,6 +559,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         applicationListCreateDto.setStatus(ApplicationListStatus.OPEN);
         applicationListCreateDto.setCourtLocationCode("CCC003");
         applicationListCreateDto.setOtherLocationDescription(null);
+        applicationListCreateDto.setDurationHours(1);
         applicationListCreateDto.setDurationMinutes(1);
         applicationListCreateDto.setCjaCode(null);
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
@@ -99,5 +100,30 @@ class ApplicationListDtoTest {
                 listConstraint, "description", "size must be between 1 and 200");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "otherLocationDescription", "size must be between 1 and 200");
+    }
+
+    @Test
+    void givenDurationHoursBoundary_whenValidated_thenMaximumIsEnforced() {
+        Validator validator =
+                Validation.byDefaultProvider().configure().buildValidatorFactory().getValidator();
+
+        for (Object dto :
+                List.of(
+                        new ApplicationListCreateDto().durationHours(99),
+                        new ApplicationListUpdateDto().durationHours(99))) {
+            Assertions.assertEquals(0, durationHoursViolations(validator, dto));
+        }
+        for (Object dto :
+                List.of(
+                        new ApplicationListCreateDto().durationHours(100),
+                        new ApplicationListUpdateDto().durationHours(100))) {
+            Assertions.assertEquals(1, durationHoursViolations(validator, dto));
+        }
+    }
+
+    private long durationHoursViolations(Validator validator, Object dto) {
+        return validator.validate(dto).stream()
+                .filter(violation -> "durationHours".equals(violation.getPropertyPath().toString()))
+                .count();
     }
 }
