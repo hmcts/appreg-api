@@ -30,6 +30,7 @@ public class PayloadLoggingRules extends BaseRules {
                     .that()
                     .areAnnotatedWith(LogPayloads.class)
                     .should(haveSupportedPlacement())
+                    .allowEmptyShould(true)
                     .because(
                             "@LogPayloads is only supported on public controller methods that accept a"
                                     + " generated model payload and return ResponseEntity");
