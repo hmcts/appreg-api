@@ -5,11 +5,15 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.OutgoingDtoSanitiser;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -26,6 +30,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
         uses = ApplicationListMappingHelper.class)
 public abstract class ApplicationListMapper {
 
+    private static final int MAX_DURATION_HOURS = 99;
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
@@ -37,6 +43,11 @@ public abstract class ApplicationListMapper {
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", source = "dto.time")
+    @Mapping(
+            target = "durationHours",
+            source = "dto.durationHours",
+            qualifiedByName = "toDurationHours",
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "entries", ignore = true)
     public abstract ApplicationList toCreateEntityWithCourt(
             ApplicationListCreateDto dto, NationalCourtHouse court);
@@ -51,6 +62,11 @@ public abstract class ApplicationListMapper {
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", source = "dto.time")
+    @Mapping(
+            target = "durationHours",
+            source = "dto.durationHours",
+            qualifiedByName = "toDurationHours",
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "entries", ignore = true)
     public abstract ApplicationList toCreateEntityWithCja(
             ApplicationListCreateDto dto, CriminalJusticeArea cja);
@@ -114,7 +130,11 @@ public abstract class ApplicationListMapper {
     @Mapping(target = "changedDate", ignore = true)
     @Mapping(target = "otherLocation", source = "dto.otherLocationDescription")
     @Mapping(target = "durationMinutes", source = "dto.durationMinutes")
-    @Mapping(target = "durationHours", source = "dto.durationHours")
+    @Mapping(
+            target = "durationHours",
+            source = "dto.durationHours",
+            qualifiedByName = "toDurationHours",
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "status", source = "dto.status.value")
@@ -143,6 +163,11 @@ public abstract class ApplicationListMapper {
     @Mapping(target = "time", source = "dto.time")
     @Mapping(target = "status", source = "dto.status.value")
     @Mapping(target = "cja", source = "cja")
+    @Mapping(
+            target = "durationHours",
+            source = "dto.durationHours",
+            qualifiedByName = "toDurationHours",
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "deletedDate", ignore = true)
     @Mapping(target = "deleted", ignore = true)
@@ -153,6 +178,19 @@ public abstract class ApplicationListMapper {
             CriminalJusticeArea cja,
             NationalCourtHouse court,
             @MappingTarget ApplicationList entity);
+
+    @Named("toDurationHours")
+    protected short toDurationHours(Integer durationHours) {
+        if (durationHours == null) {
+            return 0;
+        }
+        if (durationHours < 0 || durationHours > MAX_DURATION_HOURS) {
+            throw new AppRegistryException(
+                    ApplicationListError.INVALID_DURATION_HOURS,
+                    "durationHours must be between 0 and " + MAX_DURATION_HOURS);
+        }
+        return durationHours.shortValue();
+    }
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "uuid", source = "id")

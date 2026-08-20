@@ -60,6 +60,7 @@ properties:
     type: integer
     format: int32
     minimum: 0
+    maximum: 99
     description: Duration hours component.
     example: 2
 

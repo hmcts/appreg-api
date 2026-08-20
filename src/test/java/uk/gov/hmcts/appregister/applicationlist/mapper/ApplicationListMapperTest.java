@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
+import static org.instancio.Select.field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,18 +14,23 @@ import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 /**
@@ -44,7 +51,10 @@ class ApplicationListMapperTest {
     @Test
     void testToCreateEntityWithCja() {
         // Given
-        var dto = Instancio.of(ApplicationListCreateDto.class).create();
+        var dto =
+                Instancio.of(ApplicationListCreateDto.class)
+                        .set(field(ApplicationListCreateDto::getDurationHours), 1)
+                        .create();
         var criminalJusticeArea = Instancio.of(CriminalJusticeArea.class).create();
 
         // When
@@ -62,7 +72,10 @@ class ApplicationListMapperTest {
     @Test
     void testToCreateEntityWithCourt() {
         // Given
-        var dto = Instancio.of(ApplicationListCreateDto.class).create();
+        var dto =
+                Instancio.of(ApplicationListCreateDto.class)
+                        .set(field(ApplicationListCreateDto::getDurationHours), 1)
+                        .create();
         var nationalCourtHouse = Instancio.of(NationalCourtHouse.class).create();
 
         // When
@@ -76,6 +89,43 @@ class ApplicationListMapperTest {
         assertEquals(dto.getDate(), entity.getDate());
         assertEquals(dto.getDurationHours(), entity.getDurationHours());
         assertEquals(dto.getDurationMinutes(), entity.getDurationMinutes());
+    }
+
+    @Test
+    void givenSupportedDurationHours_whenMapped_thenValueIsPreserved() {
+        var dto = new ApplicationListCreateDto().durationHours(99);
+
+        var entity = mapper.toCreateEntityWithCourt(dto, new NationalCourtHouse());
+
+        assertEquals(99, entity.getDurationHours());
+        assertEquals(
+                0,
+                mapper.toCreateEntityWithCourt(
+                                new ApplicationListCreateDto(), new NationalCourtHouse())
+                        .getDurationHours());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 100, 32768, 65536})
+    void givenUnsupportedDurationHours_whenMapped_thenConversionIsRejected(int durationHours) {
+        var dto = new ApplicationListCreateDto().durationHours(durationHours);
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> mapper.toCreateEntityWithCourt(dto, new NationalCourtHouse()));
+
+        assertEquals(ApplicationListError.INVALID_DURATION_HOURS, exception.getCode());
+    }
+
+    @Test
+    void givenNullDurationHours_whenUpdating_thenExistingValueIsPreserved() {
+        var entity = ApplicationList.builder().durationHours((short) 2).build();
+
+        mapper.toUpdateEntityWithCourt(
+                new ApplicationListUpdateDto(), null, new NationalCourtHouse(), entity);
+
+        assertEquals(2, entity.getDurationHours());
     }
 
     @Nested

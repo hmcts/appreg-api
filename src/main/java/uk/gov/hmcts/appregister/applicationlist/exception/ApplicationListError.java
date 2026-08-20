@@ -102,7 +102,10 @@ public enum ApplicationListError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Cannot delete application list, as it is not in a deletable state.",
-                    "AL-25"));
+                    "AL-25")),
+    INVALID_DURATION_HOURS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Duration hours must be between 0 and 99.", "AL-26"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
