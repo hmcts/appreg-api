@@ -24,6 +24,7 @@ import jakarta.validation.Validation;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -1532,6 +1533,9 @@ class ApplicationEntryServiceImplTest {
         val sourceList = new ApplicationList();
         sourceList.setId(10L);
         sourceList.setUuid(sourceListId);
+        sourceList.setDate(LocalDate.of(2025, Month.SEPTEMBER, 30));
+        sourceList.setTime(LocalTime.of(9, 5, 7));
+        sourceList.setCourtName("Cardiff Crown Court");
 
         val targetList = new ApplicationList();
         targetList.setId(20L);
@@ -1545,6 +1549,7 @@ class ApplicationEntryServiceImplTest {
         entry1.setApplicationList(sourceList);
         entry1.setSequenceNumber((short) 2);
         entry1.setVersion(0L);
+        entry1.setEntryRescheduled("N");
 
         val entryId2 = UUID.randomUUID();
         val entry2 = new ApplicationListEntry();
@@ -1553,6 +1558,8 @@ class ApplicationEntryServiceImplTest {
         entry2.setApplicationList(sourceList);
         entry2.setSequenceNumber((short) 1);
         entry2.setVersion(5L);
+        entry2.setEntryRescheduled("Y");
+        entry2.setNotes("Existing notes");
 
         val dto = new MoveEntriesDto();
         dto.setTargetListId(targetList.getUuid());
@@ -1576,7 +1583,7 @@ class ApplicationEntryServiceImplTest {
         when(applicationListEntryRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0, List.class));
 
-        service.move(sourceListId, dto);
+        final var entriesNotMoved = service.move(sourceListId, dto);
 
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
         verify(applicationListEntryRepository)
@@ -1597,9 +1604,119 @@ class ApplicationEntryServiceImplTest {
                                             (short) 3, savedEntriesList.get(0).getSequenceNumber());
                                     Assertions.assertEquals(
                                             (short) 4, savedEntriesList.get(1).getSequenceNumber());
+                                    var expectedMoveNote =
+                                            "2025-10-07 : List details amended from "
+                                                    + "2025-09-30 09:05:07 Cardiff Crown Court ";
+                                    Assertions.assertEquals(
+                                            "Existing notes\n" + expectedMoveNote,
+                                            savedEntriesList.get(0).getNotes());
+                                    Assertions.assertEquals(
+                                            expectedMoveNote, savedEntriesList.get(1).getNotes());
+                                    Assertions.assertEquals(
+                                            "Y", savedEntriesList.get(0).getEntryRescheduled());
+                                    Assertions.assertEquals(
+                                            "N", savedEntriesList.get(1).getEntryRescheduled());
                                     return true;
                                 }));
         Assertions.assertEquals(4, mapping.getAleLastSequence());
+        Assertions.assertTrue(entriesNotMoved.isEmpty());
+    }
+
+    @Test
+    void move_skipsOnlyEntriesWhoseAppendedNotesExceedLimit() {
+        val sourceListId = UUID.randomUUID();
+        val sourceList = new ApplicationList();
+        sourceList.setId(10L);
+        sourceList.setUuid(sourceListId);
+        sourceList.setDate(LocalDate.of(2025, Month.SEPTEMBER, 30));
+        sourceList.setTime(LocalTime.of(9, 5, 7));
+        sourceList.setOtherLocation("Town Hall");
+
+        val targetList = new ApplicationList();
+        targetList.setId(20L);
+        targetList.setUuid(UUID.randomUUID());
+
+        var moveNote = "2025-10-07 : List details amended from 2025-09-30 09:05:07  Town Hall";
+        val movableId = UUID.randomUUID();
+        val movableEntry = new ApplicationListEntry();
+        movableEntry.setId(101L);
+        movableEntry.setUuid(movableId);
+        movableEntry.setApplicationList(sourceList);
+        movableEntry.setSequenceNumber((short) 1);
+        movableEntry.setVersion(0L);
+        movableEntry.setNotes("a".repeat(4000 - moveNote.length() - 1));
+
+        val skippedId = UUID.randomUUID();
+        val skippedEntry = new ApplicationListEntry();
+        skippedEntry.setId(102L);
+        skippedEntry.setUuid(skippedId);
+        skippedEntry.setApplicationList(sourceList);
+        skippedEntry.setSequenceNumber((short) 2);
+        skippedEntry.setVersion(0L);
+        skippedEntry.setNotes("a".repeat(4000 - moveNote.length()));
+
+        final var dto =
+                new MoveEntriesDto()
+                        .targetListId(targetList.getUuid())
+                        .entryIds(Set.of(movableId, skippedId));
+        val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(validationSuccess);
+
+        when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
+                .thenReturn(List.of(skippedEntry, movableEntry));
+        val mapping =
+                AppListEntrySequenceMapping.builder()
+                        .alId(targetList.getId())
+                        .aleLastSequence(0)
+                        .build();
+        when(appListEntrySequenceMappingRepository.findByAlIdForUpdate(targetList.getId()))
+                .thenReturn(Optional.of(mapping));
+
+        var entriesNotMoved = service.move(sourceListId, dto);
+
+        Assertions.assertEquals(List.of(skippedId), entriesNotMoved);
+        Assertions.assertEquals(4000, movableEntry.getNotes().length());
+        Assertions.assertSame(targetList, movableEntry.getApplicationList());
+        Assertions.assertSame(sourceList, skippedEntry.getApplicationList());
+        verify(applicationListEntryRepository).saveAll(List.of(movableEntry));
+    }
+
+    @Test
+    void move_whenAllEntriesExceedNotesLimit_thenDoesNotAllocateOrSave() {
+        val sourceListId = UUID.randomUUID();
+        val sourceList = new ApplicationList();
+        sourceList.setId(10L);
+        sourceList.setUuid(sourceListId);
+        sourceList.setDate(LocalDate.of(2025, Month.SEPTEMBER, 30));
+        sourceList.setTime(LocalTime.of(9, 5, 7));
+
+        val targetList = new ApplicationList();
+        targetList.setId(20L);
+        targetList.setUuid(UUID.randomUUID());
+
+        val skippedId = UUID.randomUUID();
+        val skippedEntry = new ApplicationListEntry();
+        skippedEntry.setId(101L);
+        skippedEntry.setUuid(skippedId);
+        skippedEntry.setApplicationList(sourceList);
+        skippedEntry.setSequenceNumber((short) 1);
+        skippedEntry.setNotes("a".repeat(4000));
+
+        final var dto =
+                new MoveEntriesDto().targetListId(targetList.getUuid()).entryIds(Set.of(skippedId));
+        val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(validationSuccess);
+        when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
+                .thenReturn(List.of(skippedEntry));
+
+        var entriesNotMoved = service.move(sourceListId, dto);
+
+        Assertions.assertEquals(List.of(skippedId), entriesNotMoved);
+        Assertions.assertSame(sourceList, skippedEntry.getApplicationList());
+        verify(appListEntrySequenceMappingRepository, never()).findByAlIdForUpdate(anyLong());
+        verify(applicationListEntryRepository, never()).saveAll(anyList());
     }
 
     @Test

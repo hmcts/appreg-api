@@ -252,7 +252,12 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONTENT_TOO_LARGE,
                     "Bulk action selection exceeds the configured limit",
-                    "ALE-52"));
+                    "ALE-52")),
+    MOVE_NOTES_TOO_LONG(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "One or more application list entries could not be moved",
+                    "ALE-53"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
