@@ -576,6 +576,24 @@ class StandardApplicantServiceTest {
     }
 
     @Test
+    void testExportToCsv_codeAndNameBlankFailure() {
+        val exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> standardApplicantService.generateCsv("", ""));
+        Assertions.assertEquals(
+                StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION, exception.getCode());
+    }
+
+    @Test
+    void testExportToCsv_codeIsBlankNameIsPresentSuccess() {
+        val exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> standardApplicantService.generateCsv("", "Test Org"));
+    }
+
+    @Test
     void testExportToCsv_formulaIsInField_shouldReturnFormulaValueEscaped() {
         when(clock.instant()).thenReturn(FIXED_INSTANT);
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
