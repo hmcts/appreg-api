@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -227,7 +228,17 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> moveApplicationListEntries(
             UUID listId, MoveEntriesDto moveEntriesDto) {
-        applicationEntryService.move(listId, moveEntriesDto);
+        var entriesNotMoved = applicationEntryService.move(listId, moveEntriesDto);
+
+        if (!entriesNotMoved.isEmpty()) {
+            var entryIds =
+                    entriesNotMoved.stream().map(UUID::toString).collect(Collectors.joining(", "));
+            var clientDetail = "Could not move ALEs: " + entryIds;
+            throw new AppRegistryException(
+                    AppListEntryError.MOVE_NOTES_TOO_LONG,
+                    "Skipped application list entries because appending the move note would exceed 4000 characters",
+                    clientDetail);
+        }
 
         return ResponseEntity.ok().build();
     }

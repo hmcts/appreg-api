@@ -11,6 +11,8 @@ import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
@@ -111,6 +113,63 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
         Assertions.assertEquals(2, sequences.size());
         Assertions.assertTrue(sequences.get(0) < sequences.get(1));
+    }
+
+    @Test
+    @DisplayName(
+            "Move Application List Entries: commits valid entries before reporting skipped entries")
+    void givenEntryNotesWouldOverflow_whenMove_thenSkipsEntryAndCommitsOthers() throws Exception {
+        val skippedEntry = new AppListEntryTestData().someMinimal().build();
+        skippedEntry.setNotes("a".repeat(4000));
+        skippedEntry.setSequenceNumber((short) 1);
+        val sourceList = new AppListTestData().someMinimal().build();
+        sourceList.setDate(LocalDate.of(2025, 9, 30));
+        sourceList.setTime(LocalTime.of(9, 5, 7));
+        sourceList.setCourtName("Cardiff Crown Court");
+        sourceList.setStatus(Status.OPEN);
+        skippedEntry.setApplicationList(sourceList);
+        persistance.save(skippedEntry);
+        persistance.save(sourceList);
+
+        val movableEntry = new AppListEntryTestData().someMinimal().build();
+        movableEntry.setApplicationList(sourceList);
+        movableEntry.setNotes("Existing notes");
+        movableEntry.setSequenceNumber((short) 2);
+        final var originalRescheduledValue = movableEntry.getEntryRescheduled();
+        persistance.save(movableEntry);
+
+        val targetList = createOpenTargetList();
+
+        val response =
+                moveEntries(
+                        sourceList,
+                        targetList,
+                        Set.of(skippedEntry.getUuid(), movableEntry.getUuid()));
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        val problemDetail = response.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                "Could not move ALEs: " + skippedEntry.getUuid(), problemDetail.getDetail());
+
+        val persistedSkippedEntry =
+                applicationListEntryRepository.findByUuid(skippedEntry.getUuid()).orElseThrow();
+        val persistedMovableEntry =
+                applicationListEntryRepository.findByUuid(movableEntry.getUuid()).orElseThrow();
+
+        Assertions.assertEquals(
+                sourceList.getId(), persistedSkippedEntry.getApplicationList().getId());
+        Assertions.assertEquals("a".repeat(4000), persistedSkippedEntry.getNotes());
+        Assertions.assertEquals(
+                targetList.getId(), persistedMovableEntry.getApplicationList().getId());
+
+        val currentDate = LocalDate.ofInstant(clock.instant(), ZoneId.of("UTC"));
+        Assertions.assertEquals(
+                "Existing notes\n"
+                        + currentDate
+                        + " : List details amended from 2025-09-30 09:05:07 Cardiff Crown Court ",
+                persistedMovableEntry.getNotes());
+        Assertions.assertEquals(
+                originalRescheduledValue, persistedMovableEntry.getEntryRescheduled());
     }
 
     @Test

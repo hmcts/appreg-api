@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -138,6 +139,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private static final String METRIC_SUCCEEDED = "succeeded";
     private static final String METRIC_FAILED = "failed";
     private static final int NOTES_MAX_LENGTH = 4000;
+    private static final DateTimeFormatter LEGACY_LIST_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final UUID BULK_ACTION_PREVIEW_PLACEHOLDER_ENTRY_ID = new UUID(0L, 0L);
 
     @Value("${appreg.bulk-action-preview.global-limit:2000}")
@@ -1976,7 +1979,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     @Transactional
-    public void move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
+    public List<UUID> move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
         var payload = new MoveEntriesPayload(sourceListId, moveEntriesDto);
         final ApplicationList targetList =
                 moveEntriesValidator.validate(payload, (req, success) -> success.getTargetList());
@@ -2001,30 +2004,52 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         List<ApplicationListEntry> orderedEntriesToMove = new ArrayList<>(entriesToMove);
         orderedEntriesToMove.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+        var moveNote = createMoveNote(orderedEntriesToMove.getFirst().getApplicationList());
+        var entriesNotMoved = new ArrayList<UUID>();
+        var movableEntries = new ArrayList<ApplicationListEntry>();
+
+        for (var entry : orderedEntriesToMove) {
+            var updatedNotes = appendMoveNote(entry.getNotes(), moveNote);
+            if (updatedNotes.length() > NOTES_MAX_LENGTH) {
+                entriesNotMoved.add(entry.getUuid());
+            } else {
+                entry.setNotes(updatedNotes);
+                movableEntries.add(entry);
+            }
+        }
+
+        if (movableEntries.isEmpty()) {
+            log.info(
+                    "Skipped all {} entries in bulk move from list {} because their notes would exceed {} characters",
+                    entriesNotMoved.size(),
+                    sourceListId,
+                    NOTES_MAX_LENGTH);
+            return entriesNotMoved;
+        }
+
         var oldAudit =
                 BulkMoveApplicationListEntriesAudit.forState(
-                        orderedEntriesToMove.getFirst().getApplicationList().getId(),
+                        movableEntries.getFirst().getApplicationList().getId(),
                         sourceListId,
                         targetList.getId(),
                         targetList.getUuid(),
-                        orderedEntriesToMove);
+                        movableEntries);
 
         auditService.processAudit(
                 oldAudit,
                 AppListEntryAuditOperation.BULK_MOVE_APP_ENTRIES,
                 req -> {
                     short nextSequence =
-                            allocateNextSequence(targetList.getId(), orderedEntriesToMove.size());
-                    short startingSequence =
-                            (short) (nextSequence - orderedEntriesToMove.size() + 1);
+                            allocateNextSequence(targetList.getId(), movableEntries.size());
+                    short startingSequence = (short) (nextSequence - movableEntries.size() + 1);
 
-                    for (int i = 0; i < orderedEntriesToMove.size(); i++) {
-                        var entryToMove = orderedEntriesToMove.get(i);
+                    for (int i = 0; i < movableEntries.size(); i++) {
+                        var entryToMove = movableEntries.get(i);
                         entryToMove.setApplicationList(targetList);
                         entryToMove.setSequenceNumber((short) (startingSequence + i));
                     }
 
-                    applicationListEntryRepository.saveAll(orderedEntriesToMove);
+                    applicationListEntryRepository.saveAll(movableEntries);
 
                     var newAudit =
                             BulkMoveApplicationListEntriesAudit.forState(
@@ -2032,15 +2057,33 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     sourceListId,
                                     targetList.getId(),
                                     targetList.getUuid(),
-                                    orderedEntriesToMove);
+                                    movableEntries);
 
                     return Optional.of(new AuditableResult<>(null, newAudit));
                 });
 
         log.info(
                 "Completed bulk move for {} entries from list {}",
-                existingIds.size(),
+                movableEntries.size(),
                 sourceListId);
+
+        return entriesNotMoved;
+    }
+
+    private String createMoveNote(ApplicationList sourceList) {
+        return "%s : List details amended from %s %s %s %s"
+                .formatted(
+                        businessDateProvider.currentUkDate(),
+                        sourceList.getDate(),
+                        sourceList.getTime().format(LEGACY_LIST_TIME_FORMAT),
+                        Objects.toString(sourceList.getCourtName(), ""),
+                        Objects.toString(sourceList.getOtherLocation(), ""));
+    }
+
+    private static String appendMoveNote(String existingNotes, String moveNote) {
+        return existingNotes == null || existingNotes.isEmpty()
+                ? moveNote
+                : existingNotes + "\n" + moveNote;
     }
 
     @Override

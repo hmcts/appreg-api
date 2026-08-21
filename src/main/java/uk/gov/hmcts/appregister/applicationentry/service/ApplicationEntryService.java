@@ -147,10 +147,12 @@ public interface ApplicationEntryService {
      *
      * @param listId the identifier of the source Application List that currently owns the entries.
      * @param moveEntriesDto details of the destination list and the entries to be moved.
+     * @return IDs of entries skipped because their appended move notes would exceed 4000
+     *     characters.
      * @throws AppRegistryException if validation fails, or the associated target ApplicationList
      *     entity is not found
      */
-    void move(UUID listId, MoveEntriesDto moveEntriesDto);
+    List<UUID> move(UUID listId, MoveEntriesDto moveEntriesDto);
 
     /**
      * Soft deletes an application entry.

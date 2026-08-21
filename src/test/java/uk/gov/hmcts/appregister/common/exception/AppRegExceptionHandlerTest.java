@@ -167,6 +167,28 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void givenSafeClientDetail_whenHandled_thenClientDetailIsReturned() {
+        AppRegistryException exception =
+                new AppRegistryException(
+                        CommonAppError.NOT_READABLE_ERROR,
+                        "Internal log detail",
+                        "Could not move ALEs: first, second");
+
+        ResponseEntity<ProblemDetail> response =
+                exceptionHandler.handleAppRegisterApiException(exception);
+
+        Assertions.assertNotNull(response.getBody());
+        Assertions.assertEquals(
+                "Could not move ALEs: first, second", response.getBody().getDetail());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "Could not move ALEs: first, second (Internal log detail)")));
+    }
+
+    @Test
     void givenMaxUploadSizeExceededException_whenHandled_thenAppRegistryProblemDetailIsReturned() {
         MaxUploadSizeExceededException exception = new MaxUploadSizeExceededException(5L);
 

@@ -89,6 +89,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
         // if the exception has properties, add them to the problem detail as they should be exposed
         if (e instanceof AppRegistryException appRegistryException
+                && appRegistryException.getClientDetail() != null) {
+            problemDetail.setDetail(appRegistryException.getClientDetail());
+        } else if (e instanceof AppRegistryException appRegistryException
                 && appRegistryException.getDetails() != null
                 && !appRegistryException.getDetails().isEmpty()) {
 

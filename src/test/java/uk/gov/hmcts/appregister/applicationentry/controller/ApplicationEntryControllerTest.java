@@ -55,6 +55,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 class ApplicationEntryControllerTest {
     private final ApplicationEntryService applicationEntryService =
@@ -127,6 +128,37 @@ class ApplicationEntryControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(body);
         assertThat(response.getHeaders().getContentType()).isEqualTo(VND_JSON_V1);
+    }
+
+    @Test
+    void moveApplicationListEntries_whenAllEntriesMove_thenReturnsOk() {
+        var listId = UUID.randomUUID();
+        var request = new MoveEntriesDto();
+        when(applicationEntryService.move(listId, request)).thenReturn(List.of());
+
+        var response = controller.moveApplicationListEntries(listId, request);
+
+        verify(applicationEntryService).move(listId, request);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void moveApplicationListEntries_whenEntriesAreSkipped_thenRaisesExactClientError() {
+        var listId = UUID.randomUUID();
+        var firstSkippedId = UUID.randomUUID();
+        var secondSkippedId = UUID.randomUUID();
+        var request = new MoveEntriesDto();
+        when(applicationEntryService.move(listId, request))
+                .thenReturn(List.of(firstSkippedId, secondSkippedId));
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> controller.moveApplicationListEntries(listId, request));
+
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.MOVE_NOTES_TOO_LONG);
+        assertThat(exception.getClientDetail())
+                .isEqualTo("Could not move ALEs: " + firstSkippedId + ", " + secondSkippedId);
     }
 
     @Test

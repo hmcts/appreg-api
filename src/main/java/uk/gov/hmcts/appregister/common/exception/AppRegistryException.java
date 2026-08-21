@@ -16,6 +16,8 @@ public class AppRegistryException extends RuntimeException {
 
     private final HashMap<String, String> details = new HashMap<>();
 
+    private final String clientDetail;
+
     /**
      * Construct exception.
      *
@@ -26,6 +28,7 @@ public class AppRegistryException extends RuntimeException {
     public AppRegistryException(ErrorCodeEnum code, String detail, Throwable cause) {
         super(detail, cause);
         this.code = code;
+        this.clientDetail = null;
     }
 
     /**
@@ -37,6 +40,7 @@ public class AppRegistryException extends RuntimeException {
     public AppRegistryException(ErrorCodeEnum code, String detail) {
         super(detail, null);
         this.code = code;
+        this.clientDetail = null;
     }
 
     /**
@@ -51,5 +55,19 @@ public class AppRegistryException extends RuntimeException {
         super(detail, null);
         this.code = code;
         this.details.putAll(details);
+        this.clientDetail = null;
+    }
+
+    /**
+     * Construct an exception with a deliberately client-visible detail.
+     *
+     * @param code The core code entry that controls the response status and type.
+     * @param detail The detailed message used for server-side logging only.
+     * @param clientDetail A safe message to expose in the API problem detail.
+     */
+    public AppRegistryException(ErrorCodeEnum code, String detail, String clientDetail) {
+        super(detail, null);
+        this.code = code;
+        this.clientDetail = clientDetail;
     }
 }

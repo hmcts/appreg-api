@@ -9,7 +9,12 @@ post:
   operationId: moveApplicationListEntries
   tags: [ application-list-entries ]
   summary: Move entries from one Application List to another.
-  description: Moves the specified entries from the **source** list (path `listId`) to a single **destination** list.
+  description: >
+    Moves the specified entries from the **source** list (path `listId`) to a single **destination** list.
+    Each moved entry has a note appended containing its previous list details. If appending the note
+    would make an entry's notes exceed 4000 characters, that entry is not moved. Other eligible
+    entries are still moved and committed, then the request returns `400 Bad Request` with the
+    skipped entry IDs in the format `Could not move ALEs: <id>, <id>`.
   requestBody:
     required: true
     content:
