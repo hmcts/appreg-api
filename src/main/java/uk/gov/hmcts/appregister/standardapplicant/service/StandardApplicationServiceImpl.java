@@ -213,13 +213,20 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
     public String generateCsv(String code, String name) {
 
-        if ((code != null && name != null) || (code == null && name == null)) {
+        boolean codeProvided = code != null && !code.isBlank();
+        boolean nameProvided = name != null && !name.isBlank();
+
+        if ((codeProvided && nameProvided) || (!codeProvided && !nameProvided)) {
             throw new AppRegistryException(
                     StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION,
                     "Unable to generate CSV for Standard Applicants. At least one of code or name must be provided.");
         }
 
-        List<StandardApplicant> filteredList = repository.findByCodeAndName(code, name);
+        // Need to make sure if one value is blank that we pass null through instead of the blank
+        // value.
+        List<StandardApplicant> filteredList =
+                repository.findByCodeAndName(
+                        codeProvided ? code : null, nameProvided ? name : null);
 
         if (filteredList.isEmpty()) {
             throw new AppRegistryException(
