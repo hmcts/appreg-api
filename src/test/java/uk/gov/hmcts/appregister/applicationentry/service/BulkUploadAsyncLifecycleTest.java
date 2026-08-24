@@ -252,6 +252,7 @@ class BulkUploadAsyncLifecycleTest {
             CapturedOutput output) throws IOException {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
+        row.setAccountNumber("SENSITIVE-ACCOUNT");
         JobContext context = new JobContext();
         final AsyncJobLifecycleEvent<BulkUploadRow> event = event(row, context);
 
@@ -273,16 +274,6 @@ class BulkUploadAsyncLifecycleTest {
                                                 row.getRespondentAddressLine1(),
                                                 row.getApplicantCode(),
                                                 "DATA_ERROR"))));
-        assertThat(output)
-                .contains("Bulk upload validation failure for list")
-                .contains("\"rowNumber\":2")
-                .contains("postcode")
-                .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"Provide a valid UK postcode.\"")
-                .contains("\"addressLine1\":\"1 Example Street\"")
-                .contains("\"code\":\"" + row.getApplicantCode() + "\"")
-                .contains("\"errorType\":\"DATA_ERROR\"");
-
         // Respondent Test
         BulkUploadRow respondentRow = validRespondentRow();
         respondentRow.setRespondentPostcode("invalid");
@@ -309,20 +300,33 @@ class BulkUploadAsyncLifecycleTest {
                                                 row.getApplicantCode(),
                                                 "DATA_ERROR"))));
         assertThat(output)
-                .contains("Bulk upload validation failure for list")
-                .contains("\"rowNumber\":3")
-                .contains("postcode")
-                .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"Provide a valid UK postcode.\"")
-                .contains("\"addressLine1\":\"1 Example Street\"")
-                .contains("\"code\":\"" + row.getApplicantCode() + "\"")
-                .contains("\"errorType\":\"DATA_ERROR\"");
+                .contains(
+                        "Bulk upload validation failed listId="
+                                + listId
+                                + " jobId="
+                                + event.getResponse().getJobId().getId()
+                                + " errorCount=1",
+                        "Bulk upload validation failed listId="
+                                + listId
+                                + " jobId="
+                                + event2.getResponse().getJobId().getId()
+                                + " errorCount=1")
+                .doesNotContain(
+                        "invalid",
+                        "Example Organisation",
+                        "John",
+                        "Doe",
+                        "1 Example Street",
+                        "example.organisation@example.com",
+                        "example.respondent@example.com",
+                        "0207 1111111",
+                        "07771 111111",
+                        "SENSITIVE-ACCOUNT");
     }
 
     @Test
-    void
-            givenPostcodeViolatesOpenApiPattern_whenValidatingRespondentWithMidddleName_thenLogsBeanValidationFailure(
-                    CapturedOutput output) throws IOException {
+    void givenInvalidPostcodeWithMiddleName_whenValidating_thenRecordsBeanValidationFailure()
+            throws IOException {
         // Respondent Test
         BulkUploadRow respondentRow = validRespondentRow();
         respondentRow.setRespondentPostcode("invalid");
@@ -351,15 +355,6 @@ class BulkUploadAsyncLifecycleTest {
                                                 respondentRow.getRespondentAddressLine1(),
                                                 respondentRow.getApplicantCode(),
                                                 "DATA_ERROR"))));
-        assertThat(output)
-                .contains("Bulk upload validation failure for list")
-                .contains("\"rowNumber\":2")
-                .contains("postcode")
-                .contains("\"rejectedValue\":\"invalid\"")
-                .contains("\"message\":\"Provide a valid UK postcode.\"")
-                .contains("\"addressLine1\":\"1 Example Street\"")
-                .contains("\"code\":\"APP001\"")
-                .contains("\"errorType\":\"DATA_ERROR\"");
     }
 
     @Test

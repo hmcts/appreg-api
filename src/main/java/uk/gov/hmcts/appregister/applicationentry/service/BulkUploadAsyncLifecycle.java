@@ -168,7 +168,6 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         if (!allErrors.isEmpty()) {
             sanitiseErrorMessages(allErrors);
             logValidationFailure(event, context, allErrors);
-            log.error("Bulk upload validation failed with {} errors", allErrors.size());
             saveErrorCSV(allErrors, event, context);
             throw new AppRegistryException(
                     AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
@@ -360,12 +359,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private void logValidationFailure(
             AsyncJobLifecycleEvent<BulkUploadRow> event,
             JobContext context,
-            List<BulkUploadError> error) {
+            List<BulkUploadError> errors) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            String json = objectMapper.writeValueAsString(error);
+            String json = objectMapper.writeValueAsString(errors);
             context.logFailure(json);
-            log.warn("Bulk upload validation failure for list {}: {}", listId, json);
+            log.warn(
+                    "Bulk upload validation failed listId={} jobId={} errorCount={}",
+                    listId,
+                    event.getResponse().getJobId().getId(),
+                    errors.size());
         } catch (JsonProcessingException e) {
             log.error(
                     "Failed to serialize bulk upload errors to JSON for list {}: {}",
