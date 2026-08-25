@@ -98,6 +98,11 @@ public class ApplicationCodeDataIngressProcessor
     }
 
     @Override
+    protected String dataLocationName() {
+        return "APPREGISTER";
+    }
+
+    @Override
     protected String mockFilePath() {
         return applicationCodeProperties.getMock();
     }

@@ -46,13 +46,13 @@ class CsdsIngressClientImplTest {
 
         var client = new CsdsIngressClientImpl(restClient, properties);
 
-        client.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=100&%24offset=200");
+        client.retrieveJson("/query/APPREGISTER/ApplicationCode/GD?%24limit=100&%24offset=200");
 
         var uriCaptor = ArgumentCaptor.forClass(URI.class);
         verify(requestHeadersUriSpec).uri(uriCaptor.capture());
         assertThat(uriCaptor.getValue().toString())
                 .isEqualTo(
-                        "https://csds.dev.apps.hmcts.net/api/rest/query/CSDS/ApplicationCode/GD"
+                        "https://csds.dev.apps.hmcts.net/api/rest/query/APPREGISTER/ApplicationCode/GD"
                                 + "?%24limit=100&%24offset=200");
     }
 
@@ -81,7 +81,7 @@ class CsdsIngressClientImplTest {
 
         var client = new CsdsIngressClientImpl(restClient, properties);
 
-        assertThatThrownBy(() -> client.retrieveJson("/count/CSDS/ApplicationCode/GD"))
+        assertThatThrownBy(() -> client.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Failed to retrieve CSDS data for path");
         assertThat(logCaptor.getWarnLogs())
@@ -89,11 +89,11 @@ class CsdsIngressClientImplTest {
                         log ->
                                 log.contains(
                                         "Failed to retrieve CSDS JSON, using Key 1, for path "
-                                                + "/count/CSDS/ApplicationCode/GD: 404 Not Found"))
+                                                + "/count/APPREGISTER/ApplicationCode/GD: 404 Not Found"))
                 .anyMatch(
                         log ->
                                 log.contains(
                                         "Failed to retrieve CSDS JSON, using Key 2, for path "
-                                                + "/count/CSDS/ApplicationCode/GD: 404 Not Found"));
+                                                + "/count/APPREGISTER/ApplicationCode/GD: 404 Not Found"));
     }
 }
