@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.val;
@@ -48,6 +52,7 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -113,6 +118,47 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
         Assertions.assertEquals(2, sequences.size());
         Assertions.assertTrue(sequences.get(0) < sequences.get(1));
+    }
+
+    @Test
+    void givenMoveIsReadyToSave_whenTargetCloses_thenOneRequestMustFail() throws Exception {
+        var sourceEntry = new AppListEntryTestData().someMinimal().build();
+        var sourceList = createOpenListWithEntry(sourceEntry);
+        var targetList = createEmptyOpenTargetList();
+        var token = getToken();
+        moveEntryFailureSwitch.pauseNextMoveSave();
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var moveFuture =
+                    executor.submit(
+                            () ->
+                                    getMoveApplicationListEntriesResponse(
+                                            sourceList.getUuid(),
+                                            targetList.getUuid(),
+                                            Set.of(sourceEntry.getUuid()),
+                                            token));
+            moveEntryFailureSwitch.awaitMoveSave();
+
+            var closeFuture =
+                    executor.submit(
+                            () ->
+                                    restAssuredClient.executePutRequest(
+                                            getLocalUrl(WEB_CONTEXT + "/" + targetList.getUuid()),
+                                            token,
+                                            closeRequest(targetList)));
+            Response closeResponse = responseIfCompleted(closeFuture);
+
+            moveEntryFailureSwitch.releaseMoveSave();
+            var moveResponse = moveFuture.get(5, TimeUnit.SECONDS);
+            closeResponse =
+                    closeResponse != null ? closeResponse : closeFuture.get(5, TimeUnit.SECONDS);
+
+            assertThat(List.of(moveResponse.statusCode(), closeResponse.statusCode()))
+                    .as("move and close must not both succeed")
+                    .anyMatch(status -> status >= 400);
+        } finally {
+            moveEntryFailureSwitch.releaseMoveSave();
+        }
     }
 
     @Test
@@ -605,6 +651,33 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         return targetList;
     }
 
+    private ApplicationList createEmptyOpenTargetList() {
+        var targetList = new AppListTestData().someMinimal().status(Status.OPEN).build();
+        targetList.setCourtCode("CCC003");
+        targetList.setCourtName("Cardiff Crown Court");
+        return persistance.save(targetList);
+    }
+
+    private ApplicationListUpdateDto closeRequest(ApplicationList targetList) {
+        return new ApplicationListUpdateDto()
+                .date(targetList.getDate())
+                .time(targetList.getTime())
+                .description(targetList.getDescription())
+                .status(ApplicationListStatus.CLOSED)
+                .courtLocationCode(targetList.getCourtCode())
+                .durationHours(1)
+                .durationMinutes(0);
+    }
+
+    private Response responseIfCompleted(java.util.concurrent.Future<Response> future)
+            throws Exception {
+        try {
+            return future.get(2, TimeUnit.SECONDS);
+        } catch (TimeoutException ignored) {
+            return null;
+        }
+    }
+
     private Response moveEntries(
             ApplicationList sourceList, ApplicationList targetList, Set<UUID> uuidsToMove)
             throws MalformedURLException, JOSEException {
@@ -635,6 +708,11 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
                             (proxy, method, args) -> {
                                 if (args != null
                                         && args.length == 1
+                                        && switcher.shouldPause(method.getName(), args[0])) {
+                                    switcher.pauseMoveSave();
+                                }
+                                if (args != null
+                                        && args.length == 1
                                         && switcher.shouldFail(method.getName(), args[0])) {
                                     throw new IllegalStateException(
                                             "Simulated move save failure for rollback test");
@@ -654,6 +732,9 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
     static class MoveEntryFailureSwitch {
         private final AtomicBoolean enabled = new AtomicBoolean(false);
         private final AtomicInteger saveCount = new AtomicInteger(0);
+        private final AtomicBoolean pauseEnabled = new AtomicBoolean(false);
+        private volatile CountDownLatch moveSaveReached = new CountDownLatch(0);
+        private volatile CountDownLatch releaseMoveSave = new CountDownLatch(0);
 
         void failOnMoveSave() {
             saveCount.set(0);
@@ -663,6 +744,33 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
         void reset() {
             enabled.set(false);
             saveCount.set(0);
+            releaseMoveSave();
+            pauseEnabled.set(false);
+        }
+
+        void pauseNextMoveSave() {
+            moveSaveReached = new CountDownLatch(1);
+            releaseMoveSave = new CountDownLatch(1);
+            pauseEnabled.set(true);
+        }
+
+        void awaitMoveSave() throws InterruptedException {
+            Assertions.assertTrue(moveSaveReached.await(5, TimeUnit.SECONDS));
+        }
+
+        void releaseMoveSave() {
+            releaseMoveSave.countDown();
+        }
+
+        boolean shouldPause(String methodName, Object candidate) {
+            return "saveAll".equals(methodName)
+                    && candidate instanceof Iterable<?>
+                    && pauseEnabled.compareAndSet(true, false);
+        }
+
+        void pauseMoveSave() throws InterruptedException {
+            moveSaveReached.countDown();
+            releaseMoveSave.await(5, TimeUnit.SECONDS);
         }
 
         boolean shouldFail(String methodName, Object candidate) {
