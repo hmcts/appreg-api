@@ -38,6 +38,8 @@
 #						per ARCPOC-1712
 # 12.0		17/08/2026	Matthew Harman	Correct string replacement of
 #						| with \p as per ARCPOC-1696
+# 13.0		21/08/2026	Matthew Harman	Findings from ARCPOC-1684
+#						make 00A6 \\p
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -748,13 +750,13 @@ w
 			additional_postgres_fields="first_name TEXT,
 middle_name TEXT,
 last_name TEXT,";
-			additional_oracle_select="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(forename_1,'')),UNISTR('\00A6'),''),'\\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|'||";
-			additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(TRIM(REGEXP_REPLACE(NVL(forename_2, '')|| ' ' || NVL(forename_3, ''), ' +', ' '))),UNISTR('\00A6'),''),'\\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|'||";
-			additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(surname,'')),UNISTR('\00A6'),''),'\\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|#'";
+			additional_oracle_select="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(forename_1,'')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')||CHR(31)||";
+			additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(TRIM(REGEXP_REPLACE(NVL(forename_2, '')|| ' ' || NVL(forename_3, ''), ' +', ' '))),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')||CHR(31)||";
+			additional_oracle_select="${additional_oracle_select}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(surname,'')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')||CHR(31)||'#'";
 
-			additional_oracle_select_masked="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_RANDOM.STRING('l',NVL(LENGTH(forename_1),0))),UNISTR('\00A6'),''),'\\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|'||";
-			additional_oracle_select_masked="${additional_oracle_select_masked}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_RANDOM.STRING('l',NVL(LENGTH(forename_2),0))||' '||DBMS_RANDOM.STRING('l',NVL(LENGTH(forename_3),0))),UNISTR('\00A6'),''),'\\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|'||";
-			additional_oracle_select_masked="${additional_oracle_select_masked}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_RANDOM.STRING('l',NVL(LENGTH(surname),0))),UNISTR('\00A6'),''),'\\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|#'";
+			additional_oracle_select_masked="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_RANDOM.STRING('l',NVL(LENGTH(forename_1),0))),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')||CHR(31)||";
+			additional_oracle_select_masked="${additional_oracle_select_masked}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_RANDOM.STRING('l',NVL(LENGTH(forename_2),0))||' '||DBMS_RANDOM.STRING('l',NVL(LENGTH(forename_3),0))),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')||CHR(31)||";
+			additional_oracle_select_masked="${additional_oracle_select_masked}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_RANDOM.STRING('l',NVL(LENGTH(surname),0))),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')||CHR(31)||'#'";
 
 			additional_insert=",REPLACE(REPLACE(REPLACE(REPLACE(FIRST_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS FIRST_NAME,";
 			additional_insert="${additional_insert}REPLACE(REPLACE(REPLACE(REPLACE(MIDDLE_NAME,'\p','|'), '\t',E'\t'), '\r', E'\r'), '\n', E'\n') AS MIDDLE_NAME,";
@@ -1026,18 +1028,18 @@ echo "is notnull"
 						# the test data
 						if [ $mask_mode == "YES" ] && [ $masked_function != "NONE" ]
 						then
-							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${masked_function}),UNISTR('\00A6'),''),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${masked_function}),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 						else
 							if [[ $field_nullable == "Y" ]]
 							then
 								if [[ $nvl_replacement == "Y" ]]
 								then
-									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'0')),UNISTR('\00A6'),''),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'0')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 								else
-									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),UNISTR('\00A6'),''),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 								fi
 							else
-								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),UNISTR('\00A6'),''),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 							fi
 						fi
 						field_size=`echo ${postgres_field_type}|awk -F"(" '{print $2}'`
@@ -1071,19 +1073,19 @@ echo "field_nullable: $field_nullable";
 						echo "field is a clob";
 						if [ $mask_mode == "YES" ] && [ $masked_function != "NONE" ]
 						then
-							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${masked_function}),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${masked_function}),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 						else
 							if [[ $field_nullable == "Y" ]]
 							then
 echo "field is NULL"
 								if [[ $nvl_replacement == "Y" ]]
 								then
-									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'0')),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'0')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 								else
-									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+									sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL(${field_name},'')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 								fi
 							else
-								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 echo "NOTNULL field"
 							fi
 						fi
@@ -1127,13 +1129,13 @@ echo "sql_postgres5: ${sql_postgres5}"
 						echo "field is a char";
 						if [ $mask_mode == "YES" ] && [ $masked_function != "NONE" ]
 						then
-							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${masked_function}),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+							sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${masked_function}),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 						else
 							if [[ $field_nullable == "Y" ]]
 							then
-								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL((${field_name},'')),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(NVL((${field_name},'')),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 							else
-								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')"
+								sql_script="${sql_script}REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(${field_name}),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t')"
 							fi
 						fi
 						field_size=`echo ${postgres_field_type}|awk -F"(" '{print $2}'`
@@ -1237,7 +1239,7 @@ echo "checking: ${field_name} ${counter} ${field_count}";
 				if [[ $counter -lt $field_count ]]
 				then
 echo "a1";
-					sql_script="${sql_script}||'|'||${NEWLINE}";
+					sql_script="${sql_script}||CHR(31)||${NEWLINE}";
 				else
 					# Add in the additional oracle select if
 					# applicable
@@ -1245,14 +1247,14 @@ echo "a1";
 						if [ $mask_mode == "YES" ]
 						then
 					
-							sql_script="${sql_script}||'|'||${NEWLINE}";
+							sql_script="${sql_script}||CHR(31)||${NEWLINE}";
 							sql_script="${sql_script}${additional_oracle_select_masked}${NEWLINE}";
 						else
-							sql_script="${sql_script}||'|'||${NEWLINE}";
+							sql_script="${sql_script}||CHR(31)||${NEWLINE}";
 							sql_script="${sql_script}${additional_oracle_select}${NEWLINE}";
 						fi
 					else
-						sql_script="${sql_script}||'|#'${NEWLINE}";
+						sql_script="${sql_script}||CHR(31)||'#'${NEWLINE}";
 					fi
 echo "a2";
 				fi
@@ -1348,7 +1350,7 @@ echo "AAAAA ${thread_count}";
 echo "BBBBB";
 echo "${threads}";
 			# Populate the postgres commands file
-			echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
+			echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER E'\x1f', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
 
 			sql_spool="spool ${spool_location}/${tables_to_extract}_part_${threads}.csv;";
 			sql_script=$sql_script_base;
@@ -1625,7 +1627,7 @@ echo "vv"
 				CLOB)
 echo "field_nullable: $field_nullable";
 					echo "field is a clob ${field_name}";
-					l_clob_string="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_LOB.SUBSTR(b.${field_name},3900,1+(s.piece_no-1)*3900)),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t')||'|#|'"
+					l_clob_string="REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TO_CLOB(DBMS_LOB.SUBSTR(b.${field_name},3900,1+(s.piece_no-1)*3900)),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'')||CHR(31)||'#'||CHR(31)"
 echo "NOTNULL field"
 					l_clob_field=${field_name};
 					if [[ $field_count -eq $counter ]]
@@ -1785,12 +1787,12 @@ echo $field_name
 				then
 					if [[ $field_type != "CLOB" ]] 
 					then
-						sql2_script="${sql2_script}||'|'||${NEWLINE}";
+						sql2_script="${sql2_script}||CHR(31)||${NEWLINE}";
 					fi
 				else
 
 					sql3_script="GREATEST(1,CEIL(NVL(DBMS_LOB.GETLENGTH(${l_clob_field}),0)/3900)) AS n_pieces";
-					#sql2_script="${sql2_script}||'|#'${NEWLINE}";
+					#sql2_script="${sql2_script}||CHR(31)||${NEWLINE}";
 				fi
 
 				# Write out the postgres create schema file
@@ -1840,7 +1842,7 @@ echo "AAAAA ${thread_count}";
 echo "BBBBB";
 echo "${threads}";
 				# Populate the postgres commands file
-				echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
+				echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER E'\x1f', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
 
 				sql_spool="spool ${spool_location}/${tables_to_extract}_part_${threads}.csv;";
 				sql_script=$sql_script_base;
@@ -1915,7 +1917,7 @@ echo "ZZ: ${sql_script}";
 				sql_script="${sql_script}CONNECT BY LEVEL <= (SELECT NVL(max_pieces,1) FROM maxn)${NEWLINE}";
 				sql_script="${sql_script})${NEWLINE}";
 				sql_script="${sql_script}SELECT${NEWLINE}";
-				sql_script="${sql_script}${sql2_script}||'|'||${NEWLINE}";
+				sql_script="${sql_script}${sql2_script}||CHR(31)||${NEWLINE}";
 				sql_script="${sql_script}TO_CLOB(TO_CHAR(s.piece_no))${NEWLINE}";
 #				sql_script="${sql_script}${l_clob_string}${NEWLINE}";
 				sql_script="${sql_script}FROM base b${NEWLINE}";
@@ -2112,7 +2114,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
-			primary_key="NVL(TO_CHAR(ALE_ALE_ID),'')||'|'||NVL(TO_CHAR(FEE_FEE_ID),'')||'|'||NVL(TO_CHAR(VERSION),'')||'|'||NVL(TO_CHAR(CHANGED_BY),'')||'|'||NVL(TO_CHAR(CHANGED_DATE,'YYYY-MM-DD HH24:MI:SS'),'')||'|'||REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(NVL(USER_NAME,''),'\','\\\\'),'|','\\\\p'),CHR(13),'\\\\r'),CHR(10),'\\\\n'),CHR(9),'\\\\t') AS row_text";
+			primary_key="NVL(TO_CHAR(ALE_ALE_ID),'')||CHR(31)||NVL(TO_CHAR(FEE_FEE_ID),'')||CHR(31)||NVL(TO_CHAR(VERSION),'')||CHR(31)||NVL(TO_CHAR(CHANGED_BY),'')||CHR(31)||NVL(TO_CHAR(CHANGED_DATE,'YYYY-MM-DD HH24:MI:SS'),'')||CHR(31)||REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(NVL(USER_NAME,''),CHR(92),CHR(92)||CHR(92)),'|',CHR(92)||'|'),CHR(13),CHR(92)||'r'),CHR(10),CHR(92)||'n'),CHR(9),CHR(92)||'t') AS row_text";
 			delete_allowed="YES";
 			concatenated_key="YES";
 			concatenated_string="row_text";
@@ -2126,7 +2128,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 				(appregister.appreg_get_user_mapping(a[4]) AS changed_by_txt,
 				(a[5])::timestamp AS changed_date,
 				a[6] AS user_name_esc
-				FROM (SELECT string_to_array(row_text,'|') AS a
+				FROM (SELECT string_to_array(row_text,CHR(31)) AS a
 					FROM ${postgres_schema}.${lower_table_name}_delete_temp) s
 				),
 				unescaped AS (
@@ -2341,7 +2343,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			echo "">>deletes.sql
 	
 			# Populate the postgres commands file
-			echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_delete_temp FROM '${lower_with_schema}.deletes.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>$postgres_delete_commands_file;
+			echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_delete_temp FROM '${lower_with_schema}.deletes.csv' WITH (FORMAT text, DELIMITER E'\x1f', NULL '')\" \"${postgres_environment}\"">>$postgres_delete_commands_file;
 	
 		fi
 	fi
