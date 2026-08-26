@@ -542,6 +542,76 @@ paths:
       summary: Ingest a CSDS snapshot file.
       tags:
       - admin
+  /admin/csds/trigger:
+    post:
+      description: |
+        Runs all enabled CSDS ingress processors synchronously using the same retrieval and apply flow as the scheduled CSDS job. Processing continues if an individual processor fails, but the request returns `500 Internal Server Error` after all processors have been attempted. The endpoint does not update the scheduled-run execution log and therefore does not suppress a subsequent scheduled run. Only callers with the admin role can trigger the operation.
+      operationId: triggerCsdsIngress
+      responses:
+        "200":
+          description: All enabled CSDS ingress processors completed successfully.
+          headers:
+            Vary:
+              description: Response varies by Accept for media-type versioning.
+              example: Accept
+              schema:
+                type: string
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "423":
+          content:
+            application/problem+json:
+              examples:
+                locked:
+                  value:
+                    type: https://errors.hmcts.net/common/locked
+                    title: Locked
+                    status: 423
+                    detail: The CSDS ingest is already running
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: The requested operation could not start because the resource
+            is locked.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+      summary: Trigger CSDS ingress on demand.
+      tags:
+      - admin
   /application-codes:
     get:
       description: |

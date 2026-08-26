@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
@@ -272,13 +274,6 @@ class CsdsIngressProcessorTest {
     void given_processorFails_when_runScheduledIngress_then_returnsFailedResult() {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(3));
-        var processor =
-                new CsdsIngressProcessor(
-                        properties,
-                        ingressClient,
-                        csdsExecutionLogService,
-                        distributedJobLockService,
-                        List.of(dataIngressProcessor));
         List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
         var lock =
                 new DistributedJobLock(
@@ -294,6 +289,13 @@ class CsdsIngressProcessorTest {
         when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
         doThrow(new IllegalStateException("boom")).when(dataIngressProcessor).apply("processed");
 
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        csdsExecutionLogService,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
         var startedAt = LocalDateTime.parse("2026-07-27T03:05:00");
         var result = processor.runScheduledIngress(startedAt);
 
@@ -305,6 +307,103 @@ class CsdsIngressProcessorTest {
                         startedAt,
                         "Failed processors: test-dataset");
         verify(distributedJobLockService).release(lock);
+    }
+
+    @Test
+    void given_processorFails_when_runManualIngress_then_continuesAndReportsFailure() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        @SuppressWarnings("unchecked")
+        IDataIngressProcessor<String> secondProcessor = mock(IDataIngressProcessor.class);
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        csdsExecutionLogService,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor, secondProcessor));
+        List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.renew(lock)).thenReturn(true);
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
+        when(dataIngressProcessor.datasetName()).thenReturn("failed-dataset");
+        when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
+        doThrow(new IllegalStateException("boom")).when(dataIngressProcessor).apply("processed");
+        when(secondProcessor.enabled()).thenReturn(true);
+        when(secondProcessor.datasetName()).thenReturn("successful-dataset");
+        when(secondProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        when(secondProcessor.preProcess(rawJson)).thenReturn("processed");
+
+        assertThatThrownBy(processor::runManualIngress)
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Failed processors: failed-dataset");
+
+        verify(secondProcessor).apply("processed");
+        verify(distributedJobLockService).release(lock);
+        verifyNoInteractions(csdsExecutionLogService);
+    }
+
+    @Test
+    void given_registeredProcessor_when_runManualIngress_then_executesWithoutScheduledLog() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
+        when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
+        when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        when(dataIngressProcessor.preProcess(rawJson)).thenReturn("processed");
+
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        csdsExecutionLogService,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+        processor.runManualIngress();
+
+        verify(dataIngressProcessor).apply("processed");
+        verify(distributedJobLockService).release(lock);
+        verifyNoInteractions(csdsExecutionLogService);
+    }
+
+    @Test
+    void given_lockUnavailable_when_runManualIngress_then_reportsLocked() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        csdsExecutionLogService,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(processor::runManualIngress)
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("The CSDS ingest is already running");
+
+        verifyNoInteractions(dataIngressProcessor, csdsExecutionLogService);
     }
 
     @Test

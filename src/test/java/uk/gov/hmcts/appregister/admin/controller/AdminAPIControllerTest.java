@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
@@ -20,8 +21,9 @@ import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 class AdminAPIControllerTest {
     private final AdminAPIService adminAPIService = mock(AdminAPIService.class);
     private final CsdsIngestService csdsIngestService = mock(CsdsIngestService.class);
+    private final CsdsIngressProcessor csdsIngressProcessor = mock(CsdsIngressProcessor.class);
     private final AdminAPIController controller =
-            new AdminAPIController(adminAPIService, csdsIngestService);
+            new AdminAPIController(adminAPIService, csdsIngestService, csdsIngressProcessor);
 
     @Test
     void enableDisableDatabaseJobByName_delegatesAndReturnsVersionedOkResponse() {
@@ -104,5 +106,16 @@ class AdminAPIControllerTest {
         assertThat(response.getHeaders().getContentType())
                 .hasToString("application/vnd.hmcts.appreg.v1+json");
         assertThat(response.getBody()).isSameAs(body);
+    }
+
+    @Test
+    void triggerCsdsIngress_delegatesAndReturnsVersionedOkResponse() {
+        ResponseEntity<Void> response = controller.triggerCsdsIngress();
+
+        verify(csdsIngressProcessor).runManualIngress();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getVary()).containsExactly("Accept");
+        assertThat(response.getHeaders().getContentType())
+                .hasToString("application/vnd.hmcts.appreg.v1+json");
     }
 }

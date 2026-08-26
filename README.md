@@ -147,6 +147,29 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
     the `nosecurity` profile
   - if `reporting-dir` is set, the ingress run writes comparison artifacts there for inspection
 
+- **Trigger CSDS ingress in a deployed environment**
+  Copy the ignored configuration template and provide the values for the target environment:
+  ```bash
+  cp scripts/trigger_csds.config.example scripts/trigger_csds.config
+  chmod 600 scripts/trigger_csds.config
+  ```
+
+  The configuration requires the AppReg API base URL, Entra tenant, client credentials and scope,
+  plus an AppReg admin username and password. Never commit the populated file.
+
+  Verify the configuration and admin access without triggering ingress:
+  ```bash
+  ./scripts/trigger_csds.sh --check-config
+  ```
+  This calls the existing read-only admin job-status endpoint (which will create its usual audit record).
+
+  Trigger all enabled CSDS ingress processors:
+  ```bash
+  ./scripts/trigger_csds.sh
+  ```
+  Both commands fetch a fresh admin token on every run. Access to deployed environments may require
+  the HMCTS VPN.
+
 ## Authentication and Authorisation Failure Logging
 
 Protected endpoint responses returning `401` or `403` are logged at `WARN` using the existing App

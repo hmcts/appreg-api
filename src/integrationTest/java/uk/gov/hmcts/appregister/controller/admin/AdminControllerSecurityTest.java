@@ -12,6 +12,13 @@ class AdminControllerSecurityTest extends AbstractSecurityControllerTest {
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
                 RestEndpointDescription.builder()
+                        .url(getLocalUrl("admin/csds/trigger"))
+                        .method(HttpMethod.POST)
+                        .payload("")
+                        .successRole(RoleEnum.ADMIN)
+                        .invalidRole(RoleEnum.USER)
+                        .build(),
+                RestEndpointDescription.builder()
                         .url(
                                 getLocalUrl(
                                         AbstractAdminAPICrudTest.WEB_CONTEXT
