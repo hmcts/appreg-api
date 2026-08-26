@@ -94,6 +94,11 @@ public class FeeDataIngressProcessor
     }
 
     @Override
+    protected String dataLocationName() {
+        return "APPREGISTER";
+    }
+
+    @Override
     protected String mockFilePath() {
         return feeProperties.getMock();
     }

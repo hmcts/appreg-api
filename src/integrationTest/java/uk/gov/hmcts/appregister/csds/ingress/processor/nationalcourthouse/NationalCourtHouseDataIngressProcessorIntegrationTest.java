@@ -94,7 +94,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                         sourceRecord(3803L, null, "New Court", "Llys Newydd", "B02CF00", 1L));
 
         stubFor(
-                get(urlPathEqualTo("/count/CSDS/Court/GD"))
+                get(urlPathEqualTo("/count/COURT/Court/GD"))
                         .withHeader("Api-Key", equalTo("primary-test-key"))
                         .willReturn(
                                 aResponse()
@@ -104,7 +104,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
             var page = OBJECT_MAPPER.createObjectNode();
             page.putArray("records").add(incomingRecords.get(offset));
             stubFor(
-                    get(urlEqualTo("/query/CSDS/Court/GD?%24limit=1&%24offset=" + offset))
+                    get(urlEqualTo("/query/COURT/Court/GD?%24limit=1&%24offset=" + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key"))
                             .willReturn(
                                     aResponse()
@@ -132,13 +132,13 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                 .isZero();
 
         verify(
-                getRequestedFor(urlPathEqualTo("/count/CSDS/Court/GD"))
+                getRequestedFor(urlPathEqualTo("/count/COURT/Court/GD"))
                         .withHeader("Api-Key", equalTo("primary-test-key")));
         for (var offset = 0; offset < incomingRecords.size(); offset++) {
             verify(
                     getRequestedFor(
                                     urlEqualTo(
-                                            "/query/CSDS/Court/GD?%24limit=1&%24offset=" + offset))
+                                            "/query/COURT/Court/GD?%24limit=1&%24offset=" + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key")));
         }
     }
