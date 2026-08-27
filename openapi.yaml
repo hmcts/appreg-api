@@ -7844,7 +7844,6 @@ components:
             and line breaks are not permitted.
           example: "1234"
           minLength: 1
-          pattern: "^[^{}\\r\\n]*$"
           type: string
       required:
       - key

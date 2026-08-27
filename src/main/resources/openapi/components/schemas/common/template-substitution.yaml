@@ -13,4 +13,3 @@ properties:
     description: The field value to substitute into the template key. Braces and line breaks are not permitted.
     example: "1234"
     minLength: 1
-    pattern: '^[^{}\r\n]*$'
