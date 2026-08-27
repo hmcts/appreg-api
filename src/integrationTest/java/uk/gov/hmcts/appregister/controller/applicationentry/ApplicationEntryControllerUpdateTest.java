@@ -473,7 +473,9 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                 problemDetail.getType());
         assert problemDetail.getDetail() != null;
         Assertions.assertEquals(
-                "Premises Address=" + stringExceedLength, problemDetail.getDetail().trim());
+                CommonAppError.WORDING_LENGTH_FAILURE.getCode().getMessage(),
+                problemDetail.getDetail().trim());
+        Assertions.assertFalse(problemDetail.getDetail().contains(stringExceedLength));
     }
 
     @Test

@@ -6,11 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
+@ExtendWith(OutputCaptureExtension.class)
 class WordingSentenceTest {
     private static final String MULTIPLE_VALUE_TEMPLATE =
             "Application by {TEXT|Applicant officer|10} for a production ord covering "
@@ -38,7 +42,7 @@ class WordingSentenceTest {
             "Applicant officer should review {TEXT|Applicant officer|20}";
 
     @Test
-    void testParseWordingTemplateMultipleSuccess() {
+    void testParseWordingTemplateMultipleSuccess(CapturedOutput output) {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
@@ -89,6 +93,7 @@ class WordingSentenceTest {
                         + "requiring the respondent to either produce or allow access to material that is in their "
                         + "possession or control for the purpose of a relevant investigation",
                 result.getSubstitutedString());
+        assertThat(output).doesNotContain("My Test", "2025-03-17");
         assertThat(templateSentence.getErroneousTemplates()).isEmpty();
 
         // verify getting values for the substituted string
@@ -405,6 +410,8 @@ class WordingSentenceTest {
                                         templateableToSubstitute, "this value exceeds length"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
+        assertThat(appRegistryException.getDetails())
+                .doesNotContainValue("this value exceeds length");
     }
 
     @Test
