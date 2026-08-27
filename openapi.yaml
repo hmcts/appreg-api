@@ -7840,9 +7840,11 @@ components:
           minLength: 1
           type: string
         value:
-          description: The field value to substitute into the template key
+          description: The field value to substitute into the template key. Braces
+            and line breaks are not permitted.
           example: "1234"
           minLength: 1
+          pattern: "^[^{}\\r\\n]*$"
           type: string
       required:
       - key

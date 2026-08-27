@@ -426,7 +426,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             if (!type.validateForType(value)) {
                 throw new AppRegistryException(
                         CommonAppError.WORDING_DATA_TYPE_FAILURE,
-                        "Invalid data type value in template");
+                        "Wording value contains reserved characters");
             }
 
             if (value.length() > this.getDetail().getConstraint().getLength()) {

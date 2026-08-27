@@ -69,4 +69,20 @@ class WordingTemplateTest {
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"left{brace", "right}brace", "carriage\rreturn", "line\nbreak"})
+    void givenReservedCharacterWhenSubstitutingThenRejectWithoutEchoingValue(String value) {
+        var collection = WordingTemplateSentence.with(TEXT_TEMPLATE2);
+        var exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                collection.substituteForTemplate(
+                                        collection.getTemplateableContents()[0], value));
+
+        Assertions.assertEquals(CommonAppError.WORDING_DATA_TYPE_FAILURE, exception.getCode());
+        Assertions.assertFalse(exception.getMessage().contains(value));
+        Assertions.assertTrue(exception.getDetails().isEmpty());
+    }
 }
