@@ -1085,8 +1085,9 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                 CommonAppError.WORDING_LENGTH_FAILURE.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                "Premises Address=only one field that exceeds length",
+                CommonAppError.WORDING_LENGTH_FAILURE.getCode().getMessage(),
                 problemDetail.getDetail().trim());
+        Assertions.assertFalse(problemDetail.getDetail().contains(substitution.getValue()));
     }
 
     // TODO: Re-enable this once the decision has been made on the FE implementation.
