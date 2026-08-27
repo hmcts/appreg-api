@@ -92,10 +92,13 @@ class ResolutionCodeDataIngressProcessorTest {
         var secondPage = OBJECT_MAPPER.createObjectNode();
         secondPage.putArray("records");
 
-        when(ingressClient.retrieveJson("/count/CSDS/ResolutionCode/GD")).thenReturn(countResponse);
-        when(ingressClient.retrieveJson("/query/CSDS/ResolutionCode/GD?%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(countResponse);
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson("/query/CSDS/ResolutionCode/GD?%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -116,9 +119,9 @@ class ResolutionCodeDataIngressProcessorTest {
         var secondPage = OBJECT_MAPPER.createObjectNode();
         secondPage.putArray("records");
         var parameterisedCountPath =
-                "/count/CSDS/ResolutionCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
+                "/count/APPREGISTER/ResolutionCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
         var parameterisedQueryPath =
-                "/query/CSDS/ResolutionCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
+                "/query/APPREGISTER/ResolutionCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
         when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
@@ -205,8 +208,10 @@ class ResolutionCodeDataIngressProcessorTest {
         var firstPage = OBJECT_MAPPER.createObjectNode();
         firstPage.putArray("records");
 
-        when(ingressClient.retrieveJson("/count/CSDS/ResolutionCode/GD")).thenReturn(countResponse);
-        when(ingressClient.retrieveJson("/query/CSDS/ResolutionCode/GD?%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(countResponse);
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -236,8 +241,10 @@ class ResolutionCodeDataIngressProcessorTest {
         var firstPage = OBJECT_MAPPER.createObjectNode();
         firstPage.putArray("records");
 
-        when(ingressClient.retrieveJson("/count/CSDS/ResolutionCode/GD")).thenReturn(countResponse);
-        when(ingressClient.retrieveJson("/query/CSDS/ResolutionCode/GD?%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(countResponse);
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -593,12 +600,13 @@ class ResolutionCodeDataIngressProcessorTest {
     @Test
     void given_countEndpoint_when_retrieve_then_callsItFirst() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 0);
-        when(ingressClient.retrieveJson("/count/CSDS/ResolutionCode/GD")).thenReturn(countResponse);
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(countResponse);
 
         var retrieved = processor.retrieve(ingressClient);
 
         assertThat(retrieved).isEmpty();
-        verify(ingressClient).retrieveJson("/count/CSDS/ResolutionCode/GD");
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/ResolutionCode/GD");
     }
 
     @Test

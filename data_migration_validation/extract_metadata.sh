@@ -22,12 +22,24 @@
 #						that SCN.  ARCPOC-1685
 # 4.0		14/08/2026	Matthew Harman	Add filtering of dataset as
 #						per ARCPOC-1712
+# 5.0		19/08/2026	Matthew Harman	Added better reporting as 
+#						per ARCPOC-1684
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
 
 # spool_location	Location to store extracted files
 spool_location='/opt/moj/rman/appreg';
+
+# postgres_metadata_commands_file	Location of the file created to have 
+#					the commands to load the .csv's into
+#					postgres
+postgres_metadata_commands_file="${spool_location}/load_metadata.bat";
+
+# postgres_environment			Postgres environment connection
+#					string.
+#					NOTE: Don't put passwords here
+postgres_environment='postgresql://postgres:<pwd>@localhost:5432/appreg-db';
 
 # retention_mode	Retention mode, YES to implement retention policy
 #				i.e. we won't count data out of retention
@@ -46,24 +58,27 @@ retention_policy='TRUNC(SYSDATE-1825)';
 #			<SCHEMA NAME>.<TABLE_NAME>.CHANGED_DATE
 #			
 # Removed APPREGISTER.DATA_AUDIT
-TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES.CHANGED_DATE,APPREGISTER.APPLICATION_LISTS.CHANGED_DATE,APPREGISTER.APPLICATION_LIST_ENTRIES.CHANGED_DATE,APPREGISTER.APPLICATION_REGISTER.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_FEE_ID.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS.ALEFS_CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_OFFICIAL.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS.CHANGED_DATE,APPREGISTER.CRIMINAL_JUSTICE_AREA.NO_FIELD,APPREGISTER.FEE.FEE_CHANGED_DATE,APPREGISTER.NAME_ADDRESS.CHANGED_DATE,APPREGISTER.RESOLUTION_CODES.CHANGED_DATE,APPREGISTER.STANDARD_APPLICANTS.CHANGED_DATE,LIBRA.NATIONAL_COURT_HOUSES.CHANGED_DATE';
+TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES.CHANGED_DATE¬APPREGISTER.APPLICATION_LISTS.CHANGED_DATE¬APPREGISTER.APPLICATION_LIST_ENTRIES.CHANGED_DATE¬APPREGISTER.APPLICATION_REGISTER.CHANGED_DATE¬APPREGISTER.APP_LIST_ENTRY_FEE_ID.CHANGED_DATE¬APPREGISTER.APP_LIST_ENTRY_FEE_STATUS.ALEFS_CHANGED_DATE¬APPREGISTER.APP_LIST_ENTRY_OFFICIAL.CHANGED_DATE¬APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS.CHANGED_DATE¬APPREGISTER.CRIMINAL_JUSTICE_AREA.NO_FIELD¬APPREGISTER.FEE.FEE_CHANGED_DATE¬APPREGISTER.NAME_ADDRESS.CHANGED_DATE¬APPREGISTER.RESOLUTION_CODES.CHANGED_DATE¬APPREGISTER.STANDARD_APPLICANTS.CHANGED_DATE¬LIBRA.NATIONAL_COURT_HOUSES.CHANGED_DATE¬APPREGISTER.APPREG_USER_MAPPING.NO_FIELD';
 
 # Table Structure to profile data
 # One record for each table, stored via a case statement
-APPLICATION_CODES_STRUCTURE='AC_ID:NUMBER,APPLICATION_CODE:VARCHAR,APPLICATION_CODE_TITLE:VARCHAR,APPLICATION_CODE_WORDING:CLOB,APPLICATION_LEGISLATION:CLOB,FEE_DUE:CHAR,APPLICATION_CODE_RESPONDENT:CHAR,AC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR,AC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR,APPLICATION_CODE_START_DATE:DATE,APPLICATION_CODE_END_DATE:DATE,BULK_RESPONDENT_ALLOWED:CHAR,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR,AC_FEE_REFERENCE:VARCHAR';
-APPLICATION_LISTS_STRUCTURE='AL_ID:NUMBER,APPLICATION_LIST_STATUS:VARCHAR,APPLICATION_LIST_DATE:DATE,APPLICATION_LIST_TIME:DATE,COURTHOUSE_CODE:VARCHAR,OTHER_COURTHOUSE:VARCHAR,LIST_DESCRIPTION:VARCHAR,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR,COURTHOUSE_NAME:VARCHAR,DURATION_HOUR:NUMBER,DURATION_MINUTE:NUMBER,CJA_CJA_ID:NUMBER';
-APPLICATION_LIST_ENTRIES_STRUCTURE='ALE_ID:NUMBER,AL_AL_ID:NUMBER,SA_SA_ID:NUMBER,AC_AC_ID:NUMBER,A_NA_ID:NUMBER,R_NA_ID:NUMBER,NUMBER_OF_BULK_RESPONDENTS:NUMBER,APPLICATION_LIST_ENTRY_WORDING:CLOB,CASE_REFERENCE:VARCHAR,ACCOUNT_NUMBER:VARCHAR,ENTRY_RESCHEDULED:CHAR,NOTES:VARCHAR,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,BULK_UPLOAD:VARCHAR,USER_NAME:VARCHAR,SEQUENCE_NUMBER:NUMBER,TCEP_STATUS:VARCHAR,MESSAGE_UUID:VARCHAR,RETRY_COUNT:VARCHAR,LODGEMENT_DATE:DATE';
-APPLICATION_REGISTER_STRUCTURE='AR_ID:NUMBER,AL_AL_ID:NUMBER,TEXT:CLOB,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR';
-APP_LIST_ENTRY_FEE_ID_STRUCTURE='ALE_ALE_ID:NUMBER,FEE_FEE_ID:NUMBER,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR';
-APP_LIST_ENTRY_FEE_STATUS_STRUCTURE='ALEFS_ID:NUMBER,ALEFS_ALE_ID:NUMBER,ALEFS_PAYMENT_REFERENCE:VARCHAR,ALEFS_FEE_STATUS:VARCHAR,ALEFS_FEE_STATUS_DATE:DATE,ALEFS_VERSION:NUMBER,ALEFS_CHANGED_BY:NUMBER,ALEFS_CHANGED_DATE:DATE,ALEFS_USER_NAME:VARCHAR,ALEFS_STATUS_CREATION_DATE:DATE';
-APP_LIST_ENTRY_OFFICIAL_STRUCTURE='ALEO_ID:NUMBER,ALE_ALE_ID:NUMBER,TITLE:VARCHAR,FORENAME:VARCHAR,SURNAME:VARCHAR,OFFICIAL_TYPE:VARCHAR,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR';
-APP_LIST_ENTRY_RESOLUTIONS_STRUCTURE='ALER_ID:NUMBER,RC_RC_ID:NUMBER,ALE_ALE_ID:NUMBER,AL_ENTRY_RESOLUTION_WORDING:CLOB,AL_ENTRY_RESOLUTION_OFFICER:VARCHAR,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR';
-CRIMINAL_JUSTICE_AREA_STRUCTURE='CJA_ID:NUMBER,CJA_CODE:VARCHAR,CJA_DESCRIPTION:VARCHAR';
-FEE_STRUCTURE='FEE_ID:NUMBER,FEE_REFERENCE:VARCHAR,FEE_DESCRIPTION:VARCHAR,FEE_VALUE:NUMBER,FEE_START_DATE:DATE,FEE_END_DATE:DATE,FEE_VERSION:NUMBER,FEE_CHANGED_BY:NUMBER,FEE_CHANGED_DATE:DATE,FEE_USER_NAME:VARCHAR';
-NAME_ADDRESS_STRUCTURE='NA_ID:NUMBER,CODE:VARCHAR,NAME:VARCHAR,TITLE:VARCHAR,FORENAME_1:VARCHAR,FORENAME_2:VARCHAR,FORENAME_3:VARCHAR,SURNAME:VARCHAR,ADDRESS_L1:VARCHAR,ADDRESS_L2:VARCHAR,ADDRESS_L3:VARCHAR,ADDRESS_L4:VARCHAR,ADDRESS_L5:VARCHAR,POSTCODE:VARCHAR,EMAIL_ADDRESS:VARCHAR,TELEPHONE_NUMBER:VARCHAR,MOBILE_NUMBER:VARCHAR,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR,DATE_OF_BIRTH:DATE,DMS_ID:VARCHAR';
-RESOLUTION_CODES_STRUCTURE='RC_ID:NUMBER,RESOLUTION_CODE:VARCHAR,RESOLUTION_CODE_TITLE:VARCHAR,RESOLUTION_CODE_WORDING:CLOB,RESOLUTION_LEGISLATION:CLOB,RC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR,RC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR,RESOLUTION_CODE_START_DATE:DATE,RESOLUTION_CODE_END_DATE:DATE,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR';
-STANDARD_APPLICANTS_STRUCTURE='SA_ID:NUMBER,STANDARD_APPLICANT_CODE:VARCHAR,STANDARD_APPLICANT_START_DATE:DATE,STANDARD_APPLICANT_END_DATE:DATE,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR,NAME:VARCHAR,TITLE:VARCHAR,FORENAME_1:VARCHAR,FORENAME_2:VARCHAR,FORENAME_3:VARCHAR,SURNAME:VARCHAR,ADDRESS_L1:VARCHAR,ADDRESS_L2:VARCHAR,ADDRESS_L3:VARCHAR,ADDRESS_L4:VARCHAR,ADDRESS_L5:VARCHAR,POSTCODE:VARCHAR,EMAIL_ADDRESS:VARCHAR,TELEPHONE_NUMBER:VARCHAR,MOBILE_NUMBER:VARCHAR';
-NATIONAL_COURT_HOUSES_STRUCTURE='NCH_ID:NUMBER,COURTHOUSE_NAME:VARCHAR,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,COURT_TYPE:VARCHAR,START_DATE:DATE,END_DATE:DATE,LOC_LOC_ID:NUMBER,PSA_PSA_ID:NUMBER,COURT_LOCATION_CODE:VARCHAR,SL_COURTHOUSE_NAME:VARCHAR,NORG_ID:NUMBER';
+# First field is field_name, second field type, third a replace if required
+APPLICATION_CODES_STRUCTURE='AC_ID:NUMBER:NULL¬APPLICATION_CODE:VARCHAR:NULL¬APPLICATION_CODE_TITLE:VARCHAR:NULL¬APPLICATION_CODE_WORDING:CLOB:NULL¬APPLICATION_LEGISLATION:CLOB:NULL¬FEE_DUE:CHAR:NULL¬APPLICATION_CODE_RESPONDENT:CHAR:NULL¬AC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR:NULL¬AC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR:NULL¬APPLICATION_CODE_START_DATE:DATE:NULL¬APPLICATION_CODE_END_DATE:DATE:NULL¬BULK_RESPONDENT_ALLOWED:CHAR:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL¬AC_FEE_REFERENCE:VARCHAR:NULL';
+APPLICATION_LISTS_STRUCTURE="AL_ID:NUMBER:NULL¬APPLICATION_LIST_STATUS:VARCHAR:NULL¬APPLICATION_LIST_DATE:DATE:NULL¬APPLICATION_LIST_TIME:DATE:TO_CHAR(APPLICATION_LIST_TIME,'HH24:MI:SS')¬COURTHOUSE_CODE:VARCHAR:NULL¬OTHER_COURTHOUSE:VARCHAR:NULL¬LIST_DESCRIPTION:VARCHAR:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL¬COURTHOUSE_NAME:VARCHAR:NULL¬DURATION_HOUR:NUMBER:NVL(DURATION_HOUR,0)¬DURATION_MINUTE:NUMBER:NVL(DURATION_MINUTE,0)¬CJA_CJA_ID:NUMBER:NULL";
+APPLICATION_LIST_ENTRIES_STRUCTURE='ALE_ID:NUMBER:NULL¬AL_AL_ID:NUMBER:NULL¬SA_SA_ID:NUMBER:NULL¬AC_AC_ID:NUMBER:NULL¬A_NA_ID:NUMBER:NULL¬R_NA_ID:NUMBER:NULL¬NUMBER_OF_BULK_RESPONDENTS:NUMBER:NULL¬APPLICATION_LIST_ENTRY_WORDING:CLOB:NULL¬CASE_REFERENCE:VARCHAR:NULL¬ACCOUNT_NUMBER:VARCHAR:NULL¬ENTRY_RESCHEDULED:CHAR:NULL¬NOTES:VARCHAR:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬BULK_UPLOAD:VARCHAR:NULL¬USER_NAME:VARCHAR:NULL¬SEQUENCE_NUMBER:NUMBER:NULL¬TCEP_STATUS:VARCHAR:NULL¬MESSAGE_UUID:VARCHAR:NULL¬RETRY_COUNT:VARCHAR:NULL¬LODGEMENT_DATE:DATE:NULL';
+APPLICATION_REGISTER_STRUCTURE='AR_ID:NUMBER:NULL¬AL_AL_ID:NUMBER:NULL¬TEXT:CLOB:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL';
+APP_LIST_ENTRY_FEE_ID_STRUCTURE='ALE_ALE_ID:NUMBER:NULL¬FEE_FEE_ID:NUMBER:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL';
+APP_LIST_ENTRY_FEE_STATUS_STRUCTURE='ALEFS_ID:NUMBER:NULL¬ALEFS_ALE_ID:NUMBER:NULL¬ALEFS_PAYMENT_REFERENCE:VARCHAR:NULL¬ALEFS_FEE_STATUS:VARCHAR:NULL¬ALEFS_FEE_STATUS_DATE:DATE:NULL¬ALEFS_VERSION:NUMBER:NULL¬ALEFS_CHANGED_BY:NUMBER:NULL¬ALEFS_CHANGED_DATE:DATE:NULL¬ALEFS_USER_NAME:VARCHAR:NULL¬ALEFS_STATUS_CREATION_DATE:DATE:NULL';
+APP_LIST_ENTRY_OFFICIAL_STRUCTURE='ALEO_ID:NUMBER:NULL¬ALE_ALE_ID:NUMBER:NULL¬TITLE:VARCHAR:NULL¬FORENAME:VARCHAR:NULL¬SURNAME:VARCHAR:NULL¬OFFICIAL_TYPE:VARCHAR:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL';
+APP_LIST_ENTRY_RESOLUTIONS_STRUCTURE='ALER_ID:NUMBER:NULL¬RC_RC_ID:NUMBER:NULL¬ALE_ALE_ID:NUMBER:NULL¬AL_ENTRY_RESOLUTION_WORDING:CLOB:NULL¬AL_ENTRY_RESOLUTION_OFFICER:VARCHAR:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL';
+CRIMINAL_JUSTICE_AREA_STRUCTURE='CJA_ID:NUMBER:NULL¬CJA_CODE:VARCHAR:NULL¬CJA_DESCRIPTION:VARCHAR:NULL';
+FEE_STRUCTURE='FEE_ID:NUMBER:NULL¬FEE_REFERENCE:VARCHAR:NULL¬FEE_DESCRIPTION:VARCHAR:NULL¬FEE_VALUE:NUMBER:NULL¬FEE_START_DATE:DATE:NULL¬FEE_END_DATE:DATE:NULL¬FEE_VERSION:NUMBER:NULL¬FEE_CHANGED_BY:NUMBER:NULL¬FEE_CHANGED_DATE:DATE:NULL¬FEE_USER_NAME:VARCHAR:NULL';
+#NAME_ADDRESS_STRUCTURE='NA_ID:NUMBER:NULL¬CODE:VARCHAR:NULL¬NAME:VARCHAR:NULL¬TITLE:VARCHAR:NULL¬FORENAME_1:VARCHAR:NULL¬FORENAME_2:VARCHAR:NULL¬FORENAME_3:VARCHAR:NULL¬SURNAME:VARCHAR:NULL¬ADDRESS_L1:VARCHAR:NULL¬ADDRESS_L2:VARCHAR:NULL¬ADDRESS_L3:VARCHAR:NULL¬ADDRESS_L4:VARCHAR:NULL¬ADDRESS_L5:VARCHAR:NULL¬POSTCODE:VARCHAR:NULL¬EMAIL_ADDRESS:VARCHAR:NULL¬TELEPHONE_NUMBER:VARCHAR:NULL¬MOBILE_NUMBER:VARCHAR:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL¬DATE_OF_BIRTH:DATE:NULL¬DMS_ID:VARCHAR:NULL';
+NAME_ADDRESS_STRUCTURE='NA_ID:NUMBER:NULL¬CODE:VARCHAR:NULL¬NAME:VARCHAR:NULL¬TITLE:VARCHAR:NULL¬ADDRESS_L1:VARCHAR:NULL¬ADDRESS_L2:VARCHAR:NULL¬ADDRESS_L3:VARCHAR:NULL¬ADDRESS_L4:VARCHAR:NULL¬ADDRESS_L5:VARCHAR:NULL¬POSTCODE:VARCHAR:NULL¬EMAIL_ADDRESS:VARCHAR:NULL¬TELEPHONE_NUMBER:VARCHAR:NULL¬MOBILE_NUMBER:VARCHAR:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL¬DATE_OF_BIRTH:DATE:NULL¬DMS_ID:VARCHAR:NULL';
+RESOLUTION_CODES_STRUCTURE='RC_ID:NUMBER:NULL¬RESOLUTION_CODE:VARCHAR:NULL¬RESOLUTION_CODE_TITLE:VARCHAR:NULL¬RESOLUTION_CODE_WORDING:CLOB:NULL¬RESOLUTION_LEGISLATION:CLOB:NULL¬RC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR:NULL¬RC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR:NULL¬RESOLUTION_CODE_START_DATE:DATE:TRUNC(RESOLUTION_CODE_START_DATE)¬RESOLUTION_CODE_END_DATE:DATE:TRUNC(RESOLUTION_CODE_END_DATE)¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL';
+STANDARD_APPLICANTS_STRUCTURE='SA_ID:NUMBER:NULL¬STANDARD_APPLICANT_CODE:VARCHAR:NULL¬STANDARD_APPLICANT_START_DATE:DATE:NULL¬STANDARD_APPLICANT_END_DATE:DATE:NULL¬VERSION:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬USER_NAME:VARCHAR:NULL¬NAME:VARCHAR:NULL¬TITLE:VARCHAR:NULL¬FORENAME_1:VARCHAR:NULL¬FORENAME_2:VARCHAR:NULL¬FORENAME_3:VARCHAR:NULL¬SURNAME:VARCHAR:NULL¬ADDRESS_L1:VARCHAR:NULL¬ADDRESS_L2:VARCHAR:NULL¬ADDRESS_L3:VARCHAR:NULL¬ADDRESS_L4:VARCHAR:NULL¬ADDRESS_L5:VARCHAR:NULL¬POSTCODE:VARCHAR:NULL¬EMAIL_ADDRESS:VARCHAR:NULL¬TELEPHONE_NUMBER:VARCHAR:NULL¬MOBILE_NUMBER:VARCHAR:NULL';
+NATIONAL_COURT_HOUSES_STRUCTURE='NCH_ID:NUMBER:NULL¬COURTHOUSE_NAME:VARCHAR:NULL¬VERSION_NUMBER:NUMBER:NULL¬CHANGED_BY:NUMBER:NULL¬CHANGED_DATE:DATE:NULL¬COURT_TYPE:VARCHAR:NULL¬START_DATE:DATE:NULL¬END_DATE:DATE:NULL¬LOC_LOC_ID:NUMBER:NULL¬PSA_PSA_ID:NUMBER:NULL¬COURT_LOCATION_CODE:VARCHAR:NULL¬SL_COURTHOUSE_NAME:VARCHAR:NULL¬NORG_ID:NUMBER:NULL';
+APPREG_USER_MAPPING='LEGACY_CHANGED_BY:NUMBER:NULL¬MODERN_CHANGED_BY:VARCHAR:NULL';
 
 # Further configuration that should not need changing
 sql_header1="SET PAGESIZE 0 HEADING OFF FEEDBACK OFF VERIFY OFF";
@@ -77,7 +92,7 @@ sql_header_seq3="SET LINESIZE 500 TRIMSPOOL OFF TAB OFF TERMOUT OFF ECHO OFF";
 # Main Code
 calling_script="";
 FIELD_SEPARATOR=$IFS
-IFS=','
+IFS='¬'
 NEWLINE=$'\n'
 
 # Populate the scn if it has been passed in as a parameter
@@ -96,6 +111,7 @@ fi
 >${spool_location}/oracle_counts_by_date.csv
 >${spool_location}/oracle_column_analysis.csv
 >oracle_metadata.sql
+>${postgres_metadata_commands_file}
 
 for tables_to_extract in $TABLES_TO_EXTRACT
 do
@@ -190,6 +206,12 @@ do
        	        	table_structure=$NATIONAL_COURT_HOUSES_STRUCTURE;
 			retention_clause='';
 			data_filter="COURT_TYPE='CHOA'";
+       	         	;;
+        	APPREG_USER_MAPPING)
+	               	echo "in APPREG_USER_MAPPING"
+       	        	table_structure=$APPREG_USER_MAPPING_STRUCTURE;
+			retention_clause='';
+			data_filter="";
        	         	;;
 	esac
 
@@ -288,11 +310,18 @@ echo "sql2: $sql_script"
 	fi
 
 	# now profile the columns of data
+echo "${table_structure}";
 	for structure_info in $table_structure
 	do
 echo "a1";
+echo "${structure_info}";
 		field_name=`echo ${structure_info}|awk -F":" '{print $1}'`
 		field_type=`echo ${structure_info}|awk -F":" '{print $2}'`
+		replacement_clause=$(echo "${structure_info}" |awk '{
+sub(/^[^:]*:[^:]*:/, "") 
+print 
+}');
+echo "REPLACEMENT CLAUSE: ${replacement_clause}";
 
 		case $field_type in 
 			NUMBER) 
@@ -304,9 +333,19 @@ echo "a1";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
 				if [[ ${HAVE_SCN} == "Y" ]]; then
-					sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min'||','||min(${replacement_clause}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
 				else
-					sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min'||','||min(${replacement_clause}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
 				fi
 
 				# Do we have a data filter?
@@ -334,9 +373,101 @@ echo "a1";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
 				if [[ ${HAVE_SCN} == "Y" ]]; then
-					sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max'||','||max(${replacement_clause}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
 				else
-					sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max'||','||max(${replacement_clause}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]]
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# Null_count
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'null_count'||','||TO_CHAR(count(*) - count(${replacement_clause})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'null_count'||','||TO_CHAR(count(*) - count(${field_name})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'null_count'||','||TO_CHAR(count(*) - count(${replacement_clause})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'null_count'||','||TO_CHAR(count(*) - count(${field_name})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+				
+				and_clause="WHERE";
+				# Do we have a data filter?
+				if [[ ! -z "${data_filter}" ]]
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# distinct
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'distinct_count'||','||count(distinct ${replacement_clause}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'distinct_count'||','||count(distinct ${field_name}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'distinct_count'||','||count(distinct ${replacement_clause}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'distinct_count'||','||count(distinct ${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
 				fi
 
 				# Do we have a data filter?
@@ -366,9 +497,19 @@ echo "a1";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
 				if [[ ${HAVE_SCN} == "Y" ]]; then
-					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
-#				else
-#					sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min'||','||min(${replacement_clause}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min'||','||to_char(min(${field_name}),'YYYY-MM-DD HH24:MI:SS') FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min'||','||min(${replacement_clause}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min'||','||to_char(min(${field_name}),'YYYY-MM-DD HH24:MI:SS') FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
 				fi
 
 				# Do we have a data filter?
@@ -396,9 +537,101 @@ echo "a1";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
 				if [[ ${HAVE_SCN} == "Y" ]]; then
-					sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max'||','||max(${replacement_clause}) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max'||','||to_char(max(${field_name}), 'YYYY-MM-DD HH24:MI:SS') FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
 				else
-					sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max'||','||max(${replacement_clause}) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max'||','||to_char(max(${field_name}), 'YYYY-MM-DD HH24:MI:SS') FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# null count
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${replacement_clause})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${field_name})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${replacement_clause})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${field_name})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# distinct count
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${replacement_clause})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${field_name})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${replacement_clause})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${field_name})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
 				fi
 
 				# Do we have a data filter?
@@ -428,9 +661,224 @@ echo "a1";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
 				if [[ ${HAVE_SCN} == "Y" ]]; then
-					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
 				else
-					sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# null count
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${replacement_clause})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${field_name})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${replacement_clause})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'null_count'||','||to_char(count(*) - count(${field_name})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# distinct count
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${replacement_clause})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${field_name})) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${replacement_clause})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'distinct_count'||','||to_char(count(distinct ${field_name})) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# min length
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min_len'||','||to_char(nvl(min(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min_len'||','||to_char(nvl(min(length(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min_len'||','||to_char(nvl(min(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min_len'||','||to_char(nvl(min(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# max length
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max_len'||','||to_char(nvl(max(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max_len'||','||to_char(nvl(max(length(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max_len'||','||to_char(nvl(max(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max_len'||','||to_char(nvl(max(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				and_clause="WHERE";
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# total length
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'sum_len'||','||to_char(nvl(sum(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'sum_len'||','||to_char(nvl(sum(length(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'sum_len'||','||to_char(nvl(sum(length(${replacement_clause})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'sum_len'||','||to_char(nvl(sum(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
 				fi
 
 				# Do we have a data filter?
@@ -481,6 +929,116 @@ echo "a1";
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;
+
+				# null count
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					sql_script="${sql_script}'null_count'||','||to_char(sum(CASE WHEN ${field_name} IS NULL THEN 1 ELSE 0 END)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+				else
+					sql_script="${sql_script}'null_count'||','||to_char(sum(CASE WHEN ${field_name} IS NULL THEN 1 ELSE 0 END)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				fi
+
+				# Do we have a data filter?
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# minimum length
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min_len'||','||to_char(NVL(min(dbms_lob.getlength(${replacement_clause})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min_len'||','||to_char(NVL(min(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'min_len'||','||to_char(NVL(min(dbms_lob.getlength(${replacement_clause})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'min_len'||','||to_char(NVL(min(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
+
+				# max length
+				sql_script="${sql_header1}${NEWLINE}${sql_header2}";
+				sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+				sql_script="${sql_script}spool ${spool_location}/oracle_column_analysis.csv append;${NEWLINE}";
+				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
+				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
+				if [[ ${HAVE_SCN} == "Y" ]]; then
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max_len'||','||to_char(NVL(max(dbms_lob.getlength(${replacement_clause})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max_len'||','||to_char(NVL(max(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name} AS OF SCN ${SCN_VALUE}${NEWLINE}";
+					fi
+				else
+					if [[ "${replacement_clause}" != "NULL" ]]
+					then
+						sql_script="${sql_script}'max_len'||','||to_char(NVL(max(dbms_lob.getlength(${replacement_clause})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					else
+						sql_script="${sql_script}'max_len'||','||to_char(NVL(max(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+					fi
+				fi
+
+				# Do we have a data filter?
+				if [[ ! -z "${data_filter}" ]];
+				then
+					sql_script="${sql_script}${and_clause} ${data_filter}${NEWLINE}";
+					and_clause="AND";
+				fi
+
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} ${and_clause} ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
+				sql_script="${sql_script}spool off;${NEWLINE}";
+				echo "sqlcc: $sql_script"
+				echo "${sql_script}">>oracle_metadata.sql;
 				;;
 
 		esac
@@ -488,4 +1046,10 @@ echo "a1";
 	done	
 			
 done
+
+# Generate the file to load the csvs into postgres
+echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy data_validation.oracle_column_metadata(owner, table_name, column_name, data_type, char_length, nullable, suggested_pg_type) FROM 'oracle_metadata.csv' CSV QUOTE ''''\" \"${postgres_environment}\"">>${postgres_metadata_commands_file};
+echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy data_validation.oracle_rowcounts(owner, table_name, row_count) FROM 'oracle_rowcounts.csv' CSV QUOTE ''''\" \"${postgres_environment}\"">>${postgres_metadata_commands_file};
+echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy data_validation.oracle_counts_by_date(owner, table_name, bucket_label, row_count) FROM 'oracle_counts_by_date.csv' CSV QUOTE ''''\" \"${postgres_environment}\"">>${postgres_metadata_commands_file};
+echo "\"c:\Program Files\PostgreSQL\18\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy data_validation.oracle_column_analysis(owner, table_name, column_name, metric, metric_value) FROM 'oracle_column_analysis.csv' CSV QUOTE ''''\" \"${postgres_environment}\"">>${postgres_metadata_commands_file};
 

@@ -88,13 +88,18 @@ public class StandardApplicantDataIngressProcessor
     }
 
     @Override
+    protected String dataLocationName() {
+        return "APPREGISTER";
+    }
+
+    @Override
     protected String queryPathType() {
         return "named-query";
     }
 
     @Override
-    protected boolean usesCountEndpoint() {
-        return false;
+    protected String countPathType() {
+        return "named-query-count";
     }
 
     @Override

@@ -95,8 +95,8 @@ class NationalCourtHouseDataIngressProcessorTest {
         var parameters =
                 "?$f=PublishingStatus='Active'&$f=CurrentRecordIndicator='true'"
                         + "&$f=CourtHearingOperationAreaIndicator='true'&$orderBy=CourtID";
-        var countPath = "/count/CSDS/Court/GD" + parameters;
-        var queryPath = "/query/CSDS/Court/GD" + parameters;
+        var countPath = "/count/COURT/Court/GD" + parameters;
+        var queryPath = "/query/COURT/Court/GD" + parameters;
         when(ingressClient.retrieveJson(countPath)).thenReturn(count);
         when(ingressClient.retrieveJson(queryPath + "&%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
