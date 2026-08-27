@@ -1721,6 +1721,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
     private long executeSearchAndCountPreparedStatements(
             TokenGenerator tokenGenerator, String codeFilter, int expectedContentSize)
             throws MalformedURLException, JOSEException {
+        awaitDataAudits();
         Statistics statistics = getHibernateStatistics();
         statistics.clear();
 
@@ -1738,6 +1739,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         assertThat(page.getContent()).hasSize(expectedContentSize);
+        awaitDataAudits();
 
         return statistics.getPrepareStatementCount();
     }
