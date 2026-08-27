@@ -1,11 +1,16 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 
+@ExtendWith(OutputCaptureExtension.class)
 class WordingTemplateMapperTest {
     private static final String TEMPLATE_WORDING =
             "Attends to swear a complaint for the issue summonses for the debtors to answer "
@@ -17,7 +22,8 @@ class WordingTemplateMapperTest {
     private final WordingTemplateMapper wordingTemplateMapper = new WordingTemplateMapper();
 
     @Test
-    void givenStoredWordingHasFewerPlaceholdersWhenGetTemplateDetailThenFillsWhatItCan() {
+    void givenStoredWordingHasFewerPlaceholdersWhenGetTemplateDetailThenFillsWhatItCan(
+            CapturedOutput output) {
         TemplateDetail detail =
                 wordingTemplateMapper.getTemplateDetail(
                         () -> TEMPLATE_WORDING, () -> STAGED_ENTRY_WORDING);
@@ -31,6 +37,9 @@ class WordingTemplateMapperTest {
         assertEquals(1, detail.getSubstitutionKeyConstraints().size());
         assertEquals("Number", detail.getSubstitutionKeyConstraints().get(0).getKey());
         assertEquals("", detail.getSubstitutionKeyConstraints().get(0).getValue());
+        assertThat(output)
+                .contains("Stored wording contains 0 values but template expects 1")
+                .doesNotContain(STAGED_ENTRY_WORDING, TEMPLATE_WORDING);
     }
 
     @Test

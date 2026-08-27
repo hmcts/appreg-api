@@ -19,6 +19,9 @@ public enum CommonAppError implements ErrorCodeEnum {
     WORDING_LENGTH_FAILURE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Wording length exceeded failure", "COMMON-6")),
+    WORDING_INVALID_CHARACTER_FAILURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Wording contains prohibited characters", "COMMON-17")),
     WORDING_TEMPLATE_FORMAT_FAILURE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Template format failure", "COMMON-7")),
