@@ -33,6 +33,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
@@ -592,7 +593,7 @@ class ResolutionCodeDataIngressProcessorTest {
         invalidRecord.remove("ResultTitle");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("ResultTitle");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }

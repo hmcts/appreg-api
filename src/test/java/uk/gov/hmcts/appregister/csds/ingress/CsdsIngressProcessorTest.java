@@ -2,11 +2,13 @@ package uk.gov.hmcts.appregister.csds.ingress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -23,9 +25,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,8 +77,8 @@ class CsdsIngressProcessorTest {
         assertThat(executed).isTrue();
         var inOrder = inOrder(distributedJobLockService, dataIngressProcessor, ingressClient);
         inOrder.verify(dataIngressProcessor).retrieve(ingressClient);
-        inOrder.verify(dataIngressProcessor).backup();
         inOrder.verify(dataIngressProcessor).preProcess(rawJson);
+        inOrder.verify(dataIngressProcessor).backup();
         inOrder.verify(dataIngressProcessor).apply("processed");
         verify(distributedJobLockService).release(lock);
         assertThat(logCaptor.getInfoLogs())
@@ -310,6 +316,49 @@ class CsdsIngressProcessorTest {
     }
 
     @Test
+    void given_payloadValidationFails_when_runScheduledIngress_then_doesNotOverwriteBackup() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
+        when(dataIngressProcessor.datasetName()).thenReturn("test-dataset");
+        when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        when(dataIngressProcessor.preProcess(rawJson))
+                .thenThrow(new CsdsPayloadValidationException("missing expected field"));
+
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        csdsExecutionLogService,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+        var startedAt = LocalDateTime.parse("2026-07-27T03:05:00");
+
+        var result = processor.runScheduledIngress(startedAt);
+
+        assertThat(result.status()).isEqualTo(CsdsIngressProcessor.ScheduledRunStatus.FAILED);
+        assertThat(result.message()).isEqualTo("Failed processors: test-dataset");
+        verify(dataIngressProcessor).preProcess(rawJson);
+        verify(dataIngressProcessor, never()).backup();
+        verify(dataIngressProcessor, never()).apply(any());
+        verify(csdsExecutionLogService)
+                .recordFailure(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME,
+                        startedAt,
+                        "Failed processors: test-dataset");
+        verify(distributedJobLockService).release(lock);
+    }
+
+    @Test
     void given_processorFails_when_runManualIngress_then_continuesAndReportsFailure() {
         var properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(3));
@@ -344,9 +393,60 @@ class CsdsIngressProcessorTest {
 
         assertThatThrownBy(processor::runManualIngress)
                 .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CommonAppError.INTERNAL_SERVER_ERROR))
                 .hasMessageContaining("Failed processors: failed-dataset");
 
         verify(secondProcessor).apply("processed");
+        verify(distributedJobLockService).release(lock);
+        verifyNoInteractions(csdsExecutionLogService);
+    }
+
+    @Test
+    void given_upstreamPayloadValidationFails_when_runManualIngress_then_reportsBadGateway() {
+        var properties = new CsdsIngressProperties();
+        properties.setLeaseDuration(Duration.ofMinutes(3));
+        var processor =
+                new CsdsIngressProcessor(
+                        properties,
+                        ingressClient,
+                        csdsExecutionLogService,
+                        distributedJobLockService,
+                        List.of(dataIngressProcessor));
+        List<JsonNode> rawJson = List.of(OBJECT_MAPPER.createObjectNode().put("code", "alpha"));
+        var lock =
+                new DistributedJobLock(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, "token", Duration.ofMinutes(3));
+
+        when(distributedJobLockService.tryAcquire(
+                        CsdsIngressProcessor.DATABASE_JOB_NAME, Duration.ofMinutes(3)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        when(dataIngressProcessor.enabled()).thenReturn(true);
+        when(dataIngressProcessor.datasetName()).thenReturn("failed-dataset");
+        when(dataIngressProcessor.retrieve(ingressClient)).thenReturn(rawJson);
+        when(dataIngressProcessor.preProcess(rawJson))
+                .thenThrow(new CsdsPayloadValidationException("missing expected field"));
+
+        assertThatThrownBy(processor::runManualIngress)
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.INVALID_UPSTREAM_DATA))
+                .satisfies(
+                        thrown ->
+                                assertThat(
+                                                ((AppRegistryException) thrown)
+                                                        .getCode()
+                                                        .getCode()
+                                                        .getHttpCode())
+                                        .isEqualTo(HttpStatus.BAD_GATEWAY))
+                .hasMessageContaining("Failed processors: failed-dataset");
+
+        verify(dataIngressProcessor, never()).backup();
         verify(distributedJobLockService).release(lock);
         verifyNoInteractions(csdsExecutionLogService);
     }

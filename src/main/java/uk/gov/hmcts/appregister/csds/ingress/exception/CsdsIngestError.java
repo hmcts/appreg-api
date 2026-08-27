@@ -31,6 +31,14 @@ public enum CsdsIngestError implements ErrorCodeEnum {
                     HttpStatus.CONFLICT,
                     "The requested CSDS ingest processor is disabled",
                     "CSI-6")),
+    INVALID_RECORD_DATA(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Uploaded CSDS snapshot contains invalid record data",
+                    "CSI-7")),
+    INVALID_UPSTREAM_DATA(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_GATEWAY, "CSDS returned invalid record data", "CSI-8")),
     LOCKED(
             DefaultErrorDetail.create(
                     HttpStatus.LOCKED, "The CSDS ingest is already running", "CSI-5"));

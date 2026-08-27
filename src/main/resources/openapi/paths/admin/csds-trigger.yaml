@@ -5,9 +5,10 @@ post:
   description: >
     Runs all enabled CSDS ingress processors synchronously using the same retrieval and apply flow
     as the scheduled CSDS job. Processing continues if an individual processor fails, but the
-    request returns `500 Internal Server Error` after all processors have been attempted. The
-    endpoint does not update the scheduled-run execution log and therefore does not suppress a
-    subsequent scheduled run. Only callers with the admin role can trigger the operation.
+    request returns an error after all processors have been attempted. Invalid record data returned
+    by CSDS results in `502 Bad Gateway`; unexpected AppReg failures result in `500 Internal Server
+    Error`. The endpoint does not update the scheduled-run execution log and therefore does not
+    suppress a subsequent scheduled run. Only callers with the admin role can trigger the operation.
   responses:
     "200":
       description: All enabled CSDS ingress processors completed successfully.
@@ -20,3 +21,4 @@ post:
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "423": { $ref: "../../components/responses/locked-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+    "502": { $ref: "../../components/responses/csds-upstream-bad-gateway-error.yaml" }

@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
@@ -390,7 +391,7 @@ class FeeDataIngressProcessorTest {
         invalidRecord.remove("FeeReference");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("FeeReference");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -402,7 +403,7 @@ class FeeDataIngressProcessorTest {
         List<JsonNode> processedData = List.of(createPageResponse(sourceRecord));
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("PSSFixedListID");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }

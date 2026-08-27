@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAudit;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAuditOperation;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
@@ -42,24 +43,29 @@ public class CsdsIngestService {
         validateFile(file);
         var audit = buildAudit(processorType.getExternalName(), file);
 
-        return auditOperationService.processAudit(
-                CsdsIngestAuditOperation.MANUAL_CSDS_INGEST_AUDIT_EVENT,
-                unused -> {
-                    var lock = acquireLock();
-                    try {
-                        var response = processor.ingest(parse(file));
-                        return Optional.of(new AuditableResult<>(response, audit));
-                    } finally {
-                        if (!distributedJobLockService.release(lock)) {
-                            log.warn(
-                                    """
-                                    Distributed lock release was skipped for job {}
-                                     because the lease is no longer owned
-                                    """,
-                                    CsdsIngressProcessor.DATABASE_JOB_NAME);
+        try {
+            return auditOperationService.processAudit(
+                    CsdsIngestAuditOperation.MANUAL_CSDS_INGEST_AUDIT_EVENT,
+                    unused -> {
+                        var lock = acquireLock();
+                        try {
+                            var response = processor.ingest(parse(file));
+                            return Optional.of(new AuditableResult<>(response, audit));
+                        } finally {
+                            if (!distributedJobLockService.release(lock)) {
+                                log.warn(
+                                        """
+                                        Distributed lock release was skipped for job {}
+                                         because the lease is no longer owned
+                                        """,
+                                        CsdsIngressProcessor.DATABASE_JOB_NAME);
+                            }
                         }
-                    }
-                });
+                    });
+        } catch (CsdsPayloadValidationException ex) {
+            throw new AppRegistryException(
+                    CsdsIngestError.INVALID_RECORD_DATA, ex.getMessage(), ex);
+        }
     }
 
     private IDataIngressProcessor<?> requireProcessor(CsdsIngestProcessorName processorType) {
