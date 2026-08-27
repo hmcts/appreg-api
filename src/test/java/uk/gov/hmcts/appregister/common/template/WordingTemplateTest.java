@@ -81,7 +81,8 @@ class WordingTemplateTest {
                                 collection.substituteForTemplate(
                                         collection.getTemplateableContents()[0], value));
 
-        Assertions.assertEquals(CommonAppError.WORDING_DATA_TYPE_FAILURE, exception.getCode());
+        Assertions.assertEquals(
+                CommonAppError.WORDING_INVALID_CHARACTER_FAILURE, exception.getCode());
         Assertions.assertFalse(exception.getMessage().contains(value));
         Assertions.assertTrue(exception.getDetails().isEmpty());
     }

@@ -1123,10 +1123,10 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE.getCode().getType().get(),
+                CommonAppError.WORDING_INVALID_CHARACTER_FAILURE.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE.getCode().getMessage(),
+                CommonAppError.WORDING_INVALID_CHARACTER_FAILURE.getCode().getMessage(),
                 problemDetail.getDetail().trim());
         Assertions.assertFalse(problemDetail.getDetail().contains(substitution.getValue()));
     }

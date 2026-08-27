@@ -420,13 +420,19 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         @Override
         public void canValueBeSubstituted(String value) {
+            if (containsProhibitedCharacter(value)) {
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_INVALID_CHARACTER_FAILURE,
+                        "Wording contains prohibited characters");
+            }
+
             DataType type =
                     validateDataType(this.getDetail().getConstraint().getType().getValue())
                             .getType();
             if (!type.validateForType(value)) {
                 throw new AppRegistryException(
                         CommonAppError.WORDING_DATA_TYPE_FAILURE,
-                        "Wording value contains reserved characters");
+                        "Invalid data type value in template");
             }
 
             if (value.length() > this.getDetail().getConstraint().getLength()) {
@@ -437,6 +443,14 @@ public class WordingTemplateSentence implements TemplateableSentence {
                                         this.getDetail().getConstraint().getLength(),
                                         value.length()));
             }
+        }
+
+        private boolean containsProhibitedCharacter(String value) {
+            return value != null
+                    && (value.indexOf('{') >= 0
+                            || value.indexOf('}') >= 0
+                            || value.indexOf('\r') >= 0
+                            || value.indexOf('\n') >= 0);
         }
 
         /**

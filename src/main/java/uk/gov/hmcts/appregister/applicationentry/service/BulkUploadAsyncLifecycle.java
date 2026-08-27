@@ -74,6 +74,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     Map.entry(CommonAppError.WORDING_LENGTH_FAILURE, APPLICATION_TEXT_COLUMNS),
                     Map.entry(CommonAppError.WORDING_DATA_TYPE_FAILURE, APPLICATION_TEXT_COLUMNS),
                     Map.entry(
+                            CommonAppError.WORDING_INVALID_CHARACTER_FAILURE,
+                            APPLICATION_TEXT_COLUMNS),
+                    Map.entry(
                             AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
                             "standardApplicantCode"),
                     Map.entry(
