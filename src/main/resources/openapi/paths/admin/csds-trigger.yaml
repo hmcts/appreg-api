@@ -1,0 +1,22 @@
+post:
+  operationId: triggerCsdsIngress
+  tags: [ admin ]
+  summary: Trigger CSDS ingress on demand.
+  description: >
+    Runs all enabled CSDS ingress processors synchronously using the same retrieval and apply flow
+    as the scheduled CSDS job. Processing continues if an individual processor fails, but the
+    request returns `500 Internal Server Error` after all processors have been attempted. The
+    endpoint does not update the scheduled-run execution log and therefore does not suppress a
+    subsequent scheduled run. Only callers with the admin role can trigger the operation.
+  responses:
+    "200":
+      description: All enabled CSDS ingress processors completed successfully.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string }
+          example: Accept
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "423": { $ref: "../../components/responses/locked-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

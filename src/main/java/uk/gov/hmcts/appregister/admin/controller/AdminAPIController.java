@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.api.AdminApi;
 import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
@@ -35,6 +36,7 @@ public class AdminAPIController implements AdminApi {
 
     private final AdminAPIService adminAPIService;
     private final CsdsIngestService csdsIngestService;
+    private final CsdsIngressProcessor csdsIngressProcessor;
 
     @Override
     @PutMapping(
@@ -87,5 +89,14 @@ public class AdminAPIController implements AdminApi {
                 .varyBy(VARY_ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(csdsIngestService.ingest(processor, file));
+    }
+
+    @Override
+    @PostMapping(
+            value = PATH_TRIGGER_CSDS_INGRESS,
+            produces = {"application/vnd.hmcts.appreg.v1+json", "application/problem+json"})
+    public ResponseEntity<Void> triggerCsdsIngress() {
+        csdsIngressProcessor.runManualIngress();
+        return ResponseEntity.ok().varyBy(VARY_ACCEPT).contentType(VND_JSON_V1).build();
     }
 }

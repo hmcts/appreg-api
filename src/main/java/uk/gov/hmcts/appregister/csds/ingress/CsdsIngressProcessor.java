@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 
 @Slf4j
@@ -40,6 +41,32 @@ public class CsdsIngressProcessor {
             return true;
         } finally {
             if (!distributedJobLockService.release(lock.get())) {
+                log.warn(
+                        "Distributed lock release was skipped for job {} because the lease is no longer owned",
+                        DATABASE_JOB_NAME);
+            }
+        }
+    }
+
+    public void runManualIngress() {
+        val lock =
+                distributedJobLockService
+                        .tryAcquire(DATABASE_JOB_NAME, properties.getLeaseDuration())
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                CsdsIngestError.LOCKED,
+                                                "The CSDS ingest is already running"));
+
+        try {
+            var failedProcessors = runProcessors(lock);
+            if (!failedProcessors.isEmpty()) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "Failed processors: " + String.join(", ", failedProcessors));
+            }
+        } finally {
+            if (!distributedJobLockService.release(lock)) {
                 log.warn(
                         "Distributed lock release was skipped for job {} because the lease is no longer owned",
                         DATABASE_JOB_NAME);
