@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @Slf4j
@@ -358,8 +359,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         val absentFields =
                 expectedFields.stream().filter(fieldName -> !node.has(fieldName)).toList();
         if (!absentFields.isEmpty()) {
-            throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR,
+            throw new CsdsPayloadValidationException(
                     "CSDS record for "
                             + datasetName()
                             + " was missing expected fields: "

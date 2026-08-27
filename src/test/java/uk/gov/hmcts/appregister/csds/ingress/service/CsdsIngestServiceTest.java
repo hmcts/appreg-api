@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -31,6 +33,7 @@ import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
@@ -242,6 +245,41 @@ class CsdsIngestServiceTest {
         verify(applicationCodeProcessor).processorName();
         verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
+    }
+
+    @Test
+    void given_uploadedRecordFailsValidation_when_ingest_then_throwsInvalidRecordDataError()
+            throws Exception {
+        var file = mockFile("{\"responseCode\":1,\"records\":[{}]}");
+        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
+        var lock = new DistributedJobLock("CSDS_DATA_INGRESS", "token", Duration.ofMinutes(5));
+
+        when(userProvider.getUserId()).thenReturn("tenant:object");
+        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
+        when(applicationCodeProcessor.enabled()).thenReturn(true);
+        when(distributedJobLockService.tryAcquire("CSDS_DATA_INGRESS", Duration.ofMinutes(5)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        doThrow(new CsdsPayloadValidationException("missing expected field"))
+                .when(applicationCodeProcessor)
+                .ingest(anyList());
+
+        assertThatThrownBy(() -> service.ingest(processorName, file))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.INVALID_RECORD_DATA))
+                .satisfies(
+                        thrown ->
+                                assertThat(
+                                                ((AppRegistryException) thrown)
+                                                        .getCode()
+                                                        .getCode()
+                                                        .getHttpCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
+
+        verify(distributedJobLockService).release(lock);
     }
 
     private MultipartFile mockFile(String content) throws Exception {

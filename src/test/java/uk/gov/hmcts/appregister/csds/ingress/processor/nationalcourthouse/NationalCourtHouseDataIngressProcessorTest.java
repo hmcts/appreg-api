@@ -34,6 +34,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
@@ -188,7 +189,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         List<JsonNode> processedData = List.of(page(sourceRecord));
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("CourtName");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -220,7 +221,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         List<JsonNode> processedData = List.of(page);
 
         assertThatThrownBy(() -> processor.ingest(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("missing expected fields");
     }
 

@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -14,6 +15,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 
 @Slf4j
@@ -61,9 +63,17 @@ public class CsdsIngressProcessor {
         try {
             var failedProcessors = runProcessors(lock);
             if (!failedProcessors.isEmpty()) {
+                var error =
+                        failedProcessors.stream()
+                                        .allMatch(
+                                                failure ->
+                                                        failure.cause()
+                                                                instanceof
+                                                                CsdsPayloadValidationException)
+                                ? CsdsIngestError.INVALID_UPSTREAM_DATA
+                                : CommonAppError.INTERNAL_SERVER_ERROR;
                 throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Failed processors: " + String.join(", ", failedProcessors));
+                        error, "Failed processors: " + failedProcessorNames(failedProcessors));
             }
         } finally {
             if (!distributedJobLockService.release(lock)) {
@@ -91,7 +101,7 @@ public class CsdsIngressProcessor {
             var failedProcessors = runProcessors(lock.get());
             if (!failedProcessors.isEmpty()) {
                 return recordFailure(
-                        startedAt, "Failed processors: " + String.join(", ", failedProcessors));
+                        startedAt, "Failed processors: " + failedProcessorNames(failedProcessors));
             }
             return recordSuccess(startedAt);
         } catch (RuntimeException ex) {
@@ -105,13 +115,13 @@ public class CsdsIngressProcessor {
         }
     }
 
-    private List<String> runProcessors(DistributedJobLock lock) {
+    private List<ProcessorFailure> runProcessors(DistributedJobLock lock) {
         if (processors.isEmpty()) {
             log.info("Skipping CSDS ingress because no data ingress processors are registered");
             return List.of();
         }
 
-        var failedProcessors = new ArrayList<String>();
+        var failedProcessors = new ArrayList<ProcessorFailure>();
         for (var index = 0; index < processors.size(); index++) {
             val processor = processors.get(index);
             if (!processor.enabled()) {
@@ -137,7 +147,7 @@ public class CsdsIngressProcessor {
                         processor.targetTable(),
                         processor.targetKeyField(),
                         ex);
-                failedProcessors.add(processor.datasetName());
+                failedProcessors.add(new ProcessorFailure(processor.datasetName(), ex));
             }
             if (index < processors.size() - 1) {
                 renewLock(lock, processor);
@@ -153,6 +163,12 @@ public class CsdsIngressProcessor {
             return ex.getMessage();
         }
         return "%s (cause: %s)".formatted(ex.getMessage(), ex.getCause().getMessage());
+    }
+
+    private String failedProcessorNames(List<ProcessorFailure> failures) {
+        return failures.stream()
+                .map(ProcessorFailure::processorName)
+                .collect(Collectors.joining(", "));
     }
 
     private ScheduledRunResult recordSuccess(LocalDateTime startedAt) {
@@ -174,6 +190,7 @@ public class CsdsIngressProcessor {
                 processor.targetKeyField());
 
         val rawJson = processor.retrieve(ingressClient);
+        val processedData = processor.preProcess(rawJson);
         try {
             processor.backup();
         } catch (RuntimeException ex) {
@@ -182,7 +199,6 @@ public class CsdsIngressProcessor {
                     processor.datasetName(),
                     ex);
         }
-        val processedData = processor.preProcess(rawJson);
         processor.apply(processedData);
 
         val startedAt = Instant.now();
@@ -222,4 +238,6 @@ public class CsdsIngressProcessor {
         SUCCEEDED,
         FAILED
     }
+
+    private record ProcessorFailure(String processorName, RuntimeException cause) {}
 }
