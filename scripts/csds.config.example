@@ -1,4 +1,4 @@
-# Copy this file to trigger_csds.config and provide each value locally.
+# Copy this file to csds.config and provide each value locally.
 # Quote values containing shell metacharacters. Never commit populated credentials.
 APPREG_BASE_URL=""
 AZURE_TENANT_ID=""

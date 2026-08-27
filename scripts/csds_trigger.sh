@@ -3,16 +3,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="${TRIGGER_CSDS_CONFIG_FILE:-${SCRIPT_DIR}/trigger_csds.config}"
+CONFIG_FILE="${CSDS_CONFIG_FILE:-${SCRIPT_DIR}/csds.config}"
 
 usage() {
   cat <<'EOF'
-Usage: trigger_csds.sh [--check-config|--help]
+Usage: csds_trigger.sh [--check-config|--help]
 
 Fetch a fresh AppReg admin token and trigger all enabled CSDS ingress processors.
 
-Configuration is sourced from trigger_csds.config in the same directory. Copy
-trigger_csds.config.example to that path and provide all required values locally.
+Configuration is sourced from csds.config in the same directory. Copy
+csds.config.example to that path and provide all required values locally.
 
 Options:
   --check-config  Call an existing read-only admin endpoint instead of triggering CSDS.
