@@ -3,8 +3,7 @@ post:
   tags: [ admin ]
   summary: Ingest a CSDS snapshot file.
   description: >
-    Runs the requested CSDS processor synchronously against an uploaded JSON snapshot rendered
-    from the reporting pipeline. The processor key
+    Runs the requested CSDS processor synchronously against an uploaded JSON file. The processor key
     in the path must be one of `application_codes`, `resolution_codes`, `fee`,
     `national_court_houses`, or `standard_applicants`. Implemented processors must also be enabled
     in CSDS ingress configuration; disabled processors return `409 Conflict`, and recognised but
