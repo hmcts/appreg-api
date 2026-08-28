@@ -36,6 +36,22 @@ public class CsdsIngestService {
     private final AuditOperationService auditOperationService;
     private final UserProvider userProvider;
     private final ObjectMapper objectMapper;
+    private final CsdsIngressProcessor csdsIngressProcessor;
+
+    public void trigger() {
+        var audit =
+                CsdsIngestAudit.builder()
+                        .requestingUser(userProvider.getUserId())
+                        .processorName("all")
+                        .build();
+
+        auditOperationService.<Void, CsdsIngestAudit>processAudit(
+                CsdsIngestAuditOperation.MANUAL_CSDS_TRIGGER_AUDIT_EVENT,
+                unused -> {
+                    csdsIngressProcessor.runManualIngress();
+                    return Optional.of(new AuditableResult<>(null, audit));
+                });
+    }
 
     public CsdsIngestResponse ingest(String processorName, MultipartFile file) {
         var processorType = CsdsIngestProcessorName.fromExternalName(processorName);
