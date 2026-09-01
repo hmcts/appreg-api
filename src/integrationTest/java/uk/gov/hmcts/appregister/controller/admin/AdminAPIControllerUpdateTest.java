@@ -2,16 +2,59 @@ package uk.gov.hmcts.appregister.controller.admin;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.appregister.testutils.token.TokenGenerator.DEFAULT_OID;
+import static uk.gov.hmcts.appregister.testutils.token.TokenGenerator.DEFAULT_TID;
+import static uk.gov.hmcts.appregister.testutils.token.TokenGenerator.DEFAULT_USERNAME;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAuditOperation;
 import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
 class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
+    @Test
+    void whenTriggerCsdsIngress_thenActivatingUserIsAudited() throws Exception {
+        clearDataAudits(dataAuditRepository);
+
+        var response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl("admin/csds/trigger"),
+                        createAdminToken().fetchTokenForRole(),
+                        "");
+
+        assertEquals(200, response.getStatusCode());
+        awaitDataAudits();
+
+        var expectedUserId = DEFAULT_TID + ":" + DEFAULT_OID;
+        var auditRows =
+                dataAuditRepository.findAll().stream()
+                        .filter(row -> "csds_ingest_runs".equals(row.getTableName()))
+                        .filter(
+                                row ->
+                                        CsdsIngestAuditOperation.MANUAL_CSDS_TRIGGER_AUDIT_EVENT
+                                                .getEventName()
+                                                .equals(row.getEventName()))
+                        .toList();
+
+        assertEquals(
+                Map.of("requestingUser", expectedUserId, "processorName", "all"),
+                auditRows.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        row -> row.getColumnName(), row -> row.getNewValue())));
+        auditRows.forEach(
+                row -> {
+                    assertEquals(DEFAULT_USERNAME, row.getCreatedUser());
+                    assertEquals(expectedUserId, row.getChangedBy());
+                });
+    }
+
     @Test
     void whenEnableDisableJobByName_thenReturnOk() throws Exception {
         var jobName = "APPLICATION_LISTS_DATABASE_JOB";
