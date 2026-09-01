@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentryresult;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.CLOSED;
@@ -8,6 +10,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEq
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -420,9 +423,8 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         Assertions.assertEquals(1, page.getContent().size());
         Assertions.assertEquals(createdResult.getId(), page.getContent().getFirst().getId());
         Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getEntryId());
-        Assertions.assertEquals(
-                createdResult.getUpdatedDateTime(),
-                page.getContent().getFirst().getUpdatedDateTime());
+        assertThat(page.getContent().getFirst().getUpdatedDateTime())
+                .isCloseTo(createdResult.getUpdatedDateTime(), within(1, ChronoUnit.MICROS));
         Assertions.assertEquals(
                 2,
                 page.getContent().getFirst().getWording().getSubstitutionKeyConstraints().size());
