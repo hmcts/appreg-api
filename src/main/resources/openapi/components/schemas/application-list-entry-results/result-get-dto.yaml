@@ -4,6 +4,7 @@ required:
   - id
   - entryId
   - resultCode
+  - updatedDateTime
 
 properties:
 
@@ -23,6 +24,12 @@ properties:
     type: string
     description: Code that identifies the Result Code.
     example: "RC-001"
+
+  updatedDateTime:
+    type: string
+    format: date-time
+    description: Date and time the Application List Entry Result was last updated.
+    example: "2026-08-28T10:15:30Z"
 
   wording:
     $ref: '../common/template-detail.yaml'
