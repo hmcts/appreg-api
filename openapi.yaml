@@ -7099,12 +7099,18 @@ components:
           description: Code that identifies the Result Code.
           example: RC-001
           type: string
+        updatedDateTime:
+          description: Date and time the Application List Entry Result was last updated.
+          example: 2026-08-28T10:15:30Z
+          format: date-time
+          type: string
         wording:
           $ref: "#/components/schemas/template-detail"
       required:
       - entryId
       - id
       - resultCode
+      - updatedDateTime
       type: object
     bulk-delete-results-dto:
       additionalProperties: false
