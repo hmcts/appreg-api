@@ -76,6 +76,7 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
         Assertions.assertEquals(createdAppc.getId(), first.getId());
         Assertions.assertEquals(entry.getId(), first.getEntryId());
         Assertions.assertEquals(APPC_CODE, first.getResultCode());
+        Assertions.assertEquals(createdAppc.getUpdatedDateTime(), first.getUpdatedDateTime());
         Assertions.assertEquals(
                 "Appeal forwarded to {{Name of Crown Court}}.", first.getWording().getTemplate());
         Assertions.assertEquals(
@@ -88,6 +89,7 @@ class ApplicationEntryResultControllerSearchTest extends AbstractApplicationEntr
         Assertions.assertEquals(createdCase.getId(), second.getId());
         Assertions.assertEquals(entry.getId(), second.getEntryId());
         Assertions.assertEquals("CASE", second.getResultCode());
+        Assertions.assertEquals(createdCase.getUpdatedDateTime(), second.getUpdatedDateTime());
         Assertions.assertEquals(
                 "Court agrees to state a case for the opinion of the High Court.",
                 second.getWording().getTemplate());
