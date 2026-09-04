@@ -45,7 +45,7 @@ spring:
   application:
     name: Application Registration API
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}?reWriteBatchedInserts=true
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}?reWriteBatchedInserts=true&ApplicationName=${HOSTNAME:appreg-api}
     username: ${POSTGRES_USER:app_reg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
