@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.mapper;
 
+import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -27,9 +28,12 @@ class ApplicationListEntryResultMapperTest {
                 "Test template {office1Val} and second template "
                         + "{office2Val} and third\" +\n"
                         + "                            \"template {office3Val}");
+        OffsetDateTime changedDate = OffsetDateTime.parse("2026-08-28T10:15:30Z");
+        appListEntryResolution.setChangedDate(changedDate);
         ResultGetDto resultGetDt =
                 applicationListEntryResultMapper.toResultGetDto(appListEntryResolution);
 
+        Assertions.assertEquals(changedDate, resultGetDt.getUpdatedDateTime());
         Assertions.assertEquals(3, resultGetDt.getWording().getSubstitutionKeyConstraints().size());
         Assertions.assertEquals(
                 "Applicant officer1",
