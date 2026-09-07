@@ -55,10 +55,10 @@ sonar_get() {
   curl -fsS --config "${sonar_auth_config}" --get "$@" "${sonar_host_url}${path}"
 }
 
-analysis_id_for_revision() {
+pull_request_revision() {
   local json_path="$1"
 
-  SONAR_JSON_PATH="${json_path}" EXPECTED_REVISION="${PUBLISHED_COMMIT_SHA}" python3 -I - <<'PY'
+  SONAR_JSON_PATH="${json_path}" EXPECTED_PR_NUMBER="${PR_NUMBER}" python3 -I - <<'PY'
 import json
 import os
 import sys
@@ -67,26 +67,29 @@ from pathlib import Path
 try:
     payload = json.loads(Path(os.environ["SONAR_JSON_PATH"]).read_text(encoding="utf-8"))
 except (OSError, json.JSONDecodeError) as exc:
-    print(f"Malformed Sonar analysis response: {exc}", file=sys.stderr)
+    print(f"Malformed Sonar pull-request response: {exc}", file=sys.stderr)
     raise SystemExit(2)
 
-analyses = payload.get("analyses")
-if not isinstance(analyses, list):
-    print("Malformed Sonar analysis response: 'analyses' must be a list.", file=sys.stderr)
+pull_requests = payload.get("pullRequests")
+if not isinstance(pull_requests, list):
+    print("Malformed Sonar pull-request response: 'pullRequests' must be a list.", file=sys.stderr)
     raise SystemExit(2)
 
-expected = os.environ["EXPECTED_REVISION"]
-for analysis in analyses:
-    if not isinstance(analysis, dict):
-        print("Malformed Sonar analysis response: analysis entry must be an object.", file=sys.stderr)
+expected_pr_number = os.environ["EXPECTED_PR_NUMBER"]
+for pull_request in pull_requests:
+    if not isinstance(pull_request, dict):
+        print("Malformed Sonar pull-request response: entry must be an object.", file=sys.stderr)
         raise SystemExit(2)
-    revision = analysis.get("revision")
-    key = analysis.get("key")
-    if revision == expected:
-        if not isinstance(key, str) or not key:
-            print("Malformed Sonar analysis response: matching analysis has no key.", file=sys.stderr)
+    if str(pull_request.get("key", "")) == expected_pr_number:
+        commit = pull_request.get("commit")
+        if not isinstance(commit, dict):
+            print("Malformed Sonar pull-request response: matching entry has no commit.", file=sys.stderr)
             raise SystemExit(2)
-        print(key)
+        revision = commit.get("sha")
+        if not isinstance(revision, str) or not revision:
+            print("Malformed Sonar pull-request response: matching entry has no commit SHA.", file=sys.stderr)
+            raise SystemExit(2)
+        print(revision)
         break
 PY
 }
@@ -176,35 +179,33 @@ echo "Waiting for SonarCloud analysis of ${PUBLISHED_COMMIT_SHA} on PR #${PR_NUM
 
 while true; do
   attempt=$((attempt + 1))
-  analyses_json_path="$(mktemp)"
-  analysis_id=""
+  pull_requests_json_path="$(mktemp)"
+  current_revision=""
 
   if sonar_get \
-    "/api/project_analyses/search" \
+    "/api/project_pull_requests/list" \
     --data-urlencode "project=${SONAR_PROJECT_KEY}" \
-    --data-urlencode "pullRequest=${PR_NUMBER}" \
-    --data-urlencode "p=1" \
-    --data-urlencode "ps=100" \
-    >"${analyses_json_path}"; then
+    >"${pull_requests_json_path}"; then
     set +e
-    analysis_id="$(analysis_id_for_revision "${analyses_json_path}")"
+    current_revision="$(pull_request_revision "${pull_requests_json_path}")"
     parse_status=$?
     set -e
-    rm -f "${analyses_json_path}"
+    rm -f "${pull_requests_json_path}"
     if ((parse_status != 0)); then
-      echo "::error::SonarCloud returned malformed analysis data; refusing to use an ambiguous quality-gate result." >&2
+      echo "::error::SonarCloud returned malformed pull-request data; refusing to use an ambiguous quality-gate result." >&2
       exit 1
     fi
   else
-    rm -f "${analyses_json_path}"
-    echo "SonarCloud analysis list is not available yet."
+    rm -f "${pull_requests_json_path}"
+    echo "SonarCloud pull-request list is not available yet."
   fi
 
-  if [[ -n "${analysis_id}" ]]; then
+  if [[ "${current_revision}" == "${PUBLISHED_COMMIT_SHA}" ]]; then
     quality_gate_json_path="$(mktemp)"
     if sonar_get \
       "/api/qualitygates/project_status" \
-      --data-urlencode "analysisId=${analysis_id}" \
+      --data-urlencode "projectKey=${SONAR_PROJECT_KEY}" \
+      --data-urlencode "pullRequest=${PR_NUMBER}" \
       >"${quality_gate_json_path}"; then
       set +e
       status="$(quality_gate_status "${quality_gate_json_path}")"
@@ -212,7 +213,7 @@ while true; do
       set -e
       if ((parse_status != 0)); then
         rm -f "${quality_gate_json_path}"
-        echo "::error::SonarCloud returned malformed quality-gate data for analysis ${analysis_id}." >&2
+        echo "::error::SonarCloud returned malformed quality-gate data for PR #${PR_NUMBER}." >&2
         exit 1
       fi
       print_quality_gate "${quality_gate_json_path}"
@@ -220,11 +221,11 @@ while true; do
 
       case "${status}" in
         OK)
-          echo "SonarCloud quality gate passed for analysis ${analysis_id} at ${PUBLISHED_COMMIT_SHA}."
+          echo "SonarCloud quality gate passed for PR #${PR_NUMBER} at ${PUBLISHED_COMMIT_SHA}."
           exit 0
           ;;
         ERROR)
-          echo "::error::SonarCloud quality gate failed for analysis ${analysis_id} at ${PUBLISHED_COMMIT_SHA}."
+          echo "::error::SonarCloud quality gate failed for PR #${PR_NUMBER} at ${PUBLISHED_COMMIT_SHA}."
           issues_json_path="$(mktemp)"
           if sonar_get \
             "/api/issues/search" \
@@ -243,19 +244,21 @@ while true; do
           exit 1
           ;;
         NONE)
-          echo "SonarCloud analysis ${analysis_id} exists, but its quality gate is still pending."
+          echo "SonarCloud analysis for PR #${PR_NUMBER} exists, but its quality gate is still pending."
           ;;
         *)
-          echo "::error::Unexpected SonarCloud quality-gate status '${status}' for analysis ${analysis_id}." >&2
+          echo "::error::Unexpected SonarCloud quality-gate status '${status}' for PR #${PR_NUMBER}." >&2
           exit 1
           ;;
       esac
     else
       rm -f "${quality_gate_json_path}"
-      echo "The quality gate for current analysis ${analysis_id} is not available yet."
+      echo "The quality gate for PR #${PR_NUMBER} is not available yet."
     fi
+  elif [[ -n "${current_revision}" ]]; then
+    echo "SonarCloud still reports revision ${current_revision} for PR #${PR_NUMBER}; waiting for ${PUBLISHED_COMMIT_SHA}."
   else
-    echo "No SonarCloud analysis for published revision ${PUBLISHED_COMMIT_SHA} is available yet; older analyses are ignored."
+    echo "No SonarCloud analysis for PR #${PR_NUMBER} is available yet."
   fi
 
   if ((SECONDS >= deadline)) || ((max_attempts > 0 && attempt >= max_attempts)); then

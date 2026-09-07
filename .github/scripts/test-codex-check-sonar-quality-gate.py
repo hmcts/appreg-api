@@ -19,7 +19,7 @@ class SonarQualityGateTest(unittest.TestCase):
     def run_case(
         self,
         *,
-        analyses: list[object],
+        pull_requests: list[object],
         gates: list[object] | None = None,
         max_attempts: int = 3,
     ) -> tuple[subprocess.CompletedProcess[str], str]:
@@ -32,8 +32,8 @@ class SonarQualityGateTest(unittest.TestCase):
             fixtures.mkdir()
             state.mkdir()
 
-            for index, payload in enumerate(analyses, start=1):
-                (fixtures / f"analyses-{index}.json").write_text(
+            for index, payload in enumerate(pull_requests, start=1):
+                (fixtures / f"pull-requests-{index}.json").write_text(
                     payload if isinstance(payload, str) else json.dumps(payload),
                     encoding="utf-8",
                 )
@@ -52,7 +52,7 @@ printf '%s\\n' "$*" >>"$STATE_DIR/requests.log"
 endpoint=""
 for arg in "$@"; do
   case "$arg" in
-    */api/project_analyses/search) endpoint=analyses ;;
+    */api/project_pull_requests/list) endpoint=pull-requests ;;
     */api/qualitygates/project_status) endpoint=gate ;;
     */api/issues/search) endpoint=issues ;;
   esac
@@ -97,10 +97,10 @@ cat "$fixture"
             return completed, requests
 
     @staticmethod
-    def analyses(*entries: tuple[str, str]) -> dict[str, object]:
+    def pull_requests(*entries: tuple[str, str]) -> dict[str, object]:
         return {
-            "analyses": [
-                {"key": key, "revision": revision}
+            "pullRequests": [
+                {"key": key, "commit": {"sha": revision}}
                 for key, revision in entries
             ]
         }
@@ -111,19 +111,21 @@ cat "$fixture"
 
     def test_ignores_stale_success_and_waits_for_current_pending_analysis(self) -> None:
         completed, requests = self.run_case(
-            analyses=[
-                self.analyses(("stale-analysis", STALE_SHA), ("current-analysis", CURRENT_SHA)),
-                self.analyses(("stale-analysis", STALE_SHA), ("current-analysis", CURRENT_SHA)),
+            pull_requests=[
+                self.pull_requests(("42", STALE_SHA)),
+                self.pull_requests(("42", CURRENT_SHA)),
+                self.pull_requests(("42", CURRENT_SHA)),
             ],
             gates=[self.gate("NONE"), self.gate("OK")],
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertNotIn("analysisId=stale-analysis", requests)
-        self.assertEqual(requests.count("analysisId=current-analysis"), 2)
+        self.assertEqual(requests.count("/api/qualitygates/project_status"), 2)
+        self.assertIn("projectKey=example-project", requests)
+        self.assertIn("pullRequest=42", requests)
 
     def test_current_analysis_failure_is_rejected(self) -> None:
         completed, _ = self.run_case(
-            analyses=[self.analyses(("current-analysis", CURRENT_SHA))],
+            pull_requests=[self.pull_requests(("42", CURRENT_SHA))],
             gates=[self.gate("ERROR")],
         )
         self.assertNotEqual(completed.returncode, 0)
@@ -131,15 +133,16 @@ cat "$fixture"
 
     def test_current_analysis_success_is_accepted(self) -> None:
         completed, requests = self.run_case(
-            analyses=[self.analyses(("current-analysis", CURRENT_SHA))],
+            pull_requests=[self.pull_requests(("42", CURRENT_SHA))],
             gates=[self.gate("OK")],
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("analysisId=current-analysis", requests)
+        self.assertIn("projectKey=example-project", requests)
+        self.assertIn("pullRequest=42", requests)
 
     def test_times_out_when_only_stale_analyses_exist(self) -> None:
         completed, requests = self.run_case(
-            analyses=[self.analyses(("stale-analysis", STALE_SHA))],
+            pull_requests=[self.pull_requests(("42", STALE_SHA))],
             max_attempts=2,
         )
         self.assertNotEqual(completed.returncode, 0)
@@ -147,12 +150,12 @@ cat "$fixture"
         self.assertNotIn("/api/qualitygates/project_status", requests)
 
     def test_malformed_analysis_and_gate_responses_are_rejected(self) -> None:
-        malformed_analysis, _ = self.run_case(analyses=['{"analyses":'])
+        malformed_analysis, _ = self.run_case(pull_requests=['{"pullRequests":'])
         self.assertNotEqual(malformed_analysis.returncode, 0)
-        self.assertIn("malformed analysis data", malformed_analysis.stderr)
+        self.assertIn("malformed pull-request data", malformed_analysis.stderr)
 
         malformed_gate, _ = self.run_case(
-            analyses=[self.analyses(("current-analysis", CURRENT_SHA))],
+            pull_requests=[self.pull_requests(("42", CURRENT_SHA))],
             gates=[{"unexpected": {}}],
         )
         self.assertNotEqual(malformed_gate.returncode, 0)

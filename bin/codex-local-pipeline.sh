@@ -430,10 +430,12 @@ end
 
 sonar_source = File.read(".github/scripts/codex-check-sonar-quality-gate.sh")
 unless sonar_source.include?("PUBLISHED_COMMIT_SHA") &&
-       sonar_source.include?("/api/project_analyses/search") &&
-       sonar_source.include?("analysisId=") &&
-       !sonar_source.match?(/project_status.*projectKey=.*pullRequest=/)
-  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published commit's exact analysis ID"
+       sonar_source.include?("/api/project_pull_requests/list") &&
+       sonar_source.include?('commit.get("sha")') &&
+       sonar_source.include?('"projectKey=${SONAR_PROJECT_KEY}"') &&
+       sonar_source.include?('"pullRequest=${PR_NUMBER}"') &&
+       !sonar_source.include?("/api/project_analyses/search")
+  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published PR's exact commit"
 end
 
 sonar_project_key = File.read("build.gradle")
