@@ -17,4 +17,15 @@ class StrictLocalTimeSerializerTest {
 
         Mockito.verify(generator).writeString("12:30");
     }
+
+    @Test
+    void given_timeWithLeadingZeros_when_serialize_then_writesZeroPaddedTime() throws Exception {
+        StrictLocalTimeSerializer serializer = new StrictLocalTimeSerializer();
+
+        LocalTime localTime = LocalTime.of(0, 5);
+        JsonGenerator generator = Mockito.mock(JsonGenerator.class);
+        serializer.serialize(localTime, generator, null);
+
+        Mockito.verify(generator).writeString("00:05");
+    }
 }
