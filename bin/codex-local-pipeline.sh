@@ -334,6 +334,14 @@ end
   end
 end
 
+initial_status_step = Array(jira_jobs.fetch("verify-published-pr", {}).fetch("steps", [])).find do |step|
+  step.is_a?(Hash) && step.fetch("name", "") == "Check external PR status and Sonar quality gate"
+end
+initial_status_script = initial_status_step&.fetch("run", "").to_s
+unless initial_status_script.match?(/set \+e\s+\(.*?exit "\$status"\s+\)\s+>"\$RUNNER_TEMP\/codex-pr-status\.log"/m)
+  errors << "#{jira_path}:verify-published-pr must capture external-status failures in a subshell before publishing repair evidence"
+end
+
 verification_specs = [
   {
     path: ".github/workflows/codex_pr_review_feedback.yml",
