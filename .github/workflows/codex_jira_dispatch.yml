@@ -1319,7 +1319,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api-2' }}
       PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
       PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
       REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
@@ -1765,7 +1765,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api-2' }}
       PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
       PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
       REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}

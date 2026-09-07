@@ -436,6 +436,18 @@ unless sonar_source.include?("PUBLISHED_COMMIT_SHA") &&
   errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published commit's exact analysis ID"
 end
 
+sonar_project_key = File.read("build.gradle")
+  .match(/property\s+['\"]sonar\.projectKey['\"],\s*['\"]([^'\"]+)['\"]/)
+  &.captures
+  &.first
+expected_sonar_fallback = "vars.SONAR_PROJECT_KEY || '#{sonar_project_key}'"
+%w[codex_jira_dispatch.yml codex_pr_review_feedback.yml].each do |workflow_name|
+  source = File.read(".github/workflows/#{workflow_name}")
+  unless sonar_project_key && source.scan(expected_sonar_fallback).length == 2
+    errors << ".github/workflows/#{workflow_name} must default both Sonar checks to build.gradle's sonar.projectKey"
+  end
+end
+
 jira_publish_source = File.read(".github/scripts/codex-jira-publish.sh")
 review_publish_source = File.read(".github/scripts/codex-pr-review-publish.sh")
 conflict_publish_source = File.read(".github/scripts/codex-merge-conflict-publish.sh")
