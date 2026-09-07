@@ -1330,7 +1330,7 @@ jobs:
       - name: Checkout trusted status scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Check external PR status and Sonar quality gate
         id: verify
@@ -1775,7 +1775,7 @@ jobs:
       - name: Checkout trusted status scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Check repaired external PR status and Sonar quality gate
         id: verify

@@ -577,7 +577,8 @@ revision_pinned_workflows.each do |workflow_name|
       next false unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha|commit_sha)/)
+      ref != "${{ github.sha }}" &&
+        !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha|commit_sha)/)
     end
 
     declared_needs = Array(job.fetch("needs", []))
