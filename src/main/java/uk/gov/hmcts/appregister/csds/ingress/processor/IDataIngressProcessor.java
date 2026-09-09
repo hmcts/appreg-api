@@ -2,8 +2,8 @@ package uk.gov.hmcts.appregister.csds.ingress.processor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 public interface IDataIngressProcessor<T> {
     String processorName();

@@ -11,10 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
 class AdminAPIControllerTest {

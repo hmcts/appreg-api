@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngestService;
 import uk.gov.hmcts.appregister.generated.api.AdminApi;
 import uk.gov.hmcts.appregister.generated.model.AdminJobStatus;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
 @PreAuthorize(RoleNames.ADMIN_ROLE_RESTRICTION)
@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 @RequiredArgsConstructor
 public class AdminAPIController implements AdminApi {
     private static final String VARY_ACCEPT = HttpHeaders.ACCEPT;
+    private static final String PATH_INGEST_CSDS_DATA = "/admin/csds/{processor}/ingest";
 
     private final AdminAPIService adminAPIService;
     private final CsdsIngestService csdsIngestService;
@@ -75,7 +76,6 @@ public class AdminAPIController implements AdminApi {
         return ResponseEntity.ok(adminAPIService.getDatabaseJobStatusByName(jobType));
     }
 
-    @Override
     @PostMapping(
             value = PATH_INGEST_CSDS_DATA,
             consumes = {"multipart/form-data"},

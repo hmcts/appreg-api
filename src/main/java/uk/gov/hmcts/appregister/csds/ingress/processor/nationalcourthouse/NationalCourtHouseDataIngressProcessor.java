@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
@@ -19,7 +20,6 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
 @Component

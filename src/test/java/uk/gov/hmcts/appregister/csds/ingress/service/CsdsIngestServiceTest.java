@@ -36,6 +36,7 @@ import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAudit;
@@ -43,7 +44,6 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAuditOperation;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @ExtendWith(MockitoExtension.class)
 class CsdsIngestServiceTest {
