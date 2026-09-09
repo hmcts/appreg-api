@@ -105,4 +105,15 @@ class AdminAPIControllerTest {
                 .hasToString("application/vnd.hmcts.appreg.v1+json");
         assertThat(response.getBody()).isSameAs(body);
     }
+
+    @Test
+    void triggerCsdsIngress_delegatesAndReturnsVersionedOkResponse() {
+        ResponseEntity<Void> response = controller.triggerCsdsIngress();
+
+        verify(csdsIngestService).trigger();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getVary()).containsExactly("Accept");
+        assertThat(response.getHeaders().getContentType())
+                .hasToString("application/vnd.hmcts.appreg.v1+json");
+    }
 }

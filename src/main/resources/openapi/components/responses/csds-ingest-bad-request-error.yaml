@@ -1,6 +1,6 @@
 description: >
-  Uploaded CSDS snapshot could be parsed, but one or more rows violated target-table constraints.
-  Response detail reports the failing row count; row-level reasons are written to CSDS_AUDIT.
+  The uploaded CSDS snapshot is invalid. This includes records with missing required fields and
+  rows that violate target-table constraints. Row-level database reasons are written to CSDS_AUDIT.
 content:
   application/problem+json:
     schema:

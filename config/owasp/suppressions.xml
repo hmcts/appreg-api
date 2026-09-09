@@ -27,14 +27,5 @@
     <cve>CVE-2025-15104</cve>
   </suppress>
 
-  <suppress>                                                                                                                                            
-    <notes>                                                                                                                                             
-      False positive: CVE-2026-66299 affects Tomcat's bundled WebSocket chat example.                                                                   
-      This Spring Boot application uses embedded Tomcat and does not package or deploy                                                                  
-    </notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-(core|websocket)@11\.0\.24$</packageUrl>
-    <cve>CVE-2026-66299</cve>
-  </suppress>
-
   <!--End of false positives section -->
 </suppressions>

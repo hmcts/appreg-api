@@ -62,6 +62,7 @@ paths:
   /admin/jobs/{jobType}:                                            { $ref: './paths/admin/jobs/jobs-by-type.yaml' }
   /admin/jobs/{jobType}/retention-policy:                           { $ref: './paths/admin/jobs/retention-policy-by-type.yaml' }
   /admin/csds/{processor}/ingest:                                   { $ref: './paths/admin/csds-ingest.yaml' }
+  /admin/csds/trigger:                                              { $ref: './paths/admin/csds-trigger.yaml' }
   # APPLICATION CODES
   /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }
   /application-codes/{code}:                                        { $ref: './paths/application-codes/application-codes-by-code.yaml' }

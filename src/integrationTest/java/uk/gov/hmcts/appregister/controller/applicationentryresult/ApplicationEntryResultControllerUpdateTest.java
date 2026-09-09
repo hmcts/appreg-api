@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
@@ -50,6 +51,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
         createResp.then().header(HttpHeaders.ETAG, notNullValue());
 
         val createdResult = createResp.as(ResultGetDto.class);
+        Assertions.assertNotNull(createdResult.getUpdatedDateTime());
         val resultUuid = createdResult.getId();
         val currentEtag = createResp.getHeader(HttpHeaders.ETAG);
 
@@ -105,6 +107,22 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
                                 () ->
                                         new AssertionError(
                                                 "Updated AppListEntryResolution could not be reloaded"));
+        Assertions.assertEquals(
+                updatedResolution.getChangedDate(), resultGetDto.getUpdatedDateTime());
+        Assertions.assertTrue(
+                resultGetDto.getUpdatedDateTime().isAfter(createdResult.getUpdatedDateTime()));
+
+        ResultPage resultPage =
+                getEntryResult(
+                                existingEntry.token(),
+                                existingEntry.list().getUuid(),
+                                existingEntry.entry().getUuid(),
+                                10,
+                                0)
+                        .as(ResultPage.class);
+        Assertions.assertEquals(
+                resultGetDto.getUpdatedDateTime(),
+                resultPage.getContent().getFirst().getUpdatedDateTime());
 
         differenceLogAsserter.assertNoErrors();
         awaitDataAudits();

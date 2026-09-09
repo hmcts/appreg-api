@@ -1085,22 +1085,21 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                 CommonAppError.WORDING_LENGTH_FAILURE.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                "Premises Address=only one field that exceeds length",
+                CommonAppError.WORDING_LENGTH_FAILURE.getCode().getMessage(),
                 problemDetail.getDetail().trim());
+        Assertions.assertFalse(problemDetail.getDetail().contains(substitution.getValue()));
     }
 
-    // TODO: Re-enable this once the decision has been made on the FE implementation.
-    /*
     @Test
-    void givenAnInvalidCreateEntryRequest_whenWordingDataTypeFailure_400IsReturned()
+    void givenReservedCharacterInWording_whenCreatingEntry_thenSafe400IsReturned()
             throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
-        substitution.setValue("value");
+        substitution.setValue("Caseworker {discretion");
 
         TemplateSubstitution substitution1 = new TemplateSubstitution();
         substitution1.setKey("Premises Date");
-        substitution1.setValue("extra field not a date");
+        substitution1.setValue("2025-11-28");
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
@@ -1124,11 +1123,13 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE.getCode().getType().get(),
+                CommonAppError.WORDING_INVALID_CHARACTER_FAILURE.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                "Premises Date=extra field not a date", problemDetail.getDetail().trim());
-    } */
+                CommonAppError.WORDING_INVALID_CHARACTER_FAILURE.getCode().getMessage(),
+                problemDetail.getDetail().trim());
+        Assertions.assertFalse(problemDetail.getDetail().contains(substitution.getValue()));
+    }
 
     @Test
     void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidName_201Returned()

@@ -96,6 +96,11 @@ public class ResolutionCodeDataIngressProcessor
     }
 
     @Override
+    protected String dataLocationName() {
+        return "APPREGISTER";
+    }
+
+    @Override
     protected String mockFilePath() {
         return resolutionCodeProperties.getMock();
     }

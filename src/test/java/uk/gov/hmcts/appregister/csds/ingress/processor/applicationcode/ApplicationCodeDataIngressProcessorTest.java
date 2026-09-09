@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService.BackupResult;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
@@ -96,11 +97,13 @@ class ApplicationCodeDataIngressProcessorTest {
         var secondPage = OBJECT_MAPPER.createObjectNode();
         secondPage.putArray("records");
 
-        when(ingressClient.retrieveJson("/count/CSDS/ApplicationCode/GD"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
-        when(ingressClient.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -121,9 +124,9 @@ class ApplicationCodeDataIngressProcessorTest {
         var secondPage = OBJECT_MAPPER.createObjectNode();
         secondPage.putArray("records");
         var parameterisedCountPath =
-                "/count/CSDS/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
+                "/count/APPREGISTER/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
         var parameterisedQueryPath =
-                "/query/CSDS/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
+                "/query/APPREGISTER/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
         when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
@@ -172,9 +175,10 @@ class ApplicationCodeDataIngressProcessorTest {
         var firstPage = OBJECT_MAPPER.createObjectNode();
         firstPage.putArray("records");
 
-        when(ingressClient.retrieveJson("/count/CSDS/ApplicationCode/GD"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
-        when(ingressClient.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -204,9 +208,10 @@ class ApplicationCodeDataIngressProcessorTest {
         var firstPage = OBJECT_MAPPER.createObjectNode();
         firstPage.putArray("records");
 
-        when(ingressClient.retrieveJson("/count/CSDS/ApplicationCode/GD"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
-        when(ingressClient.retrieveJson("/query/CSDS/ApplicationCode/GD?%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -695,7 +700,7 @@ class ApplicationCodeDataIngressProcessorTest {
         invalidRecord.remove("ApplicationTitle");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("ApplicationTitle");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -781,13 +786,13 @@ class ApplicationCodeDataIngressProcessorTest {
     @Test
     void given_countEndpoint_when_retrieve_then_callsItFirst() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 0);
-        when(ingressClient.retrieveJson("/count/CSDS/ApplicationCode/GD"))
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
 
         var retrieved = processor.retrieve(ingressClient);
 
         assertThat(retrieved).isEmpty();
-        verify(ingressClient).retrieveJson("/count/CSDS/ApplicationCode/GD");
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/ApplicationCode/GD");
     }
 
     @Test

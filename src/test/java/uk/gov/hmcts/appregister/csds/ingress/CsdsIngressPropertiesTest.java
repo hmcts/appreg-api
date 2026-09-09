@@ -74,6 +74,14 @@ class CsdsIngressPropertiesTest {
     }
 
     @Test
+    void given_standardApplicantsProcessorDefaults_when_read_then_usesNewNamedQuery() {
+        var properties = baseProperties();
+
+        assertThat(properties.getProcessors().getStandardApplicants().getSourceEntityName())
+                .isEqualTo("DA_GetStandardApplicant");
+    }
+
+    @Test
     void given_applicationCodesProcessorDefaults_when_validate_then_usesStagingTable() {
         var properties = baseProperties();
 

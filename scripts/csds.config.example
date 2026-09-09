@@ -1,0 +1,9 @@
+# Copy this file to csds.config and provide each value locally.
+# Quote values containing shell metacharacters. Never commit populated credentials.
+APPREG_BASE_URL=""
+AZURE_TENANT_ID=""
+AZURE_CLIENT_ID=""
+AZURE_CLIENT_SECRET=""
+AZURE_SCOPE=""
+APPREG_ADMIN_USERNAME=""
+APPREG_ADMIN_PASSWORD=""

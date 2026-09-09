@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,15 +24,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAudit;
+import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsIngestAuditOperation;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
 import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
@@ -42,22 +53,46 @@ class CsdsIngestServiceTest {
     @Mock private IDataIngressProcessor<CsdsIngestResponse> feeProcessor;
     @Mock private DistributedJobLockService distributedJobLockService;
     @Mock private UserProvider userProvider;
+    @Mock private CsdsIngressProcessor csdsIngressProcessor;
 
     private CsdsIngressProperties properties;
     private CsdsIngestService service;
+    private List<BaseAuditEvent> auditEvents;
 
     @BeforeEach
     void setUp() {
         properties = new CsdsIngressProperties();
         properties.setLeaseDuration(Duration.ofMinutes(5));
+        auditEvents = new ArrayList<>();
         service =
                 new CsdsIngestService(
                         List.of((IDataIngressProcessor<?>) applicationCodeProcessor, feeProcessor),
                         distributedJobLockService,
                         properties,
-                        new AuditOperationServiceImpl(List.of()),
+                        new AuditOperationServiceImpl(List.of(auditEvents::add)),
                         userProvider,
-                        OBJECT_MAPPER);
+                        OBJECT_MAPPER,
+                        csdsIngressProcessor);
+    }
+
+    @Test
+    void given_authenticatedUser_when_trigger_then_runsAndAuditsManualIngress() {
+        when(userProvider.getUserId()).thenReturn("tenant:object");
+
+        service.trigger();
+
+        verify(csdsIngressProcessor).runManualIngress();
+        assertThat(auditEvents).hasSize(2);
+        assertThat(auditEvents.getLast()).isInstanceOf(CompleteEvent.class);
+        assertThat(auditEvents.getLast().getRequestAction())
+                .isEqualTo(CsdsIngestAuditOperation.MANUAL_CSDS_TRIGGER_AUDIT_EVENT);
+        assertThat(auditEvents.getLast().getNewValue()).isInstanceOf(CsdsIngestAudit.class);
+
+        var audit = (CsdsIngestAudit) auditEvents.getLast().getNewValue();
+        assertThat(audit.extractAuditData(CrudEnum.CREATE))
+                .containsExactly(
+                        new AuditableData("csds_ingest_runs", "requestingUser", "tenant:object"),
+                        new AuditableData("csds_ingest_runs", "processorName", "all"));
     }
 
     @Test
@@ -242,6 +277,41 @@ class CsdsIngestServiceTest {
         verify(applicationCodeProcessor).processorName();
         verify(applicationCodeProcessor).enabled();
         verifyNoMoreInteractions(applicationCodeProcessor);
+    }
+
+    @Test
+    void given_uploadedRecordFailsValidation_when_ingest_then_throwsInvalidRecordDataError()
+            throws Exception {
+        var file = mockFile("{\"responseCode\":1,\"records\":[{}]}");
+        var processorName = CsdsIngestProcessorName.APPLICATION_CODES.getExternalName();
+        var lock = new DistributedJobLock("CSDS_DATA_INGRESS", "token", Duration.ofMinutes(5));
+
+        when(userProvider.getUserId()).thenReturn("tenant:object");
+        when(applicationCodeProcessor.processorName()).thenReturn(processorName);
+        when(applicationCodeProcessor.enabled()).thenReturn(true);
+        when(distributedJobLockService.tryAcquire("CSDS_DATA_INGRESS", Duration.ofMinutes(5)))
+                .thenReturn(Optional.of(lock));
+        when(distributedJobLockService.release(lock)).thenReturn(true);
+        doThrow(new CsdsPayloadValidationException("missing expected field"))
+                .when(applicationCodeProcessor)
+                .ingest(anyList());
+
+        assertThatThrownBy(() -> service.ingest(processorName, file))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        thrown ->
+                                assertThat(((AppRegistryException) thrown).getCode())
+                                        .isEqualTo(CsdsIngestError.INVALID_RECORD_DATA))
+                .satisfies(
+                        thrown ->
+                                assertThat(
+                                                ((AppRegistryException) thrown)
+                                                        .getCode()
+                                                        .getCode()
+                                                        .getHttpCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
+
+        verify(distributedJobLockService).release(lock);
     }
 
     private MultipartFile mockFile(String content) throws Exception {

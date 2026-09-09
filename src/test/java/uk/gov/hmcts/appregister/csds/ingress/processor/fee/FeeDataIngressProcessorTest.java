@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
@@ -100,9 +101,9 @@ class FeeDataIngressProcessorTest {
         var secondPage = OBJECT_MAPPER.createObjectNode();
         secondPage.putArray("records");
         var parameterisedCountPath =
-                "/count/CSDS/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
+                "/count/APPREGISTER/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
         var parameterisedQueryPath =
-                "/query/CSDS/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
+                "/query/APPREGISTER/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
         when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
@@ -390,7 +391,7 @@ class FeeDataIngressProcessorTest {
         invalidRecord.remove("FeeReference");
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("FeeReference");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -402,7 +403,7 @@ class FeeDataIngressProcessorTest {
         List<JsonNode> processedData = List.of(createPageResponse(sourceRecord));
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("PSSFixedListID");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -460,12 +461,13 @@ class FeeDataIngressProcessorTest {
     @Test
     void given_countEndpoint_when_retrieve_then_callsItFirst() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 0);
-        when(ingressClient.retrieveJson("/count/CSDS/CivilFee/GD")).thenReturn(countResponse);
+        when(ingressClient.retrieveJson("/count/APPREGISTER/CivilFee/GD"))
+                .thenReturn(countResponse);
 
         var retrieved = processor.retrieve(ingressClient);
 
         assertThat(retrieved).isEmpty();
-        verify(ingressClient).retrieveJson("/count/CSDS/CivilFee/GD");
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/CivilFee/GD");
     }
 
     @Test

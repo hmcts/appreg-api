@@ -34,6 +34,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,8 +96,8 @@ class NationalCourtHouseDataIngressProcessorTest {
         var parameters =
                 "?$f=PublishingStatus='Active'&$f=CurrentRecordIndicator='true'"
                         + "&$f=CourtHearingOperationAreaIndicator='true'&$orderBy=CourtID";
-        var countPath = "/count/CSDS/Court/GD" + parameters;
-        var queryPath = "/query/CSDS/Court/GD" + parameters;
+        var countPath = "/count/COURT/Court/GD" + parameters;
+        var queryPath = "/query/COURT/Court/GD" + parameters;
         when(ingressClient.retrieveJson(countPath)).thenReturn(count);
         when(ingressClient.retrieveJson(queryPath + "&%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
@@ -188,7 +189,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         List<JsonNode> processedData = List.of(page(sourceRecord));
 
         assertThatThrownBy(() -> processor.preProcess(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("CourtName");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -220,7 +221,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         List<JsonNode> processedData = List.of(page);
 
         assertThatThrownBy(() -> processor.ingest(processedData))
-                .isInstanceOf(AppRegistryException.class)
+                .isInstanceOf(CsdsPayloadValidationException.class)
                 .hasMessageContaining("missing expected fields");
     }
 

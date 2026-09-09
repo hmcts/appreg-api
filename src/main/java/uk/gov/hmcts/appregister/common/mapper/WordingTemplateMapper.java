@@ -35,7 +35,7 @@ public class WordingTemplateMapper {
             Supplier<String> wordingTemplateSupplier,
             Supplier<String> appliedTemplateSupplier,
             boolean validateStoredValues) {
-        log.debug("Parsing template {}", wordingTemplateSupplier.get());
+        log.debug("Parsing wording template");
 
         WordingTemplateSentence wordingTemplate =
                 WordingTemplateSentence.with(wordingTemplateSupplier.get());
@@ -65,8 +65,7 @@ public class WordingTemplateMapper {
         var appliedValues = parseAppliedValues(appliedTemplate);
         var templateables = wordingTemplate.getTemplateableContents();
 
-        warnWhenAppliedValueCountDiffers(
-                appliedTemplate, appliedValues, wordingTemplateSupplier.get(), templateables);
+        warnWhenAppliedValueCountDiffers(appliedValues, templateables);
 
         if (validateStoredValues) {
             applyStoredValues(wordingTemplate, templateables, appliedValues);
@@ -81,20 +80,15 @@ public class WordingTemplateMapper {
     }
 
     private void warnWhenAppliedValueCountDiffers(
-            String appliedTemplate,
-            List<String> appliedValues,
-            String wordingTemplate,
-            Templateable[] templateables) {
+            List<String> appliedValues, Templateable[] templateables) {
         if (appliedValues.size() == templateables.length) {
             return;
         }
 
         log.warn(
-                "Stored wording '{}' contains {} values but template '{}' expects {}."
+                "Stored wording contains {} values but template expects {}."
                         + " Filling what we can and leaving the rest blank.",
-                appliedTemplate,
                 appliedValues.size(),
-                wordingTemplate,
                 templateables.length);
     }
 

@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentryresult;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.CLOSED;
@@ -8,6 +10,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEq
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -64,6 +67,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         resp.then().body("id", notNullValue());
         resp.then().body("entryId", equalTo(entry.getUuid().toString()));
         resp.then().body("resultCode", equalTo(APPC_CODE));
+        resp.then().body("updatedDateTime", notNullValue());
 
         val resultGetDto = resp.as(ResultGetDto.class);
 
@@ -79,6 +83,8 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                                 () ->
                                         new AssertionError(
                                                 "Created AppListEntryResolution could not be reloaded"));
+        Assertions.assertEquals(
+                createdResolution.getChangedDate(), resultGetDto.getUpdatedDateTime());
         awaitDataAudits();
 
         // The resolution row itself should record its generated identifier on create.
@@ -385,6 +391,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         ResultGetDto createdResult = findResultForEntry(createdResults, entry.getUuid());
         Assertions.assertNotNull(createdResult.getId());
+        Assertions.assertNotNull(createdResult.getUpdatedDateTime());
         Assertions.assertEquals(RTC_CODE, createdResult.getResultCode());
         Assertions.assertEquals(
                 2, createdResult.getWording().getSubstitutionKeyConstraints().size());
@@ -397,6 +404,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         ResultGetDto createdResult1 = findResultForEntry(createdResults, entry2.getUuid());
         Assertions.assertNotNull(createdResult1.getId());
+        Assertions.assertNotNull(createdResult1.getUpdatedDateTime());
         Assertions.assertEquals(RTC_CODE, createdResult1.getResultCode());
         Assertions.assertEquals(
                 2, createdResult1.getWording().getSubstitutionKeyConstraints().size());
@@ -415,6 +423,8 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         Assertions.assertEquals(1, page.getContent().size());
         Assertions.assertEquals(createdResult.getId(), page.getContent().getFirst().getId());
         Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getEntryId());
+        assertThat(page.getContent().getFirst().getUpdatedDateTime())
+                .isCloseTo(createdResult.getUpdatedDateTime(), within(1, ChronoUnit.MICROS));
         Assertions.assertEquals(
                 2,
                 page.getContent().getFirst().getWording().getSubstitutionKeyConstraints().size());

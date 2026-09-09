@@ -29,6 +29,7 @@ public abstract class ApplicationListEntryResultMapper {
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "entryId", source = "applicationList.uuid")
     @Mapping(target = "resultCode", source = "resolutionCode.resultCode")
+    @Mapping(target = "updatedDateTime", source = "changedDate")
     @Mapping(
             target = "wording",
             expression =
@@ -40,6 +41,7 @@ public abstract class ApplicationListEntryResultMapper {
     @Mapping(target = "id", source = "resolution.uuid")
     @Mapping(target = "entryId", source = "resolution.applicationList.uuid")
     @Mapping(target = "resultCode", source = "resolutionCode.resultCode")
+    @Mapping(target = "updatedDateTime", source = "resolution.changedDate")
     @Mapping(
             target = "wording",
             expression =

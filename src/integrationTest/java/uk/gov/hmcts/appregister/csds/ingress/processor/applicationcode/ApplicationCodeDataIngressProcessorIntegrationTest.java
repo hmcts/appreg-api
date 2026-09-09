@@ -118,7 +118,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         var totalCount = incomingRecords.size();
 
         stubFor(
-                get(urlPathEqualTo("/count/CSDS/ApplicationCode/GD"))
+                get(urlPathEqualTo("/count/APPREGISTER/ApplicationCode/GD"))
                         .withHeader("Api-Key", equalTo("primary-test-key"))
                         .willReturn(
                                 aResponse()
@@ -131,7 +131,9 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
             incomingRecords.stream().skip(offset).limit(2).forEach(records::add);
 
             stubFor(
-                    get(urlEqualTo("/query/CSDS/ApplicationCode/GD?%24limit=2&%24offset=" + offset))
+                    get(urlEqualTo(
+                                    "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset="
+                                            + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key"))
                             .willReturn(
                                     aResponse()
@@ -162,13 +164,13 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                                                         expectedUpdates)));
 
         verify(
-                getRequestedFor(urlPathEqualTo("/count/CSDS/ApplicationCode/GD"))
+                getRequestedFor(urlPathEqualTo("/count/APPREGISTER/ApplicationCode/GD"))
                         .withHeader("Api-Key", equalTo("primary-test-key")));
         for (var offset = 0; offset < totalCount; offset += 2) {
             verify(
                     getRequestedFor(
                                     urlEqualTo(
-                                            "/query/CSDS/ApplicationCode/GD?%24limit=2&%24offset="
+                                            "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset="
                                                     + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key")));
         }

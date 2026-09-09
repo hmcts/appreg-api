@@ -1,0 +1,5 @@
+description: CSDS returned record data that is incompatible with the selected ingress processor.
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'

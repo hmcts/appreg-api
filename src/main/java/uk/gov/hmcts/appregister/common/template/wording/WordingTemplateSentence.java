@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -33,7 +32,6 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
  * length of the data E.g. {TEXT|Applicant Name|50}
  */
 @Slf4j
-@ToString
 public class WordingTemplateSentence implements TemplateableSentence {
     private final List<WordingTemplate> contents = new ArrayList<>();
     private final List<String> placeholderTokens = new ArrayList<>();
@@ -59,8 +57,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
     /** The decomposed template details. */
     private TemplateDetail templateDetail;
 
-    private static final String PARSING_LOG_MESSAGE = "Parsing wording template: {}";
-
     /** The regular expression to identify the template regex. */
     private static final String TEMPLATE_REGEX = "\\" + START_CHARACTER + "(.*?)\\" + END_CHARACTER;
 
@@ -72,8 +68,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         Matcher m = TEMPLATE_PATTERN.matcher(templateString);
 
-        log.debug(PARSING_LOG_MESSAGE, templateString);
-
         StringBuilder sanitisedBuilder = new StringBuilder();
         StringBuilder placeholderBuilder = new StringBuilder();
         int lastMatchEnd = 0;
@@ -83,13 +77,11 @@ public class WordingTemplateSentence implements TemplateableSentence {
             placeholderBuilder.append(templateString, lastMatchEnd, m.start());
 
             String grp = m.group(1);
-            log.debug(PARSING_LOG_MESSAGE, grp);
 
             try {
                 WordingTemplate wordingTemplate = new WordingTemplate(grp);
                 String placeholderToken = buildPlaceholderToken(placeholderTokens.size());
 
-                log.debug("Parsed wording template: {}", wordingTemplate.getDetail().getKey());
                 contents.add(wordingTemplate);
                 placeholderTokens.add(placeholderToken);
 
@@ -104,7 +96,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
                         .append(placeholderToken)
                         .append(END_CHARACTER);
             } catch (AppRegistryException ex) {
-                log.warn("Failing to parse template %s".formatted(grp), ex);
+                log.warn("Failed to parse wording template placeholder: {}", ex.getCode());
 
                 // store the erroneous template for reporting
                 erroneous.add(grp);
@@ -122,9 +114,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
         templateWithProcessedPlaceholders = placeholderBuilder.toString();
         templateDetail.setTemplate(sanitisedTemplate);
 
-        log.debug(
-                "Created template with positional placeholders: {}",
-                templateWithProcessedPlaceholders);
+        log.debug("Parsed wording template with {} placeholders", contents.size());
     }
 
     @Override
@@ -202,8 +192,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
                 String key = templateable.getDetail().getKey();
                 String value = substitutionsByKey.get(key).removeFirst();
 
-                log.debug("Substituting options into template: {}", templateable);
-
                 String subs = templateable.substitute(value);
 
                 returnedString = returnedString.replace(placeholderTokens.get(i), subs);
@@ -212,7 +200,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         templateWithProcessedPlaceholders = returnedString;
 
-        log.debug("Substituted value: {}", returnedString);
+        log.debug("Substituted {} wording values", values.size());
         return BraceSubstitutedSentence.withSubstitutedSentence(returnedString);
     }
 
@@ -301,12 +289,10 @@ public class WordingTemplateSentence implements TemplateableSentence {
             if (!contents.get(i).isSubstitutionComplete() && contents.get(i).equals(values)) {
                 String sub = contents.get(i).substitute(value);
 
-                log.debug("Substituted value into template: {}", contents.get(i));
-
                 returnedString = returnedString.replace(placeholderTokens.get(i), sub);
                 templateWithProcessedPlaceholders = returnedString;
 
-                log.debug("Substituted value into the sentence: {}", contents.get(i));
+                log.debug("Substituted wording value at position {}", i);
 
                 return this;
             }
@@ -342,7 +328,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
      * A wording template that supports substitution. The wording template is of the form
      * {TYPE|REFERENCE|LENGTH}
      */
-    @ToString
     @Getter
     public static class WordingTemplate implements Templateable {
         /** The delimiter used within a wording template. */
@@ -413,8 +398,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
         public static WordingTemplate with(String template) {
             Matcher m = TEMPLATE_PATTERN.matcher(template);
 
-            log.debug(PARSING_LOG_MESSAGE, template);
-
             boolean found = m.find();
             if (!found) {
                 throw new AppRegistryException(
@@ -422,8 +405,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
             }
 
             String grp = m.group(1);
-            log.debug(PARSING_LOG_MESSAGE, grp);
-
             return new WordingTemplate(grp);
         }
 
@@ -439,27 +420,37 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         @Override
         public void canValueBeSubstituted(String value) {
+            if (containsProhibitedCharacter(value)) {
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_INVALID_CHARACTER_FAILURE,
+                        "Wording contains prohibited characters");
+            }
+
             DataType type =
                     validateDataType(this.getDetail().getConstraint().getType().getValue())
                             .getType();
-            log.debug("Validating value '{}' for template: {}", value, this);
             if (!type.validateForType(value)) {
                 throw new AppRegistryException(
                         CommonAppError.WORDING_DATA_TYPE_FAILURE,
-                        "Invalid data type value in template",
-                        Map.of(this.getDetail().getKey(), value));
+                        "Invalid data type value in template");
             }
 
-            log.debug("Validating value length '{}' for template: {}", value.length(), this);
             if (value.length() > this.getDetail().getConstraint().getLength()) {
                 throw new AppRegistryException(
                         CommonAppError.WORDING_LENGTH_FAILURE,
                         "Invalid length type in template: expected %d but got %d"
                                 .formatted(
                                         this.getDetail().getConstraint().getLength(),
-                                        value.length()),
-                        Map.of(this.getDetail().getKey(), value));
+                                        value.length()));
             }
+        }
+
+        private boolean containsProhibitedCharacter(String value) {
+            return value != null
+                    && (value.indexOf('{') >= 0
+                            || value.indexOf('}') >= 0
+                            || value.indexOf('\r') >= 0
+                            || value.indexOf('\n') >= 0);
         }
 
         /**

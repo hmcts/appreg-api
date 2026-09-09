@@ -30,12 +30,12 @@ import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @Slf4j
 @RequiredArgsConstructor
 public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIngressProcessor<D> {
-    private static final String DATA_LOCATION_NAME = "CSDS";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String VIEW_TYPE = "GD";
 
@@ -62,10 +62,6 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                         extractRecords(mockResponse).size());
                 return List.of(mockResponse);
             }
-        }
-
-        if (!usesCountEndpoint()) {
-            return retrieveUntilEmptyPage(ingressClient);
         }
 
         val totalCount =
@@ -105,31 +101,6 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                 totalCount,
                 fetchedRecordCount);
 
-        return List.copyOf(responses);
-    }
-
-    private List<JsonNode> retrieveUntilEmptyPage(CsdsIngressClient ingressClient) {
-        val responses = new ArrayList<JsonNode>();
-        for (var offset = 0; ; offset += properties.getPageSize()) {
-            val response =
-                    ingressClient.retrieveJson(
-                            appendPagingParameters(
-                                    appendQueryParameters(queryPath(), queryParameters()),
-                                    "%24limit="
-                                            + properties.getPageSize()
-                                            + "&%24offset="
-                                            + offset));
-            if (extractRecords(response).isEmpty()) {
-                break;
-            }
-            responses.add(response);
-        }
-
-        log.info(
-                "Retrieved {} CSDS pages for {} using page size {} until an empty page",
-                responses.size(),
-                datasetName(),
-                properties.getPageSize());
         return List.copyOf(responses);
     }
 
@@ -197,8 +168,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     }
 
     private String countPath() {
-        return "/count/"
-                + DATA_LOCATION_NAME
+        return "/"
+                + countPathType()
+                + "/"
+                + dataLocationName()
                 + "/"
                 + processorProperties.getSourceEntityName()
                 + "/"
@@ -209,7 +182,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         return "/"
                 + queryPathType()
                 + "/"
-                + DATA_LOCATION_NAME
+                + dataLocationName()
                 + "/"
                 + processorProperties.getSourceEntityName()
                 + "/"
@@ -220,12 +193,14 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         return null;
     }
 
+    protected abstract String dataLocationName();
+
     protected String queryPathType() {
         return "query";
     }
 
-    protected boolean usesCountEndpoint() {
-        return true;
+    protected String countPathType() {
+        return "count";
     }
 
     protected String mockFilePath() {
@@ -384,8 +359,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         val absentFields =
                 expectedFields.stream().filter(fieldName -> !node.has(fieldName)).toList();
         if (!absentFields.isEmpty()) {
-            throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR,
+            throw new CsdsPayloadValidationException(
                     "CSDS record for "
                             + datasetName()
                             + " was missing expected fields: "

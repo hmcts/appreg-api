@@ -93,6 +93,11 @@ public class NationalCourtHouseDataIngressProcessor
     }
 
     @Override
+    protected String dataLocationName() {
+        return "COURT";
+    }
+
+    @Override
     protected String mockFilePath() {
         return nationalCourtHouseProperties.getMock();
     }

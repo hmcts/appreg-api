@@ -88,4 +88,13 @@ public class AdminAPIController implements AdminApi {
                 .contentType(VND_JSON_V1)
                 .body(csdsIngestService.ingest(processor, file));
     }
+
+    @Override
+    @PostMapping(
+            value = PATH_TRIGGER_CSDS_INGRESS,
+            produces = {"application/vnd.hmcts.appreg.v1+json", "application/problem+json"})
+    public ResponseEntity<Void> triggerCsdsIngress() {
+        csdsIngestService.trigger();
+        return ResponseEntity.ok().varyBy(VARY_ACCEPT).contentType(VND_JSON_V1).build();
+    }
 }

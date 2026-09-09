@@ -61,31 +61,29 @@ class StandardApplicantDataIngressProcessorTest {
     }
 
     @Test
-    void given_standardApplicantParameters_when_retrieve_then_usesNamedQueryPath() {
+    void given_standardApplicantParameters_when_retrieve_then_usesNamedQueryCountAndQueryPaths() {
         properties
                 .getProcessors()
                 .getStandardApplicants()
                 .setParameters("?$f=PublishingStatus='Active'");
         var firstPage = createPage(OBJECT_MAPPER.createObjectNode());
         var secondPage = createPage(OBJECT_MAPPER.createObjectNode());
-        var emptyPage = createPage();
+        var count = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var parameters = "?$f=PublishingStatus='Active'";
 
         when(ingressClient.retrieveJson(
-                        "/named-query/CSDS/DA_GetStandardApplicant/GD"
+                        "/named-query-count/APPREGISTER/DA_GetStandardApplicant/GD" + parameters))
+                .thenReturn(count);
+        when(ingressClient.retrieveJson(
+                        "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
                                 + parameters
                                 + "&%24limit=2&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
-                        "/named-query/CSDS/DA_GetStandardApplicant/GD"
+                        "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
                                 + parameters
                                 + "&%24limit=2&%24offset=2"))
                 .thenReturn(secondPage);
-        when(ingressClient.retrieveJson(
-                        "/named-query/CSDS/DA_GetStandardApplicant/GD"
-                                + parameters
-                                + "&%24limit=2&%24offset=4"))
-                .thenReturn(emptyPage);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);
     }

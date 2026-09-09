@@ -10,6 +10,6 @@ properties:
     minLength: 1
   value:
     type: string
-    description: The field value to substitute into the template key
+    description: The field value to substitute into the template key. Braces and line breaks are not permitted.
     example: "1234"
     minLength: 1
