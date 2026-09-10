@@ -12,11 +12,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.BulkImportAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.BulkImportWriteAuditMode;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -24,6 +27,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -32,10 +36,12 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRe
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -60,10 +66,33 @@ public class BulkImportService {
     private final AppListEntryOfficialRepository officialRepository;
     private final AppListEntryFeeRepository entryFeeRepository;
     private final AsyncJobAppListEntryRepository asyncJobEntryRepository;
+    private final ApplicationListRepository applicationListRepository;
+    private final ApplicationListVersionService applicationListVersionService;
     private final AuditOperationService auditService;
     private final BusinessDateProvider businessDateProvider;
     private final Clock clock;
     private final EntityManager entityManager;
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ApplicationList beginProcessing(UUID listId) {
+        var applicationList =
+                applicationListRepository
+                        .findByUuidIncludingDelete(listId)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
+                                                "The application list does not exist " + listId));
+
+        if (applicationList.isDeleted() || !applicationList.isOpen()) {
+            throw new AppRegistryException(
+                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                    "The application list is no longer open " + listId);
+        }
+
+        applicationListVersionService.incrementVersionImmediately(applicationList);
+        return applicationList;
+    }
 
     /**
      * Persists one reader page using Hibernate's configured insert batching.

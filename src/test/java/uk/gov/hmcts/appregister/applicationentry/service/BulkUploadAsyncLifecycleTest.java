@@ -89,6 +89,7 @@ class BulkUploadAsyncLifecycleTest {
 
         when(bulkCreateApplicationEntryValidator.createSession(applicationList))
                 .thenReturn(validationSession);
+        when(bulkImportService.beginProcessing(listId)).thenReturn(applicationList);
         doAnswer(
                         invocation -> {
                             PayloadForCreate<EntryCreateDto> validatable =
@@ -922,6 +923,7 @@ class BulkUploadAsyncLifecycleTest {
 
         var pageCaptor = ArgumentCaptor.<List<ValidatedBulkImportEntry>>captor();
         verify(bulkImportService, times(2)).persistPage(eq(jobId), pageCaptor.capture());
+        verify(bulkImportService).beginProcessing(listId);
         assertThat(pageCaptor.getAllValues())
                 .flatExtracting(entries -> entries)
                 .extracting(ValidatedBulkImportEntry::rowNumber)

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import static jakarta.persistence.LockModeType.OPTIMISTIC_FORCE_INCREMENT;
+import static jakarta.persistence.LockModeType.PESSIMISTIC_FORCE_INCREMENT;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,6 +29,15 @@ class ApplicationListVersionServiceTest {
         service.incrementVersion(applicationList);
 
         verify(entityManager).lock(applicationList, OPTIMISTIC_FORCE_INCREMENT);
+    }
+
+    @Test
+    void given_applicationList_when_incrementVersionImmediately_then_forceIncrementAndLock() {
+        var applicationList = mock(ApplicationList.class);
+
+        service.incrementVersionImmediately(applicationList);
+
+        verify(entityManager).lock(applicationList, PESSIMISTIC_FORCE_INCREMENT);
     }
 
     @Test

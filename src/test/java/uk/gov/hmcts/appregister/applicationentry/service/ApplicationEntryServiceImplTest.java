@@ -1572,6 +1572,7 @@ class ApplicationEntryServiceImplTest {
         dto.setEntryIds(Set.of(entryId1, entryId2));
 
         val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setSourceList(sourceList);
         validationSuccess.setTargetList(targetList);
         moveEntriesValidator.setSuccess(validationSuccess);
 
@@ -1591,6 +1592,7 @@ class ApplicationEntryServiceImplTest {
 
         final var entriesNotMoved = service.move(sourceListId, dto);
 
+        verify(applicationListVersionService).incrementVersions(List.of(sourceList, targetList));
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
         verify(applicationListEntryRepository)
                 .saveAll(
@@ -1666,6 +1668,7 @@ class ApplicationEntryServiceImplTest {
                         .targetListId(targetList.getUuid())
                         .entryIds(Set.of(movableId, skippedId));
         val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setSourceList(sourceList);
         validationSuccess.setTargetList(targetList);
         moveEntriesValidator.setSuccess(validationSuccess);
 
@@ -1712,6 +1715,7 @@ class ApplicationEntryServiceImplTest {
         final var dto =
                 new MoveEntriesDto().targetListId(targetList.getUuid()).entryIds(Set.of(skippedId));
         val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setSourceList(sourceList);
         validationSuccess.setTargetList(targetList);
         moveEntriesValidator.setSuccess(validationSuccess);
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
@@ -1723,6 +1727,7 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertSame(sourceList, skippedEntry.getApplicationList());
         verify(appListEntrySequenceMappingRepository, never()).findByAlIdForUpdate(anyLong());
         verify(applicationListEntryRepository, never()).saveAll(anyList());
+        verify(applicationListVersionService, never()).incrementVersions(anyList());
     }
 
     @Test

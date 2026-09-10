@@ -5,5 +5,6 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 
 @Data
 public class MoveEntriesValidationSuccess {
+    private ApplicationList sourceList;
     private ApplicationList targetList;
 }

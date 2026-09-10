@@ -155,7 +155,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
             assertThat(List.of(moveResponse.statusCode(), closeResponse.statusCode()))
                     .as("move and close must not both succeed")
-                    .anyMatch(status -> status >= 400);
+                    .containsExactlyInAnyOrder(HttpStatus.OK.value(), HttpStatus.CONFLICT.value());
         } finally {
             moveEntryFailureSwitch.releaseMoveSave();
         }

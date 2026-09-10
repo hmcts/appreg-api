@@ -1997,8 +1997,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public List<UUID> move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
         var payload = new MoveEntriesPayload(sourceListId, moveEntriesDto);
-        final ApplicationList targetList =
-                moveEntriesValidator.validate(payload, (req, success) -> success.getTargetList());
+        var validation = moveEntriesValidator.validate(payload, (req, success) -> success);
+        final ApplicationList sourceList = validation.getSourceList();
+        final ApplicationList targetList = validation.getTargetList();
 
         Set<UUID> requestedIds = new HashSet<>(moveEntriesDto.getEntryIds());
         List<ApplicationListEntry> entriesToMove =
@@ -2042,6 +2043,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     NOTES_MAX_LENGTH);
             return entriesNotMoved;
         }
+
+        applicationListVersionService.incrementVersions(List.of(sourceList, targetList));
 
         var oldAudit =
                 BulkMoveApplicationListEntriesAudit.forState(

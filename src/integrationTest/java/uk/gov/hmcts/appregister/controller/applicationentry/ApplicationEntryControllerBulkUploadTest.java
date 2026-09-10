@@ -82,6 +82,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
 
         UUID listId = createNewApplicationList(token);
+        final var initialList = applicationListRepository.findByUuid(listId).orElseThrow();
         Assertions.assertEquals(0, countEntriesForList(listId));
 
         Response response =
@@ -105,6 +106,9 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                 JobStatus.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
+        var importedList = applicationListRepository.findByUuid(listId).orElseThrow();
+        Assertions.assertEquals(initialList.getVersion() + 1, importedList.getVersion());
+        Assertions.assertEquals(initialList.getChangedDate(), importedList.getChangedDate());
         Assertions.assertEquals(expectedApiEntries(), apiEntriesForList(listId, token));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
         Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));

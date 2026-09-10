@@ -118,6 +118,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private int processingIndex;
     private int importedEntryCount;
     private long startedNanos;
+    private ApplicationList processingApplicationList;
 
     @Override
     public void received(AsyncJobLifecycleEvent<BulkUploadRow> event) {
@@ -401,6 +402,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                         ? validatedRows.get(processingIndex).rowNumber()
                         : FIRST_DATA_ROW_NUMBER;
         try {
+            if (processingApplicationList == null) {
+                processingApplicationList = bulkImportService.beginProcessing(listId);
+            }
             prepareValidatedPage(event.getData());
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
         } catch (Exception ex) {
@@ -432,6 +436,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
             var validatedRow = validatedRows.get(processingIndex++);
             var dto = mapper.toEntryCreateDto(row);
+            validatedRow.validationResult().setApplicationList(processingApplicationList);
             validatedPage.add(
                     new ValidatedBulkImportEntry(
                             validatedRow.rowNumber(),

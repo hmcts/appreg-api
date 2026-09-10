@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.MethodParameter;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
@@ -164,6 +165,18 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[500]: General unexpected failure"
                                                         + " (Report output file failed)")));
+    }
+
+    @Test
+    void givenOptimisticLockFailure_whenHandled_thenReturnsConflictWithoutInternalDetail() {
+        var exception = new OptimisticLockingFailureException("database entity and version");
+
+        var response = exceptionHandler.handleOptimisticLockException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody().getDetail())
+                .isEqualTo(CommonAppError.CONCURRENT_MODIFICATION.getCode().getMessage());
+        assertThat(response.getBody().getDetail()).doesNotContain("database", "version");
     }
 
     @Test

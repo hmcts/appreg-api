@@ -61,6 +61,7 @@ public class MoveEntriesValidator
         }
 
         var success = new MoveEntriesValidationSuccess();
+        success.setSourceList(sourceList);
         success.setTargetList(targetList);
 
         return createSupplier.apply(payload, success);
