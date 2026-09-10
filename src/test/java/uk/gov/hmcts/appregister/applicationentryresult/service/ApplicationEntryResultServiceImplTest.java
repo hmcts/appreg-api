@@ -53,6 +53,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResult
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultUpdateValidationSuccess;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -146,6 +147,8 @@ class ApplicationEntryResultServiceImplTest {
 
     @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
 
+    @Mock private ApplicationListVersionService applicationListVersionService;
+
     private ApplicationEntryResultServiceImpl service;
 
     @BeforeEach
@@ -159,6 +162,7 @@ class ApplicationEntryResultServiceImplTest {
                         bulkDeleteResultEntry,
                         bulkResultEntry,
                         matchService,
+                        applicationListVersionService,
                         auditOperationService,
                         applicationListEntryResultMapper,
                         applicationListEntryResultEntityMapper,
@@ -238,6 +242,7 @@ class ApplicationEntryResultServiceImplTest {
         Assertions.assertNotNull(matchResponse);
         Assertions.assertNotNull(matchResponse.getEtag());
         Assertions.assertEquals(resultGetDto, matchResponse.getPayload());
+        verify(applicationListVersionService).incrementVersion(applicationList);
     }
 
     @Test

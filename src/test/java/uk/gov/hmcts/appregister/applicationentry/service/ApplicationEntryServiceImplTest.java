@@ -88,6 +88,7 @@ import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
@@ -243,6 +244,8 @@ class ApplicationEntryServiceImplTest {
     // Services
     @Spy private MatchService matchService = new MatchServiceImpl(nullMatchProvider);
 
+    @Mock private ApplicationListVersionService applicationListVersionService;
+
     // Audit
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -367,6 +370,7 @@ class ApplicationEntryServiceImplTest {
                         bulkUpdateOfficialsValidator,
                         bulkUpdateFeesValidator,
                         matchService,
+                        applicationListVersionService,
                         auditOperationService,
                         appListEntryFeeStatusRepository,
                         nameAddressRepository,
@@ -407,6 +411,7 @@ class ApplicationEntryServiceImplTest {
                         bulkUpdateOfficialsValidator,
                         bulkUpdateFeesValidator,
                         matchService,
+                        applicationListVersionService,
                         auditOperationService,
                         appListEntryFeeStatusRepository,
                         nameAddressRepository,
@@ -798,6 +803,7 @@ class ApplicationEntryServiceImplTest {
         // run the test
         var response = service.createEntry(payload);
 
+        verify(applicationListVersionService).incrementVersion(appList);
         ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
         verify(appListEntryFeeRepository, times(2)).save(captor.capture());
 

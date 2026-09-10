@@ -61,6 +61,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntr
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -175,6 +176,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     // Services
     private final MatchService matchService;
+    private final ApplicationListVersionService applicationListVersionService;
 
     // Audit
     private final AuditOperationService auditService;
@@ -624,6 +626,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 auditService.processAudit(
                                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
                                         req -> {
+                                            applicationListVersionService.incrementVersion(
+                                                    success.getApplicationList());
                                             NameAddress applicantToSave =
                                                     createApplicant(entryCreateDto);
 
@@ -731,6 +735,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                     AppListEntryAuditOperation
                                                             .UPDATE_APP_ENTRY_LIST,
                                                     req -> {
+                                                        applicationListVersionService
+                                                                .incrementVersion(
+                                                                        success
+                                                                                .getApplicationList());
                                                         val listEntryEntity =
                                                                 saveUpdatedEntry(
                                                                         updateEntry, success);
@@ -815,6 +823,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 AppListEntryAuditOperation
                                                         .UPDATE_CLOSED_APP_ENTRY_LIST,
                                                 req -> {
+                                                    applicationListVersionService.incrementVersion(
+                                                            success.getApplicationList());
                                                     String updatedNotes =
                                                             appendNotes(
                                                                     success.getApplicationEntryId()
@@ -879,6 +889,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     List<Official> replacementOfficials = req.data().getOfficials();
                     var applicationList =
                             entries.isEmpty() ? null : entries.getFirst().getApplicationList();
+                    if (applicationList != null) {
+                        applicationListVersionService.incrementVersion(applicationList);
+                    }
 
                     List<UUID> entryUuids =
                             entries.stream().map(ApplicationListEntry::getUuid).toList();
@@ -1027,6 +1040,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             BulkUpdateFeesPayload req, BulkUpdateFeesValidationSuccess success, UUID listId) {
         List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
         entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+        if (!entries.isEmpty()) {
+            applicationListVersionService.incrementVersion(entries.getFirst().getApplicationList());
+        }
 
         var feeUpdateContext = prepareBulkFeeUpdateContext(req, entries);
         applyRequestedFeeChanges(entries, feeUpdateContext);
@@ -2097,6 +2113,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         BeanUtil.copyBean(success.getApplicationListEntry())),
                                 AppListEntryAuditOperation.DELETE_ENTRY,
                                 req -> {
+                                    applicationListVersionService.incrementVersion(
+                                            success.getApplicationListEntry().getApplicationList());
                                     success.getApplicationListEntry().setDeleted(true);
                                     applicationListEntryRepository.save(
                                             success.getApplicationListEntry());

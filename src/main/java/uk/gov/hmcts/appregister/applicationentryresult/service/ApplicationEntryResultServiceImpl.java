@@ -26,6 +26,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntr
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultDeletionValidator;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -67,6 +68,7 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
     // Services
     private final MatchService matchService;
+    private final ApplicationListVersionService applicationListVersionService;
 
     // Audit
     private final AuditOperationService auditService;
@@ -87,6 +89,10 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
         bulkApplicationEntryResultDeletionValidator.validate(
                 bulkDeleteResultsDto,
                 (request, success) -> {
+                    applicationListVersionService.incrementVersions(
+                            success.getResults().stream()
+                                    .map(item -> item.validationSuccess().getApplicationList())
+                                    .toList());
                     var deletedResults =
                             success.getResults().stream()
                                     .map(
@@ -153,6 +159,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                         auditService.processAudit(
                                 AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT,
                                 req -> {
+                                    applicationListVersionService.incrementVersion(
+                                            success.getApplicationList());
 
                                     // save the entry result
                                     AppListEntryResolution listEntryResultEntity =
@@ -217,6 +225,10 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                         AppListEntryResultAuditOperation
                                                                 .UPDATE_APP_LIST_ENTRY_RESULT,
                                                         req -> {
+                                                            applicationListVersionService
+                                                                    .incrementVersion(
+                                                                            success
+                                                                                    .getApplicationList());
 
                                                             // save the list entry result
                                                             AppListEntryResolution
@@ -349,6 +361,10 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
         return bulkApplicationEntryResultCreationValidator.validate(
                 bulkResultDto,
                 (validate, success) -> {
+                    applicationListVersionService.incrementVersions(
+                            success.getResults().stream()
+                                    .map(item -> item.validationSuccess().getApplicationList())
+                                    .toList());
                     var resultPayload = validate.getPayload().getResult();
                     var userEmail = userProvider.getEmail();
                     var entitiesToCreate =
