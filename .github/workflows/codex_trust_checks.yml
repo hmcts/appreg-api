@@ -16,6 +16,7 @@ jobs:
       - name: Checkout without persisted credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 2
           persist-credentials: false
       - name: Check workflow trust contracts
         run: ruby .github/scripts/check-codex-workflow-trust.rb
@@ -24,4 +25,4 @@ jobs:
       - name: Test settings audit
         run: python3 .github/scripts/test-audit-codex-trust-settings.py
       - name: Check patch whitespace
-        run: git show --format= --check HEAD
+        run: git diff --check HEAD^ HEAD
