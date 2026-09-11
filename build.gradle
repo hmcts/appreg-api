@@ -444,7 +444,7 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.54'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.2'
 
@@ -490,7 +490,7 @@ dependencies {
   testImplementation 'io.rest-assured:rest-assured:6.0.1'
 
   testImplementation 'com.squareup.okhttp3:mockwebserver:5.5.0'
-  testImplementation 'io.github.hakky54:logcaptor:2.12.6'
+  testImplementation 'io.github.hakky54:logcaptor:2.12.7'
   testImplementation 'org.testcontainers:testcontainers:2.0.5'
   testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.2'

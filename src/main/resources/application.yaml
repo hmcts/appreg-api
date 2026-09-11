@@ -184,4 +184,4 @@ appreg:
   job:
     page-size: 10
   report:
-    page-size: 500
+    page-size: 1000
