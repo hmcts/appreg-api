@@ -475,9 +475,9 @@ dependencies {
 
   // Lombok
   compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
-  compileOnly 'org.projectlombok:lombok:1.18.46'
+  compileOnly 'org.projectlombok:lombok:1.18.48'
   compileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
-  annotationProcessor 'org.projectlombok:lombok:1.18.46'
+  annotationProcessor 'org.projectlombok:lombok:1.18.48'
 
   // Database
   runtimeOnly 'org.postgresql:postgresql:42.7.13'
