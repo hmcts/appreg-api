@@ -85,5 +85,26 @@ contracts.each do |filename, (event, entry)|
     end
   end
 end
+hosted_path = File.join(root, ".github/workflows/codex_trust_checks.yml")
+hosted = YAML.load_file(hosted_path)
+hosted_events = hosted["on"] || hosted[true] || {}
+hosted_job = hosted.fetch("jobs", {}).fetch("trust-contract", {})
+unless hosted_events.key?("pull_request") && hosted_events.key?("push") &&
+       hosted_job["runs-on"] == "ubuntu-latest" && !hosted_job.key?("if") &&
+       !hosted_job.key?("continue-on-error")
+  errors << "codex_trust_checks.yml: hosted trust validation must be mandatory"
+end
+[
+  "ruby .github/scripts/check-codex-workflow-trust.rb",
+  "python3 .github/scripts/test-codex-workflow-trust.py",
+  "python3 .github/scripts/test-audit-codex-trust-settings.py",
+  "python3 .github/scripts/test-codex-review-feedback.py",
+  "python3 .github/scripts/test-codex-verification-bundle.py",
+].each do |command|
+  step = hosted_job.fetch("steps", []).find { |item| item["run"] == command }
+  unless step && !step.key?("if") && !step.key?("continue-on-error")
+    errors << "codex_trust_checks.yml: must unconditionally run #{command}"
+  end
+end
 abort errors.join("\n") unless errors.empty?
 puts "Codex workflow trust contracts passed (live settings require a separate audit)."

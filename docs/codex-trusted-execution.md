@@ -31,7 +31,10 @@ For each environment, select **Selected branches and tags** and add only a
 **branch** rule named **master**. Do not add wildcard, tag, feature-branch or
 refs/pull rules. No per-run reviewer gate is required for the existing small-bug
 journey. Default-branch workflow changes must still pass the team's normal
-review and release process.
+review and release process. Require at least one approval and either dismiss
+stale approvals after new commits or require approval of the latest push.
+An approval count alone does not establish that the current workflow was reviewed.
+The audit checks classic branch protection; equivalent rulesets are not inferred.
 
 Re-enter the credentials from the approved secret source into their respective
 environments. GitHub cannot return a stored Actions secret's plaintext for a
@@ -103,8 +106,16 @@ copies that remove that guard.
 For PR feedback, add review comments normally, then post /codex-review in the
 PR's main Conversation tab. The command must be posted by a repository writer.
 Putting it inside an inline review or review submission no longer starts the
-agent. The existing collector still reads review feedback and updates the same
-PR branch. /codex-resolve-conflicts continues to use conversation comments.
+agent. Trusted preparation fetches submitted review bodies and inline comments
+for the current PR head. Approved, dismissed, pending and older-head reviews are
+excluded, as is feedback superseded by that author's later approval. Subsequent
+comments do not erase earlier unresolved feedback on the current head. Outdated
+inline comments and feedback posted after the command are also excluded.
+The command author and inline authors must have current write, maintain or admin
+permission. Feedback is bounded to ten API pages per collection and 64 KiB of
+prompt data, and is always treated as untrusted input. Oversized or unverifiable
+collections fail closed. If the PR head moves during collection, post a fresh
+command. /codex-resolve-conflicts continues to use conversation comments.
 
 Authentication smoke ends with the model Action. A separate credential-free
 job validates its structured message, and a separate GitHub-hosted publisher job
@@ -118,8 +129,24 @@ Run local regression checks from the reviewed checkout:
 ruby .github/scripts/check-codex-workflow-trust.rb
 python3 .github/scripts/test-codex-workflow-trust.py
 python3 .github/scripts/test-audit-codex-trust-settings.py
+python3 .github/scripts/test-codex-review-feedback.py
+python3 .github/scripts/test-codex-verification-bundle.py
 ./bin/codex-local-pipeline.sh checks-only --no-fetch
 ```
+
+The local pipeline follows the existing optional Ruby toolchain convention:
+when Ruby is absent it reports that workflow trust validation must run in the
+mandatory hosted **Codex Trust Checks** job. Python settings-audit tests always
+run locally. The hosted job runs the Ruby checker and all regression suites
+unconditionally; missing tooling or a failing check fails that job.
+
+Review, repaired-review and conflict verification transfer a separate archive
+of trusted scripts, schemas, workflows and pipeline tooling alongside the exact
+candidate source. Jira verification captures the same inputs before applying a
+patch. The archive is hashed before candidate execution and checked immediately
+before extraction. Static verification uses the captured inputs, while application
+checks and diff guardrails still use the candidate tree. No candidate files or
+generated patches are replaced by the trusted bundle, including for pre-rollout PRs.
 
 An administrator then runs the read-only metadata audit for each repository:
 

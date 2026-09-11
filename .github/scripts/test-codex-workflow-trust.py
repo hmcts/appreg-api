@@ -86,6 +86,28 @@ class WorkflowTrustTests(unittest.TestCase):
         self.replace("codex_runner_smoke.yml", "\npermissions: {}\n", "\npermissions: write-all\n")
         self.check(False)
 
+    def test_hosted_trust_job_cannot_be_optional(self):
+        self.replace("codex_trust_checks.yml", "    runs-on: ubuntu-latest",
+                     "    if: false\n    runs-on: ubuntu-latest")
+        self.check(False)
+
+    def test_hosted_trust_failure_cannot_be_ignored(self):
+        self.replace("codex_trust_checks.yml", "    runs-on: ubuntu-latest",
+                     "    continue-on-error: true\n    runs-on: ubuntu-latest")
+        self.check(False)
+
+    def test_hosted_checker_cannot_be_guarded(self):
+        self.replace("codex_trust_checks.yml",
+                     "run: ruby .github/scripts/check-codex-workflow-trust.rb",
+                     "run: command -v ruby && ruby .github/scripts/check-codex-workflow-trust.rb")
+        self.check(False)
+
+    def test_hosted_mutations_cannot_be_skipped(self):
+        self.replace("codex_trust_checks.yml",
+                     "      - name: Test workflow mutations",
+                     "      - if: false\n        name: Test workflow mutations")
+        self.check(False)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,5 +24,9 @@ jobs:
         run: python3 .github/scripts/test-codex-workflow-trust.py
       - name: Test settings audit
         run: python3 .github/scripts/test-audit-codex-trust-settings.py
+      - name: Test Conversation review collection
+        run: python3 .github/scripts/test-codex-review-feedback.py
+      - name: Test local toolchain and trusted verification bundles
+        run: python3 .github/scripts/test-codex-verification-bundle.py
       - name: Check patch whitespace
         run: git diff --check HEAD^ HEAD

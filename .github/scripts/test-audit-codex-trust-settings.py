@@ -22,7 +22,10 @@ class SettingsAuditTests(unittest.TestCase):
                 "default_workflow_permissions": "read", "can_approve_pull_request_reviews": False,
             },
             f"{prefix}/branches/master/protection": {
-                "required_pull_request_reviews": {"required_approving_review_count": 1},
+                "required_pull_request_reviews": {
+                    "required_approving_review_count": 1, "dismiss_stale_reviews": True,
+                    "require_last_push_approval": False,
+                },
             },
             f"{prefix}/environments": {"environments": [
                 {"name": name, "deployment_branch_policy": {
@@ -93,6 +96,16 @@ class SettingsAuditTests(unittest.TestCase):
     def test_unreviewed_default_branch_rejected(self):
         self.responses[f"repos/{self.repository}/branches/master/protection"] = {}
         self.assertTrue(any("reviewed change" in error for error in self.audit()))
+
+    def test_approval_must_cover_the_latest_push(self):
+        reviews = self.responses[f"repos/{self.repository}/branches/master/protection"]["required_pull_request_reviews"]
+        for dismissal, last_push, valid in (
+            (False, False, False), (None, None, False),
+            (True, False, True), (False, True, True), (True, True, True),
+        ):
+            with self.subTest(dismissal=dismissal, last_push=last_push):
+                reviews.update(dismiss_stale_reviews=dismissal, require_last_push_approval=last_push)
+                self.assertEqual(not self.audit(), valid)
 
     def test_missing_runner_group_rejected(self):
         self.responses["orgs/hmcts/actions/runner-groups"]["runner_groups"] = []

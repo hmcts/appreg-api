@@ -435,6 +435,7 @@ jobs:
           tar -czf "$RUNNER_TEMP/codex-review-published-source.tar.gz" .
           cp ../trusted/.github/scripts/codex-pr-review-verify.sh "$RUNNER_TEMP/trusted-codex-pr-review-verify.sh"
           cp ../trusted/bin/codex-local-pipeline.sh "$RUNNER_TEMP/trusted-codex-local-pipeline.sh"
+          git -C ../trusted archive HEAD .github/scripts .github/workflows .github/schemas bin >"$RUNNER_TEMP/trusted-codex-checks.tar"
           echo "head_sha=${PUBLISHED_HEAD_SHA}" >>"$GITHUB_OUTPUT"
           echo "base_sha=${BASE_SHA}" >>"$GITHUB_OUTPUT"
 
@@ -446,6 +447,7 @@ jobs:
             ${{ runner.temp }}/codex-review-published-source.tar.gz
             ${{ runner.temp }}/trusted-codex-pr-review-verify.sh
             ${{ runner.temp }}/trusted-codex-local-pipeline.sh
+            ${{ runner.temp }}/trusted-codex-checks.tar
           if-no-files-found: error
           retention-days: 1
 
@@ -644,6 +646,7 @@ jobs:
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           TRUSTED_PIPELINE_PATH: ${{ runner.temp }}/codex-review-verification-source/trusted-codex-local-pipeline.sh
+          TRUSTED_CHECKS_ARCHIVE: ${{ runner.temp }}/codex-review-verification-source/trusted-codex-checks.tar
         run: |
           set +e
           bash "$RUNNER_TEMP/codex-review-verification-source/trusted-codex-pr-review-verify.sh" >"$RUNNER_TEMP/codex-review-external-repair-verification.log" 2>&1
@@ -871,6 +874,7 @@ jobs:
           tar -czf "$RUNNER_TEMP/codex-review-source.tar.gz" .
           cp ../trusted/.github/scripts/codex-pr-review-verify.sh "$RUNNER_TEMP/trusted-codex-pr-review-verify.sh"
           cp ../trusted/bin/codex-local-pipeline.sh "$RUNNER_TEMP/trusted-codex-local-pipeline.sh"
+          git -C ../trusted archive HEAD .github/scripts .github/workflows .github/schemas bin >"$RUNNER_TEMP/trusted-codex-checks.tar"
 
       - name: Upload credential-free review source
         uses: actions/upload-artifact@v7
@@ -880,6 +884,7 @@ jobs:
             ${{ runner.temp }}/codex-review-source.tar.gz
             ${{ runner.temp }}/trusted-codex-pr-review-verify.sh
             ${{ runner.temp }}/trusted-codex-local-pipeline.sh
+            ${{ runner.temp }}/trusted-codex-checks.tar
           if-no-files-found: error
           retention-days: 1
 
@@ -924,6 +929,7 @@ jobs:
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
           TRUSTED_PIPELINE_PATH: ${{ runner.temp }}/codex-review-verification-source/trusted-codex-local-pipeline.sh
+          TRUSTED_CHECKS_ARCHIVE: ${{ runner.temp }}/codex-review-verification-source/trusted-codex-checks.tar
         run: bash "$RUNNER_TEMP/codex-review-verification-source/trusted-codex-pr-review-verify.sh"
 
       - name: Upload verified Codex review output

@@ -56,6 +56,9 @@ def audit(repository, runner_group, api=github):
     reviews = protection.get("required_pull_request_reviews") or {}
     if reviews.get("required_approving_review_count", 0) < 1:
         errors.append("Require a reviewed change before workflow code enters the default branch.")
+    if not (reviews.get("dismiss_stale_reviews") is True or
+            reviews.get("require_last_push_approval") is True):
+        errors.append("Require stale review dismissal or approval of the latest push on the default branch.")
 
     environments = api(f"repos/{repository}/environments")["environments"]
     by_name = {item["name"]: item for item in environments}

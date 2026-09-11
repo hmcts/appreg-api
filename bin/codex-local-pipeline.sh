@@ -121,6 +121,10 @@ if [[ "${mode}" == "codex" ]]; then
   ./.github/scripts/codex-runner-preflight.sh
 fi
 
+# A captured verifier validates its own tooling without replacing candidate files.
+(
+cd "${CODEX_TRUST_ROOT:-${repo_root}}"
+
 log "Validating shell scripts"
 bash -n \
   .github/scripts/*.sh \
@@ -140,8 +144,13 @@ PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-ha
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-verify-publisher.py
 
 log "Validating Codex workflow trust boundaries"
-ruby .github/scripts/check-codex-workflow-trust.rb
-python3 .github/scripts/test-codex-workflow-trust.py
+if command -v ruby >/dev/null 2>&1; then
+  ruby .github/scripts/check-codex-workflow-trust.rb
+  python3 .github/scripts/test-codex-workflow-trust.py
+else
+  warn "ruby is not installed; local workflow trust checks require the mandatory hosted Codex Trust Checks job"
+fi
+log "Validating Codex trust settings audit"
 python3 .github/scripts/test-audit-codex-trust-settings.py
 
 log "Validating workflow YAML syntax"
@@ -372,6 +381,8 @@ verification_specs.each do |spec|
          source_job.inspect.include?("fetch-depth") &&
          source_job.inspect.include?("persist-credentials") &&
          source_job.inspect.include?("credential-free") &&
+         source_commands.include?("git -C ../trusted archive HEAD .github/scripts .github/workflows .github/schemas bin") &&
+         source_job.inspect.include?("trusted-codex-checks.tar") &&
          !source_commands.match?(/bash .*codex-(?:pr-review|merge-conflict)-verify\.sh|codex-local-pipeline\.sh (?:checks-only|fast|full)|gradlew|yarn (?:lint|cichecks)/)
     errors << "#{spec.fetch(:path)}:#{spec.fetch(:source_job)} must archive exact trusted source without executing repository tooling"
   end
@@ -392,7 +403,8 @@ verification_specs.each do |spec|
        job.inspect.match?(/GH_TOKEN|SONAR_TOKEN|secrets\.|github\.token/) ||
        job.inspect.include?("actions/checkout@") ||
        !job.inspect.include?(spec.fetch(:restore_marker)) ||
-       !job.inspect.include?("TRUSTED_PIPELINE_PATH")
+       !job.inspect.include?("TRUSTED_PIPELINE_PATH") ||
+       !job.inspect.include?("TRUSTED_CHECKS_ARCHIVE")
       errors << "#{spec.fetch(:path)}:#{job_name} must restore trusted source and execute generated code without permissions or credentials"
     end
   end
@@ -751,6 +763,7 @@ RUBY
 else
   warn "ruby is not installed; skipping workflow YAML and Codex security validation"
 fi
+)
 
 log "Checking Flyway migration numbers are unique"
 flyway_script_count="$(find ./flyway -type f | wc -l | trim_count)"

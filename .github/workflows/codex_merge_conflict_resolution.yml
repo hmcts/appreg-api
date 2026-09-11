@@ -342,6 +342,7 @@ jobs:
           tar -czf "$RUNNER_TEMP/codex-conflict-source.tar.gz" .
           cp ../trusted/.github/scripts/codex-merge-conflict-verify.sh "$RUNNER_TEMP/trusted-codex-merge-conflict-verify.sh"
           cp ../trusted/bin/codex-local-pipeline.sh "$RUNNER_TEMP/trusted-codex-local-pipeline.sh"
+          git -C ../trusted archive HEAD .github/scripts .github/workflows .github/schemas bin >"$RUNNER_TEMP/trusted-codex-checks.tar"
 
       - name: Upload credential-free conflict source
         uses: actions/upload-artifact@v7
@@ -351,6 +352,7 @@ jobs:
             ${{ runner.temp }}/codex-conflict-source.tar.gz
             ${{ runner.temp }}/trusted-codex-merge-conflict-verify.sh
             ${{ runner.temp }}/trusted-codex-local-pipeline.sh
+            ${{ runner.temp }}/trusted-codex-checks.tar
           if-no-files-found: error
           retention-days: 1
 
@@ -398,6 +400,7 @@ jobs:
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
           TRUSTED_PIPELINE_PATH: ${{ runner.temp }}/codex-conflict-verification-source/trusted-codex-local-pipeline.sh
+          TRUSTED_CHECKS_ARCHIVE: ${{ runner.temp }}/codex-conflict-verification-source/trusted-codex-checks.tar
         run: |
           set +e
           bash "$RUNNER_TEMP/codex-conflict-verification-source/trusted-codex-merge-conflict-verify.sh" >"$RUNNER_TEMP/codex-conflict-verification.log" 2>&1

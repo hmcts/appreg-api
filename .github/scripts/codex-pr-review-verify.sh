@@ -18,6 +18,7 @@ required_env "EXPECTED_BASE_REF"
 required_env "EXPECTED_HEAD_SHA"
 required_env "EXPECTED_BASE_SHA"
 required_env "TRUSTED_PIPELINE_PATH"
+required_env "TRUSTED_CHECKS_ARCHIVE"
 
 output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
@@ -30,6 +31,8 @@ sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
 trusted_pipeline_sha=""
+trusted_checks_archive="${artifact_dir}/trusted-checks.tar"
+trusted_checks_sha=""
 guardrail_review_required="false"
 guardrail_pathspecs=(
   "bin/codex-local-pipeline.sh"
@@ -180,6 +183,8 @@ patch_sha="$(file_sha256 "${patch_path}")"
 cp "${TRUSTED_PIPELINE_PATH}" "${trusted_pipeline_path}"
 chmod +x "${trusted_pipeline_path}"
 trusted_pipeline_sha="$(file_sha256 "${trusted_pipeline_path}")"
+cp "${TRUSTED_CHECKS_ARCHIVE}" "${trusted_checks_archive}"
+trusted_checks_sha="$(file_sha256 "${trusted_checks_archive}")"
 
 actual_head_sha="$(git_sanitized rev-parse HEAD)"
 actual_base_sha="$(git_sanitized rev-parse "refs/remotes/origin/${base_ref}")"
@@ -198,7 +203,10 @@ if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
   echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
 else
   verify_trusted_file "${trusted_pipeline_path}" "${trusted_pipeline_sha}" "pipeline wrapper"
-  run_sanitized "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${base_ref:-master}" --no-fetch
+  verify_trusted_file "${trusted_checks_archive}" "${trusted_checks_sha}" "check bundle"
+  trusted_checks_root="$(mktemp -d "${artifact_dir}/trusted-checks.XXXXXX")"
+  tar -xf "${trusted_checks_archive}" -C "${trusted_checks_root}"
+  run_sanitized env CODEX_TRUST_ROOT="${trusted_checks_root}" "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${base_ref:-master}" --no-fetch
 fi
 
 {
