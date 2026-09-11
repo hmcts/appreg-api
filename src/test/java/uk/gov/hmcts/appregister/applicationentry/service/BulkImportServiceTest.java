@@ -39,7 +39,6 @@ import uk.gov.hmcts.appregister.applicationentry.audit.BulkImportWriteAuditMode;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
-import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -57,6 +56,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
@@ -78,7 +78,6 @@ class BulkImportServiceTest {
     @Mock private AppListEntryFeeRepository entryFeeRepository;
     @Mock private AsyncJobAppListEntryRepository asyncJobEntryRepository;
     @Mock private ApplicationListRepository applicationListRepository;
-    @Mock private ApplicationListVersionService applicationListVersionService;
     @Mock private AuditOperationService auditService;
     @Mock private BusinessDateProvider businessDateProvider;
     @Mock private EntityManager entityManager;
@@ -106,7 +105,6 @@ class BulkImportServiceTest {
                         entryFeeRepository,
                         asyncJobEntryRepository,
                         applicationListRepository,
-                        applicationListVersionService,
                         auditService,
                         businessDateProvider,
                         Clock.fixed(Instant.parse("2026-07-14T10:00:00Z"), ZoneOffset.UTC),
@@ -135,7 +133,7 @@ class BulkImportServiceTest {
     }
 
     @Test
-    void givenOpenCurrentList_whenBeginningProcessing_thenIncrementItsVersionImmediately() {
+    void givenOpenCurrentList_whenBeginningProcessing_thenCaptureCurrentList() {
         var listId = UUID.randomUUID();
         applicationList.setStatus(Status.OPEN);
         applicationList.setDeleted(false);
@@ -143,8 +141,6 @@ class BulkImportServiceTest {
                 .thenReturn(Optional.of(applicationList));
 
         assertThat(service.beginProcessing(listId)).isSameAs(applicationList);
-
-        verify(applicationListVersionService).incrementVersionImmediately(applicationList);
     }
 
     @ParameterizedTest
@@ -161,8 +157,29 @@ class BulkImportServiceTest {
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(exception -> ((AppRegistryException) exception).getCode())
                 .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
+    }
 
-        verify(applicationListVersionService, never()).incrementVersionImmediately(any());
+    @Test
+    void givenMatchingListVersion_whenCompletingProcessing_thenIncrementVersion() {
+        var listId = UUID.randomUUID();
+        when(applicationListRepository.incrementVersionIfStateMatches(
+                        listId, 3L, Status.OPEN, YesOrNo.NO))
+                .thenReturn(1);
+
+        service.completeProcessing(listId, 3L);
+
+        verify(applicationListRepository)
+                .incrementVersionIfStateMatches(listId, 3L, Status.OPEN, YesOrNo.NO);
+    }
+
+    @Test
+    void givenListChanged_whenCompletingProcessing_thenReject() {
+        var listId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> service.completeProcessing(listId, 3L))
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(exception -> ((AppRegistryException) exception).getCode())
+                .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
     }
 
     @Test

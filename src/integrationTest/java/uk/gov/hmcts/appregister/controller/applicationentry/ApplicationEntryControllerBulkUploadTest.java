@@ -236,13 +236,16 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
-    void givenInternalProcessingFailure_whenJobStatusIsPolled_thenReturnsSafeJobReference()
-            throws Exception {
+    void
+            givenEndOfUploadVersionCheckFailure_whenJobStatusIsPolled_thenRollsBackAndReturnsSafeJobReference()
+                    throws Exception {
         var internalError =
                 "ERROR: relation appreg.application_list does not exist [select * from secret]";
-        doThrow(new IllegalStateException(internalError))
-                .when(bulkImportService)
-                .persistPage(any(), any());
+        unitOfWork.inTransaction(
+                () ->
+                        doThrow(new IllegalStateException(internalError))
+                                .when(bulkImportService)
+                                .completeProcessing(any(), any()));
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
         UUID listId = createNewApplicationList(token);

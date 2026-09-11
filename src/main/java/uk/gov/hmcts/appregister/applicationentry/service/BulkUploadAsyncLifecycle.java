@@ -119,6 +119,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private int importedEntryCount;
     private long startedNanos;
     private ApplicationList processingApplicationList;
+    private Long processingApplicationListVersion;
 
     @Override
     public void received(AsyncJobLifecycleEvent<BulkUploadRow> event) {
@@ -404,6 +405,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         try {
             if (processingApplicationList == null) {
                 processingApplicationList = bulkImportService.beginProcessing(listId);
+                processingApplicationListVersion = processingApplicationList.getVersion();
             }
             prepareValidatedPage(event.getData());
             importedEntryCount += bulkImportService.persistPage(jobId, List.copyOf(validatedPage));
@@ -455,6 +457,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     "Processing pass did not contain every validated CSV row");
         }
 
+        bulkImportService.completeProcessing(listId, processingApplicationListVersion);
         bulkImportService.completed(
                 listId, event.getResponse().getJobId().getId(), importedEntryCount);
         log.info(

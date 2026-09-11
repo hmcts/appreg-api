@@ -19,7 +19,6 @@ import uk.gov.hmcts.appregister.applicationentry.audit.BulkImportAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.BulkImportWriteAuditMode;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
-import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.audit.annotation.NestedAudit;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -40,6 +39,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
@@ -67,7 +67,6 @@ public class BulkImportService {
     private final AppListEntryFeeRepository entryFeeRepository;
     private final AsyncJobAppListEntryRepository asyncJobEntryRepository;
     private final ApplicationListRepository applicationListRepository;
-    private final ApplicationListVersionService applicationListVersionService;
     private final AuditOperationService auditService;
     private final BusinessDateProvider businessDateProvider;
     private final Clock clock;
@@ -90,8 +89,19 @@ public class BulkImportService {
                     "The application list is no longer open " + listId);
         }
 
-        applicationListVersionService.incrementVersionImmediately(applicationList);
         return applicationList;
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void completeProcessing(UUID listId, Long expectedVersion) {
+        int updated =
+                applicationListRepository.incrementVersionIfStateMatches(
+                        listId, expectedVersion, Status.OPEN, YesOrNo.NO);
+        if (updated != 1) {
+            throw new AppRegistryException(
+                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                    "The application list changed while the bulk upload was processing " + listId);
+        }
     }
 
     /**

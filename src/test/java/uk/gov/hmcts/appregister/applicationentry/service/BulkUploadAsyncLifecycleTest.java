@@ -79,6 +79,7 @@ class BulkUploadAsyncLifecycleTest {
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
         validationSession = mock(BulkCreateApplicationEntryValidator.Session.class);
         applicationList = new ApplicationList();
+        applicationList.setVersion(3L);
         listId = UUID.randomUUID();
         csvFile = mock(MultipartFile.class);
         when(csvFile.getBytes())
@@ -887,6 +888,7 @@ class BulkUploadAsyncLifecycleTest {
                 .hasSize(2)
                 .extracting(ValidatedBulkImportEntry::rowNumber)
                 .containsExactly(2, 3);
+        verify(bulkImportService).completeProcessing(listId, 3L);
         verify(bulkImportService).completed(listId, jobId, 2);
         assertThat(output)
                 .contains(

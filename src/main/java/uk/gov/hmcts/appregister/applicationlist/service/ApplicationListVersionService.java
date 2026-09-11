@@ -22,11 +22,6 @@ public class ApplicationListVersionService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void incrementVersionImmediately(ApplicationList applicationList) {
-        entityManager.lock(applicationList, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
-    }
-
-    @Transactional(propagation = Propagation.MANDATORY)
     public void incrementVersions(Collection<ApplicationList> applicationLists) {
         var listsById = new TreeMap<Long, ApplicationList>();
         applicationLists.forEach(list -> listsById.putIfAbsent(list.getId(), list));
