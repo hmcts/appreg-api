@@ -351,7 +351,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api-2' }}
       PR_NUMBER: ${{ needs.codex-review-publish.outputs.pr_number }}
       PUBLISHED_COMMIT_SHA: ${{ needs.codex-review-publish.outputs.commit_sha }}
       REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
@@ -361,7 +361,7 @@ jobs:
       - name: Checkout trusted status scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check external PR status and Sonar quality gate
@@ -786,7 +786,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api-2' }}
       PR_NUMBER: ${{ needs.codex-review-external-republish.outputs.pr_number }}
       PUBLISHED_COMMIT_SHA: ${{ needs.codex-review-external-republish.outputs.commit_sha }}
       REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
@@ -797,7 +797,7 @@ jobs:
       - name: Checkout trusted status scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.codex-review-generate.outputs.trusted_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check repaired external PR status and Sonar quality gate

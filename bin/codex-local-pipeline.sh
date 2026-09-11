@@ -334,6 +334,14 @@ end
   end
 end
 
+initial_status_step = Array(jira_jobs.fetch("verify-published-pr", {}).fetch("steps", [])).find do |step|
+  step.is_a?(Hash) && step.fetch("name", "") == "Check external PR status and Sonar quality gate"
+end
+initial_status_script = initial_status_step&.fetch("run", "").to_s
+unless initial_status_script.match?(/set \+e\s+\(.*?exit "\$status"\s+\)\s+>"\$RUNNER_TEMP\/codex-pr-status\.log"/m)
+  errors << "#{jira_path}:verify-published-pr must capture external-status failures in a subshell before publishing repair evidence"
+end
+
 verification_specs = [
   {
     path: ".github/workflows/codex_pr_review_feedback.yml",
@@ -422,10 +430,24 @@ end
 
 sonar_source = File.read(".github/scripts/codex-check-sonar-quality-gate.sh")
 unless sonar_source.include?("PUBLISHED_COMMIT_SHA") &&
-       sonar_source.include?("/api/project_analyses/search") &&
-       sonar_source.include?("analysisId=") &&
-       !sonar_source.match?(/project_status.*projectKey=.*pullRequest=/)
-  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published commit's exact analysis ID"
+       sonar_source.include?("/api/project_pull_requests/list") &&
+       sonar_source.include?('commit.get("sha")') &&
+       sonar_source.include?('"projectKey=${SONAR_PROJECT_KEY}"') &&
+       sonar_source.include?('"pullRequest=${PR_NUMBER}"') &&
+       !sonar_source.include?("/api/project_analyses/search")
+  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published PR's exact commit"
+end
+
+sonar_project_key = File.read("build.gradle")
+  .match(/property\s+['\"]sonar\.projectKey['\"],\s*['\"]([^'\"]+)['\"]/)
+  &.captures
+  &.first
+expected_sonar_fallback = "vars.SONAR_PROJECT_KEY || '#{sonar_project_key}'"
+%w[codex_jira_dispatch.yml codex_pr_review_feedback.yml].each do |workflow_name|
+  source = File.read(".github/workflows/#{workflow_name}")
+  unless sonar_project_key && source.scan(expected_sonar_fallback).length == 2
+    errors << ".github/workflows/#{workflow_name} must default both Sonar checks to build.gradle's sonar.projectKey"
+  end
 end
 
 jira_publish_source = File.read(".github/scripts/codex-jira-publish.sh")
@@ -555,7 +577,8 @@ revision_pinned_workflows.each do |workflow_name|
       next false unless step.is_a?(Hash) && step.fetch("uses", "").start_with?("actions/checkout@")
 
       ref = (step.fetch("with", {}) || {}).fetch("ref", "")
-      !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha|commit_sha)/)
+      ref != "${{ github.sha }}" &&
+        !ref.match?(/needs\.[A-Za-z0-9_-]+\.outputs\.(?:trusted_sha|head_sha|base_sha|commit_sha)/)
     end
 
     declared_needs = Array(job.fetch("needs", []))

@@ -64,7 +64,15 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
 
       - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
+        run: |
+          for attempt in 1 2 3; do
+            if ./.github/scripts/codex-runner-preflight.sh; then
+              exit 0
+            fi
+            echo "::warning::Runner toolchain preflight attempt ${attempt}/3 failed; retrying after a short backoff."
+            sleep "$((attempt * 5))"
+          done
+          exit 1
 
       - name: Prepare read-only planning prompt
         id: prepare
@@ -245,7 +253,15 @@ jobs:
           echo "sha=${actual_sha}" >>"$GITHUB_OUTPUT"
 
       - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
+        run: |
+          for attempt in 1 2 3; do
+            if ./.github/scripts/codex-runner-preflight.sh; then
+              exit 0
+            fi
+            echo "::warning::Runner toolchain preflight attempt ${attempt}/3 failed; retrying after a short backoff."
+            sleep "$((attempt * 5))"
+          done
+          exit 1
 
       - name: Materialise validated Codex plan
         env:
@@ -450,7 +466,15 @@ jobs:
           persist-credentials: false
 
       - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
+        run: |
+          for attempt in 1 2 3; do
+            if ./.github/scripts/codex-runner-preflight.sh; then
+              exit 0
+            fi
+            echo "::warning::Runner toolchain preflight attempt ${attempt}/3 failed; retrying after a short backoff."
+            sleep "$((attempt * 5))"
+          done
+          exit 1
 
       - name: Download Codex output to repair
         uses: actions/download-artifact@v8
@@ -670,7 +694,15 @@ jobs:
           persist-credentials: false
 
       - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
+        run: |
+          for attempt in 1 2 3; do
+            if ./.github/scripts/codex-runner-preflight.sh; then
+              exit 0
+            fi
+            echo "::warning::Runner toolchain preflight attempt ${attempt}/3 failed; retrying after a short backoff."
+            sleep "$((attempt * 5))"
+          done
+          exit 1
 
       - name: Download Codex output to repair
         uses: actions/download-artifact@v8
@@ -890,7 +922,15 @@ jobs:
           persist-credentials: false
 
       - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
+        run: |
+          for attempt in 1 2 3; do
+            if ./.github/scripts/codex-runner-preflight.sh; then
+              exit 0
+            fi
+            echo "::warning::Runner toolchain preflight attempt ${attempt}/3 failed; retrying after a short backoff."
+            sleep "$((attempt * 5))"
+          done
+          exit 1
 
       - name: Download Codex output to repair
         uses: actions/download-artifact@v8
@@ -1279,7 +1319,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api-2' }}
       PR_NUMBER: ${{ needs.publish-pr.outputs.pr_number }}
       PUBLISHED_COMMIT_SHA: ${{ needs.publish-pr.outputs.commit_sha }}
       REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
@@ -1290,7 +1330,7 @@ jobs:
       - name: Checkout trusted status scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Check external PR status and Sonar quality gate
         id: verify
@@ -1304,7 +1344,7 @@ jobs:
             exit 0
           fi
           set +e
-          {
+          (
             ./.github/scripts/codex-wait-pr-status.sh
             status=$?
             if [[ "$status" -eq 0 ]]; then
@@ -1312,7 +1352,7 @@ jobs:
               status=$?
             fi
             exit "$status"
-          } >"$RUNNER_TEMP/codex-pr-status.log" 2>&1
+          ) >"$RUNNER_TEMP/codex-pr-status.log" 2>&1
           status=$?
           cat "$RUNNER_TEMP/codex-pr-status.log"
           echo "failure_artifact=$STATUS_FAILURE_ARTIFACT" >>"$GITHUB_OUTPUT"
@@ -1369,7 +1409,15 @@ jobs:
           persist-credentials: false
 
       - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
+        run: |
+          for attempt in 1 2 3; do
+            if ./.github/scripts/codex-runner-preflight.sh; then
+              exit 0
+            fi
+            echo "::warning::Runner toolchain preflight attempt ${attempt}/3 failed; retrying after a short backoff."
+            sleep "$((attempt * 5))"
+          done
+          exit 1
 
       - name: Download Codex output to repair
         uses: actions/download-artifact@v8
@@ -1717,7 +1765,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SONAR_TOKEN: ${{ secrets.CODEX_SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'uk.gov.hmcts.appreg:appreg-api-2' }}
       PR_NUMBER: ${{ needs.publish-published-pr-repair-1.outputs.pr_number }}
       PUBLISHED_COMMIT_SHA: ${{ needs.publish-published-pr-repair-1.outputs.commit_sha }}
       REQUIRED_STATUS_CONTEXT: ${{ vars.CODEX_REQUIRED_STATUS_CONTEXT || 'continuous-integration/jenkins/pr-head' }}
@@ -1727,7 +1775,7 @@ jobs:
       - name: Checkout trusted status scripts
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.codex-generate.outputs.trusted_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Check repaired external PR status and Sonar quality gate
         id: verify
