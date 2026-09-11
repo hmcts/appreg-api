@@ -139,6 +139,11 @@ PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-code
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-plan-handoff.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-verify-publisher.py
 
+log "Validating Codex workflow trust boundaries"
+ruby .github/scripts/check-codex-workflow-trust.rb
+python3 .github/scripts/test-codex-workflow-trust.py
+python3 .github/scripts/test-audit-codex-trust-settings.py
+
 log "Validating workflow YAML syntax"
 if command -v ruby >/dev/null 2>&1; then
   ruby - <<'RUBY'

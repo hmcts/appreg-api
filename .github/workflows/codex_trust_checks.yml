@@ -1,0 +1,27 @@
+name: Codex Trust Checks
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  trust-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check workflow trust contracts
+        run: ruby .github/scripts/check-codex-workflow-trust.rb
+      - name: Test workflow mutations
+        run: python3 .github/scripts/test-codex-workflow-trust.py
+      - name: Test settings audit
+        run: python3 .github/scripts/test-audit-codex-trust-settings.py
+      - name: Check patch whitespace
+        run: git show --format= --check HEAD

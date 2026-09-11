@@ -1,10 +1,6 @@
 name: Codex PR Review Feedback
 
 on:
-  pull_request_review:
-    types: [submitted]
-  pull_request_review_comment:
-    types: [created]
   issue_comment:
     types: [created]
 
@@ -15,6 +11,9 @@ permissions:
 
 jobs:
   detect-codex-pr:
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      github.workflow_ref == format('{0}/.github/workflows/codex_pr_review_feedback.yml@refs/heads/{1}', github.repository, github.event.repository.default_branch)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,7 +37,6 @@ jobs:
           body=""
           actor_login=""
           actor_permission=""
-          review_state=""
 
           write_skip() {
             local reason="$1"
@@ -51,19 +49,6 @@ jobs:
           }
 
           case "$GITHUB_EVENT_NAME" in
-            pull_request_review|pull_request_review_comment)
-              pr_number="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
-              head_ref="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
-              head_repo="$(jq -r '.pull_request.head.repo.full_name' "$GITHUB_EVENT_PATH")"
-              if [[ "$GITHUB_EVENT_NAME" == "pull_request_review" ]]; then
-                body="$(jq -r '.review.body // ""' "$GITHUB_EVENT_PATH")"
-                actor_login="$(jq -r '.review.user.login // ""' "$GITHUB_EVENT_PATH")"
-                review_state="$(jq -r '.review.state // ""' "$GITHUB_EVENT_PATH")"
-              else
-                body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
-                actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
-              fi
-              ;;
             issue_comment)
               is_pr="$(jq -r '.issue | has("pull_request")' "$GITHUB_EVENT_PATH")"
               if [[ "$is_pr" != "true" ]]; then
@@ -90,11 +75,6 @@ jobs:
 
           if [[ "$head_repo" != "$GITHUB_REPOSITORY" ]]; then
             write_skip "PR head repo ${head_repo} is not ${GITHUB_REPOSITORY}"
-            exit 0
-          fi
-
-          if [[ "$review_state" == "approved" ]]; then
-            write_skip "review was approved"
             exit 0
           fi
 
@@ -136,9 +116,12 @@ jobs:
           } >>"$GITHUB_OUTPUT"
 
   codex-review-generate-action:
+    environment: codex-model
     needs: detect-codex-pr
     if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
-    runs-on: codex-pilot-azure-aks
+    runs-on:
+      group: appreg-codex
+      labels: codex-pilot-azure-aks
     permissions:
       contents: read
       pull-requests: read
@@ -252,6 +235,7 @@ jobs:
           retention-days: 1
 
   codex-review-publish:
+    environment: codex-publisher
     needs: [detect-codex-pr, codex-review-generate-action, codex-review-generate, codex-review-verify]
     if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
     runs-on: ubuntu-latest
@@ -338,6 +322,7 @@ jobs:
           } >>"$GITHUB_STEP_SUMMARY"
 
   verify-review-status:
+    environment: codex-status
     needs: [codex-review-generate, codex-review-publish]
     if: always() && needs.codex-review-publish.outputs.commit_sha != ''
     runs-on: ubuntu-latest
@@ -465,6 +450,7 @@ jobs:
           retention-days: 1
 
   codex-review-external-repair-action:
+    environment: codex-model
     needs:
       [
         codex-review-generate-action,
@@ -474,7 +460,9 @@ jobs:
         prepare-published-review-repair-source,
       ]
     if: always() && needs.verify-review-status.outputs.passed == 'false'
-    runs-on: codex-pilot-azure-aks
+    runs-on:
+      group: appreg-codex
+      labels: codex-pilot-azure-aks
     timeout-minutes: 120
     permissions:
       contents: read
@@ -694,6 +682,7 @@ jobs:
           retention-days: 1
 
   codex-review-external-republish:
+    environment: codex-publisher
     needs:
       [
         codex-review-generate-action,
@@ -774,6 +763,7 @@ jobs:
         run: "$RUNNER_TEMP/codex-pr-review-publish.sh"
 
   verify-review-status-repair:
+    environment: codex-status
     needs: [codex-review-generate, codex-review-external-republish]
     if: always() && needs.codex-review-external-republish.outputs.commit_sha != ''
     runs-on: ubuntu-latest
