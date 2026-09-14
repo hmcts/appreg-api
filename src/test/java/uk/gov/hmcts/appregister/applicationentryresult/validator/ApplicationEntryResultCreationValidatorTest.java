@@ -98,7 +98,9 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_success() {
-        validator.validate(payload);
+        var success = validator.validate(payload, (request, result) -> result);
+
+        Assertions.assertSame(list, success.getApplicationList());
     }
 
     @Test

@@ -1803,6 +1803,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(existingStatus1, existingStatus2));
 
         final BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
+        verify(applicationListVersionService).incrementVersion(applicationList);
 
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
@@ -2276,6 +2277,7 @@ class ApplicationEntryServiceImplTest {
 
         service.replaceOfficials(listId, dto);
 
+        verify(applicationListVersionService).incrementVersion(applicationList);
         verify(auditOperationService)
                 .processAudit(any(), eq(AppListEntryAuditOperation.BULK_UPDATE_OFFICIALS), any());
         verify(auditOperationService, never())
@@ -2497,9 +2499,10 @@ class ApplicationEntryServiceImplTest {
         applicationListEntry.setVersion(232L);
 
         // dummy the success of the validator
+        var applicationList = new ApplicationList();
         updateClosedEntriesValidator.setSuccess(
                 new UpdateApplicationEntryClosedValidationSuccess(
-                        new ApplicationList(), applicationListEntry));
+                        applicationList, applicationListEntry));
 
         ArgumentCaptor<ApplicationListEntry> captorEntry =
                 ArgumentCaptor.forClass(ApplicationListEntry.class);
@@ -2512,6 +2515,7 @@ class ApplicationEntryServiceImplTest {
         service.updateClosedEntry(payload);
 
         // now verify what has happened
+        verify(applicationListVersionService).incrementVersion(applicationList);
         verify(applicationListEntryRepository).save(captorEntry.capture());
         Assertions.assertEquals(
                 note + " " + entryUpdateClosedDto.getAdditionalNotes(),
@@ -2637,6 +2641,8 @@ class ApplicationEntryServiceImplTest {
     @Test
     void deleteEntrySuccess() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+        var applicationList = new ApplicationList();
+        applicationListEntry.setApplicationList(applicationList);
 
         // set the success payload that the validator has validated.
         deleteEntryValidator.success = new DeleteEntryValidationSuccess(applicationListEntry);
@@ -2648,6 +2654,7 @@ class ApplicationEntryServiceImplTest {
 
         // ensure that we called save and that we set the soft deleted state to true
         Assertions.assertTrue(applicationListEntry.isDeleted());
+        verify(applicationListVersionService).incrementVersion(applicationList);
         verify(applicationListEntryRepository).save(applicationListEntry);
     }
 
@@ -3388,6 +3395,7 @@ class ApplicationEntryServiceImplTest {
         MatchResponse<EntryGetDetailDto> response = service.updateEntry(payload);
 
         Assertions.assertNotNull(response);
+        verify(applicationListVersionService).incrementVersion(applicationList);
         List<Keyable> expectedEtagEntities = new ArrayList<>();
         expectedEtagEntities.add(applicationListEntry);
         expectedEtagEntities.add(existingFeeStatus);

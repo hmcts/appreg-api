@@ -57,6 +57,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
     private static final String CLIENT_FAILURE_MESSAGE =
             "Bulk upload processing failed. Contact support quoting job reference %s.";
+    private static final String APPLICATION_LIST_CHANGED_MESSAGE =
+            "The application list was changed, closed or deleted while the bulk upload was processing. "
+                    + "No entries were uploaded.";
     private static final int FIRST_DATA_ROW_NUMBER = 2;
     private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
     private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
@@ -457,7 +460,14 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
                     "Processing pass did not contain every validated CSV row");
         }
 
-        bulkImportService.completeProcessing(listId, processingApplicationListVersion);
+        try {
+            bulkImportService.completeProcessing(listId, processingApplicationListVersion);
+        } catch (AppRegistryException exception) {
+            if (exception.getCode() == AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT) {
+                event.getContext().logFailure(APPLICATION_LIST_CHANGED_MESSAGE);
+            }
+            throw exception;
+        }
         bulkImportService.completed(
                 listId, event.getResponse().getJobId().getId(), importedEntryCount);
         log.info(

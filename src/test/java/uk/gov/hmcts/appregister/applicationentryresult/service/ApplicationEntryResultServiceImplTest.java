@@ -322,6 +322,11 @@ class ApplicationEntryResultServiceImplTest {
 
         service.bulkDelete(request);
 
+        verify(applicationListVersionService)
+                .incrementVersions(
+                        List.of(
+                                firstResult.getApplicationList().getApplicationList(),
+                                secondResult.getApplicationList().getApplicationList()));
         verify(appListEntryResolutionRepository)
                 .deleteAllInBatch(List.of(firstResult, secondResult));
         verify(entityManager).flush();
@@ -496,6 +501,7 @@ class ApplicationEntryResultServiceImplTest {
                                 .build());
 
         Assertions.assertEquals(List.of(resultGetDto), createdResults);
+        verify(applicationListVersionService).incrementVersions(List.of(applicationList));
         verify(appListEntryResolutionRepository).saveAll(List.of(entryToSave));
         verify(appListEntryResolutionRepository, never()).findAllById(any());
         verify(entityManager).flush();
@@ -723,6 +729,7 @@ class ApplicationEntryResultServiceImplTest {
         Assertions.assertNotNull(response);
         Assertions.assertNotNull(response.getEtag());
         Assertions.assertEquals(dto, response.getPayload());
+        verify(applicationListVersionService).incrementVersion(applicationList);
 
         verify(applicationListEntryResultEntityMapper)
                 .toApplicationListEntryResult(

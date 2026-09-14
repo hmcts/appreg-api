@@ -900,6 +900,25 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
+    void givenApplicationListChanged_whenCompleting_thenRecordsSpecificFailure() {
+        var context = new JobContext();
+        var event = event(List.of(), context);
+        doThrow(
+                        new AppRegistryException(
+                                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                                "The application list changed"))
+                .when(bulkImportService)
+                .completeProcessing(listId, null);
+
+        assertThrows(AppRegistryException.class, () -> lifecycle.completed(event));
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        "The application list was changed, closed or deleted while the bulk upload was processing. "
+                                + "No entries were uploaded.");
+    }
+
+    @Test
     void givenMultipleProcessingPages_thenPreservesCsvRowNumbers() throws IOException {
         UUID jobId = UUID.randomUUID();
         var response =
