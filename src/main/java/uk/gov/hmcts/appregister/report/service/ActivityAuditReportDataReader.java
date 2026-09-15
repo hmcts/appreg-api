@@ -46,6 +46,11 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                     OR COALESCE(NULLIF(da.user_name, ''), da.user_id) = :username
                 )
                 AND POSITION('_ID' IN UPPER(da.column_name)) = 0
+                -- data_id is a deterministic tie-breaker so keyset paging cannot skip or duplicate rows.
+                AND (
+                    :hasCursor IS FALSE
+                    OR (da.created_date, da.data_id) > (:lastCreatedDateTime, :lastDataId)
+                )
             )
             SELECT
                 activity_order,
@@ -60,15 +65,6 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                 user_name
             FROM filtered_audit
             -- Maintains legacy MIS Activity Audit report ordering by CREATED_DATE.
-            -- data_id is a deterministic tie-breaker so keyset paging cannot skip or duplicate rows.
-            WHERE (
-                :hasCursor IS FALSE
-                OR created_date_time > :lastCreatedDateTime
-                OR (
-                    created_date_time = :lastCreatedDateTime
-                    AND data_id > :lastDataId
-                )
-            )
             ORDER BY
                 created_date_time,
                 data_id

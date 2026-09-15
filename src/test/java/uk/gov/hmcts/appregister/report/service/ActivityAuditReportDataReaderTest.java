@@ -191,7 +191,11 @@ class ActivityAuditReportDataReaderTest {
         assertThat(query).contains("ORDER BY");
         Assertions.assertEquals(-1, query.indexOf(":lastActivityOrder"));
         Assertions.assertEquals(-1, query.indexOf("ORDER BY\n                activity_order"));
-        assertThat(query.replaceAll("\\s+", " ")).contains("ORDER BY created_date_time, data_id");
+        assertThat(query.replaceAll("\\s+", " "))
+                .contains(
+                        "OR (da.created_date, da.data_id) > "
+                                + "(:lastCreatedDateTime, :lastDataId)")
+                .contains("ORDER BY created_date_time, data_id");
         assertThat(query).contains("LIMIT :limit");
     }
 
