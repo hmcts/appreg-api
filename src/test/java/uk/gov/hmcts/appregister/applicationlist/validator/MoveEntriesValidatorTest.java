@@ -64,6 +64,7 @@ class MoveEntriesValidatorTest {
                 validator.validate(payload(sourceListId, dto), (d, s) -> s);
 
         Assertions.assertNotNull(success);
+        Assertions.assertEquals(source, success.getSourceList());
         Assertions.assertEquals(target, success.getTargetList());
     }
 

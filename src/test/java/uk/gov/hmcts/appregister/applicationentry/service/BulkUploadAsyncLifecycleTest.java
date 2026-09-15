@@ -79,6 +79,7 @@ class BulkUploadAsyncLifecycleTest {
         bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
         validationSession = mock(BulkCreateApplicationEntryValidator.Session.class);
         applicationList = new ApplicationList();
+        applicationList.setVersion(3L);
         listId = UUID.randomUUID();
         csvFile = mock(MultipartFile.class);
         when(csvFile.getBytes())
@@ -89,6 +90,7 @@ class BulkUploadAsyncLifecycleTest {
 
         when(bulkCreateApplicationEntryValidator.createSession(applicationList))
                 .thenReturn(validationSession);
+        when(bulkImportService.beginProcessing(listId)).thenReturn(applicationList);
         doAnswer(
                         invocation -> {
                             PayloadForCreate<EntryCreateDto> validatable =
@@ -886,6 +888,7 @@ class BulkUploadAsyncLifecycleTest {
                 .hasSize(2)
                 .extracting(ValidatedBulkImportEntry::rowNumber)
                 .containsExactly(2, 3);
+        verify(bulkImportService).completeProcessing(listId, 3L);
         verify(bulkImportService).completed(listId, jobId, 2);
         assertThat(output)
                 .contains(
@@ -894,6 +897,25 @@ class BulkUploadAsyncLifecycleTest {
                                 + " jobId="
                                 + jobId
                                 + " importedEntryCount=2 durationMs=");
+    }
+
+    @Test
+    void givenApplicationListChanged_whenCompleting_thenRecordsSpecificFailure() {
+        var context = new JobContext();
+        var event = event(List.of(), context);
+        doThrow(
+                        new AppRegistryException(
+                                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                                "The application list changed"))
+                .when(bulkImportService)
+                .completeProcessing(listId, null);
+
+        assertThrows(AppRegistryException.class, () -> lifecycle.completed(event));
+
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        "The application list was changed, closed or deleted while the bulk upload was processing. "
+                                + "No entries were uploaded.");
     }
 
     @Test
@@ -922,6 +944,7 @@ class BulkUploadAsyncLifecycleTest {
 
         var pageCaptor = ArgumentCaptor.<List<ValidatedBulkImportEntry>>captor();
         verify(bulkImportService, times(2)).persistPage(eq(jobId), pageCaptor.capture());
+        verify(bulkImportService).beginProcessing(listId);
         assertThat(pageCaptor.getAllValues())
                 .flatExtracting(entries -> entries)
                 .extracting(ValidatedBulkImportEntry::rowNumber)

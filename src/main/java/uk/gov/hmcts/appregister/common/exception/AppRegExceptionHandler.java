@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -22,6 +23,7 @@ import org.apache.tomcat.util.http.InvalidParameterException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -73,6 +75,14 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         logAppRegistryException(httpStatus, problemDetail, exception);
 
         return new ResponseEntity<>(problemDetail, httpStatus);
+    }
+
+    @ExceptionHandler({OptimisticLockingFailureException.class, OptimisticLockException.class})
+    ResponseEntity<ProblemDetail> handleOptimisticLockException(Exception exception) {
+        var error = CommonAppError.CONCURRENT_MODIFICATION;
+        var problemDetail = getDetailFromEnum(error, exception);
+        logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
+        return new ResponseEntity<>(problemDetail, error.getCode().getHttpCode());
     }
 
     /**

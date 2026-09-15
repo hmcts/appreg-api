@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
@@ -16,6 +16,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -32,11 +34,13 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
@@ -82,6 +86,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
 
         UUID listId = createNewApplicationList(token);
+        final var initialList = applicationListRepository.findByUuid(listId).orElseThrow();
         Assertions.assertEquals(0, countEntriesForList(listId));
 
         Response response =
@@ -105,6 +110,9 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                 JobStatus.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
+        var importedList = applicationListRepository.findByUuid(listId).orElseThrow();
+        Assertions.assertEquals(initialList.getVersion() + 1, importedList.getVersion());
+        Assertions.assertEquals(initialList.getChangedDate(), importedList.getChangedDate());
         Assertions.assertEquals(expectedApiEntries(), apiEntriesForList(listId, token));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
         Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));
@@ -232,13 +240,21 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
-    void givenInternalProcessingFailure_whenJobStatusIsPolled_thenReturnsSafeJobReference()
+    void givenUploadReadyToComplete_whenApplicationListCloses_thenUploadFailsAndRollsBack()
             throws Exception {
-        var internalError =
-                "ERROR: relation appreg.application_list does not exist [select * from secret]";
-        doThrow(new IllegalStateException(internalError))
-                .when(bulkImportService)
-                .persistPage(any(), any());
+        var completionReached = new CountDownLatch(1);
+        var releaseCompletion = new CountDownLatch(1);
+        unitOfWork.inTransaction(
+                () ->
+                        doAnswer(
+                                        invocation -> {
+                                            completionReached.countDown();
+                                            assertThat(releaseCompletion.await(5, TimeUnit.SECONDS))
+                                                    .isTrue();
+                                            return invocation.callRealMethod();
+                                        })
+                                .when(bulkImportService)
+                                .completeProcessing(any(), any()));
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
         UUID listId = createNewApplicationList(token);
@@ -253,6 +269,20 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
 
         response.then().statusCode(202);
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
+        assertThat(completionReached.await(5, TimeUnit.SECONDS)).isTrue();
+
+        try {
+            restAssuredClient
+                    .executePutRequest(
+                            getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId),
+                            token,
+                            closeApplicationListRequest())
+                    .then()
+                    .statusCode(200);
+        } finally {
+            releaseCompletion.countDown();
+        }
+
         JobAcknowledgement failedJob =
                 AwaitilityUtil.waitForJobToReachTerminalStatus(
                         restAssuredClient,
@@ -262,12 +292,11 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         assertThat(failedJob.getStatus()).isEqualTo(JobStatus.FAILED);
         assertThat(failedJob.getErrorDescription())
                 .isEqualTo(
-                        "Bulk upload processing failed. Contact support quoting job reference "
-                                + acknowledgement.getId()
-                                + ".")
-                .doesNotContain(
-                        "ERROR", "relation", "appreg", "application_list", "select", "secret");
+                        "The application list was changed, closed or deleted while the bulk upload was processing. "
+                                + "No entries were uploaded.");
         assertThat(countEntriesForList(listId)).isZero();
+        assertThat(applicationListRepository.findByUuid(listId).orElseThrow().getStatus())
+                .isEqualTo(Status.CLOSED);
     }
 
     @Test
@@ -775,6 +804,17 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         response.then().statusCode(201);
 
         return response.as(ApplicationListGetDetailDto.class).getId();
+    }
+
+    private ApplicationListUpdateDto closeApplicationListRequest() {
+        return new ApplicationListUpdateDto()
+                .date(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1))
+                .time(LocalTime.of(10, 0))
+                .description("Bulk upload test list closed")
+                .status(ApplicationListStatus.CLOSED)
+                .courtLocationCode(VALID_COURT_CODE)
+                .durationHours(1)
+                .durationMinutes(0);
     }
 
     private FailedBulkUpload submitBulkUploadExpectingFailure(String header, String... rows)
