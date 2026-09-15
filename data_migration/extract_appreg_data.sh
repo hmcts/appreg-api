@@ -40,6 +40,8 @@
 #						| with \p as per ARCPOC-1696
 # 13.0		21/08/2026	Matthew Harman	Findings from ARCPOC-1684
 #						make 00A6 \\p
+# 14.0		10/09/2026	Matthew Harman	Fix ARCPOC-1804, change the
+#						import schema to LOGGED tables
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -944,7 +946,7 @@ echo "sql2: $sql_script"
 		counter=0;
 
 		# Do the create table line
-		echo "CREATE UNLOGGED TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_temp (">>${postgres_schema_file};
+		echo "CREATE TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_temp (">>${postgres_schema_file};
 
 		# Loop through the fields
 		for field_info in $table_fields
@@ -1494,7 +1496,7 @@ echo "sql2: $sql_script"
 		counter=0;
 
 		# Do the create table line
-		echo "CREATE UNLOGGED TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_temp (">>${postgres_schema_file};
+		echo "CREATE TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_temp (">>${postgres_schema_file};
 
 		sql1_script="";
 		sql2_script="";
@@ -2311,7 +2313,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 				# Create the schema for the deletes
 				echo "DROP TABLE IF EXISTS ${postgres_schema}.${lower_table_name}_delete_temp;">>${postgres_delete_schema_file}
 				echo "">>${postgres_delete_schema_file}
-				echo "CREATE UNLOGGED TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_delete_temp (row_text TEXT);">>${postgres_delete_schema_file}
+				echo "CREATE TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_delete_temp (row_text TEXT);">>${postgres_delete_schema_file}
 				echo "">>${postgres_delete_schema_file}
 
 				# Write the commands to delete the data from 
@@ -2328,7 +2330,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 				# Create the schema for the deletes
 				echo "DROP TABLE IF EXISTS ${postgres_schema}.${lower_table_name}_delete_temp;">>${postgres_delete_schema_file}
 				echo "">>${postgres_delete_schema_file}
-				echo "CREATE UNLOGGED TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_delete_temp (${primary_key} NUMERIC);">>${postgres_delete_schema_file}
+				echo "CREATE TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_delete_temp (${primary_key} NUMERIC);">>${postgres_delete_schema_file}
 				echo "">>${postgres_delete_schema_file}
 	
 				# Write the commands to delete the data from the main

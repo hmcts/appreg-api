@@ -33,7 +33,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.10.0'
+  id 'com.diffplug.spotless' version '8.10.2'
   id 'org.openrewrite.rewrite' version '7.39.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
@@ -55,7 +55,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.30.0'
+    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.31.1'
   }
 }
 
@@ -444,7 +444,7 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.54'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.2'
 
@@ -470,14 +470,14 @@ dependencies {
   implementation 'com.opencsv:opencsv:5.12.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.5.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.5.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.8.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.8.Final'
 
   // Lombok
   compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
-  compileOnly 'org.projectlombok:lombok:1.18.46'
+  compileOnly 'org.projectlombok:lombok:1.18.48'
   compileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
-  annotationProcessor 'org.projectlombok:lombok:1.18.46'
+  annotationProcessor 'org.projectlombok:lombok:1.18.48'
 
   // Database
   runtimeOnly 'org.postgresql:postgresql:42.7.13'
@@ -490,10 +490,10 @@ dependencies {
   testImplementation 'io.rest-assured:rest-assured:6.0.1'
 
   testImplementation 'com.squareup.okhttp3:mockwebserver:5.5.0'
-  testImplementation 'io.github.hakky54:logcaptor:2.12.6'
+  testImplementation 'io.github.hakky54:logcaptor:2.12.7'
   testImplementation 'org.testcontainers:testcontainers:2.0.5'
   testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.5'
-  testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.2'
+  testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.3'
   testImplementation 'org.instancio:instancio-junit:5.6.0'
 
   testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.0'

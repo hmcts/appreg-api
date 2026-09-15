@@ -88,6 +88,7 @@ import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
@@ -243,6 +244,8 @@ class ApplicationEntryServiceImplTest {
     // Services
     @Spy private MatchService matchService = new MatchServiceImpl(nullMatchProvider);
 
+    @Mock private ApplicationListVersionService applicationListVersionService;
+
     // Audit
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -367,6 +370,7 @@ class ApplicationEntryServiceImplTest {
                         bulkUpdateOfficialsValidator,
                         bulkUpdateFeesValidator,
                         matchService,
+                        applicationListVersionService,
                         auditOperationService,
                         appListEntryFeeStatusRepository,
                         nameAddressRepository,
@@ -407,6 +411,7 @@ class ApplicationEntryServiceImplTest {
                         bulkUpdateOfficialsValidator,
                         bulkUpdateFeesValidator,
                         matchService,
+                        applicationListVersionService,
                         auditOperationService,
                         appListEntryFeeStatusRepository,
                         nameAddressRepository,
@@ -798,6 +803,7 @@ class ApplicationEntryServiceImplTest {
         // run the test
         var response = service.createEntry(payload);
 
+        verify(applicationListVersionService).incrementVersion(appList);
         ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
         verify(appListEntryFeeRepository, times(2)).save(captor.capture());
 
@@ -1566,6 +1572,7 @@ class ApplicationEntryServiceImplTest {
         dto.setEntryIds(Set.of(entryId1, entryId2));
 
         val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setSourceList(sourceList);
         validationSuccess.setTargetList(targetList);
         moveEntriesValidator.setSuccess(validationSuccess);
 
@@ -1585,6 +1592,7 @@ class ApplicationEntryServiceImplTest {
 
         final var entriesNotMoved = service.move(sourceListId, dto);
 
+        verify(applicationListVersionService).incrementVersions(List.of(sourceList, targetList));
         verify(applicationListEntryRepository).findByUuidsInSourceList(eq(sourceListId), anySet());
         verify(applicationListEntryRepository)
                 .saveAll(
@@ -1660,6 +1668,7 @@ class ApplicationEntryServiceImplTest {
                         .targetListId(targetList.getUuid())
                         .entryIds(Set.of(movableId, skippedId));
         val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setSourceList(sourceList);
         validationSuccess.setTargetList(targetList);
         moveEntriesValidator.setSuccess(validationSuccess);
 
@@ -1706,6 +1715,7 @@ class ApplicationEntryServiceImplTest {
         final var dto =
                 new MoveEntriesDto().targetListId(targetList.getUuid()).entryIds(Set.of(skippedId));
         val validationSuccess = new MoveEntriesValidationSuccess();
+        validationSuccess.setSourceList(sourceList);
         validationSuccess.setTargetList(targetList);
         moveEntriesValidator.setSuccess(validationSuccess);
         when(applicationListEntryRepository.findByUuidsInSourceList(eq(sourceListId), anySet()))
@@ -1717,6 +1727,7 @@ class ApplicationEntryServiceImplTest {
         Assertions.assertSame(sourceList, skippedEntry.getApplicationList());
         verify(appListEntrySequenceMappingRepository, never()).findByAlIdForUpdate(anyLong());
         verify(applicationListEntryRepository, never()).saveAll(anyList());
+        verify(applicationListVersionService, never()).incrementVersions(anyList());
     }
 
     @Test
@@ -1792,6 +1803,7 @@ class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of(existingStatus1, existingStatus2));
 
         final BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
+        verify(applicationListVersionService).incrementVersion(applicationList);
 
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus1);
         verify(appListEntryFeeStatusRepository, never()).delete(existingStatus2);
@@ -2265,6 +2277,7 @@ class ApplicationEntryServiceImplTest {
 
         service.replaceOfficials(listId, dto);
 
+        verify(applicationListVersionService).incrementVersion(applicationList);
         verify(auditOperationService)
                 .processAudit(any(), eq(AppListEntryAuditOperation.BULK_UPDATE_OFFICIALS), any());
         verify(auditOperationService, never())
@@ -2486,9 +2499,10 @@ class ApplicationEntryServiceImplTest {
         applicationListEntry.setVersion(232L);
 
         // dummy the success of the validator
+        var applicationList = new ApplicationList();
         updateClosedEntriesValidator.setSuccess(
                 new UpdateApplicationEntryClosedValidationSuccess(
-                        new ApplicationList(), applicationListEntry));
+                        applicationList, applicationListEntry));
 
         ArgumentCaptor<ApplicationListEntry> captorEntry =
                 ArgumentCaptor.forClass(ApplicationListEntry.class);
@@ -2501,6 +2515,7 @@ class ApplicationEntryServiceImplTest {
         service.updateClosedEntry(payload);
 
         // now verify what has happened
+        verify(applicationListVersionService).incrementVersion(applicationList);
         verify(applicationListEntryRepository).save(captorEntry.capture());
         Assertions.assertEquals(
                 note + " " + entryUpdateClosedDto.getAdditionalNotes(),
@@ -2626,6 +2641,8 @@ class ApplicationEntryServiceImplTest {
     @Test
     void deleteEntrySuccess() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+        var applicationList = new ApplicationList();
+        applicationListEntry.setApplicationList(applicationList);
 
         // set the success payload that the validator has validated.
         deleteEntryValidator.success = new DeleteEntryValidationSuccess(applicationListEntry);
@@ -2637,6 +2654,7 @@ class ApplicationEntryServiceImplTest {
 
         // ensure that we called save and that we set the soft deleted state to true
         Assertions.assertTrue(applicationListEntry.isDeleted());
+        verify(applicationListVersionService).incrementVersion(applicationList);
         verify(applicationListEntryRepository).save(applicationListEntry);
     }
 
@@ -3377,6 +3395,7 @@ class ApplicationEntryServiceImplTest {
         MatchResponse<EntryGetDetailDto> response = service.updateEntry(payload);
 
         Assertions.assertNotNull(response);
+        verify(applicationListVersionService).incrementVersion(applicationList);
         List<Keyable> expectedEtagEntities = new ArrayList<>();
         expectedEtagEntities.add(applicationListEntry);
         expectedEtagEntities.add(existingFeeStatus);

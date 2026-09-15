@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,6 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +36,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.BulkImportWriteAuditMode;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -48,8 +52,12 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRe
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
@@ -69,6 +77,7 @@ class BulkImportServiceTest {
     @Mock private AppListEntryOfficialRepository officialRepository;
     @Mock private AppListEntryFeeRepository entryFeeRepository;
     @Mock private AsyncJobAppListEntryRepository asyncJobEntryRepository;
+    @Mock private ApplicationListRepository applicationListRepository;
     @Mock private AuditOperationService auditService;
     @Mock private BusinessDateProvider businessDateProvider;
     @Mock private EntityManager entityManager;
@@ -95,6 +104,7 @@ class BulkImportServiceTest {
                         officialRepository,
                         entryFeeRepository,
                         asyncJobEntryRepository,
+                        applicationListRepository,
                         auditService,
                         businessDateProvider,
                         Clock.fixed(Instant.parse("2026-07-14T10:00:00Z"), ZoneOffset.UTC),
@@ -120,6 +130,56 @@ class BulkImportServiceTest {
                             Collection<Long> ids = invocation.getArgument(0);
                             return ids.stream().map(this::generatedUuid).toList();
                         });
+    }
+
+    @Test
+    void givenOpenCurrentList_whenBeginningProcessing_thenCaptureCurrentList() {
+        var listId = UUID.randomUUID();
+        applicationList.setStatus(Status.OPEN);
+        applicationList.setDeleted(false);
+        when(applicationListRepository.findByUuidIncludingDelete(listId))
+                .thenReturn(Optional.of(applicationList));
+
+        assertThat(service.beginProcessing(listId)).isSameAs(applicationList);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"CLOSED, false", "OPEN, true"})
+    void givenUnavailableCurrentList_whenBeginningProcessing_thenReject(
+            Status status, boolean deleted) {
+        var listId = UUID.randomUUID();
+        applicationList.setStatus(status);
+        applicationList.setDeleted(deleted);
+        when(applicationListRepository.findByUuidIncludingDelete(listId))
+                .thenReturn(Optional.of(applicationList));
+
+        assertThatThrownBy(() -> service.beginProcessing(listId))
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(exception -> ((AppRegistryException) exception).getCode())
+                .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
+    }
+
+    @Test
+    void givenMatchingListVersion_whenCompletingProcessing_thenIncrementVersion() {
+        var listId = UUID.randomUUID();
+        when(applicationListRepository.incrementVersionIfStateMatches(
+                        listId, 3L, Status.OPEN, YesOrNo.NO))
+                .thenReturn(1);
+
+        service.completeProcessing(listId, 3L);
+
+        verify(applicationListRepository)
+                .incrementVersionIfStateMatches(listId, 3L, Status.OPEN, YesOrNo.NO);
+    }
+
+    @Test
+    void givenListChanged_whenCompletingProcessing_thenReject() {
+        var listId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> service.completeProcessing(listId, 3L))
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(exception -> ((AppRegistryException) exception).getCode())
+                .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
     }
 
     @Test

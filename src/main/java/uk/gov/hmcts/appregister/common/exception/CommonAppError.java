@@ -49,7 +49,12 @@ public enum CommonAppError implements ErrorCodeEnum {
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Parameter required", "COMMON-14")),
     MULTIPLE_SORT_NOT_SUPPORTED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Multiple sort is not required", "COMMON-16"));
+                    HttpStatus.BAD_REQUEST, "Multiple sort is not required", "COMMON-16")),
+    CONCURRENT_MODIFICATION(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The resource was changed by another request",
+                    "COMMON-18"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
