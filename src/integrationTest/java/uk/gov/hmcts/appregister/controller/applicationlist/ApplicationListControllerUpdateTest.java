@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -658,7 +659,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
 
         assertThat(dto.getId()).isNotNull();
-        assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
+        assertThat(dto.getVersion()).isEqualTo(3L); // two entry creates and the list update
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
@@ -726,7 +727,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPICATION_LIST, "version", "0", "1", operation, eventName));
+                        TableNames.APPICATION_LIST, "version", "2", "3", operation, eventName));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
@@ -878,16 +879,13 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         .courtLocationCode(VALID_COURT_CODE2)
                         .durationHours(4)
                         .durationMinutes(32);
+        UUID listId = getFirstOpenListToUpdate();
+        Long initialVersion =
+                applicationListRepository.findByUuid(listId).orElseThrow().getVersion();
 
         Response resp =
                 restAssuredClient.executePutRequest(
-                        URI.create(
-                                        getLocalUrl(WEB_CONTEXT)
-                                                + "/"
-                                                + getFirstOpenListToUpdate().toString())
-                                .toURL(),
-                        token,
-                        req);
+                        URI.create(getLocalUrl(WEB_CONTEXT) + "/" + listId).toURL(), token, req);
 
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
@@ -897,7 +895,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         assertThat(dto.getId()).isNotNull();
-        assertThat(dto.getVersion()).isEqualTo(2L); // per seed: Version = 0
+        assertThat(dto.getVersion()).isEqualTo(initialVersion + 1);
         assertThat(dto.getDate()).isEqualTo(LocalDate.parse("2025-10-19"));
         assertThat(dto.getTime()).isEqualTo("11:30"); // mapper emits "HH:mm" when seconds = 0
         assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
@@ -953,7 +951,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
 
         assertThat(dto.getId()).isNotNull();
-        assertThat(dto.getVersion()).isEqualTo(1L);
+        assertThat(dto.getVersion()).isEqualTo(3L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
@@ -1019,7 +1017,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPICATION_LIST, "version", "0", "1", operation, eventName));
+                        TableNames.APPICATION_LIST, "version", "2", "3", operation, eventName));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
@@ -1040,7 +1038,7 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
     }
 
     @Test
-    void givenValidRequest_whenUpdateForClose_then200() throws Exception {
+    void givenChildChanges_whenCloseUsesRefreshedEtag_then200() throws Exception {
         String[] createdLocation = createAppListUsingRestApi();
 
         // create an entry
@@ -1068,9 +1066,17 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
                         .build()
                         .fetchTokenForRole();
 
-        Response resp =
+        Response staleResponse =
                 restAssuredClient.executePutRequest(
                         URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+        staleResponse.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(),
+                        token,
+                        req,
+                        currentApplicationListEtag(createdLocation[0]));
 
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
@@ -1258,9 +1264,18 @@ class ApplicationListControllerUpdateTest extends AbstractApplicationListControl
 
         Response resp =
                 restAssuredClient.executePutRequest(
-                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+                        URI.create(createdLocation[0]).toURL(),
+                        token,
+                        req,
+                        currentApplicationListEtag(createdLocation[0]));
 
         resp.then().statusCode(HttpStatus.OK.value());
+    }
+
+    private String currentApplicationListEtag(String location) {
+        UUID listId = UUID.fromString(HeaderUtil.getTrailingIdFromLocation(location));
+        return EtagUtil.generateEtag(
+                List.of(applicationListRepository.findByUuid(listId).orElseThrow()));
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------

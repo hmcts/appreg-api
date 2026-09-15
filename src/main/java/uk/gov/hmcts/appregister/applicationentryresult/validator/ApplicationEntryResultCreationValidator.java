@@ -49,6 +49,7 @@ public class ApplicationEntryResultCreationValidator
             ApplicationListEntry applicationListEntry,
             PayloadForCreateEntryResult<ResultCreateDto> dto) {
         return ListEntryResultCreateValidationSuccess.builder()
+                .applicationList(applicationList)
                 .applicationListEntry(applicationListEntry)
                 .resolutionCode(code)
                 .wordingSentence(wordingTemplateCollection)
