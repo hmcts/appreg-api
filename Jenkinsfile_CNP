@@ -1,5 +1,7 @@
 #!groovy
 
+import uk.gov.hmcts.contino.GithubAPI
+
 properties([
   parameters([
     booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip all tests'),
@@ -10,12 +12,13 @@ properties([
 
 @Library("Infrastructure@2.5.1")
 
+withPipeline(type, product, component) {
+  enableBuildCache()
+}
+
 def type = "java"
 def product = "appreg"
 def component = "api"
-
-import uk.gov.hmcts.contino.GradleBuilder
-import uk.gov.hmcts.contino.GithubAPI
 
 def branchesToSync = ['demo']
 
