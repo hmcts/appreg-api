@@ -19,13 +19,16 @@ App identity, model choices and human merge approval are unchanged.
 
 ### Protect credentials
 
-Create these three environments in each Apps Reg repository:
+Create these two environments in each Apps Reg repository:
 
 | Environment | Secrets stored only in this environment |
 | --- | --- |
 | codex-model | CODEX_OPENAI_API_KEY |
 | codex-publisher | CODEX_GITHUB_APP_PRIVATE_KEY, CODEX_JIRA_PR_NOTIFY_URL |
-| codex-status | CODEX_SONAR_TOKEN |
+
+The former `codex-status` environment and `CODEX_SONAR_TOKEN` secret are no
+longer used by any workflow; delete them where they still exist. See
+[Re-enabling the Sonar quality gate](codex-aks-runner.md#re-enabling-the-sonar-quality-gate).
 
 For each environment, select **Selected branches and tags** and add only a
 **branch** rule named **master**. Do not add wildcard, tag, feature-branch or
