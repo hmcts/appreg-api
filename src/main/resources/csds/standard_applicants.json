@@ -1,12 +1,12 @@
 {
   "records" : [ {
-    "ApplicantID" : 9560,
-    "PSSSAID" : 41,
+    "ApplicantID" : 2,
+    "PSSApplicantID" : 41,
     "Code" : "MHA",
     "OrganisationName" : "Devon County Council",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Mental Health Finance",
@@ -21,13 +21,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 41
   }, {
-    "ApplicantID" : 9561,
-    "PSSSAID" : 202,
+    "ApplicantID" : 3,
+    "PSSApplicantID" : 202,
     "Code" : "EDDC",
     "OrganisationName" : "EAST DEVON DISTRICT COUNCIL",
     "StartDate" : "2016-07-11",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Knowle",
@@ -42,13 +42,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 202
   }, {
-    "ApplicantID" : 9562,
-    "PSSSAID" : 262,
+    "ApplicantID" : 4,
+    "PSSApplicantID" : 262,
     "Code" : "OVO",
     "OrganisationName" : "OVO Energy",
     "StartDate" : "2016-08-30",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "1 Rivergate",
@@ -63,13 +63,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 262
   }, {
-    "ApplicantID" : 9563,
-    "PSSSAID" : 362,
+    "ApplicantID" : 5,
+    "PSSApplicantID" : 362,
     "Code" : "DCH",
     "OrganisationName" : "Devon and Cornwall Housing Ltd",
     "StartDate" : "2016-10-31",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "72 Paris Street",
@@ -87,13 +87,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 362
   }, {
-    "ApplicantID" : 9564,
-    "PSSSAID" : 422,
+    "ApplicantID" : 6,
+    "PSSApplicantID" : 422,
     "Code" : "UTIL",
     "OrganisationName" : "Face2Face (Utility Warehouse)",
     "StartDate" : "2016-11-21",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Face2Face Contact Ltd",
@@ -108,13 +108,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 422
   }, {
-    "ApplicantID" : 9565,
-    "PSSSAID" : 482,
+    "ApplicantID" : 7,
+    "PSSApplicantID" : 482,
     "Code" : "TEUW",
     "OrganisationName" : "Telecom Plus t/as Utility Warehouse",
     "StartDate" : "2016-11-24",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Network HQ",
@@ -129,13 +129,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 482
   }, {
-    "ApplicantID" : 9566,
-    "PSSSAID" : 501,
+    "ApplicantID" : 8,
+    "PSSApplicantID" : 501,
     "Code" : "GROSUW",
     "OrganisationName" : "Grosvenor Services Group Ltd (The Utility Warehouse)",
     "StartDate" : "2016-11-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -156,13 +156,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 501
   }, {
-    "ApplicantID" : 9567,
-    "PSSSAID" : 582,
+    "ApplicantID" : 9,
+    "PSSApplicantID" : 582,
     "Code" : "GAZPROM",
     "OrganisationName" : "GAZPROM ENERGY",
     "StartDate" : "2016-12-10",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "BAUHAUS",
@@ -177,13 +177,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 582
   }, {
-    "ApplicantID" : 9568,
-    "PSSSAID" : 1623,
+    "ApplicantID" : 10,
+    "PSSApplicantID" : 1623,
     "Code" : "DMBC",
     "OrganisationName" : "Doncaster Metropolitan Borough Council",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Civic Office",
@@ -201,13 +201,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1623
   }, {
-    "ApplicantID" : 9569,
-    "PSSSAID" : 181,
+    "ApplicantID" : 11,
+    "PSSApplicantID" : 181,
     "Code" : "OPUS",
     "OrganisationName" : "OPUS ENERGY LIMITED",
     "StartDate" : "2016-07-11",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Opus Energy House",
@@ -228,13 +228,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 181
   }, {
-    "ApplicantID" : 9570,
-    "PSSSAID" : 301,
+    "ApplicantID" : 12,
+    "PSSApplicantID" : 301,
     "Code" : "BMBC",
     "OrganisationName" : "Barnsley Metropolitan Borough Council",
     "StartDate" : "2016-09-29",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Beevor Court 2",
@@ -249,13 +249,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 301
   }, {
-    "ApplicantID" : 9571,
-    "PSSSAID" : 421,
+    "ApplicantID" : 13,
+    "PSSApplicantID" : 421,
     "Code" : "SPAR",
     "OrganisationName" : "Spark Energy Supply Ltd (Engage)",
     "StartDate" : "2016-11-21",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Regent House",
@@ -270,13 +270,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 421
   }, {
-    "ApplicantID" : 9572,
-    "PSSSAID" : 441,
+    "ApplicantID" : 14,
+    "PSSApplicantID" : 441,
     "Code" : "EXTR",
     "OrganisationName" : "Extra Energy Ltd",
     "StartDate" : "2016-11-23",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Energy House",
@@ -291,13 +291,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 441
   }, {
-    "ApplicantID" : 9573,
-    "PSSSAID" : 462,
+    "ApplicantID" : 15,
+    "PSSApplicantID" : 462,
     "Code" : "GRLEDF",
     "OrganisationName" : "Grosvenor Services Group Ltd (EDF)",
     "StartDate" : "2016-11-23",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -318,13 +318,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 462
   }, {
-    "ApplicantID" : 9574,
-    "PSSSAID" : 583,
+    "ApplicantID" : 16,
+    "PSSApplicantID" : 583,
     "Code" : "BES",
     "OrganisationName" : "BUSINESS ENERGY SOLUTIONS LTD",
     "StartDate" : "2016-12-10",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PARKSIDE STAND",
@@ -339,13 +339,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 583
   }, {
-    "ApplicantID" : 9575,
-    "PSSSAID" : 723,
+    "ApplicantID" : 17,
+    "PSSApplicantID" : 723,
     "Code" : "NORTHUMBRI",
     "OrganisationName" : "Northumbrian Water",
     "StartDate" : "2017-01-24",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Northumbria House",
@@ -360,13 +360,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 723
   }, {
-    "ApplicantID" : 9576,
-    "PSSSAID" : 1645,
+    "ApplicantID" : 18,
+    "PSSApplicantID" : 1645,
     "Code" : "NELC",
     "OrganisationName" : "North East Lincolnshire City Council",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Municipal Offices",
@@ -384,13 +384,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1645
   }, {
-    "ApplicantID" : 9577,
-    "PSSSAID" : 1783,
+    "ApplicantID" : 19,
+    "PSSApplicantID" : 1783,
     "Code" : "POLC",
     "OrganisationName" : "Cambridgeshire Police",
     "StartDate" : "2017-03-15",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cambridgeshire Constabulary HQ",
@@ -405,13 +405,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1783
   }, {
-    "ApplicantID" : 9578,
-    "PSSSAID" : 2546,
+    "ApplicantID" : 20,
+    "PSSApplicantID" : 2546,
     "Code" : "SWPOLBRIDG",
     "OrganisationName" : "South Wales Police HQ",
     "StartDate" : "2017-05-10",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cowbridge Road",
@@ -429,13 +429,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2546
   }, {
-    "ApplicantID" : 9579,
-    "PSSSAID" : 2846,
+    "ApplicantID" : 21,
+    "PSSApplicantID" : 2846,
     "Code" : "ENW",
     "OrganisationName" : "Electricity North West",
     "StartDate" : "2017-05-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "304 Bridgewater Place",
@@ -456,13 +456,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2846
   }, {
-    "ApplicantID" : 9580,
-    "PSSSAID" : 3108,
+    "ApplicantID" : 22,
+    "PSSApplicantID" : 3108,
     "Code" : "GAD",
     "OrganisationName" : "GREGORY ABRAMS DAVIDSON SOLICITORS",
     "StartDate" : "2017-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "20-24 MATHEW STREET",
@@ -483,13 +483,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3108
   }, {
-    "ApplicantID" : 9581,
-    "PSSSAID" : 3595,
+    "ApplicantID" : 23,
+    "PSSApplicantID" : 3595,
     "Code" : "TVLO",
     "OrganisationName" : "TV Licensing",
     "StartDate" : "2017-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Customer Service Centre",
@@ -510,13 +510,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3595
   }, {
-    "ApplicantID" : 9582,
-    "PSSSAID" : 4134,
+    "ApplicantID" : 24,
+    "PSSApplicantID" : 4134,
     "Code" : "HASTE",
     "OrganisationName" : "Haste Ltd",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PO Box 290",
@@ -537,13 +537,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 4134
   }, {
-    "ApplicantID" : 9583,
-    "PSSSAID" : 5939,
+    "ApplicantID" : 25,
+    "PSSApplicantID" : 5939,
     "Code" : "ICEBD",
     "OrganisationName" : "East of England ICE Team (Bedford)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Unit 2, Franklin Court",
@@ -558,13 +558,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5939
   }, {
-    "ApplicantID" : 9584,
-    "PSSSAID" : 81,
+    "ApplicantID" : 26,
+    "PSSApplicantID" : 81,
     "Code" : "SPWR",
     "OrganisationName" : "Scottish Power Energy Retail Ltd",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor Scottish Power",
@@ -579,13 +579,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 81
   }, {
-    "ApplicantID" : 9585,
-    "PSSSAID" : 221,
+    "ApplicantID" : 27,
+    "PSSApplicantID" : 221,
     "Code" : "ENGASPEN",
     "OrganisationName" : "ENGAGE (SPARKS ENERGY)",
     "StartDate" : "2016-08-11",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Wavell House",
@@ -603,13 +603,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 221
   }, {
-    "ApplicantID" : 9586,
-    "PSSSAID" : 361,
+    "ApplicantID" : 28,
+    "PSSApplicantID" : 361,
     "Code" : "Total",
     "OrganisationName" : "Total Gas and Power",
     "StartDate" : "2016-10-31",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Bridge Gate",
@@ -627,13 +627,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 361
   }, {
-    "ApplicantID" : 9587,
-    "PSSSAID" : 381,
+    "ApplicantID" : 29,
+    "PSSApplicantID" : 381,
     "Code" : "SCP",
     "OrganisationName" : "Scottish Power Energy (Richburns)",
     "StartDate" : "2016-11-07",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "New Aspect House",
@@ -648,13 +648,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 381
   }, {
-    "ApplicantID" : 9588,
-    "PSSSAID" : 401,
+    "ApplicantID" : 30,
+    "PSSApplicantID" : 401,
     "Code" : "XtraEnergy",
     "OrganisationName" : "Face2Face (Extra Energy Ltd)",
     "StartDate" : "2016-11-02",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Energy House",
@@ -669,13 +669,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 401
   }, {
-    "ApplicantID" : 9589,
-    "PSSSAID" : 461,
+    "ApplicantID" : 31,
+    "PSSApplicantID" : 461,
     "Code" : "GRLNP",
     "OrganisationName" : "Grosvenor Services Group Ltd (NPower)",
     "StartDate" : "2016-11-23",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 4,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -696,13 +696,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 461
   }, {
-    "ApplicantID" : 9590,
-    "PSSSAID" : 581,
+    "ApplicantID" : 32,
+    "PSSApplicantID" : 581,
     "Code" : "ARVEDF",
     "OrganisationName" : "Arvato Financial Solutions Limited (EDF)",
     "StartDate" : "2016-12-10",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "24 George Square",
@@ -723,13 +723,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 581
   }, {
-    "ApplicantID" : 9591,
-    "PSSSAID" : 904,
+    "ApplicantID" : 33,
+    "PSSApplicantID" : 904,
     "Code" : "SYPOLICE",
     "OrganisationName" : "South Yorkshire Police",
     "StartDate" : "2017-02-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Carbrook House",
@@ -747,13 +747,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 904
   }, {
-    "ApplicantID" : 9592,
-    "PSSSAID" : 1483,
+    "ApplicantID" : 34,
+    "PSSApplicantID" : 1483,
     "Code" : "KENTPOL",
     "OrganisationName" : "Kent Police HQ",
     "StartDate" : "2017-02-26",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Kent Police Headquarters",
@@ -768,13 +768,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1483
   }, {
-    "ApplicantID" : 9593,
-    "PSSSAID" : 1643,
+    "ApplicantID" : 35,
+    "PSSApplicantID" : 1643,
     "Code" : "SCC",
     "OrganisationName" : "Sheffield City Council",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -792,13 +792,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1643
   }, {
-    "ApplicantID" : 9594,
-    "PSSSAID" : 1704,
+    "ApplicantID" : 36,
+    "PSSApplicantID" : 1704,
     "Code" : "ESSEXPOL",
     "OrganisationName" : "Essex Police",
     "StartDate" : "2017-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Essex Police HQ",
@@ -813,13 +813,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1704
   }, {
-    "ApplicantID" : 9595,
-    "PSSSAID" : 1994,
+    "ApplicantID" : 37,
+    "PSSApplicantID" : 1994,
     "Code" : "OXLEMHT",
     "OrganisationName" : "Oxleas NHS Foundation Trust Headquarters",
     "StartDate" : "2017-02-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Pinewood House",
@@ -840,13 +840,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1994
   }, {
-    "ApplicantID" : 9596,
-    "PSSSAID" : 2786,
+    "ApplicantID" : 38,
+    "PSSApplicantID" : 2786,
     "Code" : "MARL",
     "OrganisationName" : "MARLOWE HOUSE STN",
     "StartDate" : "2017-05-22",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "1",
@@ -861,13 +861,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2786
   }, {
-    "ApplicantID" : 9597,
-    "PSSSAID" : 3066,
+    "ApplicantID" : 39,
+    "PSSApplicantID" : 3066,
     "Code" : "IBC01",
     "OrganisationName" : "Ipswich Borough Council",
     "StartDate" : "2017-06-09",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Grafton House",
@@ -882,13 +882,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3066
   }, {
-    "ApplicantID" : 9598,
-    "PSSSAID" : 21,
+    "ApplicantID" : 40,
+    "PSSApplicantID" : 21,
     "Code" : "NPF2",
     "OrganisationName" : "Face2Face (NPower)",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Face2Face Contact Ltd",
@@ -903,13 +903,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 21
   }, {
-    "ApplicantID" : 9599,
-    "PSSSAID" : 121,
+    "ApplicantID" : 41,
+    "PSSApplicantID" : 121,
     "Code" : "NPMP",
     "OrganisationName" : "Npower Ltd, MeterPlus",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 3,
     "Address" : [ {
       "AddressLine1" : "Windmill Hill Business Park",
@@ -924,13 +924,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 121
   }, {
-    "ApplicantID" : 9600,
-    "PSSSAID" : 201,
+    "ApplicantID" : 42,
+    "PSSApplicantID" : 201,
     "Code" : "EXCC",
     "OrganisationName" : "EXETER CITY COUNCIL",
     "StartDate" : "2016-07-11",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -945,13 +945,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 201
   }, {
-    "ApplicantID" : 9601,
-    "PSSSAID" : 281,
+    "ApplicantID" : 43,
+    "PSSApplicantID" : 281,
     "Code" : "SEG",
     "OrganisationName" : "Southern Electric Gas",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "55 Vastern Road",
@@ -966,13 +966,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 281
   }, {
-    "ApplicantID" : 9602,
-    "PSSSAID" : 504,
+    "ApplicantID" : 44,
+    "PSSApplicantID" : 504,
     "Code" : "GROSHE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Hudson Energy)",
     "StartDate" : "2016-11-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -993,13 +993,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 504
   }, {
-    "ApplicantID" : 9603,
-    "PSSSAID" : 521,
+    "ApplicantID" : 45,
+    "PSSApplicantID" : 521,
     "Code" : "GROSO",
     "OrganisationName" : "Grosvenor Services Group Ltd (Ovo Energy)",
     "StartDate" : "2016-11-29",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -1020,13 +1020,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 521
   }, {
-    "ApplicantID" : 9604,
-    "PSSSAID" : 522,
+    "ApplicantID" : 46,
+    "PSSApplicantID" : 522,
     "Code" : "WPD",
     "OrganisationName" : "Western Power Distribution",
     "StartDate" : "2016-11-29",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Avonbank",
@@ -1044,13 +1044,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 522
   }, {
-    "ApplicantID" : 9605,
-    "PSSSAID" : 523,
+    "ApplicantID" : 47,
+    "PSSApplicantID" : 523,
     "Code" : "HAVE",
     "OrganisationName" : "Haven Power (Advanced Collection Systems)",
     "StartDate" : "2016-11-29",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Advanced Collection Systems Ltd",
@@ -1065,13 +1065,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 523
   }, {
-    "ApplicantID" : 9606,
-    "PSSSAID" : 763,
+    "ApplicantID" : 48,
+    "PSSApplicantID" : 763,
     "Code" : "COOP",
     "OrganisationName" : "Co-op Energy",
     "StartDate" : "2017-01-31",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Co-operative House",
@@ -1086,13 +1086,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 763
   }, {
-    "ApplicantID" : 9607,
-    "PSSSAID" : 2162,
+    "ApplicantID" : 49,
+    "PSSApplicantID" : 2162,
     "Code" : "RBG",
     "OrganisationName" : "ROYAL BOROUGH OF GREENWICH",
     "StartDate" : "2017-04-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Customer Services",
@@ -1110,13 +1110,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2162
   }, {
-    "ApplicantID" : 9608,
-    "PSSSAID" : 2492,
+    "ApplicantID" : 50,
+    "PSSApplicantID" : 2492,
     "Code" : "ENGA",
     "OrganisationName" : "Engage Services Limited on behalf of RWE Npower",
     "StartDate" : "2017-05-03",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "8th Floor Rutland House",
@@ -1131,13 +1131,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2492
   }, {
-    "ApplicantID" : 9609,
-    "PSSSAID" : 1,
+    "ApplicantID" : 51,
+    "PSSApplicantID" : 1,
     "Code" : "BGAS",
     "OrganisationName" : "British Gas Trading Limited",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 5,
     "Address" : [ {
       "AddressLine1" : "Millstream",
@@ -1152,13 +1152,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1
   }, {
-    "ApplicantID" : 9610,
-    "PSSSAID" : 82,
+    "ApplicantID" : 52,
+    "PSSApplicantID" : 82,
     "Code" : "EON",
     "OrganisationName" : "E.ON Energy Solutions Ltd (BCW)",
     "StartDate" : "2016-06-22",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Westwood Way",
@@ -1173,13 +1173,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 82
   }, {
-    "ApplicantID" : 9611,
-    "PSSSAID" : 101,
+    "ApplicantID" : 53,
+    "PSSApplicantID" : 101,
     "Code" : "UTILW",
     "OrganisationName" : "The Utility Warehouse",
     "StartDate" : "2016-06-28",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "508 Edgware Road",
@@ -1194,13 +1194,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 101
   }, {
-    "ApplicantID" : 9612,
-    "PSSSAID" : 241,
+    "ApplicantID" : 54,
+    "PSSApplicantID" : 241,
     "Code" : "CNG",
     "OrganisationName" : "CONTRACT NATURAL GAS LIMITED",
     "StartDate" : "2016-08-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "CNG HOUSE",
@@ -1221,13 +1221,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 241
   }, {
-    "ApplicantID" : 9613,
-    "PSSSAID" : 424,
+    "ApplicantID" : 55,
+    "PSSApplicantID" : 424,
     "Code" : "OVOF",
     "OrganisationName" : "Face2Face (Ovo Energy)",
     "StartDate" : "2016-11-21",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Face2Face Contact Ltd",
@@ -1242,13 +1242,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 424
   }, {
-    "ApplicantID" : 9614,
-    "PSSSAID" : 425,
+    "ApplicantID" : 56,
+    "PSSApplicantID" : 425,
     "Code" : "EONW",
     "OrganisationName" : "EON (Western Power Distribution)",
     "StartDate" : "2016-11-21",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Western Power Distribution",
@@ -1263,13 +1263,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 425
   }, {
-    "ApplicantID" : 9615,
-    "PSSSAID" : 502,
+    "ApplicantID" : 57,
+    "PSSApplicantID" : 502,
     "Code" : "GROSSP",
     "OrganisationName" : "Grosvenor Services Group Ltd (Scottish Power)",
     "StartDate" : "2016-11-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -1290,13 +1290,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 502
   }, {
-    "ApplicantID" : 9616,
-    "PSSSAID" : 1603,
+    "ApplicantID" : 58,
+    "PSSApplicantID" : 1603,
     "Code" : "HERTSPOL",
     "OrganisationName" : "Herts Police",
     "StartDate" : "2017-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Hertfordshire Constabulary HQ",
@@ -1311,13 +1311,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1603
   }, {
-    "ApplicantID" : 9617,
-    "PSSSAID" : 1605,
+    "ApplicantID" : 59,
+    "PSSApplicantID" : 1605,
     "Code" : "SUSSEXPOL",
     "OrganisationName" : "Sussex Police",
     "StartDate" : "2017-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Sussex Police HQ",
@@ -1332,13 +1332,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1605
   }, {
-    "ApplicantID" : 9618,
-    "PSSSAID" : 1703,
+    "ApplicantID" : 60,
+    "PSSApplicantID" : 1703,
     "Code" : "SURREYPOL",
     "OrganisationName" : "Surrey Police",
     "StartDate" : "2017-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Surrey Police HQ",
@@ -1356,13 +1356,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1703
   }, {
-    "ApplicantID" : 9619,
-    "PSSSAID" : 2586,
+    "ApplicantID" : 61,
+    "PSSApplicantID" : 2586,
     "Code" : "RCALL",
     "OrganisationName" : "Resolvecall Limited",
     "StartDate" : "2017-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "3rd Floor",
@@ -1383,13 +1383,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2586
   }, {
-    "ApplicantID" : 9620,
-    "PSSSAID" : 3271,
+    "ApplicantID" : 62,
+    "PSSApplicantID" : 3271,
     "Code" : "WMIDSPOL",
     "OrganisationName" : "West Midlands Police",
     "StartDate" : "2017-07-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "West Midlands Police Headquarters ",
@@ -1407,13 +1407,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3271
   }, {
-    "ApplicantID" : 9621,
-    "PSSSAID" : 5949,
+    "ApplicantID" : 63,
+    "PSSApplicantID" : 5949,
     "Code" : "ICELD",
     "OrganisationName" : "Yorkshire and Humber ICE Team (Leeds)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Waterside Court",
@@ -1428,13 +1428,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5949
   }, {
-    "ApplicantID" : 9622,
-    "PSSSAID" : 5950,
+    "ApplicantID" : 64,
+    "PSSApplicantID" : 5950,
     "Code" : "ICENE",
     "OrganisationName" : "North East ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Link House",
@@ -1449,13 +1449,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5950
   }, {
-    "ApplicantID" : 9623,
-    "PSSSAID" : 5952,
+    "ApplicantID" : 65,
+    "PSSApplicantID" : 5952,
     "Code" : "ICESA",
     "OrganisationName" : "Wales ICE Team (Swansea)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "E Block, Heol Pentereflin",
@@ -1470,13 +1470,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5952
   }, {
-    "ApplicantID" : 9624,
-    "PSSSAID" : 5953,
+    "ApplicantID" : 66,
+    "PSSApplicantID" : 5953,
     "Code" : "ICESF",
     "OrganisationName" : "Yorkshire and Humber ICE Team (Sheffield)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Millsands",
@@ -1491,13 +1491,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5953
   }, {
-    "ApplicantID" : 9625,
-    "PSSSAID" : 5958,
+    "ApplicantID" : 67,
+    "PSSApplicantID" : 5958,
     "Code" : "ICEWL",
     "OrganisationName" : "West London ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Eaton House",
@@ -1512,13 +1512,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5958
   }, {
-    "ApplicantID" : 9626,
-    "PSSSAID" : 4016,
+    "ApplicantID" : 68,
+    "PSSApplicantID" : 4016,
     "Code" : "SSE",
     "OrganisationName" : "SSE Energy Supply Limited",
     "StartDate" : "2017-10-18",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "No.1 Forbury Place",
@@ -1533,13 +1533,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 4016
   }, {
-    "ApplicantID" : 9627,
-    "PSSSAID" : 524,
+    "ApplicantID" : 69,
+    "PSSApplicantID" : 524,
     "Code" : "UTILI",
     "OrganisationName" : "Face2Face (Utilita Energy Limited)",
     "StartDate" : "2016-11-29",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Face2Face Contact Ltd",
@@ -1554,13 +1554,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 524
   }, {
-    "ApplicantID" : 9628,
-    "PSSSAID" : 541,
+    "ApplicantID" : 70,
+    "PSSApplicantID" : 541,
     "Code" : "DONG",
     "OrganisationName" : "Dong Energy Sales Uk Limited (PDP)",
     "StartDate" : "2016-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PDP Management Services Limited",
@@ -1575,13 +1575,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 541
   }, {
-    "ApplicantID" : 9629,
-    "PSSSAID" : 562,
+    "ApplicantID" : 71,
+    "PSSApplicantID" : 562,
     "Code" : "FCMFU",
     "OrganisationName" : "Fidelite Credit Management (First Utility)",
     "StartDate" : "2016-12-03",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor",
@@ -1602,13 +1602,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 562
   }, {
-    "ApplicantID" : 9630,
-    "PSSSAID" : 1043,
+    "ApplicantID" : 72,
+    "PSSApplicantID" : 1043,
     "Code" : "GROSECO",
     "OrganisationName" : "Grosvenor Services Group Ltd (Ecotricity)",
     "StartDate" : "2017-02-22",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -1629,13 +1629,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1043
   }, {
-    "ApplicantID" : 9631,
-    "PSSSAID" : 1663,
+    "ApplicantID" : 73,
+    "PSSApplicantID" : 1663,
     "Code" : "RMBC",
     "OrganisationName" : "Rotherham Metropolitan Borough Council",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Riverside House",
@@ -1653,13 +1653,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1663
   }, {
-    "ApplicantID" : 9632,
-    "PSSSAID" : 2081,
+    "ApplicantID" : 74,
+    "PSSApplicantID" : 2081,
     "Code" : "EDF",
     "OrganisationName" : "EDF Energy Customers Ltd",
     "StartDate" : "2017-04-03",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "90 Whitfield Street",
@@ -1674,13 +1674,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2081
   }, {
-    "ApplicantID" : 9633,
-    "PSSSAID" : 2163,
+    "ApplicantID" : 75,
+    "PSSApplicantID" : 2163,
     "Code" : "ARVATOO",
     "OrganisationName" : "Arvato Financial Solutions Limited",
     "StartDate" : "2017-04-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "24 George Square",
@@ -1698,13 +1698,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2163
   }, {
-    "ApplicantID" : 9634,
-    "PSSSAID" : 2848,
+    "ApplicantID" : 76,
+    "PSSApplicantID" : 2848,
     "Code" : "SCC02",
     "OrganisationName" : "Suffolk Trading Standards",
     "StartDate" : "2017-05-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Suffolk County Council",
@@ -1725,13 +1725,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2848
   }, {
-    "ApplicantID" : 9635,
-    "PSSSAID" : 2986,
+    "ApplicantID" : 77,
+    "PSSApplicantID" : 2986,
     "Code" : "HUMBPOL",
     "OrganisationName" : "Humberside Police",
     "StartDate" : "2017-06-09",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -1746,13 +1746,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2986
   }, {
-    "ApplicantID" : 9636,
-    "PSSSAID" : 3270,
+    "ApplicantID" : 78,
+    "PSSApplicantID" : 3270,
     "Code" : "RH",
     "OrganisationName" : "Riverside Housing",
     "StartDate" : "2017-07-26",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Riverside",
@@ -1770,13 +1770,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3270
   }, {
-    "ApplicantID" : 9637,
-    "PSSSAID" : 3965,
+    "ApplicantID" : 79,
+    "PSSApplicantID" : 3965,
     "Code" : "WIBC1",
     "OrganisationName" : "Wigan Council Trading Standards",
     "StartDate" : "2017-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Wigan Trading Standards Licensing",
@@ -1794,13 +1794,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3965
   }, {
-    "ApplicantID" : 9638,
-    "PSSSAID" : 5951,
+    "ApplicantID" : 80,
+    "PSSApplicantID" : 5951,
     "Code" : "ICENL",
     "OrganisationName" : "North London ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "3rd floor, Becket House",
@@ -1815,13 +1815,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5951
   }, {
-    "ApplicantID" : 9639,
-    "PSSSAID" : 5954,
+    "ApplicantID" : 81,
+    "PSSApplicantID" : 5954,
     "Code" : "ICESL",
     "OrganisationName" : "South London ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lunar House",
@@ -1836,13 +1836,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5954
   }, {
-    "ApplicantID" : 9640,
-    "PSSSAID" : 5955,
+    "ApplicantID" : 82,
+    "PSSApplicantID" : 5955,
     "Code" : "ICEST",
     "OrganisationName" : "East London (Stansted) ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Enterprise House",
@@ -1857,13 +1857,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5955
   }, {
-    "ApplicantID" : 9641,
-    "PSSSAID" : 5956,
+    "ApplicantID" : 83,
+    "PSSApplicantID" : 5956,
     "Code" : "ICESW",
     "OrganisationName" : "South West ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd floor Westpoint",
@@ -1878,13 +1878,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5956
   }, {
-    "ApplicantID" : 9642,
-    "PSSSAID" : 5614,
+    "ApplicantID" : 84,
+    "PSSApplicantID" : 5614,
     "Code" : "EOS",
     "OrganisationName" : "EOS",
     "StartDate" : "2018-04-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2 Birchwood Office Park",
@@ -1899,13 +1899,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5614
   }, {
-    "ApplicantID" : 9643,
-    "PSSSAID" : 342,
+    "ApplicantID" : 85,
+    "PSSApplicantID" : 342,
     "Code" : "LEENF",
     "OrganisationName" : "NCES LEICESTERSHIRE",
     "StartDate" : "2016-10-11",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Leicester Magistrates Court",
@@ -1920,13 +1920,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 342
   }, {
-    "ApplicantID" : 9644,
-    "PSSSAID" : 423,
+    "ApplicantID" : 86,
+    "PSSApplicantID" : 423,
     "Code" : "F2F",
     "OrganisationName" : "Face2Face",
     "StartDate" : "2016-11-21",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Face2Face Contact Ltd",
@@ -1941,13 +1941,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 423
   }, {
-    "ApplicantID" : 9645,
-    "PSSSAID" : 426,
+    "ApplicantID" : 87,
+    "PSSApplicantID" : 426,
     "Code" : "FUL",
     "OrganisationName" : "First Utility Limited",
     "StartDate" : "2016-11-21",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Point 3",
@@ -1962,13 +1962,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 426
   }, {
-    "ApplicantID" : 9646,
-    "PSSSAID" : 481,
+    "ApplicantID" : 88,
+    "PSSApplicantID" : 481,
     "Code" : "GRSCOTPWR",
     "OrganisationName" : "Grosvenor Services Group Scottish Power",
     "StartDate" : "2016-11-18",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -1989,13 +1989,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 481
   }, {
-    "ApplicantID" : 9647,
-    "PSSSAID" : 561,
+    "ApplicantID" : 89,
+    "PSSApplicantID" : 561,
     "Code" : "ADVCOLL",
     "OrganisationName" : "ADVANCED COLLECTION SYSTEMS",
     "StartDate" : "2016-12-03",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "STEELE HOUSE",
@@ -2016,13 +2016,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 561
   }, {
-    "ApplicantID" : 9648,
-    "PSSSAID" : 682,
+    "ApplicantID" : 90,
+    "PSSApplicantID" : 682,
     "Code" : "DURPOL",
     "OrganisationName" : "Durham Police",
     "StartDate" : "2017-01-19",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Durham Constabulary",
@@ -2037,13 +2037,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 682
   }, {
-    "ApplicantID" : 9649,
-    "PSSSAID" : 943,
+    "ApplicantID" : 91,
+    "PSSApplicantID" : 943,
     "Code" : "HYDRONOVO",
     "OrganisationName" : "HYDRON (Ovo Energy)",
     "StartDate" : "2017-02-17",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -2058,13 +2058,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 943
   }, {
-    "ApplicantID" : 9650,
-    "PSSSAID" : 1604,
+    "ApplicantID" : 92,
+    "PSSApplicantID" : 1604,
     "Code" : "BEDSPOL",
     "OrganisationName" : "Bedfordshire Police",
     "StartDate" : "2017-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Bedfordshire Police",
@@ -2082,13 +2082,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1604
   }, {
-    "ApplicantID" : 9651,
-    "PSSSAID" : 1683,
+    "ApplicantID" : 93,
+    "PSSApplicantID" : 1683,
     "Code" : "WYP",
     "OrganisationName" : "West Yorkshire Police",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Huddersfield Police Station",
@@ -2106,13 +2106,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1683
   }, {
-    "ApplicantID" : 9652,
-    "PSSSAID" : 2490,
+    "ApplicantID" : 94,
+    "PSSApplicantID" : 2490,
     "Code" : "NORFOLKPOL",
     "OrganisationName" : "Norfolk Police HQ",
     "StartDate" : "2017-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Norfolk Constabulary",
@@ -2127,13 +2127,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2490
   }, {
-    "ApplicantID" : 9653,
-    "PSSSAID" : 2533,
+    "ApplicantID" : 95,
+    "PSSApplicantID" : 2533,
     "Code" : "WBCCADS",
     "OrganisationName" : "West Berks Council, Central Location Team, Adult Services, Social Services",
     "StartDate" : "2017-05-09",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Council Offices",
@@ -2151,13 +2151,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2533
   }, {
-    "ApplicantID" : 9654,
-    "PSSSAID" : 3088,
+    "ApplicantID" : 96,
+    "PSSApplicantID" : 3088,
     "Code" : "GROSSSE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Southern Electric)",
     "StartDate" : "2017-02-26",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -2178,13 +2178,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3088
   }, {
-    "ApplicantID" : 9655,
-    "PSSSAID" : 6158,
+    "ApplicantID" : 97,
+    "PSSApplicantID" : 6158,
     "Code" : "GROSYU",
     "OrganisationName" : "Grosvenor Services Group Ltd (Yu Energy)",
     "StartDate" : "2018-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -2205,13 +2205,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6158
   }, {
-    "ApplicantID" : 9656,
-    "PSSSAID" : 6178,
+    "ApplicantID" : 98,
+    "PSSApplicantID" : 6178,
     "Code" : "ABMS",
     "OrganisationName" : "ABM Solutions Limited",
     "StartDate" : "2018-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "20 Granite Way",
@@ -2226,13 +2226,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6178
   }, {
-    "ApplicantID" : 9657,
-    "PSSSAID" : 6198,
+    "ApplicantID" : 99,
+    "PSSApplicantID" : 6198,
     "Code" : "BULL",
     "OrganisationName" : "Blackthorne Utilities Ltd",
     "StartDate" : "2018-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "264 Carter Knowle Road",
@@ -2256,13 +2256,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6198
   }, {
-    "ApplicantID" : 9658,
-    "PSSSAID" : 6238,
+    "ApplicantID" : 100,
+    "PSSApplicantID" : 6238,
     "Code" : "HAMPOL",
     "OrganisationName" : "Hampshire Constabulary",
     "StartDate" : "2018-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Hamble Lane",
@@ -2277,13 +2277,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6238
   }, {
-    "ApplicantID" : 9659,
-    "PSSSAID" : 6278,
+    "ApplicantID" : 101,
+    "PSSApplicantID" : 6278,
     "Code" : "DCCMH",
     "OrganisationName" : "Derbyshire County Council Mental Health Team",
     "StartDate" : "2018-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "County Hall",
@@ -2298,13 +2298,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6278
   }, {
-    "ApplicantID" : 9660,
-    "PSSSAID" : 6280,
+    "ApplicantID" : 102,
+    "PSSApplicantID" : 6280,
     "Code" : "NBCHE",
     "OrganisationName" : "Northampton Borough Council Housing Enforcement Team",
     "StartDate" : "2018-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "The Guildhall",
@@ -2319,13 +2319,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6280
   }, {
-    "ApplicantID" : 9661,
-    "PSSSAID" : 6298,
+    "ApplicantID" : 103,
+    "PSSApplicantID" : 6298,
     "Code" : "YHN",
     "OrganisationName" : "Your Homes Newcastle",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "YHN House",
@@ -2346,13 +2346,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6298
   }, {
-    "ApplicantID" : 9662,
-    "PSSSAID" : 6318,
+    "ApplicantID" : 104,
+    "PSSApplicantID" : 6318,
     "Code" : "MCHT",
     "OrganisationName" : "Manchester Community Health Team",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Kath Locke Centre",
@@ -2370,13 +2370,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6318
   }, {
-    "ApplicantID" : 9663,
-    "PSSSAID" : 5943,
+    "ApplicantID" : 105,
+    "PSSApplicantID" : 5943,
     "Code" : "ICEEL",
     "OrganisationName" : "East London ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "4th Floor, Becket House",
@@ -2391,13 +2391,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5943
   }, {
-    "ApplicantID" : 9664,
-    "PSSSAID" : 5945,
+    "ApplicantID" : 106,
+    "PSSApplicantID" : 5945,
     "Code" : "ICEFL",
     "OrganisationName" : "East of England ICE Team (Felixstowe)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Custom House",
@@ -2412,13 +2412,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5945
   }, {
-    "ApplicantID" : 9665,
-    "PSSSAID" : 5948,
+    "ApplicantID" : 107,
+    "PSSApplicantID" : 5948,
     "Code" : "ICEKT",
     "OrganisationName" : "Kent and Sussex ICE Team (Kent office)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Frontier House",
@@ -2433,13 +2433,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5948
   }, {
-    "ApplicantID" : 9666,
-    "PSSSAID" : 964,
+    "ApplicantID" : 108,
+    "PSSApplicantID" : 964,
     "Code" : "RICHBURNS",
     "OrganisationName" : "Richburns Ltd",
     "StartDate" : "2017-02-17",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "3rd Floor",
@@ -2457,13 +2457,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 964
   }, {
-    "ApplicantID" : 9667,
-    "PSSSAID" : 702,
+    "ApplicantID" : 109,
+    "PSSApplicantID" : 702,
     "Code" : "PDP",
     "OrganisationName" : "PDP Management Services",
     "StartDate" : "2017-01-16",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Blenheim Court",
@@ -2481,13 +2481,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 702
   }, {
-    "ApplicantID" : 9668,
-    "PSSSAID" : 1403,
+    "ApplicantID" : 110,
+    "PSSApplicantID" : 1403,
     "Code" : "NOTCTYCNCL",
     "OrganisationName" : "Nottingham City Council",
     "StartDate" : "2017-03-07",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Mental Health Social Care Team Nort",
@@ -2502,13 +2502,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1403
   }, {
-    "ApplicantID" : 9669,
-    "PSSSAID" : 1646,
+    "ApplicantID" : 111,
+    "PSSApplicantID" : 1646,
     "Code" : "NLC",
     "OrganisationName" : "North Lincolnshire Council",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -2526,13 +2526,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1646
   }, {
-    "ApplicantID" : 9670,
-    "PSSSAID" : 2004,
+    "ApplicantID" : 112,
+    "PSSApplicantID" : 2004,
     "Code" : "CLPOL",
     "OrganisationName" : "Cleveland Police",
     "StartDate" : "2017-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Ladgate Lane",
@@ -2547,13 +2547,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2004
   }, {
-    "ApplicantID" : 9671,
-    "PSSSAID" : 2406,
+    "ApplicantID" : 113,
+    "PSSApplicantID" : 2406,
     "Code" : "YOS001",
     "OrganisationName" : "Youth Offending Service",
     "StartDate" : "2017-04-26",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "North East Lincolnshire Council",
@@ -2574,13 +2574,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2406
   }, {
-    "ApplicantID" : 9672,
-    "PSSSAID" : 5957,
+    "ApplicantID" : 114,
+    "PSSApplicantID" : 5957,
     "Code" : "ICESX",
     "OrganisationName" : "Kent and Sussex ICE Team (Sussex office)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Timberham House",
@@ -2595,13 +2595,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5957
   }, {
-    "ApplicantID" : 9673,
-    "PSSSAID" : 5054,
+    "ApplicantID" : 115,
+    "PSSApplicantID" : 5054,
     "Code" : "SSEM",
     "OrganisationName" : "SSE Metering Ltd",
     "StartDate" : "2018-02-06",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Inveralmond House",
@@ -2616,13 +2616,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5054
   }, {
-    "ApplicantID" : 9674,
-    "PSSSAID" : 5394,
+    "ApplicantID" : 116,
+    "PSSApplicantID" : 5394,
     "Code" : "MPOL",
     "OrganisationName" : "MERSEYSIDE POLICE",
     "StartDate" : "2017-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "CANNING PLACE",
@@ -2640,13 +2640,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5394
   }, {
-    "ApplicantID" : 9675,
-    "PSSSAID" : 622,
+    "ApplicantID" : 117,
+    "PSSApplicantID" : 622,
     "Code" : "DSTS",
     "OrganisationName" : "Devon & Somerset Trading Standards Service",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "County Hall",
@@ -2661,13 +2661,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 622
   }, {
-    "ApplicantID" : 9676,
-    "PSSSAID" : 1723,
+    "ApplicantID" : 118,
+    "PSSApplicantID" : 1723,
     "Code" : "TVPOL",
     "OrganisationName" : "Thames Valley Police",
     "StartDate" : "2017-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Thames Valley Police HQ",
@@ -2685,13 +2685,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1723
   }, {
-    "ApplicantID" : 9677,
-    "PSSSAID" : 2165,
+    "ApplicantID" : 119,
+    "PSSApplicantID" : 2165,
     "Code" : "LBL",
     "OrganisationName" : "LONDON BOROUGH OF LEWISHAM",
     "StartDate" : "2017-04-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Laurence House",
@@ -2709,13 +2709,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2165
   }, {
-    "ApplicantID" : 9678,
-    "PSSSAID" : 2527,
+    "ApplicantID" : 120,
+    "PSSApplicantID" : 2527,
     "Code" : "SCC01",
     "OrganisationName" : "Suffolk County Council",
     "StartDate" : "2017-05-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Endeavour House",
@@ -2736,13 +2736,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2527
   }, {
-    "ApplicantID" : 9679,
-    "PSSSAID" : 2646,
+    "ApplicantID" : 121,
+    "PSSApplicantID" : 2646,
     "Code" : "STAFFPOL",
     "OrganisationName" : "Staffordshire Police",
     "StartDate" : "2017-05-12",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Northern Area Custody Facility NACF",
@@ -2757,13 +2757,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2646
   }, {
-    "ApplicantID" : 9680,
-    "PSSSAID" : 5946,
+    "ApplicantID" : 122,
+    "PSSApplicantID" : 5946,
     "Code" : "ICEGM",
     "OrganisationName" : "Greater Manchester and Cumbria ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Greater Manchester and Cumbria ICE",
@@ -2778,13 +2778,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5946
   }, {
-    "ApplicantID" : 9681,
-    "PSSSAID" : 5959,
+    "ApplicantID" : 123,
+    "PSSApplicantID" : 5959,
     "Code" : "ICEWM",
     "OrganisationName" : "West Midlands ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Sandford House",
@@ -2799,13 +2799,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5959
   }, {
-    "ApplicantID" : 9682,
-    "PSSSAID" : 5960,
+    "ApplicantID" : 124,
+    "PSSApplicantID" : 5960,
     "Code" : "ICEMY",
     "OrganisationName" : "Merseyside ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "The Capital Building",
@@ -2820,13 +2820,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5960
   }, {
-    "ApplicantID" : 9683,
-    "PSSSAID" : 3067,
+    "ApplicantID" : 125,
+    "PSSApplicantID" : 3067,
     "Code" : "ENSE",
     "OrganisationName" : "Engage Services",
     "StartDate" : "2017-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Wavell House",
@@ -2844,13 +2844,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3067
   }, {
-    "ApplicantID" : 9684,
-    "PSSSAID" : 3555,
+    "ApplicantID" : 126,
+    "PSSApplicantID" : 3555,
     "Code" : "WDC01",
     "OrganisationName" : "Waveney District Council",
     "StartDate" : "2017-08-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Riverside",
@@ -2871,13 +2871,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3555
   }, {
-    "ApplicantID" : 9685,
-    "PSSSAID" : 3694,
+    "ApplicantID" : 127,
+    "PSSApplicantID" : 3694,
     "Code" : "RCBC-TS",
     "OrganisationName" : "Redcar & Cleveland BC - Trading Standards",
     "StartDate" : "2017-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Belmont House",
@@ -2892,13 +2892,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3694
   }, {
-    "ApplicantID" : 9686,
-    "PSSSAID" : 5414,
+    "ApplicantID" : 128,
+    "PSSApplicantID" : 5414,
     "Code" : "WOE",
     "OrganisationName" : "Morrisons Data Services (E.ON Energy Limited)",
     "StartDate" : "2018-03-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Westwood Way",
@@ -2913,13 +2913,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5414
   }, {
-    "ApplicantID" : 9687,
-    "PSSSAID" : 5738,
+    "ApplicantID" : 129,
+    "PSSApplicantID" : 5738,
     "Code" : "CHESHPOL",
     "OrganisationName" : "Cheshire Police",
     "StartDate" : "2018-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Headquarters Clemonds Hey",
@@ -2934,13 +2934,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5738
   }, {
-    "ApplicantID" : 9688,
-    "PSSSAID" : 5818,
+    "ApplicantID" : 130,
+    "PSSApplicantID" : 5818,
     "Code" : "CHURCHILL",
     "OrganisationName" : "Churchill Recovery Solutions",
     "StartDate" : "2018-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Suite 5A",
@@ -2961,13 +2961,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5818
   }, {
-    "ApplicantID" : 9689,
-    "PSSSAID" : 5940,
+    "ApplicantID" : 131,
+    "PSSApplicantID" : 5940,
     "Code" : "ICEBS",
     "OrganisationName" : "South Central ICE Team (Berks/Surrey)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor, Eaton House",
@@ -2982,13 +2982,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5940
   }, {
-    "ApplicantID" : 9690,
-    "PSSSAID" : 5941,
+    "ApplicantID" : 132,
+    "PSSApplicantID" : 5941,
     "Code" : "ICECF",
     "OrganisationName" : "Wales ICE Team (Cardiff)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "General Buildings",
@@ -3003,13 +3003,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5941
   }, {
-    "ApplicantID" : 9691,
-    "PSSSAID" : 5942,
+    "ApplicantID" : 133,
+    "PSSApplicantID" : 5942,
     "Code" : "ICECL",
     "OrganisationName" : "Central London ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "1st Floor, Becket House",
@@ -3024,13 +3024,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5942
   }, {
-    "ApplicantID" : 9692,
-    "PSSSAID" : 5944,
+    "ApplicantID" : 134,
+    "PSSApplicantID" : 5944,
     "Code" : "ICEEM",
     "OrganisationName" : "East Midlands ICE Team",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Melbourne House",
@@ -3045,13 +3045,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5944
   }, {
-    "ApplicantID" : 9693,
-    "PSSSAID" : 5947,
+    "ApplicantID" : 135,
+    "PSSApplicantID" : 5947,
     "Code" : "ICEHD",
     "OrganisationName" : "South Central ICE Team (Hants/Dorset)",
     "StartDate" : "2018-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor Norman House",
@@ -3066,13 +3066,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5947
   }, {
-    "ApplicantID" : 9694,
-    "PSSSAID" : 563,
+    "ApplicantID" : 136,
+    "PSSApplicantID" : 563,
     "Code" : "FCMEDF",
     "OrganisationName" : "Fidelite Credit Management (EDF)",
     "StartDate" : "2016-12-03",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor",
@@ -3093,13 +3093,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 563
   }, {
-    "ApplicantID" : 9695,
-    "PSSSAID" : 803,
+    "ApplicantID" : 137,
+    "PSSApplicantID" : 803,
     "Code" : "NA",
     "OrganisationName" : "East Devon District Council",
     "StartDate" : "2017-02-08",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Knowle",
@@ -3120,13 +3120,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 803
   }, {
-    "ApplicantID" : 9696,
-    "PSSSAID" : 883,
+    "ApplicantID" : 138,
+    "PSSApplicantID" : 883,
     "Code" : "HYDRON",
     "OrganisationName" : "Hydron (Corona Energy)",
     "StartDate" : "2017-01-31",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -3141,13 +3141,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 883
   }, {
-    "ApplicantID" : 9697,
-    "PSSSAID" : 903,
+    "ApplicantID" : 139,
+    "PSSApplicantID" : 903,
     "Code" : "GROSIE",
     "OrganisationName" : "Grosvenor Services Group Ltd (iSupply Energy)",
     "StartDate" : "2017-02-16",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 2,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -3168,13 +3168,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 903
   }, {
-    "ApplicantID" : 9698,
-    "PSSSAID" : 1044,
+    "ApplicantID" : 140,
+    "PSSApplicantID" : 1044,
     "Code" : "FID",
     "OrganisationName" : "Fidelite",
     "StartDate" : "2017-02-22",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Spectrum House Glasgow",
@@ -3189,13 +3189,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1044
   }, {
-    "ApplicantID" : 9699,
-    "PSSSAID" : 1103,
+    "ApplicantID" : 141,
+    "PSSApplicantID" : 1103,
     "Code" : "UGP",
     "OrganisationName" : "United Gas and Power",
     "StartDate" : "2017-02-24",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Eaton House",
@@ -3210,13 +3210,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1103
   }, {
-    "ApplicantID" : 9700,
-    "PSSSAID" : 1644,
+    "ApplicantID" : 142,
+    "PSSApplicantID" : 1644,
     "Code" : "HCC",
     "OrganisationName" : "Hull City Council",
     "StartDate" : "2017-03-14",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Treasury Building",
@@ -3234,13 +3234,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1644
   }, {
-    "ApplicantID" : 9701,
-    "PSSSAID" : 2847,
+    "ApplicantID" : 143,
+    "PSSApplicantID" : 2847,
     "Code" : "HMRCFIS",
     "OrganisationName" : "HM Revenue & Customs Fraud Investigation Service",
     "StartDate" : "2017-05-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "SO128",
@@ -3255,13 +3255,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2847
   }, {
-    "ApplicantID" : 9702,
-    "PSSSAID" : 3091,
+    "ApplicantID" : 144,
+    "PSSApplicantID" : 3091,
     "Code" : "MOR",
     "OrganisationName" : "Morrison Data Services",
     "StartDate" : "2017-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cobalt Business Park",
@@ -3279,13 +3279,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3091
   }, {
-    "ApplicantID" : 9703,
-    "PSSSAID" : 6438,
+    "ApplicantID" : 145,
+    "PSSApplicantID" : 6438,
     "Code" : "HYDRONECO",
     "OrganisationName" : "HYDRON (Ecotricity)",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -3306,13 +3306,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6438
   }, {
-    "ApplicantID" : 9704,
-    "PSSSAID" : 6439,
+    "ApplicantID" : 146,
+    "PSSApplicantID" : 6439,
     "Code" : "REGEGAS",
     "OrganisationName" : "Regent Gas Limited",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Kendal Avenue",
@@ -3327,13 +3327,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6439
   }, {
-    "ApplicantID" : 9705,
-    "PSSSAID" : 6440,
+    "ApplicantID" : 147,
+    "PSSApplicantID" : 6440,
     "Code" : "GATESHC",
     "OrganisationName" : "Gateshead Housing Company (Gateshead Council)",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Gateshead Civic Centre",
@@ -3354,13 +3354,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6440
   }, {
-    "ApplicantID" : 9706,
-    "PSSSAID" : 6518,
+    "ApplicantID" : 148,
+    "PSSApplicantID" : 6518,
     "Code" : "NCTPSE",
     "OrganisationName" : "National Counter Terrorism Policing (SE)",
     "StartDate" : "2018-09-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PO Box 363",
@@ -3375,13 +3375,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6518
   }, {
-    "ApplicantID" : 9707,
-    "PSSSAID" : 6519,
+    "ApplicantID" : 149,
+    "PSSApplicantID" : 6519,
     "Code" : "BBDNMHT",
     "OrganisationName" : "Blackburn with Darwen Council Mental Health Team",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Daisyfield Mill",
@@ -3399,13 +3399,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6519
   }, {
-    "ApplicantID" : 9708,
-    "PSSSAID" : 6598,
+    "ApplicantID" : 150,
+    "PSSApplicantID" : 6598,
     "Code" : "CARDCC",
     "OrganisationName" : "Cardiff County Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "County Hall",
@@ -3423,13 +3423,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6598
   }, {
-    "ApplicantID" : 9709,
-    "PSSSAID" : 6599,
+    "ApplicantID" : 151,
+    "PSSApplicantID" : 6599,
     "Code" : "GROSBG",
     "OrganisationName" : "Grosvenor Services Group Ltd (British Gas)",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St. David's House",
@@ -3450,13 +3450,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6599
   }, {
-    "ApplicantID" : 9710,
-    "PSSSAID" : 6600,
+    "ApplicantID" : 152,
+    "PSSApplicantID" : 6600,
     "Code" : "GWPHQ",
     "OrganisationName" : "Gwent Police",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Gwent Police Headquarters",
@@ -3477,13 +3477,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6600
   }, {
-    "ApplicantID" : 9711,
-    "PSSSAID" : 6601,
+    "ApplicantID" : 153,
+    "PSSApplicantID" : 6601,
     "Code" : "BGCBC",
     "OrganisationName" : "Blaenau Gwent County Borough Council",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "HQ - Social Services Directorate",
@@ -3504,13 +3504,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6601
   }, {
-    "ApplicantID" : 9712,
-    "PSSSAID" : 6602,
+    "ApplicantID" : 154,
+    "PSSApplicantID" : 6602,
     "Code" : "BLDC",
     "OrganisationName" : "Bassetlaw District Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Queen's Buildings",
@@ -3531,13 +3531,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6602
   }, {
-    "ApplicantID" : 9713,
-    "PSSSAID" : 6603,
+    "ApplicantID" : 155,
+    "PSSApplicantID" : 6603,
     "Code" : "LCCTS",
     "OrganisationName" : "Lincolnshire County Council Trading Standards",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Myle Cross Centre",
@@ -3555,13 +3555,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6603
   }, {
-    "ApplicantID" : 9714,
-    "PSSSAID" : 6604,
+    "ApplicantID" : 156,
+    "PSSApplicantID" : 6604,
     "Code" : "TORFTS",
     "OrganisationName" : "Torfaen County Borough Council Trading Standards",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -3582,13 +3582,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6604
   }, {
-    "ApplicantID" : 9715,
-    "PSSSAID" : 6605,
+    "ApplicantID" : 157,
+    "PSSApplicantID" : 6605,
     "Code" : "BWBC",
     "OrganisationName" : "Barrow Borough Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Borough of Barrow-in-Furness",
@@ -3609,13 +3609,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6605
   }, {
-    "ApplicantID" : 9716,
-    "PSSSAID" : 6638,
+    "ApplicantID" : 158,
+    "PSSApplicantID" : 6638,
     "Code" : "NORTHPOL",
     "OrganisationName" : "Northumbria Police",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Force Headquarters",
@@ -3630,13 +3630,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6638
   }, {
-    "ApplicantID" : 9717,
-    "PSSSAID" : 6639,
+    "ApplicantID" : 159,
+    "PSSApplicantID" : 6639,
     "Code" : "NEWCMHSW",
     "OrganisationName" : "Newcastle Community Health and Social Care Direct",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor",
@@ -3657,13 +3657,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6639
   }, {
-    "ApplicantID" : 9718,
-    "PSSSAID" : 6640,
+    "ApplicantID" : 160,
+    "PSSApplicantID" : 6640,
     "Code" : "NORTYC",
     "OrganisationName" : "North Tyneside Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Quadrant",
@@ -3681,13 +3681,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6640
   }, {
-    "ApplicantID" : 9719,
-    "PSSSAID" : 6641,
+    "ApplicantID" : 161,
+    "PSSApplicantID" : 6641,
     "Code" : "SUNDCC",
     "OrganisationName" : "Sunderland City Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -3705,13 +3705,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6641
   }, {
-    "ApplicantID" : 9720,
-    "PSSSAID" : 6818,
+    "ApplicantID" : 162,
+    "PSSApplicantID" : 6818,
     "Code" : "LINCPHQ",
     "OrganisationName" : "Lincolnshire Police Headquarters",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Deepdale Lane",
@@ -3726,13 +3726,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6818
   }, {
-    "ApplicantID" : 9721,
-    "PSSSAID" : 6819,
+    "ApplicantID" : 163,
+    "PSSApplicantID" : 6819,
     "Code" : "PENBC",
     "OrganisationName" : "Pendle Borough Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Elliott House",
@@ -3747,13 +3747,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6819
   }, {
-    "ApplicantID" : 9722,
-    "PSSSAID" : 6820,
+    "ApplicantID" : 164,
+    "PSSApplicantID" : 6820,
     "Code" : "BURNBC",
     "OrganisationName" : "Burnley Borough Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -3768,13 +3768,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6820
   }, {
-    "ApplicantID" : 9723,
-    "PSSSAID" : 7278,
+    "ApplicantID" : 165,
+    "PSSApplicantID" : 7278,
     "Code" : "NATCA",
     "OrganisationName" : "National Crime Agency",
     "StartDate" : "2018-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Units 1-6, Citadel Place",
@@ -3795,13 +3795,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7278
   }, {
-    "ApplicantID" : 9724,
-    "PSSSAID" : 7558,
+    "ApplicantID" : 166,
+    "PSSApplicantID" : 7558,
     "Code" : "SANDBC",
     "OrganisationName" : "Sandwell Metropolitan Borough Council",
     "StartDate" : "2019-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Oldbury Council House",
@@ -3819,13 +3819,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7558
   }, {
-    "ApplicantID" : 9725,
-    "PSSSAID" : 7638,
+    "ApplicantID" : 167,
+    "PSSApplicantID" : 7638,
     "Code" : "CLIC",
     "OrganisationName" : "City of Lincoln Council",
     "StartDate" : "2019-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "City Hall",
@@ -3840,13 +3840,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7638
   }, {
-    "ApplicantID" : 9726,
-    "PSSSAID" : 7658,
+    "ApplicantID" : 168,
+    "PSSApplicantID" : 7658,
     "Code" : "WLDC",
     "OrganisationName" : "West Lindsey District Council",
     "StartDate" : "2019-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Guildhall",
@@ -3867,13 +3867,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7658
   }, {
-    "ApplicantID" : 9727,
-    "PSSSAID" : 7798,
+    "ApplicantID" : 169,
+    "PSSApplicantID" : 7798,
     "Code" : "UTILITA",
     "OrganisationName" : "Utilita Energy",
     "StartDate" : "2019-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Hutwood Court",
@@ -3891,13 +3891,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7798
   }, {
-    "ApplicantID" : 9728,
-    "PSSSAID" : 7799,
+    "ApplicantID" : 170,
+    "PSSApplicantID" : 7799,
     "Code" : "HARLDC",
     "OrganisationName" : "Harlow District Council",
     "StartDate" : "2019-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -3918,13 +3918,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7799
   }, {
-    "ApplicantID" : 9729,
-    "PSSSAID" : 8078,
+    "ApplicantID" : 171,
+    "PSSApplicantID" : 8078,
     "Code" : "BASBC",
     "OrganisationName" : "Basildon Borough Council",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Basildon Centre",
@@ -3942,13 +3942,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8078
   }, {
-    "ApplicantID" : 9730,
-    "PSSSAID" : 8079,
+    "ApplicantID" : 172,
+    "PSSApplicantID" : 8079,
     "Code" : "SOSBC",
     "OrganisationName" : "Southend-on-Sea Borough Council",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -3966,13 +3966,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8079
   }, {
-    "ApplicantID" : 9731,
-    "PSSSAID" : 8080,
+    "ApplicantID" : 173,
+    "PSSApplicantID" : 8080,
     "Code" : "THURC",
     "OrganisationName" : "Thurrock Council",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Offices",
@@ -3990,13 +3990,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8080
   }, {
-    "ApplicantID" : 9732,
-    "PSSSAID" : 8141,
+    "ApplicantID" : 174,
+    "PSSApplicantID" : 8141,
     "Code" : "HMRCPOC",
     "OrganisationName" : "HM Revenue and Customs FIS POC",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "3rd Floor, Yorke House",
@@ -4011,13 +4011,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8141
   }, {
-    "ApplicantID" : 9733,
-    "PSSSAID" : 8261,
+    "ApplicantID" : 175,
+    "PSSApplicantID" : 8261,
     "Code" : "NTSECT",
     "OrganisationName" : "National Trading Standards Regional Investigations and eCrime Team",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Hazel Court EcoDept",
@@ -4035,13 +4035,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8261
   }, {
-    "ApplicantID" : 9734,
-    "PSSSAID" : 9021,
+    "ApplicantID" : 176,
+    "PSSApplicantID" : 9021,
     "Code" : "LINLS",
     "OrganisationName" : "Lincolnshire County Council, Legal Services",
     "StartDate" : "2022-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lincolnshire County Offices",
@@ -4059,13 +4059,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9021
   }, {
-    "ApplicantID" : 9735,
-    "PSSSAID" : 9283,
+    "ApplicantID" : 177,
+    "PSSApplicantID" : 9283,
     "Code" : "Yu",
     "OrganisationName" : "Yu Energy",
     "StartDate" : "2023-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2 Horizon Pl",
@@ -4080,13 +4080,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9283
   }, {
-    "ApplicantID" : 9736,
-    "PSSSAID" : 9401,
+    "ApplicantID" : 178,
+    "PSSApplicantID" : 9401,
     "Code" : "TLBL",
     "OrganisationName" : "The London Borough of Lambeth",
     "StartDate" : "2023-11-16",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "6 Brixton Hill",
@@ -4104,13 +4104,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9401
   }, {
-    "ApplicantID" : 9737,
-    "PSSSAID" : 9521,
+    "ApplicantID" : 179,
+    "PSSApplicantID" : 9521,
     "Code" : "TRUENERGY",
     "OrganisationName" : "Tru Energy Limited",
     "StartDate" : "2024-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Gable House",
@@ -4131,13 +4131,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9521
   }, {
-    "ApplicantID" : 9738,
-    "PSSSAID" : 9641,
+    "ApplicantID" : 180,
+    "PSSApplicantID" : 9641,
     "Code" : "GSCLTD",
     "OrganisationName" : "Global Security and Credit Agency Ltd",
     "StartDate" : "2024-10-24",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "219 Marsh Wall",
@@ -4158,13 +4158,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9641
   }, {
-    "ApplicantID" : 9739,
-    "PSSSAID" : 9661,
+    "ApplicantID" : 181,
+    "PSSApplicantID" : 9661,
     "Code" : "CADENT",
     "OrganisationName" : "Cadent Gas Limited",
     "StartDate" : "2025-01-09",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Pilot Way",
@@ -4185,13 +4185,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9661
   }, {
-    "ApplicantID" : 9740,
-    "PSSSAID" : 9725,
+    "ApplicantID" : 182,
+    "PSSApplicantID" : 9725,
     "Code" : "LBRED",
     "OrganisationName" : "London Borough of Redbridge",
     "StartDate" : "2025-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "128-142 High Road",
@@ -4209,13 +4209,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9725
   }, {
-    "ApplicantID" : 9741,
-    "PSSSAID" : 9763,
+    "ApplicantID" : 183,
+    "PSSApplicantID" : 9763,
     "Code" : "UESLTD",
     "OrganisationName" : "Utility Enforcement Solutions Ltd",
     "StartDate" : "2025-12-04",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Union House",
@@ -4236,13 +4236,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9763
   }, {
-    "ApplicantID" : 9742,
-    "PSSSAID" : 9764,
+    "ApplicantID" : 184,
+    "PSSApplicantID" : 9764,
     "Code" : "NWSLTD",
     "OrganisationName" : "National Warrant Services Ltd",
     "StartDate" : "2025-12-04",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "85 Great Portland Street",
@@ -4263,13 +4263,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9764
   }, {
-    "ApplicantID" : 9743,
-    "PSSSAID" : 9823,
+    "ApplicantID" : 185,
+    "PSSApplicantID" : 9823,
     "Code" : "ICRLTD",
     "OrganisationName" : "Interactive Contact & Resolution Limited",
     "StartDate" : "2026-03-09",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Genesis Centre",
@@ -4290,13 +4290,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9823
   }, {
-    "ApplicantID" : 9744,
-    "PSSSAID" : 6338,
+    "ApplicantID" : 186,
+    "PSSApplicantID" : 6338,
     "Code" : "GMP",
     "OrganisationName" : "Greater Manchester Police",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -4314,13 +4314,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6338
   }, {
-    "ApplicantID" : 9745,
-    "PSSSAID" : 6479,
+    "ApplicantID" : 187,
+    "PSSApplicantID" : 6479,
     "Code" : "MHTBURY",
     "OrganisationName" : "Community Mental Health Team Bury",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Humphrey House",
@@ -4338,13 +4338,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6479
   }, {
-    "ApplicantID" : 9746,
-    "PSSSAID" : 7218,
+    "ApplicantID" : 188,
+    "PSSApplicantID" : 7218,
     "Code" : "LANCTS",
     "OrganisationName" : "Trading Standards Lancashire",
     "StartDate" : "2018-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lancashire County Council",
@@ -4362,13 +4362,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7218
   }, {
-    "ApplicantID" : 9747,
-    "PSSSAID" : 7238,
+    "ApplicantID" : 189,
+    "PSSApplicantID" : 7238,
     "Code" : "BDBC",
     "OrganisationName" : "Basingstoke and Deane Borough Council",
     "StartDate" : "2018-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Offices",
@@ -4383,13 +4383,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7238
   }, {
-    "ApplicantID" : 9748,
-    "PSSSAID" : 7339,
+    "ApplicantID" : 190,
+    "PSSApplicantID" : 7339,
     "Code" : "BTP01",
     "OrganisationName" : "British Transport Police Authority",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "The Forum, 5th Floor North",
@@ -4410,13 +4410,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7339
   }, {
-    "ApplicantID" : 9749,
-    "PSSSAID" : 7698,
+    "ApplicantID" : 191,
+    "PSSApplicantID" : 7698,
     "Code" : "DORAMHP",
     "OrganisationName" : "Dorset AMHP Hub",
     "StartDate" : "2019-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Forston Clinic",
@@ -4434,13 +4434,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7698
   }, {
-    "ApplicantID" : 9750,
-    "PSSSAID" : 7718,
+    "ApplicantID" : 192,
+    "PSSApplicantID" : 7718,
     "Code" : "MJSS",
     "OrganisationName" : "Mark Jermin Stage School",
     "StartDate" : "2019-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "41 Mount Pleasant",
@@ -4458,13 +4458,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7718
   }, {
-    "ApplicantID" : 9751,
-    "PSSSAID" : 7719,
+    "ApplicantID" : 193,
+    "PSSApplicantID" : 7719,
     "Code" : "LSS",
     "OrganisationName" : "License Services (Swansea)",
     "StartDate" : "2019-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "58 Hendrefoilan Avenue",
@@ -4479,13 +4479,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7719
   }, {
-    "ApplicantID" : 9752,
-    "PSSSAID" : 8341,
+    "ApplicantID" : 194,
+    "PSSApplicantID" : 8341,
     "Code" : "PCCTST",
     "OrganisationName" : "Portsmouth City Council Trading Standards Team",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Floor 2, Core 3",
@@ -4500,13 +4500,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8341
   }, {
-    "ApplicantID" : 9753,
-    "PSSSAID" : 8361,
+    "ApplicantID" : 195,
+    "PSSApplicantID" : 8361,
     "Code" : "NERART",
     "OrganisationName" : "North East Region Asset Recovery Team",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PO Box 9",
@@ -4521,13 +4521,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8361
   }, {
-    "ApplicantID" : 9754,
-    "PSSSAID" : 8381,
+    "ApplicantID" : 196,
+    "PSSApplicantID" : 8381,
     "Code" : "INSCIT",
     "OrganisationName" : "Insolvency Service - Criminal Investigations Team",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Financial Investigation Unit",
@@ -4542,13 +4542,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8381
   }, {
-    "ApplicantID" : 9755,
-    "PSSSAID" : 8421,
+    "ApplicantID" : 197,
+    "PSSApplicantID" : 8421,
     "Code" : "EANEWC",
     "OrganisationName" : "The Environment Agency Newcastle",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Tyneside House",
@@ -4563,13 +4563,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8421
   }, {
-    "ApplicantID" : 9756,
-    "PSSSAID" : 8581,
+    "ApplicantID" : 198,
+    "PSSApplicantID" : 8581,
     "Code" : "COSO",
     "OrganisationName" : "Customer outreach solutions office",
     "StartDate" : "2023-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "4 Riverside Trading Estate",
@@ -4584,13 +4584,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8581
   }, {
-    "ApplicantID" : 9757,
-    "PSSSAID" : 8621,
+    "ApplicantID" : 199,
+    "PSSApplicantID" : 8621,
     "Code" : "TELFWRE",
     "OrganisationName" : "Telford and Wrekin Council",
     "StartDate" : "2020-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Trading Standards and Licensing",
@@ -4608,13 +4608,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8621
   }, {
-    "ApplicantID" : 9758,
-    "PSSSAID" : 8641,
+    "ApplicantID" : 200,
+    "PSSApplicantID" : 8641,
     "Code" : "DVSA",
     "OrganisationName" : "Driver and Vehicle Standards Agency",
     "StartDate" : "2020-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Plas Machynlleth",
@@ -4635,13 +4635,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8641
   }, {
-    "ApplicantID" : 9759,
-    "PSSSAID" : 8801,
+    "ApplicantID" : 201,
+    "PSSApplicantID" : 8801,
     "Code" : "CMSBRISTOL",
     "OrganisationName" : "CMS Cameron McKenna Nabarro Olswang LLP",
     "StartDate" : "2021-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2 College Square",
@@ -4659,13 +4659,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8801
   }, {
-    "ApplicantID" : 9760,
-    "PSSSAID" : 8901,
+    "ApplicantID" : 202,
+    "PSSApplicantID" : 8901,
     "Code" : "STHO",
     "OrganisationName" : "South Tyneside Homes",
     "StartDate" : "2021-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Unit 4, Heddon Way",
@@ -4680,13 +4680,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8901
   }, {
-    "ApplicantID" : 9761,
-    "PSSSAID" : 8981,
+    "ApplicantID" : 203,
+    "PSSApplicantID" : 8981,
     "Code" : "CFTLINC",
     "OrganisationName" : "Community Forensic Team Lincolnshire",
     "StartDate" : "2021-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lincolnshire Partnership NHS",
@@ -4707,13 +4707,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8981
   }, {
-    "ApplicantID" : 9762,
-    "PSSSAID" : 9301,
+    "ApplicantID" : 204,
+    "PSSApplicantID" : 9301,
     "Code" : "UCOLTD",
     "OrganisationName" : "Utility Collections Limited",
     "StartDate" : "2023-08-22",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Unit 1B",
@@ -4728,13 +4728,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9301
   }, {
-    "ApplicantID" : 9763,
-    "PSSSAID" : 9381,
+    "ApplicantID" : 205,
+    "PSSApplicantID" : 9381,
     "Code" : "LBC",
     "OrganisationName" : "London Borough of Camden",
     "StartDate" : "2023-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "9th Floor Legal Housing",
@@ -4752,13 +4752,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9381
   }, {
-    "ApplicantID" : 9764,
-    "PSSSAID" : 9581,
+    "ApplicantID" : 206,
+    "PSSApplicantID" : 9581,
     "Code" : "FINU",
     "OrganisationName" : "Financial Investigations Unit",
     "StartDate" : "2024-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "National Intelligence Unit",
@@ -4773,13 +4773,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9581
   }, {
-    "ApplicantID" : 9765,
-    "PSSSAID" : 9703,
+    "ApplicantID" : 207,
+    "PSSApplicantID" : 9703,
     "Code" : "NERECU",
     "OrganisationName" : "North East Regional Economic Crime Unit",
     "StartDate" : "2025-03-17",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "c/o Durham Police HQ",
@@ -4794,13 +4794,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9703
   }, {
-    "ApplicantID" : 9766,
-    "PSSSAID" : 9726,
+    "ApplicantID" : 208,
+    "PSSApplicantID" : 9726,
     "Code" : "ENSLTD",
     "OrganisationName" : "Engage Services (ESL) Limited",
     "StartDate" : "2025-10-03",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "12th Floor One America Square",
@@ -4821,13 +4821,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9726
   }, {
-    "ApplicantID" : 9767,
-    "PSSSAID" : 6418,
+    "ApplicantID" : 209,
+    "PSSApplicantID" : 6418,
     "Code" : "OMHT",
     "OrganisationName" : "Olympus Care Mental Health Team",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Olympus House",
@@ -4845,13 +4845,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6418
   }, {
-    "ApplicantID" : 9768,
-    "PSSSAID" : 6419,
+    "ApplicantID" : 210,
+    "PSSApplicantID" : 6419,
     "Code" : "NORPOL",
     "OrganisationName" : "Northamptonshire Police",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Wooton Hall Police Headquarters",
@@ -4866,13 +4866,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6419
   }, {
-    "ApplicantID" : 9769,
-    "PSSSAID" : 6461,
+    "ApplicantID" : 211,
+    "PSSApplicantID" : 6461,
     "Code" : "FORHOUS",
     "OrganisationName" : "ForHousing",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "7-9 Civic Way",
@@ -4893,13 +4893,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6461
   }, {
-    "ApplicantID" : 9770,
-    "PSSSAID" : 6998,
+    "ApplicantID" : 212,
+    "PSSApplicantID" : 6998,
     "Code" : "ECICMHT",
     "OrganisationName" : "East Cornwall Integrated Community Mental Health Team",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cornwall Partnership NHS Foundation",
@@ -4920,13 +4920,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6998
   }, {
-    "ApplicantID" : 9771,
-    "PSSSAID" : 1995,
+    "ApplicantID" : 213,
+    "PSSApplicantID" : 1995,
     "Code" : "LDYWMHT",
     "OrganisationName" : "Ladywell Inpatient Mental Health Services",
     "StartDate" : "2017-02-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lewisham Hospital (Ladywell Unit)",
@@ -4944,13 +4944,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1995
   }, {
-    "ApplicantID" : 9772,
-    "PSSSAID" : 1993,
+    "ApplicantID" : 214,
+    "PSSApplicantID" : 1993,
     "Code" : "BEXSOCS",
     "OrganisationName" : "BEXLEY SOCIAL SERVICES",
     "StartDate" : "2017-02-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Offices",
@@ -4971,13 +4971,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 1993
   }, {
-    "ApplicantID" : 9773,
-    "PSSSAID" : 322,
+    "ApplicantID" : 215,
+    "PSSApplicantID" : 322,
     "Code" : "GROSTEL",
     "OrganisationName" : "Grosvenor Services Group Ltd (Telecom Plus PLC)",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St. David's House",
@@ -4998,13 +4998,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 322
   }, {
-    "ApplicantID" : 9774,
-    "PSSSAID" : 5758,
+    "ApplicantID" : 216,
+    "PSSApplicantID" : 5758,
     "Code" : "WBC",
     "OrganisationName" : "Warrington Borough Council",
     "StartDate" : "2018-05-10",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Contact Warrington",
@@ -5025,13 +5025,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 5758
   }, {
-    "ApplicantID" : 9775,
-    "PSSSAID" : 7078,
+    "ApplicantID" : 217,
+    "PSSApplicantID" : 7078,
     "Code" : "TRAFFC",
     "OrganisationName" : "Trafford Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Trafford Town Hall",
@@ -5052,13 +5052,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7078
   }, {
-    "ApplicantID" : 9776,
-    "PSSSAID" : 7098,
+    "ApplicantID" : 218,
+    "PSSApplicantID" : 7098,
     "Code" : "RCHDC",
     "OrganisationName" : "Rochdale Metropolitan Borough Council",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "AMHP Hub",
@@ -5073,13 +5073,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7098
   }, {
-    "ApplicantID" : 9777,
-    "PSSSAID" : 7298,
+    "ApplicantID" : 219,
+    "PSSApplicantID" : 7298,
     "Code" : "AVSOMPOL",
     "OrganisationName" : "Avon & Somerset Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police and Fire Headquarters",
@@ -5097,13 +5097,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7298
   }, {
-    "ApplicantID" : 9778,
-    "PSSSAID" : 7299,
+    "ApplicantID" : 220,
+    "PSSApplicantID" : 7299,
     "Code" : "CBPOL",
     "OrganisationName" : "Cumbria Constabulary",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Constabulary Headquarters",
@@ -5121,13 +5121,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7299
   }, {
-    "ApplicantID" : 9779,
-    "PSSSAID" : 7300,
+    "ApplicantID" : 221,
+    "PSSApplicantID" : 7300,
     "Code" : "DRBYPOL",
     "OrganisationName" : "Derbyshire Constabulary",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -5145,13 +5145,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7300
   }, {
-    "ApplicantID" : 9780,
-    "PSSSAID" : 7301,
+    "ApplicantID" : 222,
+    "PSSApplicantID" : 7301,
     "Code" : "DYFPOL",
     "OrganisationName" : "Dyfed-Powys Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -5169,13 +5169,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7301
   }, {
-    "ApplicantID" : 9781,
-    "PSSSAID" : 7302,
+    "ApplicantID" : 223,
+    "PSSApplicantID" : 7302,
     "Code" : "GLOSPOL",
     "OrganisationName" : "Gloucestershire Constabulary",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "County Police Headquarters",
@@ -5193,13 +5193,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7302
   }, {
-    "ApplicantID" : 9782,
-    "PSSSAID" : 7303,
+    "ApplicantID" : 224,
+    "PSSApplicantID" : 7303,
     "Code" : "LANCSPOL",
     "OrganisationName" : "Lancashire Constabulary",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Constabulary Headquarters",
@@ -5217,13 +5217,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7303
   }, {
-    "ApplicantID" : 9783,
-    "PSSSAID" : 7304,
+    "ApplicantID" : 225,
+    "PSSApplicantID" : 7304,
     "Code" : "LEICSPOL",
     "OrganisationName" : "Leicestershire Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -5244,13 +5244,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7304
   }, {
-    "ApplicantID" : 9784,
-    "PSSSAID" : 7305,
+    "ApplicantID" : 226,
+    "PSSApplicantID" : 7305,
     "Code" : "METPOL",
     "OrganisationName" : "Metropolitan Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -5268,13 +5268,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7305
   }, {
-    "ApplicantID" : 9785,
-    "PSSSAID" : 7306,
+    "ApplicantID" : 227,
+    "PSSApplicantID" : 7306,
     "Code" : "NYRKPOL",
     "OrganisationName" : "North Yorkshire Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Police Headquarters",
@@ -5295,13 +5295,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7306
   }, {
-    "ApplicantID" : 9786,
-    "PSSSAID" : 7308,
+    "ApplicantID" : 228,
+    "PSSApplicantID" : 7308,
     "Code" : "SUFFPOL",
     "OrganisationName" : "Suffolk Constabulary",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Force Headquarters",
@@ -5319,13 +5319,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7308
   }, {
-    "ApplicantID" : 9787,
-    "PSSSAID" : 7309,
+    "ApplicantID" : 229,
+    "PSSApplicantID" : 7309,
     "Code" : "WARKSPOL",
     "OrganisationName" : "Warwickshire Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Force Headquarters",
@@ -5343,13 +5343,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7309
   }, {
-    "ApplicantID" : 9788,
-    "PSSSAID" : 7310,
+    "ApplicantID" : 230,
+    "PSSApplicantID" : 7310,
     "Code" : "WILTSPOL",
     "OrganisationName" : "Wiltshire Police",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Force Headquarters",
@@ -5367,13 +5367,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7310
   }, {
-    "ApplicantID" : 9789,
-    "PSSSAID" : 7478,
+    "ApplicantID" : 231,
+    "PSSApplicantID" : 7478,
     "Code" : "AHMPB",
     "OrganisationName" : "Birmingham Shared Lives",
     "StartDate" : "2019-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "City Wide AHMP Team",
@@ -5391,13 +5391,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7478
   }, {
-    "ApplicantID" : 9790,
-    "PSSSAID" : 7479,
+    "ApplicantID" : 232,
+    "PSSApplicantID" : 7479,
     "Code" : "CMHTNEW",
     "OrganisationName" : "Newington Community Mental Health Team",
     "StartDate" : "2019-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Mental Health and Autism Team",
@@ -5415,13 +5415,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7479
   }, {
-    "ApplicantID" : 9791,
-    "PSSSAID" : 8058,
+    "ApplicantID" : 233,
+    "PSSApplicantID" : 8058,
     "Code" : "STBC",
     "OrganisationName" : "Stockton on Tees Borough Council",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "16 Church Road",
@@ -5436,13 +5436,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8058
   }, {
-    "ApplicantID" : 9792,
-    "PSSSAID" : 8781,
+    "ApplicantID" : 234,
+    "PSSApplicantID" : 8781,
     "Code" : "SYMBIOE",
     "OrganisationName" : "Symbio Energy Ltd.",
     "StartDate" : "2021-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "103 Mansion House",
@@ -5463,13 +5463,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8781
   }, {
-    "ApplicantID" : 9793,
-    "PSSSAID" : 8921,
+    "ApplicantID" : 235,
+    "PSSApplicantID" : 8921,
     "Code" : "NNCLA",
     "OrganisationName" : "North Northamptonshire Council",
     "StartDate" : "2021-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Municipal Offices",
@@ -5487,13 +5487,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8921
   }, {
-    "ApplicantID" : 9794,
-    "PSSSAID" : 8961,
+    "ApplicantID" : 236,
+    "PSSApplicantID" : 8961,
     "Code" : "EASPAL",
     "OrganisationName" : "Environment Agency Spalding",
     "StartDate" : "2021-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Environment Agency District Offices",
@@ -5514,13 +5514,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8961
   }, {
-    "ApplicantID" : 9795,
-    "PSSSAID" : 9041,
+    "ApplicantID" : 237,
+    "PSSApplicantID" : 9041,
     "Code" : "GLAAN",
     "OrganisationName" : "Gangmasters & Labour Abuse Authority",
     "StartDate" : "2022-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PO Box 10272",
@@ -5535,13 +5535,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9041
   }, {
-    "ApplicantID" : 9796,
-    "PSSSAID" : 9141,
+    "ApplicantID" : 238,
+    "PSSApplicantID" : 9141,
     "Code" : "SHDC",
     "OrganisationName" : "South Holland District Council",
     "StartDate" : "2022-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Council Offices",
@@ -5562,13 +5562,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9141
   }, {
-    "ApplicantID" : 9797,
-    "PSSSAID" : 9221,
+    "ApplicantID" : 239,
+    "PSSApplicantID" : 9221,
     "Code" : "CFCE",
     "OrganisationName" : "Criminal Fines Collection and Enforcement",
     "StartDate" : "2022-10-18",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "102 Petty France",
@@ -5583,13 +5583,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9221
   }, {
-    "ApplicantID" : 9798,
-    "PSSSAID" : 9402,
+    "ApplicantID" : 240,
+    "PSSApplicantID" : 9402,
     "Code" : "LBBH",
     "OrganisationName" : "Barnet Homes",
     "StartDate" : "2023-11-16",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Grahame Park Office",
@@ -5604,13 +5604,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9402
   }, {
-    "ApplicantID" : 9799,
-    "PSSSAID" : 9403,
+    "ApplicantID" : 241,
+    "PSSApplicantID" : 9403,
     "Code" : "LBHA",
     "OrganisationName" : "London Borough of Haringey",
     "StartDate" : "2023-11-16",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Legal Services",
@@ -5631,13 +5631,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9403
   }, {
-    "ApplicantID" : 9800,
-    "PSSSAID" : 9601,
+    "ApplicantID" : 242,
+    "PSSApplicantID" : 9601,
     "Code" : "CECAMHPS",
     "OrganisationName" : "Cheshire East Council AMHP Service",
     "StartDate" : "2024-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Westfields",
@@ -5652,13 +5652,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9601
   }, {
-    "ApplicantID" : 9801,
-    "PSSSAID" : 6838,
+    "ApplicantID" : 243,
+    "PSSApplicantID" : 6838,
     "Code" : "NKDC",
     "OrganisationName" : "North Kesteven District Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "District Council Offices",
@@ -5676,13 +5676,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6838
   }, {
-    "ApplicantID" : 9802,
-    "PSSSAID" : 6839,
+    "ApplicantID" : 244,
+    "PSSApplicantID" : 6839,
     "Code" : "GROSBRE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Bristol Energy)",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St. David's House",
@@ -5703,13 +5703,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6839
   }, {
-    "ApplicantID" : 9803,
-    "PSSSAID" : 6918,
+    "ApplicantID" : 245,
+    "PSSApplicantID" : 6918,
     "Code" : "HYDRONFLOW",
     "OrganisationName" : "HYDRON (Flow Energy)",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -5730,13 +5730,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6918
   }, {
-    "ApplicantID" : 9804,
-    "PSSSAID" : 6919,
+    "ApplicantID" : 246,
+    "PSSApplicantID" : 6919,
     "Code" : "GROSENGIE",
     "OrganisationName" : "Grosvenor Services Group Ltd (Engie)",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -5757,13 +5757,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6919
   }, {
-    "ApplicantID" : 9805,
-    "PSSSAID" : 7058,
+    "ApplicantID" : 247,
+    "PSSApplicantID" : 7058,
     "Code" : "SKDC",
     "OrganisationName" : "South Kesteven District Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Council Offices",
@@ -5778,13 +5778,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7058
   }, {
-    "ApplicantID" : 9806,
-    "PSSSAID" : 7138,
+    "ApplicantID" : 248,
+    "PSSApplicantID" : 7138,
     "Code" : "ANGWS",
     "OrganisationName" : "Anglian Water Services Ltd.",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Legal Dept. Lancaster House",
@@ -5805,13 +5805,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7138
   }, {
-    "ApplicantID" : 9807,
-    "PSSSAID" : 7258,
+    "ApplicantID" : 249,
+    "PSSApplicantID" : 7258,
     "Code" : "WMERPOL",
     "OrganisationName" : "West Mercia Police",
     "StartDate" : "2018-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "West Mercia Police HQ",
@@ -5829,13 +5829,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7258
   }, {
-    "ApplicantID" : 9808,
-    "PSSSAID" : 7259,
+    "ApplicantID" : 250,
+    "PSSApplicantID" : 7259,
     "Code" : "KASHDC",
     "OrganisationName" : "Ashfield District Council",
     "StartDate" : "2018-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Urban Road",
@@ -5856,13 +5856,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7259
   }, {
-    "ApplicantID" : 9809,
-    "PSSSAID" : 7260,
+    "ApplicantID" : 251,
+    "PSSApplicantID" : 7260,
     "Code" : "MANSDC",
     "OrganisationName" : "Mansfield District Council",
     "StartDate" : "2018-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -5883,13 +5883,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7260
   }, {
-    "ApplicantID" : 9810,
-    "PSSSAID" : 7538,
+    "ApplicantID" : 252,
+    "PSSApplicantID" : 7538,
     "Code" : "LIVCTX",
     "OrganisationName" : "Liverpool City Council (Taxi Licensing)",
     "StartDate" : "2019-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cunard Building",
@@ -5904,13 +5904,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7538
   }, {
-    "ApplicantID" : 9811,
-    "PSSSAID" : 7539,
+    "ApplicantID" : 253,
+    "PSSApplicantID" : 7539,
     "Code" : "LIVCLD",
     "OrganisationName" : "Liverpool City Council (Licensing Department)",
     "StartDate" : "2019-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cunard Building",
@@ -5925,13 +5925,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7539
   }, {
-    "ApplicantID" : 9812,
-    "PSSSAID" : 7598,
+    "ApplicantID" : 254,
+    "PSSApplicantID" : 7598,
     "Code" : "YRKC",
     "OrganisationName" : "City Of York Council",
     "StartDate" : "2019-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "West Offices",
@@ -5946,13 +5946,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7598
   }, {
-    "ApplicantID" : 9813,
-    "PSSSAID" : 7618,
+    "ApplicantID" : 255,
+    "PSSApplicantID" : 7618,
     "Code" : "DUDBC",
     "OrganisationName" : "Dudley Metropolitan Borough Council",
     "StartDate" : "2019-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Council House",
@@ -5967,13 +5967,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7618
   }, {
-    "ApplicantID" : 9814,
-    "PSSSAID" : 7619,
+    "ApplicantID" : 256,
+    "PSSApplicantID" : 7619,
     "Code" : "WALBC",
     "OrganisationName" : "Walsall Metropolitan Borough Council",
     "StartDate" : "2019-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -5988,13 +5988,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7619
   }, {
-    "ApplicantID" : 9815,
-    "PSSSAID" : 7678,
+    "ApplicantID" : 257,
+    "PSSApplicantID" : 7678,
     "Code" : "TVBC",
     "OrganisationName" : "Test Valley Borough Council",
     "StartDate" : "2019-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Council Offices",
@@ -6015,13 +6015,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7678
   }, {
-    "ApplicantID" : 9816,
-    "PSSSAID" : 7738,
+    "ApplicantID" : 258,
+    "PSSApplicantID" : 7738,
     "Code" : "FYC",
     "OrganisationName" : "Farnham Youth Choir",
     "StartDate" : "2019-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "10 Larchfield Road",
@@ -6039,13 +6039,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7738
   }, {
-    "ApplicantID" : 9817,
-    "PSSSAID" : 7858,
+    "ApplicantID" : 259,
+    "PSSApplicantID" : 7858,
     "Code" : "MUSL",
     "OrganisationName" : "Mercia Utility Services Ltd",
     "StartDate" : "2019-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -6066,13 +6066,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7858
   }, {
-    "ApplicantID" : 9818,
-    "PSSSAID" : 7958,
+    "ApplicantID" : 260,
+    "PSSApplicantID" : 7958,
     "Code" : "GROSBPG",
     "OrganisationName" : "Grosvenor Services Ltd (Business Power and Gas)",
     "StartDate" : "2019-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -6093,13 +6093,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7958
   }, {
-    "ApplicantID" : 9819,
-    "PSSSAID" : 8018,
+    "ApplicantID" : 261,
+    "PSSApplicantID" : 8018,
     "Code" : "LEEDSCC",
     "OrganisationName" : "Leeds City Council",
     "StartDate" : "2019-11-18",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Tribeca House",
@@ -6117,13 +6117,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8018
   }, {
-    "ApplicantID" : 9820,
-    "PSSSAID" : 8161,
+    "ApplicantID" : 262,
+    "PSSApplicantID" : 8161,
     "Code" : "BWDBC",
     "OrganisationName" : "Brentwood Borough Council",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "The Town Hall",
@@ -6138,13 +6138,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8161
   }, {
-    "ApplicantID" : 9821,
-    "PSSSAID" : 8181,
+    "ApplicantID" : 263,
+    "PSSApplicantID" : 8181,
     "Code" : "BSKYMET",
     "OrganisationName" : "Bluesky Metering Services",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor, Pacific House",
@@ -6159,13 +6159,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8181
   }, {
-    "ApplicantID" : 9822,
-    "PSSSAID" : 8241,
+    "ApplicantID" : 264,
+    "PSSApplicantID" : 8241,
     "Code" : "ROYMAIL",
     "OrganisationName" : "Royal Mail",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PO Box 67189",
@@ -6180,13 +6180,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8241
   }, {
-    "ApplicantID" : 9823,
-    "PSSSAID" : 8321,
+    "ApplicantID" : 265,
+    "PSSApplicantID" : 8321,
     "Code" : "CFIB",
     "OrganisationName" : "Criminal & Financial Investigations Basingstoke",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Home Office, CFI Basingstoke",
@@ -6201,13 +6201,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8321
   }, {
-    "ApplicantID" : 9824,
-    "PSSSAID" : 8721,
+    "ApplicantID" : 266,
+    "PSSApplicantID" : 8721,
     "Code" : "SEVTREW",
     "OrganisationName" : "Severn Trent Water",
     "StartDate" : "2020-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Severn Trent Centre",
@@ -6225,13 +6225,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8721
   }, {
-    "ApplicantID" : 9825,
-    "PSSSAID" : 8841,
+    "ApplicantID" : 267,
+    "PSSApplicantID" : 8841,
     "Code" : "CORBC",
     "OrganisationName" : "Corby Borough Council",
     "StartDate" : "2021-02-28",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "The Corby Cube",
@@ -6246,13 +6246,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8841
   }, {
-    "ApplicantID" : 9826,
-    "PSSSAID" : 9001,
+    "ApplicantID" : 268,
+    "PSSApplicantID" : 9001,
     "Code" : "SWANCC",
     "OrganisationName" : "Swansea County Council",
     "StartDate" : "2022-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Council of City & County of Swansea",
@@ -6270,13 +6270,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9001
   }, {
-    "ApplicantID" : 9827,
-    "PSSSAID" : 9081,
+    "ApplicantID" : 269,
+    "PSSApplicantID" : 9081,
     "Code" : "GROSBRYT",
     "OrganisationName" : "Grosvenor Services Group Ltd (Bryt Energy)",
     "StartDate" : "2022-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "1 Victoria Square",
@@ -6294,13 +6294,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9081
   }, {
-    "ApplicantID" : 9828,
-    "PSSSAID" : 9422,
+    "ApplicantID" : 270,
+    "PSSApplicantID" : 9422,
     "Code" : "MANCC",
     "OrganisationName" : "Manchester City Council",
     "StartDate" : "2024-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -6318,13 +6318,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9422
   }, {
-    "ApplicantID" : 9829,
-    "PSSSAID" : 9461,
+    "ApplicantID" : 271,
+    "PSSApplicantID" : 9461,
     "Code" : "LBHAV",
     "OrganisationName" : "London Borough of Havering",
     "StartDate" : "2024-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -6342,13 +6342,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9461
   }, {
-    "ApplicantID" : 9830,
-    "PSSSAID" : 9682,
+    "ApplicantID" : 272,
+    "PSSApplicantID" : 9682,
     "Code" : "NRWALES",
     "OrganisationName" : "Cyfoeth Naturiol Cymru/Natural Resources Wales",
     "StartDate" : "2025-01-27",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Maes Y Ffynnon",
@@ -6363,13 +6363,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9682
   }, {
-    "ApplicantID" : 9831,
-    "PSSSAID" : 9704,
+    "ApplicantID" : 273,
+    "PSSApplicantID" : 9704,
     "Code" : "LBHIL",
     "OrganisationName" : "London Borough of Hillingdon",
     "StartDate" : "2025-03-17",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -6390,13 +6390,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9704
   }, {
-    "ApplicantID" : 9832,
-    "PSSSAID" : 6358,
+    "ApplicantID" : 274,
+    "PSSApplicantID" : 6358,
     "Code" : "HYDRONBES",
     "OrganisationName" : "HYDRON (BES Utilities)",
     "StartDate" : "2018-09-13",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -6411,13 +6411,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6358
   }, {
-    "ApplicantID" : 9833,
-    "PSSSAID" : 6938,
+    "ApplicantID" : 275,
+    "PSSApplicantID" : 6938,
     "Code" : "AHMPSO",
     "OrganisationName" : "Social Care Mental Health Team Southampton",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "County AHMP Service",
@@ -6432,13 +6432,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6938
   }, {
-    "ApplicantID" : 9834,
-    "PSSSAID" : 7038,
+    "ApplicantID" : 276,
+    "PSSApplicantID" : 7038,
     "Code" : "PENDMHT",
     "OrganisationName" : "Pendle Community Mental Health Team",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Pendle House",
@@ -6459,13 +6459,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7038
   }, {
-    "ApplicantID" : 9835,
-    "PSSSAID" : 7158,
+    "ApplicantID" : 277,
+    "PSSApplicantID" : 7158,
     "Code" : "HYDRONENG",
     "OrganisationName" : "Hydron (Engie)",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -6480,13 +6480,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7158
   }, {
-    "ApplicantID" : 9836,
-    "PSSSAID" : 7198,
+    "ApplicantID" : 278,
+    "PSSApplicantID" : 7198,
     "Code" : "CNXUS",
     "OrganisationName" : "Conexus Recovery & Field Services Ltd",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Carlisle House",
@@ -6504,13 +6504,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7198
   }, {
-    "ApplicantID" : 9837,
-    "PSSSAID" : 7458,
+    "ApplicantID" : 279,
+    "PSSApplicantID" : 7458,
     "Code" : "ASHPCC",
     "OrganisationName" : "Ashton Primary Care Centre",
     "StartDate" : "2019-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "193 Old Street",
@@ -6528,13 +6528,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7458
   }, {
-    "ApplicantID" : 9838,
-    "PSSSAID" : 8038,
+    "ApplicantID" : 280,
+    "PSSApplicantID" : 8038,
     "Code" : "TSWSCC",
     "OrganisationName" : "Trading Standards Office West Sussex",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Operations Team 2",
@@ -6552,13 +6552,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8038
   }, {
-    "ApplicantID" : 9839,
-    "PSSSAID" : 8121,
+    "ApplicantID" : 281,
+    "PSSApplicantID" : 8121,
     "Code" : "ELINDC",
     "OrganisationName" : "East Lindsey District Council",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Tedder Hall",
@@ -6573,13 +6573,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8121
   }, {
-    "ApplicantID" : 9840,
-    "PSSSAID" : 8281,
+    "ApplicantID" : 282,
+    "PSSApplicantID" : 8281,
     "Code" : "DCCTS",
     "OrganisationName" : "Durham County Council Trading Standards",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Annand House",
@@ -6597,13 +6597,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8281
   }, {
-    "ApplicantID" : 9841,
-    "PSSSAID" : 8301,
+    "ApplicantID" : 283,
+    "PSSApplicantID" : 8301,
     "Code" : "CWCMHT",
     "OrganisationName" : "Cheshire West and Chester Mental Health",
     "StartDate" : "2020-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "The Countess of Chester Health Park",
@@ -6621,13 +6621,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8301
   }, {
-    "ApplicantID" : 9842,
-    "PSSSAID" : 8601,
+    "ApplicantID" : 284,
+    "PSSApplicantID" : 8601,
     "Code" : "KIRKC",
     "OrganisationName" : "Kirklees Council",
     "StartDate" : "2020-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Huddersfield Customer Service Ctr",
@@ -6648,13 +6648,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8601
   }, {
-    "ApplicantID" : 9843,
-    "PSSSAID" : 8881,
+    "ApplicantID" : 285,
+    "PSSApplicantID" : 8881,
     "Code" : "UNUTIL",
     "OrganisationName" : "United Utilities Group PLC",
     "StartDate" : "2021-04-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Haweswater House",
@@ -6672,13 +6672,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8881
   }, {
-    "ApplicantID" : 9844,
-    "PSSSAID" : 9061,
+    "ApplicantID" : 286,
+    "PSSApplicantID" : 9061,
     "Code" : "SEEKA",
     "OrganisationName" : "Seeka Ltd",
     "StartDate" : "2022-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Broxden House",
@@ -6696,13 +6696,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9061
   }, {
-    "ApplicantID" : 9845,
-    "PSSSAID" : 9181,
+    "ApplicantID" : 287,
+    "PSSApplicantID" : 9181,
     "Code" : "EONNEXT",
     "OrganisationName" : "E.ON Field Debt Solutions part of E.ON Energy Solutions Ltd acting on behalf of E.ON Next Energy Ltd",
     "StartDate" : "2023-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Westwood Way",
@@ -6717,13 +6717,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9181
   }, {
-    "ApplicantID" : 9846,
-    "PSSSAID" : 9201,
+    "ApplicantID" : 288,
+    "PSSApplicantID" : 9201,
     "Code" : "EONNP",
     "OrganisationName" : "E.ON Energy Solutions Ltd acting on behalf of Npower Commercial Gas Ltd",
     "StartDate" : "2023-03-06",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Westwood Way",
@@ -6738,13 +6738,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9201
   }, {
-    "ApplicantID" : 9847,
-    "PSSSAID" : 9321,
+    "ApplicantID" : 289,
+    "PSSApplicantID" : 9321,
     "Code" : "SBC",
     "OrganisationName" : "Stockport Borough Council",
     "StartDate" : "2023-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Fred Perry House",
@@ -6762,13 +6762,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9321
   }, {
-    "ApplicantID" : 9848,
-    "PSSSAID" : 9322,
+    "ApplicantID" : 290,
+    "PSSApplicantID" : 9322,
     "Code" : "WBC",
     "OrganisationName" : "Wigan Borough Council",
     "StartDate" : "2023-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Life Centre",
@@ -6786,13 +6786,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9322
   }, {
-    "ApplicantID" : 9849,
-    "PSSSAID" : 9341,
+    "ApplicantID" : 291,
+    "PSSApplicantID" : 9341,
     "Code" : "RBKC",
     "OrganisationName" : "The Royal Borough of Kensington and Chelsea",
     "StartDate" : "2023-10-02",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Horton Street",
@@ -6807,13 +6807,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9341
   }, {
-    "ApplicantID" : 9850,
-    "PSSSAID" : 9370,
+    "ApplicantID" : 292,
+    "PSSApplicantID" : 9370,
     "Code" : "BRENTC",
     "OrganisationName" : "Brent Council",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Brent Civic Centre",
@@ -6831,13 +6831,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9370
   }, {
-    "ApplicantID" : 9851,
-    "PSSSAID" : 9743,
+    "ApplicantID" : 293,
+    "PSSApplicantID" : 9743,
     "Code" : "COLPOL",
     "OrganisationName" : "City of London Police",
     "StartDate" : "2025-11-06",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Fraud Team C",
@@ -6852,13 +6852,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9743
   }, {
-    "ApplicantID" : 9852,
-    "PSSSAID" : 6319,
+    "ApplicantID" : 294,
+    "PSSApplicantID" : 6319,
     "Code" : "EMSOU",
     "OrganisationName" : "East Midlands Special Operations Unit",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lincolnshire Police",
@@ -6873,13 +6873,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6319
   }, {
-    "ApplicantID" : 9853,
-    "PSSSAID" : 6398,
+    "ApplicantID" : 295,
+    "PSSApplicantID" : 6398,
     "Code" : "SALFPL",
     "OrganisationName" : "Salford City Council (Place Directorate)",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -6897,13 +6897,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6398
   }, {
-    "ApplicantID" : 9854,
-    "PSSSAID" : 6558,
+    "ApplicantID" : 296,
+    "PSSApplicantID" : 6558,
     "Code" : "NOTPOL",
     "OrganisationName" : "Nottinghamshire Constabulary",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Nottinghamshire Police Headquarters",
@@ -6918,13 +6918,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6558
   }, {
-    "ApplicantID" : 9855,
-    "PSSSAID" : 6578,
+    "ApplicantID" : 297,
+    "PSSApplicantID" : 6578,
     "Code" : "NOTTCC",
     "OrganisationName" : "Nottinghamshire County Council",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "County Hall",
@@ -6942,13 +6942,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6578
   }, {
-    "ApplicantID" : 9856,
-    "PSSSAID" : 6579,
+    "ApplicantID" : 298,
+    "PSSApplicantID" : 6579,
     "Code" : "HALBC",
     "OrganisationName" : "Halton Borough Council",
     "StartDate" : "2018-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Municipal Buildings",
@@ -6969,13 +6969,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6579
   }, {
-    "ApplicantID" : 9857,
-    "PSSSAID" : 6778,
+    "ApplicantID" : 299,
+    "PSSApplicantID" : 6778,
     "Code" : "GCTSS",
     "OrganisationName" : "Gateshead Council Trading Standards Service",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Gateshead Civic Centre",
@@ -6996,13 +6996,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6778
   }, {
-    "ApplicantID" : 9858,
-    "PSSSAID" : 6798,
+    "ApplicantID" : 300,
+    "PSSApplicantID" : 6798,
     "Code" : "BURBC",
     "OrganisationName" : "Bury Metropolitan Borough Council",
     "StartDate" : "2018-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Environmental Services",
@@ -7020,13 +7020,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6798
   }, {
-    "ApplicantID" : 9859,
-    "PSSSAID" : 61,
+    "ApplicantID" : 301,
+    "PSSApplicantID" : 61,
     "Code" : "POLEXE",
     "OrganisationName" : "Devon and Cornwall Police",
     "StartDate" : "2016-06-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Middlemoor HQ",
@@ -7044,13 +7044,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 61
   }, {
-    "ApplicantID" : 9860,
-    "PSSSAID" : 2164,
+    "ApplicantID" : 302,
+    "PSSApplicantID" : 2164,
     "Code" : "SLAM",
     "OrganisationName" : "South London and Maudsley NHS Foundation Trust",
     "StartDate" : "2017-04-05",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Bethlem Royal Hospital",
@@ -7068,13 +7068,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 2164
   }, {
-    "ApplicantID" : 9861,
-    "PSSSAID" : 3390,
+    "ApplicantID" : 303,
+    "PSSApplicantID" : 3390,
     "Code" : "DORSPOL",
     "OrganisationName" : "Dorset Police HQ",
     "StartDate" : "2017-08-08",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Force Headquarters",
@@ -7089,13 +7089,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 3390
   }, {
-    "ApplicantID" : 9862,
-    "PSSSAID" : 7398,
+    "ApplicantID" : 304,
+    "PSSApplicantID" : 7398,
     "Code" : "WVCC",
     "OrganisationName" : "Wolverhampton City Council",
     "StartDate" : "2019-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -7113,13 +7113,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7398
   }, {
-    "ApplicantID" : 9863,
-    "PSSSAID" : 7758,
+    "ApplicantID" : 305,
+    "PSSApplicantID" : 7758,
     "Code" : "REDBC",
     "OrganisationName" : "Redditch Borough Council",
     "StartDate" : "2019-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -7137,13 +7137,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7758
   }, {
-    "ApplicantID" : 9864,
-    "PSSSAID" : 7778,
+    "ApplicantID" : 306,
+    "PSSApplicantID" : 7778,
     "Code" : "HMRC-SCC",
     "OrganisationName" : "Her Majesty's Revenue and Customs - Scottish Crime Campus",
     "StartDate" : "2019-08-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Craignethan Drive",
@@ -7158,13 +7158,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7778
   }, {
-    "ApplicantID" : 9865,
-    "PSSSAID" : 7818,
+    "ApplicantID" : 307,
+    "PSSApplicantID" : 7818,
     "Code" : "GROSEON",
     "OrganisationName" : "Grosvenor Services Group Ltd (E.ON)",
     "StartDate" : "2019-09-11",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St David's House",
@@ -7185,13 +7185,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7818
   }, {
-    "ApplicantID" : 9866,
-    "PSSSAID" : 7838,
+    "ApplicantID" : 308,
+    "PSSApplicantID" : 7838,
     "Code" : "WINCMHT",
     "OrganisationName" : "Winchester Community Mental Health Team",
     "StartDate" : "2019-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Acute Mental Health Team Winchester",
@@ -7209,13 +7209,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7838
   }, {
-    "ApplicantID" : 9867,
-    "PSSSAID" : 7839,
+    "ApplicantID" : 309,
+    "PSSApplicantID" : 7839,
     "Code" : "SCOTPHQ",
     "OrganisationName" : "Scottish Power Energy Retail Ltd - HQ",
     "StartDate" : "2019-09-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "320 St Vincent Street",
@@ -7233,13 +7233,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7839
   }, {
-    "ApplicantID" : 9868,
-    "PSSSAID" : 8081,
+    "ApplicantID" : 310,
+    "PSSApplicantID" : 8081,
     "Code" : "RBBC",
     "OrganisationName" : "Reigate and Banstead Borough Council",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -7257,13 +7257,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8081
   }, {
-    "ApplicantID" : 9869,
-    "PSSSAID" : 8101,
+    "ApplicantID" : 311,
+    "PSSApplicantID" : 8101,
     "Code" : "INSOLV",
     "OrganisationName" : "Insolvency Service - Legal Services Directorate",
     "StartDate" : "2019-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Complaints Team, 16th Floor",
@@ -7281,13 +7281,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8101
   }, {
-    "ApplicantID" : 9870,
-    "PSSSAID" : 8501,
+    "ApplicantID" : 312,
+    "PSSApplicantID" : 8501,
     "Code" : "MHRA",
     "OrganisationName" : "Medical Healthcare Products Regulatory Agency",
     "StartDate" : "2020-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Foss House",
@@ -7302,13 +7302,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8501
   }, {
-    "ApplicantID" : 9871,
-    "PSSSAID" : 8661,
+    "ApplicantID" : 313,
+    "PSSApplicantID" : 8661,
     "Code" : "ENSL",
     "OrganisationName" : "Enstroga Limited",
     "StartDate" : "2020-06-24",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Alexandra House",
@@ -7326,13 +7326,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8661
   }, {
-    "ApplicantID" : 9872,
-    "PSSSAID" : 8761,
+    "ApplicantID" : 314,
+    "PSSApplicantID" : 8761,
     "Code" : "HOIMEC",
     "OrganisationName" : "Home Office Immigration Enforcement Cardiff",
     "StartDate" : "2020-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Home Office Immigration Enforcement",
@@ -7347,13 +7347,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8761
   }, {
-    "ApplicantID" : 9873,
-    "PSSSAID" : 8941,
+    "ApplicantID" : 315,
+    "PSSApplicantID" : 8941,
     "Code" : "LPFTJCH",
     "OrganisationName" : "Spalding Community Mental Health Team",
     "StartDate" : "2021-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Johnson Community Hospital",
@@ -7368,13 +7368,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8941
   }, {
-    "ApplicantID" : 9874,
-    "PSSSAID" : 9121,
+    "ApplicantID" : 316,
+    "PSSApplicantID" : 9121,
     "Code" : "MPAAS",
     "OrganisationName" : "Meter Point Administration And Solutions (MPAAS)",
     "StartDate" : "2022-04-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Unit 2",
@@ -7395,13 +7395,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9121
   }, {
-    "ApplicantID" : 9875,
-    "PSSSAID" : 9161,
+    "ApplicantID" : 317,
+    "PSSApplicantID" : 9161,
     "Code" : "SCML",
     "OrganisationName" : "Smart Choice Metering Limited",
     "StartDate" : "2023-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Parkside Stand",
@@ -7416,13 +7416,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9161
   }, {
-    "ApplicantID" : 9876,
-    "PSSSAID" : 9281,
+    "ApplicantID" : 318,
+    "PSSApplicantID" : 9281,
     "Code" : "Valda",
     "OrganisationName" : "Valda Energy",
     "StartDate" : "2023-07-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Unit 11",
@@ -7437,13 +7437,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9281
   }, {
-    "ApplicantID" : 9877,
-    "PSSSAID" : 6359,
+    "ApplicantID" : 319,
+    "PSSApplicantID" : 6359,
     "Code" : "HYDRONORST",
     "OrganisationName" : "HYDRON (Orsted Energy)",
     "StartDate" : "2018-09-13",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Amington House",
@@ -7458,13 +7458,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 6359
   }, {
-    "ApplicantID" : 9878,
-    "PSSSAID" : 7118,
+    "ApplicantID" : 320,
+    "PSSApplicantID" : 7118,
     "Code" : "NPWR",
     "OrganisationName" : "NPower",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Npower Head Office",
@@ -7479,13 +7479,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7118
   }, {
-    "ApplicantID" : 9879,
-    "PSSSAID" : 7119,
+    "ApplicantID" : 321,
+    "PSSApplicantID" : 7119,
     "Code" : "AMHPLINC",
     "OrganisationName" : "AMHP Service Lincolnshire ",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Lincolnshire County Council Room 3",
@@ -7503,13 +7503,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7119
   }, {
-    "ApplicantID" : 9880,
-    "PSSSAID" : 7120,
+    "ApplicantID" : 322,
+    "PSSApplicantID" : 7120,
     "Code" : "ICEEMBOS",
     "OrganisationName" : "East Midlands ICE Team (Boston)",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Boston Police Station",
@@ -7527,13 +7527,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7120
   }, {
-    "ApplicantID" : 9881,
-    "PSSSAID" : 7178,
+    "ApplicantID" : 323,
+    "PSSApplicantID" : 7178,
     "Code" : "NWPOL",
     "OrganisationName" : "North Wales Police",
     "StartDate" : "2018-11-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "7 Rhiw Rd",
@@ -7548,13 +7548,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7178
   }, {
-    "ApplicantID" : 9882,
-    "PSSSAID" : 7378,
+    "ApplicantID" : 324,
+    "PSSApplicantID" : 7378,
     "Code" : "OLDBC",
     "OrganisationName" : "Oldham Borough Council",
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Level 14, Civic Centre",
@@ -7572,13 +7572,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7378
   }, {
-    "ApplicantID" : 9883,
-    "PSSSAID" : 7418,
+    "ApplicantID" : 325,
+    "PSSApplicantID" : 7418,
     "Code" : "CNCPOL",
     "OrganisationName" : "Civil Nuclear Constabulary",
     "StartDate" : "2019-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "F6 Culham Science Centre",
@@ -7593,13 +7593,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7418
   }, {
-    "ApplicantID" : 9884,
-    "PSSSAID" : 7419,
+    "ApplicantID" : 326,
+    "PSSApplicantID" : 7419,
     "Code" : "CCUN",
     "OrganisationName" : "Cumbria County Council - Urgent Care Team North",
     "StartDate" : "2019-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Cumbria House",
@@ -7620,13 +7620,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7419
   }, {
-    "ApplicantID" : 9885,
-    "PSSSAID" : 7420,
+    "ApplicantID" : 327,
+    "PSSApplicantID" : 7420,
     "Code" : "CCUW",
     "OrganisationName" : "Cumbria County Council - Urgent Care Team West",
     "StartDate" : "2019-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "West Cumbria House",
@@ -7647,13 +7647,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7420
   }, {
-    "ApplicantID" : 9886,
-    "PSSSAID" : 7518,
+    "ApplicantID" : 328,
+    "PSSApplicantID" : 7518,
     "Code" : "NRTHCBSMHT",
     "OrganisationName" : "Northcroft, Birmingham and Solihull Mental Health Team",
     "StartDate" : "2019-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "190 Reservoir Road",
@@ -7671,13 +7671,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 7518
   }, {
-    "ApplicantID" : 9887,
-    "PSSSAID" : 8461,
+    "ApplicantID" : 329,
+    "PSSApplicantID" : 8461,
     "Code" : "HAMPTS",
     "OrganisationName" : "Hampshire Trading Standards",
     "StartDate" : "2020-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Montgomery House",
@@ -7698,13 +7698,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8461
   }, {
-    "ApplicantID" : 9888,
-    "PSSSAID" : 8481,
+    "ApplicantID" : 330,
+    "PSSApplicantID" : 8481,
     "Code" : "DWPF",
     "OrganisationName" : "DWP Financial Investigations Unit",
     "StartDate" : "2020-02-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "St Cross House",
@@ -7719,13 +7719,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8481
   }, {
-    "ApplicantID" : 9889,
-    "PSSSAID" : 8521,
+    "ApplicantID" : 331,
+    "PSSApplicantID" : 8521,
     "Code" : "CPSPOC",
     "OrganisationName" : "Proceeds of Crime, Crown Prosecution Service",
     "StartDate" : "2020-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "5th Floor, Zone A",
@@ -7746,13 +7746,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8521
   }, {
-    "ApplicantID" : 9890,
-    "PSSSAID" : 8541,
+    "ApplicantID" : 332,
+    "PSSApplicantID" : 8541,
     "Code" : "HMRCNEWC",
     "OrganisationName" : "Her Majesty's Revenue and Customs",
     "StartDate" : "2020-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Po Box 198",
@@ -7770,13 +7770,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8541
   }, {
-    "ApplicantID" : 9891,
-    "PSSSAID" : 8561,
+    "ApplicantID" : 333,
+    "PSSApplicantID" : 8561,
     "Code" : "AMSNOTTS",
     "OrganisationName" : "AMS Nottingham Limited",
     "StartDate" : "2020-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Church Street",
@@ -7791,13 +7791,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8561
   }, {
-    "ApplicantID" : 9892,
-    "PSSSAID" : 8741,
+    "ApplicantID" : 334,
+    "PSSApplicantID" : 8741,
     "Code" : "NCCTS",
     "OrganisationName" : "Newport City Council Trading Standards",
     "StartDate" : "2020-12-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Newport City Council",
@@ -7812,13 +7812,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8741
   }, {
-    "ApplicantID" : 9893,
-    "PSSSAID" : 8861,
+    "ApplicantID" : 335,
+    "PSSApplicantID" : 8861,
     "Code" : "LANCAMHP",
     "OrganisationName" : "Lancashire County Council Approved Mental Health Professional (AMHP) Service",
     "StartDate" : "2021-03-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "First Floor CCP",
@@ -7836,13 +7836,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 8861
   }, {
-    "ApplicantID" : 9894,
-    "PSSSAID" : 9361,
+    "ApplicantID" : 336,
+    "PSSApplicantID" : 9361,
     "Code" : "LBN",
     "OrganisationName" : "London Borough of Newham",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Newham Dockside",
@@ -7857,13 +7857,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9361
   }, {
-    "ApplicantID" : 9895,
-    "PSSSAID" : 9362,
+    "ApplicantID" : 337,
+    "PSSApplicantID" : 9362,
     "Code" : "LBBDC",
     "OrganisationName" : "London Borough of Barking and Dagenham Council",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Barking Town Hall",
@@ -7881,13 +7881,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9362
   }, {
-    "ApplicantID" : 9896,
-    "PSSSAID" : 9363,
+    "ApplicantID" : 338,
+    "PSSApplicantID" : 9363,
     "Code" : "LBH",
     "OrganisationName" : "London Borough of Harrow",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Forward Drive",
@@ -7905,13 +7905,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9363
   }, {
-    "ApplicantID" : 9897,
-    "PSSSAID" : 9364,
+    "ApplicantID" : 339,
+    "PSSApplicantID" : 9364,
     "Code" : "LBTH",
     "OrganisationName" : "London Borough of Tower Hamlets",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -7926,13 +7926,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9364
   }, {
-    "ApplicantID" : 9898,
-    "PSSSAID" : 9365,
+    "ApplicantID" : 340,
+    "PSSApplicantID" : 9365,
     "Code" : "LBE",
     "OrganisationName" : "London Borough of Enfield",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Civic Centre",
@@ -7950,13 +7950,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9365
   }, {
-    "ApplicantID" : 9899,
-    "PSSSAID" : 9366,
+    "ApplicantID" : 341,
+    "PSSApplicantID" : 9366,
     "Code" : "LBI",
     "OrganisationName" : "London Borough of Islington",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -7974,13 +7974,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9366
   }, {
-    "ApplicantID" : 9900,
-    "PSSSAID" : 9367,
+    "ApplicantID" : 342,
+    "PSSApplicantID" : 9367,
     "Code" : "LBHFC",
     "OrganisationName" : "LB Hammersmith & Fulham Council",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "2nd Floor",
@@ -7995,13 +7995,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9367
   }, {
-    "ApplicantID" : 9901,
-    "PSSSAID" : 9368,
+    "ApplicantID" : 343,
+    "PSSApplicantID" : 9368,
     "Code" : "LBW",
     "OrganisationName" : "London Borough of Waltham",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Forest",
@@ -8016,13 +8016,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9368
   }, {
-    "ApplicantID" : 9902,
-    "PSSSAID" : 9369,
+    "ApplicantID" : 344,
+    "PSSApplicantID" : 9369,
     "Code" : "SOC",
     "OrganisationName" : "Southwark Council",
     "StartDate" : "2023-10-20",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Maintenance and Compliance",
@@ -8040,13 +8040,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9369
   }, {
-    "ApplicantID" : 9903,
-    "PSSSAID" : 9421,
+    "ApplicantID" : 345,
+    "PSSApplicantID" : 9421,
     "Code" : "TMBC",
     "OrganisationName" : "Tameside Metropolitan Borough Council",
     "StartDate" : "2024-01-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Tameside One",
@@ -8064,13 +8064,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9421
   }, {
-    "ApplicantID" : 9904,
-    "PSSSAID" : 9441,
+    "ApplicantID" : 346,
+    "PSSApplicantID" : 9441,
     "Code" : "WCC",
     "OrganisationName" : "Westminster City Council",
     "StartDate" : "2024-01-02",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "64 Victoria Street",
@@ -8091,13 +8091,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9441
   }, {
-    "ApplicantID" : 9905,
-    "PSSSAID" : 9541,
+    "ApplicantID" : 347,
+    "PSSApplicantID" : 9541,
     "Code" : "LINCC",
     "OrganisationName" : "Lincolnshire County Council",
     "StartDate" : "2024-05-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Trading Standards Services",
@@ -8115,13 +8115,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9541
   }, {
-    "ApplicantID" : 9906,
-    "PSSSAID" : 9561,
+    "ApplicantID" : 348,
+    "PSSApplicantID" : 9561,
     "Code" : "SIA",
     "OrganisationName" : "Security Industry Authority",
     "StartDate" : "2024-06-25",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "PO Box 74957",
@@ -8136,13 +8136,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9561
   }, {
-    "ApplicantID" : 9907,
-    "PSSSAID" : 9621,
+    "ApplicantID" : 349,
+    "PSSApplicantID" : 9621,
     "Code" : "BOLTONC",
     "OrganisationName" : "Bolton Council",
     "StartDate" : "2024-08-15",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Town Hall",
@@ -8157,13 +8157,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9621
   }, {
-    "ApplicantID" : 9908,
-    "PSSSAID" : 9724,
+    "ApplicantID" : 350,
+    "PSSApplicantID" : 9724,
     "Code" : "EALINO",
     "OrganisationName" : "Environment Agency for Lincolnshire & Northamptonshire Area",
     "StartDate" : "2025-10-01",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Ceres House",
@@ -8178,13 +8178,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9724
   }, {
-    "ApplicantID" : 9909,
-    "PSSSAID" : 9843,
+    "ApplicantID" : 351,
+    "PSSApplicantID" : 9843,
     "Code" : "OCTNWL",
     "OrganisationName" : "Northumbrian Water Limited",
     "StartDate" : "2026-04-27",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-21T12:43:34.989Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Northumbria House",
@@ -8205,13 +8205,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9843
   }, {
-    "ApplicantID" : 9910,
-    "PSSSAID" : 9844,
+    "ApplicantID" : 352,
+    "PSSApplicantID" : 9844,
     "Code" : "OCTBSL",
     "OrganisationName" : "Business Stream Limited",
     "StartDate" : "2026-04-27",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-07T15:08:00.411Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "1-3 Lochside Crescent",
@@ -8232,13 +8232,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9844
   }, {
-    "ApplicantID" : 9911,
-    "PSSSAID" : 9845,
+    "ApplicantID" : 353,
+    "PSSApplicantID" : 9845,
     "Code" : "OCTEL",
     "OrganisationName" : "Everflow Limited",
     "StartDate" : "2026-04-27",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-21T12:43:45.059Z",
+    "UpdateDate" : "2026-08-12T10:09:22.831Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "Traynor Hub (T2)",
@@ -8259,13 +8259,13 @@
     "PublishingStatus" : "Active",
     "SA_ID" : 9845
   }, {
-    "ApplicantID" : 9912,
-    "PSSSAID" : 9846,
+    "ApplicantID" : 354,
+    "PSSApplicantID" : 9846,
     "Code" : "OCTSESBWL",
     "OrganisationName" : "SES Business Water Limited",
     "StartDate" : "2026-04-27",
     "EndDate" : null,
-    "UpdateDate" : "2026-07-21T12:43:51.172Z",
+    "UpdateDate" : "2026-09-02T09:16:30.090Z",
     "RevisionNumber" : 1,
     "Address" : [ {
       "AddressLine1" : "66-74 London Road",

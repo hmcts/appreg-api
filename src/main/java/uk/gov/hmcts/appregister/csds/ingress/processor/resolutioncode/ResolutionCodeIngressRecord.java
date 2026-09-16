@@ -17,13 +17,13 @@ public record ResolutionCodeIngressRecord(
         Long version) {
     private static final String RC_ID_FIELD = "RC_ID";
     private static final String RESOLUTION_CODE_ID_FIELD = "ResolutionCodeID";
-    private static final String PSS_RESOLUTION_CODE_ID_FIELD = "PSSRCID";
+    private static final String PSS_RESOLUTION_CODE_ID_FIELD = "PSSResolutionCodeID";
     private static final long NEW_RECORD_ID_OFFSET = 100000L;
 
     public static @Nullable Long calculateId(
-            @Nullable Long pssrcid, @Nullable Long resolutionCodeId) {
-        if (pssrcid != null) {
-            return pssrcid;
+            @Nullable Long pssResolutionCodeId, @Nullable Long resolutionCodeId) {
+        if (pssResolutionCodeId != null) {
+            return pssResolutionCodeId;
         }
 
         return resolutionCodeId == null ? null : resolutionCodeId + NEW_RECORD_ID_OFFSET;

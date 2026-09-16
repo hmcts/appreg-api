@@ -28,7 +28,7 @@ public class StandardApplicantDataIngressProcessor
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ApplicantID",
-                    "PSSSAID",
+                    "PSSApplicantID",
                     "Code",
                     "OrganisationName",
                     "StartDate",
@@ -204,10 +204,10 @@ public class StandardApplicantDataIngressProcessor
             return node;
         }
         val copiedRecord = objectNode.deepCopy();
-        val psssaId = nullableLong(copiedRecord, "PSSSAID");
+        val pssApplicantId = nullableLong(copiedRecord, "PSSApplicantID");
         val applicantId = nullableLong(copiedRecord, "ApplicantID");
-        if (psssaId != null) {
-            copiedRecord.put(SA_ID, psssaId);
+        if (pssApplicantId != null) {
+            copiedRecord.put(SA_ID, pssApplicantId);
         } else if (applicantId != null) {
             copiedRecord.put(SA_ID, applicantId + 100000L);
         }

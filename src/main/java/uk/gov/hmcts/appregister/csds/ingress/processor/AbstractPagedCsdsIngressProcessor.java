@@ -56,6 +56,7 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         if (StringUtils.hasText(mockFilePath)) {
             val mockResponse = loadMockResponse(mockFilePath);
             if (mockResponse != null) {
+                reportReceivedJson(mockResponse, "mock");
                 log.info(
                         "Loaded mock CSDS payload for {} with {} records",
                         datasetName(),
@@ -66,8 +67,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
 
         val totalCount =
                 extractCount(
-                        ingressClient.retrieveJson(
-                                appendQueryParameters(countPath(), queryParameters())));
+                        reportReceivedJson(
+                                ingressClient.retrieveJson(
+                                        appendQueryParameters(countPath(), queryParameters())),
+                                "count"));
 
         if (totalCount == 0) {
             log.info(
@@ -81,13 +84,15 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         val responses = new ArrayList<JsonNode>();
         for (var offset = 0; offset < totalCount; offset += properties.getPageSize()) {
             responses.add(
-                    ingressClient.retrieveJson(
-                            appendPagingParameters(
-                                    appendQueryParameters(queryPath(), queryParameters()),
-                                    "%24limit="
-                                            + properties.getPageSize()
-                                            + "&%24offset="
-                                            + offset)));
+                    reportReceivedJson(
+                            ingressClient.retrieveJson(
+                                    appendPagingParameters(
+                                            appendQueryParameters(queryPath(), queryParameters()),
+                                            "%24limit="
+                                                    + properties.getPageSize()
+                                                    + "&%24offset="
+                                                    + offset)),
+                            "offset_" + offset));
         }
         val fetchedRecordCount =
                 responses.stream().mapToInt(response -> extractRecords(response).size()).sum();
@@ -102,6 +107,28 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
                 fetchedRecordCount);
 
         return List.copyOf(responses);
+    }
+
+    private JsonNode reportReceivedJson(JsonNode response, String part) {
+        var reportingDir = processorProperties.getReportingDir();
+        if (properties.getProcessors().isReportRaw() && StringUtils.hasText(reportingDir)) {
+            try {
+                var directory = Files.createDirectories(Path.of(reportingDir));
+                var output =
+                        Files.createTempFile(
+                                directory, processorName() + "_received_" + part + "_", ".json");
+                OBJECT_MAPPER
+                        .writerWithDefaultPrettyPrinter()
+                        .writeValue(output.toFile(), response);
+                log.info("Wrote received CSDS JSON for {} to {}", datasetName(), output);
+            } catch (IOException ex) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "Failed to write received CSDS JSON for " + datasetName(),
+                        ex);
+            }
+        }
+        return response;
     }
 
     @Override
