@@ -132,14 +132,22 @@ class StandardApplicantDataIngressProcessorTest {
                         List.of(createPage(sourceRecord(9659L, 6278L, "Derbyshire")))));
 
         try (var files = Files.list(tempDir)) {
-            assertThat(files.map(path -> path.getFileName().toString()).toList())
+            var reports = files.toList();
+            for (var report : reports) {
+                var name = report.getFileName().toString();
+                if (name.endsWith(".csv") && !name.startsWith("standard_applicants_existing_")) {
+                    assertThat(Files.readString(report)).contains("\"6278\",\"9659\",\"6278\"");
+                }
+            }
+            assertThat(reports.stream().map(path -> path.getFileName().toString()).toList())
                     .anyMatch(name -> name.startsWith("standard_applicants_incoming_"))
                     .anyMatch(name -> name.startsWith("standard_applicants_existing_"))
                     .anyMatch(name -> name.startsWith("standard_applicants_diff_"));
         }
     }
 
-    private ObjectNode sourceRecord(Long applicantId, Long psssaId, String organisationName) {
+    private ObjectNode sourceRecord(
+            Long applicantId, Long pssApplicantId, String organisationName) {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
@@ -149,10 +157,10 @@ class StandardApplicantDataIngressProcessorTest {
                         .put("StartDate", "2018-08-01")
                         .putNull("EndDate")
                         .put("RevisionNumber", 2);
-        if (psssaId == null) {
-            sourceRecord.putNull("PSSSAID");
+        if (pssApplicantId == null) {
+            sourceRecord.putNull("PSSApplicantID");
         } else {
-            sourceRecord.put("PSSSAID", psssaId);
+            sourceRecord.put("PSSApplicantID", pssApplicantId);
         }
         sourceRecord.putArray("Address").addObject().put("AddressLine1", "County Hall");
         sourceRecord

@@ -145,7 +145,14 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   Notes:
   - the startup runner is only created for local `bootRunLocalDev`-style runs because it is behind
     the `nosecurity` profile
-  - if `reporting-dir` is set, the ingress run writes comparison artifacts there for inspection
+  - if a processor's `reporting-dir` is set and `appreg.csds.ingress.processors.report-raw=true`
+    (default `false`), the ingress run saves each received JSON count response, data page
+    or mock payload as `<processor>_received_<part>_<unique-id>.json` before payload validation.
+    Earlier pages remain available if a later request or validation fails. These are pretty-printed
+    parsed JSON, not raw HTTP bodies; invalid JSON or failed requests cannot be saved this way.
+  - comparison artifacts are still written after successful preprocessing and diff calculation
+    when `reporting-dir` is set, independently of `report-raw`.
+    Reporting contains source data: use a local, untracked directory and remove files when no longer needed.
 
 - **Trigger CSDS ingress in a deployed environment**
   Copy the ignored configuration template and provide the values for the target environment:
