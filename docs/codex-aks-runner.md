@@ -2,6 +2,11 @@
 
 This repository is wired for the Applications Register Codex pilot using GitHub Actions Runner Controller on AKS.
 
+Before deploying the workflow trust changes, complete the
+[trusted execution rollout](codex-trusted-execution.md). The protected
+environments and organisation runner-group policies are required; YAML guards
+alone do not restrict a modified feature-branch workflow.
+
 ## Flow
 
 ```text
@@ -31,10 +36,13 @@ The flow is not tied to one Jira board. Each board needs its own Automation rule
 - `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, plans the implementation, validates and gates the plan, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
 - `.github/workflows/codex_pr_review_feedback.yml`: sends PR review feedback back to Codex for follow-up changes on the same `codex/*` branch.
 
-All Codex workflows target:
+Model jobs select the restricted organisation runner group and this repository's
+runner label. Publisher and verification jobs use fresh GitHub-hosted compute:
 
 ```yaml
-runs-on: codex-pilot-azure-aks
+runs-on:
+  group: appreg-codex
+  labels: codex-pilot-azure-aks
 ```
 
 ## Codex Action authentication
@@ -154,11 +162,15 @@ organisation usage dashboard at least weekly. See OpenAI's
 [Usage and Costs API guide](https://developers.openai.com/cookbook/examples/completions_usage_api)
 and [organisation usage dashboard](https://platform.openai.com/settings/organization/usage).
 
-## Required Repository Secrets
+## Protected Environment Secrets
+
+Store these only in the master-only environments specified in the
+[rollout guide](codex-trusted-execution.md), not as repository secrets.
 
 - `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_GITHUB_APP_PRIVATE_KEY`: private key for the HMCTS-owned Codex GitHub App, used only to mint repository-scoped installation tokens in trusted jobs.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
+- `CODEX_SONAR_TOKEN`: Sonar status API credential, restricted to codex-status.
 
 ## Required Repository Variables
 
