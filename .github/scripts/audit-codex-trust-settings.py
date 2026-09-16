@@ -9,7 +9,6 @@ REPOSITORIES = ("hmcts/appreg-api", "hmcts/appreg-frontend")
 ENVIRONMENTS = {
     "codex-model": {"CODEX_OPENAI_API_KEY"},
     "codex-publisher": {"CODEX_GITHUB_APP_PRIVATE_KEY", "CODEX_JIRA_PR_NOTIFY_URL"},
-    "codex-status": {"CODEX_SONAR_TOKEN"},
 }
 WORKFLOWS = (
     "codex_jira_dispatch.yml",
