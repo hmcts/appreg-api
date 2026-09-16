@@ -2,9 +2,12 @@ package uk.gov.hmcts.appregister.job.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -12,6 +15,8 @@ import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
@@ -20,6 +25,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.entity.AsyncJob;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
@@ -31,6 +37,8 @@ import uk.gov.hmcts.appregister.job.validator.JobSuccess;
 class JobServiceImplTest {
 
     @Mock private JobMapper jobMapper;
+
+    @Mock private AsyncJobAppListEntryRepository jobEntryRepository;
 
     @Mock private JobExistanceValidator jobExistanceValidator;
 
@@ -71,7 +79,8 @@ class JobServiceImplTest {
                 new JobServiceImpl(
                         jobMapper,
                         jobExistanceValidator,
-                        new AuditOperationServiceImpl(List.of(listener)));
+                        new AuditOperationServiceImpl(List.of(listener)),
+                        jobEntryRepository);
 
         // Execute the same service method used by the controller and capture the audit event that
         // is emitted when the request completes.
@@ -101,11 +110,49 @@ class JobServiceImplTest {
                 new JobServiceImpl(
                                 jobMapper,
                                 jobExistanceValidator,
-                                new AuditOperationServiceImpl(List.of()))
+                                new AuditOperationServiceImpl(List.of()),
+                                jobEntryRepository)
                         .getJobStatusById(jobId);
 
         Assertions.assertSame(expected, actual);
         verify(jobExistanceValidator).validate(eq(jobId), any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(JobStatus.class)
+    void givenBulkUpload_whenPolling_thenTotalsOnlyForCompletedJob(JobStatus status) {
+        var jobId = UUID.randomUUID();
+        var response =
+                JobStatusResponse.builder()
+                        .uuid(jobId)
+                        .status(status)
+                        .type(JobType.BULK_UPLOAD_ENTRIES)
+                        .build();
+        when(jobExistanceValidator.validate(eq(jobId), any())).thenReturn(response);
+        when(jobMapper.toDto(response)).thenReturn(new JobAcknowledgement());
+        if (status == JobStatus.COMPLETED) {
+            var totals = mock(AsyncJobAppListEntryRepository.FeeTotals.class);
+            when(totals.getMainFeeTotal()).thenReturn(new BigDecimal("120.50"));
+            when(totals.getOffsiteFeeTotal()).thenReturn(new BigDecimal("30.25"));
+            when(jobEntryRepository.getFeeTotals(jobId)).thenReturn(totals);
+        }
+        var service =
+                new JobServiceImpl(
+                        jobMapper,
+                        jobExistanceValidator,
+                        new AuditOperationServiceImpl(List.of()),
+                        jobEntryRepository);
+        var actual = service.getJobAckById(jobId);
+        if (status == JobStatus.COMPLETED) {
+            Assertions.assertEquals(new BigDecimal("120.50"), actual.getMainFeeTotal());
+            Assertions.assertEquals(new BigDecimal("30.25"), actual.getOffsiteFeeTotal());
+            Assertions.assertEquals(new BigDecimal("150.75"), actual.getTotalFeeValue());
+        } else {
+            Assertions.assertNull(actual.getMainFeeTotal());
+            Assertions.assertNull(actual.getOffsiteFeeTotal());
+            Assertions.assertNull(actual.getTotalFeeValue());
+            verifyNoInteractions(jobEntryRepository);
+        }
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

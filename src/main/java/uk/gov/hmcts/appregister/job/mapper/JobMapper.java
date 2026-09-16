@@ -17,6 +17,9 @@ public interface JobMapper {
     @Mapping(target = "id", source = "jobStatusResponse.uuid")
     @Mapping(target = "type", source = "jobStatusResponse.type")
     @Mapping(target = "errorDescription", source = "jobStatusResponse.errorMessage")
+    @Mapping(target = "mainFeeTotal", ignore = true)
+    @Mapping(target = "offsiteFeeTotal", ignore = true)
+    @Mapping(target = "totalFeeValue", ignore = true)
     JobAcknowledgement toDto(JobStatusResponse jobStatusResponse);
 
     @AfterMapping
