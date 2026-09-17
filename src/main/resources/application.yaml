@@ -187,4 +187,5 @@ appreg:
   job:
     page-size: 10
   report:
-    page-size: ${APPREG_REPORT_PAGE_SIZE:10000}
+    page-size: ${APPREG_REPORT_PAGE_SIZE:2500}
+    max-rows: ${APPREG_REPORT_MAX_ROWS:100000}

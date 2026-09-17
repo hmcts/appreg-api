@@ -164,12 +164,17 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final WorkloadFilterDto filterDto;
     private final String schema;
+    private final int maxRows;
 
     public WorkloadReportDataReader(
-            NamedParameterJdbcTemplate jdbcTemplate, WorkloadFilterDto filterDto, String schema) {
+            NamedParameterJdbcTemplate jdbcTemplate,
+            WorkloadFilterDto filterDto,
+            String schema,
+            int maxRows) {
         this.jdbcTemplate = jdbcTemplate;
         this.filterDto = filterDto;
         this.schema = schema;
+        this.maxRows = maxRows;
     }
 
     WorkloadFilterDto filter() {
@@ -186,15 +191,21 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                 .getJdbcTemplate()
                 .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
         WorkloadReportReadCursor cursor = new WorkloadReportReadCursor(position.getPageSize());
-        List<WorkloadReportRow> rows = readPage(cursor);
+        int rowsRead = 0;
 
-        while (!rows.isEmpty()) {
+        while (rowsRead < maxRows) {
+            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
+            List<WorkloadReportRow> rows = readPage(cursor, pageLimit);
+            if (rows.isEmpty()) {
+                return;
+            }
+
             pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
+            rowsRead += rows.size();
+            if (rows.size() < pageLimit) {
                 return;
             }
             cursor.advance(rows);
-            rows = readPage(cursor);
         }
     }
 
@@ -203,7 +214,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
         // No stream to close.
     }
 
-    private List<WorkloadReportRow> readPage(WorkloadReportReadCursor cursor) {
+    private List<WorkloadReportRow> readPage(WorkloadReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filterDto.getDateFrom(), Types.DATE)
@@ -232,7 +243,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                 "lastApplicationListEntryId",
                                 cursor.lastApplicationListEntryId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 

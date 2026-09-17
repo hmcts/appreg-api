@@ -49,7 +49,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                 -- data_id is a deterministic tie-breaker so keyset paging cannot skip or duplicate rows.
                 AND (
                     :hasCursor IS FALSE
-                    OR (da.created_date, da.data_id) > (:lastCreatedDateTime, :lastDataId)
+                    OR (da.created_date, da.data_id) < (:lastCreatedDateTime, :lastDataId)
                 )
             )
             SELECT
@@ -64,10 +64,10 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                 created_date_time,
                 user_name
             FROM filtered_audit
-            -- Maintains legacy MIS Activity Audit report ordering by CREATED_DATE.
+            -- Show the most recent audit activity first so configured row caps retain useful data.
             ORDER BY
-                created_date_time,
-                data_id
+                created_date_time DESC,
+                data_id DESC
             LIMIT :limit
             """;
 
@@ -169,12 +169,17 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ActivityAuditFilterDto filter;
     private final String schema;
+    private final int maxRows;
 
     ActivityAuditReportDataReader(
-            NamedParameterJdbcTemplate jdbcTemplate, ActivityAuditFilterDto filter, String schema) {
+            NamedParameterJdbcTemplate jdbcTemplate,
+            ActivityAuditFilterDto filter,
+            String schema,
+            int maxRows) {
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+        this.maxRows = maxRows;
     }
 
     ActivityAuditFilterDto filter() {
@@ -193,15 +198,21 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
         // S2077: schema is trusted Spring config; report filter values are bound query parameters.
 
         ActivityAuditReadCursor auditCursor = new ActivityAuditReadCursor(position.getPageSize());
-        List<ActivityAuditReportRow> rows = readPage(auditCursor);
+        int rowsRead = 0;
 
-        while (!rows.isEmpty()) {
+        while (rowsRead < maxRows) {
+            int pageLimit = Math.min(auditCursor.pageSize(), maxRows - rowsRead);
+            List<ActivityAuditReportRow> rows = readPage(auditCursor, pageLimit);
+            if (rows.isEmpty()) {
+                return;
+            }
+
             pageReader.readData(rows, jobContext);
-            if (rows.size() < auditCursor.pageSize()) {
+            rowsRead += rows.size();
+            if (rows.size() < pageLimit) {
                 return;
             }
             auditCursor.advance(rows);
-            rows = readPage(auditCursor);
         }
     }
 
@@ -210,7 +221,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
         // No stream to close.
     }
 
-    private List<ActivityAuditReportRow> readPage(ActivityAuditReadCursor cursor) {
+    private List<ActivityAuditReportRow> readPage(ActivityAuditReadCursor cursor, int pageLimit) {
         EventNameFilter eventNameFilter = eventNameFilter();
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
@@ -224,7 +235,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                                 cursor.lastCreatedDateTime(),
                                 Types.TIMESTAMP)
                         .addValue("lastDataId", cursor.lastDataId(), Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
 
         for (int index = 0; index < eventNameFilter.orderedEventNames().size(); index++) {
             parameters.addValue(

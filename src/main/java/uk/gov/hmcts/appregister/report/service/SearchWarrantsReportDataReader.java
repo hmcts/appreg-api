@@ -126,14 +126,17 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final SearchWarrantsReportFilterDto filter;
     private final String schema;
+    private final int maxRows;
 
     SearchWarrantsReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             SearchWarrantsReportFilterDto filter,
-            String schema) {
+            String schema,
+            int maxRows) {
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+        this.maxRows = maxRows;
     }
 
     SearchWarrantsReportFilterDto filter() {
@@ -153,14 +156,21 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
 
         SearchWarrantsReportReadCursor cursor =
                 new SearchWarrantsReportReadCursor(position.getPageSize());
-        List<SearchWarrantsReportRow> rows = readPage(cursor);
-        while (!rows.isEmpty()) {
+        int rowsRead = 0;
+
+        while (rowsRead < maxRows) {
+            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
+            List<SearchWarrantsReportRow> rows = readPage(cursor, pageLimit);
+            if (rows.isEmpty()) {
+                return;
+            }
+
             pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
+            rowsRead += rows.size();
+            if (rows.size() < pageLimit) {
                 return;
             }
             cursor.advance(rows);
-            rows = readPage(cursor);
         }
     }
 
@@ -169,7 +179,8 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
         // No stream to close.
     }
 
-    private List<SearchWarrantsReportRow> readPage(SearchWarrantsReportReadCursor cursor) {
+    private List<SearchWarrantsReportRow> readPage(
+            SearchWarrantsReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
@@ -192,7 +203,7 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                                 "lastApplicationListEntryId",
                                 cursor.lastApplicationListEntryId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
 
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }

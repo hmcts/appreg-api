@@ -6,6 +6,7 @@ post:
     Creates an asynchronous job to produce a CSV report of applications that incur a fee,
     filtered by date range and location.
     Returns an acknowledgement containing the job ID for tracking progress.
+    The CSV output is capped by server configuration, defaulting to 100,000 rows.
   requestBody:
     required: true
     content:

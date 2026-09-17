@@ -62,7 +62,7 @@ class FeesReportDataReaderTest {
                         });
 
         FeesReportFilterDto filter = filter();
-        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg", 100);
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -115,7 +115,7 @@ class FeesReportDataReaderTest {
                 new FeesReportFilterDto()
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
-        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg", 100);
         PageReader<FeesReportRow> pageReader =
                 (rows, context) -> Assertions.fail("No rows expected");
 
@@ -146,7 +146,8 @@ class FeesReportDataReaderTest {
                             return List.of(rowMapper.mapRow(resultSet(), 0));
                         });
 
-        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter(), "appreg");
+        FeesReportDataReader reader =
+                new FeesReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(
                 new ReadPagePosition(25, 0),

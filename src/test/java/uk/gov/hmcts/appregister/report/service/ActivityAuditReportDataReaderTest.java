@@ -61,7 +61,7 @@ class ActivityAuditReportDataReaderTest {
                         });
 
         ActivityAuditReportDataReader reader =
-                new ActivityAuditReportDataReader(jdbcTemplate, filter(), "appreg");
+                new ActivityAuditReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -105,7 +105,7 @@ class ActivityAuditReportDataReaderTest {
                         });
 
         ActivityAuditReportDataReader reader =
-                new ActivityAuditReportDataReader(jdbcTemplate, filter(), "appreg");
+                new ActivityAuditReportDataReader(jdbcTemplate, filter(), "appreg", 1000);
 
         reader.readData(
                 new ReadPagePosition(600, 0),
@@ -114,6 +114,39 @@ class ActivityAuditReportDataReaderTest {
 
         Assertions.assertEquals(1, parameterSources.size());
         Assertions.assertEquals(600, parameterSources.getFirst().getValue("limit"));
+    }
+
+    @Test
+    void givenMaxRowsBelowFullPages_whenReadData_thenStopsAtConfiguredMaximum() throws Exception {
+        NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
+        List<MapSqlParameterSource> parameterSources = new ArrayList<>();
+        List<Integer> pageSizes = new ArrayList<>();
+
+        when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
+        when(jdbcTemplate.query(
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<ActivityAuditReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            MapSqlParameterSource parameters = invocation.getArgument(1);
+                            parameterSources.add(parameters);
+                            return rows((Integer) parameters.getValue("limit"));
+                        });
+
+        ActivityAuditReportDataReader reader =
+                new ActivityAuditReportDataReader(jdbcTemplate, filter(), "appreg", 25);
+
+        reader.readData(
+                new ReadPagePosition(20, 0),
+                (rows, context) -> pageSizes.add(rows.size()),
+                mock(JobContext.class));
+
+        Assertions.assertEquals(List.of(20, 5), pageSizes);
+        Assertions.assertEquals(2, parameterSources.size());
+        Assertions.assertEquals(20, parameterSources.getFirst().getValue("limit"));
+        Assertions.assertEquals(5, parameterSources.get(1).getValue("limit"));
     }
 
     @Test
@@ -186,16 +219,15 @@ class ActivityAuditReportDataReaderTest {
         Assertions.assertTrue(
                 query.contains("OR COALESCE(NULLIF(da.user_name, ''), da.user_id) = :username"));
         assertThat(query).contains("POSITION('_ID' IN UPPER(da.column_name)) = 0");
-        Assertions.assertTrue(
-                query.contains("Maintains legacy MIS Activity Audit report ordering"));
+        Assertions.assertTrue(query.contains("Show the most recent audit activity first"));
         assertThat(query).contains("ORDER BY");
         Assertions.assertEquals(-1, query.indexOf(":lastActivityOrder"));
         Assertions.assertEquals(-1, query.indexOf("ORDER BY\n                activity_order"));
         assertThat(query.replaceAll("\\s+", " "))
                 .contains(
-                        "OR (da.created_date, da.data_id) > "
+                        "OR (da.created_date, da.data_id) < "
                                 + "(:lastCreatedDateTime, :lastDataId)")
-                .contains("ORDER BY created_date_time, data_id");
+                .contains("ORDER BY created_date_time DESC, data_id DESC");
         assertThat(query).contains("LIMIT :limit");
     }
 

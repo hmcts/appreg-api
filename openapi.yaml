@@ -4232,7 +4232,7 @@ paths:
   /reports/activity-audit/jobs:
     post:
       description: |
-        Creates an asynchronous job to produce a CSV report detailing user activity within the application register, filtered by date range, username, and activity type. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+        Creates an asynchronous job to produce a CSV report detailing user activity within the application register, filtered by date range, username, and activity type. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createActivityAuditReport
       requestBody:
         content:
@@ -4310,7 +4310,7 @@ paths:
   /reports/fees/jobs:
     post:
       description: |
-        Creates an asynchronous job to produce a CSV report of applications that incur a fee, filtered by date range and location. Returns an acknowledgement containing the job ID for tracking progress.
+        Creates an asynchronous job to produce a CSV report of applications that incur a fee, filtered by date range and location. Returns an acknowledgement containing the job ID for tracking progress. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createFeesReport
       requestBody:
         content:
@@ -4387,7 +4387,7 @@ paths:
   /reports/list-maintenance/jobs:
     post:
       description: |
-        Creates an asynchronous job to produce a CSV report of open application lists matching the specified inclusive date range, optional list description, and optional legacy location filters. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+        Creates an asynchronous job to produce a CSV report of open application lists matching the specified inclusive date range, optional list description, and optional legacy location filters. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createListMaintenanceReport
       requestBody:
         content:
@@ -4465,7 +4465,7 @@ paths:
   /reports/search-warrants/jobs:
     post:
       description: |
-        Creates an asynchronous job to produce a CSV report listing search warrants, filtered by date range and court location. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+        Creates an asynchronous job to produce a CSV report listing search warrants, filtered by date range and court location. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createSearchWarrantsReport
       requestBody:
         content:
@@ -4542,7 +4542,7 @@ paths:
   /reports/workload/jobs:
     post:
       description: |
-        Creates an asynchronous job to produce a CSV report summarising applications that have been processed within closed application lists, filtered by date range and court location. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+        Creates an asynchronous job to produce a CSV report summarising applications that have been processed within closed application lists, filtered by date range and court location. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createWorkloadReport
       requestBody:
         content:
@@ -4619,7 +4619,7 @@ paths:
   /reports/duration/jobs:
     post:
       description: |
-        Initiates an asynchronous job to create a CSV report of closed application lists within the specified date range. Duration values are the recorded duration hours and minutes on the application list. Returns an acknowledgement containing the job ID for tracking progress.
+        Initiates an asynchronous job to create a CSV report of closed application lists within the specified date range. Duration values are the recorded duration hours and minutes on the application list. Returns an acknowledgement containing the job ID for tracking progress. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createDurationReport
       requestBody:
         content:
@@ -4696,7 +4696,7 @@ paths:
   /reports/private-prosecutors-index/jobs:
     post:
       description: |
-        Creates an asynchronous job to produce a CSV report listing all applications to commence a private prosecution recorded under code MX99010, filtered by date range and legacy report location semantics. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+        Creates an asynchronous job to produce a CSV report listing all applications to commence a private prosecution recorded under code MX99010, filtered by date range and legacy report location semantics. Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete. The CSV output is capped by server configuration, defaulting to 100,000 rows.
       operationId: createPrivateProsecutorsIndexReport
       requestBody:
         content:

@@ -6,6 +6,7 @@ post:
     Creates an asynchronous job to produce a CSV report detailing user activity within the application register,
     filtered by date range, username, and activity type.
     Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+    The CSV output is capped by server configuration, defaulting to 100,000 rows.
   requestBody:
     required: true
     content:

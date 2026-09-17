@@ -245,6 +245,7 @@ class PrivateProsecutorsIndexReportDataReader
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final PrivateProsecutorsIndexFilterDto filter;
     private final String schema;
+    private final int maxRows;
 
     PrivateProsecutorsIndexFilterDto filter() {
         return filter;
@@ -253,10 +254,12 @@ class PrivateProsecutorsIndexReportDataReader
     PrivateProsecutorsIndexReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             PrivateProsecutorsIndexFilterDto filter,
-            String schema) {
+            String schema,
+            int maxRows) {
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+        this.maxRows = maxRows;
     }
 
     @Override
@@ -272,15 +275,21 @@ class PrivateProsecutorsIndexReportDataReader
 
         PrivateProsecutorsIndexReportReadCursor cursor =
                 new PrivateProsecutorsIndexReportReadCursor(position.getPageSize());
-        List<PrivateProsecutorsIndexReportRow> rows = readPage(cursor);
+        int rowsRead = 0;
 
-        while (!rows.isEmpty()) {
+        while (rowsRead < maxRows) {
+            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
+            List<PrivateProsecutorsIndexReportRow> rows = readPage(cursor, pageLimit);
+            if (rows.isEmpty()) {
+                return;
+            }
+
             pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
+            rowsRead += rows.size();
+            if (rows.size() < pageLimit) {
                 return;
             }
             cursor.advance(rows);
-            rows = readPage(cursor);
         }
     }
 
@@ -290,7 +299,7 @@ class PrivateProsecutorsIndexReportDataReader
     }
 
     private List<PrivateProsecutorsIndexReportRow> readPage(
-            PrivateProsecutorsIndexReportReadCursor cursor) {
+            PrivateProsecutorsIndexReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
@@ -333,7 +342,7 @@ class PrivateProsecutorsIndexReportDataReader
                                 "lastApplicationListEntryId",
                                 cursor.lastApplicationListEntryId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
 
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }

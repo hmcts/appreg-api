@@ -53,6 +53,7 @@ public class ReportServiceImpl implements ReportService {
     private final ReportLocationValidator reportLocationValidator;
     private final String schema;
     private final int reportPageSize;
+    private final int reportMaxRows;
 
     public ReportServiceImpl(
             AsyncJobService asyncJobService,
@@ -64,7 +65,11 @@ public class ReportServiceImpl implements ReportService {
             ReportJobAuditService reportJobAuditService,
             ReportLocationValidator reportLocationValidator,
             @Value("${spring.jpa.properties.hibernate.default_schema}") String schema,
-            @Value("${appreg.report.page-size}") int reportPageSize) {
+            @Value("${appreg.report.page-size}") int reportPageSize,
+            @Value("${appreg.report.max-rows}") int reportMaxRows) {
+        if (reportMaxRows <= 0) {
+            throw new IllegalArgumentException("appreg.report.max-rows must be greater than zero");
+        }
         this.asyncJobService = asyncJobService;
         this.jobService = jobService;
         this.userProvider = userProvider;
@@ -75,6 +80,7 @@ public class ReportServiceImpl implements ReportService {
         this.reportLocationValidator = reportLocationValidator;
         this.schema = schema;
         this.reportPageSize = reportPageSize;
+        this.reportMaxRows = reportMaxRows;
     }
 
     @Override
@@ -98,7 +104,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new ActivityAuditReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 
@@ -130,7 +136,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new FeesReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 
@@ -163,7 +169,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new SearchWarrantsReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 
@@ -195,7 +201,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new DurationReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 
@@ -226,7 +232,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new WorkloadReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 
@@ -258,7 +264,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new ListMaintenanceReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 
@@ -292,7 +298,7 @@ public class ReportServiceImpl implements ReportService {
                             asyncJobService.startJob(
                                     jobRequest,
                                     new PrivateProsecutorsIndexReportDataReader(
-                                            jdbcTemplate, normalisedFilter, schema),
+                                            jdbcTemplate, normalisedFilter, schema, reportMaxRows),
                                     audited(lifecycle),
                                     reportPageSize);
 

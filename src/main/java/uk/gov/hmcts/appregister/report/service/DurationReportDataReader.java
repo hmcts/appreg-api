@@ -68,12 +68,17 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final DurationFilterDto filter;
     private final String schema;
+    private final int maxRows;
 
     DurationReportDataReader(
-            NamedParameterJdbcTemplate jdbcTemplate, DurationFilterDto filter, String schema) {
+            NamedParameterJdbcTemplate jdbcTemplate,
+            DurationFilterDto filter,
+            String schema,
+            int maxRows) {
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+        this.maxRows = maxRows;
     }
 
     DurationFilterDto filter() {
@@ -92,15 +97,21 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
         // S2077: schema is trusted Spring config; report filter values are bound query parameters.
 
         DurationReportReadCursor cursor = new DurationReportReadCursor(position.getPageSize());
-        List<DurationReportRow> rows = readPage(cursor);
+        int rowsRead = 0;
 
-        while (!rows.isEmpty()) {
+        while (rowsRead < maxRows) {
+            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
+            List<DurationReportRow> rows = readPage(cursor, pageLimit);
+            if (rows.isEmpty()) {
+                return;
+            }
+
             pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
+            rowsRead += rows.size();
+            if (rows.size() < pageLimit) {
                 return;
             }
             cursor.advance(rows);
-            rows = readPage(cursor);
         }
     }
 
@@ -109,7 +120,7 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
         // No stream to close.
     }
 
-    private List<DurationReportRow> readPage(DurationReportReadCursor cursor) {
+    private List<DurationReportRow> readPage(DurationReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
@@ -132,7 +143,7 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                                 "lastApplicationListId",
                                 cursor.lastApplicationListId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
 
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }

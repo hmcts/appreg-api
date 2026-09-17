@@ -78,14 +78,17 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ListMaintenanceFilterDto filter;
     private final String schema;
+    private final int maxRows;
 
     ListMaintenanceReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             ListMaintenanceFilterDto filter,
-            String schema) {
+            String schema,
+            int maxRows) {
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;
         this.schema = schema;
+        this.maxRows = maxRows;
     }
 
     ListMaintenanceFilterDto filter() {
@@ -105,15 +108,21 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
 
         ListMaintenanceReportReadCursor cursor =
                 new ListMaintenanceReportReadCursor(position.getPageSize());
-        List<ListMaintenanceReportRow> rows = readPage(cursor);
+        int rowsRead = 0;
 
-        while (!rows.isEmpty()) {
+        while (rowsRead < maxRows) {
+            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
+            List<ListMaintenanceReportRow> rows = readPage(cursor, pageLimit);
+            if (rows.isEmpty()) {
+                return;
+            }
+
             pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
+            rowsRead += rows.size();
+            if (rows.size() < pageLimit) {
                 return;
             }
             cursor.advance(rows);
-            rows = readPage(cursor);
         }
     }
 
@@ -122,7 +131,8 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
         // No stream to close.
     }
 
-    private List<ListMaintenanceReportRow> readPage(ListMaintenanceReportReadCursor cursor) {
+    private List<ListMaintenanceReportRow> readPage(
+            ListMaintenanceReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
@@ -146,7 +156,7 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
                                 "lastApplicationListId",
                                 cursor.lastApplicationListId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
 
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
