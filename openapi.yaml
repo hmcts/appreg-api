@@ -6809,6 +6809,24 @@ components:
           $ref: "#/components/schemas/job-type"
         status:
           $ref: "#/components/schemas/job-status"
+        mainFeeTotal:
+          description: |
+            Current main fees in GBP for non-deleted applications created by this upload, regardless of payment or remission status. Available only when polling a completed BULK_UPLOAD_ENTRIES job; zero when no applicable fees remain. Calculated on read, so later changes to applications or associated fees can change this value. Omitted from all other responses.
+          example: 120.5
+          type: number
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)'
+        offsiteFeeTotal:
+          description: |
+            Current applicable offsite fees in GBP for non-deleted applications created by this upload, regardless of payment or remission status. Available only when polling a completed BULK_UPLOAD_ENTRIES job; zero when no applicable fees remain. Calculated on read, not an upload-time snapshot. Omitted from all other responses.
+          example: 30.25
+          type: number
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)'
+        totalFeeValue:
+          description: |
+            Sum of mainFeeTotal and offsiteFeeTotal in GBP. Available only when polling a completed BULK_UPLOAD_ENTRIES job. Zero when no applicable fees remain; calculated on read. Omitted from all other responses.
+          example: 150.75
+          type: number
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)'
         error_description:
           description: |
             Details of a failed job. Bulk-upload validation failures may include actionable input errors; unexpected bulk-upload processing failures use a generic message and identify the job reference to quote to support.

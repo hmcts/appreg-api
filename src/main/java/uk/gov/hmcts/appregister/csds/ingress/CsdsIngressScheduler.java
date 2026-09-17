@@ -31,6 +31,9 @@ class CsdsIngressScheduler {
             return;
         }
         if (csdsIngressProcessor.hasTerminalStatusToday()) {
+            log.info(
+                    "Skipping scheduled CSDS ingress because a terminal execution status already exists for {}",
+                    LocalDateTime.now(clock.withZone(ukZone)).toLocalDate());
             return;
         }
 
