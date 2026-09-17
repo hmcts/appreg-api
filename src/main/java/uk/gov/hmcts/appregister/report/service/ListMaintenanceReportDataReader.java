@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -9,15 +8,14 @@ import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.report.model.ListMaintenanceReportRow;
 
-class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceReportRow> {
+class ListMaintenanceReportDataReader
+        extends AbstractReportDataReader<
+                ListMaintenanceReportRow,
+                ListMaintenanceReportDataReader.ListMaintenanceReportReadCursor> {
     private static final String REPORT_QUERY =
             """
             SELECT
@@ -55,11 +53,7 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
                 )
                 AND (
                     :hasCursor IS FALSE
-                    OR al.application_list_date < :lastListDate
-                    OR (
-                        al.application_list_date = :lastListDate
-                        AND al.al_id < :lastApplicationListId
-                    )
+                    OR (al.application_list_date, al.al_id) < (:lastListDate, :lastApplicationListId)
                 )
             ORDER BY al.application_list_date DESC, al.al_id DESC
             LIMIT :limit
@@ -75,20 +69,15 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
     private static final RowMapper<ListMaintenanceReportRow> ROW_MAPPER =
             new ListMaintenanceReportRowMapper();
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ListMaintenanceFilterDto filter;
-    private final String schema;
-    private final int maxRows;
 
     ListMaintenanceReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             ListMaintenanceFilterDto filter,
             String schema,
             int maxRows) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate, schema, maxRows);
         this.filter = filter;
-        this.schema = schema;
-        this.maxRows = maxRows;
     }
 
     ListMaintenanceFilterDto filter() {
@@ -96,42 +85,12 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position,
-            PageReader<ListMaintenanceReportRow> pageReader,
-            JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
-
-        ListMaintenanceReportReadCursor cursor =
-                new ListMaintenanceReportReadCursor(position.getPageSize());
-        int rowsRead = 0;
-
-        while (rowsRead < maxRows) {
-            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
-            List<ListMaintenanceReportRow> rows = readPage(cursor, pageLimit);
-            if (rows.isEmpty()) {
-                return;
-            }
-
-            pageReader.readData(rows, jobContext);
-            rowsRead += rows.size();
-            if (rows.size() < pageLimit) {
-                return;
-            }
-            cursor.advance(rows);
-        }
+    protected ListMaintenanceReportReadCursor createCursor(int pageSize) {
+        return new ListMaintenanceReportReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<ListMaintenanceReportRow> readPage(
+    protected List<ListMaintenanceReportRow> readPage(
             ListMaintenanceReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
@@ -140,15 +99,20 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
                         .addValue("listDescription", filter.getListDescription(), Types.VARCHAR)
                         .addValue(
                                 "cjaCode",
-                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                legacyLocationValue(
+                                        filter.getLocation(), LegacyReportLocation::getCjaCode),
                                 Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -161,46 +125,22 @@ class ListMaintenanceReportDataReader implements DataReader<ListMaintenanceRepor
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(
-            java.util.function.Function<LegacyReportLocation, String> getter) {
-        if (filter.getLocation() == null) {
-            return null;
-        }
-
-        return getter.apply(filter.getLocation());
-    }
-
-    private static class ListMaintenanceReportReadCursor {
-        private final int pageSize;
-        private ListMaintenanceReportRow lastRow;
-
+    static class ListMaintenanceReportReadCursor
+            extends ReportReadCursor<ListMaintenanceReportRow> {
         ListMaintenanceReportReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<ListMaintenanceReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
+            super(pageSize);
         }
 
         LocalDate lastListDate() {
-            return hasLastRow() ? lastRow.getListDate() : null;
+            return hasLastRow() ? lastRow().getListDate() : null;
         }
 
         Long lastApplicationListId() {
-            return hasLastRow() ? lastRow.getApplicationListId() : null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            return hasLastRow() ? lastRow().getApplicationListId() : null;
         }
     }
 
-    private static class ListMaintenanceReportRowMapper
-            implements RowMapper<ListMaintenanceReportRow> {
+    static class ListMaintenanceReportRowMapper implements RowMapper<ListMaintenanceReportRow> {
         @Override
         public ListMaintenanceReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return ListMaintenanceReportRow.builder()

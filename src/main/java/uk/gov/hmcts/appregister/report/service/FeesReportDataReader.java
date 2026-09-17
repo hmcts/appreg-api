@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -9,15 +8,12 @@ import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
-class FeesReportDataReader implements DataReader<FeesReportRow> {
+class FeesReportDataReader
+        extends AbstractReportDataReader<FeesReportRow, FeesReportDataReader.FeesReportReadCursor> {
     private static final String REPORT_QUERY =
             """
             WITH candidate_apps AS (
@@ -107,10 +103,9 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     )
                     AND (
                         :hasCursor IS FALSE
-                        OR b.application_list_date < :lastListDate
-                        OR (
-                            b.application_list_date = :lastListDate
-                            AND b.ale_id < :lastApplicationListEntryId
+                        OR (b.application_list_date, b.ale_id) < (
+                            :lastListDate,
+                            :lastApplicationListEntryId
                         )
                     )
                 ORDER BY b.application_list_date DESC, b.ale_id DESC
@@ -196,10 +191,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
 
     private static final RowMapper<FeesReportRow> ROW_MAPPER = new FeesReportRowMapper();
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final FeesReportFilterDto filter;
-    private final String schema;
-    private final int maxRows;
 
     FeesReportFilterDto filter() {
         return filter;
@@ -210,46 +202,17 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
             FeesReportFilterDto filter,
             String schema,
             int maxRows) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate, schema, maxRows);
         this.filter = filter;
-        this.schema = schema;
-        this.maxRows = maxRows;
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position, PageReader<FeesReportRow> pageReader, JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
-
-        FeesReportReadCursor cursor = new FeesReportReadCursor(position.getPageSize());
-        int rowsRead = 0;
-
-        while (rowsRead < maxRows) {
-            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
-            List<FeesReportRow> rows = readPage(cursor, pageLimit);
-            if (rows.isEmpty()) {
-                return;
-            }
-
-            pageReader.readData(rows, jobContext);
-            rowsRead += rows.size();
-            if (rows.size() < pageLimit) {
-                return;
-            }
-            cursor.advance(rows);
-        }
+    protected FeesReportReadCursor createCursor(int pageSize) {
+        return new FeesReportReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<FeesReportRow> readPage(FeesReportReadCursor cursor, int pageLimit) {
+    protected List<FeesReportRow> readPage(FeesReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
@@ -261,15 +224,20 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                         .addValue("applicantName", filter.getApplicantName(), Types.VARCHAR)
                         .addValue(
                                 "cjaCode",
-                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                legacyLocationValue(
+                                        filter.getLocation(), LegacyReportLocation::getCjaCode),
                                 Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -282,45 +250,21 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(
-            java.util.function.Function<LegacyReportLocation, String> getter) {
-        if (filter.getLocation() == null) {
-            return null;
-        }
-
-        return getter.apply(filter.getLocation());
-    }
-
-    private static class FeesReportReadCursor {
-        private final int pageSize;
-        private FeesReportRow lastRow;
-
+    static class FeesReportReadCursor extends ReportReadCursor<FeesReportRow> {
         FeesReportReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<FeesReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
+            super(pageSize);
         }
 
         LocalDate lastListDate() {
-            return hasLastRow() ? lastRow.getListDate() : null;
+            return hasLastRow() ? lastRow().getListDate() : null;
         }
 
         Long lastApplicationListEntryId() {
-            return hasLastRow() ? lastRow.getApplicationListEntryId() : null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            return hasLastRow() ? lastRow().getApplicationListEntryId() : null;
         }
     }
 
-    private static class FeesReportRowMapper implements RowMapper<FeesReportRow> {
+    static class FeesReportRowMapper implements RowMapper<FeesReportRow> {
         @Override
         public FeesReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return FeesReportRow.builder()

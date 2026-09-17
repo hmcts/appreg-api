@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -9,15 +8,14 @@ import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.report.model.SearchWarrantsReportRow;
 
-class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportRow> {
+class SearchWarrantsReportDataReader
+        extends AbstractReportDataReader<
+                SearchWarrantsReportRow,
+                SearchWarrantsReportDataReader.SearchWarrantsReportReadCursor> {
     private static final String REPORT_QUERY =
             """
             WITH candidate_apps AS (
@@ -105,9 +103,7 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                 )
                 AND (
                     :hasCursor IS FALSE
-                    OR c.list_date < :lastListDate
-                    OR (c.list_date = :lastListDate
-                        AND c.ale_id < :lastApplicationListEntryId)
+                    OR (c.list_date, c.ale_id) < (:lastListDate, :lastApplicationListEntryId)
                 )
             ORDER BY c.list_date DESC, c.ale_id DESC
             LIMIT :limit
@@ -123,20 +119,15 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
     private static final RowMapper<SearchWarrantsReportRow> ROW_MAPPER =
             new SearchWarrantsReportRowMapper();
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final SearchWarrantsReportFilterDto filter;
-    private final String schema;
-    private final int maxRows;
 
     SearchWarrantsReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             SearchWarrantsReportFilterDto filter,
             String schema,
             int maxRows) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate, schema, maxRows);
         this.filter = filter;
-        this.schema = schema;
-        this.maxRows = maxRows;
     }
 
     SearchWarrantsReportFilterDto filter() {
@@ -144,42 +135,12 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position,
-            PageReader<SearchWarrantsReportRow> pageReader,
-            JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
-
-        SearchWarrantsReportReadCursor cursor =
-                new SearchWarrantsReportReadCursor(position.getPageSize());
-        int rowsRead = 0;
-
-        while (rowsRead < maxRows) {
-            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
-            List<SearchWarrantsReportRow> rows = readPage(cursor, pageLimit);
-            if (rows.isEmpty()) {
-                return;
-            }
-
-            pageReader.readData(rows, jobContext);
-            rowsRead += rows.size();
-            if (rows.size() < pageLimit) {
-                return;
-            }
-            cursor.advance(rows);
-        }
+    protected SearchWarrantsReportReadCursor createCursor(int pageSize) {
+        return new SearchWarrantsReportReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<SearchWarrantsReportRow> readPage(
+    protected List<SearchWarrantsReportRow> readPage(
             SearchWarrantsReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
@@ -187,15 +148,20 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                         .addValue("dateTo", filter.getDateTo(), Types.DATE)
                         .addValue(
                                 "cjaCode",
-                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                legacyLocationValue(
+                                        filter.getLocation(), LegacyReportLocation::getCjaCode),
                                 Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -208,46 +174,21 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(
-            java.util.function.Function<LegacyReportLocation, String> getter) {
-        if (filter.getLocation() == null) {
-            return null;
-        }
-
-        return getter.apply(filter.getLocation());
-    }
-
-    private static class SearchWarrantsReportReadCursor {
-        private final int pageSize;
-        private SearchWarrantsReportRow lastRow;
-
+    static class SearchWarrantsReportReadCursor extends ReportReadCursor<SearchWarrantsReportRow> {
         SearchWarrantsReportReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<SearchWarrantsReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
+            super(pageSize);
         }
 
         LocalDate lastListDate() {
-            return hasLastRow() ? lastRow.getListDate() : null;
+            return hasLastRow() ? lastRow().getListDate() : null;
         }
 
         Long lastApplicationListEntryId() {
-            return hasLastRow() ? lastRow.getApplicationListEntryId() : null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            return hasLastRow() ? lastRow().getApplicationListEntryId() : null;
         }
     }
 
-    private static class SearchWarrantsReportRowMapper
-            implements RowMapper<SearchWarrantsReportRow> {
+    static class SearchWarrantsReportRowMapper implements RowMapper<SearchWarrantsReportRow> {
         @Override
         public SearchWarrantsReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return SearchWarrantsReportRow.builder()

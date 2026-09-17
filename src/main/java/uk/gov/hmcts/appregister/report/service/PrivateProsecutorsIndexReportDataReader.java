@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -9,16 +8,14 @@ import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.report.model.PrivateProsecutorsIndexReportRow;
 
 class PrivateProsecutorsIndexReportDataReader
-        implements DataReader<PrivateProsecutorsIndexReportRow> {
+        extends AbstractReportDataReader<
+                PrivateProsecutorsIndexReportRow,
+                PrivateProsecutorsIndexReportDataReader.PrivateProsecutorsIndexReportReadCursor> {
     private static final String REPORT_QUERY =
             """
             WITH standard_applicant_names AS (
@@ -175,10 +172,9 @@ class PrivateProsecutorsIndexReportDataReader
                 SELECT *
                 FROM candidate_apps ca
                 WHERE :hasCursor IS FALSE
-                    OR ca.application_list_date < :lastListDate
-                    OR (
-                        ca.application_list_date = :lastListDate
-                        AND ca.ale_id < :lastApplicationListEntryId
+                    OR (ca.application_list_date, ca.ale_id) < (
+                        :lastListDate,
+                        :lastApplicationListEntryId
                     )
                 ORDER BY ca.application_list_date DESC, ca.ale_id DESC
                 LIMIT :limit
@@ -242,10 +238,7 @@ class PrivateProsecutorsIndexReportDataReader
     private static final RowMapper<PrivateProsecutorsIndexReportRow> ROW_MAPPER =
             new PrivateProsecutorsIndexReportRowMapper();
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final PrivateProsecutorsIndexFilterDto filter;
-    private final String schema;
-    private final int maxRows;
 
     PrivateProsecutorsIndexFilterDto filter() {
         return filter;
@@ -256,49 +249,17 @@ class PrivateProsecutorsIndexReportDataReader
             PrivateProsecutorsIndexFilterDto filter,
             String schema,
             int maxRows) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate, schema, maxRows);
         this.filter = filter;
-        this.schema = schema;
-        this.maxRows = maxRows;
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position,
-            PageReader<PrivateProsecutorsIndexReportRow> pageReader,
-            JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
-
-        PrivateProsecutorsIndexReportReadCursor cursor =
-                new PrivateProsecutorsIndexReportReadCursor(position.getPageSize());
-        int rowsRead = 0;
-
-        while (rowsRead < maxRows) {
-            int pageLimit = Math.min(cursor.pageSize(), maxRows - rowsRead);
-            List<PrivateProsecutorsIndexReportRow> rows = readPage(cursor, pageLimit);
-            if (rows.isEmpty()) {
-                return;
-            }
-
-            pageReader.readData(rows, jobContext);
-            rowsRead += rows.size();
-            if (rows.size() < pageLimit) {
-                return;
-            }
-            cursor.advance(rows);
-        }
+    protected PrivateProsecutorsIndexReportReadCursor createCursor(int pageSize) {
+        return new PrivateProsecutorsIndexReportReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<PrivateProsecutorsIndexReportRow> readPage(
+    protected List<PrivateProsecutorsIndexReportRow> readPage(
             PrivateProsecutorsIndexReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
@@ -326,15 +287,20 @@ class PrivateProsecutorsIndexReportDataReader
                                 Types.VARCHAR)
                         .addValue(
                                 "cjaCode",
-                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                legacyLocationValue(
+                                        filter.getLocation(), LegacyReportLocation::getCjaCode),
                                 Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -347,45 +313,22 @@ class PrivateProsecutorsIndexReportDataReader
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(
-            java.util.function.Function<LegacyReportLocation, String> getter) {
-        if (filter.getLocation() == null) {
-            return null;
-        }
-
-        return getter.apply(filter.getLocation());
-    }
-
-    private static class PrivateProsecutorsIndexReportReadCursor {
-        private final int pageSize;
-        private PrivateProsecutorsIndexReportRow lastRow;
-
+    static class PrivateProsecutorsIndexReportReadCursor
+            extends ReportReadCursor<PrivateProsecutorsIndexReportRow> {
         PrivateProsecutorsIndexReportReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<PrivateProsecutorsIndexReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
+            super(pageSize);
         }
 
         LocalDate lastListDate() {
-            return hasLastRow() ? lastRow.getListDate() : null;
+            return hasLastRow() ? lastRow().getListDate() : null;
         }
 
         Long lastApplicationListEntryId() {
-            return hasLastRow() ? lastRow.getApplicationListEntryId() : null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            return hasLastRow() ? lastRow().getApplicationListEntryId() : null;
         }
     }
 
-    private static class PrivateProsecutorsIndexReportRowMapper
+    static class PrivateProsecutorsIndexReportRowMapper
             implements RowMapper<PrivateProsecutorsIndexReportRow> {
         @Override
         public PrivateProsecutorsIndexReportRow mapRow(ResultSet rs, int rowNum)

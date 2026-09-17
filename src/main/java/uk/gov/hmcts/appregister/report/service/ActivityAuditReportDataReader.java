@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -11,16 +10,14 @@ import java.util.Map;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 
-class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow> {
+class ActivityAuditReportDataReader
+        extends AbstractReportDataReader<
+                ActivityAuditReportRow, ActivityAuditReportDataReader.ActivityAuditReadCursor> {
     private static final String REPORT_QUERY =
             """
             WITH filtered_audit AS (
@@ -166,20 +163,15 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                             ActivityType.UPDATE_STANDARD_APPLICANT,
                             List.of("Update Standard Applicant")));
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ActivityAuditFilterDto filter;
-    private final String schema;
-    private final int maxRows;
 
     ActivityAuditReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate,
             ActivityAuditFilterDto filter,
             String schema,
             int maxRows) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate, schema, maxRows);
         this.filter = filter;
-        this.schema = schema;
-        this.maxRows = maxRows;
     }
 
     ActivityAuditFilterDto filter() {
@@ -187,41 +179,12 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position,
-            PageReader<ActivityAuditReportRow> pageReader,
-            JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
-
-        ActivityAuditReadCursor auditCursor = new ActivityAuditReadCursor(position.getPageSize());
-        int rowsRead = 0;
-
-        while (rowsRead < maxRows) {
-            int pageLimit = Math.min(auditCursor.pageSize(), maxRows - rowsRead);
-            List<ActivityAuditReportRow> rows = readPage(auditCursor, pageLimit);
-            if (rows.isEmpty()) {
-                return;
-            }
-
-            pageReader.readData(rows, jobContext);
-            rowsRead += rows.size();
-            if (rows.size() < pageLimit) {
-                return;
-            }
-            auditCursor.advance(rows);
-        }
+    protected ActivityAuditReadCursor createCursor(int pageSize) {
+        return new ActivityAuditReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<ActivityAuditReportRow> readPage(ActivityAuditReadCursor cursor, int pageLimit) {
+    protected List<ActivityAuditReportRow> readPage(ActivityAuditReadCursor cursor, int pageLimit) {
         EventNameFilter eventNameFilter = eventNameFilter();
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
@@ -276,36 +239,21 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
 
     private record EventNameFilter(List<String> eventNames, List<String> orderedEventNames) {}
 
-    private static class ActivityAuditReadCursor {
-        private final int pageSize;
-        private ActivityAuditReportRow lastRow;
-
+    static class ActivityAuditReadCursor extends ReportReadCursor<ActivityAuditReportRow> {
         ActivityAuditReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<ActivityAuditReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            super(pageSize);
         }
 
         LocalDateTime lastCreatedDateTime() {
-            return hasLastRow() ? lastRow.getCreatedDateTime() : null;
+            return hasLastRow() ? lastRow().getCreatedDateTime() : null;
         }
 
         Long lastDataId() {
-            return hasLastRow() ? lastRow.getDataId() : null;
+            return hasLastRow() ? lastRow().getDataId() : null;
         }
     }
 
-    private static class ActivityAuditReportRowMapper implements RowMapper<ActivityAuditReportRow> {
+    static class ActivityAuditReportRowMapper implements RowMapper<ActivityAuditReportRow> {
         @Override
         public ActivityAuditReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return ActivityAuditReportRow.builder()
