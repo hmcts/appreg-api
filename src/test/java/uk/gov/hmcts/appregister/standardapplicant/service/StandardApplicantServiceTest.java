@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
@@ -27,13 +26,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -511,9 +515,8 @@ class StandardApplicantServiceTest {
         sa.setApplicantSurname("Smith");
         sa.setApplicantForename1("John");
 
-        when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any()))
-                .thenReturn(List.of(sa));
-        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null);
+        stubCsvSearch(sa);
+        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null, csvPaging());
         Assertions.assertNotNull(csv);
         Assertions.assertEquals(
                 StandardApplicantCsvRow.Header, List.of(csv.split("\n")[0].split("\\|")));
@@ -542,8 +545,8 @@ class StandardApplicantServiceTest {
         sa.setTelephoneNumber("0123456789");
         sa.setMobileNumber("0987654321");
 
-        when(repository.findByCodeAndName(any(), eq(sa.getName()))).thenReturn(List.of(sa));
-        String csv = standardApplicantService.generateCsv(null, sa.getName());
+        stubCsvSearch(sa);
+        String csv = standardApplicantService.generateCsv(null, sa.getName(), csvPaging());
         Assertions.assertNotNull(csv);
         Assertions.assertEquals(
                 StandardApplicantCsvRow.Header, List.of(csv.split("\n")[0].split("\\|")));
@@ -553,36 +556,42 @@ class StandardApplicantServiceTest {
         }
     }
 
-    @Test
-    void testExportToCsv_codeAndNameFilterFailure() {
-        val exception =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> standardApplicantService.generateCsv("APP001", "Test Org"));
-        Assertions.assertEquals(
-                StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION, exception.getCode());
+    @ParameterizedTest
+    @CsvSource({"APP001,", ",Test Org", "APP001,Test Org", ",", "'',''"})
+    void export_acceptsSearchFilterCombinationsAndUsesActiveDateAndSort(String code, String name) {
+        val sa =
+                projection("APP001", "Test Org", CURRENT_UK_DATE.minusDays(1), null)
+                        .getStandardApplicant();
+        stubCsvSearch(sa);
+
+        val csv = standardApplicantService.generateCsv(code, name, csvPaging());
+
+        Assertions.assertEquals("APP001", parseCsv(csv).get(1).getApplicantCode());
+        verify(repository)
+                .search(
+                        code == null || code.isBlank() ? null : code,
+                        name == null || name.isBlank() ? null : name,
+                        null,
+                        null,
+                        null,
+                        CURRENT_UK_DATE,
+                        Pageable.unpaged(
+                                Sort.by(Sort.Direction.DESC, "effectiveName")
+                                        .and(Sort.by(StandardApplicant_.ID))));
     }
 
     @Test
     void testExportToCsv_noResultsFoundFailure() {
-        when(repository.findByCodeAndName(any(), any())).thenReturn(Collections.emptyList());
+        when(clock.withZone(ukZone)).thenReturn(FIXED_CLOCK);
+        when(repository.search(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of()));
         val exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> standardApplicantService.generateCsv("APP001", null));
+                        () -> standardApplicantService.generateCsv("APP001", null, csvPaging()));
         Assertions.assertEquals(
                 StandardApplicantCodeError.NO_RESULTS_FOUND_FOR_CSV_GENERATION,
                 exception.getCode());
-    }
-
-    @Test
-    void testExportToCsv_codeAndNameBlankFailure() {
-        val exception =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> standardApplicantService.generateCsv("", ""));
-        Assertions.assertEquals(
-                StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION, exception.getCode());
     }
 
     @Test
@@ -607,14 +616,21 @@ class StandardApplicantServiceTest {
         sa.setApplicantSurname("Smith");
         sa.setApplicantForename1("John");
 
-        when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any()))
-                .thenReturn(List.of(sa));
-        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), "");
+        stubCsvSearch(sa);
+        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), "", csvPaging());
         Assertions.assertNotNull(csv);
         Assertions.assertEquals(
                 StandardApplicantCsvRow.Header, List.of(csv.split("\n")[0].split("\\|")));
 
-        verify(repository).findByCodeAndName(sa.getApplicantCode(), null);
+        verify(repository)
+                .search(
+                        eq(sa.getApplicantCode()),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        eq(CURRENT_UK_DATE),
+                        any());
         List<StandardApplicantCsvRow> rows = parseCsv(csv);
         for (int i = 1; i < rows.size(); i++) {
             dataComparison(rows.get(i), sa);
@@ -643,9 +659,8 @@ class StandardApplicantServiceTest {
         sa.setApplicantSurname("Smith");
         sa.setApplicantForename1("John");
 
-        when(repository.findByCodeAndName(eq(sa.getApplicantCode()), any()))
-                .thenReturn(List.of(sa));
-        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null);
+        stubCsvSearch(sa);
+        String csv = standardApplicantService.generateCsv(sa.getApplicantCode(), null, csvPaging());
 
         Assertions.assertTrue(
                 csv.contains("'=1+1"),
@@ -655,6 +670,82 @@ class StandardApplicantServiceTest {
                 "CSV should escape formula values to prevent execution when imported into Excel");
         Assertions.assertEquals("=1+1", sa.getApplicantCode());
         Assertions.assertEquals("@Test Org", sa.getName());
+    }
+
+    private void stubCsvSearch(StandardApplicant applicant) {
+        when(clock.withZone(ukZone)).thenReturn(FIXED_CLOCK);
+        val projection = mock(StandardApplicantEnrichedProjection.class);
+        when(projection.getStandardApplicant()).thenReturn(applicant);
+        when(repository.search(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(projection)));
+    }
+
+    private PagingWrapper csvPaging() {
+        return PagingWrapper.of(
+                List.of(), PageRequest.of(3, 1, Sort.by(Sort.Direction.DESC, "effectiveName")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3})
+    void print_enforcesConfiguredLimitWithoutTruncation(int count) {
+        ReflectionTestUtils.setField(standardApplicantService, "maxPrintRows", 2);
+        when(clock.withZone(ukZone)).thenReturn(FIXED_CLOCK);
+        val rows =
+                IntStream.range(0, count)
+                        .mapToObj(i -> projection("APP" + i, "Org", CURRENT_UK_DATE, null))
+                        .toList();
+        when(repository.search(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(rows));
+        if (count > 2) {
+            assertThatThrownBy(
+                            () ->
+                                    standardApplicantService.print(
+                                            null, null, null, null, null, csvPaging()))
+                    .isInstanceOf(AppRegistryException.class)
+                    .hasMessageContaining("exceeds 2 rows");
+        } else {
+            Assertions.assertEquals(
+                    count,
+                    standardApplicantService
+                            .print(null, null, null, null, null, csvPaging())
+                            .getRecordCount());
+        }
+    }
+
+    @Test
+    void print_fetchesAllPagesWhenConfiguredLimitExceedsBatchSize() {
+        ReflectionTestUtils.setField(standardApplicantService, "maxPrintRows", 1001);
+        when(clock.withZone(ukZone)).thenReturn(FIXED_CLOCK);
+        val sort =
+                Sort.by(Sort.Direction.DESC, "effectiveName").and(Sort.by(StandardApplicant_.ID));
+        val first = PageRequest.of(0, 1000, sort);
+        val second = first.next();
+        val rows =
+                IntStream.range(0, 1001)
+                        .mapToObj(i -> projection("APP" + i, "Org", CURRENT_UK_DATE, null))
+                        .toList();
+        when(repository.search(
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        eq(CURRENT_UK_DATE),
+                        eq(first)))
+                .thenReturn(new PageImpl<>(rows.subList(0, 1000), first, 1001));
+        when(repository.search(
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        eq(CURRENT_UK_DATE),
+                        eq(second)))
+                .thenReturn(new PageImpl<>(rows.subList(1000, 1001), second, 1001));
+
+        val result = standardApplicantService.print(null, null, null, null, null, csvPaging());
+        Assertions.assertEquals(1001, result.getRecordCount());
+        Assertions.assertEquals("APP1000", result.getApplicants().getLast().getCode().get());
     }
 
     private void dataComparison(StandardApplicantCsvRow row, StandardApplicant expected) {

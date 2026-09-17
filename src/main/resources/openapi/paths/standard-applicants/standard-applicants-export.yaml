@@ -1,26 +1,35 @@
 get:
   operationId: standardApplicantsExport
   description: |
-    Export a filtered list of Standard Applicants to a CSV file.
+    Export all matching currently active Standard Applicants, across all pages, to a CSV file.
+    Uses the same code/name matching and ordering as search without date filters.
+    Code and name are optional and may be combined; both must match when supplied together.
+    Omitting both returns all currently active applicants. Defaults to code ascending.
     - Filters:
-        - `code` – case-insensitive partial match. Name parameter cannot be included when providing the code parameter.
-        - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3. Code parameter cannot be included when providing the name parameter.
+        - `code` – case-insensitive partial match.
+        - `name` – case-insensitive partial match against organisation/name, surname and forenames 1-3.
   tags: ['standard-applicants']
   parameters:
     - in: query
       name: code
-      description: Filter by code (contains, case-insensitive). Name parameter cannot be included when providing the code parameter.
+      description: Filter by code (contains, case-insensitive). May be combined with name.
       schema:
         type: string
         maxLength: 10
       example: "SA"
     - in: query
       name: name
-      description: Filter by organisation name (contains, case-insensitive). Code parameter cannot be included when providing the name parameter.
+      description: Filter by organisation or person name (contains, case-insensitive). May be combined with code.
       schema:
         type: string
         maxLength: 100
         example: "Innovative Solutions Inc"
+    - in: query
+      name: sort
+      schema:
+        type: array
+        items: { type: string }
+      description: "One sort value: code, name, addressLine1, from or to, followed by asc or desc (for example name,desc). Defaults to code,asc."
   responses:
     "200":
       description: A CSV file containing the filtered list of Standard Applicants.
@@ -36,6 +45,5 @@ get:
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
-    "409": { $ref: "../../components/responses/bad-request-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 

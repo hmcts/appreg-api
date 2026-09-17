@@ -15,7 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 @Getter
 public enum StandardApplicantSortFieldEnum implements SortableOperationEnum {
     NAME("name", StandardApplicant_.ID, "effectiveName"),
-    CODE("code", StandardApplicant_.APPLICANT_CODE),
+    CODE("code", StandardApplicant_.ID, StandardApplicant_.APPLICANT_CODE),
     ADDRESS_LINE_1("addressLine1", StandardApplicant_.ID, StandardApplicant_.ADDRESS_LINE1),
     FROM("from", StandardApplicant_.ID, StandardApplicant_.APPLICANT_START_DATE),
     TO("to", StandardApplicant_.ID, StandardApplicant_.APPLICANT_END_DATE);

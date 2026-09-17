@@ -96,6 +96,8 @@ azure:
 
 
 appreg:
+  standard-applicants:
+    max-print-rows: ${STANDARD_APPLICANTS_MAX_PRINT_ROWS:1000}
   bulk-import:
     page-size: ${BULK_IMPORT_PAGE_SIZE:250}
     write-audit-mode: ${BULK_IMPORT_WRITE_AUDIT_MODE:BULK}

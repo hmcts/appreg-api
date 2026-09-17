@@ -104,7 +104,15 @@ public class StandardApplicantController implements StandardApplicantsApi {
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<String> standardApplicantsExport(
-            @Nullable String code, @Nullable String name) {
-        return ResponseEntity.ok(service.generateCsv(code, name));
+            @Nullable String code, @Nullable String name, @Nullable List<String> sort) {
+        var pageable =
+                pageableMapper.from(
+                        0,
+                        1,
+                        sort,
+                        StandardApplicantSortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        StandardApplicantSortFieldEnum::getEntityValue);
+        return ResponseEntity.ok(service.generateCsv(code, name, pageable));
     }
 }

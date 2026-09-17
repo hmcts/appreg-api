@@ -11,6 +11,9 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,23 +30,44 @@ class StandardApplicantControllerTest {
     private final StandardApplicantController controller =
             new StandardApplicantController(service, pageableMapper);
 
-    @Test
-    void getStandardApplicants_delegatesAndReturnsOk() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "name,desc"})
+    void getStandardApplicants_delegatesAndReturnsOk(String sort) {
+        var sorts = sort == null ? null : sort.isEmpty() ? List.<String>of() : List.of(sort);
+        var expectedSorts = sorts == null ? List.<String>of() : sorts;
         var paging = mock(PagingWrapper.class);
         var body = new StandardApplicantPage();
         var from = LocalDate.of(2026, Month.JANUARY, 1);
         var to = LocalDate.of(2026, Month.DECEMBER, 31);
         when(pageableMapper.from(
-                        eq(0), eq(20), eq(List.of()), any(), eq(Sort.Direction.ASC), any()))
+                        eq(0), eq(20), eq(expectedSorts), any(), eq(Sort.Direction.ASC), any()))
                 .thenReturn(paging);
         when(service.findAll("CODE", "Name", "Address", from, to, paging)).thenReturn(body);
 
         ResponseEntity<StandardApplicantPage> actual =
-                controller.getStandardApplicants("CODE", "Name", "Address", from, to, 0, 20, null);
+                controller.getStandardApplicants("CODE", "Name", "Address", from, to, 0, 20, sorts);
 
         verify(service).findAll("CODE", "Name", "Address", from, to, paging);
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(actual.getBody()).isSameAs(body);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"name,desc", "code,asc"})
+    void export_passesFiltersAndSortToService(String sort) {
+        var sorts = sort == null ? null : List.of(sort);
+        var paging = mock(PagingWrapper.class);
+        when(pageableMapper.from(eq(0), eq(1), eq(sorts), any(), eq(Sort.Direction.ASC), any()))
+                .thenReturn(paging);
+        when(service.generateCsv("CODE", "Name", paging)).thenReturn("csv");
+
+        var actual = controller.standardApplicantsExport("CODE", "Name", sorts);
+
+        verify(service).generateCsv("CODE", "Name", paging);
+        assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(actual.getBody()).isEqualTo("csv");
     }
 
     @Test
@@ -61,19 +85,24 @@ class StandardApplicantControllerTest {
                 .hasToString("application/vnd.hmcts.appreg.v1+json");
     }
 
-    @Test
-    void printStandardApplicants_passesAddressLine1FilterToService() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "name,desc"})
+    void printStandardApplicants_passesAddressLine1FilterToService(String sort) {
+        var sorts = sort == null ? null : sort.isEmpty() ? List.<String>of() : List.of(sort);
+        var expectedSorts = sorts == null ? List.<String>of() : sorts;
         var paging = mock(PagingWrapper.class);
         var body = mock(StandardApplicantPrintDto.class);
         var from = LocalDate.of(2026, Month.JANUARY, 1);
         var to = LocalDate.of(2026, Month.DECEMBER, 31);
 
-        when(pageableMapper.from(eq(0), eq(1), eq(List.of()), any(), eq(Sort.Direction.ASC), any()))
+        when(pageableMapper.from(
+                        eq(0), eq(1), eq(expectedSorts), any(), eq(Sort.Direction.ASC), any()))
                 .thenReturn(paging);
         when(service.print("CODE", "Name", "High Street", from, to, paging)).thenReturn(body);
 
         ResponseEntity<StandardApplicantPrintDto> actual =
-                controller.printStandardApplicants("CODE", "Name", from, to, "High Street", null);
+                controller.printStandardApplicants("CODE", "Name", from, to, "High Street", sorts);
 
         verify(service).print("CODE", "Name", "High Street", from, to, paging);
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
