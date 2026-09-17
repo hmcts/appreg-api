@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   detect-conflicted-pr:
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      github.workflow_ref == format('{0}/.github/workflows/codex_merge_conflict_resolution.yml@refs/heads/{1}', github.repository, github.event.repository.default_branch)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -186,9 +189,12 @@ jobs:
           } >>"$GITHUB_OUTPUT"
 
   codex-conflict-generate-action:
+    environment: codex-model
     needs: detect-conflicted-pr
     if: needs.detect-conflicted-pr.outputs.should_run == 'true'
-    runs-on: codex-pilot-azure-aks
+    runs-on:
+      group: appreg-codex
+      labels: codex-pilot-azure-aks
     timeout-minutes: 120
     permissions:
       contents: read
@@ -336,6 +342,7 @@ jobs:
           tar -czf "$RUNNER_TEMP/codex-conflict-source.tar.gz" .
           cp ../trusted/.github/scripts/codex-merge-conflict-verify.sh "$RUNNER_TEMP/trusted-codex-merge-conflict-verify.sh"
           cp ../trusted/bin/codex-local-pipeline.sh "$RUNNER_TEMP/trusted-codex-local-pipeline.sh"
+          git -C ../trusted archive HEAD .github/scripts .github/workflows .github/schemas bin >"$RUNNER_TEMP/trusted-codex-checks.tar"
 
       - name: Upload credential-free conflict source
         uses: actions/upload-artifact@v7
@@ -345,6 +352,7 @@ jobs:
             ${{ runner.temp }}/codex-conflict-source.tar.gz
             ${{ runner.temp }}/trusted-codex-merge-conflict-verify.sh
             ${{ runner.temp }}/trusted-codex-local-pipeline.sh
+            ${{ runner.temp }}/trusted-codex-checks.tar
           if-no-files-found: error
           retention-days: 1
 
@@ -392,6 +400,7 @@ jobs:
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-conflict-output
           TRUSTED_PIPELINE_PATH: ${{ runner.temp }}/codex-conflict-verification-source/trusted-codex-local-pipeline.sh
+          TRUSTED_CHECKS_ARCHIVE: ${{ runner.temp }}/codex-conflict-verification-source/trusted-codex-checks.tar
         run: |
           set +e
           bash "$RUNNER_TEMP/codex-conflict-verification-source/trusted-codex-merge-conflict-verify.sh" >"$RUNNER_TEMP/codex-conflict-verification.log" 2>&1
@@ -417,6 +426,7 @@ jobs:
           retention-days: 1
 
   publish-conflict-resolution:
+    environment: codex-publisher
     needs: [detect-conflicted-pr, codex-conflict-generate, verify-conflict-resolution]
     if: needs.detect-conflicted-pr.outputs.should_run == 'true' && needs.verify-conflict-resolution.outputs.passed == 'true'
     runs-on: ubuntu-latest

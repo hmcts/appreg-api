@@ -27,6 +27,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
     @Override
     public JsonNode retrieveJson(String path) {
         validatePath(path);
+        var uri = buildUri(path);
 
         RestClientException lastException = null;
         var accessKeys = properties.getAccessKeys();
@@ -37,7 +38,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                 val response =
                         csdsIngressRestClient
                                 .get()
-                                .uri(buildUri(path))
+                                .uri(uri)
                                 .header(properties.getAccessKeyHeader(), accessKey)
                                 .accept(MediaType.APPLICATION_JSON)
                                 .retrieve()
@@ -49,7 +50,16 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                             "CSDS response body was null for path " + path);
                 }
 
-                return readJson(response, path);
+                var json = readJson(response, path);
+                if (json != null) {
+                    var count = json.path("count");
+                    var records = json.path("records");
+                    if ((count.canConvertToInt() && count.intValue() == 0)
+                            || (records.isArray() && records.isEmpty())) {
+                        log.warn("NO RECORDS RETURNED for query {}", uri);
+                    }
+                }
+                return json;
             } catch (RestClientException ex) {
                 lastException = ex;
                 log.warn(

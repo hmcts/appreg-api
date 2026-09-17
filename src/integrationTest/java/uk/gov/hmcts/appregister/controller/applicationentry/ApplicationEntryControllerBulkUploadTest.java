@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import io.restassured.response.Response;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkImportService;
 import uk.gov.hmcts.appregister.common.async.exception.JobError;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -116,6 +118,92 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         Assertions.assertEquals(expectedApiEntries(), apiEntriesForList(listId, token));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
         Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));
+    }
+
+    @Test
+    void givenCompletedUpload_whenFeesChange_thenPollingReturnsCurrentNonDeletedTotals()
+            throws Exception {
+        var tokenGenerator = createAdminToken();
+        var token = tokenGenerator.fetchTokenForRole();
+        var listId = createNewApplicationList(token);
+        var response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                        token,
+                        "file",
+                        csvFile(),
+                        "text/csv");
+        response.then().statusCode(202);
+        assertThat(response.jsonPath().getMap(""))
+                .doesNotContainKeys("mainFeeTotal", "offsiteFeeTotal", "totalFeeValue");
+        var jobId = response.as(JobAcknowledgement.class).getId();
+        var completed =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient, getLocalUrl("jobs/" + jobId), token);
+        assertThat(completed.getStatus()).isEqualTo(JobStatus.COMPLETED);
+        assertThat(completed.getMainFeeTotal()).isNotNull();
+        assertThat(completed.getOffsiteFeeTotal()).isNotNull();
+        assertThat(completed.getTotalFeeValue())
+                .isEqualByComparingTo(
+                        completed.getMainFeeTotal().add(completed.getOffsiteFeeTotal()));
+
+        var main = saveActiveFee("BULKMAIN", "Main", new BigDecimal("10.15"), false, null);
+        var offsite = saveActiveFee("BULKOFF", "Offsite", new BigDecimal("2.35"), true, null);
+        var entryIds =
+                asyncJobAppListEntryRepository.findByAsyncJobId(jobId).stream()
+                        .map(link -> link.getAppListEntryId())
+                        .toList();
+        unitOfWork.inTransaction(
+                () -> {
+                    for (var entryId : entryIds) {
+                        var entry =
+                                applicationListEntryRepository.findByUuid(entryId).orElseThrow();
+                        appListEntryFeeRepository.deleteAll(
+                                appListEntryFeeRepository.getEntryFeesForEntry(entry.getId()));
+                    }
+                    appListEntryFeeRepository.flush();
+                    for (var entryId : entryIds.subList(0, 2)) {
+                        var entry =
+                                applicationListEntryRepository.findByUuid(entryId).orElseThrow();
+                        for (var fee : List.of(main, offsite)) {
+                            var link = new AppListEntryFeeId();
+                            link.setAppListEntryId(entry.getId());
+                            link.setFeeId(fee.getId());
+                            appListEntryFeeRepository.save(link);
+                        }
+                    }
+                    return null;
+                });
+        assertPollingTotals(jobId, token, "20.30", "4.70", "25.00");
+        var otherJobTotals = asyncJobAppListEntryRepository.getFeeTotals(UUID.randomUUID());
+        assertThat(otherJobTotals.getMainFeeTotal()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(otherJobTotals.getOffsiteFeeTotal()).isEqualByComparingTo(BigDecimal.ZERO);
+
+        for (var entryId : entryIds.subList(0, 2)) {
+            unitOfWork.inTransaction(
+                    () -> {
+                        var entry =
+                                applicationListEntryRepository.findByUuid(entryId).orElseThrow();
+                        entry.setDeleted(YesOrNo.YES);
+                        applicationListEntryRepository.save(entry);
+                        return null;
+                    });
+            if (entryId.equals(entryIds.getFirst())) {
+                assertPollingTotals(jobId, token, "10.15", "2.35", "12.50");
+            }
+        }
+        assertPollingTotals(jobId, token, "0", "0", "0");
+    }
+
+    private void assertPollingTotals(
+            UUID jobId, TokenAndJwksKey token, String main, String offsite, String total)
+            throws IOException {
+        var result =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient, getLocalUrl("jobs/" + jobId), token);
+        assertThat(result.getMainFeeTotal()).isEqualByComparingTo(main);
+        assertThat(result.getOffsiteFeeTotal()).isEqualByComparingTo(offsite);
+        assertThat(result.getTotalFeeValue()).isEqualByComparingTo(total);
     }
 
     @Test

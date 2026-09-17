@@ -29,7 +29,7 @@ public class ResolutionCodeDataIngressProcessor
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ResolutionCodeID",
-                    "PSSRCID",
+                    "PSSResolutionCodeID",
                     "Code",
                     "ResultTitle",
                     "ResultWording",

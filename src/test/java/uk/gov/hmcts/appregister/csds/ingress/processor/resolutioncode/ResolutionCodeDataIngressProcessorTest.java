@@ -59,6 +59,7 @@ class ResolutionCodeDataIngressProcessorTest {
     void setUp() {
         properties = new CsdsIngressProperties();
         properties.setPageSize(2);
+        properties.getProcessors().setReportRaw(true);
         properties.getProcessors().getResolutionCodes().setReportingDir(tempDir.toString());
         lenient().when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.NONE);
         rowMapper = new ResolutionCodeIngressDatabaseRowMapper();
@@ -105,6 +106,108 @@ class ResolutionCodeDataIngressProcessorTest {
         var retrieved = processor.retrieve(ingressClient);
 
         assertThat(retrieved).containsExactly(firstPage, secondPage);
+    }
+
+    @Test
+    void given_invalidPayload_when_preProcessFails_then_receivedJsonIsAlreadySaved()
+            throws Exception {
+        var page = OBJECT_MAPPER.readTree("{\"records\":[{\"PSSResolutionCodeID\":123}]}");
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 1));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                .thenReturn(page);
+
+        var received = processor.retrieve(ingressClient);
+        assertThatThrownBy(() -> processor.preProcess(received))
+                .isInstanceOf(CsdsPayloadValidationException.class);
+        try (var files = Files.list(tempDir)) {
+            var saved =
+                    files.filter(path -> path.getFileName().toString().contains("_offset_0_"))
+                            .toList();
+            assertThat(saved).hasSize(1);
+            assertThat(OBJECT_MAPPER.readTree(saved.getFirst().toFile())).isEqualTo(page);
+        }
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_laterPageFails_when_retrieve_then_keepsEarlierPage() throws Exception {
+        var page = OBJECT_MAPPER.readTree("{\"records\":[]}");
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 3));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                .thenReturn(page);
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=2"))
+                .thenThrow(new IllegalStateException("Upstream unavailable"));
+
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .isInstanceOf(IllegalStateException.class);
+        try (var files = Files.list(tempDir)) {
+            var saved =
+                    files.filter(path -> path.getFileName().toString().contains("_offset_0_"))
+                            .toList();
+            assertThat(saved).hasSize(1);
+            assertThat(OBJECT_MAPPER.readTree(saved.getFirst().toFile())).isEqualTo(page);
+        }
+    }
+
+    @Test
+    void given_rawReportingDisabled_when_retrieve_then_doesNotWriteFiles() throws Exception {
+        properties.getProcessors().setReportRaw(false);
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 1));
+        var page = OBJECT_MAPPER.readTree("{\"records\":[]}");
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                .thenReturn(page);
+
+        assertThat(processor.retrieve(ingressClient)).containsExactly(page);
+        try (var files = Files.list(tempDir)) {
+            assertThat(files).isEmpty();
+        }
+    }
+
+    @Test
+    void given_blankReportingDir_when_retrieve_then_doesNotWriteFiles() throws Exception {
+        properties.getProcessors().getResolutionCodes().setReportingDir(" ");
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 0));
+
+        assertThat(processor.retrieve(ingressClient)).isEmpty();
+        try (var files = Files.list(tempDir)) {
+            assertThat(files).isEmpty();
+        }
+    }
+
+    @Test
+    void given_zeroCount_when_retrievedTwice_then_savesBothResponses() throws Exception {
+        var count = OBJECT_MAPPER.createObjectNode().put("count", 0);
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD")).thenReturn(count);
+
+        assertThat(processor.retrieve(ingressClient)).isEmpty();
+        assertThat(processor.retrieve(ingressClient)).isEmpty();
+        try (var files = Files.list(tempDir)) {
+            var saved = files.toList();
+            assertThat(saved).hasSize(2);
+            for (var file : saved) {
+                assertThat(OBJECT_MAPPER.readTree(file.toFile())).isEqualTo(count);
+            }
+        }
+    }
+
+    @Test
+    void given_unwritableReportingDir_when_retrieve_then_reportsFileError() throws Exception {
+        var file = Files.createFile(tempDir.resolve("not-a-directory"));
+        properties.getProcessors().getResolutionCodes().setReportingDir(file.toString());
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 0));
+
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Failed to write received CSDS JSON");
     }
 
     @Test
@@ -165,7 +268,7 @@ class ResolutionCodeDataIngressProcessorTest {
                       "RevisionDateFrom": null,
                       "RevisionDateTo": null,
                       "ClonedFrom": null,
-                      "PSSRCID": null,
+                      "PSSResolutionCodeID": null,
                       "PSSChangeSetHeaderID": null,
                       "PSSChangeSetItemID": null,
                       "FID_ApplicationRegisterHeader": 10193,
@@ -522,7 +625,7 @@ class ResolutionCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_pssrcidPresent_when_apply_then_useItAsTheResolvedKey() {
+    void given_pssResolutionCodeIdPresent_when_apply_then_useItAsTheResolvedKey() throws Exception {
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper)).thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ResolutionCodeDiffReportingService.class);
@@ -537,10 +640,25 @@ class ResolutionCodeDataIngressProcessorTest {
 
         assertThat(logCaptor.getInfoLogs())
                 .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
+        try (var files = Files.list(tempDir)) {
+            var reports =
+                    files.filter(
+                                    path ->
+                                            path.toString().endsWith(".csv")
+                                                    && !path.getFileName()
+                                                            .toString()
+                                                            .startsWith(
+                                                                    "resolution_codes_existing_"))
+                            .toList();
+            assertThat(reports).hasSize(2);
+            for (var report : reports) {
+                assertThat(Files.readString(report)).contains("\"345\",,\"345\"");
+            }
+        }
     }
 
     @Test
-    void given_pssrcidMissing_when_apply_then_useResolutionCodeIdOffsetKey() {
+    void given_pssResolutionCodeIdMissing_when_apply_then_useResolutionCodeIdOffsetKey() {
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper)).thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ResolutionCodeDiffReportingService.class);
@@ -720,7 +838,7 @@ class ResolutionCodeDataIngressProcessorTest {
                         .putNull("RevisionDateFrom")
                         .putNull("RevisionDateTo")
                         .putNull("ClonedFrom")
-                        .putNull("PSSRCID")
+                        .putNull("PSSResolutionCodeID")
                         .putNull("PSSChangeSetHeaderID")
                         .putNull("PSSChangeSetItemID")
                         .put("FID_ApplicationRegisterHeader", 10193L)
@@ -738,22 +856,22 @@ class ResolutionCodeDataIngressProcessorTest {
     }
 
     private ObjectNode createSourceRecordWithoutResolutionCodeId(
-            Long pssrcid, String code, String title, String wording, Long version) {
+            Long pssResolutionCodeId, String code, String title, String wording, Long version) {
         var sourceRecord =
                 createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
-        sourceRecord.put("PSSRCID", pssrcid);
+        sourceRecord.put("PSSResolutionCodeID", pssResolutionCodeId);
         return sourceRecord;
     }
 
     private ObjectNode createSourceRecordWithPssrcid(
-            Long pssrcid,
+            Long pssResolutionCodeId,
             Long resolutionCodeId,
             String code,
             String title,
             String wording,
             Long version) {
         var sourceRecord = createSourceRecord(resolutionCodeId, code, title, wording, version);
-        sourceRecord.put("PSSRCID", pssrcid);
+        sourceRecord.put("PSSResolutionCodeID", pssResolutionCodeId);
         return sourceRecord;
     }
 

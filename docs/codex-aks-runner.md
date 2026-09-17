@@ -2,6 +2,11 @@
 
 This repository is wired for the Applications Register Codex pilot using GitHub Actions Runner Controller on AKS.
 
+Before deploying the workflow trust changes, complete the
+[trusted execution rollout](codex-trusted-execution.md). The protected
+environments and organisation runner-group policies are required; YAML guards
+alone do not restrict a modified feature-branch workflow.
+
 ## Flow
 
 ```text
@@ -31,10 +36,13 @@ The flow is not tied to one Jira board. Each board needs its own Automation rule
 - `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, plans the implementation, validates and gates the plan, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
 - `.github/workflows/codex_pr_review_feedback.yml`: sends PR review feedback back to Codex for follow-up changes on the same `codex/*` branch.
 
-All Codex workflows target:
+Model jobs select the restricted organisation runner group and this repository's
+runner label. Publisher and verification jobs use fresh GitHub-hosted compute:
 
 ```yaml
-runs-on: codex-pilot-azure-aks
+runs-on:
+  group: appreg-codex
+  labels: codex-pilot-azure-aks
 ```
 
 ## Codex Action authentication
@@ -96,9 +104,9 @@ The workflow rejects plans that target Gradle, runner, workflow or verification
 tooling. A trusted preparation job archives the exact planned repository
 revision without executing it. Patch application, formatting, Gradle and all
 repository tests then run from that archive in jobs with `permissions: {}` and
-no GitHub or Sonar credentials. Authenticated publication and status/Sonar API
-checks run later in separate trusted jobs that never apply or execute the
-model-generated patch.
+no GitHub credentials. Authenticated publication and required-status checks run
+later in separate trusted jobs that never apply or execute the model-generated
+patch.
 
 The current Azure Function implementation callback accepts only genuine
 PR-created payloads and transitions Jira to Dev Review. It has no blocker or
@@ -154,7 +162,10 @@ organisation usage dashboard at least weekly. See OpenAI's
 [Usage and Costs API guide](https://developers.openai.com/cookbook/examples/completions_usage_api)
 and [organisation usage dashboard](https://platform.openai.com/settings/organization/usage).
 
-## Required Repository Secrets
+## Protected Environment Secrets
+
+Store these only in the master-only environments specified in the
+[rollout guide](codex-trusted-execution.md), not as repository secrets.
 
 - `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_GITHUB_APP_PRIVATE_KEY`: private key for the HMCTS-owned Codex GitHub App, used only to mint repository-scoped installation tokens in trusted jobs.
@@ -168,6 +179,27 @@ and [organisation usage dashboard](https://platform.openai.com/settings/organiza
 
 - `CODEX_REVIEWER`: GitHub username to request for review on Codex PRs.
 - `CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after PR creation. Defaults to `10`.
+
+## Re-enabling the Sonar quality gate
+
+The Codex workflows no longer wait for the SonarCloud quality gate; only the
+required Jenkins status (`CODEX_REQUIRED_STATUS_CONTEXT`) gates a published PR.
+The gate script, its tests, the `codex-status` environment and the
+`CODEX_SONAR_TOKEN` secret were removed on 16 September 2026;
+`git log --diff-filter=D -- .github/scripts/codex-check-sonar-quality-gate.sh`
+finds the removing commit. To bring the gate back:
+
+- Restore `.github/scripts/codex-check-sonar-quality-gate.sh`,
+  `.github/scripts/test-codex-check-sonar-quality-gate.py` and the
+  `bin/codex-local-pipeline.sh` assertions from that commit's parent.
+- Use project key `uk.gov.hmcts.appreg:appreg-api-2` (`sonar.projectKey` in
+  `build.gradle`) on `https://sonarcloud.io`. The previous workflow default
+  `uk.gov.hmcts.appreg:appreg-api` was wrong and never matched an analysis.
+- Re-create the master-only `codex-status` environment holding only
+  `CODEX_SONAR_TOKEN`, add it back to `ENVIRONMENTS` in
+  `.github/scripts/audit-codex-trust-settings.py` and to `secret_environments`
+  in `.github/scripts/check-codex-workflow-trust.rb`, and declare
+  `environment: codex-status` on every job that references the secret.
 
 ## Jira Automation
 

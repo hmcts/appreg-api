@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+
 jobs:
   PublishToAzureArtifacts:
     runs-on: ubuntu-latest

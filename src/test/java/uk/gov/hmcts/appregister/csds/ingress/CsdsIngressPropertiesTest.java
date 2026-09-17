@@ -4,9 +4,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
 class CsdsIngressPropertiesTest {
+
+    @Test
+    void given_noRawReportingSetting_when_read_then_defaultsToDisabled() {
+        assertThat(new CsdsIngressProperties().getProcessors().isReportRaw()).isFalse();
+    }
+
+    @Test
+    void given_rawReportingSetting_when_bind_then_enablesRawReporting() {
+        var source =
+                new MapConfigurationPropertySource(
+                        Map.of("appreg.csds.ingress.processors.report-raw", "true"));
+        var properties =
+                new Binder(source).bind("appreg.csds.ingress", CsdsIngressProperties.class).get();
+
+        assertThat(properties.getProcessors().isReportRaw()).isTrue();
+    }
 
     @Test
     void given_manualIngestWithMockOnly_when_validate_then_remoteCredentialsAreNotRequired() {

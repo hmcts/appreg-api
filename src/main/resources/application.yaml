@@ -96,6 +96,8 @@ azure:
 
 
 appreg:
+  standard-applicants:
+    max-print-rows: ${STANDARD_APPLICANTS_MAX_PRINT_ROWS:1000}
   bulk-import:
     page-size: ${BULK_IMPORT_PAGE_SIZE:250}
     write-audit-mode: ${BULK_IMPORT_WRITE_AUDIT_MODE:BULK}
@@ -131,6 +133,7 @@ appreg:
         minute: ${CSDS_SCHEDULE_MINUTE:0}
         poll-interval: PT10M
       processors:
+        report-raw: false
         application-codes:
           enabled: true
           backup-source: application_codes
@@ -140,7 +143,7 @@ appreg:
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicationCodeID
 #          mock: csds/application_codes.json
-#          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
+          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:}
         resolution-codes:
           enabled: true
           backup-source: resolution_codes
@@ -150,7 +153,7 @@ appreg:
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json
-#          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
+          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:}
         fee:
           enabled: true
           backup-source: fee
@@ -160,7 +163,7 @@ appreg:
           source-entity-name: CivilFee
           parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
 #          mock: csds/fee.json
-#          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
+          reporting-dir: ${CSDS_FEE_REPORTING_DIR:}
         standard-applicants:
           enabled: true
           backup-source: standard_applicants
@@ -168,9 +171,9 @@ appreg:
           ingress-target: standard_applicants
           primary-key: sa_id
           source-entity-name: DA_GetStandardApplicant
-#          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json
-#         reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
+          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:}
         national-court-houses:
           enabled: true
           backup-source: national_court_houses
@@ -180,8 +183,8 @@ appreg:
           source-entity-name: Court
           parameters: ?%24expr=Updator&%24f=CourtHearingOperationAreaIndicator='true'%20AND%20PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24orderBy=CourtID
 #          mock: csds/national_court_houses.json
-#          reporting-dir: ${CSDS_NATIONAL_COURT_HOUSES_REPORTING_DIR:}
+          reporting-dir: ${CSDS_NATIONAL_COURT_HOUSES_REPORTING_DIR:}
   job:
     page-size: 10
   report:
-    page-size: 1000
+    page-size: ${APPREG_REPORT_PAGE_SIZE:10000}

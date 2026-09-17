@@ -6,6 +6,11 @@ get:
     Returns all data required for printing Standard Applicants filtered by the supported
     print criteria; code, name, addressLine1, from and to.  Dates are returned in ISO format;
     frontend PDF rendering should display dates as dd/MM/yyyy for legacy parity.
+    Code and name are optional and may be combined; both must match when supplied together.
+    Without date filters, only currently active records are returned, as for search.
+    Returns all matching pages in the requested order (default code ascending).
+    Results exceeding appreg.standard-applicants.max-print-rows (default 1000) are rejected
+    with HTTP 400; results are never silently truncated.
   parameters:
     - in: query
       name: code
