@@ -13,8 +13,7 @@ contracts = {
 secret_environments = {
   "CODEX_OPENAI_API_KEY" => "codex-model",
   "CODEX_GITHUB_APP_PRIVATE_KEY" => "codex-publisher",
-  "CODEX_JIRA_PR_NOTIFY_URL" => "codex-publisher",
-  "CODEX_SONAR_TOKEN" => "codex-status"
+  "CODEX_JIRA_PR_NOTIFY_URL" => "codex-publisher"
 }
 errors = []
 contracts.each do |filename, (event, entry)|

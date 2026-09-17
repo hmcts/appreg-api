@@ -104,9 +104,9 @@ The workflow rejects plans that target Gradle, runner, workflow or verification
 tooling. A trusted preparation job archives the exact planned repository
 revision without executing it. Patch application, formatting, Gradle and all
 repository tests then run from that archive in jobs with `permissions: {}` and
-no GitHub or Sonar credentials. Authenticated publication and status/Sonar API
-checks run later in separate trusted jobs that never apply or execute the
-model-generated patch.
+no GitHub credentials. Authenticated publication and required-status checks run
+later in separate trusted jobs that never apply or execute the model-generated
+patch.
 
 The current Azure Function implementation callback accepts only genuine
 PR-created payloads and transitions Jira to Dev Review. It has no blocker or
@@ -170,7 +170,6 @@ Store these only in the master-only environments specified in the
 - `CODEX_OPENAI_API_KEY`: OpenAI API key used only by the official Codex Action proxy.
 - `CODEX_GITHUB_APP_PRIVATE_KEY`: private key for the HMCTS-owned Codex GitHub App, used only to mint repository-scoped installation tokens in trusted jobs.
 - `CODEX_JIRA_PR_NOTIFY_URL`: Azure Function URL, including its function key, for the PR-created notification endpoint.
-- `CODEX_SONAR_TOKEN`: Sonar status API credential, restricted to codex-status.
 
 ## Required Repository Variables
 
@@ -180,6 +179,27 @@ Store these only in the master-only environments specified in the
 
 - `CODEX_REVIEWER`: GitHub username to request for review on Codex PRs.
 - `CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after PR creation. Defaults to `10`.
+
+## Re-enabling the Sonar quality gate
+
+The Codex workflows no longer wait for the SonarCloud quality gate; only the
+required Jenkins status (`CODEX_REQUIRED_STATUS_CONTEXT`) gates a published PR.
+The gate script, its tests, the `codex-status` environment and the
+`CODEX_SONAR_TOKEN` secret were removed on 16 September 2026;
+`git log --diff-filter=D -- .github/scripts/codex-check-sonar-quality-gate.sh`
+finds the removing commit. To bring the gate back:
+
+- Restore `.github/scripts/codex-check-sonar-quality-gate.sh`,
+  `.github/scripts/test-codex-check-sonar-quality-gate.py` and the
+  `bin/codex-local-pipeline.sh` assertions from that commit's parent.
+- Use project key `uk.gov.hmcts.appreg:appreg-api-2` (`sonar.projectKey` in
+  `build.gradle`) on `https://sonarcloud.io`. The previous workflow default
+  `uk.gov.hmcts.appreg:appreg-api` was wrong and never matched an analysis.
+- Re-create the master-only `codex-status` environment holding only
+  `CODEX_SONAR_TOKEN`, add it back to `ENVIRONMENTS` in
+  `.github/scripts/audit-codex-trust-settings.py` and to `secret_environments`
+  in `.github/scripts/check-codex-workflow-trust.rb`, and declare
+  `environment: codex-status` on every job that references the secret.
 
 ## Jira Automation
 

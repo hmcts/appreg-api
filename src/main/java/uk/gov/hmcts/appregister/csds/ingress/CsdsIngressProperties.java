@@ -93,6 +93,8 @@ public class CsdsIngressProperties {
     @Getter
     @Setter
     public static class Processors {
+        private boolean reportRaw;
+
         private ApplicationCodes applicationCodes = new ApplicationCodes();
         private ResolutionCodes resolutionCodes = new ResolutionCodes();
         private Fee fee = new Fee();

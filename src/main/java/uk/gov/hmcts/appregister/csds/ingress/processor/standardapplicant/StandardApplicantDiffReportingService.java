@@ -15,7 +15,7 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 public class StandardApplicantDiffReportingService
         extends AbstractIngressDiffReportingService<StandardApplicantIngressRecord> {
     private static final String APPLICANT_ID = "ApplicantID";
-    private static final String PSSSA_ID = "PSSSAID";
+    private static final String PSS_APPLICANT_ID = "PSSApplicantID";
     private static final String SA_ID = "SA_ID";
     private static final String CODE = "Code";
     private static final String NAME = "OrganisationName";
@@ -79,7 +79,7 @@ public class StandardApplicantDiffReportingService
                         item -> {
                             var source = incomingRecordsBySaId.get(item.intended().id());
                             return new DiffReportRow(
-                                    nullableLong(source, PSSSA_ID),
+                                    nullableLong(source, PSS_APPLICANT_ID),
                                     nullableLong(source, APPLICANT_ID),
                                     item.intended().id(),
                                     changeType(item.operation()));
@@ -114,7 +114,7 @@ public class StandardApplicantDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, PSSSA_ID)),
+                        csvValue(nullableLong(node, PSS_APPLICANT_ID)),
                         csvValue(nullableLong(node, APPLICANT_ID)),
                         csvValue(nullableLong(node, SA_ID)),
                         csvValue(nullableText(node, CODE)),

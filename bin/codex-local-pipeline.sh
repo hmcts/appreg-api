@@ -136,7 +136,6 @@ mkdir -p "${python_cache}"
 PYTHONPYCACHEPREFIX="${python_cache}" python3 -m py_compile .github/scripts/*.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-collect-codex-patch-result.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-patch-export.py
-PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-check-sonar-quality-gate.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-publish-revision.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-codex-pr-review-handoff.py
 PYTHONPYCACHEPREFIX="${python_cache}" python3 .github/scripts/test-validate-codex-plan.py
@@ -342,8 +341,7 @@ end
   status_job = jira_jobs.fetch(job_name, {})
   if status_job.inspect.include?("codex-jira-verify.sh") ||
      status_job.inspect.include?("codex-local-pipeline.sh") ||
-     !status_job.inspect.include?("codex-wait-pr-status.sh") ||
-     !status_job.inspect.include?("codex-check-sonar-quality-gate.sh")
+     !status_job.inspect.include?("codex-wait-pr-status.sh")
     errors << "#{jira_path}:#{job_name} must query external status without executing the generated patch"
   end
 end
@@ -414,8 +412,7 @@ review_workflow = YAML.load_file(".github/workflows/codex_pr_review_feedback.yml
 %w[verify-review-status verify-review-status-repair].each do |job_name|
   review_status = review_workflow.fetch("jobs", {}).fetch(job_name, {})
   if review_status.inspect.match?(/trusted-codex-pr-review-verify|codex-local-pipeline|gradlew|yarn (?:lint|cichecks)/) ||
-     !review_status.inspect.include?("codex-wait-pr-status.sh") ||
-     !review_status.inspect.include?("codex-check-sonar-quality-gate.sh")
+     !review_status.inspect.include?("codex-wait-pr-status.sh")
     errors << ".github/workflows/codex_pr_review_feedback.yml:#{job_name} must query external status without executing model-writable content"
   end
 end
@@ -435,14 +432,6 @@ unless initial_status.inspect.include?("verification-failure.log") &&
        Array(external_republish.fetch("needs", [])).include?("codex-review-external-repair-verify") &&
        Array(repaired_status.fetch("needs", [])).include?("codex-review-external-republish")
   errors << ".github/workflows/codex_pr_review_feedback.yml:external status failure must feed one bounded repair, credential-free verification, re-publication, and status cycle"
-end
-
-sonar_source = File.read(".github/scripts/codex-check-sonar-quality-gate.sh")
-unless sonar_source.include?("PUBLISHED_COMMIT_SHA") &&
-       sonar_source.include?("/api/project_analyses/search") &&
-       sonar_source.include?("analysisId=") &&
-       !sonar_source.match?(/project_status.*projectKey=.*pullRequest=/)
-  errors << ".github/scripts/codex-check-sonar-quality-gate.sh must bind the quality gate to the published commit's exact analysis ID"
 end
 
 jira_publish_source = File.read(".github/scripts/codex-jira-publish.sh")

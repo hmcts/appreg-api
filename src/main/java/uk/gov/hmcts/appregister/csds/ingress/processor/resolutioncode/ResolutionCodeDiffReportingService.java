@@ -70,7 +70,7 @@ public class ResolutionCodeDiffReportingService
                                 new DiffReportRow(
                                         nullableLong(
                                                 incomingRecordsByRcId.get(item.intended().id()),
-                                                "PSSRCID"),
+                                                "PSSResolutionCodeID"),
                                         nullableLong(
                                                 incomingRecordsByRcId.get(item.intended().id()),
                                                 "ResolutionCodeID"),
@@ -113,7 +113,7 @@ public class ResolutionCodeDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, "PSSRCID")),
+                        csvValue(nullableLong(node, "PSSResolutionCodeID")),
                         csvValue(nullableLong(node, "ResolutionCodeID")),
                         csvValue(nullableLong(node, RC_ID)),
                         csvValue(nullableText(node, "Code")),
