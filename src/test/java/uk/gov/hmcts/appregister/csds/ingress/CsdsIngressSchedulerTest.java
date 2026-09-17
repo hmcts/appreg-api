@@ -42,7 +42,9 @@ class CsdsIngressSchedulerTest {
     }
 
     @Test
-    void given_terminalStatusExistsToday_when_pollNightlyIngress_then_doesNothing() {
+    void given_terminalStatusExistsToday_when_pollNightlyIngress_then_logsSkip() {
+        var logCaptor = LogCaptor.forClass(CsdsIngressScheduler.class);
+        logCaptor.clearLogs();
         var schedule = new CsdsIngressProperties.Schedule();
         schedule.setHour(3);
         schedule.setMinute(0);
@@ -53,6 +55,10 @@ class CsdsIngressSchedulerTest {
         scheduler.pollNightlyIngress();
 
         verify(csdsIngressProcessor, never()).runScheduledIngress(any());
+        assertThat(logCaptor.getInfoLogs())
+                .contains(
+                        "Skipping scheduled CSDS ingress because a terminal execution status already exists for"
+                                + " 2026-07-27");
     }
 
     @Test

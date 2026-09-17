@@ -7,7 +7,10 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobAppListEntryRepository;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
+import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.audit.JobAuditOperation;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.validator.JobExistanceValidator;
@@ -21,6 +24,8 @@ public class JobServiceImpl implements JobService {
 
     private final AuditOperationService auditService;
 
+    private final AsyncJobAppListEntryRepository jobEntryRepository;
+
     @Override
     public JobAcknowledgement getJobAckById(UUID jobId) {
         return auditService.processAudit(
@@ -28,9 +33,17 @@ public class JobServiceImpl implements JobService {
                 unused -> {
                     JobStatusResponse jobStatusResponse = getJobStatusById(jobId);
 
+                    var acknowledgement = jobMapper.toDto(jobStatusResponse);
+                    if (jobStatusResponse.getStatus() == JobStatus.COMPLETED
+                            && jobStatusResponse.getType() == JobType.BULK_UPLOAD_ENTRIES) {
+                        var totals = jobEntryRepository.getFeeTotals(jobId);
+                        acknowledgement.setMainFeeTotal(totals.getMainFeeTotal());
+                        acknowledgement.setOffsiteFeeTotal(totals.getOffsiteFeeTotal());
+                        acknowledgement.setTotalFeeValue(
+                                totals.getMainFeeTotal().add(totals.getOffsiteFeeTotal()));
+                    }
                     return Optional.of(
-                            new AuditableResult<>(
-                                    jobMapper.toDto(jobStatusResponse), jobMapper.toEntity(jobId)));
+                            new AuditableResult<>(acknowledgement, jobMapper.toEntity(jobId)));
                 });
     }
 
