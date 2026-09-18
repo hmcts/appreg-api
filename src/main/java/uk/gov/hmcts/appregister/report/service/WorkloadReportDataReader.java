@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -9,14 +8,12 @@ import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
-public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
+public class WorkloadReportDataReader
+        extends AbstractReportDataReader<
+                WorkloadReportRow, WorkloadReportDataReader.WorkloadReportReadCursor> {
     private static final String REPORT_QUERY =
             """
             WITH applicants AS (
@@ -122,9 +119,9 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     )
                     AND(:hasCursor IS FALSE
                            OR :lastListDate IS NULL
-                           OR al.application_list_date < :lastListDate
-                           OR (al.application_list_date = :lastListDate
-                                   AND ale.ale_id < :lastApplicationListEntryId))
+                           OR (al.application_list_date, ale.ale_id) < (
+                                   :lastListDate,
+                                   :lastApplicationListEntryId))
                 GROUP BY
                     ale.ale_id,
                     al.application_list_date,
@@ -161,15 +158,15 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
 
     private static final RowMapper<WorkloadReportRow> ROW_MAPPER = new WorkloadReportRowMapper();
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final WorkloadFilterDto filterDto;
-    private final String schema;
 
     public WorkloadReportDataReader(
-            NamedParameterJdbcTemplate jdbcTemplate, WorkloadFilterDto filterDto, String schema) {
-        this.jdbcTemplate = jdbcTemplate;
+            NamedParameterJdbcTemplate jdbcTemplate,
+            WorkloadFilterDto filterDto,
+            String schema,
+            int maxRows) {
+        super(jdbcTemplate, schema, maxRows);
         this.filterDto = filterDto;
-        this.schema = schema;
     }
 
     WorkloadFilterDto filter() {
@@ -177,33 +174,12 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position,
-            PageReader<WorkloadReportRow> pageReader,
-            JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        WorkloadReportReadCursor cursor = new WorkloadReportReadCursor(position.getPageSize());
-        List<WorkloadReportRow> rows = readPage(cursor);
-
-        while (!rows.isEmpty()) {
-            pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
-                return;
-            }
-            cursor.advance(rows);
-            rows = readPage(cursor);
-        }
+    protected WorkloadReportReadCursor createCursor(int pageSize) {
+        return new WorkloadReportReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<WorkloadReportRow> readPage(WorkloadReportReadCursor cursor) {
+    protected List<WorkloadReportRow> readPage(WorkloadReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filterDto.getDateFrom(), Types.DATE)
@@ -232,40 +208,25 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                 "lastApplicationListEntryId",
                                 cursor.lastApplicationListEntryId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private static class WorkloadReportReadCursor {
-        private final int pageSize;
-        private WorkloadReportRow lastRow;
-
+    static class WorkloadReportReadCursor extends ReportReadCursor<WorkloadReportRow> {
         WorkloadReportReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<WorkloadReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            super(pageSize);
         }
 
         LocalDate lastListDate() {
-            return hasLastRow() ? lastRow.getListDate() : null;
+            return hasLastRow() ? lastRow().getListDate() : null;
         }
 
         Long lastApplicationListEntryId() {
-            return hasLastRow() ? lastRow.getLastApplicationListEntryId() : null;
+            return hasLastRow() ? lastRow().getLastApplicationListEntryId() : null;
         }
     }
 
-    private static class WorkloadReportRowMapper implements RowMapper<WorkloadReportRow> {
+    static class WorkloadReportRowMapper implements RowMapper<WorkloadReportRow> {
         @Override
         public WorkloadReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return WorkloadReportRow.builder()

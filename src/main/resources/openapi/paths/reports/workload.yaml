@@ -7,6 +7,7 @@ post:
     that have been processed within closed application lists,
     filtered by date range and court location.
     Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
+    The CSV output is capped by server configuration, defaulting to 100,000 rows.
   requestBody:
     required: true
     content:
