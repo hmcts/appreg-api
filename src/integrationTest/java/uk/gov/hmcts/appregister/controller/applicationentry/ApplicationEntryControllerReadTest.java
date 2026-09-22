@@ -2012,9 +2012,10 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 .body("content[0].id", Matchers.equalTo(matchingEntry.getUuid().toString()))
                 .body("content[0].listId", Matchers.equalTo(applicationList.getUuid().toString()))
                 .body("content[0].sequenceNumber", Matchers.equalTo(3))
-                .body("content[0].applicant.person.name.title", Matchers.equalTo("Ms"))
-                .body("content[0].applicant.person.name.firstName", Matchers.equalTo("Jane"))
-                .body("content[0].applicant.person.name.lastName", Matchers.equalTo("Doe"));
+                .body("content[0].applicant.person", Matchers.nullValue())
+                .body(
+                        "content[0].applicant.organisation.name",
+                        Matchers.equalTo(matchingApplicant.getApplicantCode()));
     }
 
     @Test
@@ -2288,8 +2289,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                         .map(String::toLowerCase)
                         .toList();
 
-        Assertions.assertEquals(
-                List.of("mr amy zimmer", "beta org", "dr zoe anderson"), applicantNames);
+        Assertions.assertEquals(List.of("appamy", "appzoe", "beta org"), applicantNames);
     }
 
     @Test

@@ -90,9 +90,8 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      *
      * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)
      *
-     * <p>Name can represent either the organisation name or a person name. For person records, the
-     * effective display/sort value is based on {@code applicantForename1 + " " + applicantSurname}.
-     * Search matches organisation name, surname, and all three forename fields.
+     * <p>Display and sorting use only the reference name, never personal name fields. Legacy search
+     * filters remain supported; personal and contact details are not returned.
      *
      * @param code optional partial code filter (case-insensitive)
      * @param name optional partial applicant display-name filter (case-insensitive)
@@ -107,18 +106,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             """
         SELECT
                 c AS standardApplicant,
-                COALESCE(
-                    c.name,
-                    NULLIF(
-                        TRIM(
-                            FUNCTION('concat_ws', ' ',
-                                c.applicantForename1,
-                                c.applicantSurname
-                            )
-                        ),
-                        ''
-                    )
-                ) AS effectiveName
+                c.name AS effectiveName
         FROM StandardApplicant c
         WHERE (:code IS NULL OR LOWER(c.applicantCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%')  ESCAPE '\\')
           AND (

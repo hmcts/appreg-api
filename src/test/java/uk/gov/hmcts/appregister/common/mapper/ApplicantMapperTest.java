@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -10,6 +11,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
@@ -32,12 +34,24 @@ class ApplicantMapperTest {
     }
 
     @Test
-    void getNameForApplicant_returnsFormattedPersonNameForIndividuals() {
-        var standardApplicant = new StandardApplicant();
-        standardApplicant.setApplicantForename1("Jane");
-        standardApplicant.setApplicantSurname("Doe");
+    void getNameForApplicant_usesCodeInsteadOfPersonalNames() {
+        var standardApplicant = new StandardApplicantTestData().someComplete();
+        standardApplicant.setName(null);
+        standardApplicant.setApplicantCode("SA001");
+        assertEquals("SA001", mapper.getNameForApplicant(standardApplicant, null));
+        standardApplicant.setName("  ");
+        assertEquals("SA001", mapper.getNameForApplicant(standardApplicant, null));
+    }
 
-        assertEquals("Jane Doe", mapper.getNameForApplicant(standardApplicant, null));
+    @Test
+    void toApplicantEntity_doesNotCopyAnyPersonalOrContactDetails() {
+        var standardApplicant = new StandardApplicantTestData().someComplete();
+        var expected = new NameAddress();
+        expected.setName(standardApplicant.getName());
+        assertThat(mapper.toApplicantEntity(standardApplicant))
+                .usingRecursiveComparison()
+                .isEqualTo(expected);
+        assertNull(mapper.toApplicantEntity(null));
     }
 
     @Test

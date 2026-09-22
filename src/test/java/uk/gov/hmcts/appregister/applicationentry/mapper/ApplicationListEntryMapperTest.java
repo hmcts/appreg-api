@@ -1222,32 +1222,21 @@ class ApplicationListEntryMapperTest {
         // assert the applicant data
         Assertions.assertNotNull(applicant.getOrganisation());
         Assertions.assertEquals(entity.getName(), applicant.getOrganisation().getName());
-        Assertions.assertEquals(
-                entity.getMobileNumber(),
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getMobile().orElse(null));
-        Assertions.assertEquals(
-                entity.getEmailAddress(),
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getEmail().orElse(null));
-        Assertions.assertEquals(
-                entity.getPostcode(),
-                applicant.getOrganisation().getContactDetails().getPostcode());
-        Assertions.assertEquals(
-                entity.getTelephoneNumber(),
+        Assertions.assertNull(applicant.getOrganisation().getContactDetails().getPostcode());
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getPhone().orElse(null));
-        Assertions.assertEquals(
-                entity.getAddressLine1(),
-                applicant.getOrganisation().getContactDetails().getAddressLine1());
-        Assertions.assertEquals(
-                entity.getAddressLine2(),
+        Assertions.assertNull(applicant.getOrganisation().getContactDetails().getAddressLine1());
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getAddressLine2().orElse(null));
-        Assertions.assertEquals(
-                entity.getAddressLine3(),
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getAddressLine3().orElse(null));
-        Assertions.assertEquals(
-                entity.getAddressLine4(),
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getAddressLine4().orElse(null));
-        Assertions.assertEquals(
-                entity.getAddressLine5(),
+        Assertions.assertNull(
                 applicant.getOrganisation().getContactDetails().getAddressLine5().orElse(null));
     }
 

@@ -28,9 +28,11 @@ class FeesReportDataReader
                     al.courthouse_code,
                     cja.cja_code,
                     sa.standard_applicant_code,
-                    COALESCE(na.name, sa.name) AS name,
-                    COALESCE(na.first_name, sa.forename_1) AS forename_1,
-                    COALESCE(na.last_name, sa.surname) AS surname,
+                    CASE WHEN sa.sa_id IS NOT NULL
+                        THEN COALESCE(NULLIF(TRIM(sa.name), ''), sa.standard_applicant_code)
+                        ELSE na.name END AS name,
+                    CASE WHEN sa.sa_id IS NULL THEN na.first_name ELSE NULL END AS forename_1,
+                    CASE WHEN sa.sa_id IS NULL THEN na.last_name ELSE NULL END AS surname,
                     ac.application_code,
                     ac.application_code_title,
                     ale.ale_id

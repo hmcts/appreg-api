@@ -23,7 +23,6 @@ import java.util.stream.IntStream;
 import lombok.Setter;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -88,11 +87,6 @@ class StandardApplicantServiceTest {
 
     @InjectMocks private StandardApplicationServiceImpl standardApplicantService;
 
-    @BeforeEach
-    void before() {
-        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
-    }
-
     @Test
     void testGetAll() {
         when(clock.instant()).thenReturn(FIXED_INSTANT);
@@ -122,10 +116,8 @@ class StandardApplicantServiceTest {
         val pageable = PageRequest.of(0, 2);
 
         when(projection1.getStandardApplicant()).thenReturn(standardApplicant1);
-        when(projection1.getEffectiveName()).thenReturn("John Doe");
 
         when(projection2.getStandardApplicant()).thenReturn(standardApplicant2);
-        when(projection2.getEffectiveName()).thenReturn("Jane Doe");
 
         val pageImpl = new PageImpl<>(java.util.List.of(projection1, projection2), pageable, 2);
 
@@ -157,9 +149,7 @@ class StandardApplicantServiceTest {
 
         Assertions.assertEquals(2, standardApplicantPage.getTotalElements());
         Assertions.assertEquals(standardApplicant1.getApplicantCode(), firstResult.getCode());
-        Assertions.assertEquals(
-                standardApplicant1.getName(),
-                firstResult.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(standardApplicant1.getName(), firstResult.getName());
         Assertions.assertEquals(
                 standardApplicant1.getApplicantStartDate(), firstResult.getStartDate());
         Assertions.assertEquals(
@@ -167,9 +157,7 @@ class StandardApplicantServiceTest {
 
         val secondResult = standardApplicantPage.getContent().get(1);
         Assertions.assertEquals(standardApplicant2.getApplicantCode(), secondResult.getCode());
-        Assertions.assertEquals(
-                standardApplicant2.getName(),
-                secondResult.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(standardApplicant2.getName(), secondResult.getName());
         Assertions.assertEquals(
                 standardApplicant2.getApplicantStartDate(), secondResult.getStartDate());
         Assertions.assertEquals(
@@ -274,7 +262,6 @@ class StandardApplicantServiceTest {
         val pageable = PageRequest.of(0, 2);
         val projection = mock(StandardApplicantEnrichedProjection.class);
         when(projection.getStandardApplicant()).thenReturn(applicant);
-        when(projection.getEffectiveName()).thenReturn(name);
         when(repository.search(
                         eq(code),
                         eq(name),
@@ -331,7 +318,6 @@ class StandardApplicantServiceTest {
         val pageable = PageRequest.of(0, 2);
         val projection = mock(StandardApplicantEnrichedProjection.class);
         when(projection.getStandardApplicant()).thenReturn(applicant);
-        when(projection.getEffectiveName()).thenReturn(name);
         when(repository.search(
                         eq(code),
                         eq(name),
@@ -416,7 +402,6 @@ class StandardApplicantServiceTest {
 
         Assertions.assertEquals(0, result.getRecordCount());
         Assertions.assertTrue(result.getApplicants().isEmpty());
-        Assertions.assertEquals(addressLine1, result.getSearchCriteria().getAddressLine1().get());
         Assertions.assertEquals(from, result.getSearchCriteria().getFrom().get());
         Assertions.assertEquals(to, result.getSearchCriteria().getTo().get());
     }

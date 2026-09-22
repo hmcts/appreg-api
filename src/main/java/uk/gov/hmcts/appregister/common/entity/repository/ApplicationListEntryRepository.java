@@ -206,8 +206,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                         FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)
                     WHEN sa.name IS NOT NULL THEN
                          sa.name
-                    WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
-                        FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname)
+                    WHEN sa.id IS NOT NULL THEN sa.applicantCode
                     END as applicantName,
                     CASE WHEN rna.name IS NOT NULL THEN
                          rna.name
@@ -371,8 +370,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                         FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)
                     WHEN sa.name IS NOT NULL THEN
                          sa.name
-                    WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
-                        FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname)
+                    WHEN sa.id IS NOT NULL THEN sa.applicantCode
                     END as applicantName,
                     CASE WHEN rna.name IS NOT NULL THEN
                          rna.name
@@ -560,8 +558,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                         FUNCTION('concat_ws', ' ', ana.firstName, ana.lastName)
                     WHEN sa.name IS NOT NULL THEN
                          sa.name
-                    WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
-                        FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname)
+                    WHEN sa.id IS NOT NULL THEN sa.applicantCode
                     END as applicantName,
                     CASE WHEN rna.name IS NOT NULL THEN
                          rna.name
@@ -615,23 +612,21 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             ale.uuid AS uuid,
             ale.applicationList.uuid AS listId,
             ale.sequenceNumber AS sequenceNumber,
-            COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
-            COALESCE(ana.lastName, sa.applicantSurname) AS applicantLastName,
-            COALESCE(ana.firstName, sa.applicantForename1) AS applicantFirstName,
-            CASE
-                WHEN ana.id IS NOT NULL THEN ana.middleName
-                ELSE FUNCTION('concat_ws', ' ', sa.applicantForename2, sa.applicantForename3)
-            END AS applicantMiddleName,
-            COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
-            COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
-            COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
-            COALESCE(ana.address4, sa.addressLine4) AS applicantAddressLine4,
-            COALESCE(ana.address5, sa.addressLine5) AS applicantAddressLine5,
-            COALESCE(ana.postcode, sa.postcode) AS applicantPostcode,
-            COALESCE(ana.telephoneNumber, sa.telephoneNumber) AS applicantPhone,
-            COALESCE(ana.mobileNumber, sa.mobileNumber) AS applicantMobile,
-            COALESCE(ana.emailAddress, sa.emailAddress) AS applicantEmail,
-            COALESCE(ana.name, sa.name) AS applicantName,
+            CASE WHEN sa.id IS NULL THEN ana.title ELSE NULL END AS applicantTitle,
+            CASE WHEN sa.id IS NULL THEN ana.lastName ELSE NULL END AS applicantLastName,
+            CASE WHEN sa.id IS NULL THEN ana.firstName ELSE NULL END AS applicantFirstName,
+            CASE WHEN sa.id IS NULL THEN ana.middleName ELSE NULL END AS applicantMiddleName,
+            CASE WHEN sa.id IS NULL THEN ana.address1 ELSE NULL END AS applicantAddressLine1,
+            CASE WHEN sa.id IS NULL THEN ana.address2 ELSE NULL END AS applicantAddressLine2,
+            CASE WHEN sa.id IS NULL THEN ana.address3 ELSE NULL END AS applicantAddressLine3,
+            CASE WHEN sa.id IS NULL THEN ana.address4 ELSE NULL END AS applicantAddressLine4,
+            CASE WHEN sa.id IS NULL THEN ana.address5 ELSE NULL END AS applicantAddressLine5,
+            CASE WHEN sa.id IS NULL THEN ana.postcode ELSE NULL END AS applicantPostcode,
+            CASE WHEN sa.id IS NULL THEN ana.telephoneNumber ELSE NULL END AS applicantPhone,
+            CASE WHEN sa.id IS NULL THEN ana.mobileNumber ELSE NULL END AS applicantMobile,
+            CASE WHEN sa.id IS NULL THEN ana.emailAddress ELSE NULL END AS applicantEmail,
+            CASE WHEN sa.id IS NOT NULL THEN COALESCE(NULLIF(TRIM(sa.name), ''), sa.applicantCode)
+                ELSE ana.name END AS applicantName,
             rna.title AS respondentTitle,
             rna.lastName AS respondentLastName,
             rna.firstName AS respondentFirstName,
@@ -671,23 +666,21 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             ale.uuid AS uuid,
             ale.applicationList.uuid AS listId,
             ale.sequenceNumber AS sequenceNumber,
-            COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
-            COALESCE(ana.lastName, sa.applicantSurname) AS applicantLastName,
-            COALESCE(ana.firstName, sa.applicantForename1) AS applicantFirstName,
-            CASE
-                WHEN ana.id IS NOT NULL THEN ana.middleName
-                ELSE FUNCTION('concat_ws', ' ', sa.applicantForename2, sa.applicantForename3)
-            END AS applicantMiddleName,
-            COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
-            COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
-            COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
-            COALESCE(ana.address4, sa.addressLine4) AS applicantAddressLine4,
-            COALESCE(ana.address5, sa.addressLine5) AS applicantAddressLine5,
-            COALESCE(ana.postcode, sa.postcode) AS applicantPostcode,
-            COALESCE(ana.telephoneNumber, sa.telephoneNumber) AS applicantPhone,
-            COALESCE(ana.mobileNumber, sa.mobileNumber) AS applicantMobile,
-            COALESCE(ana.emailAddress, sa.emailAddress) AS applicantEmail,
-            COALESCE(ana.name, sa.name) AS applicantName,
+            CASE WHEN sa.id IS NULL THEN ana.title ELSE NULL END AS applicantTitle,
+            CASE WHEN sa.id IS NULL THEN ana.lastName ELSE NULL END AS applicantLastName,
+            CASE WHEN sa.id IS NULL THEN ana.firstName ELSE NULL END AS applicantFirstName,
+            CASE WHEN sa.id IS NULL THEN ana.middleName ELSE NULL END AS applicantMiddleName,
+            CASE WHEN sa.id IS NULL THEN ana.address1 ELSE NULL END AS applicantAddressLine1,
+            CASE WHEN sa.id IS NULL THEN ana.address2 ELSE NULL END AS applicantAddressLine2,
+            CASE WHEN sa.id IS NULL THEN ana.address3 ELSE NULL END AS applicantAddressLine3,
+            CASE WHEN sa.id IS NULL THEN ana.address4 ELSE NULL END AS applicantAddressLine4,
+            CASE WHEN sa.id IS NULL THEN ana.address5 ELSE NULL END AS applicantAddressLine5,
+            CASE WHEN sa.id IS NULL THEN ana.postcode ELSE NULL END AS applicantPostcode,
+            CASE WHEN sa.id IS NULL THEN ana.telephoneNumber ELSE NULL END AS applicantPhone,
+            CASE WHEN sa.id IS NULL THEN ana.mobileNumber ELSE NULL END AS applicantMobile,
+            CASE WHEN sa.id IS NULL THEN ana.emailAddress ELSE NULL END AS applicantEmail,
+            CASE WHEN sa.id IS NOT NULL THEN COALESCE(NULLIF(TRIM(sa.name), ''), sa.applicantCode)
+                ELSE ana.name END AS applicantName,
             rna.title AS respondentTitle,
             rna.lastName AS respondentLastName,
             rna.firstName AS respondentFirstName,

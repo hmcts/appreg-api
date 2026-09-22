@@ -33,12 +33,12 @@ public class WorkloadReportDataReader
                 SELECT
                     sa_id AS id,
                     standard_applicant_code,
-                    name,
-                    title,
-                    forename_1,
-                    forename_2,
-                    forename_3,
-                    surname,
+                    COALESCE(NULLIF(TRIM(name), ''), standard_applicant_code),
+                    NULL AS title,
+                    NULL AS forename_1,
+                    NULL AS forename_2,
+                    NULL AS forename_3,
+                    NULL AS surname,
                     TRUE AS is_standard_applicant
                 FROM
                     standard_applicants sa),

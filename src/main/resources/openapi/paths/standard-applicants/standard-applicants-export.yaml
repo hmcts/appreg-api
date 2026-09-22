@@ -2,6 +2,8 @@ get:
   operationId: standardApplicantsExport
   description: |
     Export all matching currently active Standard Applicants, across all pages, to a CSV file.
+    Contains exactly four columns: Applicant Code, Name, Use From and Use To.
+    Personal names, titles, addresses, postcodes, email and telephone/mobile numbers are never exported.
     Uses the same code/name matching and ordering as search without date filters.
     Code and name are optional and may be combined; both must match when supplied together.
     Omitting both returns all currently active applicants. Defaults to code ascending.

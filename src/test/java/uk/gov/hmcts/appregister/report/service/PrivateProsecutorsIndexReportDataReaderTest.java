@@ -210,8 +210,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
         assertThat(query).contains("NULLIF(TRIM(sa.name), '')");
         assertThat(query).contains("app_na.first_name");
         assertThat(query).contains("app_na.last_name");
-        assertThat(query).contains("COALESCE(sa.forename_1, '')");
-        assertThat(query).contains("COALESCE(sa.surname, '')");
+        assertThat(query).doesNotContain("sa.forename_", "sa.surname");
         assertThat(query).contains("sa.standard_applicant_code");
         assertThat(query).contains("AND ale.sa_sa_id IS NULL");
         assertThat(query).contains("OR UPPER(sa.standard_applicant_name)");
