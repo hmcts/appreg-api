@@ -1,0 +1,7 @@
+codex runner smoke test
+runner_name=GitHub Actions 1002188254
+runner_os=Linux
+runner_arch=X64
+repository=hmcts/appreg-api
+workflow_url=https://github.com/hmcts/appreg-api/actions/runs/35726543188
+timestamp_utc=2026-09-22T12:22:00Z
