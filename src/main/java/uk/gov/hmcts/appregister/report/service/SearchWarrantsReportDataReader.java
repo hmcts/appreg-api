@@ -68,7 +68,7 @@ class SearchWarrantsReportDataReader
                     sa.standard_applicant_code,
                     COALESCE(
                         NULLIF(TRIM(sa.name), ''),
-                        NULLIF(TRIM(COALESCE(sa.forename_1, '') || ' ' ||COALESCE(sa.surname, '')), '')
+                        sa.standard_applicant_code
                     ) AS applicant_full_name,
                     ac.application_code,
                     REPLACE(REPLACE(ale.application_list_entry_wording,'{',''),'}','') AS application_list_entry_wording

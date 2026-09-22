@@ -361,7 +361,7 @@ public final class OutgoingDtoSanitiser {
             return null;
         }
         dto.setCode(emptyToNull(dto.getCode()));
-        sanitize(dto.getApplicant());
+        dto.setName(emptyToNull(dto.getName()));
         return dto;
     }
 
@@ -370,7 +370,7 @@ public final class OutgoingDtoSanitiser {
             return null;
         }
         dto.setCode(emptyToNull(dto.getCode()));
-        sanitize(dto.getApplicant());
+        dto.setName(emptyToNull(dto.getName()));
         return dto;
     }
 

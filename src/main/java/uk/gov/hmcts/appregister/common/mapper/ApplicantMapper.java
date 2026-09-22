@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
 import org.apache.commons.lang3.StringUtils;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -200,28 +201,14 @@ public abstract class ApplicantMapper {
     }
 
     /**
-     * There is a one to one between applicant and standard applicant. Map the values directly.
+     * Expose only the reference name (or code) for a Standard Applicant. Never copy personal or
+     * contact fields.
      *
      * @param standardApplicant The standard applicant
      * @return The name address entity representation
      */
-    @Mapping(target = "code", ignore = true)
-    @Mapping(target = "title", source = "applicantTitle")
-    @Mapping(target = "firstName", source = "applicantForename1")
-    @Mapping(
-            target = "middleName",
-            expression =
-                    "java(combineMiddleName(standardApplicant.getApplicantForename2(), "
-                            + "standardApplicant.getApplicantForename3()))")
-    @Mapping(target = "lastName", source = "applicantSurname")
-    @Mapping(target = "address1", source = "addressLine1")
-    @Mapping(target = "address2", source = "addressLine2")
-    @Mapping(target = "address3", source = "addressLine3")
-    @Mapping(target = "address4", source = "addressLine4")
-    @Mapping(target = "address5", source = "addressLine5")
-    @Mapping(target = "userName", source = "createdUser")
-    @Mapping(target = "dateOfBirth", ignore = true)
-    @Mapping(target = "dmsId", ignore = true)
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "name", expression = "java(getNameForApplicant(standardApplicant, null))")
     public abstract NameAddress toApplicantEntity(StandardApplicant standardApplicant);
 
     /**
@@ -236,13 +223,7 @@ public abstract class ApplicantMapper {
      */
     public String getNameForApplicant(StandardApplicant sa, NameAddress applicant) {
         if (sa != null) {
-
-            // if the name is not set i.e. not an org then use person name fields
-            if (sa.getName() == null) {
-                return formatPersonName(sa.getApplicantForename1(), sa.getApplicantSurname());
-            } else {
-                return sa.getName();
-            }
+            return StringUtils.isNotBlank(sa.getName()) ? sa.getName() : sa.getApplicantCode();
         } else if (applicant != null) {
             return getNameForNameAddress(applicant);
         }

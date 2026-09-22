@@ -49,6 +49,42 @@ public class StandardApplicantControllerExportTest
     }
 
     @Test
+    void populatedPersonalDetailsAreAbsentFromAllReferenceResponses() throws Exception {
+        insertStandardApplicant();
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+        var detail =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/TEST001"), token);
+        detail.then().statusCode(200);
+        assertThat(detail.jsonPath().getMap("").keySet())
+                .containsExactlyInAnyOrder("code", "name", "startDate", "endDate");
+        var search =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT), token, rs -> rs.queryParam("code", "TEST001"));
+        search.then().statusCode(200);
+        assertThat(search.jsonPath().getMap("content[0]").keySet())
+                .containsExactlyInAnyOrder("code", "name", "startDate", "endDate");
+        var print =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/reports/print"),
+                        token,
+                        rs -> rs.queryParam("code", "TEST001"));
+        print.then().statusCode(200);
+        assertThat(print.jsonPath().getMap("searchCriteria").keySet())
+                .containsExactlyInAnyOrder("code", "name", "from", "to");
+        assertThat(print.jsonPath().getMap("applicants[0]").keySet())
+                .containsExactlyInAnyOrder("code", "name", "useFrom", "useTo");
+        for (var response : List.of(detail, search, print)) {
+            assertThat(response.asString())
+                    .doesNotContain(
+                            "PlayDough", "123 Test Street", "john@testorg.com", "07123456789");
+        }
+    }
+
+    @Test
     void testExportCsvCodeOnlySucceed() throws Exception {
         final StandardApplicant sa = insertStandardApplicant();
         // create the token

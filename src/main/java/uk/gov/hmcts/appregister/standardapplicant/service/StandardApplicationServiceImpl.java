@@ -190,7 +190,6 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             new StandardApplicantPrintSearchCriteriaDto()
                                     .code(code)
                                     .name(name)
-                                    .addressLine1(addressLine1)
                                     .from(normalisedFrom)
                                     .to(normalisedTo);
 

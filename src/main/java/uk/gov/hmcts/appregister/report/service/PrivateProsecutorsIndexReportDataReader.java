@@ -23,14 +23,6 @@ class PrivateProsecutorsIndexReportDataReader
                     sa.sa_id,
                     COALESCE(
                         NULLIF(TRIM(sa.name), ''),
-                        NULLIF(
-                            TRIM(
-                                COALESCE(sa.forename_1, '')
-                                || ' '
-                                || COALESCE(sa.surname, '')
-                            ),
-                            ''
-                        ),
                         sa.standard_applicant_code
                     ) AS standard_applicant_name
                 FROM standard_applicants sa

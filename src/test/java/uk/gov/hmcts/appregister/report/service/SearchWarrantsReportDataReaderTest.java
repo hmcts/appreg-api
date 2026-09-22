@@ -198,6 +198,7 @@ class SearchWarrantsReportDataReaderTest {
     private void assertLegacySearchWarrantsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
 
+        assertThat(normalisedQuery).doesNotContain("sa.forename_", "sa.surname");
         assertThat(normalisedQuery).contains("WITH candidate_apps AS (");
         assertThat(normalisedQuery).contains("UPPER(ac.application_code) LIKE 'SW%'");
         assertThat(normalisedQuery).contains("application_list_entry_wording");

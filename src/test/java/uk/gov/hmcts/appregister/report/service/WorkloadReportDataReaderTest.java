@@ -179,6 +179,11 @@ class WorkloadReportDataReaderTest {
 
     private void assertLegacyWorkloadsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
+        assertThat(normalisedQuery)
+                .contains(
+                        "COALESCE(NULLIF(TRIM(name), ''), standard_applicant_code), NULL AS title, "
+                                + "NULL AS forename_1, NULL AS forename_2, NULL AS forename_3, NULL AS surname, "
+                                + "TRUE AS is_standard_applicant");
         assertThat(normalisedQuery).contains("first_name as forename_1");
         assertThat(normalisedQuery).contains("middle_name as forename_2");
         assertThat(normalisedQuery).contains("null as forename_3");

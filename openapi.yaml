@@ -46,10 +46,11 @@ tags:
     \ required to provide a set of ways an Application List Entry can be resulted.\
     \ e.g. Approved/Denied."
   name: result-codes
-- description: "Standard Applicants are reference data, not managed in App Reg. They\
-    \ are pre-registered individuals stored in the system to streamline applications\
-    \ for recurring users, avoiding the need to manually re-enter their details each\
-    \ time they create applications."
+- description: "Standard Applicants are reference data, not managed in App Reg. Only\
+    \ code, name and usage dates are exposed by reference-data endpoints and exports.\
+    \ Personal and contact details are excluded, including when Standard Applicants\
+    \ appear in application responses and reports. Ordinary applicants and respondents\
+    \ are unaffected."
   name: standard-applicants
 paths:
   /admin/jobs/{jobType}:
@@ -5488,6 +5489,8 @@ paths:
     get:
       description: |
         Export all matching currently active Standard Applicants, across all pages, to a CSV file.
+        Contains exactly four columns: Applicant Code, Name, Use From and Use To.
+        Personal names, titles, addresses, postcodes, email and telephone/mobile numbers are never exported.
         Uses the same code/name matching and ordering as search without date filters.
         Code and name are optional and may be combined; both must match when supplied together.
         Omitting both returns all currently active applicants. Defaults to code ascending.
@@ -7362,7 +7365,8 @@ components:
       - searchCriteria
       type: object
     standard-applicant-get-detail-dto:
-      description: Immutable DTO representing a detailed Standard Applicant.
+      description: "Standard Applicant reference data. Only code, name and usage dates\
+        \ are exposed; personal and contact details are excluded."
       properties:
         code:
           description: Code that identifies the Standard Applicant.
@@ -7372,8 +7376,6 @@ components:
           description: Name of the Standard Applicant.
           example: Standard Applicant 1
           type: string
-        applicant:
-          $ref: "#/components/schemas/applicant"
         startDate:
           description: Date the applicant record became active.
           example: 2025-12-01
@@ -7720,7 +7722,13 @@ components:
       type: object
     applicant:
       additionalProperties: false
-      description: The applicant making the application.
+      description: |
+        The applicant making the application.
+        In application read and print responses, Standard Applicants are represented by their
+        reference name in organisation.name (or their code when no reference name exists).
+        Their personal and contact values are not returned. For these read responses the
+        shared input contact constraints do not apply: contact fields may be null or absent.
+        Ordinary applicant input still requires the person or organisation contact details.
       properties:
         person:
           $ref: "#/components/schemas/person"
@@ -7995,30 +8003,32 @@ components:
       - title
       type: object
     standard-applicant-get-summary-dto:
-      description: "Lightweight DTO for Standard Applicants, used in list/search views."
+      description: "Standard Applicant reference data. Only code, name and usage dates\
+        \ are exposed; personal and contact details are excluded."
       properties:
         code:
           description: Code that identifies the Standard Applicant.
           example: STANDARD-1
           type: string
-        applicant:
-          $ref: "#/components/schemas/applicant"
+        name:
+          description: Standard Applicant name. Never derived from personal name fields.
+          example: Standard Applicant 1
+          type: string
         startDate:
           description: Date the applicant record became active.
           example: 2025-12-01
           format: date
           type: string
         endDate:
-          description: Date the applicant record became inactive (if applicable).
+          description: "Date the applicant record became inactive, or null if still\
+            \ active."
           example: 2025-12-01
           format: date
           nullable: true
           type: string
       required:
-      - addressLine1
-      - "code,"
+      - code
       - endDate
-      - "name,"
       - startDate
       type: object
     standard-applicant-print-search-criteria-dto:
@@ -8030,9 +8040,6 @@ components:
         name:
           nullable: true
           type: string
-        addressLine1:
-          nullable: true
-          type: string
         from:
           format: date
           nullable: true
@@ -8042,14 +8049,14 @@ components:
           nullable: true
           type: string
       required:
-      - addressLine1
       - code
       - from
       - name
       - to
       type: object
     standard-applicant-print-row-dto:
-      description: Legacy Standard Applicants print row.
+      description: "Standard Applicant print row containing only code, name and usage\
+        \ dates. Personal and contact details are excluded."
       properties:
         code:
           nullable: true
@@ -8065,65 +8072,9 @@ components:
           format: date
           nullable: true
           type: string
-        title:
-          nullable: true
-          type: string
-        addressLine1:
-          nullable: true
-          type: string
-        forename1:
-          nullable: true
-          type: string
-        addressLine2:
-          nullable: true
-          type: string
-        forename2:
-          nullable: true
-          type: string
-        addressLine3:
-          nullable: true
-          type: string
-        forename3:
-          nullable: true
-          type: string
-        addressLine4:
-          nullable: true
-          type: string
-        surname:
-          nullable: true
-          type: string
-        addressLine5:
-          nullable: true
-          type: string
-        emailAddress:
-          nullable: true
-          type: string
-        postcode:
-          nullable: true
-          type: string
-        telephoneNumber:
-          nullable: true
-          type: string
-        mobileNumber:
-          nullable: true
-          type: string
       required:
-      - addressLine1
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
       - code
-      - emailAddress
-      - forename1
-      - forename2
-      - forename3
-      - mobileNumber
       - name
-      - postcode
-      - surname
-      - telephoneNumber
-      - title
       - useFrom
       - useTo
       type: object

@@ -1578,7 +1578,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 new PrivateProsecutorsIndexFilterDto()
                         .dateFrom(LocalDate.of(2026, Month.APRIL, 1))
                         .dateTo(LocalDate.of(2026, Month.APRIL, 28))
-                        .standardApplicantName("John")
+                        .standardApplicantName("APP001")
                         .respondentOrganisationName("Standard Respondent")
                         .location(
                                 new LegacyReportLocation()
@@ -1595,7 +1595,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 "standardApplicantName",
-                "John");
+                "APP001");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 "respondentOrganisationName",
@@ -1649,8 +1649,9 @@ class ReportingControllerPostTest extends BaseIntegration {
             assertThat(report).contains("Standard private wording");
             assertThat(report).contains("REF");
             assertThat(report).contains("Standard private notes");
-            assertThat(report).contains("John Smith");
-            assertThat(report).contains("CD,,,John Smith,");
+            assertThat(report).contains("APP001");
+            assertThat(report).contains("CD,,,APP001,");
+            assertThat(report).doesNotContain("John Smith");
         }
     }
 
@@ -1710,8 +1711,9 @@ class ReportingControllerPostTest extends BaseIntegration {
             assertThat(report).contains("Private Prosecution Index Report");
             assertThat(report).contains("13/04/2026");
             assertThat(report).contains("XCD997 - Individual Standard Private Court");
-            assertThat(report).contains("Jane Doe");
-            assertThat(report).contains("CD,,,Jane Doe,");
+            assertThat(report).contains("APP002");
+            assertThat(report).contains("CD,,,APP002,");
+            assertThat(report).doesNotContain("Jane Doe");
         }
     }
 

@@ -1,341 +1,110 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.beans.Introspector;
 import java.time.LocalDate;
-import java.time.Month;
+import java.util.Arrays;
 import java.util.List;
 import lombok.val;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 
 class StandardApplicantMapperTest {
+    private final StandardApplicantMapper mapper = new StandardApplicantMapperImpl();
+
     @Test
-    void testStandardApplicantMapperForIndividual() {
-        val standardApplicant = new StandardApplicantTestData().someComplete();
+    void exposesOnlyReferenceFieldsDespitePopulatedPersonalDetails() throws Exception {
+        val source = new StandardApplicantTestData().someComplete();
+        val detail = mapper.toReadGetDto(source);
+        val summary = mapper.toReadGetSummaryDto(projection(source));
+        val print = mapper.toPrintRowDto(projection(source));
 
-        // make the name null to simulate individual
-        standardApplicant.setName(null);
-
-        val standardApplicantMapper = new StandardApplicantMapperImpl();
-        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
-        val standardApplicantGetDetailDto = standardApplicantMapper.toReadGetDto(standardApplicant);
-
-        Assertions.assertEquals(
-                standardApplicant.getApplicantStartDate(),
-                standardApplicantGetDetailDto.getStartDate());
-        Assertions.assertTrue(standardApplicantGetDetailDto.getEndDate().isPresent());
-        Assertions.assertEquals(
-                standardApplicant.getApplicantEndDate(),
-                standardApplicantGetDetailDto.getEndDate().get());
-        Assertions.assertNotNull(standardApplicantGetDetailDto.getApplicant());
-        Assertions.assertNotNull(standardApplicantGetDetailDto.getApplicant().getPerson());
-        Assertions.assertNull(standardApplicantGetDetailDto.getApplicant().getOrganisation());
-        Assertions.assertNotNull(
-                standardApplicantGetDetailDto.getApplicant().getPerson().getName());
-        Assertions.assertNotNull(
-                standardApplicant.getApplicantTitle(),
-                standardApplicantGetDetailDto.getApplicant().getPerson().getName().getTitle());
-        Assertions.assertNotNull(
-                standardApplicant.getApplicantForename1(),
-                standardApplicantGetDetailDto.getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "%s %s"
-                        .formatted(
-                                standardApplicant.getApplicantForename2(),
-                                standardApplicant.getApplicantForename3()),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getName()
-                        .getMiddleName()
-                        .get());
-        Assertions.assertEquals(
-                standardApplicant.getApplicantSurname(),
-                standardApplicantGetDetailDto.getApplicant().getPerson().getName().getLastName());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine1(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine1());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine2(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine3(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine5(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine4(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getEmailAddress(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getEmail()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getMobileNumber(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getMobile()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getTelephoneNumber(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getPhone()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getPostcode(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getPerson()
-                        .getContactDetails()
-                        .getPostcode());
+        assertProperties(detail, "code", "name", "startDate", "endDate");
+        assertProperties(summary, "code", "name", "startDate", "endDate");
+        assertProperties(print, "code", "name", "useFrom", "useTo");
+        assertThat(detail.getCode()).isEqualTo(source.getApplicantCode());
+        assertThat(detail.getName()).isEqualTo(source.getName());
+        assertThat(detail.getStartDate()).isEqualTo(source.getApplicantStartDate());
+        assertThat(detail.getEndDate().get()).isEqualTo(source.getApplicantEndDate());
+        assertThat(summary.getName()).isEqualTo(source.getName());
+        assertThat(summary.getEndDate().get()).isEqualTo(source.getApplicantEndDate());
+        assertThat(print.getName().get()).isEqualTo(source.getName());
+        assertThat(print.getCode().get()).isEqualTo(source.getApplicantCode());
+        assertThat(print.getUseFrom().get()).isEqualTo(source.getApplicantStartDate());
+        assertThat(print.getUseTo().get()).isEqualTo(source.getApplicantEndDate());
+        val csv = mapper.toEntity(List.of(source)).getFirst();
+        assertThat(csv.getApplicantCode()).isEqualTo(source.getApplicantCode());
+        assertThat(csv.getName()).isEqualTo(source.getName());
+        assertThat(csv.getApplicantStartDate())
+                .isEqualTo(source.getApplicantStartDate().toString());
+        assertThat(csv.getApplicantEndDate()).isEqualTo(source.getApplicantEndDate().toString());
     }
 
     @Test
-    void testStandardApplicantMapperForOrganisation() {
-        val standardApplicant = new StandardApplicantTestData().someComplete();
-
-        val standardApplicantMapper = new StandardApplicantMapperImpl();
-        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
-
-        val standardApplicantGetDetailDto = standardApplicantMapper.toReadGetDto(standardApplicant);
-
-        Assertions.assertEquals(
-                standardApplicant.getApplicantStartDate(),
-                standardApplicantGetDetailDto.getStartDate());
-        Assertions.assertTrue(standardApplicantGetDetailDto.getEndDate().isPresent());
-        Assertions.assertEquals(
-                standardApplicant.getApplicantEndDate(),
-                standardApplicantGetDetailDto.getEndDate().get());
-        Assertions.assertNotNull(standardApplicantGetDetailDto.getApplicant());
-        Assertions.assertNotNull(standardApplicantGetDetailDto.getApplicant().getOrganisation());
-
-        Assertions.assertEquals(
-                standardApplicant.getName(),
-                standardApplicantGetDetailDto.getApplicant().getOrganisation().getName());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine1(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine1());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine2(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine3(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine5(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getAddressLine4(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getEmailAddress(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getEmail()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getMobileNumber(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getMobile()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getTelephoneNumber(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getPhone()
-                        .get());
-        Assertions.assertNotNull(
-                standardApplicant.getPostcode(),
-                standardApplicantGetDetailDto
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getPostcode());
+    void doesNotDeriveMissingReferenceNameFromPersonalNames() {
+        val source = new StandardApplicantTestData().someComplete();
+        source.setName(null);
+        source.setApplicantEndDate(null);
+        assertThat(mapper.toReadGetDto(source).getName()).isNull();
+        assertThat(mapper.toReadGetSummaryDto(projection(source)).getName()).isNull();
+        assertThat(mapper.toReadGetDto(source).getEndDate().get()).isNull();
+        assertThat(mapper.toPrintRowDto(projection(source)).getName().get()).isNull();
     }
 
     @Test
-    void testNoEntity() {
-        val codeAndName = new CodeAndName(null, null, null, null, null);
-
-        var mapper = new StandardApplicantMapperImpl();
-        Assertions.assertNotNull(mapper.toEntity(codeAndName));
+    void printIncludesExplicitNullsForMissingReferenceFields() {
+        val print = mapper.toPrintRowDto(projection(new StandardApplicant()));
+        assertThat(print.getCode().isPresent()).isTrue();
+        assertThat(print.getCode().get()).isNull();
+        assertThat(print.getName().isPresent()).isTrue();
+        assertThat(print.getName().get()).isNull();
+        assertThat(print.getUseFrom().isPresent()).isTrue();
+        assertThat(print.getUseFrom().get()).isNull();
+        assertThat(print.getUseTo().isPresent()).isTrue();
+        assertThat(print.getUseTo().get()).isNull();
     }
 
     @Test
-    void testSearchAuditEntityIncludesAllAuditedFilters() {
-        // Build the same lightweight surrogate entity that the GET /standard-applicants search
-        // endpoint passes into the audit framework.
-        val codeAndName =
-                new CodeAndName(
-                        "APP001",
-                        "John Doe",
-                        "123 High Street",
-                        LocalDate.of(2026, Month.APRIL, 1),
-                        LocalDate.of(2026, Month.DECEMBER, 31));
-
-        var mapper = new StandardApplicantMapperImpl();
-        val entity = mapper.toEntity(codeAndName);
-
-        // Each populated field below maps to a real database column and is now eligible for READ
-        // audit extraction.
-        Assertions.assertEquals("APP001", entity.getApplicantCode());
-        Assertions.assertEquals("John Doe", entity.getName());
-        Assertions.assertEquals("123 High Street", entity.getAddressLine1());
-        Assertions.assertEquals(LocalDate.of(2026, Month.APRIL, 1), entity.getApplicantStartDate());
-        Assertions.assertEquals(
-                LocalDate.of(2026, Month.DECEMBER, 31), entity.getApplicantEndDate());
+    void mapsSearchAuditFilters() {
+        val from = LocalDate.of(2026, 1, 1);
+        val to = LocalDate.of(2026, 12, 31);
+        val entity =
+                mapper.toEntity(
+                        new CodeAndName("SA001", "Synthetic organisation", "excluded", from, to));
+        assertThat(entity.getApplicantCode()).isEqualTo("SA001");
+        assertThat(entity.getName()).isEqualTo("Synthetic organisation");
+        assertThat(entity.getApplicantStartDate()).isEqualTo(from);
+        assertThat(entity.getApplicantEndDate()).isEqualTo(to);
+        assertThat(entity.getAddressLine1()).isEqualTo("excluded");
+        assertThat(mapper.toEntity("SA001").getApplicantCode()).isEqualTo("SA001");
+        assertThat(mapper.toReadGetDto(null)).isNull();
+        assertThat(mapper.toReadGetSummaryDto(null)).isNull();
+        assertThat(mapper.toPrintRowDto(null)).isNull();
     }
 
-    @Test
-    void testPrintRowMapsNullSourceValuesToExplicitJsonNulls() {
-        val standardApplicant = new StandardApplicant();
-        val mapper = new StandardApplicantMapperImpl();
-        mapper.setApplicantMapper(new ApplicantMapperImpl());
+    private static StandardApplicantEnrichedProjection projection(StandardApplicant source) {
+        return new StandardApplicantEnrichedProjection() {
+            @Override
+            public StandardApplicant getStandardApplicant() {
+                return source;
+            }
 
-        val dto =
-                mapper.toPrintRowDto(
-                        new StandardApplicantEnrichedProjection() {
-                            @Override
-                            public StandardApplicant getStandardApplicant() {
-                                return standardApplicant;
-                            }
-
-                            @Override
-                            public String getEffectiveName() {
-                                return null;
-                            }
-                        });
-
-        assertPresentNull(dto.getCode());
-        assertPresentNull(dto.getUseFrom());
-        assertPresentNull(dto.getName());
-        assertPresentNull(dto.getUseTo());
-        assertPresentNull(dto.getTitle());
-        assertPresentNull(dto.getAddressLine1());
-        assertPresentNull(dto.getForename1());
-        assertPresentNull(dto.getAddressLine2());
-        assertPresentNull(dto.getForename2());
-        assertPresentNull(dto.getAddressLine3());
-        assertPresentNull(dto.getForename3());
-        assertPresentNull(dto.getAddressLine4());
-        assertPresentNull(dto.getSurname());
-        assertPresentNull(dto.getAddressLine5());
-        assertPresentNull(dto.getEmailAddress());
-        assertPresentNull(dto.getPostcode());
-        assertPresentNull(dto.getTelephoneNumber());
-        assertPresentNull(dto.getMobileNumber());
+            @Override
+            public String getEffectiveName() {
+                return "Must not be used as a personal-name fallback";
+            }
+        };
     }
 
-    @Test
-    void testStandardApplicantHydratesCanonicalMiddleNameFromLegacyForenames() {
-        val standardApplicant = new StandardApplicantTestData().someComplete();
-        standardApplicant.setName(null);
-        standardApplicant.setApplicantForename1("Ada");
-        standardApplicant.setApplicantForename2("Byron");
-        standardApplicant.setApplicantForename3("King");
-        standardApplicant.setApplicantSurname("Lovelace");
-
-        val standardApplicantMapper = new StandardApplicantMapperImpl();
-        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
-
-        val dto = standardApplicantMapper.toReadGetDto(standardApplicant);
-
-        Assertions.assertEquals("Ada", dto.getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "Byron King", dto.getApplicant().getPerson().getName().getMiddleName().get());
-        Assertions.assertEquals("Lovelace", dto.getApplicant().getPerson().getName().getLastName());
-    }
-
-    private static void assertPresentNull(JsonNullable<?> value) {
-        Assertions.assertTrue(value.isPresent());
-        Assertions.assertNull(value.get());
-    }
-
-    @Test
-    void testStandardApplicantMapToCsvRow() {
-        val standardApplicant = new StandardApplicantTestData().someComplete();
-
-        val standardApplicantMapper = new StandardApplicantMapperImpl();
-        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
-
-        val csvRow = standardApplicantMapper.toEntity(List.of(standardApplicant)).getFirst();
-        Assertions.assertEquals(standardApplicant.getApplicantCode(), csvRow.getApplicantCode());
-        Assertions.assertEquals(
-                standardApplicant.getName(), csvRow.getName() == null ? "" : csvRow.getName());
-        Assertions.assertEquals(
-                standardApplicant.getApplicantStartDate().toString(),
-                csvRow.getApplicantStartDate() == null ? "" : csvRow.getApplicantStartDate());
-        Assertions.assertEquals(
-                standardApplicant.getApplicantEndDate().toString(),
-                csvRow.getApplicantEndDate() == null ? "" : csvRow.getApplicantEndDate());
+    private static void assertProperties(Object dto, String... fields) throws Exception {
+        assertThat(
+                        Arrays.stream(
+                                        Introspector.getBeanInfo(dto.getClass(), Object.class)
+                                                .getPropertyDescriptors())
+                                .map(property -> property.getName()))
+                .containsExactlyInAnyOrder(fields);
     }
 }

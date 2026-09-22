@@ -28,6 +28,7 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
@@ -87,11 +88,12 @@ class ObfuscationUtilTest {
     void testObfuscationStandardApplicantGetSummaryDto() {
         StandardApplicantGetSummaryDto standardApplicantGetSummaryDto =
                 Instancio.of(StandardApplicantGetSummaryDto.class).create();
-        Assertions.assertEquals(
-                2,
-                StringUtils.countMatches(
-                        ObfuscationUtil.getObfuscatedString(standardApplicantGetSummaryDto),
-                        "[REDACTED]"));
+        assertThat(ObfuscationUtil.getObfuscatedString(standardApplicantGetSummaryDto))
+                .isEqualTo("\"[REDACTED]\"");
+        assertThat(
+                        ObfuscationUtil.getObfuscatedString(
+                                new StandardApplicantGetDetailDto().name("Synthetic organisation")))
+                .isEqualTo("\"[REDACTED]\"");
     }
 
     @Test
@@ -309,11 +311,7 @@ class ObfuscationUtilTest {
                                 List.of(
                                         new StandardApplicantPrintRowDto()
                                                 .code("STD001")
-                                                .name("Jane Applicant")
-                                                .addressLine1("1 Secret Street")
-                                                .emailAddress("jane@example.com")
-                                                .telephoneNumber("01234567890")
-                                                .mobileNumber("07700900123")));
+                                                .name("Jane Applicant")));
 
         String obfuscated = ObfuscationUtil.getObfuscatedString(dto);
 
@@ -323,10 +321,6 @@ class ObfuscationUtilTest {
                 .contains("\"searchCriteria\":\"[REDACTED]\"")
                 .contains("\"applicants\":\"[REDACTED]\"")
                 .doesNotContain("STD001")
-                .doesNotContain("Jane Applicant")
-                .doesNotContain("1 Secret Street")
-                .doesNotContain("jane@example.com")
-                .doesNotContain("01234567890")
-                .doesNotContain("07700900123");
+                .doesNotContain("Jane Applicant");
     }
 }
