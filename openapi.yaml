@@ -7926,7 +7926,6 @@ components:
       description: Type of user activity recorded in the audit log.
       enum:
       - ADD_APPLICATION
-      - ADD_STANDARD_APPLICANT
       - BULK_APPLICATION_UPLOAD
       - BULK_UPDATE_FEE_STATUS
       - BULK_UPDATE_OFFICIALS
@@ -7936,7 +7935,6 @@ components:
       - DELETE_RESULT_APPLICATION
       - DELETE_RESULT_LIST
       - DELETE_RESULT_MULTIPLE_APPLICATIONS
-      - DELETE_STANDARD_APPLICANT
       - MOVE_APPLICATION
       - REPORT_CREATED
       - REPORT_DOWNLOADED
@@ -7949,7 +7947,6 @@ components:
       - UPDATE_RESULT_APPLICATION
       - UPDATE_RESULT_LIST
       - UPDATE_RESULT_MULTIPLE_APPLICATIONS
-      - UPDATE_STANDARD_APPLICANT
       example: UPDATE_APPLICATION
       title: ActivityType
       type: string
