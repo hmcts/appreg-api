@@ -77,9 +77,6 @@ class ActivityAuditReportDataReader
                             ActivityType.ADD_APPLICATION,
                             List.of("Add Application", "Create Entry Application List")),
                     Map.entry(
-                            ActivityType.ADD_STANDARD_APPLICANT,
-                            List.of("Add Standard Applicant", "Create Applicant")),
-                    Map.entry(
                             ActivityType.BULK_APPLICATION_UPLOAD,
                             List.of("Bulk Application Upload")),
                     Map.entry(
@@ -103,9 +100,6 @@ class ActivityAuditReportDataReader
                     Map.entry(
                             ActivityType.DELETE_RESULT_MULTIPLE_APPLICATIONS,
                             List.of("Delete Result Multiple Applications")),
-                    Map.entry(
-                            ActivityType.DELETE_STANDARD_APPLICANT,
-                            List.of("Delete Standard Applicant", "Delete Applicant")),
                     Map.entry(
                             ActivityType.MOVE_APPLICATION,
                             List.of("Move Application", "Move Entry")),
@@ -158,10 +152,7 @@ class ActivityAuditReportDataReader
                     Map.entry(ActivityType.UPDATE_RESULT_LIST, List.of("Update Result List")),
                     Map.entry(
                             ActivityType.UPDATE_RESULT_MULTIPLE_APPLICATIONS,
-                            List.of("Update Result Multiple Applications")),
-                    Map.entry(
-                            ActivityType.UPDATE_STANDARD_APPLICANT,
-                            List.of("Update Standard Applicant")));
+                            List.of("Update Result Multiple Applications")));
 
     private final ActivityAuditFilterDto filter;
 
