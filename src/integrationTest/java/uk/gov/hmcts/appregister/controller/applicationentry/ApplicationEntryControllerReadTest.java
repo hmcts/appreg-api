@@ -1089,10 +1089,16 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
         assertEquals(10, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstName())
-                .isEqualTo("Jane");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getLastName())
-                .isEqualTo("Doe");
+        assertThat(entryGetSummaryDto.getApplicant().getPerson()).isNull();
+        assertThat(entryGetSummaryDto.getApplicant().getOrganisation().getName())
+                .isEqualTo("APP002");
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine1())
+                .isNull();
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
                 .isEqualTo("Legal Aid Board");
         assertThat(

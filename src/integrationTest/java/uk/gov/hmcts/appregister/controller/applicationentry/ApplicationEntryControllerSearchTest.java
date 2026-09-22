@@ -514,9 +514,11 @@ class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudT
 
         EntryGetSummaryDto entry = findEntry(page, matchingEntry.getUuid());
         assertThat(entry.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
-        assertThat(entry.getApplicant().getPerson().getName().getFirstName()).isEqualTo("Jane");
-        assertThat(entry.getApplicant().getPerson().getName().getLastName())
-                .isEqualTo(applicantLastName);
+        assertThat(entry.getApplicant().getPerson()).isNull();
+        assertThat(entry.getApplicant().getOrganisation().getName())
+                .isEqualTo("SA" + matchingEntry.getAccountNumber());
+        assertThat(entry.getApplicant().getOrganisation().getContactDetails().getAddressLine1())
+                .isNull();
     }
 
     @StabilityTest

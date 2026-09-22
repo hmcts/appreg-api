@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
@@ -19,9 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRe
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
-import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
-import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -246,24 +245,26 @@ public class ApplicationListEntryAssertion {
 
         // validate applicant in the response
         if (entryCreateUpdateDto.getStandardApplicantCode() != null) {
-            // determine how the applicant should be represented
-            Applicant applicant =
-                    new ApplicantMapperImpl()
-                            .toApplicant(
-                                    new ApplicantMapperImpl()
-                                            .toApplicantEntity(
-                                                    applicationListEntry.getStandardApplicant()));
-
-            // validate the SA person or organisation
-            if (applicant.getPerson() != null) {
-                ApplicantAssertion.validatePerson(
-                        response.getApplicant().getPerson(),
-                        applicationListEntry.getStandardApplicant());
-            } else {
-                ApplicantAssertion.validateOrganisation(
-                        response.getApplicant().getOrganisation(),
-                        applicationListEntry.getStandardApplicant());
-            }
+            var standardApplicant = applicationListEntry.getStandardApplicant();
+            var applicant = response.getApplicant();
+            assertThat(applicant.getPerson()).isNull();
+            assertThat(applicant.getOrganisation().getName())
+                    .isEqualTo(
+                            StringUtils.isNotBlank(standardApplicant.getName())
+                                    ? standardApplicant.getName()
+                                    : standardApplicant.getApplicantCode());
+            assertThat(applicant.getOrganisation().getContactDetails())
+                    .extracting(
+                            contact -> contact.getAddressLine1(),
+                            contact -> contact.getAddressLine2().orElse(null),
+                            contact -> contact.getAddressLine3().orElse(null),
+                            contact -> contact.getAddressLine4().orElse(null),
+                            contact -> contact.getAddressLine5().orElse(null),
+                            contact -> contact.getPostcode(),
+                            contact -> contact.getPhone().orElse(null),
+                            contact -> contact.getMobile().orElse(null),
+                            contact -> contact.getEmail().orElse(null))
+                    .containsOnlyNulls();
         } else {
             // if not a SA assert the expected response based on the input
             if (entryCreateUpdateDto.getApplicant().getPerson() != null) {
