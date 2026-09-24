@@ -61,7 +61,7 @@ class DurationReportDataReaderTest {
                         });
 
         DurationReportDataReader reader =
-                new DurationReportDataReader(jdbcTemplate, filter(), "appreg");
+                new DurationReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -106,7 +106,7 @@ class DurationReportDataReaderTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
         DurationReportDataReader reader =
-                new DurationReportDataReader(jdbcTemplate, filter, "appreg");
+                new DurationReportDataReader(jdbcTemplate, filter, "appreg", 100);
         PageReader<DurationReportRow> pageReader =
                 (rows, context) -> Assertions.fail("No rows expected");
 
@@ -137,7 +137,7 @@ class DurationReportDataReaderTest {
                         });
 
         DurationReportDataReader reader =
-                new DurationReportDataReader(jdbcTemplate, filter(), "appreg");
+                new DurationReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(
                 new ReadPagePosition(25, 0),

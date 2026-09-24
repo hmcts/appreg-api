@@ -26,6 +26,8 @@ import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPrintRowDto;
 
@@ -71,6 +73,10 @@ public class ObfuscationUtil {
                 StandardApplicantPrintDto.class,
                 new StandardApplicantPrintDtoSensitiveSerializer());
         maskingModule.addSerializer(StandardApplicantPrintRowDto.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(
+                StandardApplicantGetSummaryDto.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(
+                StandardApplicantGetDetailDto.class, new RedactedSerializer<>());
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setConfig(

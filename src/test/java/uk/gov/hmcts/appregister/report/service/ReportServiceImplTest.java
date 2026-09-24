@@ -90,7 +90,31 @@ class ReportServiceImplTest {
                 reportJobAuditService,
                 reportLocationValidator,
                 "appreg",
-                500);
+                500,
+                1000);
+    }
+
+    @Test
+    void givenInvalidReportMaxRows_whenCreatingService_thenThrows() {
+        var exception =
+                Assertions.assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                new ReportServiceImpl(
+                                        asyncJobService,
+                                        jobService,
+                                        userProvider,
+                                        jobMapper,
+                                        jdbcTemplate,
+                                        auditService,
+                                        reportJobAuditService,
+                                        reportLocationValidator,
+                                        "appreg",
+                                        500,
+                                        0));
+
+        Assertions.assertEquals(
+                "appreg.report.max-rows must be greater than zero", exception.getMessage());
     }
 
     @Test

@@ -53,6 +53,7 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResult
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultUpdateValidationSuccess;
+import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListVersionService;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -146,6 +147,8 @@ class ApplicationEntryResultServiceImplTest {
 
     @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
 
+    @Mock private ApplicationListVersionService applicationListVersionService;
+
     private ApplicationEntryResultServiceImpl service;
 
     @BeforeEach
@@ -159,6 +162,7 @@ class ApplicationEntryResultServiceImplTest {
                         bulkDeleteResultEntry,
                         bulkResultEntry,
                         matchService,
+                        applicationListVersionService,
                         auditOperationService,
                         applicationListEntryResultMapper,
                         applicationListEntryResultEntityMapper,
@@ -238,6 +242,7 @@ class ApplicationEntryResultServiceImplTest {
         Assertions.assertNotNull(matchResponse);
         Assertions.assertNotNull(matchResponse.getEtag());
         Assertions.assertEquals(resultGetDto, matchResponse.getPayload());
+        verify(applicationListVersionService).incrementVersion(applicationList);
     }
 
     @Test
@@ -317,6 +322,11 @@ class ApplicationEntryResultServiceImplTest {
 
         service.bulkDelete(request);
 
+        verify(applicationListVersionService)
+                .incrementVersions(
+                        List.of(
+                                firstResult.getApplicationList().getApplicationList(),
+                                secondResult.getApplicationList().getApplicationList()));
         verify(appListEntryResolutionRepository)
                 .deleteAllInBatch(List.of(firstResult, secondResult));
         verify(entityManager).flush();
@@ -491,6 +501,7 @@ class ApplicationEntryResultServiceImplTest {
                                 .build());
 
         Assertions.assertEquals(List.of(resultGetDto), createdResults);
+        verify(applicationListVersionService).incrementVersions(List.of(applicationList));
         verify(appListEntryResolutionRepository).saveAll(List.of(entryToSave));
         verify(appListEntryResolutionRepository, never()).findAllById(any());
         verify(entityManager).flush();
@@ -718,6 +729,7 @@ class ApplicationEntryResultServiceImplTest {
         Assertions.assertNotNull(response);
         Assertions.assertNotNull(response.getEtag());
         Assertions.assertEquals(dto, response.getPayload());
+        verify(applicationListVersionService).incrementVersion(applicationList);
 
         verify(applicationListEntryResultEntityMapper)
                 .toApplicationListEntryResult(

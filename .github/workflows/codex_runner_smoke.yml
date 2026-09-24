@@ -12,7 +12,15 @@ permissions: {}
 
 jobs:
   codex-auth-smoke:
-    runs-on: codex-pilot-azure-aks
+    outputs:
+      response: ${{ steps.codex-action.outputs.final-message }}
+    environment: codex-model
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      github.workflow_ref == format('{0}/.github/workflows/codex_runner_smoke.yml@refs/heads/{1}', github.repository, github.event.repository.default_branch)
+    runs-on:
+      group: appreg-codex
+      labels: codex-pilot-azure-aks
     timeout-minutes: 30
     permissions:
       contents: read
@@ -21,7 +29,7 @@ jobs:
       - name: Checkout workflow revision
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.workflow_sha }}
           persist-credentials: false
 
       - name: Verify runner toolchain
@@ -45,28 +53,26 @@ jobs:
           model: gpt-5.6-sol
           effort: ultra
           prompt-file: ${{ runner.temp }}/codex-smoke/prompt.md
-          output-file: ${{ runner.temp }}/codex-smoke/final-message.md
           permission-profile: ":read-only"
           safety-strategy: unprivileged-user
           codex-user: codex
           codex-args: '["--ephemeral"]'
 
-      - name: Stop Codex API proxy
-        if: always() && steps.codex-action.outcome != 'skipped'
-        run: |
-          set -euo pipefail
-          server_info="/home/codex/.codex/${GITHUB_RUN_ID}.json"
-          test -s "$server_info"
-          proxy_port="$(jq -r '.port // empty' "$server_info")"
-          [[ "$proxy_port" =~ ^[0-9]+$ ]]
-          curl --fail --silent --show-error "http://127.0.0.1:${proxy_port}/shutdown" >/dev/null
-
-      - name: Verify authentication response
-        run: grep -qx 'CODEX_SMOKE_OK' "$RUNNER_TEMP/codex-smoke/final-message.md"
+  verify-auth-response:
+    needs: codex-auth-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Verify authentication response in a fresh job
+        env:
+          CODEX_RESPONSE: ${{ needs.codex-auth-smoke.outputs.response }}
+        run: test "$CODEX_RESPONSE" = 'CODEX_SMOKE_OK'
 
   branch-smoke:
-    needs: codex-auth-smoke
-    runs-on: codex-pilot-azure-aks
+    environment: codex-publisher
+    needs: verify-auth-response
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
@@ -78,7 +84,7 @@ jobs:
       - name: Checkout workflow revision
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.workflow_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -102,9 +108,6 @@ jobs:
           GITHUB_APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           GITHUB_APP_INSTALLATION_ID: ${{ steps.app-token.outputs.installation-id }}
         run: python3 -I .github/scripts/codex-verify-publisher.py
-
-      - name: Verify runner toolchain
-        run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Configure Git identity
         run: |

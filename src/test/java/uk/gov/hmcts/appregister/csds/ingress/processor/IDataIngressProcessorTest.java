@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 class IDataIngressProcessorTest {
 

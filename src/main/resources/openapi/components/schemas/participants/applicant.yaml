@@ -1,5 +1,11 @@
 type: object
-description: The applicant making the application.
+description: |
+  The applicant making the application.
+  In application read and print responses, Standard Applicants are represented by their
+  reference name in organisation.name (or their code when no reference name exists).
+  Their personal and contact values are not returned. For these read responses the
+  shared input contact constraints do not apply: contact fields may be null or absent.
+  Ordinary applicant input still requires the person or organisation contact details.
 additionalProperties: false
 properties:
 

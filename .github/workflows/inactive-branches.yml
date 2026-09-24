@@ -25,6 +25,11 @@ on:
         default: 'true'
     # schedule:
     #   - cron: '0 0 * * 0' # Runs every Sunday at midnight
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+
 jobs:
   locate-Inactive-Branches:
     runs-on: ubuntu-latest

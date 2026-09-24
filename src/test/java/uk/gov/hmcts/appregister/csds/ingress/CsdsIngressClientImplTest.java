@@ -13,6 +13,8 @@ import java.net.URI;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
@@ -54,6 +56,50 @@ class CsdsIngressClientImplTest {
                 .isEqualTo(
                         "https://csds.dev.apps.hmcts.net/api/rest/query/APPREGISTER/ApplicationCode/GD"
                                 + "?%24limit=100&%24offset=200");
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+            value = {
+                "{\"count\":0}|true",
+                "{\"records\":[]}|true",
+                "{\"count\":2}|false",
+                "{\"records\":[{}]}|false",
+                "{}|false",
+                "{\"count\":\"invalid\"}|false",
+                "{\"records\":null}|false"
+            },
+            delimiter = '|')
+    @SuppressWarnings("unchecked")
+    void given_response_when_retrieveJson_then_warnsOnlyForNoRecords(String payload, boolean warns)
+            throws Exception {
+        var restClient = mock(RestClient.class);
+        var request = mock(RestClient.RequestHeadersUriSpec.class);
+        var headers = mock(RestClient.RequestHeadersSpec.class);
+        var response = mock(RestClient.ResponseSpec.class);
+        when(restClient.get()).thenReturn(request);
+        when(request.uri(any(URI.class))).thenReturn(headers);
+        when(headers.header("Api-Key", "test-key")).thenReturn(headers);
+        when(headers.accept(MediaType.APPLICATION_JSON)).thenReturn(headers);
+        when(headers.retrieve()).thenReturn(response);
+        when(response.body(String.class)).thenReturn(payload);
+        var properties = new CsdsIngressProperties();
+        properties.setBaseUrl("https://example.test/api/rest/");
+        properties.setAccessKeys(List.of("test-key"));
+        var path = "query/COURT/Court/GD?%24f=PublishingStatus='Active'&%24limit=100&%24offset=0";
+
+        try (var logs = LogCaptor.forClass(CsdsIngressClientImpl.class)) {
+            logs.clearLogs();
+            var actual = new CsdsIngressClientImpl(restClient, properties).retrieveJson(path);
+            assertThat(actual).isEqualTo(OBJECT_MAPPER.readTree(payload));
+            assertThat(logs.getWarnLogs())
+                    .containsExactlyElementsOf(
+                            warns
+                                    ? List.of(
+                                            "NO RECORDS RETURNED for query https://example.test/api/rest/"
+                                                    + path)
+                                    : List.of());
+        }
     }
 
     @Test

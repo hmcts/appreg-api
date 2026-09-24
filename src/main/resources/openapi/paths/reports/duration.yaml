@@ -6,6 +6,7 @@ post:
     Initiates an asynchronous job to create a CSV report of closed application lists within the specified date range.
     Duration values are the recorded duration hours and minutes on the application list.
     Returns an acknowledgement containing the job ID for tracking progress.
+    The CSV output is capped by server configuration, defaulting to 100,000 rows.
   requestBody:
     required: true
     content:

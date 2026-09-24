@@ -6,12 +6,13 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,9 @@ import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExi
 @Transactional(readOnly = true)
 public class StandardApplicationServiceImpl implements StandardApplicantService {
     private static final int PRINT_PAGE_SIZE = 1000;
-    private static final int MAX_PRINT_ROWS = 1000;
+
+    @Value("${appreg.standard-applicants.max-print-rows:1000}")
+    private int maxPrintRows = 1000;
 
     private final StandardApplicantRepository repository;
     private final StandardApplicantMapper mapper;
@@ -157,7 +160,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                     var printPageable =
                             PageRequest.of(
                                     0,
-                                    1000,
+                                    PRINT_PAGE_SIZE,
                                     withStableTieBreaker(pageable.getPageable().getSort()));
 
                     Page<StandardApplicantEnrichedProjection> results;
@@ -172,11 +175,11 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                         todayUk,
                                         printPageable);
 
-                        if (results.getTotalElements() > MAX_PRINT_ROWS) {
+                        if (results.getTotalElements() > maxPrintRows) {
                             throw new AppRegistryException(
                                     StandardApplicantCodeError.PRINT_RESULT_LIMIT_EXCEEDED,
                                     "Standard Applicant print result exceeds %d rows; narrow the search criteria"
-                                            .formatted(MAX_PRINT_ROWS));
+                                            .formatted(maxPrintRows));
                         }
 
                         applicants.addAll(results.getContent());
@@ -187,7 +190,6 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             new StandardApplicantPrintSearchCriteriaDto()
                                     .code(code)
                                     .name(name)
-                                    .addressLine1(addressLine1)
                                     .from(normalisedFrom)
                                     .to(normalisedTo);
 
@@ -211,22 +213,23 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                 });
     }
 
-    public String generateCsv(String code, String name) {
-
-        boolean codeProvided = code != null && !code.isBlank();
-        boolean nameProvided = name != null && !name.isBlank();
-
-        if ((codeProvided && nameProvided) || (!codeProvided && !nameProvided)) {
-            throw new AppRegistryException(
-                    StandardApplicantCodeError.CODE_AND_NAME_EXCLUSION_VIOLATION,
-                    "Unable to generate CSV for Standard Applicants. At least one of code or name must be provided.");
-        }
-
-        // Need to make sure if one value is blank that we pass null through instead of the blank
-        // value.
-        List<StandardApplicant> filteredList =
-                repository.findByCodeAndName(
-                        codeProvided ? code : null, nameProvided ? name : null);
+    @Override
+    public String generateCsv(String code, String name, PagingWrapper pageable) {
+        // CSV is built in memory; stream it if applicant volumes grow significantly.
+        var filteredList =
+                repository
+                        .search(
+                                code == null || code.isBlank() ? null : code,
+                                name == null || name.isBlank() ? null : name,
+                                null,
+                                null,
+                                null,
+                                LocalDate.now(clock.withZone(ukZone)),
+                                Pageable.unpaged(
+                                        withStableTieBreaker(pageable.getPageable().getSort())))
+                        .stream()
+                        .map(StandardApplicantEnrichedProjection::getStandardApplicant)
+                        .toList();
 
         if (filteredList.isEmpty()) {
             throw new AppRegistryException(

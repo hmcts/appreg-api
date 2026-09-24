@@ -515,7 +515,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void testSearchSortsPersonByForenameThenSurnameIgnoringTitle() throws Exception {
+    void testSearchSortsByReferenceNameWithoutUsingPersonalNames() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
@@ -563,13 +563,17 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                                     null,
                                     null,
                                     activeDate,
-                                    PageRequest.of(0, 10, Sort.by("effectiveName").ascending()));
+                                    PageRequest.of(
+                                            0, 10, Sort.by("effectiveName", "id").ascending()));
 
                     assertThat(results.getContent())
                             .extracting(
                                     projection ->
                                             projection.getStandardApplicant().getApplicantCode())
-                            .containsSequence("APP-AMY", "APP-ORG", "APP-ZOE");
+                            .containsExactlyInAnyOrder("APP-ORG", "APP-ZOE", "APP-AMY");
+                    assertThat(results.getContent())
+                            .extracting(StandardApplicantEnrichedProjection::getEffectiveName)
+                            .containsExactly("Beta Org", null, null);
                 });
     }
 }

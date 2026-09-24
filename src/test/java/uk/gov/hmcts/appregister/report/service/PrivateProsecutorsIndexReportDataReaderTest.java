@@ -62,7 +62,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
                         });
 
         PrivateProsecutorsIndexReportDataReader reader =
-                new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter(), "appreg");
+                new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -116,7 +116,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
         PrivateProsecutorsIndexReportDataReader reader =
-                new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter, "appreg");
+                new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter, "appreg", 100);
         PageReader<PrivateProsecutorsIndexReportRow> pageReader =
                 (rows, context) -> Assertions.fail("No rows expected");
 
@@ -148,7 +148,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
                         });
 
         PrivateProsecutorsIndexReportDataReader reader =
-                new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter(), "appreg");
+                new PrivateProsecutorsIndexReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(
                 new ReadPagePosition(25, 0),
@@ -210,8 +210,7 @@ class PrivateProsecutorsIndexReportDataReaderTest {
         assertThat(query).contains("NULLIF(TRIM(sa.name), '')");
         assertThat(query).contains("app_na.first_name");
         assertThat(query).contains("app_na.last_name");
-        assertThat(query).contains("COALESCE(sa.forename_1, '')");
-        assertThat(query).contains("COALESCE(sa.surname, '')");
+        assertThat(query).doesNotContain("sa.forename_", "sa.surname");
         assertThat(query).contains("sa.standard_applicant_code");
         assertThat(query).contains("AND ale.sa_sa_id IS NULL");
         assertThat(query).contains("OR UPPER(sa.standard_applicant_name)");

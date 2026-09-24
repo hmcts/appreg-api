@@ -1089,10 +1089,16 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
         assertEquals(10, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstName())
-                .isEqualTo("Jane");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getLastName())
-                .isEqualTo("Doe");
+        assertThat(entryGetSummaryDto.getApplicant().getPerson()).isNull();
+        assertThat(entryGetSummaryDto.getApplicant().getOrganisation().getName())
+                .isEqualTo("APP002");
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine1())
+                .isNull();
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
                 .isEqualTo("Legal Aid Board");
         assertThat(
@@ -2012,9 +2018,10 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                 .body("content[0].id", Matchers.equalTo(matchingEntry.getUuid().toString()))
                 .body("content[0].listId", Matchers.equalTo(applicationList.getUuid().toString()))
                 .body("content[0].sequenceNumber", Matchers.equalTo(3))
-                .body("content[0].applicant.person.name.title", Matchers.equalTo("Ms"))
-                .body("content[0].applicant.person.name.firstName", Matchers.equalTo("Jane"))
-                .body("content[0].applicant.person.name.lastName", Matchers.equalTo("Doe"));
+                .body("content[0].applicant.person", Matchers.nullValue())
+                .body(
+                        "content[0].applicant.organisation.name",
+                        Matchers.equalTo(matchingApplicant.getApplicantCode()));
     }
 
     @Test
@@ -2288,8 +2295,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
                         .map(String::toLowerCase)
                         .toList();
 
-        Assertions.assertEquals(
-                List.of("mr amy zimmer", "beta org", "dr zoe anderson"), applicantNames);
+        Assertions.assertEquals(List.of("appamy", "appzoe", "beta org"), applicantNames);
     }
 
     @Test

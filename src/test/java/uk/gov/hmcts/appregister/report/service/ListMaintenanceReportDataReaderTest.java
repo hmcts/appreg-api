@@ -62,7 +62,7 @@ class ListMaintenanceReportDataReaderTest {
                         });
 
         ListMaintenanceReportDataReader reader =
-                new ListMaintenanceReportDataReader(jdbcTemplate, filter(), "appreg");
+                new ListMaintenanceReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -107,7 +107,7 @@ class ListMaintenanceReportDataReaderTest {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
         ListMaintenanceReportDataReader reader =
-                new ListMaintenanceReportDataReader(jdbcTemplate, filter, "appreg");
+                new ListMaintenanceReportDataReader(jdbcTemplate, filter, "appreg", 100);
         PageReader<ListMaintenanceReportRow> pageReader =
                 (rows, context) -> Assertions.fail("No rows expected");
 
@@ -140,7 +140,7 @@ class ListMaintenanceReportDataReaderTest {
                         });
 
         ListMaintenanceReportDataReader reader =
-                new ListMaintenanceReportDataReader(jdbcTemplate, filter(), "appreg");
+                new ListMaintenanceReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(
                 new ReadPagePosition(25, 0),

@@ -1,5 +1,5 @@
 type: object
-description: Immutable DTO representing a detailed Standard Applicant.
+description: Standard Applicant reference data. Only code, name and usage dates are exposed; personal and contact details are excluded.
 required:
   - code
   - startDate
@@ -15,9 +15,6 @@ properties:
     type: string
     description: Name of the Standard Applicant.
     example: "Standard Applicant 1"
-
-  applicant:
-    $ref: '../participants/applicant.yaml'
 
   startDate:
     type: string

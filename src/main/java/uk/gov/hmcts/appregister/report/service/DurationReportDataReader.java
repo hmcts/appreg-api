@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -9,15 +8,13 @@ import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import uk.gov.hmcts.appregister.common.async.JobContext;
-import uk.gov.hmcts.appregister.common.async.reader.DataReader;
-import uk.gov.hmcts.appregister.common.async.reader.PageReader;
-import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
-class DurationReportDataReader implements DataReader<DurationReportRow> {
+class DurationReportDataReader
+        extends AbstractReportDataReader<
+                DurationReportRow, DurationReportDataReader.DurationReportReadCursor> {
     private static final String REPORT_QUERY =
             """
             SELECT
@@ -46,11 +43,7 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                 )
                 AND (
                     :hasCursor IS FALSE
-                    OR al.application_list_date < :lastListDate
-                    OR (
-                        al.application_list_date = :lastListDate
-                        AND al.al_id < :lastApplicationListId
-                    )
+                    OR (al.application_list_date, al.al_id) < (:lastListDate, :lastApplicationListId)
                 )
             ORDER BY al.application_list_date DESC, al.al_id DESC
             LIMIT :limit
@@ -65,15 +58,15 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
 
     private static final RowMapper<DurationReportRow> ROW_MAPPER = new DurationReportRowMapper();
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final DurationFilterDto filter;
-    private final String schema;
 
     DurationReportDataReader(
-            NamedParameterJdbcTemplate jdbcTemplate, DurationFilterDto filter, String schema) {
-        this.jdbcTemplate = jdbcTemplate;
+            NamedParameterJdbcTemplate jdbcTemplate,
+            DurationFilterDto filter,
+            String schema,
+            int maxRows) {
+        super(jdbcTemplate, schema, maxRows);
         this.filter = filter;
-        this.schema = schema;
     }
 
     DurationFilterDto filter() {
@@ -81,50 +74,32 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
     }
 
     @Override
-    public void readData(
-            ReadPagePosition position,
-            PageReader<DurationReportRow> pageReader,
-            JobContext jobContext)
-            throws IOException {
-        jdbcTemplate
-                .getJdbcTemplate()
-                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
-        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
-
-        DurationReportReadCursor cursor = new DurationReportReadCursor(position.getPageSize());
-        List<DurationReportRow> rows = readPage(cursor);
-
-        while (!rows.isEmpty()) {
-            pageReader.readData(rows, jobContext);
-            if (rows.size() < cursor.pageSize()) {
-                return;
-            }
-            cursor.advance(rows);
-            rows = readPage(cursor);
-        }
+    protected DurationReportReadCursor createCursor(int pageSize) {
+        return new DurationReportReadCursor(pageSize);
     }
 
     @Override
-    public void close() throws IOException {
-        // No stream to close.
-    }
-
-    private List<DurationReportRow> readPage(DurationReportReadCursor cursor) {
+    protected List<DurationReportRow> readPage(DurationReportReadCursor cursor, int pageLimit) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
                         .addValue("dateTo", filter.getDateTo(), Types.DATE)
                         .addValue(
                                 "cjaCode",
-                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                legacyLocationValue(
+                                        filter.getLocation(), LegacyReportLocation::getCjaCode),
                                 Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
+                                legacyLocationValue(
+                                        filter.getLocation(),
+                                        LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -132,50 +107,26 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                                 "lastApplicationListId",
                                 cursor.lastApplicationListId(),
                                 Types.BIGINT)
-                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
+                        .addValue("limit", pageLimit, Types.INTEGER);
 
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(
-            java.util.function.Function<LegacyReportLocation, String> getter) {
-        if (filter.getLocation() == null) {
-            return null;
-        }
-
-        return getter.apply(filter.getLocation());
-    }
-
-    private static class DurationReportReadCursor {
-        private final int pageSize;
-        private DurationReportRow lastRow;
-
+    static class DurationReportReadCursor extends ReportReadCursor<DurationReportRow> {
         DurationReportReadCursor(int pageSize) {
-            this.pageSize = pageSize;
-        }
-
-        void advance(List<DurationReportRow> rows) {
-            lastRow = rows.getLast();
-        }
-
-        boolean hasLastRow() {
-            return lastRow != null;
+            super(pageSize);
         }
 
         LocalDate lastListDate() {
-            return hasLastRow() ? lastRow.getListDate() : null;
+            return hasLastRow() ? lastRow().getListDate() : null;
         }
 
         Long lastApplicationListId() {
-            return hasLastRow() ? lastRow.getApplicationListId() : null;
-        }
-
-        int pageSize() {
-            return pageSize;
+            return hasLastRow() ? lastRow().getApplicationListId() : null;
         }
     }
 
-    private static class DurationReportRowMapper implements RowMapper<DurationReportRow> {
+    static class DurationReportRowMapper implements RowMapper<DurationReportRow> {
         @Override
         public DurationReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return DurationReportRow.builder()

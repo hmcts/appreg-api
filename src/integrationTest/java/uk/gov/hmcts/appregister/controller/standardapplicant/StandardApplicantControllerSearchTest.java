@@ -110,39 +110,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(LocalDate.now(java.time.ZoneOffset.UTC), returnedSa.getStartDate());
         Assertions.assertTrue(returnedSa.getEndDate().isPresent());
         assertNull(returnedSa.getEndDate().get());
-        Assertions.assertNotNull(returnedSa.getApplicant().getPerson().getName());
-        Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
-        Assertions.assertEquals(
-                "John", returnedSa.getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getName().getMiddleName().get());
-        Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getName().getMiddleName().get());
-        Assertions.assertEquals(
-                "Smith", returnedSa.getApplicant().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                "123 High Street",
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());
-        Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2().get());
-        Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3().get());
-        Assertions.assertEquals(
-                "Townsville",
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4().get());
-        Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5().get());
-        Assertions.assertEquals(
-                "john.smith@example.com",
-                returnedSa.getApplicant().getPerson().getContactDetails().getEmail().get());
-        Assertions.assertEquals(
-                "07123456789",
-                returnedSa.getApplicant().getPerson().getContactDetails().getMobile().get());
-        Assertions.assertEquals(
-                "01234567890",
-                returnedSa.getApplicant().getPerson().getContactDetails().getPhone().get());
-        Assertions.assertEquals(
-                "TS1 1AB", returnedSa.getApplicant().getPerson().getContactDetails().getPostcode());
+        assertNull(returnedSa.getName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -178,14 +146,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(
                 activeDate.minusDays(1).toString(), responseBody.path("startDate").asText());
         assertExplicitNull(responseBody, "endDate");
-        assertExplicitNull(responseBody, "applicant.person.name.middleName");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine2");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine3");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine4");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.addressLine5");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.phone");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.mobile");
-        assertExplicitNull(responseBody, "applicant.person.contactDetails.email");
+        assertThat(responseBody.has("applicant")).isFalse();
     }
 
     @Test
@@ -213,52 +174,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                 LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1), returnedSa.getStartDate());
         Assertions.assertTrue(returnedSa.getEndDate().isPresent());
         assertNull(returnedSa.getEndDate().get());
-        Assertions.assertEquals(
-                "Organisation 1", returnedSa.getApplicant().getOrganisation().getName());
-        Assertions.assertEquals(
-                "123 High Street",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
-        Assertions.assertNull(
-                returnedSa
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine2()
-                        .get());
-        Assertions.assertNull(
-                returnedSa
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine3()
-                        .get());
-        Assertions.assertEquals(
-                "Townsville",
-                returnedSa
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine4()
-                        .get());
-        Assertions.assertNull(
-                returnedSa
-                        .getApplicant()
-                        .getOrganisation()
-                        .getContactDetails()
-                        .getAddressLine5()
-                        .get());
-        Assertions.assertEquals(
-                "john.smith@example.com",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail().get());
-        Assertions.assertEquals(
-                "07123456789",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile().get());
-        Assertions.assertEquals(
-                "01234567890",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone().get());
-        Assertions.assertEquals(
-                "TS1 1AB",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getPostcode());
+        Assertions.assertEquals("Organisation 1", returnedSa.getName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -285,8 +201,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantGetDetailDto returnedSa =
                 responseSpec.as(StandardApplicantGetDetailDto.class);
         Assertions.assertEquals("APP006", returnedSa.getCode());
-        Assertions.assertEquals(
-                "Organisation 3", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals("Organisation 3", returnedSa.getName());
     }
 
     @Test
@@ -457,8 +372,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantGetDetailDto returnedSa =
                 responseSpec.as(StandardApplicantGetDetailDto.class);
         Assertions.assertEquals(code, returnedSa.getCode());
-        Assertions.assertEquals(
-                "Open-Ended Applicant", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals("Open-Ended Applicant", returnedSa.getName());
         Assertions.assertTrue(returnedSa.getEndDate().isPresent());
         assertNull(returnedSa.getEndDate().get());
     }
@@ -495,13 +409,9 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
         Assertions.assertEquals(2, response.getContent().size());
         Assertions.assertEquals(code, response.getContent().get(0).getCode());
-        Assertions.assertEquals(
-                "Time-Bounded Applicant",
-                response.getContent().get(0).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals("Time-Bounded Applicant", response.getContent().get(0).getName());
         Assertions.assertEquals(code, response.getContent().get(1).getCode());
-        Assertions.assertEquals(
-                "Open-Ended Applicant",
-                response.getContent().get(1).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals("Open-Ended Applicant", response.getContent().get(1).getName());
     }
 
     @Test
@@ -536,8 +446,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(1, response.getContent().size());
         Assertions.assertEquals(code, response.getContent().getFirst().getCode());
         Assertions.assertEquals(
-                "Reversed Range Applicant",
-                response.getContent().getFirst().getApplicant().getOrganisation().getName());
+                "Reversed Range Applicant", response.getContent().getFirst().getName());
     }
 
     @Test
@@ -575,8 +484,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(1, response.getContent().size());
         Assertions.assertEquals(code, response.getContent().getFirst().getCode());
         Assertions.assertEquals(
-                "Historical Range Applicant",
-                response.getContent().getFirst().getApplicant().getOrganisation().getName());
+                "Historical Range Applicant", response.getContent().getFirst().getName());
     }
 
     @StabilityTest
@@ -655,38 +563,24 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantGetSummaryDto firstEntry = response.getContent().get(0);
 
         assertEquals("APP001", firstEntry.getCode());
-        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstName());
-        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getLastName());
-        assertEquals(
-                "123 High Street",
-                firstEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        assertNull(firstEntry.getName());
+
         assertNotNull(firstEntry.getStartDate());
         assertTrue(firstEntry.getEndDate().isPresent());
         assertNull(firstEntry.getEndDate().get());
 
         StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
         assertEquals("APP002", secondEntry.getCode());
-        assertEquals("Jane", secondEntry.getApplicant().getPerson().getName().getFirstName());
-        assertEquals("Doe", secondEntry.getApplicant().getPerson().getName().getLastName());
-        assertEquals(
-                "456 Elm Road",
-                secondEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        assertNull(secondEntry.getName());
+
         assertNotNull(secondEntry.getStartDate());
         assertTrue(secondEntry.getEndDate().isPresent());
         assertNull(secondEntry.getEndDate().get());
 
         StandardApplicantGetSummaryDto org = response.getContent().get(6);
         assertEquals("APP006", org.getCode());
-        assertEquals("Organisation 3", org.getApplicant().getOrganisation().getName());
-        assertEquals(
-                "456 Elm Road",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
-        assertEquals(
-                "Apt 5",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine2().get());
-        assertEquals(
-                "Cityville",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine4().get());
+        assertEquals("Organisation 3", org.getName());
+
         assertNotNull(secondEntry.getStartDate());
         assertTrue(secondEntry.getEndDate().isPresent());
         assertNull(secondEntry.getEndDate().get());
@@ -742,20 +636,16 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         // assert records are sorted based on the title of the auth codes
         StandardApplicantGetSummaryDto firstEntry = response.getContent().get(0);
         assertEquals("APP006", firstEntry.getCode());
-        assertEquals("Organisation 3", firstEntry.getApplicant().getOrganisation().getName());
-        assertEquals(
-                "456 Elm Road",
-                firstEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        assertEquals("Organisation 3", firstEntry.getName());
+
         assertNotNull(firstEntry.getStartDate());
         assertTrue(firstEntry.getEndDate().isPresent());
         assertNull(firstEntry.getEndDate().get());
 
         StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
         assertEquals("APP004", secondEntry.getCode());
-        assertEquals("Organisation 2", secondEntry.getApplicant().getOrganisation().getName());
-        assertEquals(
-                "123 High Street",
-                secondEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        assertEquals("Organisation 2", secondEntry.getName());
+
         assertNotNull(secondEntry.getStartDate());
         assertTrue(secondEntry.getEndDate().isPresent());
         assertNull(secondEntry.getEndDate().get());
@@ -971,15 +861,9 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 3);
 
-        Assertions.assertEquals(
-                "Organisation 1",
-                response.getContent().get(0).getApplicant().getOrganisation().getName());
-        Assertions.assertEquals(
-                "Organisation 2",
-                response.getContent().get(1).getApplicant().getOrganisation().getName());
-        Assertions.assertEquals(
-                "Organisation 3",
-                response.getContent().get(2).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals("Organisation 1", response.getContent().get(0).getName());
+        Assertions.assertEquals("Organisation 2", response.getContent().get(1).getName());
+        Assertions.assertEquals("Organisation 3", response.getContent().get(2).getName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1034,24 +918,9 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 3);
 
-        Assertions.assertEquals(
-                "Alex",
-                response.getContent().get(0).getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "Dunn",
-                response.getContent().get(0).getApplicant().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                "Alex",
-                response.getContent().get(1).getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "Dunn",
-                response.getContent().get(1).getApplicant().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                "Jane",
-                response.getContent().get(2).getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "Doe",
-                response.getContent().get(2).getApplicant().getPerson().getName().getLastName());
+        assertNull(response.getContent().get(0).getName());
+        assertNull(response.getContent().get(1).getName());
+        assertNull(response.getContent().get(2).getName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1106,18 +975,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 2);
 
-        Assertions.assertEquals(
-                "Alex",
-                response.getContent().get(0).getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "Dunn",
-                response.getContent().get(0).getApplicant().getPerson().getName().getLastName());
-        Assertions.assertEquals(
-                "Alex",
-                response.getContent().get(0).getApplicant().getPerson().getName().getFirstName());
-        Assertions.assertEquals(
-                "Dunn",
-                response.getContent().get(0).getApplicant().getPerson().getName().getLastName());
+        assertNull(response.getContent().get(0).getName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1171,8 +1029,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("APP001", firstEntry.getCode());
-        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstName());
-        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getLastName());
+        assertNull(firstEntry.getName());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1223,8 +1080,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
         StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("APP001", firstEntry.getCode());
-        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstName());
-        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getLastName());
+        assertNull(firstEntry.getName());
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1770,36 +1626,11 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         val first = page.getContent().get(0);
         val second = page.getContent().get(1);
 
-        val firstName =
-                first.getApplicant().getOrganisation() != null
-                        ? first.getApplicant().getOrganisation().getName()
-                        : first.getApplicant().getPerson().getName().getFirstName();
-
-        val secondName =
-                second.getApplicant().getOrganisation() != null
-                        ? second.getApplicant().getOrganisation().getName()
-                        : second.getApplicant().getPerson().getName().getFirstName();
-
-        Assertions.assertEquals("John", firstName);
-        Assertions.assertEquals("Organisation 1", secondName);
-
-        // verify filter applied
-        page.getContent()
-                .forEach(
-                        item -> {
-                            val address =
-                                    item.getApplicant().getOrganisation() != null
-                                            ? item.getApplicant()
-                                                    .getOrganisation()
-                                                    .getContactDetails()
-                                                    .getAddressLine1()
-                                            : item.getApplicant()
-                                                    .getPerson()
-                                                    .getContactDetails()
-                                                    .getAddressLine1();
-
-                            Assertions.assertEquals("123 High Street", address);
-                        });
+        Assertions.assertEquals("Organisation 1", first.getName());
+        Assertions.assertEquals("Organisation 2", second.getName());
+        assertThat(page.getContent())
+                .extracting(StandardApplicantGetSummaryDto::getCode)
+                .containsExactly("APP005", "APP004", "APP001");
 
         // The GET audit should capture each DB-backed filter value that was sent on the request.
         differenceLogAsserter.assertDataAuditChange(
@@ -1839,15 +1670,9 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
         assertThat(page.getContent()).isNotEmpty();
 
-        String firstAddress = extractAddress(page.getContent().get(0));
-        String secondAddress = extractAddress(page.getContent().get(1));
-        String thirdAddress = extractAddress(page.getContent().get(2));
-        String fourthAddress = extractAddress(page.getContent().get(3));
-
-        Assertions.assertEquals("123 High Street", firstAddress);
-        Assertions.assertEquals("123 High Street", secondAddress);
-        Assertions.assertEquals("123 High Street", thirdAddress);
-        Assertions.assertEquals("456 Elm Road", fourthAddress);
+        assertThat(page.getContent().subList(0, 4))
+                .extracting(StandardApplicantGetSummaryDto::getCode)
+                .containsExactly("APP001", "APP005", "APP004", "APP002");
     }
 
     @Test
@@ -2040,11 +1865,5 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());
-    }
-
-    private String extractAddress(StandardApplicantGetSummaryDto dto) {
-        return dto.getApplicant().getOrganisation() != null
-                ? dto.getApplicant().getOrganisation().getContactDetails().getAddressLine1()
-                : dto.getApplicant().getPerson().getContactDetails().getAddressLine1();
     }
 }

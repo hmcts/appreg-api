@@ -10,12 +10,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 
 /**
@@ -68,6 +70,22 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
         WHERE al.uuid = :id
         """)
     Optional<ApplicationList> findByUuidIncludingDelete(UUID id);
+
+    @Modifying(flushAutomatically = true)
+    @Query(
+            """
+        UPDATE ApplicationList al
+        SET al.version = al.version + 1
+        WHERE al.uuid = :id
+          AND al.version = :expectedVersion
+          AND al.status = :requiredStatus
+          AND (al.deleted IS NULL OR al.deleted = :notDeleted)
+        """)
+    int incrementVersionIfStateMatches(
+            @Param("id") UUID id,
+            @Param("expectedVersion") Long expectedVersion,
+            @Param("requiredStatus") Status requiredStatus,
+            @Param("notDeleted") YesOrNo notDeleted);
 
     @Query(
             """

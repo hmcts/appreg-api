@@ -53,15 +53,14 @@ tags:
       List Entry can be resulted. e.g. Approved/Denied.
   - name: standard-applicants
     description:
-      Standard Applicants are reference data, not managed in App Reg. They are pre-registered individuals stored in the
-      system to streamline applications for recurring users, avoiding the need to manually re-enter their details each
-      time they create applications.
+      Standard Applicants are reference data, not managed in App Reg. Only code, name and usage dates are exposed
+      by reference-data endpoints and exports. Personal and contact details are excluded, including when Standard
+      Applicants appear in application responses and reports. Ordinary applicants and respondents are unaffected.
 
 paths:
   # ADMINISTRATIVE JOBS
   /admin/jobs/{jobType}:                                            { $ref: './paths/admin/jobs/jobs-by-type.yaml' }
   /admin/jobs/{jobType}/retention-policy:                           { $ref: './paths/admin/jobs/retention-policy-by-type.yaml' }
-  /admin/csds/{processor}/ingest:                                   { $ref: './paths/admin/csds-ingest.yaml' }
   /admin/csds/trigger:                                              { $ref: './paths/admin/csds-trigger.yaml' }
   # APPLICATION CODES
   /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }

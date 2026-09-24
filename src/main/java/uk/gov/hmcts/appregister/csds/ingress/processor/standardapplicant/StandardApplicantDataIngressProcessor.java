@@ -9,6 +9,7 @@ import lombok.val;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
+import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
@@ -17,7 +18,6 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractPagedCsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
-import uk.gov.hmcts.appregister.generated.model.CsdsIngestResponse;
 
 @Slf4j
 @Component
@@ -28,7 +28,7 @@ public class StandardApplicantDataIngressProcessor
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "ApplicantID",
-                    "PSSSAID",
+                    "PSSApplicantID",
                     "Code",
                     "OrganisationName",
                     "StartDate",
@@ -204,10 +204,10 @@ public class StandardApplicantDataIngressProcessor
             return node;
         }
         val copiedRecord = objectNode.deepCopy();
-        val psssaId = nullableLong(copiedRecord, "PSSSAID");
+        val pssApplicantId = nullableLong(copiedRecord, "PSSApplicantID");
         val applicantId = nullableLong(copiedRecord, "ApplicantID");
-        if (psssaId != null) {
-            copiedRecord.put(SA_ID, psssaId);
+        if (pssApplicantId != null) {
+            copiedRecord.put(SA_ID, pssApplicantId);
         } else if (applicantId != null) {
             copiedRecord.put(SA_ID, applicantId + 100000L);
         }

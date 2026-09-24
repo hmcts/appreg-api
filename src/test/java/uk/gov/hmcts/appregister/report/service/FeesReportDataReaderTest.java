@@ -62,7 +62,7 @@ class FeesReportDataReaderTest {
                         });
 
         FeesReportFilterDto filter = filter();
-        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg", 100);
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -115,7 +115,7 @@ class FeesReportDataReaderTest {
                 new FeesReportFilterDto()
                         .dateFrom(LocalDate.of(2018, Month.MAY, 1))
                         .dateTo(LocalDate.of(2018, Month.MAY, 31));
-        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg", 100);
         PageReader<FeesReportRow> pageReader =
                 (rows, context) -> Assertions.fail("No rows expected");
 
@@ -146,7 +146,8 @@ class FeesReportDataReaderTest {
                             return List.of(rowMapper.mapRow(resultSet(), 0));
                         });
 
-        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter(), "appreg");
+        FeesReportDataReader reader =
+                new FeesReportDataReader(jdbcTemplate, filter(), "appreg", 100);
 
         reader.readData(
                 new ReadPagePosition(25, 0),
@@ -208,10 +209,13 @@ class FeesReportDataReaderTest {
 
     private void assertLegacyFeesQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
+        assertThat(normalisedQuery).doesNotContain("sa.forename_", "sa.surname");
         Assertions.assertTrue(
-                normalisedQuery.contains("COALESCE(na.first_name, sa.forename_1) AS forename_1"));
+                normalisedQuery.contains(
+                        "CASE WHEN sa.sa_id IS NULL THEN na.first_name ELSE NULL END AS forename_1"));
         Assertions.assertTrue(
-                normalisedQuery.contains("COALESCE(na.last_name, sa.surname) AS surname"));
+                normalisedQuery.contains(
+                        "CASE WHEN sa.sa_id IS NULL THEN na.last_name ELSE NULL END AS surname"));
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(sa.standard_applicant_code) "
