@@ -470,8 +470,8 @@ dependencies {
   implementation 'com.opencsv:opencsv:5.12.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.8.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.8.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.10.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.10.Final'
 
   // Lombok
   compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
