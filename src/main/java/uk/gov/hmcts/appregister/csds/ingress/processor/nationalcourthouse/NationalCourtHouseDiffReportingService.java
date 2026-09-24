@@ -71,7 +71,7 @@ public class NationalCourtHouseDiffReportingService
                                 new DiffReportRow(
                                         nullableLong(
                                                 incomingRecordsByNchId.get(item.intended().id()),
-                                                "PSSNationalCourtHouseID"),
+                                                "PSSNationalCourthouseID"),
                                         nullableLong(
                                                 incomingRecordsByNchId.get(item.intended().id()),
                                                 "CourtID"),
@@ -112,7 +112,7 @@ public class NationalCourtHouseDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, "PSSNationalCourtHouseID")),
+                        csvValue(nullableLong(node, "PSSNationalCourthouseID")),
                         csvValue(nullableLong(node, "CourtID")),
                         csvValue(nullableLong(node, NCH_ID)),
                         csvValue(nullableText(node, "CourtName")),

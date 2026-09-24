@@ -29,7 +29,7 @@ public class NationalCourtHouseDataIngressProcessor
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
                     "CourtID",
-                    "PSSNationalCourtHouseID",
+                    "PSSNationalCourthouseID",
                     "CourtName",
                     "CourtWelshName",
                     "CourtLocationCode",
