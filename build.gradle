@@ -272,8 +272,14 @@ def commonCoverageExclusions = [
   '**/uk/gov/hmcts/appregister/generated/**/*.class'
 ]
 
-def sonarCoverageExclusions = [
-  '.github/scripts/**/*.py',
+def sonarExclusions = [
+  '.github/**/*',
+  'bin/**/*',
+  'scripts/**/*',
+  'tests/**/*',
+]
+
+def sonarCoverageExclusions = sonarExclusions + [
   'src/main/java/uk/gov/hmcts/appregister/generated/**/*',
 ]
 
@@ -372,6 +378,7 @@ sonarqube {
   properties {
     property 'sonar.projectName', 'AppReg :: appreg-api-2'
     property 'sonar.projectKey', 'uk.gov.hmcts.appreg:appreg-api-2'
+    property 'sonar.exclusions', sonarExclusions
     property 'sonar.coverage.exclusions', sonarCoverageExclusions
     property(
       'sonar.coverage.jacoco.xmlReportPaths',
