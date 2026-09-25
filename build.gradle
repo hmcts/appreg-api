@@ -273,6 +273,7 @@ def commonCoverageExclusions = [
 ]
 
 def sonarCoverageExclusions = [
+  '.github/scripts/**/*.py',
   'src/main/java/uk/gov/hmcts/appregister/generated/**/*',
 ]
 
