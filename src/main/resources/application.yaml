@@ -133,7 +133,7 @@ appreg:
         minute: ${CSDS_SCHEDULE_MINUTE:0}
         poll-interval: PT10M
       processors:
-        report-raw: false # Setting this to true spite out the raw JSON to the reporting dir for that processor (assuming the dir is set)
+        report-raw: false # Setting this to true spits out the raw JSON to the reporting dir for that processor (assuming the dir is set)
         application-codes:
           enabled: true
           backup-source: application_codes
