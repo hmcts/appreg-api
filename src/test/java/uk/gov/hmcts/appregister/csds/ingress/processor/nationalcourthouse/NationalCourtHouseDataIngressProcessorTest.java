@@ -161,10 +161,25 @@ class NationalCourtHouseDataIngressProcessorTest {
                         same(rowMapper),
                         org.mockito.ArgumentMatchers.any());
         try (var files = Files.list(tempDir)) {
-            assertThat(files.map(path -> path.getFileName().toString()).toList())
+            var generatedFiles = files.toList();
+            assertThat(generatedFiles.stream().map(path -> path.getFileName().toString()).toList())
                     .anyMatch(name -> name.startsWith("national_court_houses_incoming_"))
                     .anyMatch(name -> name.startsWith("national_court_houses_existing_"))
                     .anyMatch(name -> name.startsWith("national_court_houses_diff_"));
+            var incomingCsv =
+                    generatedFiles.stream()
+                            .filter(
+                                    path ->
+                                            path.getFileName()
+                                                            .toString()
+                                                            .startsWith(
+                                                                    "national_court_houses_incoming_")
+                                                    && path.getFileName()
+                                                            .toString()
+                                                            .endsWith(".csv"))
+                            .findFirst()
+                            .orElseThrow();
+            assertThat(Files.readString(incomingCsv)).contains("\"3106\"");
         }
     }
 
@@ -241,7 +256,7 @@ class NationalCourtHouseDataIngressProcessorTest {
                         .putNull("EndDate")
                         .put("RevisionNumber", version);
         sourceRecord.put("CourtID", courtId);
-        sourceRecord.put("PSSNationalCourtHouseID", pssId);
+        sourceRecord.put("PSSNationalCourthouseID", pssId);
         return sourceRecord;
     }
 

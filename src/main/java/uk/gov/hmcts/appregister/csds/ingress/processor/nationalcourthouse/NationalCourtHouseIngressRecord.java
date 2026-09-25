@@ -14,7 +14,7 @@ public record NationalCourtHouseIngressRecord(
         String welshName) {
     private static final String NCH_ID_FIELD = "NCH_ID";
     private static final String COURT_ID_FIELD = "CourtID";
-    private static final String PSS_NATIONAL_COURT_HOUSE_ID_FIELD = "PSSNationalCourtHouseID";
+    private static final String PSS_NATIONAL_COURTHOUSE_ID_FIELD = "PSSNationalCourthouseID";
     private static final long NEW_RECORD_ID_OFFSET = 100000L;
 
     public static @Nullable Long calculateId(
@@ -31,7 +31,7 @@ public record NationalCourtHouseIngressRecord(
             return resolvedId;
         }
         return calculateId(
-                nullableLong(node, PSS_NATIONAL_COURT_HOUSE_ID_FIELD),
+                nullableLong(node, PSS_NATIONAL_COURTHOUSE_ID_FIELD),
                 nullableLong(node, COURT_ID_FIELD));
     }
 
