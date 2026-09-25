@@ -178,7 +178,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                         .put("StartDate", "1900-01-01")
                         .putNull("EndDate")
                         .put("RevisionNumber", revisionNumber);
-        record.put("PSSNationalCourtHouseID", pssNationalCourtHouseId);
+        record.put("PSSNationalCourthouseID", pssNationalCourtHouseId);
         record.put("CourtWelshName", welshName);
         return record;
     }
