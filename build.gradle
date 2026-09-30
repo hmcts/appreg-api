@@ -504,7 +504,7 @@ dependencies {
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.3'
   testImplementation 'org.instancio:instancio-junit:5.6.0'
 
-  testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.0'
+  testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
   rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.41.1'
