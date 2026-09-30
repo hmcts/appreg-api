@@ -1611,7 +1611,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 success.getApplicationList(),
                 success.getApplicationEntryId());
 
-        val updatedEntry = applicationListEntryRepository.save(success.getApplicationEntryId());
+        val updatedEntry =
+                applicationListEntryRepository.saveAndFlush(success.getApplicationEntryId());
         deleteNameAddress(
                 replacedNameAddresses.applicant(),
                 AppListEntryAuditOperation.DELETE_APPLICANT,

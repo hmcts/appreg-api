@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -60,6 +61,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudTest {
     @Autowired private DataAuditRepository dataAuditRepository;
+    @Autowired private NameAddressRepository nameAddressRepository;
 
     @Test
     void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
@@ -1266,23 +1268,59 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    @DisplayName(
-            "Update Application Entry persists write audit rows for standard applicant selection")
-    void givenStandardApplicantUpdate_whenUpdated_thenPersistStandardApplicantAuditRow()
+    @DisplayName("Update an organisation applicant to a standard applicant")
+    void givenOrganisationApplicant_whenUpdatedToStandardApplicant_thenOldApplicantIsDeleted()
             throws Exception {
+        val entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getApplicant().setPerson(null);
+        entryCreateDto.getApplicant().setOrganisation(Instancio.create(Organisation.class));
+        entryCreateDto.getApplicant().getOrganisation().setName("Applicant Original Org");
+        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA12 1AA");
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setEmail(JsonNullable.of(null));
+
+        val tokenGenerator = createAdminToken();
+        val responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+        responseSpecCreate.then().statusCode(201);
+
+        val createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
+        final Long oldApplicantId =
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository
+                                        .findByUuid(createdDto.getId())
+                                        .orElseThrow()
+                                        .getAnamedaddress()
+                                        .getId());
+
         val entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setApplicant(null);
         entryUpdateDto.setStandardApplicantCode("APP002");
         entryUpdateDto.setNumberOfRespondents(null);
 
-        val tokenGenerator = createAdminToken();
-        val responseSpecCreate = createListEntryWithAllData();
-
-        // Ignore the audit rows produced by the setup create request so we only inspect the update.
         clearDataAudits(dataAuditRepository);
 
-        // Update the entry through the real endpoint so the standard-applicant reassignment goes
-        // through the production validator, service and audit listener stack.
         val responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
@@ -1291,10 +1329,22 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         responseSpecUpdate.then().statusCode(200);
 
-        val updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        val responseSpecGet =
+                restAssuredClient.executeGetRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole());
+        responseSpecGet.then().statusCode(200);
+        val updatedDto = responseSpecGet.as(EntryGetDetailDto.class);
         Assertions.assertEquals("APP002", updatedDto.getStandardApplicantCode());
+        Assertions.assertNull(
+                unitOfWork.inTransaction(
+                        () ->
+                                applicationListEntryRepository
+                                        .findByUuid(createdDto.getId())
+                                        .orElseThrow()
+                                        .getAnamedaddress()));
+        Assertions.assertFalse(nameAddressRepository.existsById(oldApplicantId));
 
-        // The update should record the selected standard applicant code in DATA_AUDIT.
         val standardApplicantAuditRow =
                 waitForAudit(
                         () ->
@@ -1302,10 +1352,18 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
                                         TableNames.STANDARD_APPLICANTS,
                                         "standard_applicant_code",
                                         "APP002"));
-
         Assertions.assertEquals(
                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName(),
                 standardApplicantAuditRow.getEventName());
+
+        val deletedApplicantAuditRow =
+                waitForAudit(
+                        () ->
+                                dataAuditRepository.findDataAuditForTableAndColumnAndOldValue(
+                                        TableNames.NAME_ADDRESS, "name", "Applicant Original Org"));
+        Assertions.assertEquals(
+                AppListEntryAuditOperation.DELETE_APPLICANT.getEventName(),
+                deletedApplicantAuditRow.getEventName());
     }
 
     @Test
