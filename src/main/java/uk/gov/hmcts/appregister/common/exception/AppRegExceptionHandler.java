@@ -60,7 +60,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> ACTIVITY_TYPES_REQUIRED_ERROR_CODES =
             Set.of("NotNull", "NotEmpty", "Size");
 
-    private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
+    private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired", "hasEntries");
 
     private final SecurityEndpointFailureLogger securityEndpointFailureLogger;
 

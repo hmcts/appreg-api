@@ -409,6 +409,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                     timeWindow.wrapsMidnight,
                                                     dto.getDescription(),
                                                     dto.getOtherLocationDescription(),
+                                                    dto.getHasEntries(),
                                                     pageable.getPageable());
 
                                     AuditableResult<ApplicationListPage, ApplicationList> result =
