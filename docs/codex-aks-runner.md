@@ -5,7 +5,7 @@ This repository is wired for the Applications Register Codex pilot using GitHub 
 The Codex workflows come from the shared HMCTS
 [codex-agent-workflows](https://github.com/hmcts/codex-agent-workflows)
 repository, pinned to a full commit SHA. This repository keeps two thin
-callers, the runner smoke test, `bin/codex-local-pipeline.sh` and `AGENTS.md`.
+callers, `bin/codex-local-pipeline.sh` and `AGENTS.md`.
 Its settings are the inputs in those callers; the shared
 [caller contract](https://github.com/hmcts/codex-agent-workflows/blob/main/docs/caller-contract.md)
 describes each one.
@@ -40,7 +40,6 @@ The flow is not tied to one Jira board. Each board needs its own Automation rule
 
 ## Workflows
 
-- `.github/workflows/codex_runner_smoke.yml`: validates the AKS runner can start, authenticate Codex, create a branch, commit, and push.
 - `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch` and calls the shared `codex-implement.yml`, which plans the implementation, validates the plan, runs Codex, verifies the result, opens a PR and notifies Azure so Jira Automation can transition Jira.
 - `.github/workflows/codex_pr_review.yml`: on an exact `/codex-review` comment, calls the shared `codex-review-feedback.yml`, which sends the PR's current review feedback back to Codex for follow-up changes on the same `codex/*` branch.
 
@@ -59,9 +58,8 @@ The API key is stored as the GitHub Actions secret `CODEX_OPENAI_API_KEY` and
 is supplied only to the pinned official `openai/codex-action`. The action keeps
 the real key behind a local Responses API proxy; Codex runs as the dedicated
 unprivileged `codex` user and never receives the key in its environment.
-The workflows also pin the Codex CLI and proxy to `0.146.0`; update that
-version consistently across all invocations only after both repository smoke
-workflows pass.
+The shared workflows pin the Codex CLI and proxy to `0.146.0` and update it
+with each shared release.
 
 Every workspace-writing Codex job ends with the official Action. Codex returns
 a schema-validated, size-bounded gzip/base64 patch through the Action's

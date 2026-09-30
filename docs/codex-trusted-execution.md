@@ -47,7 +47,7 @@ repository's own label:
 
 Set group repository access to only hmcts/appreg-api and hmcts/appreg-frontend.
 Restrict workflow access to the shared model workflows at the release SHA the
-callers pin, plus the two runner smoke tests:
+callers pin:
 
 ```text
 hmcts/codex-agent-workflows/.github/workflows/codex-plan.yml@<release SHA>
@@ -57,8 +57,6 @@ hmcts/codex-agent-workflows/.github/workflows/codex-post-repair.yml@<release SHA
 hmcts/codex-agent-workflows/.github/workflows/codex-review-generate.yml@<release SHA>
 hmcts/codex-agent-workflows/.github/workflows/codex-review-repair.yml@<release SHA>
 hmcts/codex-agent-workflows/.github/workflows/codex-review-repair-round.yml@<release SHA>
-hmcts/appreg-api/.github/workflows/codex_runner_smoke.yml@refs/heads/master
-hmcts/appreg-frontend/.github/workflows/codex_runner_smoke.yml@refs/heads/master
 ```
 
 The first shared release is `84cd0d5adffbc9d2c09a7dddff6a0dd25485db10`. A later release needs the same seven
