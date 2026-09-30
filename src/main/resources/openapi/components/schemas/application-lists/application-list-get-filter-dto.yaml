@@ -41,4 +41,11 @@ properties:
   status:
     $ref: "./application-list-status.yaml"
 
+  hasEntries:
+    type: boolean
+    description: >
+      Filters lists by active entries: true returns lists with at least one entry;
+      false returns lists with no active entries.
+    example: true
+
 required: []

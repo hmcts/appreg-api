@@ -5914,6 +5914,11 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/application-list-status"
+        hasEntries:
+          description: |
+            Filters lists by active entries: true returns lists with at least one entry; false returns lists with no active entries.
+          example: true
+          type: boolean
       type: object
     application-list-page:
       allOf:
