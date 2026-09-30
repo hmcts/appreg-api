@@ -2,6 +2,14 @@
 
 This repository is wired for the Applications Register Codex pilot using GitHub Actions Runner Controller on AKS.
 
+The Codex workflows come from the shared HMCTS
+[codex-agent-workflows](https://github.com/hmcts/codex-agent-workflows)
+repository, pinned to a full commit SHA. This repository keeps two thin
+callers, the runner smoke test, `bin/codex-local-pipeline.sh` and `AGENTS.md`.
+Its settings are the inputs in those callers; the shared
+[caller contract](https://github.com/hmcts/codex-agent-workflows/blob/main/docs/caller-contract.md)
+describes each one.
+
 Before deploying the workflow trust changes, complete the
 [trusted execution rollout](codex-trusted-execution.md). The protected
 environments and organisation runner-group policies are required; YAML guards
@@ -33,8 +41,8 @@ The flow is not tied to one Jira board. Each board needs its own Automation rule
 ## Workflows
 
 - `.github/workflows/codex_runner_smoke.yml`: validates the AKS runner can start, authenticate Codex, create a branch, commit, and push.
-- `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch`, plans the implementation, validates and gates the plan, runs Codex, verifies the result, opens a PR, and notifies Azure so Jira Automation can transition Jira.
-- `.github/workflows/codex_pr_review_feedback.yml`: sends PR review feedback back to Codex for follow-up changes on the same `codex/*` branch.
+- `.github/workflows/codex_jira_dispatch.yml`: receives Jira fields through `workflow_dispatch` and calls the shared `codex-implement.yml`, which plans the implementation, validates the plan, runs Codex, verifies the result, opens a PR and notifies Azure so Jira Automation can transition Jira.
+- `.github/workflows/codex_pr_review.yml`: on an exact `/codex-review` comment, calls the shared `codex-review-feedback.yml`, which sends the PR's current review feedback back to Codex for follow-up changes on the same `codex/*` branch.
 
 Model jobs select the restricted organisation runner group and this repository's
 runner label. Publisher and verification jobs use fresh GitHub-hosted compute:
@@ -93,7 +101,7 @@ without silently extending it into broader or higher-risk work.
 
 Planning uses `gpt-5.6-sol` with `ultra` effort. Implementation checks out the
 exact commit inspected by the planner and uses `gpt-5.6-sol` with `medium`
-effort; repair, PR-feedback, and conflict-resolution invocations use the same
+effort; repair and PR-feedback invocations use the same
 implementation configuration. The validated plan is included only in the
 implementation and repair prompts. Its exact file paths constrain both the
 captured patch exporter and every fresh trusted collector; any other changed
@@ -116,7 +124,7 @@ external API and Jira Automation rule are extended.
 
 ## Trusted GitHub publication
 
-Codex branches, pull requests, review updates and conflict-resolution commits
+Codex branches, pull requests and review updates
 are published by an HMCTS-owned GitHub App. Each trusted publication job mints
 a short-lived installation token restricted to `appreg-api`, with explicit
 write access to Contents, Pull requests, Issues and Workflows. The App is used
@@ -125,7 +133,7 @@ not receive Actions administration permission. The default GitHub Actions
 identity is not used for publication.
 
 Publisher credentials are exposed only to the trusted identity-verification and
-publication steps. Before each push, `.github/scripts/codex-verify-publisher.py`
+publication steps. Before each push, the shared `codex-verify-publisher.py`
 checks the App slug, installation ID, HMCTS installation owner, explicit
 permissions, bot identity and push access to this exact repository. The bot
 login and noreply email are derived from the verified App identity rather than
@@ -177,29 +185,7 @@ Store these only in the master-only environments specified in the
 
 ## Optional Repository Variables
 
-- `CODEX_REVIEWER`: GitHub username to request for review on Codex PRs.
 - `CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS`: timeout for notifying Azure after PR creation. Defaults to `10`.
-
-## Re-enabling the Sonar quality gate
-
-The Codex workflows no longer wait for the SonarCloud quality gate; only the
-required Jenkins status (`CODEX_REQUIRED_STATUS_CONTEXT`) gates a published PR.
-The gate script, its tests, the `codex-status` environment and the
-`CODEX_SONAR_TOKEN` secret were removed on 16 September 2026;
-`git log --diff-filter=D -- .github/scripts/codex-check-sonar-quality-gate.sh`
-finds the removing commit. To bring the gate back:
-
-- Restore `.github/scripts/codex-check-sonar-quality-gate.sh`,
-  `.github/scripts/test-codex-check-sonar-quality-gate.py` and the
-  `bin/codex-local-pipeline.sh` assertions from that commit's parent.
-- Use project key `uk.gov.hmcts.appreg:appreg-api-2` (`sonar.projectKey` in
-  `build.gradle`) on `https://sonarcloud.io`. The previous workflow default
-  `uk.gov.hmcts.appreg:appreg-api` was wrong and never matched an analysis.
-- Re-create the master-only `codex-status` environment holding only
-  `CODEX_SONAR_TOKEN`, add it back to `ENVIRONMENTS` in
-  `.github/scripts/audit-codex-trust-settings.py` and to `secret_environments`
-  in `.github/scripts/check-codex-workflow-trust.rb`, and declare
-  `environment: codex-status` on every job that references the secret.
 
 ## Jira Automation
 
