@@ -527,6 +527,14 @@ class AppRegExceptionHandlerTest {
                                 false,
                                 new String[] {"typeMismatch"},
                                 null,
+                                "defaultMessage"),
+                        new FieldError(
+                                "objectName",
+                                "hasEntries",
+                                "maybe",
+                                false,
+                                new String[] {"typeMismatch"},
+                                null,
                                 "defaultMessage"));
 
         Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
@@ -551,6 +559,8 @@ class AppRegExceptionHandlerTest {
 
         Assertions.assertEquals(
                 "Please ensure feeRequired is a valid boolean value", errors.get("feeRequired"));
+        Assertions.assertEquals(
+                "Please ensure hasEntries is a valid boolean value", errors.get("hasEntries"));
     }
 
     @Test
