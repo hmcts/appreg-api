@@ -59,7 +59,7 @@ hmcts/codex-agent-workflows/.github/workflows/codex-review-repair.yml@<release S
 hmcts/codex-agent-workflows/.github/workflows/codex-review-repair-round.yml@<release SHA>
 ```
 
-The first shared release is `84cd0d5adffbc9d2c09a7dddff6a0dd25485db10`. A later release needs the same seven
+The first shared release is `5f481616d558a7495e4d83826dd9aa6191197fd2`. A later release needs the same seven
 entries at its SHA before its pin PRs merge. Keep scale-to-zero, ephemeral
 runners and credential-free verification. Publisher and verification jobs run
 on fresh GitHub-hosted compute.
