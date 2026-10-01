@@ -55,6 +55,12 @@ JUnit 5 is the default across unit, integration, functional, and smoke suites. M
 - No dead code, no duplicated logic without reason, and no manual edits to generated artifacts.
 - Required verification tasks pass locally for the scope of change.
 
+## Codex Automation
+These rules apply when Codex plans, implements, repairs or addresses review feedback in this repository:
+- When planning, explicitly compare a focused fix with any broader API, OpenAPI, validation, data-model or cross-system correction the evidence suggests.
+- Spotless does not cover all backend formatting. Check Checkstyle-sensitive Java formatting by hand before finishing, and fix a Checkstyle verification failure directly rather than relying only on `spotlessApply`. In particular, Checkstyle `RightCurlyAlone` requires each closing brace to be alone on its own line, including in lambda and assertion blocks.
+- Backend report tests assert that temporary files are cleaned up, so do not leave `.appregtmp` files behind.
+
 ## Commit & Pull Request Guidelines
 Follow existing history style using ticket-prefixed messages (for example, `ARCPOC-1169: ...`) or clear conventional prefixes for maintenance work (for example, `fix(deps): ...`). Keep commits focused and self-contained; squash obvious WIP noise before opening a PR. PRs should include:
 - concise change summary,
