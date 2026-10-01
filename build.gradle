@@ -478,8 +478,8 @@ dependencies {
   implementation 'com.opencsv:opencsv:5.12.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.10.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.10.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.11.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.11.Final'
 
   // Lombok
   compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
@@ -510,7 +510,7 @@ dependencies {
   rewrite 'org.openrewrite.recipe:rewrite-static-analysis:2.41.1'
 
   // Updated Third-Party Dependencies
-  implementation 'org.apache.commons:commons-lang3:3.20.0'
+  implementation 'org.apache.commons:commons-lang3:3.21.0'
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.6.3'
   annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
