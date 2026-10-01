@@ -3,7 +3,10 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.description;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
+import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.saveApplicationListEntry;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -27,7 +30,9 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationListRepository repository;
+    @Autowired private ApplicationListEntryRepository entryRepository;
     @Autowired private CriminalJusticeAreaRepository cjaRepository;
+    @PersistenceContext private EntityManager entityManager;
 
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, Month.JANUARY, 2);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(9, 0);
@@ -177,6 +182,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false, // wraps midnight
                         null, // description
                         null, // other location
+                        null, // hasEntries
                         page);
 
         // Then
@@ -214,6 +220,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false, // wraps midnight
                         null, // description
                         null, // other location
+                        null, // hasEntries
                         page);
 
         // Then
@@ -247,6 +254,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         true, // wraps midnight
                         null, // description
                         null, // other location
+                        null, // hasEntries
                         page);
 
         // Then
@@ -269,7 +277,17 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
-                        Status.OPEN, "CCC003", null, null, null, null, false, null, null, page);
+                        Status.OPEN,
+                        "CCC003",
+                        null,
+                        null,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        page);
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -297,6 +315,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         false,
+                        null,
                         null,
                         null,
                         PageRequest.of(0, 10));
@@ -329,6 +348,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false,
                         "SESSION",
                         null,
+                        null,
                         PageRequest.of(0, 10));
 
         // Then
@@ -356,6 +376,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false,
                         null,
                         "hall",
+                        null,
                         PageRequest.of(0, 10));
 
         // Then
@@ -390,10 +411,103 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false, // wraps midnight
                         "soft deleted", // description
                         null, // other location
+                        null, // hasEntries
                         page);
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(0);
+    }
+
+    @Test
+    @Transactional
+    @DisplayName(
+            "findAllByFilter: hasEntries filters active entries, inactive entries, all entries if omitted")
+    void findAllByFilter_hasEntries_filtersActiveEntriesAndPreservesPaging() {
+        LocalDate filterDate = LocalDate.of(2099, Month.JANUARY, 2);
+        ApplicationList activeOne =
+                save("OPEN", "HE1", null, filterDate, DEFAULT_TIME, "has-one", "west");
+        ApplicationList activeMany =
+                save(
+                        "OPEN",
+                        "HE2",
+                        null,
+                        filterDate,
+                        DEFAULT_TIME.plusMinutes(1),
+                        "has-many",
+                        "west");
+        ApplicationList empty =
+                save("OPEN", "HE3", null, filterDate, DEFAULT_TIME.plusMinutes(2), "empty", "west");
+        final ApplicationList deletedOnly =
+                save(
+                        "OPEN",
+                        "HE4",
+                        null,
+                        filterDate,
+                        DEFAULT_TIME.plusMinutes(3),
+                        "deleted-only",
+                        "west");
+
+        saveApplicationListEntry(entityManager, persistance, activeOne, (short) 1);
+        saveApplicationListEntry(entityManager, persistance, activeMany, (short) 1);
+        saveApplicationListEntry(entityManager, persistance, activeMany, (short) 2);
+        var deletedEntry =
+                saveApplicationListEntry(entityManager, persistance, deletedOnly, (short) 1);
+        deletedEntry.setDeleted(true);
+        entryRepository.saveAndFlush(deletedEntry);
+        entityManager.clear();
+
+        Page<ApplicationListSummaryProjection> withEntries =
+                repository.findAllByFilter(
+                        null,
+                        null,
+                        null,
+                        filterDate,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null,
+                        true,
+                        PageRequest.of(0, 1));
+
+        assertThat(withEntries.getTotalElements()).isEqualTo(2);
+        assertThat(withEntries.getNumberOfElements()).isEqualTo(1);
+        assertThat(withEntries.getContent().getFirst().getEntryCount()).isGreaterThan(0);
+
+        Page<ApplicationListSummaryProjection> withoutEntries =
+                repository.findAllByFilter(
+                        null,
+                        null,
+                        null,
+                        filterDate,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null,
+                        false,
+                        PageRequest.of(0, 10));
+
+        assertThat(withoutEntries.getTotalElements()).isEqualTo(2);
+        assertThat(withoutEntries.getContent())
+                .extracting(ApplicationListSummaryProjection::getDescription)
+                .containsExactlyInAnyOrder("empty", "deleted-only");
+
+        Page<ApplicationListSummaryProjection> withoutFilter =
+                repository.findAllByFilter(
+                        null,
+                        null,
+                        null,
+                        filterDate,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null,
+                        null,
+                        PageRequest.of(0, 10));
+
+        assertThat(withoutFilter.getTotalElements()).isEqualTo(4);
     }
 
     @Test
@@ -419,6 +533,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false,
                         null,
                         null,
+                        null,
                         PageRequest.of(
                                 0, 1, org.springframework.data.domain.Sort.by("date").ascending()));
 
@@ -432,6 +547,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         false,
+                        null,
                         null,
                         null,
                         PageRequest.of(
@@ -492,6 +608,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         false, // wrapsMidnight
                         null, // description
                         null, // otherDesc
+                        null, // hasEntries
                         page);
 
         // Then

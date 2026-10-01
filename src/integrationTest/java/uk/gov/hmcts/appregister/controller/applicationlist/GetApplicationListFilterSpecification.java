@@ -31,6 +31,8 @@ public class GetApplicationListFilterSpecification implements UnaryOperator<Requ
 
     @Builder.Default private final Optional<Status> status = Optional.empty();
 
+    @Builder.Default private final Optional<Boolean> hasEntries = Optional.empty();
+
     @Override
     public RequestSpecification apply(RequestSpecification rs) {
         if (dateValue.isPresent()) {
@@ -59,6 +61,10 @@ public class GetApplicationListFilterSpecification implements UnaryOperator<Requ
 
         if (status.isPresent()) {
             rs = rs.queryParam("status", status.get());
+        }
+
+        if (hasEntries.isPresent()) {
+            rs = rs.queryParam("hasEntries", hasEntries.get());
         }
 
         return rs;

@@ -786,6 +786,83 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
     }
 
     @Test
+    @DisplayName("GET: filter by hasEntries")
+    void givenHasEntriesFilter_thenOnlyMatchingRows() throws Exception {
+        String prefix = uniquePrefix("get-has-entries-filter");
+        final ApplicationListGetDetailDto emptyList =
+                createWithCourt(prefix + " - empty", TEST_DATE, TEST_TIME);
+        ApplicationListGetDetailDto populatedList =
+                createWithCourt(prefix + " - populated", TEST_DATE, TEST_TIME.plusMinutes(1));
+        createEntry(populatedList.getId());
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response withEntriesResponse =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        GetApplicationListFilterSpecification.builder()
+                                .description(Optional.of(prefix))
+                                .hasEntries(Optional.of(true))
+                                .build(),
+                        null);
+
+        withEntriesResponse.then().statusCode(HttpStatus.OK.value());
+        assertThat(withEntriesResponse.as(ApplicationListPage.class).getContent())
+                .extracting(item -> item.getId())
+                .containsExactly(populatedList.getId());
+
+        Response withoutEntriesResponse =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        GetApplicationListFilterSpecification.builder()
+                                .description(Optional.of(prefix))
+                                .hasEntries(Optional.of(false))
+                                .build(),
+                        null);
+
+        withoutEntriesResponse.then().statusCode(HttpStatus.OK.value());
+        assertThat(withoutEntriesResponse.as(ApplicationListPage.class).getContent())
+                .extracting(item -> item.getId())
+                .containsExactly(emptyList.getId());
+    }
+
+    @Test
+    @DisplayName("GET: invalid hasEntries returns a boolean validation error")
+    void givenInvalidHasEntriesFilter_thenBadRequest() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response response =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        request -> request.queryParam("hasEntries", "not-a-boolean"),
+                        null);
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        assertThat(response.asString())
+                .contains("\"hasEntries\":\"Please ensure hasEntries is a valid boolean value\"");
+    }
+
+    @Test
     @DisplayName("GET: filter by cjaCode")
     void givenCjaFilter_thenOnlyCjaRows() throws Exception {
 
