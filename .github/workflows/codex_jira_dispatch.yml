@@ -44,7 +44,7 @@ concurrency:
 
 jobs:
   implement:
-    uses: hmcts/codex-agent-workflows/.github/workflows/codex-implement.yml@84cd0d5adffbc9d2c09a7dddff6a0dd25485db10
+    uses: hmcts/codex-agent-workflows/.github/workflows/codex-implement.yml@5f481616d558a7495e4d83826dd9aa6191197fd2
     with:
       issueKey: ${{ inputs.issueKey }}
       summary: ${{ inputs.summary }}
