@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -3382,7 +3381,7 @@ class ApplicationEntryServiceImplTest {
         when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
                 .thenReturn(List.of(existingFee));
 
-        when(applicationListEntryRepository.save(any(ApplicationListEntry.class)))
+        when(applicationListEntryRepository.saveAndFlush(any(ApplicationListEntry.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(appListEntryFeeRepository.save(any(AppListEntryFeeId.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -3403,7 +3402,7 @@ class ApplicationEntryServiceImplTest {
         expectedEtagEntities.add(offsiteFee);
         Assertions.assertEquals(
                 MatchResponse.of(null, expectedEtagEntities).getEtag(), response.getEtag());
-        verify(applicationListEntryRepository, atLeastOnce()).save(applicationListEntry);
+        verify(applicationListEntryRepository).saveAndFlush(applicationListEntry);
         verify(appListEntryOfficialRepository).getOfficialByEntryUuid(entryId);
         verify(appListEntryFeeStatusRepository).getFeeStatusByEntryUuid(entryId);
         verify(appListEntryFeeRepository).getFeeForEntryId(applicationListEntry.getId());
