@@ -39,6 +39,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -422,6 +425,7 @@ class ApplicationListServiceImplTest {
                         eq(false),
                         eq("morning"),
                         eq("town hall"),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -487,6 +491,7 @@ class ApplicationListServiceImplTest {
                         eq(false),
                         isNull(),
                         isNull(),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -514,6 +519,53 @@ class ApplicationListServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
 
         verify(mapper).toGetSummaryDto(row, 0L, "Central Court");
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(booleans = {true, false})
+    void getPage_forwardsHasEntriesFilter(Boolean hasEntries) {
+        getValidator.setSuccess(new ListUpdateValidationSuccess());
+
+        Pageable pageable = mock(Pageable.class);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        Page<ApplicationListSummaryProjection> dbPage = Page.empty();
+
+        when(repository.findAllByFilter(
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        eq(false),
+                        isNull(),
+                        isNull(),
+                        eq(hasEntries),
+                        eq(pageable)))
+                .thenReturn(dbPage);
+
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
+
+        var filter = new ApplicationListGetFilterDto().hasEntries(hasEntries);
+
+        service.getPage(filter, wrapper);
+
+        verify(repository)
+                .findAllByFilter(
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        isNull(),
+                        eq(false),
+                        isNull(),
+                        isNull(),
+                        eq(hasEntries),
+                        eq(pageable));
     }
 
     @Test
@@ -546,6 +598,7 @@ class ApplicationListServiceImplTest {
                         eq(false),
                         isNull(),
                         eq("town"),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -588,6 +641,7 @@ class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         eq(false),
+                        isNull(),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -635,6 +689,7 @@ class ApplicationListServiceImplTest {
                         eq(false),
                         eq("morning"),
                         eq("town hall"),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -705,6 +760,7 @@ class ApplicationListServiceImplTest {
                         eq(false),
                         isNull(),
                         isNull(),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -746,6 +802,7 @@ class ApplicationListServiceImplTest {
                         eq(false),
                         isNull(),
                         isNull(),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -785,6 +842,7 @@ class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         eq(false),
+                        isNull(),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -833,6 +891,7 @@ class ApplicationListServiceImplTest {
                         eq(true),
                         eq("morning"),
                         eq("town hall"),
+                        isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
 
@@ -874,6 +933,7 @@ class ApplicationListServiceImplTest {
                         eq(true),
                         eq("morning"),
                         eq("town hall"),
+                        isNull(),
                         eq(pageable));
     }
 

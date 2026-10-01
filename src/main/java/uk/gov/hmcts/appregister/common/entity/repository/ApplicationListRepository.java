@@ -130,6 +130,8 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      *     null} for no filter
      * @param otherDesc the text to search within the {@code otherLocation} field, or {@code null}
      *     for no filter
+     * @param hasEntries whether to return lists with entries ({@code true}), lists without entries
+     *     ({@code false}), or all lists ({@code null})
      * @param pageable the pagination and sorting information
      * @return a {@link Page} of {@link ApplicationList} entities matching the provided filter
      *     criteria
@@ -169,6 +171,27 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
                   LIKE concat('%', lower(cast(:description AS string)), '%') ESCAPE '\\')
           AND (:otherDesc IS NULL OR lower(al.otherLocation)
                   LIKE concat('%', lower(cast(:otherDesc AS string)), '%') ESCAPE '\\')
+          AND (
+                :hasEntries IS NULL
+                OR (
+                    :hasEntries = TRUE
+                    AND EXISTS (
+                        SELECT 1
+                        FROM ApplicationListEntry ale
+                        WHERE ale.applicationList = al
+                          AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+                    )
+                )
+                OR (
+                    :hasEntries = FALSE
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM ApplicationListEntry ale
+                        WHERE ale.applicationList = al
+                          AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+                    )
+                )
+              )
           AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
     @SuppressWarnings("java:S107")
@@ -182,5 +205,6 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
             @Param("wrapsMidnight") boolean wrapsMidnight,
             @LikeParam @Param("description") String description,
             @LikeParam @Param("otherDesc") String otherDesc,
+            @Param("hasEntries") Boolean hasEntries,
             Pageable pageable);
 }
