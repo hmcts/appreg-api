@@ -33,7 +33,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.10.2'
+  id 'com.diffplug.spotless' version '8.10.3'
   id 'org.openrewrite.rewrite' version '7.39.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
@@ -439,7 +439,7 @@ dependencies {
   // Allows us to use Jackson 2 until we can successfully migrate to Jackson 3.
   implementation 'org.springframework.cloud:spring-cloud-starter'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-  implementation 'org.openapitools:jackson-databind-nullable:0.2.11'
+  implementation 'org.openapitools:jackson-databind-nullable:0.2.12'
 
   // OAuth2 support
   implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'

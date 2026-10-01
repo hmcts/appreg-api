@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   remove-redirect-uris:
+    if: ${{ !startsWith(github.head_ref, 'codex/') }}
     runs-on: ubuntu-latest
 
     env:
