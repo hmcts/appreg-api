@@ -2445,7 +2445,7 @@ paths:
   /application-lists/{listId}/entries/bulk-import:
     post:
       description: |
-        Validates the target application list and CSV structure up front, then enqueues a background job that validates the uploaded rows and, if valid, automatically inserts all rows in a single transaction. If row validation or commit fails, the entire transaction is rolled back and the job ends in `FAILED`. Row-validation failures provide actionable input feedback; unexpected processing failures return only a generic message and the job reference to quote to support. There is a file size limitation of 5MB.
+        Validates the target application list and CSV structure up front, then enqueues a background job that validates the uploaded rows and, if valid, automatically inserts all rows in a single transaction. If row validation or commit fails, the entire transaction is rolled back and the job ends in `FAILED`. Row-validation failures provide actionable input feedback; unexpected processing failures return only a generic message and the job reference to quote to support. Files must not exceed 5MB or contain more than 1,050 application entries (excluding the header). Either limit is rejected with HTTP 413 before a background job is created. Split larger uploads into smaller files.
       operationId: bulkUploadApplicationListEntries
       parameters:
       - description: ID of the Application List receiving the uploaded entries.

@@ -656,6 +656,68 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     @Test
+    void given1051Entries_whenBulkUpload_thenRejectsWithoutCreatingEntries() throws Exception {
+        var token = createAdminToken().fetchTokenForRole();
+        var listId = createNewApplicationList(token);
+        try (var file =
+                tempCsv(
+                        CANONICAL_BULK_UPLOAD_HEADER
+                                + "\n"
+                                + (canonicalBulkUploadRow("Example Organisation", "", "") + "\n")
+                                        .repeat(1051))) {
+            var response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+            response.then().statusCode(413);
+            var problem = response.as(ProblemDetail.class);
+            assertThat(problem.getType())
+                    .isEqualTo(
+                            AppListEntryError.BULK_UPLOAD_TOO_MANY_ENTRIES
+                                    .getCode()
+                                    .getType()
+                                    .get());
+            assertThat(problem.getDetail()).contains("1,050", "Split");
+            assertThat(countEntriesForList(listId)).isZero();
+            assertThat(response.header("Location")).isNull();
+        }
+    }
+
+    @Test
+    void given1050Entries_whenBulkUpload_thenCompletes() throws Exception {
+        var token = createAdminToken().fetchTokenForRole();
+        var listId = createNewApplicationList(token);
+        try (var file =
+                tempCsv(
+                        CANONICAL_BULK_UPLOAD_HEADER
+                                + "\n"
+                                + (canonicalBulkUploadRow("Example Organisation", "", "") + "\n")
+                                        .repeat(1050))) {
+            var response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            file.file(),
+                            "text/csv");
+            response.then().statusCode(202);
+            var acknowledgement = response.as(JobAcknowledgement.class);
+            var completed =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient,
+                            getLocalUrl("jobs/" + acknowledgement.getId()),
+                            token);
+            assertThat(completed.getStatus()).isEqualTo(JobStatus.COMPLETED);
+            assertThat(countEntriesForList(listId)).isEqualTo(1050);
+        }
+    }
+
+    @Test
     void givenLargeCsv6MB_whenBulkUploadApplicationListEntries_thenJobFails() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
