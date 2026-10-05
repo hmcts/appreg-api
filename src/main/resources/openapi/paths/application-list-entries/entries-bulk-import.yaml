@@ -16,7 +16,9 @@ post:
     all rows in a single transaction. If row validation or commit fails, the entire
     transaction is rolled back and the job ends in `FAILED`. Row-validation failures provide
     actionable input feedback; unexpected processing failures return only a generic message and
-    the job reference to quote to support. There is a file size limitation of 5MB.
+    the job reference to quote to support. Files must not exceed 5MB or contain more than
+    1,050 application entries (excluding the header). Either limit is rejected with HTTP 413
+    before a background job is created. Split larger uploads into smaller files.
   requestBody:
     required: true
     content:

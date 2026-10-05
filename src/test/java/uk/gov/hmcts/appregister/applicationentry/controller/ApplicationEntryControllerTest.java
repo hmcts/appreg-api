@@ -6,8 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
@@ -209,6 +211,25 @@ class ApplicationEntryControllerTest {
                         () -> controller.bulkUploadApplicationListEntries(listId, file));
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_FILE_MISSING);
+    }
+
+    @Test
+    void bulkUploadApplicationListEntries_whenEntryLimitExceeded_thenDoesNotStartJob() {
+        var file = mock(MultipartFile.class);
+        var error =
+                new AppRegistryException(
+                        AppListEntryError.BULK_UPLOAD_TOO_MANY_ENTRIES, "Too many entries");
+        doThrow(error).when(bulkUploadCsvFormatValidator).validate(file);
+
+        assertThat(
+                        assertThrows(
+                                AppRegistryException.class,
+                                () ->
+                                        controller.bulkUploadApplicationListEntries(
+                                                UUID.randomUUID(), file)))
+                .isSameAs(error);
+        verifyNoInteractions(
+                asyncJobService, bulkImportService, bulkCreateApplicationEntryValidator);
     }
 
     @Test

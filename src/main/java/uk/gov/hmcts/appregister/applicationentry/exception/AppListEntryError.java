@@ -257,7 +257,12 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "One or more application list entries could not be moved",
-                    "ALE-53"));
+                    "ALE-53")),
+    BULK_UPLOAD_TOO_MANY_ENTRIES(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONTENT_TOO_LARGE,
+                    "Uploaded file must contain no more than 1,050 application entries",
+                    "ALE-54"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
