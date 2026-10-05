@@ -7,3 +7,15 @@ AZURE_CLIENT_SECRET=""
 AZURE_SCOPE=""
 APPREG_ADMIN_USERNAME=""
 APPREG_ADMIN_PASSWORD=""
+
+# csds_diff.sh: PostgreSQL connection (read-only access is sufficient).
+# Leave PGPASSWORD empty to use .pgpass or local trust authentication.
+PGHOST=""
+PGPORT="5432"
+PGDATABASE=""
+PGUSER=""
+PGPASSWORD=""
+PGSSLMODE="prefer"
+# For remote TLS verification, set PGSSLMODE=verify-full and supply the server CA.
+PGSSLROOTCERT=""
+CSDS_DB_SCHEMA=""
