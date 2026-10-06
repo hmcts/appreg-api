@@ -16,7 +16,7 @@ concurrency:
 jobs:
   review:
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/codex-review' && contains(fromJSON('["COLLABORATOR","MEMBER","OWNER"]'), github.event.comment.author_association) }}
-    uses: hmcts/codex-agent-workflows/.github/workflows/codex-review-feedback.yml@5f481616d558a7495e4d83826dd9aa6191197fd2
+    uses: hmcts/codex-agent-workflows/.github/workflows/codex-review-feedback.yml@1c408575fe4fb1b4b7c9facf54018ac4b4e4e8cd
     with:
       runner_label: codex-pilot-azure-aks
       runner_group: appreg-codex
