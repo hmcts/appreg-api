@@ -1,6 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvValidationException;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -8,13 +12,15 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 /**
- * Validates the respondent name column shape before OpenCSV binds rows.
+ * Validates the respondent name column shape and record limit before a bulk upload job starts.
  */
 @Component
 public class BulkUploadCsvFormatValidator {
@@ -23,6 +29,9 @@ public class BulkUploadCsvFormatValidator {
             Set.of("RESP_FORENAME1", "RESP_FORENAME2", "RESP_FORENAME3", "RESP_SURNAME");
     private static final Set<String> CANONICAL_NAME_COLUMNS =
             Set.of("RESP_FIRST_NAME", "RESP_MIDDLE_NAME", "RESP_LAST_NAME");
+
+    @Value("${appreg.bulk-action-preview.single-list-limit:1050}")
+    private int entryLimit = 1050;
 
     public void validate(MultipartFile file) {
         Set<String> headers = readHeaders(file);
@@ -52,6 +61,36 @@ public class BulkUploadCsvFormatValidator {
             throw invalidFormat(
                     "Bulk upload files must include either legacy respondent name columns or"
                             + " canonical respondent name columns");
+        }
+
+        validateEntryCount(file);
+    }
+
+    private void validateEntryCount(MultipartFile file) {
+        try (var input = file.getInputStream()) {
+            var bytes = input.readAllBytes();
+            try (var reader =
+                    new CSVReaderBuilder(
+                                    new InputStreamReader(
+                                            new ByteArrayInputStream(bytes),
+                                            CsvReader.guessCharset(bytes)))
+                            .withCSVParser(new CSVParserBuilder().withSeparator('|').build())
+                            .build()) {
+                reader.readNext(); // The header is not an application entry.
+                // Count CSV records, not lines: quoted fields can contain newlines.
+                for (int count = 0; reader.readNext() != null; count++) {
+                    if (count >= entryLimit) {
+                        var message =
+                                "Uploaded file must contain no more than %,d application entries. "
+                                                .formatted(entryLimit)
+                                        + "Split the entries into smaller files and try again.";
+                        throw new AppRegistryException(
+                                AppListEntryError.BULK_UPLOAD_TOO_MANY_ENTRIES, message, message);
+                    }
+                }
+            }
+        } catch (IOException | CsvValidationException exception) {
+            throw invalidFormat("Uploaded file could not be read");
         }
     }
 

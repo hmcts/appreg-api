@@ -15,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -73,11 +74,87 @@ class BulkUploadCsvFormatValidatorTest {
         assertThat(exception).hasMessageContaining("could not be read");
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {1049, 1050})
+    void givenWithinLimit_whenValidate_thenPasses(int count) {
+        assertDoesNotThrow(
+                () ->
+                        validator.validate(
+                                csvFile(
+                                        "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n"
+                                                + "Jane||Jones\n".repeat(count))));
+    }
+
+    @Test
+    void given1051Entries_whenValidate_thenRejectsWithClientMessage() {
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                validator.validate(
+                                        csvFile(
+                                                "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n"
+                                                        + "Jane||Jones\n".repeat(1051))));
+        assertThat(exception.getCode()).isEqualTo(AppListEntryError.BULK_UPLOAD_TOO_MANY_ENTRIES);
+        assertThat(exception.getClientDetail()).contains("1,050", "Split");
+    }
+
+    @Test
+    void givenQuotedMultilineRecords_whenValidate_thenCountsRecordsNotLines() {
+        assertDoesNotThrow(
+                () ->
+                        validator.validate(
+                                csvFile(
+                                        "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n"
+                                                + "\"Jane\nMary\"||Jones\n".repeat(1050))));
+    }
+
+    @Test
+    void givenBlankRecord_whenValidate_thenCountsItLikeImporter() {
+        ReflectionTestUtils.setField(validator, "entryLimit", 1);
+        assertThrows(
+                AppRegistryException.class,
+                () ->
+                        validator.validate(
+                                csvFile(
+                                        "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\nJane||Jones\n\n")));
+    }
+
+    @Test
+    void givenMalformedCsv_whenValidate_thenRejects() {
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                validator.validate(
+                                        csvFile(
+                                                "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n\"unclosed")));
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT);
+    }
+
+    @Test
+    void givenConfiguredLimit_whenValidate_thenUsesIt() {
+        ReflectionTestUtils.setField(validator, "entryLimit", 2);
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                validator.validate(
+                                        csvFile(
+                                                "RESP_FIRST_NAME|RESP_MIDDLE_NAME|RESP_LAST_NAME\n"
+                                                        + "Jane||Jones\n".repeat(3))));
+        assertThat(exception.getClientDetail()).contains("2 application entries");
+    }
+
     private static MultipartFile csvFile(String content) {
         MultipartFile file = mock(MultipartFile.class);
         try {
             when(file.getInputStream())
-                    .thenReturn(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+                    .thenAnswer(
+                            invocation ->
+                                    new ByteArrayInputStream(
+                                            content.getBytes(StandardCharsets.UTF_8)));
         } catch (IOException exception) {
             throw new AssertionError(exception);
         }
