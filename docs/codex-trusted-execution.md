@@ -1,191 +1,117 @@
-# Codex trusted execution rollout
+# Codex trusted execution
 
-This change addresses the Codex workflow paths in ARCPOC-1674. A repository writer
-can change a workflow on a feature branch before dispatching it. Checking out
-master later, or adding an if condition inside that workflow, does not establish
-a security boundary.
+Codex runs in this repository through the shared HMCTS
+[codex-agent-workflows](https://github.com/hmcts/codex-agent-workflows), pinned to a full commit SHA. This page
+covers the controls this repository relies on and how to check them. The shared
+repository documents the workflows themselves.
 
 The enforceable controls are environment secret restrictions and organisation
 runner-group workflow restrictions, configured by administrators outside the
-repository checkout. The workflow guards and local tests are regression checks,
-not protection against a writer who also modifies those checks.
+repository checkout. The shared credential safety gate and the workflow guards
+are regression checks, not protection against a writer who also modifies those
+checks.
 
-## Do not activate before the control-plane migration
+## Protect credentials
 
-The PR alone does not close the finding. Do not merge until the environments,
-secret migration and runner-group migration below are ready for a coordinated
-cutover. No live settings are changed by the scripts in this PR. The publisher
-App identity, model choices and human merge approval are unchanged.
+Two environments in each Apps Reg repository hold the Codex secrets:
 
-### Protect credentials
+- `codex-model`: `CODEX_OPENAI_API_KEY`.
+- `codex-publisher`: `CODEX_GITHUB_APP_PRIVATE_KEY` and `CODEX_JIRA_PR_NOTIFY_URL`.
 
-Create these two environments in each Apps Reg repository:
-
-| Environment | Secrets stored only in this environment |
-| --- | --- |
-| codex-model | CODEX_OPENAI_API_KEY |
-| codex-publisher | CODEX_GITHUB_APP_PRIVATE_KEY, CODEX_JIRA_PR_NOTIFY_URL |
-
-The former `codex-status` environment and `CODEX_SONAR_TOKEN` secret are no
-longer used by any workflow; delete them where they still exist. See
-[Re-enabling the Sonar quality gate](codex-aks-runner.md#re-enabling-the-sonar-quality-gate).
+The thin callers map all three secrets. The shared workflows accept the empty
+values the callers pass and read each secret only inside a job that declares
+its environment.
 
 For each environment, select **Selected branches and tags** and add only a
 **branch** rule named **master**. Do not add wildcard, tag, feature-branch or
-refs/pull rules. No per-run reviewer gate is required for the existing small-bug
-journey. Default-branch workflow changes must still pass the team's normal
+refs/pull rules. Default-branch workflow changes must pass the team's normal
 review and release process. Require at least one approval and either dismiss
 stale approvals after new commits or require approval of the latest push.
-An approval count alone does not establish that the current workflow was reviewed.
-The audit checks classic branch protection; equivalent rulesets are not inferred.
-
-Re-enter the credentials from the approved secret source into their respective
-environments. GitHub cannot return a stored Actions secret's plaintext for a
-move. Validate the destination configuration, then remove the same credentials
-from repository secrets, any organisation-secret access granted to these
-repositories, and other environments. Retain a recovery copy only in the
-approved secret store, not as an unrestricted GitHub fallback.
 
 An environment name in YAML is not sufficient: GitHub can automatically create
-an unprotected environment, and repository/organisation secrets remain available
-when a workflow omits that environment. Remove all fallback copies before
-claiming the restriction is effective. Do not expose the publisher private key
-or Jira callback URL to the model environment.
+an unprotected environment, and repository or organisation secrets remain
+available when a workflow omits that environment. Keep no fallback copies of
+these secrets as repository or organisation secrets, and do not expose the
+publisher private key or Jira callback URL to the model environment.
 
-Keep CODEX_GITHUB_APP_CLIENT_ID as a repository variable. Change default workflow
-permissions to read-only and disable GitHub Actions PR approval. These settings
-reduce ambient token privileges; they do not prevent a writer from requesting
-explicit permissions in a new workflow.
+Keep `CODEX_GITHUB_APP_CLIENT_ID` as a repository variable. Keep default
+workflow permissions read-only and GitHub Actions PR approval disabled.
 
-### Restrict runner scheduling
+## Restrict runner scheduling
 
-Repository-scoped ARC registration cannot enforce an organisation runner-group
-workflow allow-list. Migrate the two Apps Reg scale sets to organisation-scoped
-registration in the **appreg-codex** runner group, keeping their distinct labels:
+Model jobs run in the `appreg-codex` organisation runner group, each on its
+repository's own label:
 
-- appreg-api: codex-pilot-azure-aks
-- appreg-frontend: codex-frontend-azure-aks
-
-An HMCTS organisation owner must provision the group and approve a registration
-identity with the required organisation runner-management permission. Repository
-Administration permission alone is not sufficient for organisation registration.
-Do not broaden the publishing App's permission as an implicit part of this PR;
-the platform team must approve the ARC registration identity.
+- appreg-api: `codex-pilot-azure-aks`
+- appreg-frontend: `codex-frontend-azure-aks`
 
 Set group repository access to only hmcts/appreg-api and hmcts/appreg-frontend.
-Allow those selected public repositories, then restrict workflow access to these
-eight exact paths:
+Restrict workflow access to the shared model workflows at the release SHA the
+callers pin:
 
 ```text
-hmcts/appreg-api/.github/workflows/codex_jira_dispatch.yml@refs/heads/master
-hmcts/appreg-api/.github/workflows/codex_pr_review_feedback.yml@refs/heads/master
-hmcts/appreg-api/.github/workflows/codex_merge_conflict_resolution.yml@refs/heads/master
-hmcts/appreg-api/.github/workflows/codex_runner_smoke.yml@refs/heads/master
-hmcts/appreg-frontend/.github/workflows/codex_jira_dispatch.yml@refs/heads/master
-hmcts/appreg-frontend/.github/workflows/codex_pr_review_feedback.yml@refs/heads/master
-hmcts/appreg-frontend/.github/workflows/codex_merge_conflict_resolution.yml@refs/heads/master
-hmcts/appreg-frontend/.github/workflows/codex_runner_smoke.yml@refs/heads/master
+hmcts/codex-agent-workflows/.github/workflows/codex-plan.yml@<release SHA>
+hmcts/codex-agent-workflows/.github/workflows/codex-generate.yml@<release SHA>
+hmcts/codex-agent-workflows/.github/workflows/codex-repair-round.yml@<release SHA>
+hmcts/codex-agent-workflows/.github/workflows/codex-post-repair.yml@<release SHA>
+hmcts/codex-agent-workflows/.github/workflows/codex-review-generate.yml@<release SHA>
+hmcts/codex-agent-workflows/.github/workflows/codex-review-repair.yml@<release SHA>
+hmcts/codex-agent-workflows/.github/workflows/codex-review-repair-round.yml@<release SHA>
 ```
 
-Register ARC against https://github.com/hmcts with runnerGroup appreg-codex.
-Keep scale-to-zero, ephemeral runners and credential-free verification. Retire
-the old repository-scoped scale sets; leaving them registered preserves an
-alternative route to the AKS runners. Do not change the seven Juror scale sets
-as part of this Apps Reg change.
-
-The model jobs now explicitly select the group and repository-specific label.
-Publisher and verification jobs run on fresh GitHub-hosted compute. Keep runner
-network isolation, service-account permissions and absence of mounted secrets
-under platform review; scheduling policy is not a substitute for pod isolation.
+The current shared release is `1c408575fe4fb1b4b7c9facf54018ac4b4e4e8cd`. A later release needs the same seven
+entries at its SHA before its pin PRs merge. Keep scale-to-zero, ephemeral
+runners and credential-free verification. Publisher and verification jobs run
+on fresh GitHub-hosted compute.
 
 ## Developer journey
 
-Jira dispatch and the manual runner smoke workflow must run from master.
-Selecting a feature branch is deliberately unsupported for credentialed runs.
-The entry job rejects a mismatched branch or workflow ref before scheduling
-normal downstream work; the server-side controls still protect against modified
-copies that remove that guard.
+- The Azure Function dispatches `codex_jira_dispatch.yml` on `master` for a
+  `codex-ready` ARCPOC ticket. A run from any other branch cannot obtain the
+  environment secrets.
+- Plans follow the strict policy: no `.github`, build or dependency changes,
+  and no high-risk or cross-system plans. A blocked plan stops before
+  implementation.
+- Only verified work is published, and Jira hears only `pr-created`. A required
+  status reporting that the commit cannot be built gets one repair attempt.
+- For PR feedback, add review comments normally, then post exactly
+  `/codex-review` in the PR's Conversation tab. The command author must have
+  write access. Codex addresses every change-request or comment review of the
+  current head submitted by the time of the command, from reviewers with
+  write, maintain or admin permission. Feedback a reviewer has since approved,
+  outdated inline comments and feedback posted or edited after the command are
+  left out. Feedback is capped at 64 KiB. If the PR head moves during
+  collection, post a fresh command.
+- The `/codex-resolve-conflicts` command is retired.
 
-For PR feedback, add review comments normally, then post /codex-review in the
-PR's main Conversation tab. The command must be posted by a repository writer.
-Putting it inside an inline review or review submission no longer starts the
-agent. Trusted preparation fetches submitted review bodies and inline comments
-for the current PR head. Approved, dismissed, pending and older-head reviews are
-excluded, as is feedback superseded by that author's later approval. Subsequent
-comments do not erase earlier unresolved feedback on the current head. Outdated
-inline comments and feedback posted after the command are also excluded.
-The command author and inline authors must have current write, maintain or admin
-permission. Feedback is bounded to ten API pages per collection and 64 KiB of
-prompt data, and is always treated as untrusted input. Oversized or unverifiable
-collections fail closed. If the PR head moves during collection, post a fresh
-command. /codex-resolve-conflicts continues to use conversation comments.
+## Verification
 
-Authentication smoke ends with the model Action. A separate credential-free
-job validates its structured message, and a separate GitHub-hosted publisher job
-tests branch creation. No Git command runs after the model in its workspace.
+- `./bin/codex-local-pipeline.sh checks-only --no-fetch` runs this repository's
+  guardrails, and Jenkins runs it on every PR. The shared workflows run
+  fast mode to verify each Codex change without credentials.
+- Before merging a change to this repository's workflows, run the credential
+  safety gate from a checkout of codex-agent-workflows at the pinned release:
+  `ruby .github/scripts/check-codex-pr-safety.rb --repository-root <this checkout> --trusted-repository-root <this checkout>`.
+  The shared workflows also run it on every Codex patch and before every
+  publication.
+- New releases arrive as pin PRs from the shared repository's
+  `Update caller workflow pins` workflow, dispatched with `callers: appreg`.
+  Review them like any other change.
 
-## Verification and cutover
-
-Run local regression checks from the reviewed checkout:
-
-```bash
-ruby .github/scripts/check-codex-workflow-trust.rb
-python3 .github/scripts/test-codex-workflow-trust.py
-python3 .github/scripts/test-audit-codex-trust-settings.py
-python3 .github/scripts/test-codex-review-feedback.py
-python3 .github/scripts/test-codex-verification-bundle.py
-./bin/codex-local-pipeline.sh checks-only --no-fetch
-```
-
-The local pipeline follows the existing optional Ruby toolchain convention:
-when Ruby is absent it reports that workflow trust validation must run in the
-mandatory hosted **Codex Trust Checks** job. Python settings-audit tests always
-run locally. The hosted job runs the Ruby checker and all regression suites
-unconditionally; missing tooling or a failing check fails that job.
-
-Review, repaired-review and conflict verification transfer a separate archive
-of trusted scripts, schemas, workflows and pipeline tooling alongside the exact
-candidate source. Jira verification captures the same inputs before applying a
-patch. The archive is hashed before candidate execution and checked immediately
-before extraction. Static verification uses the captured inputs, while application
-checks and diff guardrails still use the candidate tree. No candidate files or
-generated patches are replaced by the trusted bundle, including for pre-rollout PRs.
-
-An administrator then runs the read-only metadata audit for each repository:
-
-```bash
-python3 .github/scripts/audit-codex-trust-settings.py \
-  --repository hmcts/appreg-api --runner-group appreg-codex
-python3 .github/scripts/audit-codex-trust-settings.py \
-  --repository hmcts/appreg-frontend --runner-group appreg-codex
-```
-
-The audit fails on missing/inaccessible settings, unrestricted or inherited
-Codex secrets, tag/feature-branch policies, unreviewed default-branch protection
-and over-broad runner-group policies. It never reads secret values or changes
-GitHub settings. Independently verify the live ARC registration, the absence of
-legacy scale sets and other accessible unrestricted runner groups.
-
-In an agreed change window, pause dispatch, drain active runs, migrate the
-control plane, merge through normal review and resume dispatch. Run an
-authentication smoke test and one small Jira-to-PR test in each repository.
-Confirm bot authorship, Jira attribution, required CI and a /codex-review update.
-
-Use a non-sensitive canary credential in an isolated test repository/environment
-for negative tests: feature/tag/PR refs must not obtain it even when they omit
-the guard, select the protected environment or change the workflow filename.
-Verify denied workflows never allocate an appreg-codex runner. Do not use real
+Use a non-sensitive canary credential in an isolated test repository or
+environment for negative tests: feature, tag and PR refs must not obtain it.
+Verify denied workflows never get an `appreg-codex` runner. Do not use real
 credential disclosure, production mutations or an admin merge bypass as tests.
 A failed cutover must pause the agent; do not restore unrestricted secrets or
 runner registration merely to get a run to start.
 
 ## Scope and references
 
-This PR does not migrate the shared Juror runtime, change Jenkins release
-requirements, or fix unrelated Azure redirect/ADO/branch-maintenance workflows.
 Other repository-accessible credentials, Azure federated trust and unrelated
-write-token jobs require their own inventory and protection. Do not close a
-broader repository-wide finding solely because these Codex checks pass.
+write-token jobs need their own inventory and protection. Do not close a
+broader repository-wide finding solely because the Codex checks pass.
 
+- [Shared workflow caller contract](https://github.com/hmcts/codex-agent-workflows/blob/main/docs/caller-contract.md)
+- [Apps Reg rollout runbook](https://github.com/hmcts/codex-agent-workflows/blob/main/docs/appreg-rollout.md)
 - [GitHub environment protection](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
 - [GitHub selected-workflow runner access](https://docs.github.com/en/enterprise-cloud%40latest/actions/how-tos/manage-runners/self-hosted-runners/manage-access)
