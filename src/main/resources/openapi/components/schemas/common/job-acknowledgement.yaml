@@ -19,6 +19,18 @@ properties:
   status:
     $ref: './job-status.yaml'
 
+  createdCount:
+    type: integer
+    format: int64
+    minimum: 0
+    x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)'
+    description: >
+      Number of applications imported by this job, excluding the CSV header and including
+      subsequently soft-deleted applications. Available only when polling a completed
+      BULK_UPLOAD_ENTRIES job; omitted from all other responses. Counted from retained
+      job-to-application mappings, not the current list size.
+    example: 12
+
   mainFeeTotal:
     type: number
     x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)'
