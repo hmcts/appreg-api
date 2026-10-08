@@ -219,7 +219,7 @@ tasks.register('integration', Test) {
   description = 'Runs integration tests'
   group = 'Verification'
   // Separate JVMs keep database and Spring context isolation while running classes concurrently.
-  maxParallelForks = 2
+  maxParallelForks = providers.environmentVariable('INTEGRATION_FORKS').orElse('1').get().toInteger()
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = files(sourceSets.integrationTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath)
 }
