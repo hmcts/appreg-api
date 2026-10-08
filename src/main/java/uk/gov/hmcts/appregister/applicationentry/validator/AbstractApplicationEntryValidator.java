@@ -445,12 +445,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         log.debug("Validated the application code {}", getApplicationCode(validatable));
-        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                code,
-                "application code",
-                getApplicationCode(validatable),
-                todayUk,
-                ApplicationCode::getEndDate);
+        return code.getFirst();
     }
 
     private void validateAccountNumber(T validatable) {

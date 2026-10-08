@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.applicationcode.validator;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import nl.altindag.log.LogCaptor;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -19,7 +18,6 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 
 @ExtendWith(MockitoExtension.class)
@@ -68,33 +66,25 @@ class GetApplicationCodeValidatorTest {
     }
 
     @Test
-    void testValidateDuplicateExists_prefersFirstRecord() {
-        LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
-        logCaptor.clearLogs();
-
+    void testValidateExistingCodeReturnsRecord() {
         ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
         ApplicationCode applicationCode = applicationCodeTestData.someComplete();
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         PayloadForGet payloadForGet =
                 Instancio.of(PayloadForGet.class).withSettings(settings).create();
-        ApplicationCode alternativeApplicationCode = applicationCodeTestData.someComplete();
-        alternativeApplicationCode.setEndDate(payloadForGet.getDate().plusDays(1));
 
         GetApplicationCodeValidator validator =
                 new GetApplicationCodeValidator(applicationCodeRepository);
 
         when(applicationCodeRepository.findByCodeAndDate(
                         payloadForGet.getCode(), payloadForGet.getDate()))
-                .thenReturn(List.of(applicationCode, alternativeApplicationCode));
+                .thenReturn(List.of(applicationCode));
 
         GetApplicationCodeValidationSuccess success =
                 validator.validate(
                         payloadForGet, (payload, validationSuccess) -> validationSuccess);
 
         Assertions.assertSame(applicationCode, success.getApplicationCode());
-        Assertions.assertTrue(
-                logCaptor.getWarnLogs().stream()
-                        .anyMatch(message -> message.contains("Data quality warning")));
     }
 }

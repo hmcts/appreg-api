@@ -74,23 +74,8 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
         var applicationCodes =
                 applicationCodeRepository.findAllByDate(businessDate).stream()
                         .collect(
-                                Collectors.groupingBy(
-                                        code -> normalise(code.getCode()),
-                                        LinkedHashMap::new,
-                                        Collectors.toList()))
-                        .entrySet()
-                        .stream()
-                        .collect(
                                 Collectors.toUnmodifiableMap(
-                                        Map.Entry::getKey,
-                                        entry ->
-                                                ReferenceDataSelectionUtil
-                                                        .selectFirstOrderedActiveRecord(
-                                                                entry.getValue(),
-                                                                "application code",
-                                                                entry.getKey(),
-                                                                businessDate,
-                                                                ApplicationCode::getEndDate)));
+                                        code -> normalise(code.getCode()), code -> code));
         var standardApplicants =
                 standardApplicantRepository.findAllByDate(businessDate).stream()
                         .collect(

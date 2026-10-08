@@ -139,7 +139,7 @@ appreg:
           backup-source: application_codes
           backup-target: application_codes_staging
           ingress-target: application_codes
-          primary-key: ac_id
+          primary-key: application_code
           source-entity-name: ApplicationCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicationCodeID
 #          mock: csds/application_codes.json # ...if specified - this overrides the rest endpoint.  Used for local dev

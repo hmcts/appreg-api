@@ -80,6 +80,55 @@ class ApplicationCodeDataIngressProcessorTest {
                         rowMapper);
     }
 
+    @Test
+    void given_newCodeWithoutSourceId_when_diff_then_reject() {
+        var records =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecordWithoutApplicationCodeId(
+                                        345L, "A3", "Title", "Wording", 1L)));
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> processor.diff(records))
+                .hasMessageContaining("Missing ApplicationCodeID");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_distinctNewCodesWithSameSourceId_when_diff_then_rejectIdCollision() {
+        var records =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecord(3L, "A3", "Title", "Wording", 1L),
+                                createSourceRecord(3L, "A4", "Title", "Wording", 1L)));
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> processor.diff(records))
+                .hasMessageContaining("Conflicting AC_ID 100003");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_sourceIdOverflow_when_diff_then_reject() {
+        var records =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecord(Long.MAX_VALUE, "A3", "Title", "Wording", 1L)));
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> processor.diff(records)).isInstanceOf(ArithmeticException.class);
+        verifyNoInteractions(bulkUpsertService);
+    }
+
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
         return new CsdsIngressTransactionRunner() {
             @Override
@@ -501,10 +550,8 @@ class ApplicationCodeDataIngressProcessorTest {
             assertThat(incomingCsv)
                     .contains(
                             "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation")
-                    .contains("\"1\",\"999\",\"1\",\"A1\",\"Title 1 Duplicate\"")
-                    .contains(
-                            ",\"3\",\"%s\",\"A3\",\"Title 3\""
-                                    .formatted(ApplicationCodeIngressRecord.calculateId(null, 3L)));
+                    .contains("\"1\",\"999\",,\"A1\",\"Title 1 Duplicate\"")
+                    .contains(",\"3\",,\"A3\",\"Title 3\"");
             assertThat(existingCsv)
                     .contains(
                             "pssApplicationCodeId,applicationCodeId,acId,code,title,wording,legislation")
@@ -513,9 +560,7 @@ class ApplicationCodeDataIngressProcessorTest {
             assertThat(diffCsv)
                     .contains("pssApplicationCodeId,applicationCodeId,acId,changeType")
                     .contains("\"1\",\"999\",\"1\",\"update\"")
-                    .contains(
-                            ",\"3\",\"%s\",\"insert\""
-                                    .formatted(ApplicationCodeIngressRecord.calculateId(null, 3L)))
+                    .contains(",\"3\",\"%s\",\"insert\"".formatted(100003L))
                     .contains("\"4\",,\"4\",\"update\"");
         }
     }
@@ -563,18 +608,25 @@ class ApplicationCodeDataIngressProcessorTest {
                             assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
                             assertThat(diffRecord.existing()).isNull();
                             assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
-                            assertThat(diffRecord.intended().id())
-                                    .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
+                            assertThat(diffRecord.intended().id()).isEqualTo(100003L);
                         });
     }
 
     @Test
-    void given_pssacidPresent_when_apply_then_useItAsTheResolvedKey() {
+    void given_existingCodeWithoutSourceId_when_apply_then_preserveStoredId() {
         when(tableReadService.loadAll(
                         properties.getProcessors().getApplicationCodes().getIngressTarget(),
                         rowMapper))
                 .thenReturn(List.of());
 
+        when(tableReadService.loadAll(
+                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
+                        rowMapper))
+                .thenReturn(
+                        List.of(
+                                toIngressRecord(
+                                        createSourceRecord(
+                                                987L, "A3", "Old title", "Wording 3", 1L))));
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
         logCaptor.clearLogs();
 
@@ -586,7 +638,7 @@ class ApplicationCodeDataIngressProcessorTest {
                                                 345L, "A3", "Title 3", "Wording 3", 1L)))));
 
         assertThat(logCaptor.getInfoLogs())
-                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
+                .anyMatch(log -> log.contains("incoming=1, existing=1, inserts=0, updates=1"));
     }
 
     @Test
@@ -706,32 +758,31 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_duplicateResolvedAcId_when_apply_then_throwException() {
+    void given_duplicateCodeAcrossPages_when_apply_then_throwException() {
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffService.class);
         logCaptor.clearLogs();
 
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
-                                createSourceRecordWithoutApplicationCodeId(
-                                        345L, "A3", "Title 3", "Wording 3", 1L),
-                                createSourceRecordWithoutApplicationCodeId(
-                                        345L, "A4", "Title 4", "Wording 4", 2L)));
+                                createSourceRecord(345L, "A3", "Title 3", "Wording 3", 1L)),
+                        createPageResponse(
+                                createSourceRecord(346L, "A3", "Title 4", "Wording 4", 2L)));
         var preProcessed = processor.preProcess(processedData);
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming AC_ID 345");
+                .hasMessageContaining("Duplicate incoming application_code A3");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->
                                 log.contains(
-                                                "Duplicate incoming AC_ID 345 detected for application_codes")
+                                                "Duplicate incoming application_code A3 detected for application_codes")
                                         && log.contains("duplicate record"));
     }
 
     @Test
-    void given_processedData_when_preProcess_then_addAcIdAndPreserveIncomingOrder() {
+    void given_processedData_when_preProcess_then_preserveIncomingOrder() {
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
@@ -743,18 +794,12 @@ class ApplicationCodeDataIngressProcessorTest {
 
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .extracting(sourceRecord -> sourceRecord.get("AC_ID").longValue())
-                .containsExactly(
-                        ApplicationCodeIngressRecord.calculateId(null, 3L),
-                        ApplicationCodeIngressRecord.calculateId(null, 1L),
-                        ApplicationCodeIngressRecord.calculateId(null, 2L));
-        assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(sourceRecord -> sourceRecord.get("ApplicationCodeID").longValue())
                 .containsExactly(3L, 1L, 2L);
     }
 
     @Test
-    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addAcId() {
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_preserveRecord() {
         var sourceRecord = createSourceRecord(3L, "A3", "Title 3", "Wording 3", 1L);
         sourceRecord.remove(
                 List.of(
@@ -775,12 +820,8 @@ class ApplicationCodeDataIngressProcessorTest {
 
         var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
-        assertThat(
-                        extractRecordsFromPage(preProcessed.getFirst())
-                                .getFirst()
-                                .get("AC_ID")
-                                .longValue())
-                .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
+        assertThat(extractRecordsFromPage(preProcessed.getFirst()).getFirst().has("AC_ID"))
+                .isFalse();
     }
 
     @Test
@@ -965,7 +1006,9 @@ class ApplicationCodeDataIngressProcessorTest {
 
     private ApplicationCodeIngressRecord toIngressRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
-                ApplicationCodeIngressRecord.resolveId(node),
+                node.get("ApplicationCodeID").isNull()
+                        ? null
+                        : node.get("ApplicationCodeID").longValue(),
                 node.get("Code").asText(),
                 node.get("ApplicationTitle").asText(),
                 node.get("ApplicationWording").asText(),

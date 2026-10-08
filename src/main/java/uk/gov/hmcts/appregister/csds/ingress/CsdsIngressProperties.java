@@ -174,7 +174,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class ApplicationCodes extends ProcessorProperties {
         public ApplicationCodes() {
-            super("ApplicationCode", "application_codes_staging", "ac_id");
+            super("ApplicationCode", "application_codes_staging", "application_code");
         }
     }
 
