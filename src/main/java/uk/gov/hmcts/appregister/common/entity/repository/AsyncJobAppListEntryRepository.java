@@ -10,6 +10,8 @@ import uk.gov.hmcts.appregister.common.entity.AsyncJobsAppListEntry;
 public interface AsyncJobAppListEntryRepository extends JpaRepository<AsyncJobsAppListEntry, Long> {
     List<AsyncJobsAppListEntry> findByAsyncJobId(UUID asyncJobId);
 
+    long countByAsyncJobId(UUID asyncJobId);
+
     /** Current applicable fees for non-deleted entries, regardless of payment status. */
     @Query(
             value =
