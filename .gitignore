@@ -31,7 +31,7 @@ applicationinsights-agent-*.jar
 
 /.run/
 /.gradle-home/
-/.dockerignore
+### /.dockerignore
 
 /*.hprof
 /appreg-csds-ingress/
