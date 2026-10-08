@@ -1,0 +1,10 @@
+*
+!Dockerfile
+!lib/
+lib/*
+!lib/applicationinsights.json
+!build/
+build/*
+!build/libs/
+build/libs/*
+!build/libs/app-register.jar
