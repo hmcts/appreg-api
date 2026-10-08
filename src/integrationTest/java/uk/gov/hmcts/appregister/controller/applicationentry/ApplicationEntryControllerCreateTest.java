@@ -362,18 +362,12 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenOverlappingActiveApplicationCodesAndFees_whenCreateListEntry_thenPreferNullEndDateRecords()
-                    throws Exception {
+    void givenActiveApplicationCodeAndOverlappingFees_whenCreateListEntry_thenPreferNullEndDateFee()
+            throws Exception {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String applicationCodeValue = "ZZ90001";
         String feeReference = "ZZ1.1";
 
-        saveActiveApplicationCode(
-                applicationCodeValue,
-                feeReference,
-                today.plusDays(30),
-                "Fallback overlapping application code");
         final var preferredCode =
                 saveActiveApplicationCode(
                         applicationCodeValue, feeReference, null, "Preferred application code");

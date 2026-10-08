@@ -302,7 +302,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         return OBJECT_MAPPER
                 .createObjectNode()
                 .put("ApplicationCodeID", insertedId)
-                .put("Code", "AA99999")
+                .put("Code", "AA" + insertedId)
                 .put("ApplicationTitle", "Inserted Title")
                 .put("ApplicationWording", "Inserted Wording")
                 .putNull("Legislation")
