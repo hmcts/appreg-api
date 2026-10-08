@@ -90,6 +90,8 @@ class JobServiceImplTest {
         Assertions.assertEquals(jobId, actual.getId());
         Assertions.assertEquals(JobStatus.COMPLETED, actual.getStatus());
         Assertions.assertEquals(JobType.FEES_REPORT, actual.getType());
+        Assertions.assertNull(actual.getCreatedCount());
+        verifyNoInteractions(jobEntryRepository);
 
         // The auditable surrogate should contain the requested job UUID so the data-audit layer
         // can persist a GET row for asynch_jobs.id.
@@ -120,7 +122,7 @@ class JobServiceImplTest {
 
     @ParameterizedTest
     @EnumSource(JobStatus.class)
-    void givenBulkUpload_whenPolling_thenTotalsOnlyForCompletedJob(JobStatus status) {
+    void givenBulkUpload_whenPolling_thenCountAndTotalsOnlyForCompletedJob(JobStatus status) {
         var jobId = UUID.randomUUID();
         var response =
                 JobStatusResponse.builder()
@@ -135,6 +137,7 @@ class JobServiceImplTest {
             when(totals.getMainFeeTotal()).thenReturn(new BigDecimal("120.50"));
             when(totals.getOffsiteFeeTotal()).thenReturn(new BigDecimal("30.25"));
             when(jobEntryRepository.getFeeTotals(jobId)).thenReturn(totals);
+            when(jobEntryRepository.countByAsyncJobId(jobId)).thenReturn(12L);
         }
         var service =
                 new JobServiceImpl(
@@ -144,10 +147,13 @@ class JobServiceImplTest {
                         jobEntryRepository);
         var actual = service.getJobAckById(jobId);
         if (status == JobStatus.COMPLETED) {
+            Assertions.assertEquals(12L, actual.getCreatedCount());
+            verify(jobEntryRepository).countByAsyncJobId(jobId);
             Assertions.assertEquals(new BigDecimal("120.50"), actual.getMainFeeTotal());
             Assertions.assertEquals(new BigDecimal("30.25"), actual.getOffsiteFeeTotal());
             Assertions.assertEquals(new BigDecimal("150.75"), actual.getTotalFeeValue());
         } else {
+            Assertions.assertNull(actual.getCreatedCount());
             Assertions.assertNull(actual.getMainFeeTotal());
             Assertions.assertNull(actual.getOffsiteFeeTotal());
             Assertions.assertNull(actual.getTotalFeeValue());

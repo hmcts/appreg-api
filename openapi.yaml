@@ -6817,6 +6817,14 @@ components:
           $ref: "#/components/schemas/job-type"
         status:
           $ref: "#/components/schemas/job-status"
+        createdCount:
+          description: |
+            Number of applications imported by this job, excluding the CSV header and including subsequently soft-deleted applications. Available only when polling a completed BULK_UPLOAD_ENTRIES job; omitted from all other responses. Counted from retained job-to-application mappings, not the current list size.
+          example: 12
+          format: int64
+          minimum: 0
+          type: integer
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)'
         mainFeeTotal:
           description: |
             Current main fees in GBP for non-deleted applications created by this upload, regardless of payment or remission status. Available only when polling a completed BULK_UPLOAD_ENTRIES job; zero when no applicable fees remain. Calculated on read, so later changes to applications or associated fees can change this value. Omitted from all other responses.
