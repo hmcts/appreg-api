@@ -4771,6 +4771,62 @@ paths:
       summary: Generate a Private Prosecutors Index report.
       tags:
       - reports
+  /reports/jobs:
+    get:
+      description: |
+        Returns completed report jobs with non-empty stored CSV output, newest first by completion time, then job sequence for ties. Only the authenticated user's reports are returned; bulk-upload jobs are excluded. The server-configured maximum defaults to 7 (appreg.report.recent-limit, range 1–100). An empty list is returned when no reports are available. Listing or downloading reports does not create a generation job. This endpoint does not change retention or return the original report criteria.
+      operationId: getRecentReports
+      responses:
+        "200":
+          content:
+            application/vnd.hmcts.appreg.v1+json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/recent-report"
+                type: array
+          description: "Recent downloadable reports, possibly empty."
+        "401":
+          content:
+            application/problem+json:
+              examples:
+                unauthenticated:
+                  value:
+                    type: https://errors.hmcts.net/common/unauthorized
+                    title: Unauthorized
+                    status: 401
+                    detail: Missing or invalid credentials
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authentication required or token invalid.
+        "403":
+          content:
+            application/problem+json:
+              examples:
+                forbidden:
+                  value:
+                    type: https://errors.hmcts.net/common/forbidden
+                    title: Forbidden
+                    status: 403
+                    detail: You do not have permission to access this resource
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Authenticated but not permitted to perform this action.
+        "500":
+          content:
+            application/problem+json:
+              examples:
+                generic:
+                  value:
+                    type: https://errors.hmcts.net/common/internal-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred
+              schema:
+                $ref: "#/components/schemas/problem"
+          description: Unexpected server error.
+      summary: List the authenticated user's recent downloadable reports.
+      tags:
+      - reports
   /reports/jobs/{jobId}/download:
     get:
       description: |
@@ -7293,6 +7349,27 @@ components:
       required:
       - dateFrom
       - dateTo
+      type: object
+    recent-report:
+      description: Metadata identifying a completed report available to download again.
+      properties:
+        id:
+          description: Job identifier used by the existing report download endpoint.
+          example: 9f7b2a35-57ac-4a1c-9c41-83b6c8157af4
+          format: uuid
+          type: string
+        type:
+          $ref: "#/components/schemas/job-type"
+        completedAt:
+          description: Time the job was last updated to completed. Downloads do not
+            change this time.
+          example: 2026-10-07T12:30:00Z
+          format: date-time
+          type: string
+      required:
+      - completedAt
+      - id
+      - type
       type: object
     result-code-page:
       allOf:

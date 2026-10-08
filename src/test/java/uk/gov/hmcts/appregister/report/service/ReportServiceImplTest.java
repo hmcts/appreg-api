@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,10 +23,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
@@ -39,6 +42,8 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.entity.AsyncJob;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
@@ -71,6 +76,7 @@ import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
     @Mock private AsyncJobService asyncJobService;
+    @Mock private AsyncJobRepository asyncJobRepository;
     @Mock private JobService jobService;
     @Mock private UserProvider userProvider;
     @Mock private JobMapper jobMapper;
@@ -91,7 +97,74 @@ class ReportServiceImplTest {
                 reportLocationValidator,
                 "appreg",
                 500,
-                1000);
+                1000,
+                asyncJobRepository,
+                7);
+    }
+
+    @Test
+    void givenRecentReports_whenListing_thenUsesAuthenticatedUserAndConfiguredLimit() {
+        var job =
+                AsyncJob.builder()
+                        .uuid(UUID.randomUUID())
+                        .jobType(JobType.FEES_REPORT.getValue())
+                        .updateTime(OffsetDateTime.parse("2026-10-07T12:30:00Z"))
+                        .build();
+        when(userProvider.getUserId()).thenReturn("current-user");
+        when(asyncJobRepository.findRecentReports("current-user", PageRequest.of(0, 7)))
+                .thenReturn(List.of(job));
+        var result = service().getRecentReports();
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(job.getUuid(), result.getFirst().getId());
+        Assertions.assertEquals(JobType.FEES_REPORT, result.getFirst().getType());
+        Assertions.assertEquals(job.getUpdateTime(), result.getFirst().getCompletedAt());
+        Mockito.verifyNoInteractions(asyncJobService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, 101})
+    void givenInvalidRecentLimit_whenCreatingService_thenThrows(int limit) {
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new ReportServiceImpl(
+                                asyncJobService,
+                                jobService,
+                                userProvider,
+                                jobMapper,
+                                jdbcTemplate,
+                                auditService,
+                                reportJobAuditService,
+                                reportLocationValidator,
+                                "appreg",
+                                500,
+                                1000,
+                                asyncJobRepository,
+                                limit));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 100})
+    void givenValidRecentLimitAndNoReports_whenListing_thenReturnsEmpty(int limit) {
+        when(userProvider.getUserId()).thenReturn("current-user");
+        when(asyncJobRepository.findRecentReports("current-user", PageRequest.of(0, limit)))
+                .thenReturn(List.of());
+        var reportService =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        jobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        auditService,
+                        reportJobAuditService,
+                        reportLocationValidator,
+                        "appreg",
+                        500,
+                        1000,
+                        asyncJobRepository,
+                        limit);
+        Assertions.assertTrue(reportService.getRecentReports().isEmpty());
     }
 
     @Test
@@ -111,7 +184,9 @@ class ReportServiceImplTest {
                                         reportLocationValidator,
                                         "appreg",
                                         500,
-                                        0));
+                                        0,
+                                        asyncJobRepository,
+                                        7));
 
         Assertions.assertEquals(
                 "appreg.report.max-rows must be greater than zero", exception.getMessage());

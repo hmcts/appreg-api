@@ -104,6 +104,7 @@ paths:
   /reports/workload/jobs:                                           { $ref: './paths/reports/workload.yaml' }
   /reports/duration/jobs:                                           { $ref: './paths/reports/duration.yaml' }
   /reports/private-prosecutors-index/jobs:                          { $ref: './paths/reports/private-prosecutors-index.yaml' }
+  /reports/jobs:                                                   { $ref: './paths/reports/report-jobs.yaml' }
   /reports/jobs/{jobId}/download:                                   { $ref: './paths/reports/report-jobs-download-by-id.yaml' }
   # RESULT CODES
   /result-codes:                                                    { $ref: './paths/result-codes/result-codes.yaml' }
