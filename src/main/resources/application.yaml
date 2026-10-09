@@ -149,7 +149,7 @@ appreg:
           backup-source: resolution_codes
           backup-target: resolution_codes_staging
           ingress-target: resolution_codes
-          primary-keys: [rc_id]
+          primary-keys: [resolution_code]
           source-entity-name: ResolutionCode
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json # ...if specified - this overrides the rest endpoint.  Used for local dev

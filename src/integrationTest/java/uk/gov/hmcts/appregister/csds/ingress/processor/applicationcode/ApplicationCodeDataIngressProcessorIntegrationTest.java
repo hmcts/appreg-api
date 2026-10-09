@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
             "appreg.csds.ingress.processors.application-codes.backup-source=",
             "appreg.csds.ingress.processors.application-codes.backup-target=",
             "appreg.csds.ingress.processors.application-codes.ingress-target=application_codes",
-            "appreg.csds.ingress.processors.application-codes.primary-key=ac_id",
+            "appreg.csds.ingress.processors.application-codes.primary-keys[0]=application_code",
             "appreg.csds.ingress.base-url=${wiremock.server.baseUrl}",
             "appreg.csds.ingress.access-keys[0]=primary-test-key",
             "appreg.csds.ingress.access-keys[1]=secondary-test-key"

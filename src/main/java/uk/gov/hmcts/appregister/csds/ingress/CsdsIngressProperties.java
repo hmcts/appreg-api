@@ -186,7 +186,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class ResolutionCodes extends ProcessorProperties {
         public ResolutionCodes() {
-            super("ResolutionCode", "resolution_codes_staging", List.of("rc_id"));
+            super("ResolutionCode", "resolution_codes_staging", List.of("resolution_code"));
         }
     }
 

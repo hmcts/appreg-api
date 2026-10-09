@@ -18,7 +18,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
@@ -83,9 +82,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                                         .formatted(code, date));
                     }
 
-                    ResolutionCode selected =
-                            ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                                    rows, "result code", code, date, ResolutionCode::getEndDate);
+                    var selected = rows.getFirst();
 
                     log.debug(
                             "Finish: Find active Result Code for code: {} on date: {}", code, date);

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -69,7 +71,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
 
             assertThat(page.getContent())
                     .extracting(ResolutionCode::getResultCode)
-                    .containsExactly("APPC", "APPABANDON");
+                    .containsExactlyInAnyOrder("APPC", "APPABANDON");
         }
 
         @Test
@@ -125,7 +127,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
         void returnsSeededAppc_prefersNullEndDate() {
-            List<ResolutionCode> result = repository.findPrioritisingNullEndDate("appc", today());
+            List<ResolutionCode> result =
+                    repository.findActiveResolutionCodesByCodeAndDate("appc", today());
 
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
@@ -134,9 +137,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName(
-                "when multiple rows are active for the same code, prefers endDate = null over a future endDate")
-        void prefersNullEndDate_whenMultipleActive() {
+        @DisplayName("rejects another record with the same business code")
+        void rejectsDuplicateBusinessCode() {
             LocalDate t = today();
 
             ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
@@ -149,23 +151,15 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             additionalActiveWithEndDate.setChangedBy(1L);
             additionalActiveWithEndDate.setChangedDate(OffsetDateTime.now(clock));
 
-            ResolutionCode savedWithEndDate = repository.saveAndFlush(additionalActiveWithEndDate);
-
-            List<ResolutionCode> result = repository.findPrioritisingNullEndDate("APPC", today());
-
-            assertThat(result).hasSize(2);
-
-            assertThat(result.getFirst().getEndDate()).isNull();
-            assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
-            assertThat(result.get(1).getId()).isEqualTo(savedWithEndDate.getId());
-            assertThat(result.get(1).getEndDate()).isEqualTo(t.plusDays(10));
+            assertThatThrownBy(() -> repository.saveAndFlush(additionalActiveWithEndDate))
+                    .isInstanceOf(DataIntegrityViolationException.class);
         }
 
         @Test
         @DisplayName("returns empty when no active row exists for the given code")
         void returnsEmpty_whenNotFound() {
             List<ResolutionCode> result =
-                    repository.findPrioritisingNullEndDate("DOES_NOT_EXIST", today());
+                    repository.findActiveResolutionCodesByCodeAndDate("DOES_NOT_EXIST", today());
 
             assertThat(result).isEmpty();
         }

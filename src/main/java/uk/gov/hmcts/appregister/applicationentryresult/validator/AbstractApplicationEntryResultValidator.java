@@ -17,7 +17,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 @Slf4j
@@ -54,15 +53,14 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
         if (resultCode != null) {
             LocalDate todayUk = businessDateProvider.currentUkDate();
             List<ResolutionCode> list =
-                    resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
+                    resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
+                            resultCode, todayUk);
             if (list.isEmpty()) {
                 throw new AppRegistryException(
                         ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
                         "No valid resolution code could be found %s".formatted(resultCode));
             }
-            code =
-                    ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                            list, "result code", resultCode, todayUk, ResolutionCode::getEndDate);
+            code = list.getFirst();
             wordingTemplateCollection = WordingTemplateSentence.with(code.getWording());
             log.debug("Validated the result code {}", resultCode);
         } else {
