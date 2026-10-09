@@ -26,6 +26,7 @@ public class CsdsIngressProperties {
 
     private Duration readTimeout = Duration.ofSeconds(30L);
 
+    // Retained for configuration compatibility; retrieval now uses the reported dataset count.
     private int pageSize = 100;
 
     private StartupRunner startupRunner = new StartupRunner();

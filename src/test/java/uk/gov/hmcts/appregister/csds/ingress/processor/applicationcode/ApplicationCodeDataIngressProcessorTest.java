@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,8 +14,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
@@ -22,6 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -77,7 +83,8 @@ class ApplicationCodeDataIngressProcessorTest {
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
-                        rowMapper);
+                        rowMapper,
+                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
     }
 
     @Test
@@ -139,20 +146,80 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_countExceedsPageSize_when_retrieve_then_pagesThroughQueryEndpoint() {
+    void given_fullResponse_when_retrieve_then_usesOnlyCountAndFetch() throws Exception {
+        var page = OBJECT_MAPPER.readTree("{\"records\":[{},{},{}]}");
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 3));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0"))
+                .thenReturn(page);
+
+        assertThat(processor.retrieve(ingressClient)).containsExactly(page);
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/ApplicationCode/GD");
+        verify(ingressClient)
+                .retrieveJson("/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0");
+        verifyNoMoreInteractions(ingressClient);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"records\":[]}", "{\"records\":[{},{}]}"})
+    void given_countMismatch_when_retrieve_then_rejectBeforeWrites(String response)
+            throws Exception {
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 1));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=1&%24offset=0"))
+                .thenReturn(OBJECT_MAPPER.readTree(response));
+
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("CSDS record count mismatch");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_emptyFallbackPage_when_retrieve_then_rejectPartialDataset() throws Exception {
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 3));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0"))
+                .thenReturn(OBJECT_MAPPER.readTree("{\"records\":[{}]}"));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=1"))
+                .thenReturn(OBJECT_MAPPER.readTree("{\"records\":[]}"));
+
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .hasMessageContaining("at offset 1");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "1.5", "2147483648", "null", "\"3\""})
+    void given_invalidCount_when_retrieve_then_reject(String count) throws Exception {
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.readTree("{\"count\":" + count + "}"));
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .isInstanceOf(AppRegistryException.class);
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/ApplicationCode/GD");
+        verifyNoMoreInteractions(ingressClient);
+    }
+
+    @Test
+    void given_serverCapsResponse_when_retrieve_then_advancesByReceivedRecords() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
+        secondPage.withArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=2"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=1"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -169,18 +236,19 @@ class ApplicationCodeDataIngressProcessorTest {
 
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
+        firstPage.withArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
         var parameterisedCountPath =
                 "/count/APPREGISTER/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
         var parameterisedQueryPath =
                 "/query/APPREGISTER/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -222,12 +290,12 @@ class ApplicationCodeDataIngressProcessorTest {
         logCaptor.clearLogs();
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 1);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -255,12 +323,12 @@ class ApplicationCodeDataIngressProcessorTest {
         logCaptor.clearLogs();
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 1);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -428,7 +496,8 @@ class ApplicationCodeDataIngressProcessorTest {
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
-                        rowMapper);
+                        rowMapper,
+                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
 
         var existingUpdated =
                 createApplicationCode(
@@ -782,6 +851,78 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void given_futureDuplicatesAcrossPages_when_preProcess_then_logAndDropBeforeDiff() {
+        var past = createSourceRecord(1L, "A1", "Title", "Wording", 1L);
+        past.put("StartDate", "2026-07-01");
+        var today = past.deepCopy().put("ApplicationCodeID", 2L).put("Code", "A2");
+        today.put("StartDate", "2026-07-02");
+        var future = past.deepCopy().put("StartDate", "2026-07-03");
+        try (var logs = LogCaptor.forClass(ApplicationCodeDataIngressProcessor.class)) {
+            var processed =
+                    processor.preProcess(
+                            List.of(
+                                    createPageResponse(future, past),
+                                    createPageResponse(today, future)));
+            assertThat(extractRecordsFromPage(processed.getFirst())).containsExactly(past, today);
+            assertThat(logs.getWarnLogs())
+                    .filteredOn(
+                            log ->
+                                    log.contains(
+                                            "Dropping future-dated application code A1 with StartDate 2026-07-03"))
+                    .hasSize(2);
+            processor.apply(processed);
+        }
+    }
+
+    @Test
+    void given_onlyFutureRecords_when_preProcess_then_returnEmptyRecords() {
+        var future = createSourceRecord(1L, "A1", "Title", "Wording", 1L);
+        future.put("StartDate", "2026-07-03");
+        assertThat(
+                        extractRecordsFromPage(
+                                processor
+                                        .preProcess(List.of(createPageResponse(future)))
+                                        .getFirst()))
+                .isEmpty();
+        assertThat(processor.preProcess(List.of())).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "\"\"", "\"invalid\"", "\"2026-02-30\"", "123"})
+    void given_invalidStartDateOnLaterPage_when_preProcess_then_failBatch(String date)
+            throws Exception {
+        var valid = createSourceRecord(1L, "A1", "Title", "Wording", 1L);
+        var invalid = valid.deepCopy();
+        invalid.set("StartDate", OBJECT_MAPPER.readTree(date));
+        assertThatThrownBy(
+                        () ->
+                                processor.preProcess(
+                                        List.of(
+                                                createPageResponse(valid),
+                                                createPageResponse(invalid))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("StartDate");
+        invalid.remove("StartDate");
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(invalid))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("StartDate");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"\"\"", "\"invalid\"", "\"2026-02-30\"", "123"})
+    void given_invalidEndDateOnFutureRecord_when_preProcess_then_failBatch(String date)
+            throws Exception {
+        var invalid = createSourceRecord(1L, "A1", "Title", "Wording", 1L);
+        invalid.put("StartDate", "2026-07-03");
+        invalid.set("EndDate", OBJECT_MAPPER.readTree(date));
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(invalid))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("EndDate");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
     void given_processedData_when_preProcess_then_preserveIncomingOrder() {
         List<JsonNode> processedData =
                 List.of(
@@ -850,7 +991,8 @@ class ApplicationCodeDataIngressProcessorTest {
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
-                        rowMapper);
+                        rowMapper,
+                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
         when(tableReadService.loadAll(
                         properties.getProcessors().getApplicationCodes().getIngressTarget(),
                         rowMapper))
