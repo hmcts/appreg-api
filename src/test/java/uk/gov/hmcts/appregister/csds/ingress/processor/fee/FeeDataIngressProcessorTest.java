@@ -97,18 +97,19 @@ class FeeDataIngressProcessorTest {
 
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
+        firstPage.withArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
         var parameterisedCountPath =
                 "/count/APPREGISTER/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
         var parameterisedQueryPath =
                 "/query/APPREGISTER/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -448,7 +449,7 @@ class FeeDataIngressProcessorTest {
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("fee_staging"),
-                        eq("fee_id"),
+                        eq(List.of("fee_id")),
                         argThat(
                                 rows ->
                                         rows.size() == 1

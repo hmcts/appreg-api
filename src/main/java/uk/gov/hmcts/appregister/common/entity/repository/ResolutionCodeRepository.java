@@ -69,17 +69,6 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             Pageable pageable);
 
     /**
-     * Finds active {@link ResolutionCode} records for the given result code (case-insensitive),
-     * prioritising open-ended rows where {@code endDate IS NULL}.
-     *
-     * @param resultCode the result code to match (case-insensitive)
-     * @return a list of active resolution codes ordered with open-ended rows first
-     */
-    default List<ResolutionCode> findPrioritisingNullEndDate(String resultCode, LocalDate date) {
-        return findActiveByResultCodeIgnoreCaseOrdered(resultCode, date);
-    }
-
-    /**
      * Finds active {@link ResolutionCode} records for the given result code (case-insensitive).
      *
      * <p>An active resolution code is defined as:
@@ -106,19 +95,4 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             @Param("resultCode") String resultCode,
             @Param("date") LocalDate date,
             Pageable pageable);
-
-    @Query(
-            """
-        select rc
-        from ResolutionCode rc
-        where lower(rc.resultCode) = lower(:resultCode)
-        and rc.startDate <= :date
-        and (rc.endDate is null or rc.endDate >= :date)
-        order by case when rc.endDate is null then 0 else 1 end,
-                 rc.endDate desc,
-                 rc.startDate desc,
-                 rc.id desc
-        """)
-    List<ResolutionCode> findActiveByResultCodeIgnoreCaseOrdered(
-            @Param("resultCode") String resultCode, @Param("date") LocalDate date);
 }

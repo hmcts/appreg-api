@@ -142,7 +142,7 @@ public class FeeDataIngressProcessor
     protected void applyDiff(FeeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
-                targetTable(), targetKeyField(), rows, rowMapper, FeeIngressRecord::id);
+                targetTable(), targetKeyFields(), rows, rowMapper, FeeIngressRecord::id);
     }
 
     @Override

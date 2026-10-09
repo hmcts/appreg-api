@@ -82,27 +82,42 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         }
 
         val responses = new ArrayList<JsonNode>();
-        for (var offset = 0; offset < totalCount; offset += properties.getPageSize()) {
-            responses.add(
+        // CSDS may cap a response. Advance by records received, not the requested limit.
+        for (var offset = 0; offset < totalCount; ) {
+            val response =
                     reportReceivedJson(
                             ingressClient.retrieveJson(
                                     appendPagingParameters(
                                             appendQueryParameters(queryPath(), queryParameters()),
                                             "%24limit="
-                                                    + properties.getPageSize()
+                                                    + (totalCount - offset)
                                                     + "&%24offset="
                                                     + offset)),
-                            "offset_" + offset));
+                            "offset_" + offset);
+            val received = extractRecords(response).size();
+            if (received == 0 || received > totalCount - offset) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "CSDS record count mismatch for "
+                                + datasetName()
+                                + ": expected "
+                                + totalCount
+                                + ", received "
+                                + received
+                                + " at offset "
+                                + offset);
+            }
+            responses.add(response);
+            offset += received;
         }
         val fetchedRecordCount =
                 responses.stream().mapToInt(response -> extractRecords(response).size()).sum();
 
         log.info(
-                "Retrieved {} CSDS pages for {} using page size {} and reported count {} "
+                "Retrieved {} CSDS pages for {} with reported count {} "
                         + "with actual fetched records {}",
                 responses.size(),
                 datasetName(),
-                properties.getPageSize(),
                 totalCount,
                 fetchedRecordCount);
 
@@ -138,7 +153,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
 
     @Override
     public final String targetKeyField() {
-        return processorProperties.getPrimaryKey();
+        return String.join(", ", targetKeyFields());
+    }
+
+    protected final List<String> targetKeyFields() {
+        return processorProperties.getPrimaryKeys();
     }
 
     @Override
@@ -185,7 +204,10 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
 
     private int extractCount(JsonNode response) {
         val countNode = response.get("count");
-        if (countNode == null || !countNode.canConvertToInt()) {
+        if (countNode == null
+                || !countNode.isIntegralNumber()
+                || !countNode.canConvertToInt()
+                || countNode.intValue() < 0) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR,
                     "CSDS count response did not contain a numeric count for " + datasetName());

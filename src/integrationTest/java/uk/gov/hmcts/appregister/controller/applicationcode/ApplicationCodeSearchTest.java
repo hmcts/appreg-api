@@ -102,7 +102,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 22, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 21, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size(), "");
 
         TemplateAssertion.assertTemplate(
@@ -163,7 +163,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                         getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 22, TOTAL_APP_CODES_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 21, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
@@ -222,7 +222,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 16, 160);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 16, 159);
 
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
@@ -332,9 +332,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
     }
 
     @Test
-    void
-            givenOverlappingActiveApplicationCodes_whenGetApplicationCodes_thenCallerSortControlsPageOrder()
-                    throws MalformedURLException, JOSEException {
+    void givenDeduplicatedApplicationCode_whenGetApplicationCodes_thenReturnSingleRetainedRecord()
+            throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -352,9 +351,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        assertEquals(1, page.getContent().size());
         assertEquals(DUPLICATE_APPCODE_CODE, page.getContent().getFirst().getApplicationCode());
         assertEquals(COPY_DOCUMENTS_ELECTRONIC, page.getContent().getFirst().getTitle());
-        assertEquals("Condemnation of Unfit Food", page.getContent().get(1).getTitle());
     }
 
     @Test
@@ -668,7 +667,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
 
         // make the assertions
-        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 106, 211);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 105, 210);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -781,7 +780,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         // assert the response
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 106, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 105, TOTAL_APP_CODES_COUNT);
 
         // assert records are sorted based on the title of the auth codes
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
@@ -1249,9 +1248,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
     }
 
     @Test
-    void
-            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturnPreferredActiveRecord()
-                    throws URISyntaxException, MalformedURLException, JOSEException {
+    void givenValidRequest_whenGetApplicationCodeAfterDeduplication_thenReturnRetainedRecord()
+            throws URISyntaxException, MalformedURLException, JOSEException {
 
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -1272,8 +1270,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
         assertEquals("MS99006", response.getApplicationCode());
-        assertEquals("Condemnation of Unfit Food", response.getTitle());
-        assertFalse(response.getEndDate().isPresent());
+        assertEquals(COPY_DOCUMENTS_ELECTRONIC, response.getTitle());
+        assertTrue(response.getEndDate().isPresent());
     }
 
     @Test

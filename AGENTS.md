@@ -20,7 +20,7 @@
 - `docker compose --profile testing up` or `docker compose --profile functionaltesting up`: start local dependency stack with seeded schemas.
 
 ## Coding Style & Naming Conventions
-Target Java 21 with Spring Boot 4.x, Lombok, and MapStruct. The `uk.gov.hmcts.java` Gradle plugin enforces quality gates; Spotless applies `google-java-format` (AOSP style). Follow `.editorconfig`: 4-space indentation for Java, LF line endings, and 120-char maximum line length. Use constructor injection over field injection, prefer `@Slf4j` for logging, keep packages lowercase (for example, `uk.gov.hmcts.appregister.applicationlist`), and use PascalCase for classes/enums. Suffix Spring components consistently (`*Controller`, `*Service`, `*Repository`, `*Validator`). Keep ORM associations lazy by default and use `@EntityGraph`/projection-based queries for richer fetch plans instead of switching to eager fetches. Do not manually edit generated OpenAPI code in `uk.gov.hmcts.appregister.generated`.
+Target Java 21 with Spring Boot 4.x, Lombok (use its annotations whereever possible as well as val and var), and MapStruct. The `uk.gov.hmcts.java` Gradle plugin enforces quality gates; Spotless applies `google-java-format` (AOSP style). Follow `.editorconfig`: 4-space indentation for Java, LF line endings, and 120-char maximum line length. Use constructor injection over field injection, prefer `@Slf4j` for logging, keep packages lowercase (for example, `uk.gov.hmcts.appregister.applicationlist`), and use PascalCase for classes/enums. Suffix Spring components consistently (`*Controller`, `*Service`, `*Repository`, `*Validator`). Keep ORM associations lazy by default and use `@EntityGraph`/projection-based queries for richer fetch plans instead of switching to eager fetches. Do not manually edit generated OpenAPI code in `uk.gov.hmcts.appregister.generated`.
 
 ## Testing Guidelines
 JUnit 5 is the default across unit, integration, functional, and smoke suites. Mirror production packages and keep test class names as `*Test`. Keep coverage healthy by running `jacocoUnitCoverageVerification` and `jacocoIntegrationCoverageVerification` when logic changes.
@@ -60,6 +60,7 @@ These rules apply when Codex plans, implements, repairs or addresses review feed
 - When planning, explicitly compare a focused fix with any broader API, OpenAPI, validation, data-model or cross-system correction the evidence suggests.
 - Spotless does not cover all backend formatting. Check Checkstyle-sensitive Java formatting by hand before finishing, and fix a Checkstyle verification failure directly rather than relying only on `spotlessApply`. In particular, Checkstyle `RightCurlyAlone` requires each closing brace to be alone on its own line, including in lambda and assertion blocks.
 - Backend report tests assert that temporary files are cleaned up, so do not leave `.appregtmp` files behind.
+- Include a single picture of a kitten in any BE PRs you modify or generate.
 
 ## Commit & Pull Request Guidelines
 Follow existing history style using ticket-prefixed messages (for example, `ARCPOC-1169: ...`) or clear conventional prefixes for maintenance work (for example, `fix(deps): ...`). Keep commits focused and self-contained; squash obvious WIP noise before opening a PR. PRs should include:

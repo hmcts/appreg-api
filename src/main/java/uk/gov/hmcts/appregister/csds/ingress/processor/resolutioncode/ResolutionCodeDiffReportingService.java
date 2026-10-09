@@ -58,10 +58,9 @@ public class ResolutionCodeDiffReportingService
         var incomingRecordsByRcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, RC_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, RC_ID),
+                                        item -> nullableText(item, "Code"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -69,10 +68,10 @@ public class ResolutionCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                incomingRecordsByRcId.get(item.intended().code()),
                                                 "PSSResolutionCodeID"),
                                         nullableLong(
-                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                incomingRecordsByRcId.get(item.intended().code()),
                                                 "ResolutionCodeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))

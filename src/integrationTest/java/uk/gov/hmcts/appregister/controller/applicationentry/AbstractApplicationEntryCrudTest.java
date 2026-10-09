@@ -126,7 +126,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
     protected static final OffsetDateTime TEST_OFFSET_DATE_TIME =
             OffsetDateTime.of(TEST_DATE, TEST_TIME, ZoneOffset.UTC);
-    protected static final String VALID_COURT_CODE = "CCC003";
+    protected static final String VALID_COURT_CODE = "C62CR00";
 
     @BeforeEach
     void setupUser() {
@@ -557,7 +557,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         ApplicationListCreateDto applicationListCreateDto =
                 Instancio.create(ApplicationListCreateDto.class);
         applicationListCreateDto.setStatus(ApplicationListStatus.OPEN);
-        applicationListCreateDto.setCourtLocationCode("CCC003");
+        applicationListCreateDto.setCourtLocationCode(VALID_COURT_CODE);
         applicationListCreateDto.setOtherLocationDescription(null);
         applicationListCreateDto.setDurationHours(1);
         applicationListCreateDto.setDurationMinutes(1);

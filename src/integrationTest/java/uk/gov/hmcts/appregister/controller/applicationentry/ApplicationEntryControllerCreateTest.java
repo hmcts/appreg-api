@@ -362,18 +362,12 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenOverlappingActiveApplicationCodesAndFees_whenCreateListEntry_thenPreferNullEndDateRecords()
-                    throws Exception {
+    void givenActiveApplicationCodeAndOverlappingFees_whenCreateListEntry_thenPreferNullEndDateFee()
+            throws Exception {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String applicationCodeValue = "ZZ90001";
         String feeReference = "ZZ1.1";
 
-        saveActiveApplicationCode(
-                applicationCodeValue,
-                feeReference,
-                today.plusDays(30),
-                "Fallback overlapping application code");
         final var preferredCode =
                 saveActiveApplicationCode(
                         applicationCodeValue, feeReference, null, "Preferred application code");
@@ -2160,7 +2154,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         .time(LocalTime.of(10, 0))
                         .description("SEQ TEST LIST " + UUID.randomUUID())
                         .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode("CCC003")
+                        .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(1)
                         .durationMinutes(0);
 

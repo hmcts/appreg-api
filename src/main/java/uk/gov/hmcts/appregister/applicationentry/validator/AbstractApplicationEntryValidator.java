@@ -27,7 +27,6 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -239,12 +238,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
             log.debug("Validated standard applicant {}", standardApplicantCode);
 
-            return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                    saCode,
-                    "standard applicant",
-                    standardApplicantCode,
-                    todayUk,
-                    StandardApplicant::getApplicantEndDate);
+            return saCode.getFirst();
         }
 
         return null;
@@ -445,12 +439,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         log.debug("Validated the application code {}", getApplicationCode(validatable));
-        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                code,
-                "application code",
-                getApplicationCode(validatable),
-                todayUk,
-                ApplicationCode::getEndDate);
+        return code.getFirst();
     }
 
     private void validateAccountNumber(T validatable) {

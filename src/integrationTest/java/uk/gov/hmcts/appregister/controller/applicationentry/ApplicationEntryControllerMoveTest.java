@@ -653,7 +653,7 @@ class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCru
 
     private ApplicationList createEmptyOpenTargetList() {
         var targetList = new AppListTestData().someMinimal().status(Status.OPEN).build();
-        targetList.setCourtCode("CCC003");
+        targetList.setCourtCode("C62CR00");
         targetList.setCourtName("Cardiff Crown Court");
         return persistance.save(targetList);
     }

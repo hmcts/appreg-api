@@ -55,13 +55,12 @@ public class ApplicationCodeDiffReportingService
                                     ApplicationCodeIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByAcId =
+        var incomingRecordsByCode =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, AC_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, AC_ID),
+                                        item -> nullableText(item, "Code"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -69,10 +68,10 @@ public class ApplicationCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByAcId.get(item.intended().id()),
+                                                incomingRecordsByCode.get(item.intended().code()),
                                                 "PSSApplicationCodeID"),
                                         nullableLong(
-                                                incomingRecordsByAcId.get(item.intended().id()),
+                                                incomingRecordsByCode.get(item.intended().code()),
                                                 "ApplicationCodeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
