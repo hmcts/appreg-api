@@ -36,6 +36,8 @@ public class JobServiceImpl implements JobService {
                     var acknowledgement = jobMapper.toDto(jobStatusResponse);
                     if (jobStatusResponse.getStatus() == JobStatus.COMPLETED
                             && jobStatusResponse.getType() == JobType.BULK_UPLOAD_ENTRIES) {
+                        acknowledgement.setCreatedCount(
+                                jobEntryRepository.countByAsyncJobId(jobId));
                         var totals = jobEntryRepository.getFeeTotals(jobId);
                         acknowledgement.setMainFeeTotal(totals.getMainFeeTotal());
                         acknowledgement.setOffsiteFeeTotal(totals.getOffsiteFeeTotal());
