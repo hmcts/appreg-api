@@ -449,7 +449,7 @@ class FeeDataIngressProcessorTest {
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("fee_staging"),
-                        eq("fee_id"),
+                        eq(List.of("fee_id")),
                         argThat(
                                 rows ->
                                         rows.size() == 1

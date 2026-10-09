@@ -136,7 +136,7 @@ public class StandardApplicantDataIngressProcessor
 
     @Override
     protected void applyDiff(StandardApplicantDiffResult diff) {
-        applyService.reconcileAndUpsert(targetTable(), targetKeyField(), diff);
+        applyService.reconcileAndUpsert(targetTable(), targetKeyFields(), diff);
     }
 
     @Override

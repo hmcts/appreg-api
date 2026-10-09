@@ -134,7 +134,7 @@ public class NationalCourtHouseDataIngressProcessor
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
                 targetTable(),
-                targetKeyField(),
+                targetKeyFields(),
                 rows,
                 rowMapper,
                 NationalCourtHouseIngressRecord::id);

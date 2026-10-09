@@ -153,7 +153,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("national_court_houses_staging"),
-                        eq("nch_id"),
+                        eq(List.of("nch_id")),
                         argThat(
                                 rows ->
                                         rows.size() == 2

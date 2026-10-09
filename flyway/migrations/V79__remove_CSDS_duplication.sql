@@ -167,7 +167,7 @@ BEGIN
         -- try and find the highest version number on the fee, or if not take the highest id
         SELECT fee_id INTO r_fee_id
             FROM (
-                SELECT t.*, ROW_NUMBER() OVER (PARTITION BY fee_reference, fee_start_date ORDER BY version DESC, fee_id DESC) AS rn
+                SELECT t.*, ROW_NUMBER() OVER (PARTITION BY fee_reference, fee_start_date ORDER BY fee_version DESC, fee_id DESC) AS rn
                 FROM ${flyway:defaultSchema}.fee t
                 WHERE t.fee_reference = r_find_duplicate_fee.fee_reference AND t.fee_start_date = r_find_duplicate_fee.fee_start_date
             ) as ranked

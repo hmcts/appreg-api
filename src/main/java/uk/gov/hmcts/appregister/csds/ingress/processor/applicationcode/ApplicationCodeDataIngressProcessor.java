@@ -165,7 +165,11 @@ public class ApplicationCodeDataIngressProcessor
     protected void applyDiff(ApplicationCodeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
-                targetTable(), targetKeyField(), rows, rowMapper, ApplicationCodeIngressRecord::id);
+                targetTable(),
+                targetKeyFields(),
+                rows,
+                rowMapper,
+                ApplicationCodeIngressRecord::id);
     }
 
     @Override

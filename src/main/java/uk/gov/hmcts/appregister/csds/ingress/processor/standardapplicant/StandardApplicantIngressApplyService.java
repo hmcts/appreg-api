@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -29,15 +30,14 @@ public class StandardApplicantIngressApplyService {
 
     @Transactional
     public void reconcileAndUpsert(
-            String targetTable, String targetKeyField, StandardApplicantDiffResult diff) {
+            String targetTable, List<String> targetKeyFields, StandardApplicantDiffResult diff) {
         val validatedTableName = CsdsSqlIdentifierValidator.requireValid(targetTable, "tableName");
-        val validatedPrimaryKey =
-                CsdsSqlIdentifierValidator.requireValid(targetKeyField, "primaryKey");
-        endDateMissingApplicants(validatedTableName, validatedPrimaryKey, diff.incomingById());
+        // Reconciliation compares numeric IDs, independently of the configured conflict key.
+        endDateMissingApplicants(validatedTableName, "sa_id", diff.incomingById());
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
                 validatedTableName,
-                validatedPrimaryKey,
+                targetKeyFields,
                 rows,
                 rowMapper,
                 StandardApplicantIngressRecord::id);

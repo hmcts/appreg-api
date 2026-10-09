@@ -102,7 +102,9 @@ class StandardApplicantDataIngressProcessorTest {
         var diffCaptor = ArgumentCaptor.forClass(StandardApplicantDiffResult.class);
         verify(applyService)
                 .reconcileAndUpsert(
-                        eq("standard_applicants_staging"), eq("sa_id"), diffCaptor.capture());
+                        eq("standard_applicants_staging"),
+                        eq(List.of("sa_id")),
+                        diffCaptor.capture());
         assertThat(response.getInserted()).isEqualTo(2);
         assertThat(response.getUpdated()).isZero();
         assertThat(diffCaptor.getValue().incomingById()).containsKeys(6278L, 109660L);

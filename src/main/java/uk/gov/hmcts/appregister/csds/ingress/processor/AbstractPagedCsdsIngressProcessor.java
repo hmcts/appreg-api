@@ -153,7 +153,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
 
     @Override
     public final String targetKeyField() {
-        return processorProperties.getPrimaryKey();
+        return String.join(", ", targetKeyFields());
+    }
+
+    protected final List<String> targetKeyFields() {
+        return processorProperties.getPrimaryKeys();
     }
 
     @Override

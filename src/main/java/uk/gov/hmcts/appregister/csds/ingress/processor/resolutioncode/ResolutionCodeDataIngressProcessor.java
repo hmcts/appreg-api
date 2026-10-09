@@ -144,7 +144,7 @@ public class ResolutionCodeDataIngressProcessor
     protected void applyDiff(ResolutionCodeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
-                targetTable(), targetKeyField(), rows, rowMapper, ResolutionCodeIngressRecord::id);
+                targetTable(), targetKeyFields(), rows, rowMapper, ResolutionCodeIngressRecord::id);
     }
 
     @Override

@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,42 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
 class CsdsIngressPropertiesTest {
+
+    @Test
+    void given_compositePrimaryKeys_when_bind_then_preserveBothColumnsInOrder() {
+        var source =
+                new MapConfigurationPropertySource(
+                        Map.of(
+                                "appreg.csds.ingress.processors.fee.primary-keys[0]",
+                                        "fee_reference",
+                                "appreg.csds.ingress.processors.fee.primary-keys[1]",
+                                        "fee_start_date"));
+        var properties =
+                new Binder(source).bind("appreg.csds.ingress", CsdsIngressProperties.class).get();
+        assertThat(properties.getProcessors().getFee().getPrimaryKeys())
+                .containsExactly("fee_reference", "fee_start_date");
+        assertThat(properties.getProcessors().getApplicationCodes().getPrimaryKeys())
+                .containsExactly("application_code");
+    }
+
+    @Test
+    void given_invalidPrimaryKeys_when_enabled_then_configurationIsInvalid() {
+        var processor = new CsdsIngressProperties().getProcessors().getFee();
+        processor.setEnabled(true);
+        List<List<String>> invalidKeys =
+                Arrays.asList(
+                        null,
+                        List.of(),
+                        List.of("fee_id", "fee_id"),
+                        List.of(" "),
+                        Arrays.asList((String) null));
+        for (var keys : invalidKeys) {
+            processor.setPrimaryKeys(keys);
+            assertThat(processor.isConfigurationValid()).isFalse();
+        }
+        processor.setPrimaryKeys(List.of("fee_reference", "fee_start_date"));
+        assertThat(processor.isConfigurationValid()).isTrue();
+    }
 
     @Test
     void given_noRawReportingSetting_when_read_then_defaultsToDisabled() {
