@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,7 +25,6 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -79,24 +77,9 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
         var standardApplicants =
                 standardApplicantRepository.findAllByDate(businessDate).stream()
                         .collect(
-                                Collectors.groupingBy(
-                                        applicant -> normalise(applicant.getApplicantCode()),
-                                        LinkedHashMap::new,
-                                        Collectors.toList()))
-                        .entrySet()
-                        .stream()
-                        .collect(
                                 Collectors.toUnmodifiableMap(
-                                        Map.Entry::getKey,
-                                        entry ->
-                                                ReferenceDataSelectionUtil
-                                                        .selectFirstOrderedActiveRecord(
-                                                                entry.getValue(),
-                                                                "standard applicant",
-                                                                entry.getKey(),
-                                                                businessDate,
-                                                                StandardApplicant
-                                                                        ::getApplicantEndDate)));
+                                        applicant -> normalise(applicant.getApplicantCode()),
+                                        applicant -> applicant));
 
         return new Session(applicationList, applicationCodes, standardApplicants);
     }

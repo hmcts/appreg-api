@@ -26,11 +26,11 @@ public class StandardApplicantDiffService
 
     @Override
     public StandardApplicantDiffResult diff(StandardApplicantDiffRequest request) {
-        val incomingById = new LinkedHashMap<Long, StandardApplicantIngressRecord>();
+        val incomingByCode = new LinkedHashMap<String, StandardApplicantIngressRecord>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
-                .forEach(item -> addIncomingRecord(request.targetTable(), incomingById, item));
+                .forEach(item -> addIncomingRecord(request.targetTable(), incomingByCode, item));
 
         val existingById =
                 tableReadService.loadAll(request.targetTable(), rowMapper).stream()
@@ -46,15 +46,44 @@ public class StandardApplicantDiffService
                                 StandardApplicantIngressRecord,
                                 StandardApplicantIngressRecord,
                                 StandardApplicantIngressRecord>>();
-        for (val incoming : incomingById.values()) {
-            val existing = existingById.get(incoming.id());
+        val existingByCode =
+                existingById.values().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        StandardApplicantIngressRecord::code, item -> item));
+        val incomingById = new LinkedHashMap<Long, StandardApplicantIngressRecord>();
+        for (val incoming : incomingByCode.values()) {
+            val existing = existingByCode.get(incoming.code());
+            val intendedId =
+                    existing == null
+                            ? StandardApplicantIngressRecord.calculateId(
+                                    incoming.pssId(), incoming.id())
+                            : existing.id();
+            if (intendedId == null) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "Missing source ID for new standard applicant " + incoming.code());
+            }
+            val intended = incoming.withId(intendedId);
+            val idOwner = existingById.get(intendedId);
+            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                    || incomingById.putIfAbsent(intendedId, intended) != null) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "Conflicting SA_ID "
+                                + intendedId
+                                + " for standard applicant "
+                                + incoming.code());
+            }
             diffRecords.add(
                     new IngressDiffRecord<>(
                             existing == null ? IngressOperation.INSERT : IngressOperation.UPDATE,
-                            incoming,
+                            intended,
                             existing,
-                            incoming,
-                            existing == null ? "no existing sa_id match" : "existing sa_id match"));
+                            intended,
+                            existing == null
+                                    ? "no existing standard_applicant_code match"
+                                    : "existing standard_applicant_code match"));
         }
         return new StandardApplicantDiffResult(
                 incomingById, existingById, List.copyOf(diffRecords));
@@ -62,13 +91,16 @@ public class StandardApplicantDiffService
 
     private void addIncomingRecord(
             String targetTable,
-            LinkedHashMap<Long, StandardApplicantIngressRecord> incomingById,
+            LinkedHashMap<String, StandardApplicantIngressRecord> incomingByCode,
             StandardApplicantIngressRecord item) {
-        if (incomingById.putIfAbsent(item.id(), item) == null) {
+        if (incomingByCode.putIfAbsent(item.code(), item) == null) {
             return;
         }
         throw new AppRegistryException(
                 CommonAppError.INTERNAL_SERVER_ERROR,
-                "Duplicate incoming SA_ID " + item.id() + " detected for " + targetTable);
+                "Duplicate incoming standard_applicant_code "
+                        + item.code()
+                        + " detected for "
+                        + targetTable);
     }
 }

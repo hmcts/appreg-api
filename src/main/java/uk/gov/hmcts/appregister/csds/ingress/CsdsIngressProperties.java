@@ -210,7 +210,10 @@ public class CsdsIngressProperties {
     @Setter
     public static class StandardApplicants extends ProcessorProperties {
         public StandardApplicants() {
-            super("DA_GetStandardApplicant", "standard_applicants_staging", List.of("sa_id"));
+            super(
+                    "DA_GetStandardApplicant",
+                    "standard_applicants_staging",
+                    List.of("standard_applicant_code"));
         }
     }
 }

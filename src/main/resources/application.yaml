@@ -169,8 +169,8 @@ appreg:
           backup-source: standard_applicants
           backup-target: standard_applicants_staging
           ingress-target: standard_applicants
-          primary-keys: [sa_id]
-          source-entity-name: DA_GetStandardApplicant
+          primary-keys: [standard_applicant_code]
+          source-entity-name: GetStandardApplicant
           parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json # ...if specified - this overrides the rest endpoint.  Used for local dev
 #          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:} # ...if set - this writes out data and metadata for this processor

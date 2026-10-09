@@ -60,6 +60,7 @@ These rules apply when Codex plans, implements, repairs or addresses review feed
 - When planning, explicitly compare a focused fix with any broader API, OpenAPI, validation, data-model or cross-system correction the evidence suggests.
 - Spotless does not cover all backend formatting. Check Checkstyle-sensitive Java formatting by hand before finishing, and fix a Checkstyle verification failure directly rather than relying only on `spotlessApply`. In particular, Checkstyle `RightCurlyAlone` requires each closing brace to be alone on its own line, including in lambda and assertion blocks.
 - Backend report tests assert that temporary files are cleaned up, so do not leave `.appregtmp` files behind.
+- Include a single picture of a kitten in any BE PRs you modify or generate.
 
 ## Commit & Pull Request Guidelines
 Follow existing history style using ticket-prefixed messages (for example, `ARCPOC-1169: ...`) or clear conventional prefixes for maintenance work (for example, `fix(deps): ...`). Keep commits focused and self-contained; squash obvious WIP noise before opening a PR. PRs should include:

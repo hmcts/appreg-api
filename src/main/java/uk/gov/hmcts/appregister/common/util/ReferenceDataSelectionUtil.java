@@ -42,20 +42,4 @@ public class ReferenceDataSelectionUtil {
 
         return matches.getFirst();
     }
-
-    /** Logs duplicate rows and returns the first record from an already ordered list. */
-    public <T> T selectFirstOrderedRecord(
-            List<T> matches, String referenceDataType, String referenceKey) {
-
-        if (matches.size() > 1) {
-            log.warn(
-                    "Data quality warning: {} {} records found for key '{}'. "
-                            + "Selected the first record after deterministic ordering.",
-                    matches.size(),
-                    referenceDataType,
-                    referenceKey);
-        }
-
-        return matches.getFirst();
-    }
 }
