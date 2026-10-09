@@ -67,6 +67,7 @@ class StandardApplicantDataIngressProcessorTest {
                 .getStandardApplicants()
                 .setParameters("?$f=PublishingStatus='Active'");
         var firstPage = createPage(OBJECT_MAPPER.createObjectNode());
+        firstPage.withArray("records").addObject();
         var secondPage = createPage(OBJECT_MAPPER.createObjectNode());
         var count = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var parameters = "?$f=PublishingStatus='Active'";
@@ -77,12 +78,12 @@ class StandardApplicantDataIngressProcessorTest {
         when(ingressClient.retrieveJson(
                         "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
                                 + parameters
-                                + "&%24limit=2&%24offset=0"))
+                                + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
                         "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
                                 + parameters
-                                + "&%24limit=2&%24offset=2"))
+                                + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);

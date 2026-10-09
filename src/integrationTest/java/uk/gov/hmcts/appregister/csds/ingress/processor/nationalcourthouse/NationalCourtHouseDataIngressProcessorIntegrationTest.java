@@ -104,7 +104,11 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
             var page = OBJECT_MAPPER.createObjectNode();
             page.putArray("records").add(incomingRecords.get(offset));
             stubFor(
-                    get(urlEqualTo("/query/COURT/Court/GD?%24limit=1&%24offset=" + offset))
+                    get(urlEqualTo(
+                                    "/query/COURT/Court/GD?%24limit="
+                                            + (incomingRecords.size() - offset)
+                                            + "&%24offset="
+                                            + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key"))
                             .willReturn(
                                     aResponse()
@@ -138,7 +142,10 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
             verify(
                     getRequestedFor(
                                     urlEqualTo(
-                                            "/query/COURT/Court/GD?%24limit=1&%24offset=" + offset))
+                                            "/query/COURT/Court/GD?%24limit="
+                                                    + (incomingRecords.size() - offset)
+                                                    + "&%24offset="
+                                                    + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key")));
         }
     }

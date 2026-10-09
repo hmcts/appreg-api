@@ -90,17 +90,18 @@ class ResolutionCodeDataIngressProcessorTest {
     void given_countExceedsPageSize_when_retrieve_then_pagesThroughQueryEndpoint() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
+        firstPage.withArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=2"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -115,7 +116,7 @@ class ResolutionCodeDataIngressProcessorTest {
         when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
                 .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 1));
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(page);
 
         var received = processor.retrieve(ingressClient);
@@ -133,14 +134,14 @@ class ResolutionCodeDataIngressProcessorTest {
 
     @Test
     void given_laterPageFails_when_retrieve_then_keepsEarlierPage() throws Exception {
-        var page = OBJECT_MAPPER.readTree("{\"records\":[]}");
+        var page = OBJECT_MAPPER.readTree("{\"records\":[{},{}]}");
         when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
                 .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 3));
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=3&%24offset=0"))
                 .thenReturn(page);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=2"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=1&%24offset=2"))
                 .thenThrow(new IllegalStateException("Upstream unavailable"));
 
         assertThatThrownBy(() -> processor.retrieve(ingressClient))
@@ -159,9 +160,9 @@ class ResolutionCodeDataIngressProcessorTest {
         properties.getProcessors().setReportRaw(false);
         when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
                 .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 1));
-        var page = OBJECT_MAPPER.readTree("{\"records\":[]}");
+        var page = OBJECT_MAPPER.readTree("{\"records\":[{}]}");
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(page);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(page);
@@ -219,18 +220,19 @@ class ResolutionCodeDataIngressProcessorTest {
 
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
+        firstPage.withArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
         var parameterisedCountPath =
                 "/count/APPREGISTER/ResolutionCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
         var parameterisedQueryPath =
                 "/query/APPREGISTER/ResolutionCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -310,12 +312,12 @@ class ResolutionCodeDataIngressProcessorTest {
         logCaptor.clearLogs();
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 1);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -343,12 +345,12 @@ class ResolutionCodeDataIngressProcessorTest {
         logCaptor.clearLogs();
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 1);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ResolutionCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ResolutionCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);

@@ -91,7 +91,10 @@ class NationalCourtHouseDataIngressProcessorTest {
                         "?$f=PublishingStatus='Active'&$f=CurrentRecordIndicator='true'"
                                 + "&$f=CourtHearingOperationAreaIndicator='true'&$orderBy=CourtID");
         var count = OBJECT_MAPPER.createObjectNode().put("count", 3);
-        var firstPage = page(sourceRecord(3802L, 3106L, "First Court", 1L));
+        var firstPage =
+                page(
+                        sourceRecord(3802L, 3106L, "First Court", 1L),
+                        sourceRecord(3804L, null, "Third Court", 1L));
         var secondPage = page(sourceRecord(3803L, null, "Second Court", 1L));
         var parameters =
                 "?$f=PublishingStatus='Active'&$f=CurrentRecordIndicator='true'"
@@ -99,9 +102,9 @@ class NationalCourtHouseDataIngressProcessorTest {
         var countPath = "/count/COURT/Court/GD" + parameters;
         var queryPath = "/query/COURT/Court/GD" + parameters;
         when(ingressClient.retrieveJson(countPath)).thenReturn(count);
-        when(ingressClient.retrieveJson(queryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(queryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(queryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(queryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);

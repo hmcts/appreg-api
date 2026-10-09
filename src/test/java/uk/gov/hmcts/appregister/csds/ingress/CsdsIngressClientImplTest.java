@@ -92,6 +92,8 @@ class CsdsIngressClientImplTest {
             logs.clearLogs();
             var actual = new CsdsIngressClientImpl(restClient, properties).retrieveJson(path);
             assertThat(actual).isEqualTo(OBJECT_MAPPER.readTree(payload));
+            assertThat(logs.getInfoLogs())
+                    .containsExactly("Target url = https://example.test/api/rest/" + path);
             assertThat(logs.getWarnLogs())
                     .containsExactlyElementsOf(
                             warns
@@ -127,19 +129,25 @@ class CsdsIngressClientImplTest {
 
         var client = new CsdsIngressClientImpl(restClient, properties);
 
+        var targetUrl =
+                "https://csds.dev.apps.hmcts.net/api/rest/count/APPREGISTER/ApplicationCode/GD";
         assertThatThrownBy(() -> client.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to retrieve CSDS data for path");
+                .hasMessageContaining("Failed to retrieve CSDS data. Target url = " + targetUrl);
         assertThat(logCaptor.getWarnLogs())
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Failed to retrieve CSDS JSON, using Key 1, for path "
-                                                + "/count/APPREGISTER/ApplicationCode/GD: 404 Not Found"))
+                                        "Failed to retrieve CSDS JSON, using Key 1. Target url = "
+                                                + targetUrl
+                                                + ": 404 Not Found"))
                 .anyMatch(
                         log ->
                                 log.contains(
-                                        "Failed to retrieve CSDS JSON, using Key 2, for path "
-                                                + "/count/APPREGISTER/ApplicationCode/GD: 404 Not Found"));
+                                        "Failed to retrieve CSDS JSON, using Key 2. Target url = "
+                                                + targetUrl
+                                                + ": 404 Not Found"));
+        assertThat(logCaptor.getWarnLogs())
+                .noneMatch(log -> log.contains("primary-key") || log.contains("secondary-key"));
     }
 }
