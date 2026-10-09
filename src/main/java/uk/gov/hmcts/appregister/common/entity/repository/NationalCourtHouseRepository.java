@@ -15,6 +15,9 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
  * <p>Provides access to National Court Houses (NCH) stored in the {@code national_court_houses}
  * table. Includes custom queries for retrieving active court locations by code/date and paginated
  * searches with optional filters.
+ *
+ * <p>Ingress identity is the courthouse name, not its location code. Different names may share a
+ * code, so code lookups retain their deterministic ordering.
  */
 public interface NationalCourtHouseRepository extends JpaRepository<NationalCourtHouse, Long> {
 
@@ -31,7 +34,7 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
      * </ul>
      *
      * <p>This query may return zero, one, or multiple results. Service layer is responsible for
-     * enforcing uniqueness.
+     * selecting the preferred active record.
      *
      * @param code business identifier for the Court Location
      * @param date date on which the Court Location must be valid
@@ -66,7 +69,7 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
      * </ul>
      *
      * <p>This query may return zero, one, or multiple results. Service layer is responsible for
-     * enforcing uniqueness.
+     * selecting the preferred active record.
      *
      * @param code business identifier for the Court Location
      * @param date active date to evaluate against

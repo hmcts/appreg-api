@@ -134,7 +134,7 @@ class CsdsIngressPropertiesTest {
         var properties = baseProperties();
 
         assertThat(properties.getProcessors().getStandardApplicants().getSourceEntityName())
-                .isEqualTo("DA_GetStandardApplicant");
+                .isEqualTo("GetStandardApplicant");
     }
 
     @Test

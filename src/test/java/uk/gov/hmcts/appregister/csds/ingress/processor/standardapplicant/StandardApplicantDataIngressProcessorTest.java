@@ -83,15 +83,15 @@ class StandardApplicantDataIngressProcessorTest {
         var parameters = "?$f=PublishingStatus='Active'";
 
         when(ingressClient.retrieveJson(
-                        "/named-query-count/APPREGISTER/DA_GetStandardApplicant/GD" + parameters))
+                        "/named-query-count/APPREGISTER/GetStandardApplicant/GD" + parameters))
                 .thenReturn(count);
         when(ingressClient.retrieveJson(
-                        "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
+                        "/named-query/APPREGISTER/GetStandardApplicant/GD"
                                 + parameters
                                 + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
-                        "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
+                        "/named-query/APPREGISTER/GetStandardApplicant/GD"
                                 + parameters
                                 + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);

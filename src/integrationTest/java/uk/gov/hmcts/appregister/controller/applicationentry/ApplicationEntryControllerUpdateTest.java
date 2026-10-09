@@ -1760,7 +1760,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // now update to close the list
         var req =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode("CCC003")
+                        .courtLocationCode(VALID_COURT_CODE)
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)
@@ -1870,7 +1870,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // now update to close the list
         var req =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode("CCC003")
+                        .courtLocationCode(VALID_COURT_CODE)
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)
@@ -2109,7 +2109,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // now update to close the list
         var req =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode("CCC003")
+                        .courtLocationCode(VALID_COURT_CODE)
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)

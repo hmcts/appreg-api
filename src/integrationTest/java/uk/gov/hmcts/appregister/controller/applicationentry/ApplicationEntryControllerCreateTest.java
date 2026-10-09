@@ -2154,7 +2154,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         .time(LocalTime.of(10, 0))
                         .description("SEQ TEST LIST " + UUID.randomUUID())
                         .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode("CCC003")
+                        .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(1)
                         .durationMinutes(0);
 

@@ -202,7 +202,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class NationalCourtHouses extends ProcessorProperties {
         public NationalCourtHouses() {
-            super("Court", "national_court_houses_staging", List.of("nch_id"));
+            super("Court", "national_court_houses_staging", List.of("courthouse_name"));
         }
     }
 
@@ -211,7 +211,7 @@ public class CsdsIngressProperties {
     public static class StandardApplicants extends ProcessorProperties {
         public StandardApplicants() {
             super(
-                    "DA_GetStandardApplicant",
+                    "GetStandardApplicant",
                     "standard_applicants_staging",
                     List.of("standard_applicant_code"));
         }

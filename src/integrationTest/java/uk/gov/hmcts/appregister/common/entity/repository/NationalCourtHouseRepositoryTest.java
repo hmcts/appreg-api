@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -26,11 +27,11 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
 
         @Test
         @DisplayName(
-                "returns seeded Cardiff (CCC003) when active on given date (case-insensitive code)")
+                "returns seeded Cardiff (C62CR00) when active on given date (case-insensitive code)")
         void returnsCardiff() {
             List<NationalCourtHouse> result =
                     repository.findActiveCourtsWithDate(
-                            "ccc003", LocalDate.of(2025, Month.JANUARY, 1));
+                            "c62cr00", LocalDate.of(2025, Month.JANUARY, 1));
 
             assertThat(result)
                     .hasSize(1)
@@ -39,7 +40,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             n -> {
                                 assertThat(n.getCourtType()).isEqualTo("CHOA");
                                 assertThat(n.getEndDate()).isNull();
-                                assertThat(n.getCourtLocationCode()).isEqualTo("CCC003");
+                                assertThat(n.getCourtLocationCode()).isEqualTo("C62CR00");
                                 assertThat(n.getName()).containsIgnoringCase("Cardiff");
                                 assertThat(n.getStartDate())
                                         .isBeforeOrEqualTo(LocalDate.of(2025, Month.JANUARY, 1));
@@ -47,15 +48,15 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName("returns seeded Bristol (BCC006) when active on given date")
+        @DisplayName("returns seeded Bristol (C52BT00) when active on given date")
         void returnsBristol() {
             List<NationalCourtHouse> result =
                     repository.findActiveCourtsWithDate(
-                            "BCC006", LocalDate.of(2025, Month.JANUARY, 1));
+                            "C52BT00", LocalDate.of(2025, Month.JANUARY, 1));
 
             assertThat(result)
                     .extracting(NationalCourtHouse::getCourtLocationCode)
-                    .containsExactly("BCC006");
+                    .containsExactly("C52BT00");
         }
 
         @Test
@@ -138,18 +139,18 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
     class FindAllActiveCourts {
 
         @Test
-        @DisplayName("no filters -> only active CHOA rows from seed (CCC003, BCC006)")
+        @DisplayName("no filters -> only active CHOA rows from seed (C62CR00, C52BT00)")
         void onlyActiveChoaRows() {
             var page =
                     repository.findAllActiveCourts(
                             null,
                             null,
                             LocalDate.now(java.time.ZoneOffset.UTC),
-                            PageRequest.of(0, 20));
+                            Pageable.unpaged());
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
-                    .contains("CCC003", "BCC006");
+                    .contains("C62CR00", "C52BT00");
 
             assertThat(page.getContent())
                     .allSatisfy(
@@ -171,7 +172,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
-                    .containsExactlyInAnyOrder("CCC003", "BCC006", "B13CC00", "C47CC00");
+                    .containsExactlyInAnyOrder("B13CC00", "C47CC00");
         }
 
         @Test
@@ -194,14 +195,14 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         void filtersByCodeAndName() {
             var page =
                     repository.findAllActiveCourts(
-                            "cc",
+                            "bt",
                             "bristol",
                             LocalDate.now(java.time.ZoneOffset.UTC),
                             PageRequest.of(0, 20));
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
-                    .containsExactly("BCC006");
+                    .containsExactly("C52BT00");
         }
 
         @Test

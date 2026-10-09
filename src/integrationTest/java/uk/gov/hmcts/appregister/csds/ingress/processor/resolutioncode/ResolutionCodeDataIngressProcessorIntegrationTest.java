@@ -39,7 +39,13 @@ class ResolutionCodeDataIngressProcessorIntegrationTest extends BaseRepositoryTe
     private String schema;
 
     @Test
+    @Transactional
     void existingCodePreservesIdReferencesAndAuditIdentityWithChangedOrMissingSourceIds() {
+        jdbc.update(
+                ("UPDATE %s.configuration_parameters SET parameter_value='DEBUG' "
+                                + "WHERE parameter_name='AUDIT_CSDS'")
+                        .formatted(schema),
+                new MapSqlParameterSource());
         var linkedId =
                 jdbc.queryForObject(
                         "SELECT rc_rc_id FROM %s.app_list_entry_resolutions ORDER BY aler_id LIMIT 1"

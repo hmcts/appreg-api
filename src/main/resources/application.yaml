@@ -179,7 +179,7 @@ appreg:
           backup-source: national_court_houses
           backup-target: national_court_houses_staging
           ingress-target: national_court_houses
-          primary-keys: [nch_id]
+          primary-keys: [courthouse_name]
           source-entity-name: Court
           parameters: ?%24expr=Updator&%24f=CourtHearingOperationAreaIndicator='true'%20AND%20PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24orderBy=CourtID
 #          mock: csds/national_court_houses.json # ...if specified - this overrides the rest endpoint.  Used for local dev

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +30,39 @@ public class NationalCourtHouseDiffReportingService
             List<JsonNode> processedData,
             NationalCourtHouseDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
+        var idsByName =
+                diffResult.incomingById().values().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        NationalCourtHouseIngressRecord::name,
+                                        NationalCourtHouseIngressRecord::id));
+        // Decorate report copies only: the CSV retains resolved IDs, while source/audit JSON is
+        // untouched.
+        var reportPages =
+                processedData.stream()
+                        .map(
+                                page -> {
+                                    JsonNode copy = page.deepCopy();
+                                    recordsExtractor
+                                            .apply(copy)
+                                            .forEach(
+                                                    record ->
+                                                            ((ObjectNode) record)
+                                                                    .put(
+                                                                            NCH_ID,
+                                                                            idsByName.get(
+                                                                                    nullableText(
+                                                                                            record,
+                                                                                            "CourtName"))));
+                                    return copy;
+                                })
+                        .toList();
         super.reportDiff(
                 reportingDir,
                 datasetName,
                 targetTable,
                 targetKeyField,
-                processedData,
+                reportPages,
                 diffResult.incomingById(),
                 diffResult.existingById(),
                 diffResult.diffRecords(),
@@ -56,13 +84,12 @@ public class NationalCourtHouseDiffReportingService
                                     NationalCourtHouseIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByNchId =
+        var incomingRecordsByName =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, NCH_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, NCH_ID),
+                                        item -> nullableText(item, "CourtName"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -70,10 +97,10 @@ public class NationalCourtHouseDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByNchId.get(item.intended().id()),
+                                                incomingRecordsByName.get(item.intended().name()),
                                                 "PSSNationalCourthouseID"),
                                         nullableLong(
-                                                incomingRecordsByNchId.get(item.intended().id()),
+                                                incomingRecordsByName.get(item.intended().name()),
                                                 "CourtID"),
                                         item.intended().id(),
                                         changeType(item.operation())))

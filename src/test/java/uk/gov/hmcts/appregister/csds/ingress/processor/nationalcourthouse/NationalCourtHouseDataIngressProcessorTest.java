@@ -15,10 +15,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,7 +74,8 @@ class NationalCourtHouseDataIngressProcessorTest {
                         diffService,
                         new NationalCourtHouseDiffReportingService(properties),
                         bulkUpsertService,
-                        rowMapper);
+                        rowMapper,
+                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
@@ -111,20 +116,19 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void given_pssId_when_preProcess_then_usesItAsNchId() {
+    void given_pssId_when_diff_then_usesItForNewName() {
         var processed =
                 processor.preProcess(List.of(page(sourceRecord(3802L, 3106L, "Court", 1L))));
 
-        assertThat(records(processed.getFirst()).getFirst().get("NCH_ID").longValue())
-                .isEqualTo(3106L);
+        assertThat(processor.diff(processed).incomingById()).containsOnlyKeys(3106L);
+        assertThat(records(processed.getFirst()).getFirst().has("NCH_ID")).isFalse();
     }
 
     @Test
-    void given_noPssId_when_preProcess_then_offsetsCourtId() {
+    void given_noPssId_when_diff_then_offsetsCourtIdForNewName() {
         var processed = processor.preProcess(List.of(page(sourceRecord(3802L, null, "Court", 1L))));
 
-        assertThat(records(processed.getFirst()).getFirst().get("NCH_ID").longValue())
-                .isEqualTo(103802L);
+        assertThat(processor.diff(processed).incomingById()).containsOnlyKeys(103802L);
     }
 
     @Test
@@ -145,7 +149,7 @@ class NationalCourtHouseDataIngressProcessorTest {
                 processor.ingest(
                         List.of(
                                 page(
-                                        sourceRecord(3802L, 3106L, "Updated Court", 2L),
+                                        sourceRecord(3802L, 9999L, "Old Court", 2L),
                                         sourceRecord(3803L, null, "New Court", 1L))));
 
         assertThat(response.getInserted()).isEqualTo(1);
@@ -153,7 +157,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("national_court_houses_staging"),
-                        eq(List.of("nch_id")),
+                        eq(List.of("courthouse_name")),
                         argThat(
                                 rows ->
                                         rows.size() == 2
@@ -187,16 +191,24 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void given_duplicateResolvedId_when_ingest_then_rejectsBeforeDatabaseRead() {
+    void given_duplicateNamesAcrossPages_when_ingest_then_rejectsBeforeDatabaseRead() {
         List<JsonNode> processedData =
                 List.of(
-                        page(
-                                sourceRecord(3802L, 3106L, "First Court", 1L),
-                                sourceRecord(3803L, 3106L, "Duplicate Court", 1L)));
+                        page(sourceRecord(3802L, 3106L, "Court", 1L)),
+                        page(sourceRecord(3803L, 3107L, "Court", 1L)));
 
         assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming NCH_ID 3106");
+                .hasMessageContaining("Duplicate incoming courthouse_name Court");
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(
+                                                page(
+                                                        sourceRecord(3802L, 3106L, "Court", 1L),
+                                                        sourceRecord(3803L, 3107L, "Court", 1L)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Duplicate incoming courthouse_name Court");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
@@ -219,7 +231,17 @@ class NationalCourtHouseDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("NCH_ID");
+                .hasMessageContaining("Missing source ID for new national courthouse");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void malformedIdForNewNameIsRejectedBeforeWrites() {
+        var source = sourceRecord(null, null, "Malformed", 1L).put("CourtID", "not-a-number");
+        assertThatThrownBy(() -> processor.ingest(List.of(page(source))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Missing source ID for new national courthouse Malformed");
+        verifyNoInteractions(bulkUpsertService);
     }
 
     @Test
@@ -233,19 +255,171 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void given_recordNodeIsNotObject_when_preProcess_then_preservesItForValidation() {
+    void given_recordNodeIsNotObject_when_preProcess_then_rejectsIt() {
         var page = OBJECT_MAPPER.createObjectNode();
         page.putArray("records").add("invalid");
         List<JsonNode> processedData = List.of(page);
 
         assertThatThrownBy(() -> processor.ingest(processedData))
-                .isInstanceOf(CsdsPayloadValidationException.class)
-                .hasMessageContaining("missing expected fields");
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("StartDate");
     }
 
     @Test
     void given_emptyInput_when_preProcess_then_returnsEmptyInput() {
         assertThat(processor.preProcess(List.of())).isEmpty();
+    }
+
+    @Test
+    void existingNameRetainsStoredIdWithChangedMissingAndOverflowingSourceIds() {
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(
+                        List.of(
+                                new NationalCourtHouseIngressRecord(
+                                        42L,
+                                        "Court",
+                                        1L,
+                                        LocalDate.parse("1900-01-01"),
+                                        null,
+                                        "B01CF00",
+                                        null)));
+        for (var source :
+                List.of(
+                        sourceRecord(1L, 999L, "Court", 2L),
+                        sourceRecord(Long.MAX_VALUE, null, "Court", 2L),
+                        sourceRecord(null, null, "Court", 2L))) {
+            if (source.path("CourtID").isNull()) {
+                source.remove(List.of("CourtID", "PSSNationalCourthouseID"));
+            }
+            var diff = processor.diff(processor.preProcess(List.of(page(source))));
+            assertThat(diff.incomingById()).containsOnlyKeys(42L);
+            assertThat(diff.incomingById().get(42L).version()).isEqualTo(2L);
+            assertThat(diff.diffRecords().getFirst().existing().id()).isEqualTo(42L);
+        }
+    }
+
+    @Test
+    void differentNamesWithSameLocationCodeRemainDistinct() {
+        var diff =
+                processor.diff(
+                        processor.preProcess(
+                                List.of(
+                                        page(
+                                                sourceRecord(1L, null, "Court", 1L),
+                                                sourceRecord(2L, null, "court", 1L)))));
+        assertThat(diff.incomingById()).containsOnlyKeys(100001L, 100002L);
+        assertThat(diff.incomingById().values())
+                .extracting(NationalCourtHouseIngressRecord::name)
+                .containsExactly("Court", "court");
+    }
+
+    @Test
+    void newIdOverflowAndStoredOrIncomingIdCollisionsFailBeforeWrites() {
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(
+                                                page(
+                                                        sourceRecord(
+                                                                Long.MAX_VALUE,
+                                                                null,
+                                                                "Overflow",
+                                                                1L)))))
+                .isInstanceOf(ArithmeticException.class);
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(
+                        List.of(
+                                new NationalCourtHouseIngressRecord(
+                                        100001L,
+                                        "Stored",
+                                        1L,
+                                        LocalDate.parse("1900-01-01"),
+                                        null,
+                                        "STORED",
+                                        null)));
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(page(sourceRecord(1L, null, "Collision", 1L)))))
+                .hasMessageContaining("Conflicting NCH_ID");
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(List.of());
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(
+                                                page(
+                                                        sourceRecord(1L, null, "Fallback", 1L),
+                                                        sourceRecord(
+                                                                2L,
+                                                                100001L,
+                                                                "PSS collision",
+                                                                1L)))))
+                .hasMessageContaining("Conflicting NCH_ID");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void futureRecordsAreWarnedAndDroppedBeforeIdentityAndDuplicatesAtUkMidnight() {
+        var today = sourceRecord(1L, null, "Court", 1L).put("StartDate", "2026-07-02");
+        var future = sourceRecord(Long.MAX_VALUE, null, "Court", 1L).put("StartDate", "2026-07-03");
+        try (var logs = LogCaptor.forClass(NationalCourtHouseDataIngressProcessor.class)) {
+            var processed = processor.preProcess(List.of(page(today), page(future)));
+            assertThat(records(processed.getFirst())).hasSize(1);
+            assertThat(processor.diff(processed).incomingById()).containsOnlyKeys(100001L);
+            assertThat(logs.getWarnLogs())
+                    .anyMatch(
+                            log ->
+                                    log.contains("Court")
+                                            && log.contains("2026-07-03")
+                                            && log.contains("today 2026-07-02"));
+            var allFuture = processor.diff(processor.preProcess(List.of(page(future))));
+            assertThat(allFuture.incomingById()).isEmpty();
+            assertThat(allFuture.diffRecords()).isEmpty();
+            assertThat(logs.getWarnLogs()).hasSize(2);
+        }
+        assertThat(
+                        records(
+                                processor
+                                        .preProcess(
+                                                List.of(
+                                                        page(
+                                                                today.deepCopy()
+                                                                        .put(
+                                                                                "StartDate",
+                                                                                "2020-01-01")
+                                                                        .put(
+                                                                                "EndDate",
+                                                                                "2020-12-31"))))
+                                        .getFirst()))
+                .hasSize(1);
+        assertThat(today.has("NCH_ID")).isFalse();
+    }
+
+    @Test
+    void invalidDatesOnLaterPagesFailIncludingFutureRecords() {
+        var valid = sourceRecord(1L, null, "Valid", 1L);
+        for (var start : List.of("", "not-a-date", "2026-02-30")) {
+            var invalid = valid.deepCopy().put("StartDate", start);
+            assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(invalid))))
+                    .isInstanceOf(AppRegistryException.class)
+                    .hasMessageContaining("StartDate");
+        }
+        for (var invalid : List.of(valid.deepCopy().putNull("StartDate"), valid.deepCopy())) {
+            if (!invalid.path("StartDate").isNull()) {
+                invalid.remove("StartDate");
+            }
+            assertThatThrownBy(() -> processor.ingest(List.of(page(invalid))))
+                    .isInstanceOf(AppRegistryException.class)
+                    .hasMessageContaining("StartDate");
+        }
+        for (var end : List.of("", "not-a-date", "2026-02-30")) {
+            var invalid = valid.deepCopy().put("StartDate", "2026-07-03").put("EndDate", end);
+            assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(invalid))))
+                    .isInstanceOf(AppRegistryException.class)
+                    .hasMessageContaining("EndDate");
+        }
+        verifyNoInteractions(bulkUpsertService);
     }
 
     private ObjectNode sourceRecord(Long courtId, Long pssId, String name, Long version) {

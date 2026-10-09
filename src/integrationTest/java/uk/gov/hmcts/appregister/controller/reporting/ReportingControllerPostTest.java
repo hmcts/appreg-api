@@ -225,7 +225,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 new SearchWarrantsReportFilterDto()
                         .dateFrom(LocalDate.of(2032, Month.FEBRUARY, 3))
                         .dateTo(LocalDate.of(2032, Month.FEBRUARY, 3))
-                        .location(new LegacyReportLocation().courtLocationCode("CCC003")),
+                        .location(new LegacyReportLocation().courtLocationCode("C62CR00")),
                 JobType.SEARCH_WARRANTS_REPORT);
 
         String report =
@@ -277,7 +277,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 new FeesReportFilterDto()
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1))
-                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
+                        .location(new LegacyReportLocation().courtLocationCode("C62CR00"));
         ObjectNode requestBody = mapper.valueToTree(request);
         ((ObjectNode) requestBody.path("location")).put("unexpected", "value");
 
@@ -304,7 +304,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1))
                         .applicantName("Smith")
-                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
+                        .location(new LegacyReportLocation().courtLocationCode("C62CR00"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -320,7 +320,9 @@ class ReportingControllerPostTest extends BaseIntegration {
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "applicantName", "Smith");
         assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "courtLocationCode", "CCC003");
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
+                "courtLocationCode",
+                "C62CR00");
         assertOnlyReportParametersAuditedFor(ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT);
 
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
@@ -484,7 +486,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                         .dateTo(LocalDate.of(2018, Month.MAY, 31))
                         .location(
                                 new LegacyReportLocation()
-                                        .courtLocationCode("CCC003")
+                                        .courtLocationCode("C62CR00")
                                         .cjaCode("CD")
                                         .otherLocationDescription("Town Hall"));
 
@@ -568,7 +570,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                         .dateTo(LocalDate.of(2018, Month.MAY, 1))
                         .dateFrom(LocalDate.of(2018, Month.MAY, 31))
                         .dateTo(LocalDate.of(2018, Month.MAY, 1))
-                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
+                        .location(new LegacyReportLocation().courtLocationCode("C62CR00"));
         Response createResponse =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(SEARCH_WARRANTS_REPORT_WEB_CONTEXT),
@@ -587,7 +589,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
                 "courtLocationCode",
-                "CCC003");
+                "C62CR00");
         assertOnlyReportParametersAuditedFor(
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT);
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
@@ -1358,7 +1360,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 insertApplicationListRowReturningId(
                         "CLOSED",
                         listDate,
-                        "CCC003",
+                        "C62CR00",
                         null,
                         "Workload Report - Court Only Included",
                         "Cardiff Crown Court",
@@ -1371,7 +1373,7 @@ class ReportingControllerPostTest extends BaseIntegration {
                 insertApplicationListRowReturningId(
                         "CLOSED",
                         listDate,
-                        "BCC006",
+                        "C52BT00",
                         null,
                         "Workload Report - Court Only Excluded",
                         "Bristol Crown Court",
@@ -1385,13 +1387,13 @@ class ReportingControllerPostTest extends BaseIntegration {
                         new WorkloadFilterDto()
                                 .dateFrom(listDate)
                                 .dateTo(listDate)
-                                .location(new LegacyReportLocation().courtLocationCode("CCC003")));
+                                .location(new LegacyReportLocation().courtLocationCode("C62CR00")));
 
         assertThat(report).contains("Workload Report");
         assertThat(report).contains(includedApplicant);
-        assertThat(report).contains("CCC003 - Cardiff Crown Court");
+        assertThat(report).contains("C62CR00 - Cardiff Crown Court");
         assertThat(report).doesNotContain(excludedApplicant);
-        assertThat(report).doesNotContain("BCC006 - Bristol Crown Court");
+        assertThat(report).doesNotContain("C52BT00 - Bristol Crown Court");
     }
 
     @Test
@@ -1984,7 +1986,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         insertApplicationListRow(
                 "OPEN",
                 LocalDate.of(2026, Month.JUNE, 15),
-                "CCC003",
+                "C62CR00",
                 null,
                 description,
                 "Cardiff Crown Court",
@@ -1994,7 +1996,7 @@ class ReportingControllerPostTest extends BaseIntegration {
         insertApplicationListRow(
                 "OPEN",
                 LocalDate.of(2026, Month.JUNE, 15),
-                "BCC006",
+                "C52BT00",
                 null,
                 description,
                 "Bristol Crown Court",
@@ -2008,10 +2010,10 @@ class ReportingControllerPostTest extends BaseIntegration {
                                 .dateFrom(LocalDate.of(2026, Month.JUNE, 1))
                                 .dateTo(LocalDate.of(2026, Month.JUNE, 30))
                                 .listDescription(description)
-                                .location(new LegacyReportLocation().courtLocationCode("CCC003")));
+                                .location(new LegacyReportLocation().courtLocationCode("C62CR00")));
 
-        assertThat(report).contains("CCC003 - Cardiff Crown Court");
-        assertThat(report).doesNotContain("BCC006 - Bristol Crown Court");
+        assertThat(report).contains("C62CR00 - Cardiff Crown Court");
+        assertThat(report).doesNotContain("C52BT00 - Bristol Crown Court");
     }
 
     @Test
