@@ -16,8 +16,8 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
  * table. Includes custom queries for retrieving active court locations by code/date and paginated
  * searches with optional filters.
  *
- * <p>Ingress identity is the courthouse name, not its location code. Different names may share a
- * code, so code lookups retain their deterministic ordering.
+ * <p>Ingress identity is the case-sensitive location code. Public code lookups ignore case, so
+ * case-distinct codes retain their deterministic ordering.
  */
 public interface NationalCourtHouseRepository extends JpaRepository<NationalCourtHouse, Long> {
 

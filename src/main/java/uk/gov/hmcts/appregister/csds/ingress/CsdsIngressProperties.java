@@ -245,8 +245,8 @@ public class CsdsIngressProperties {
             super(
                     "Court",
                     "national_court_houses_staging",
-                    List.of("courthouse_name"),
-                    List.of("CourtName"),
+                    List.of("court_location_code"),
+                    List.of("CourtLocationCode"),
                     "CourtID",
                     "PSSNationalCourthouseID");
         }

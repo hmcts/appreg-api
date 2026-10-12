@@ -14,7 +14,8 @@ public record NationalCourtHouseIngressRecord(
         Long pssId) {
     private static final long NEW_RECORD_ID_OFFSET = 100000L;
 
-    // Database rows contain resolved IDs; incoming rows retain both source IDs until name matching.
+    // Database rows contain resolved IDs; incoming rows retain source IDs until location-code
+    // matching.
     public NationalCourtHouseIngressRecord(
             Long id,
             String name,

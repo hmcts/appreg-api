@@ -42,7 +42,8 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
             "appreg.csds.ingress.processors.national-court-houses.backup-source=",
             "appreg.csds.ingress.processors.national-court-houses.backup-target=",
             "appreg.csds.ingress.processors.national-court-houses.ingress-target=national_court_houses",
-            "appreg.csds.ingress.processors.national-court-houses.primary-keys[0]=courthouse_name",
+            "appreg.csds.ingress.processors.national-court-houses.primary-keys[0]=court_location_code",
+            "appreg.csds.ingress.processors.national-court-houses.business-keys[0]=CourtLocationCode",
             "appreg.csds.ingress.processors.application-code.enabled=false",
             "appreg.csds.ingress.processors.resolution-code.enabled=false",
             "appreg.csds.ingress.processors.standard-applicants.enabled=false",
@@ -81,8 +82,8 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
         jdbcTemplate.update(
                 "DELETE FROM "
                         + schema
-                        + ".national_court_houses WHERE courthouse_name IN "
-                        + "('Old Court','New Court','PSS Court','Expired Court')");
+                        + ".national_court_houses WHERE court_location_code IN "
+                        + "('B01CF00','B02CF00','PSS001','EXP001')");
         jdbcTemplate.update(
                 """
                 INSERT INTO %s.national_court_houses (
@@ -97,7 +98,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                 0L,
                 "CHOA",
                 LocalDate.of(1900, 1, 1),
-                "OLD");
+                "B01CF00");
     }
 
     @Test
@@ -105,7 +106,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
             throws JsonProcessingException {
         var incomingRecords =
                 List.of(
-                        sourceRecord(3802L, 9999L, "Old Court", null, "B01CF00", 2L),
+                        sourceRecord(3802L, 9999L, "Renamed Court", null, "B01CF00", 2L),
                         sourceRecord(3803L, null, "New Court", "Llys Newydd", "B02CF00", 1L));
 
         stubFor(
@@ -136,7 +137,8 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                 .containsExactly(
                         new StagedCourtHouse(
                                 103803L, "New Court", 1L, "CHOA", "B02CF00", "Llys Newydd"),
-                        new StagedCourtHouse(9003106L, "Old Court", 2L, "CHOA", "B01CF00", null));
+                        new StagedCourtHouse(
+                                9003106L, "Renamed Court", 2L, "CHOA", "B01CF00", null));
         assertThat(
                         jdbcTemplate.queryForObject(
                                 """
@@ -166,7 +168,8 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
 
     @Test
     @Transactional
-    void existingNameKeepsItsIdAndCodeConsumersAcrossRepeatedIngress() throws Exception {
+    void existingCodeKeepsItsIdAndConsumersWhenCourtIsRenamedAcrossRepeatedIngress()
+            throws Exception {
         final var before = snapshot().size();
         var listId =
                 jdbcTemplate.queryForObject(
@@ -176,14 +179,16 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                         jdbcTemplate.update(
                                 "UPDATE "
                                         + schema
-                                        + ".application_lists SET courthouse_code='OLD001' WHERE al_id=?",
+                                        + ".application_lists SET courthouse_code='B01CF00' WHERE al_id=?",
                                 listId))
                 .isEqualTo(1);
         jdbcTemplate.update(
                 "UPDATE "
                         + schema
                         + ".configuration_parameters SET parameter_value='DEBUG' WHERE parameter_name='AUDIT_CSDS'");
-        var changed = record(Long.MAX_VALUE, 9999L, "Old Court", 2L);
+        var changed =
+                record(Long.MAX_VALUE, 9999L, "Renamed Court", 2L)
+                        .put("CourtLocationCode", "B01CF00");
         var missing = changed.deepCopy();
         missing.remove(List.of("CourtID", "PSSNationalCourthouseID"));
         for (var source : List.of(changed, missing)) {
@@ -191,12 +196,13 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
             assertThat(snapshot()).hasSize(before);
             var stored =
                     jdbcTemplate.queryForMap(
-                            "SELECT nch_id, version_number, court_location_code FROM "
+                            "SELECT nch_id, courthouse_name, version_number, court_location_code FROM "
                                     + schema
-                                    + ".national_court_houses WHERE courthouse_name='Old Court'");
+                                    + ".national_court_houses WHERE court_location_code='B01CF00'");
             assertThat(stored.get("nch_id")).isEqualTo(9003106L);
+            assertThat(stored.get("courthouse_name")).isEqualTo("Renamed Court");
             assertThat(((Number) stored.get("version_number")).longValue()).isEqualTo(2L);
-            assertThat(stored.get("court_location_code")).isEqualTo("OLD001");
+            assertThat(stored.get("court_location_code")).isEqualTo("B01CF00");
             assertThat(
                             jdbcTemplate.queryForObject(
                                     "SELECT courthouse_code FROM "
@@ -204,7 +210,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                                             + ".application_lists WHERE al_id=?",
                                     String.class,
                                     listId))
-                    .isEqualTo("OLD001");
+                    .isEqualTo("B01CF00");
             assertThat(source.has("NCH_ID")).isFalse();
         }
         var audit =
@@ -214,14 +220,54 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                                 + ".csds_audit WHERE appreg_key='9003106' ORDER BY ca_id DESC LIMIT 1");
         assertThat(((Number) audit.get("appreg_key")).longValue()).isEqualTo(9003106L);
         var auditedSource = OBJECT_MAPPER.readTree(audit.get("csds_json").toString());
-        assertThat(auditedSource.get("CourtName").textValue()).isEqualTo("Old Court");
+        assertThat(auditedSource.get("CourtName").textValue()).isEqualTo("Renamed Court");
+        assertThat(auditedSource.get("CourtLocationCode").textValue()).isEqualTo("B01CF00");
         assertThat(auditedSource.has("CourtID")).isFalse();
         assertThat(auditedSource.has("NCH_ID")).isFalse();
     }
 
     @Test
     @Transactional
-    void newNamesUseBothAllocationPathsRetainExpiredAndIgnoreFutureRecords() {
+    void sameNameWithDifferentCodesRemainsDistinctAcrossRepeatedIngress() throws Exception {
+        jdbcTemplate.update(
+                "UPDATE "
+                        + schema
+                        + ".configuration_parameters SET parameter_value='DEBUG' WHERE parameter_name='AUDIT_CSDS'");
+        var first = sourceRecord(3802L, 9903106L, "Shrewsbury Crown Court", null, "TSTSR00", 1L);
+        var second = sourceRecord(3803L, 9903107L, "Shrewsbury Crown Court", null, "TSTSW00", 1L);
+        var pages = List.of(page(first), page(second));
+        for (var attempt = 0; attempt < 2; attempt++) {
+            var response = courthouseProcessor.ingest(pages);
+            assertThat(response.getInserted()).isEqualTo(attempt == 0 ? 2 : 0);
+            assertThat(response.getUpdated()).isEqualTo(attempt == 0 ? 0 : 2);
+            assertThat(
+                            jdbcTemplate.queryForList(
+                                    "SELECT nch_id FROM "
+                                            + schema
+                                            + ".national_court_houses WHERE courthouse_name=? "
+                                            + "AND court_location_code IN ('TSTSR00','TSTSW00') ORDER BY nch_id",
+                                    Long.class,
+                                    "Shrewsbury Crown Court"))
+                    .containsExactly(9903106L, 9903107L);
+            for (var source : List.of(first, second)) {
+                var id = source.get("PSSNationalCourthouseID").longValue();
+                var json =
+                        jdbcTemplate.queryForObject(
+                                "SELECT csds_json FROM "
+                                        + schema
+                                        + ".csds_audit WHERE appreg_key=? ORDER BY ca_id DESC LIMIT 1",
+                                String.class,
+                                id);
+                assertThat(OBJECT_MAPPER.readTree(json))
+                        .isEqualTo(OBJECT_MAPPER.readTree(source.toString()));
+                assertThat(source.has("NCH_ID")).isFalse();
+            }
+        }
+    }
+
+    @Test
+    @Transactional
+    void newCodesUseBothAllocationPathsRetainExpiredAndIgnoreFutureRecords() {
         var before = snapshot().size();
         var fallback = record(3803L, null, "New Court", 1L);
         var pss = record(Long.MAX_VALUE, 5506L, "PSS Court", 1L).put("CourtWelshName", "Llys");
@@ -276,6 +322,8 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                         record(Long.MAX_VALUE, null, "Overflow", 1L),
                         record(3804L, 9003106L, "Stored ID collision", 1L),
                         record(3804L, 103803L, "Incoming ID collision", 1L),
+                        record(3804L, null, "Missing code", 1L).putNull("CourtLocationCode"),
+                        record(3804L, null, "Blank code", 1L).put("CourtLocationCode", ""),
                         record(3804L, null, "Bad start date", 1L).put("StartDate", "not-a-date"),
                         record(3804L, null, "Missing start date", 1L).putNull("StartDate"),
                         record(3804L, null, "Bad future end date", 1L)
@@ -298,7 +346,18 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
     }
 
     private ObjectNode record(Long courtId, Long pssId, String name, Long version) {
-        return sourceRecord(courtId, pssId, name, null, "OLD001", version);
+        return sourceRecord(
+                courtId,
+                pssId,
+                name,
+                null,
+                Map.of(
+                                "Old Court", "B01CF00",
+                                "New Court", "B02CF00",
+                                "PSS Court", "PSS001",
+                                "Expired Court", "EXP001")
+                        .getOrDefault(name, "BAD001"),
+                version);
     }
 
     private JsonNode page(JsonNode... records) {

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName("prefers the most recent null-end row when multiple courts share a code")
+        @DisplayName("prefers the most recent null-end row when case-insensitive codes match")
         void prefersMostRecentNullEndDateRow() {
             LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
             String code = "NCHNF001";
@@ -78,7 +79,8 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
             NationalCourtHouse newerCourt =
                     new NationalCourtHouseData()
                             .someMinimal()
-                            .courtLocationCode(code)
+                            // Distinct ingress keys still share a case-insensitive public lookup.
+                            .courtLocationCode(code.toLowerCase(Locale.ROOT))
                             .name("Newer Court")
                             .startDate(activeDate.minusDays(1))
                             .endDate(null)
@@ -114,7 +116,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
             NationalCourtHouse futureCourt =
                     new NationalCourtHouseData()
                             .someMinimal()
-                            .courtLocationCode(code)
+                            .courtLocationCode(code.toLowerCase(Locale.ROOT))
                             .name("Future Open Court")
                             .startDate(activeDate.plusDays(1))
                             .endDate(null)
@@ -172,7 +174,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
-                    .containsExactlyInAnyOrder("B13CC00", "C47CC00");
+                    .containsExactlyInAnyOrder("B13CC00", "C47CC00", "CCC003", "BCC006");
         }
 
         @Test
@@ -246,7 +248,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
             NationalCourtHouse futureCourt =
                     new NationalCourtHouseData()
                             .someMinimal()
-                            .courtLocationCode(code)
+                            .courtLocationCode(code.toLowerCase(Locale.ROOT))
                             .name("Future Court")
                             .startDate(today.plusDays(2))
                             .endDate(null)

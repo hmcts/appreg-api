@@ -30,11 +30,11 @@ public class NationalCourtHouseDiffReportingService
             List<JsonNode> processedData,
             NationalCourtHouseDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var idsByName =
+        var idsByCode =
                 diffResult.incomingById().values().stream()
                         .collect(
                                 Collectors.toMap(
-                                        NationalCourtHouseIngressRecord::name,
+                                        NationalCourtHouseIngressRecord::courtLocationCode,
                                         NationalCourtHouseIngressRecord::id));
         // Decorate report copies only: the CSV retains resolved IDs, while source/audit JSON is
         // untouched.
@@ -50,7 +50,7 @@ public class NationalCourtHouseDiffReportingService
                                                             ((ObjectNode) record)
                                                                     .put(
                                                                             NCH_ID,
-                                                                            idsByName.get(
+                                                                            idsByCode.get(
                                                                                     nullableText(
                                                                                             record,
                                                                                             processorProperties
@@ -86,7 +86,7 @@ public class NationalCourtHouseDiffReportingService
                                     NationalCourtHouseIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByName =
+        var incomingRecordsByCode =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
                         .collect(
@@ -104,10 +104,12 @@ public class NationalCourtHouseDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByName.get(item.intended().name()),
+                                                incomingRecordsByCode.get(
+                                                        item.intended().courtLocationCode()),
                                                 processorProperties.getLegacyKey()),
                                         nullableLong(
-                                                incomingRecordsByName.get(item.intended().name()),
+                                                incomingRecordsByCode.get(
+                                                        item.intended().courtLocationCode()),
                                                 processorProperties.getCsdsKey()),
                                         item.intended().id(),
                                         changeType(item.operation())))
@@ -149,11 +151,11 @@ public class NationalCourtHouseDiffReportingService
                         csvValue(nullableLong(node, processorProperties.getLegacyKey())),
                         csvValue(nullableLong(node, processorProperties.getCsdsKey())),
                         csvValue(nullableLong(node, NCH_ID)),
+                        csvValue(nullableText(node, "CourtName")),
+                        csvValue(nullableText(node, "CourtWelshName")),
                         csvValue(
                                 nullableText(
                                         node, processorProperties.getBusinessKeys().getFirst())),
-                        csvValue(nullableText(node, "CourtWelshName")),
-                        csvValue(nullableText(node, "CourtLocationCode")),
                         csvValue(nullableText(node, "StartDate")),
                         csvValue(nullableText(node, "EndDate")),
                         csvValue(nullableLong(node, "RevisionNumber")))

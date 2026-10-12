@@ -37,7 +37,7 @@ class CsdsIngressPropertiesTest {
         assertThat(processors.getResolutionCodes().getBusinessKeys()).containsExactly("Code");
         assertThat(processors.getStandardApplicants().getBusinessKeys()).containsExactly("Code");
         assertThat(processors.getNationalCourtHouses().getBusinessKeys())
-                .containsExactly("CourtName");
+                .containsExactly("CourtLocationCode");
         assertThat(processors.getFee().getBusinessKeys())
                 .containsExactly("FeeReference", "StartDate");
     }
@@ -52,7 +52,7 @@ class CsdsIngressPropertiesTest {
                                 prefix + "resolution-codes.business-keys[0]", "ResolutionCode",
                                 prefix + "standard-applicants.business-keys[0]", "ApplicantCode",
                                 prefix + "national-court-houses.business-keys[0]",
-                                        "CourtDisplayName",
+                                        "IncomingLocationCode",
                                 prefix + "fee.business-keys[0]", "SourceFeeReference",
                                 prefix + "fee.business-keys[1]", "EffectiveFrom"));
         var processors =
@@ -67,13 +67,13 @@ class CsdsIngressPropertiesTest {
         assertThat(processors.getStandardApplicants().getBusinessKeys())
                 .containsExactly("ApplicantCode");
         assertThat(processors.getNationalCourtHouses().getBusinessKeys())
-                .containsExactly("CourtDisplayName");
+                .containsExactly("IncomingLocationCode");
         assertThat(processors.getFee().getBusinessKeys())
                 .containsExactly("SourceFeeReference", "EffectiveFrom");
         assertThat(processors.getFee().getPrimaryKeys())
                 .containsExactly("fee_reference", "fee_start_date");
         assertThat(processors.getNationalCourtHouses().getPrimaryKeys())
-                .containsExactly("courthouse_name");
+                .containsExactly("court_location_code");
     }
 
     @Test

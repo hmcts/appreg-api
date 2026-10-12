@@ -27,12 +27,7 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 public class NationalCourtHouseDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, NationalCourtHouseDiffResult> {
     private static final List<String> REQUIRED_RECORD_FIELDS =
-            List.of(
-                    "CourtWelshName",
-                    "CourtLocationCode",
-                    "StartDate",
-                    "EndDate",
-                    "RevisionNumber");
+            List.of("CourtWelshName", "CourtName", "StartDate", "EndDate", "RevisionNumber");
 
     private final CsdsIngressProperties.NationalCourtHouses nationalCourtHouseProperties;
     private final NationalCourtHouseDiffService diffService;
@@ -173,20 +168,25 @@ public class NationalCourtHouseDataIngressProcessor
     }
 
     private NationalCourtHouseIngressRecord toSourceRecord(JsonNode node) {
+        val codeField = nationalCourtHouseProperties.getBusinessKeys().getFirst();
+        val code = requiredText(node, codeField);
+        if (code.isBlank()) {
+            throw invalidField(node, codeField);
+        }
         return new NationalCourtHouseIngressRecord(
                 nullableLong(node, nationalCourtHouseProperties.getCsdsKey()),
-                requiredText(node, nationalCourtHouseProperties.getBusinessKeys().getFirst()),
+                requiredText(node, "CourtName"),
                 requiredLong(node, "RevisionNumber"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                nullableText(node, "CourtLocationCode"),
+                code,
                 nullableText(node, "CourtWelshName"),
                 nullableLong(node, nationalCourtHouseProperties.getLegacyKey()));
     }
 
     private Map<Long, JsonNode> sourceRecordsById(
             List<JsonNode> processedData, NationalCourtHouseDiffResult diff) {
-        val sourcesByName =
+        val sourcesByCode =
                 processedData.stream()
                         .flatMap(page -> extractRecords(page).stream())
                         .collect(
@@ -198,11 +198,11 @@ public class NationalCourtHouseDataIngressProcessor
                                                                 .getBusinessKeys()
                                                                 .getFirst()),
                                         node -> node));
-        // Audit IDs stay numeric while raw source records are matched by business name.
+        // Audit IDs stay numeric while raw source records are matched by location code.
         return diff.diffRecords().stream()
                 .collect(
                         Collectors.toMap(
                                 item -> item.intended().id(),
-                                item -> sourcesByName.get(item.intended().name())));
+                                item -> sourcesByCode.get(item.intended().courtLocationCode())));
     }
 }

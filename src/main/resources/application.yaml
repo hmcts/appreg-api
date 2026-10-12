@@ -191,7 +191,7 @@ appreg:
           backup-source: national_court_houses
           backup-target: national_court_houses_staging
           ingress-target: national_court_houses
-          primary-keys: [courthouse_location_code]
+          primary-keys: [court_location_code]
           business-keys: [CourtLocationCode]
           csds-key: CourtID
           legacy-key: PSSNationalCourthouseID
