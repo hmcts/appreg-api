@@ -187,5 +187,8 @@ appreg:
   job:
     page-size: 10
   report:
-    page-size: ${APPREG_REPORT_PAGE_SIZE:2500}
-    max-rows: ${APPREG_REPORT_MAX_ROWS:100000}
+      page-size: ${APPREG_REPORT_PAGE_SIZE:2500}
+      max-rows: ${APPREG_REPORT_MAX_ROWS:100000}
+  date-validation:
+      min-date: ${APPREG_MIN_DATE:1900-01-01}
+      max-date: ${APPREG_MAX_DATE:3000-12-31}

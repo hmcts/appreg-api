@@ -573,6 +573,7 @@ tasks.named('openApiGenerate') {
   outputDir = layout.buildDirectory.dir('generated/openapi')
   apiPackage = 'uk.gov.hmcts.appregister.generated.api'
   modelPackage = 'uk.gov.hmcts.appregister.generated.model'
+  templateDir = layout.projectDirectory.dir('src/main/resources/openapi/templates')
   skipOperationExample = true
   openapiNormalizer = [
     REF_AS_PARENT_IN_ALLOF: 'true'

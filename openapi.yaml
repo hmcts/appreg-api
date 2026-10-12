@@ -7115,11 +7115,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
+          x-field-extra-annotation: '@DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
+          x-field-extra-annotation: '@DateValidator'
         standardApplicantCode:
           description: Standard applicant code (case-insensitive contains match).
           example: STD-00123
@@ -7664,6 +7666,7 @@ components:
           description: Single date of the Application List.
           example: 2025-10-07
           format: date
+          x-field-extra-annotation: '@DateValidator'
           type: string
         sequenceNumber:
           description: The sequence number of the application in the list.
@@ -7795,6 +7798,7 @@ components:
             date or a past date.
           example: 2025-12-01
           format: date
+          x-field-extra-annotation: '@DateValidator'
           type: string
       required:
       - paymentStatus
@@ -7871,6 +7875,7 @@ components:
             future.
           example: 2025-12-01
           format: date
+          x-field-extra-annotation: '@DateValidator'
           type: string
         paymentReference:
           description: Optional reference used to identify the payment.
@@ -8031,12 +8036,14 @@ components:
           description: Date the applicant record became active.
           example: 2025-12-01
           format: date
+          x-field-extra-annotation: '@DateValidator'
           type: string
         endDate:
           description: "Date the applicant record became inactive, or null if still\
             \ active."
           example: 2025-12-01
           format: date
+          x-field-extra-annotation: '@DateValidator'
           nullable: true
           type: string
       required:
