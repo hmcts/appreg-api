@@ -47,6 +47,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -80,6 +81,7 @@ import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     protected static final String WEB_CONTEXT = "application-list-entries";
     protected static final String CREATE_ENTRY_CONTEXT = "application-lists";
@@ -795,15 +797,25 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
-        ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
-        resolutionCode.setResultCode(resultCode);
-        resolutionCode.setTitle(resultCode + " title");
-        resolutionCode.setWording(resultCode + " wording");
-        resolutionCode.setLegislation("Test legislation");
-        resolutionCode.setStartDate(TEST_DATE);
-        resolutionCode.setChangedBy(1L);
-        resolutionCode.setChangedDate(TEST_OFFSET_DATE_TIME);
-        resolutionCode = persistance.save(resolutionCode);
+        // Reuse exact business codes. A keyed query can replace this small fixture-table scan.
+        var existing =
+                resolutionCodeRepository.findAll().stream()
+                        .filter(row -> resultCode.equals(row.getResultCode()))
+                        .findFirst();
+        ResolutionCode resolutionCode;
+        if (existing.isPresent()) {
+            resolutionCode = existing.get();
+        } else {
+            resolutionCode = new ResolutionCodeTestData().someComplete();
+            resolutionCode.setResultCode(resultCode);
+            resolutionCode.setTitle(resultCode + " title");
+            resolutionCode.setWording(resultCode + " wording");
+            resolutionCode.setLegislation("Test legislation");
+            resolutionCode.setStartDate(TEST_DATE);
+            resolutionCode.setChangedBy(1L);
+            resolutionCode.setChangedDate(TEST_OFFSET_DATE_TIME);
+            resolutionCode = persistance.save(resolutionCode);
+        }
 
         ApplicationCode persistedCode =
                 applicationCodeRepository

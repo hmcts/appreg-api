@@ -196,7 +196,16 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
     }
 
     protected ResolutionCode saveActiveResolutionCode(String code, LocalDate start, LocalDate end) {
-        ResolutionCode rc = new ResolutionCodeTestData().someComplete();
+        // Scan the small fixture table for its unique code; use a keyed query if it grows.
+        var existing =
+                resolutionCodeRepository.findAll().stream()
+                        .filter(row -> code.equals(row.getResultCode()))
+                        .findFirst();
+        // Seeded reference rows are shared; controlled validity tests must use fresh codes.
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        var rc = new ResolutionCodeTestData().someComplete();
         rc.setResultCode(code);
         rc.setStartDate(start);
         rc.setEndDate(end);
@@ -232,9 +241,10 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
         var entry = createEntry(list);
         persistance.save(entry);
 
-        var resolutionCode = new ResolutionCodeTestData().someComplete();
-        resolutionCode.setResultCode(APPC_CODE);
-        persistance.save(resolutionCode);
+        var resolutionCode =
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate(APPC_CODE, TEST_DATE)
+                        .getFirst();
 
         var entryResult = createAndSaveResolution(entry, resolutionCode);
 
