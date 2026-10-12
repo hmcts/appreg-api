@@ -1684,7 +1684,11 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
             offsiteFee.setDescription(OFFSITE_FEE_DESCRIPTION);
             offsiteFee.setAmount(BigDecimal.valueOf(70));
             offsiteFee.setOffsite(true);
-            offsiteFee.setStartDate(offsiteFeeStartDate);
+            // Offsite status is not part of the migrated primary key.
+            offsiteFee.setStartDate(
+                    offsiteFeeStartDate.equals(mainFeeStartDate)
+                            ? offsiteFeeStartDate.minusDays(1)
+                            : offsiteFeeStartDate);
             offsiteFee.setEndDate(null);
             persistance.save(offsiteFee);
         } finally {

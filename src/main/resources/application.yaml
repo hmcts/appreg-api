@@ -159,7 +159,7 @@ appreg:
           backup-source: fee
           backup-target: fee_staging
           ingress-target: fee
-          primary-keys: [fee_id]
+          primary-keys: [fee_reference, fee_start_date]
           source-entity-name: CivilFee
           parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
 #          mock: csds/fee.json # ...if specified - this overrides the rest endpoint.  Used for local dev

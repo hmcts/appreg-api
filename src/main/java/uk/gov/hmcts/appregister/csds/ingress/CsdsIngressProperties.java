@@ -194,7 +194,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class Fee extends ProcessorProperties {
         public Fee() {
-            super("CivilFee", "fee_staging", List.of("fee_id"));
+            super("CivilFee", "fee_staging", List.of("fee_reference", "fee_start_date"));
         }
     }
 

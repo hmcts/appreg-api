@@ -11,6 +11,11 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
 class CsdsIngressPropertiesTest {
+    @Test
+    void feeDefaultsUseBothBusinessKeyColumns() {
+        assertThat(new CsdsIngressProperties().getProcessors().getFee().getPrimaryKeys())
+                .containsExactly("fee_reference", "fee_start_date");
+    }
 
     @Test
     void given_compositePrimaryKeys_when_bind_then_preserveBothColumnsInOrder() {

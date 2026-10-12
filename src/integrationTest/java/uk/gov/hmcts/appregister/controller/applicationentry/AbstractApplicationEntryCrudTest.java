@@ -756,7 +756,8 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         fee.setDescription(description);
         fee.setAmount(amount);
         fee.setOffsite(offsite);
-        fee.setStartDate(TEST_DATE.minusDays(10));
+        // Overlapping fees remain distinct by reference/start date after V80.
+        fee.setStartDate(TEST_DATE.minusDays(endDate == null ? 11 : 10));
         fee.setEndDate(endDate);
         return persistance.save(fee);
     }

@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +32,36 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
             List<JsonNode> processedData,
             FeeDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
+        var idsByKey =
+                diffResult.incomingById().values().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        FeeIngressRecord::businessKey, FeeIngressRecord::id));
+        // Decorate report copies only; source/audit JSON must retain the original source IDs.
+        var reportPages =
+                processedData.stream()
+                        .map(
+                                page -> {
+                                    JsonNode copy = page.deepCopy();
+                                    recordsExtractor
+                                            .apply(copy)
+                                            .forEach(
+                                                    record ->
+                                                            ((ObjectNode) record)
+                                                                    .put(
+                                                                            FEE_ID,
+                                                                            idsByKey.get(
+                                                                                    businessKey(
+                                                                                            record))));
+                                    return copy;
+                                })
+                        .toList();
         super.reportDiff(
                 reportingDir,
                 datasetName,
                 targetTable,
                 targetKeyField,
-                processedData,
+                reportPages,
                 diffResult.incomingById(),
                 diffResult.existingById(),
                 diffResult.diffRecords(),
@@ -53,13 +79,12 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
             List<IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByFeeId =
+        var incomingRecordsByKey =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, FEE_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, FEE_ID),
+                                        FeeDiffReportingService::businessKey,
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -67,14 +92,22 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByFeeId.get(item.intended().id()),
+                                                incomingRecordsByKey.get(
+                                                        item.intended().businessKey()),
                                                 "PSSFixedListID"),
                                         nullableLong(
-                                                incomingRecordsByFeeId.get(item.intended().id()),
+                                                incomingRecordsByKey.get(
+                                                        item.intended().businessKey()),
                                                 "CivilFeeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
+    }
+
+    private static FeeIngressRecord.BusinessKey businessKey(JsonNode node) {
+        return new FeeIngressRecord.BusinessKey(
+                nullableText(node, "FeeReference"),
+                LocalDate.parse(nullableText(node, "StartDate")));
     }
 
     @Override
