@@ -102,17 +102,12 @@ public class ResolutionCodeDiffService
             return;
         }
 
-        log.error(
-                "Duplicate incoming resolution_code {} detected for {}. Existing record [{}], duplicate record [{}]",
-                item.code(),
-                targetTable,
-                describe(existing),
-                describe(item));
-        throw new CsdsDuplicateRecordException(
-                "Duplicate incoming resolution_code "
-                        + item.code()
-                        + " detected for "
-                        + targetTable);
+        val message =
+                ("Duplicate incoming resolution_code %s detected for %s. Existing record [%s], "
+                                + "duplicate record [%s]")
+                        .formatted(item.code(), targetTable, describe(existing), describe(item));
+        log.error(message);
+        throw new CsdsDuplicateRecordException(message);
     }
 
     private IngressDiffRecord<

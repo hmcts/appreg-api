@@ -97,17 +97,16 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
             return;
         }
 
-        log.error(
-                "Duplicate incoming fee business key {} detected for {}. Existing record [{}], duplicate record [{}]",
-                item.businessKey(),
-                targetTable,
-                describe(existing),
-                describe(item));
-        throw new CsdsDuplicateRecordException(
-                "Duplicate incoming fee business key "
-                        + item.businessKey()
-                        + " detected for "
-                        + targetTable);
+        val message =
+                ("Duplicate incoming fee business key %s detected for %s. Existing record [%s], "
+                                + "duplicate record [%s]")
+                        .formatted(
+                                item.businessKey(),
+                                targetTable,
+                                describe(existing),
+                                describe(item));
+        log.error(message);
+        throw new CsdsDuplicateRecordException(message);
     }
 
     private IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>

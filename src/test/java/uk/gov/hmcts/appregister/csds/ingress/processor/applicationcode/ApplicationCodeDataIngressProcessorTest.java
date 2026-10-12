@@ -841,7 +841,9 @@ class ApplicationCodeDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming application_code A3");
+                .hasMessageContaining("Duplicate incoming application_code A3")
+                .hasMessageContaining("Existing record [")
+                .hasMessageContaining("duplicate record [");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->

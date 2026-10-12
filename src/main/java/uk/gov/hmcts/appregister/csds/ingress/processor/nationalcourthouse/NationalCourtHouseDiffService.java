@@ -105,17 +105,12 @@ public class NationalCourtHouseDiffService
             return;
         }
 
-        log.error(
-                "Duplicate incoming courthouse_name {} detected for {}. Existing record [{}], duplicate record [{}]",
-                item.name(),
-                targetTable,
-                describe(existing),
-                describe(item));
-        throw new CsdsDuplicateRecordException(
-                "Duplicate incoming courthouse_name "
-                        + item.name()
-                        + " detected for "
-                        + targetTable);
+        val message =
+                ("Duplicate incoming courthouse_name %s detected for %s. Existing record [%s], "
+                                + "duplicate record [%s]")
+                        .formatted(item.name(), targetTable, describe(existing), describe(item));
+        log.error(message);
+        throw new CsdsDuplicateRecordException(message);
     }
 
     private IngressDiffRecord<

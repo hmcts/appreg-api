@@ -499,7 +499,9 @@ class FeeDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming fee business key");
+                .hasMessageContaining("Duplicate incoming fee business key")
+                .hasMessageContaining("Existing record [")
+                .hasMessageContaining("duplicate record [");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->

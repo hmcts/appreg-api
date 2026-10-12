@@ -190,7 +190,9 @@ class StandardApplicantDataIngressProcessorTest {
         try (var logs = LogCaptor.forClass(StandardApplicantDiffService.class)) {
             assertThatThrownBy(
                             () -> processor.ingest(List.of(createPage(first), createPage(second))))
-                    .hasMessageContaining("Duplicate incoming standard_applicant_code");
+                    .hasMessageContaining("Duplicate incoming standard_applicant_code")
+                    .hasMessageContaining("Existing record [")
+                    .hasMessageContaining("duplicate record [");
             assertThat(logs.getErrorLogs())
                     .anyMatch(
                             log ->

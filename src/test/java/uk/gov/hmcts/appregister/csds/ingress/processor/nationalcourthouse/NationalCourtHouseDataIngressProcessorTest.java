@@ -199,7 +199,9 @@ class NationalCourtHouseDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming courthouse_name Court");
+                .hasMessageContaining("Duplicate incoming courthouse_name Court")
+                .hasMessageContaining("Existing record [")
+                .hasMessageContaining("duplicate record [");
         assertThatThrownBy(
                         () ->
                                 processor.ingest(

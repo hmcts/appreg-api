@@ -754,7 +754,9 @@ class ResolutionCodeDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming resolution_code R2");
+                .hasMessageContaining("Duplicate incoming resolution_code R2")
+                .hasMessageContaining("Existing record [")
+                .hasMessageContaining("duplicate record [");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->
