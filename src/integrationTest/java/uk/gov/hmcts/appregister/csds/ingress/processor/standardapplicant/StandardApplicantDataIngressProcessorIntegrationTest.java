@@ -117,14 +117,18 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
         var before =
                 jdbc.queryForList(
                         "SELECT * FROM %s.standard_applicants ORDER BY sa_id".formatted(schema));
-        var existingId = applicants.findStandardApplicantByCode("APP001").orElseThrow().getId();
+        var existingId =
+                applicants
+                        .findStandardApplicantByCode("APP001", businessDateProvider.currentUkDate())
+                        .getFirst()
+                        .getId();
         var valid = source("CSDSNEW", 890003L, null, "New applicant");
         var duplicate = source("CSDSNEW", 890004L, null, "Duplicate");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(duplicate))))
                 .hasMessageContaining("Duplicate incoming standard_applicant_code");
         var collision = source("CSDSBAD", existingId - 100000L, null, "Collision");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(collision))))
-                .hasMessageContaining("Generated legacy SA_ID " + existingId);
+                .hasMessageContaining("Legacy SA_ID " + existingId);
         var noId = source("CSDSBAD", null, null, "Missing source ID");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(noId))))
                 .hasMessageContaining("Missing source ID");
@@ -160,7 +164,10 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
     @Test
     @Transactional
     void droppedFutureApplicantIsMissingForExistingReconciliationPolicy() {
-        var stored = applicants.findStandardApplicantByCode("APP001").orElseThrow();
+        var stored =
+                applicants
+                        .findStandardApplicantByCode("APP001", businessDateProvider.currentUkDate())
+                        .getFirst();
         var activeIds =
                 applicants.findAll().stream()
                         .filter(item -> item.getApplicantEndDate() == null)

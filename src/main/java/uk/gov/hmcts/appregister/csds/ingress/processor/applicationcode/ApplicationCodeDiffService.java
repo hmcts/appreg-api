@@ -65,7 +65,6 @@ public class ApplicationCodeDiffService
                         CommonAppError.INTERNAL_SERVER_ERROR,
                         "Missing ApplicationCodeID for new application code " + incoming.code());
             }
-            val usesGeneratedLegacyId = existing == null && incoming.pssId() == null;
             val intendedId =
                     existing == null
                             ? ApplicationCodeIngressRecord.calculateId(
@@ -79,19 +78,16 @@ public class ApplicationCodeDiffService
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
             val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if (usesGeneratedLegacyId
-                    && ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                            || incomingOwner != null)) {
-                log.error(
-                        "Generated legacy AC_ID {} conflicts for incoming application code [{}]",
-                        intendedId,
-                        describe(intended));
-                throw new CsdsDuplicateRecordException(
-                        "Generated legacy AC_ID "
-                                + intendedId
-                                + " conflicts for incoming application code ["
-                                + describe(intended)
-                                + "]");
+            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                    || incomingOwner != null) {
+                val message =
+                        "Legacy AC_ID %s conflicts for incoming application code [%s] with owner [%s]"
+                                .formatted(
+                                        intendedId,
+                                        describe(intended),
+                                        describe(incomingOwner != null ? incomingOwner : idOwner));
+                log.error(message);
+                throw new CsdsDuplicateRecordException(message);
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }

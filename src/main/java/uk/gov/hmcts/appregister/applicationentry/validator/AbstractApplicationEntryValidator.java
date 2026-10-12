@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -222,13 +223,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         LocalDate todayUk = currentBusinessDate();
 
         // validate the standard applicant code if provided
+        List<StandardApplicant> saCode;
         if (standardApplicantCode != null) {
-            var standardApplicant =
-                    standardApplicantRepository
-                            .findStandardApplicantByCodeAndDate(standardApplicantCode, todayUk)
-                            .orElse(null);
+            saCode =
+                    standardApplicantRepository.findStandardApplicantByCodeAndDate(
+                            standardApplicantCode, todayUk);
 
-            if (standardApplicant == null) {
+            if (saCode.isEmpty()) {
                 // throw exception we expect a valid standard applicant code
                 throw new AppRegistryException(
                         AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
@@ -238,7 +239,12 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
             log.debug("Validated standard applicant {}", standardApplicantCode);
 
-            return standardApplicant;
+            return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                    saCode,
+                    "standard applicant",
+                    standardApplicantCode,
+                    todayUk,
+                    StandardApplicant::getApplicantEndDate);
         }
 
         return null;
@@ -428,19 +434,23 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private ApplicationCode validateApplicationCode(T validatable) {
         LocalDate todayUk = currentBusinessDate();
         // validate that the application code exists and is valid for today
-        var applicationCode =
-                applicationCodeRepository
-                        .findByCodeAndDate(getApplicationCode(validatable), todayUk)
-                        .orElse(null);
+        List<ApplicationCode> code =
+                applicationCodeRepository.findByCodeAndDate(
+                        getApplicationCode(validatable), todayUk);
 
-        if (applicationCode == null) {
+        if (code.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
                     "No valid code can be found %s".formatted(getApplicationCode(validatable)));
         }
 
         log.debug("Validated the application code {}", getApplicationCode(validatable));
-        return applicationCode;
+        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                code,
+                "application code",
+                getApplicationCode(validatable),
+                todayUk,
+                ApplicationCode::getEndDate);
     }
 
     private void validateAccountNumber(T validatable) {

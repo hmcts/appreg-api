@@ -125,7 +125,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP002", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertThat(retrievedApplicant).isPresent();
+                    assertThat(retrievedApplicant).hasSize(1);
                 });
     }
 
@@ -137,7 +137,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP003", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertThat(retrievedApplicant).isPresent();
+                    assertThat(retrievedApplicant).hasSize(1);
                 });
     }
 
@@ -166,10 +166,11 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
 
         StandardApplicant savedHistoricApplicant = persistance.save(historicApplicant);
 
-        var retrievedApplicant = repository.findStandardApplicantByCode(code);
+        var retrievedApplicant = repository.findStandardApplicantByCode(code, activeDate);
 
         assertThat(retrievedApplicant)
-                .hasValueSatisfying(
+                .singleElement()
+                .satisfies(
                         applicant ->
                                 assertThat(applicant.getId())
                                         .isEqualTo(savedHistoricApplicant.getId()));

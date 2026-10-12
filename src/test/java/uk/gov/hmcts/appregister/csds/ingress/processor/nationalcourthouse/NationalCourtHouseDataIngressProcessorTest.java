@@ -465,7 +465,7 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void newIdOverflowFailsButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
+    void newIdOverflowAndCollidingLegacyIdsFail() {
         assertThatThrownBy(
                         () ->
                                 processor.ingest(
@@ -497,19 +497,26 @@ class NationalCourtHouseDataIngressProcessorTest {
                                                                 sourceRecord(
                                                                         33L, null, "Stored",
                                                                         1L))))))
-                .hasMessageContaining("Generated legacy NCH_ID 100033");
+                .hasMessageContaining("Legacy NCH_ID 100033");
 
         when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
                 .thenReturn(List.of());
-        var incomingCollision =
-                processor.diff(
-                        processor.preProcess(
-                                List.of(
-                                        page(
-                                                sourceRecord(1L, null, "Fallback", 1L),
-                                                sourceRecord(2L, 100001L, "PSS collision", 1L)
-                                                        .put("CourtLocationCode", "B02CF00")))));
-        assertThat(incomingCollision.diffRecords()).hasSize(2);
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(
+                                                page(
+                                                        sourceRecord(1L, null, "Fallback", 1L),
+                                                        sourceRecord(
+                                                                        2L,
+                                                                        100001L,
+                                                                        "PSS collision",
+                                                                        1L)
+                                                                .put(
+                                                                        "CourtLocationCode",
+                                                                        "B02CF00")))))
+                .hasMessageContaining("Legacy NCH_ID 100001");
+        verifyNoInteractions(bulkUpsertService);
     }
 
     @Test

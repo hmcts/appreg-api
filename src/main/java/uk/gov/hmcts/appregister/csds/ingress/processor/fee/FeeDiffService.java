@@ -67,20 +67,16 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
             val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if (existing == null
-                    && incoming.pssId() == null
-                    && ((idOwner != null && !idOwner.businessKey().equals(incoming.businessKey()))
-                            || incomingOwner != null)) {
-                log.error(
-                        "Generated legacy FEE_ID {} conflicts for incoming fee [{}]",
-                        intendedId,
-                        describe(intended));
-                throw new CsdsDuplicateRecordException(
-                        "Generated legacy FEE_ID "
-                                + intendedId
-                                + " conflicts for incoming fee ["
-                                + describe(intended)
-                                + "]");
+            if ((idOwner != null && !idOwner.businessKey().equals(incoming.businessKey()))
+                    || incomingOwner != null) {
+                val message =
+                        "Legacy FEE_ID %s conflicts for incoming fee [%s] with owner [%s]"
+                                .formatted(
+                                        intendedId,
+                                        describe(intended),
+                                        describe(incomingOwner != null ? incomingOwner : idOwner));
+                log.error(message);
+                throw new CsdsDuplicateRecordException(message);
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }

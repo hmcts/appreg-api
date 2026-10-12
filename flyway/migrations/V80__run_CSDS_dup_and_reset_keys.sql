@@ -52,10 +52,10 @@ alter table national_court_houses add constraint nch_id_key unique (nch_id);
 
 alter table national_court_houses drop constraint nch_pk;
 
-alter table national_court_houses add constraint nch_pk primary key (court_location_code);
-
--- delete any records with a null court_location_code, as they are invalid and will cause issues with the new primary key
+-- Remove invalid null or empty location codes before adding the new primary key.
 delete from national_court_houses where court_location_code is null or court_location_code = '';
+
+alter table national_court_houses add constraint nch_pk primary key (court_location_code);
 
 
 -- standard_applicants table
@@ -72,4 +72,3 @@ alter table standard_applicants add constraint standard_applicant_pk primary key
 alter table application_list_entries add constraint ale_sa_fk foreign key (sa_sa_id) references standard_applicants(sa_id);
 
 drop index if exists sa_sac_idx;
-

@@ -233,7 +233,7 @@ class StandardApplicantDataIngressProcessorTest {
     }
 
     @Test
-    void newRecordsWithoutIdsOrOverflowFailButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
+    void newRecordsWithoutIdsOverflowAndCollidingLegacyIdsFail() {
         var missing = sourceRecord(1L, null, "Missing");
         missing.remove(List.of("ApplicantID", "PSSApplicantID"));
         assertThatThrownBy(() -> processor.ingest(List.of(createPage(missing))))
@@ -259,18 +259,19 @@ class StandardApplicantDataIngressProcessorTest {
                                                         createPage(
                                                                 sourceRecord(
                                                                         1L, null, "Collision"))))))
-                .hasMessageContaining("Generated legacy SA_ID 100001");
+                .hasMessageContaining("Legacy SA_ID 100001");
 
         when(tableReadService.loadAll(any(), any())).thenReturn(List.of());
         var differentCode = sourceRecord(2L, 100001L, "Provided legacy key").put("Code", "OTHER");
-        var incomingCollision =
-                processor.diff(
-                        processor.preProcess(
-                                List.of(
-                                        createPage(
-                                                sourceRecord(1L, null, "Fallback"),
-                                                differentCode))));
-        assertThat(incomingCollision.diffRecords()).hasSize(2);
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(
+                                                createPage(
+                                                        sourceRecord(1L, null, "Fallback"),
+                                                        differentCode))))
+                .hasMessageContaining("Legacy SA_ID 100001");
+        verifyNoInteractions(applyService);
     }
 
     @Test

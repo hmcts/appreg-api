@@ -82,7 +82,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         assertThat(
                         applicationCodeRepository.findByCodeAndDate(
                                 "AD99002", LocalDate.now(java.time.ZoneOffset.UTC)))
-                .isPresent();
+                .hasSize(1);
     }
 
     @Test
@@ -116,7 +116,8 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         var result = applicationCodeRepository.findByCodeAndDate(applicationCode.getCode(), today);
 
         assertThat(result)
-                .hasValueSatisfying(
+                .singleElement()
+                .satisfies(
                         found -> {
                             Assertions.assertEquals(applicationCode.getId(), found.getId());
                             Assertions.assertNull(found.getEndDate());
@@ -146,7 +147,8 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         var result = applicationCodeRepository.findByCodeAndDate(code, today);
 
         assertThat(result)
-                .hasValueSatisfying(
+                .singleElement()
+                .satisfies(
                         found -> {
                             Assertions.assertEquals(exactMatchId, found.getId());
                             Assertions.assertEquals(code, found.getCode());

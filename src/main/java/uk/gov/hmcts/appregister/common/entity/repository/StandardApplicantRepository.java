@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,7 +23,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      *
      * @param code the applicant code to search for
      * @param date The date to check for active status
-     * @return the matching active standard applicant, or empty if not found
+     * @return matching active rows in deterministic selection order
      */
     @Query(
             """
@@ -33,36 +32,58 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
         AND sa.applicantStartDate <= :date
         AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
         """)
-    Optional<StandardApplicant> findStandardApplicantByCodeAndDate(
+    List<StandardApplicant> findStandardApplicantByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
-    /** Returns all standard-applicant rows active on the supplied date. */
+    /** Returns all standard-applicant rows active on the supplied date in selection order. */
     @Query(
             """
             SELECT sa
             FROM StandardApplicant sa
             WHERE sa.applicantStartDate <= :date
               AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+            ORDER BY LOWER(sa.applicantCode),
+                     CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                     sa.applicantEndDate DESC,
+                     sa.applicantStartDate DESC,
+                     sa.id DESC
             """)
     List<StandardApplicant> findAllByDate(@Param("date") LocalDate date);
 
     /**
      * Finds StandardApplicant rows by applicant code without filtering by lodgement date.
      *
-     * <p>Historic rows remain eligible so saved ALE detail rendering is not blocked by
+     * <p>The supplied active date is only used to prefer the currently active row when duplicate
+     * codes exist. Historic rows remain eligible so saved ALE detail rendering is not blocked by
      * date-effective lookup failures.
      *
      * @param code the applicant code to search for
-     * @return the matching StandardApplicant, or empty if not found
+     * @param active the date used to prefer currently active rows
+     * @return ordered matching StandardApplicant rows
      */
     @Query(
             """
         SELECT sa
         FROM StandardApplicant sa
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
+        ORDER BY CASE
+                    WHEN sa.applicantStartDate <= :active
+                     AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :active)
+                    THEN 0
+                    ELSE 1
+                 END,
+                 CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
         """)
-    Optional<StandardApplicant> findStandardApplicantByCode(@Param("code") String code);
+    List<StandardApplicant> findStandardApplicantByCode(
+            @Param("code") String code, @Param("active") LocalDate active);
 
     /**
      * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).

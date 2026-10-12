@@ -63,7 +63,7 @@ class ResolutionCodeDiffServiceTest {
     }
 
     @Test
-    void missingIdsAndOverflowFailButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
+    void missingIdsOverflowAndCollidingLegacyIdsFail() {
         when(reader.loadAll("resolution_codes", rowMapper))
                 .thenReturn(List.of(record(100007L, null, "OLD")));
         assertThatThrownBy(() -> diff(List.of(record(null, null, "NEW"))))
@@ -73,15 +73,26 @@ class ResolutionCodeDiffServiceTest {
                 .isInstanceOf(ArithmeticException.class);
 
         assertThatThrownBy(() -> diff(List.of(record(7L, null, "NEW"))))
-                .hasMessageContaining("Generated legacy RC_ID 100007");
+                .hasMessageContaining("Legacy RC_ID 100007");
+
+        assertThatThrownBy(() -> diff(List.of(record(7L, 100007L, "NEW"))))
+                .hasMessageContaining("Legacy RC_ID 100007")
+                .hasMessageContaining("OLD")
+                .hasMessageContaining("NEW");
 
         assertThat(diff(List.of(record(7L, 42L, "NEW"))).diffRecords()).hasSize(1);
 
         when(reader.loadAll("resolution_codes", rowMapper)).thenReturn(List.of());
-        assertThat(
-                        diff(List.of(record(7L, null, "NEW"), record(8L, 100007L, "OTHER")))
-                                .diffRecords())
-                .hasSize(2);
+        for (Long firstPssId : new Long[] {null, 100007L}) {
+            var first = record(7L, firstPssId, "NEW");
+            var second = record(8L, 100007L, "OTHER");
+            for (var records : List.of(List.of(first, second), List.of(second, first))) {
+                assertThatThrownBy(() -> diff(records))
+                        .hasMessageContaining("Legacy RC_ID 100007")
+                        .hasMessageContaining("NEW")
+                        .hasMessageContaining("OTHER");
+            }
+        }
     }
 
     private ResolutionCodeDiffResult diff(List<ResolutionCodeIngressRecord> records) {

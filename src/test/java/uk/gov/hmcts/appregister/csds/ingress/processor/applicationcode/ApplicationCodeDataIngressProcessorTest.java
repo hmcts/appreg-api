@@ -119,7 +119,7 @@ class ApplicationCodeDataIngressProcessorTest {
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> processor.diff(records))
-                .hasMessageContaining("Generated legacy AC_ID 100003")
+                .hasMessageContaining("Legacy AC_ID 100003")
                 .hasMessageContaining("A4");
     }
 

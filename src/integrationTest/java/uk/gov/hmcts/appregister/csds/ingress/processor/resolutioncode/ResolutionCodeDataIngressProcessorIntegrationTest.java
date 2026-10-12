@@ -115,7 +115,7 @@ class ResolutionCodeDataIngressProcessorIntegrationTest extends BaseRepositoryTe
                         .put("ResolutionCodeID", existing.getId() - 100000L)
                         .putNull("PSSResolutionCodeID");
         assertThatThrownBy(() -> processor.ingest(List.of(page(first), page(collision))))
-                .hasMessageContaining("Generated legacy RC_ID " + existing.getId());
+                .hasMessageContaining("Legacy RC_ID " + existing.getId());
         assertThat(repository.count()).isEqualTo(count);
         assertThat(repository.findById(1000001L)).isEmpty();
     }

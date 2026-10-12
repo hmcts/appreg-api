@@ -57,7 +57,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns seeded APPC when active on date (case-insensitive code)")
         void returnsAppc() {
             assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", today()))
-                    .hasValueSatisfying(
+                    .singleElement()
+                    .satisfies(
                             rc -> {
                                 assertThat(rc.getResultCode()).isEqualTo("APPC");
                                 assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
@@ -146,7 +147,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             var result = repository.findActiveResolutionCodesByCodeAndDate("appc", today());
 
             assertThat(result)
-                    .hasValueSatisfying(
+                    .singleElement()
+                    .satisfies(
                             rc -> {
                                 assertThat(rc.getResultCode()).isEqualTo("APPC");
                                 assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");

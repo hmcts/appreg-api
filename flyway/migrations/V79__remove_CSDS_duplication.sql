@@ -180,6 +180,13 @@ BEGIN
             EXIT WHEN NOT FOUND;
 
             IF r_find_records_by_fee.fee_id <> r_fee_id THEN
+                -- Keep the existing survivor link and its audit metadata when both fees are linked.
+                DELETE FROM ${flyway:defaultSchema}.app_list_entry_fee_id duplicate_link
+                USING ${flyway:defaultSchema}.app_list_entry_fee_id survivor_link
+                WHERE duplicate_link.fee_fee_id = r_find_records_by_fee.fee_id
+                  AND survivor_link.fee_fee_id = r_fee_id
+                  AND survivor_link.ale_ale_id = duplicate_link.ale_ale_id;
+
                 -- Move application_list_entries to the kept record
                 UPDATE ${flyway:defaultSchema}.app_list_entry_fee_id
                 SET fee_fee_id = r_fee_id

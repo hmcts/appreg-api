@@ -240,7 +240,7 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
         var resolutionCode =
                 resolutionCodeRepository
                         .findActiveResolutionCodesByCodeAndDate(APPC_CODE, TEST_DATE)
-                        .orElseThrow();
+                        .getFirst();
 
         var entryResult = createAndSaveResolution(entry, resolutionCode);
 

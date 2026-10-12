@@ -29,7 +29,7 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
      *
      * @param code case-insensitive business code (e.g. "ABC123")
      * @param date local date to check for active codes
-     * @return the matching active row, or empty if not found
+     * @return matching active rows in deterministic selection order
      */
     @Query(
             """
@@ -43,7 +43,7 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
                  rc.startDate DESC,
                  rc.id DESC
         """)
-    Optional<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
+    List<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
     /**

@@ -76,22 +76,17 @@ public class NationalCourtHouseDiffService
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
             val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if (existing == null
-                    && incoming.pssId() == null
-                    && ((idOwner != null
-                                    && !idOwner.courtLocationCode()
-                                            .equals(incoming.courtLocationCode()))
-                            || incomingOwner != null)) {
-                log.error(
-                        "Generated legacy NCH_ID {} conflicts for incoming national courthouse [{}]",
-                        intendedId,
-                        describe(intended));
-                throw new CsdsDuplicateRecordException(
-                        "Generated legacy NCH_ID "
-                                + intendedId
-                                + " conflicts for incoming national courthouse ["
-                                + describe(intended)
-                                + "]");
+            if ((idOwner != null
+                            && !idOwner.courtLocationCode().equals(incoming.courtLocationCode()))
+                    || incomingOwner != null) {
+                val message =
+                        "Legacy NCH_ID %s conflicts for incoming national courthouse [%s] with owner [%s]"
+                                .formatted(
+                                        intendedId,
+                                        describe(intended),
+                                        describe(incomingOwner != null ? incomingOwner : idOwner));
+                log.error(message);
+                throw new CsdsDuplicateRecordException(message);
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }

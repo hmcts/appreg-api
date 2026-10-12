@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,7 +20,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
      * Finds an ApplicationCode entity by its application code.
      *
      * @param applicationCode the application code to search for
-     * @return the matching code, or empty if not found; assumes no case-only code clashes
+     * @return matching active rows in deterministic selection order
      */
     @Query(
             """
@@ -30,16 +29,25 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             WHERE LOWER(c.code) = LOWER(CAST(:applicationCode AS string))
               AND c.startDate <= :dateTime
               AND (c.endDate IS NULL OR c.endDate >= :dateTime)
+            ORDER BY CASE WHEN c.endDate IS NULL THEN 0 ELSE 1 END,
+                     c.endDate DESC,
+                     c.startDate DESC,
+                     c.id DESC
             """)
-    Optional<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
+    List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
-    /** Returns all application-code rows active on the supplied date. */
+    /** Returns all application-code rows active on the supplied date in selection order. */
     @Query(
             """
             SELECT c
             FROM ApplicationCode c
             WHERE c.startDate <= :date
               AND (c.endDate IS NULL OR c.endDate >= :date)
+            ORDER BY LOWER(c.code),
+                     CASE WHEN c.endDate IS NULL THEN 0 ELSE 1 END,
+                     c.endDate DESC,
+                     c.startDate DESC,
+                     c.id DESC
             """)
     List<ApplicationCode> findAllByDate(@Param("date") LocalDate date);
 

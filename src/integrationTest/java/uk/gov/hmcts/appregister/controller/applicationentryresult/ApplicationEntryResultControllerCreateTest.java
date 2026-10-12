@@ -292,6 +292,8 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         var preferredId =
                 resolutionCodeRepository
                         .findActiveResolutionCodesByCodeAndDate("DUP1", today)
+                        .stream()
+                        .findFirst()
                         .orElseThrow(
                                 () ->
                                         new AssertionError(

@@ -1,11 +1,17 @@
 package uk.gov.hmcts.appregister.standardapplicant.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Optional;
+import java.time.Month;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.function.BiFunction;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,26 +22,32 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 
 @ExtendWith(MockitoExtension.class)
 class StandardApplicantExistsValidatorTest {
+    private static final ZoneId UK_ZONE = ZoneId.of("Europe/London");
+    private static final LocalDate TODAY_UK = LocalDate.of(2026, Month.JUNE, 9);
+
     @Mock private StandardApplicantRepository standardApplicantRepository;
 
     private StandardApplicantExistsValidator validator;
 
     @BeforeEach
     void setUp() {
-        validator = new StandardApplicantExistsValidator(standardApplicantRepository);
+        Clock clock = Clock.fixed(Instant.parse("2026-06-09T10:00:00Z"), ZoneId.of("UTC"));
+        validator =
+                new StandardApplicantExistsValidator(standardApplicantRepository, clock, UK_ZONE);
     }
 
     @Test
     void successValidation() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(Optional.of(standardApplicant));
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
+                .thenReturn(List.of(standardApplicant));
 
         // call the validator. No assertions needed as no exception means success
         validator.validate(code);
@@ -45,8 +57,8 @@ class StandardApplicantExistsValidatorTest {
     void successValidationCallback() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(Optional.of(standardApplicant));
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
+                .thenReturn(List.of(standardApplicant));
 
         BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
                 mockCallback();
@@ -61,8 +73,8 @@ class StandardApplicantExistsValidatorTest {
     void successValidationFailNoCallback() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(Optional.empty());
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
+                .thenReturn(List.of());
 
         BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
                 mockCallback();
@@ -78,8 +90,8 @@ class StandardApplicantExistsValidatorTest {
     @Test
     void successValidationFailureNotFound() {
         String code = "test";
-        when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(Optional.empty());
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
+                .thenReturn(List.of());
 
         // call the validator. No assertions needed as no exception means success
         AppRegistryException appRegistryException =
@@ -96,16 +108,19 @@ class StandardApplicantExistsValidatorTest {
     }
 
     @Test
-    void historicApplicantRemainsAvailableForDetailLookup() {
+    void successValidationFailureDuplicate_prefersFirstRecord() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
-        standardApplicant.setApplicantEndDate(LocalDate.of(2020, 1, 1));
-        when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(Optional.of(standardApplicant));
+        StandardApplicant alternativeApplicant = new StandardApplicant();
+        when(standardApplicantRepository.findStandardApplicantByCode(code, TODAY_UK))
+                .thenReturn(List.of(standardApplicant, alternativeApplicant));
+
+        LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
 
         StandardApplicant actual = validator.validate(code, (request, applicant) -> applicant);
 
         Assertions.assertSame(standardApplicant, actual);
+        assertThat(logCaptor.getWarnLogs().getFirst()).contains("Data quality warning");
     }
 
     @SuppressWarnings("unchecked")

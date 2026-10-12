@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
@@ -57,7 +59,8 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     /**
      * Retrieve a Result Code by its code and effective date.
      *
-     * <p>Returns the active record for the given combination of {@code code} and {@code date}.
+     * <p>Selects the first deterministically ordered active record for {@code code} and {@code
+     * date}, logging overlapping matches. Throws a domain-specific exception if no record is found.
      *
      * @param code the identifier for the Result Code (case-insensitive)
      * @param date ISO date on which the Result Code must be valid
@@ -70,17 +73,19 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                 ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT,
                 unused -> {
                     log.debug("Start: Find active Result Code using code: {} date: {}", code, date);
-                    final ResolutionCode selected =
-                            repository
-                                    .findActiveResolutionCodesByCodeAndDate(code, date)
-                                    .orElse(null);
+                    final List<ResolutionCode> rows =
+                            repository.findActiveResolutionCodesByCodeAndDate(code, date);
 
-                    if (selected == null) {
+                    if (rows.isEmpty()) {
                         throw new AppRegistryException(
                                 ResultCodeError.RESULT_CODE_NOT_FOUND,
                                 "No result code found for code '%s' on date %s"
                                         .formatted(code, date));
                     }
+
+                    ResolutionCode selected =
+                            ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                                    rows, "result code", code, date, ResolutionCode::getEndDate);
 
                     log.debug(
                             "Finish: Find active Result Code for code: {} on date: {}", code, date);

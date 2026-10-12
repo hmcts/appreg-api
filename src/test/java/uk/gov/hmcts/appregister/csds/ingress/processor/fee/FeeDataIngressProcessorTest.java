@@ -604,7 +604,7 @@ class FeeDataIngressProcessorTest {
     }
 
     @Test
-    void invalidNewIdsRejectButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
+    void invalidNewIdsAndCollidingLegacyIdsReject() {
         var owner =
                 new FeeIngressRecord(
                         100033L,
@@ -643,15 +643,16 @@ class FeeDataIngressProcessorTest {
                                                 List.of(
                                                         createPageResponse(valid),
                                                         createPageResponse(generatedCollision)))))
-                .hasMessageContaining("Generated legacy FEE_ID 100033");
+                .hasMessageContaining("Legacy FEE_ID 100033");
 
-        var incomingCollisionDiff =
-                processor.diff(
-                        processor.preProcess(
-                                List.of(
-                                        createPageResponse(valid),
-                                        createPageResponse(incomingCollision))));
-        assertThat(incomingCollisionDiff.diffRecords()).hasSize(2);
+        assertThatThrownBy(
+                        () ->
+                                processor.ingest(
+                                        List.of(
+                                                createPageResponse(valid),
+                                                createPageResponse(incomingCollision))))
+                .hasMessageContaining("Legacy FEE_ID 100001");
+        verifyNoInteractions(bulkUpsertService);
     }
 
     @ParameterizedTest

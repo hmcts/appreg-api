@@ -72,20 +72,16 @@ public class ResolutionCodeDiffService
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
             val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if (existing == null
-                    && incoming.pssId() == null
-                    && ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                            || incomingOwner != null)) {
-                log.error(
-                        "Generated legacy RC_ID {} conflicts for incoming resolution code [{}]",
-                        intendedId,
-                        describe(intended));
-                throw new CsdsDuplicateRecordException(
-                        "Generated legacy RC_ID "
-                                + intendedId
-                                + " conflicts for incoming resolution code ["
-                                + describe(intended)
-                                + "]");
+            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                    || incomingOwner != null) {
+                val message =
+                        "Legacy RC_ID %s conflicts for incoming resolution code [%s] with owner [%s]"
+                                .formatted(
+                                        intendedId,
+                                        describe(intended),
+                                        describe(incomingOwner != null ? incomingOwner : idOwner));
+                log.error(message);
+                throw new CsdsDuplicateRecordException(message);
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }

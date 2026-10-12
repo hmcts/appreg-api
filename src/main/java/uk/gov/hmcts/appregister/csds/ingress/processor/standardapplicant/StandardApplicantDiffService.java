@@ -68,20 +68,16 @@ public class StandardApplicantDiffService
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
             val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if (existing == null
-                    && incoming.pssId() == null
-                    && ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                            || incomingOwner != null)) {
-                log.error(
-                        "Generated legacy SA_ID {} conflicts for incoming standard applicant [{}]",
-                        intendedId,
-                        describe(intended));
-                throw new CsdsDuplicateRecordException(
-                        "Generated legacy SA_ID "
-                                + intendedId
-                                + " conflicts for incoming standard applicant ["
-                                + describe(intended)
-                                + "]");
+            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                    || incomingOwner != null) {
+                val message =
+                        "Legacy SA_ID %s conflicts for incoming standard applicant [%s] with owner [%s]"
+                                .formatted(
+                                        intendedId,
+                                        describe(intended),
+                                        describe(incomingOwner != null ? incomingOwner : idOwner));
+                log.error(message);
+                throw new CsdsDuplicateRecordException(message);
             }
             diffRecords.add(
                     new IngressDiffRecord<>(

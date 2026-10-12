@@ -105,7 +105,7 @@ class CreateApplicationEntryValidatorTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         FeeTestData feeTestData = new FeeTestData();
         fee = feeTestData.someComplete();
@@ -116,7 +116,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), TODAY_UK))
-                .thenReturn(Optional.of(standardApplicant));
+                .thenReturn(List.of(standardApplicant));
     }
 
     private static void sanitiseFeeStatusDates(List<FeeStatus> feeStatuses) {
@@ -148,7 +148,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -180,7 +180,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -203,7 +203,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -413,7 +413,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), TODAY_UK))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of());
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -432,7 +432,7 @@ class CreateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testStandardApplicantLookup_returnsMatchingRecord() {
+    void testStandardApplicantMultiple_prefersFirstRecord() {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
@@ -442,9 +442,10 @@ class CreateApplicationEntryValidatorTest {
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
         StandardApplicant preferredStandardApplicant = new StandardApplicant();
+        StandardApplicant alternativeStandardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), TODAY_UK))
-                .thenReturn(Optional.of(preferredStandardApplicant));
+                .thenReturn(List.of(preferredStandardApplicant, alternativeStandardApplicant));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -467,7 +468,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of());
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -486,7 +487,7 @@ class CreateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantCodeLookup_returnsMatchingRecord() {
+    void testApplicantCodeMultiple_prefersFirstRecord() {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
@@ -495,9 +496,12 @@ class CreateApplicationEntryValidatorTest {
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
+        ApplicationCode alternativeApplicationCode = new ApplicationCodeTestData().someComplete();
+        alternativeApplicationCode.setEndDate(TODAY_UK.plusDays(1));
+
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode, alternativeApplicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -593,7 +597,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -662,7 +666,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -690,7 +694,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -719,7 +723,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -796,7 +800,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -832,7 +836,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
         when(feeService.resolveFeePair(Mockito.any(), eq(TODAY_UK)))
                 .thenReturn(new FeePair(fee, null));
 
@@ -867,7 +871,7 @@ class CreateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(Optional.of(applicationCode));
+                .thenReturn(List.of(applicationCode));
 
         when(feeService.resolveFeePair(Mockito.notNull(), Mockito.notNull()))
                 .thenReturn(new FeePair(fee, null));

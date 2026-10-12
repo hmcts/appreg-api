@@ -5,6 +5,7 @@ import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -89,7 +90,7 @@ class ApplicationEntryResultUpdateValidatorTest {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(Optional.of(resolutionCode));
+                .thenReturn(List.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
         AppListEntryResolution entryResolution = new AppListEntryResolution();
@@ -190,7 +191,7 @@ class ApplicationEntryResultUpdateValidatorTest {
     void validateResolutionCodeDoesNotExist() {
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
