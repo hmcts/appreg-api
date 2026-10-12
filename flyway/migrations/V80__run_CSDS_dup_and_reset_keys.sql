@@ -52,7 +52,10 @@ alter table national_court_houses add constraint nch_id_key unique (nch_id);
 
 alter table national_court_houses drop constraint nch_pk;
 
-alter table national_court_houses add constraint nch_pk primary key (courthouse_name);
+alter table national_court_houses add constraint nch_pk primary key (court_location_code);
+
+-- delete any records with a null court_location_code, as they are invalid and will cause issues with the new primary key
+delete from national_court_houses where court_location_code is null or court_location_code = '';
 
 
 -- standard_applicants table

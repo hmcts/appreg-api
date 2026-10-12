@@ -207,17 +207,17 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     cur_find_duplicate_nch CURSOR FOR
-        SELECT courthouse_name, COUNT(*) AS count
+        SELECT court_location_code, COUNT(*) AS count
         FROM ${flyway:defaultSchema}.national_court_houses
-        GROUP BY courthouse_name
+        GROUP BY court_location_code
         HAVING COUNT(*) > 1;
 
     r_find_duplicate_nch  RECORD;
 
-    cur_find_records_by_nch CURSOR (p_courthouse_name ${flyway:defaultSchema}.national_court_houses.courthouse_name%TYPE) FOR
+    cur_find_records_by_nch CURSOR (p_court_location_code ${flyway:defaultSchema}.national_court_houses.court_location_code%TYPE) FOR
         SELECT nch_id
         FROM ${flyway:defaultSchema}.national_court_houses
-        WHERE courthouse_name = p_courthouse_name;
+        WHERE court_location_code = p_court_location_code;
     
     r_find_records_by_nch RECORD;  
 
@@ -233,14 +233,14 @@ BEGIN
         -- try and find the highest version number on the code, or if not take the highest id
         SELECT nch_id INTO r_nch_id
             FROM (
-                SELECT t.*, ROW_NUMBER() OVER (PARTITION BY courthouse_name ORDER BY version_number DESC, nch_id DESC) AS rn
+                SELECT t.*, ROW_NUMBER() OVER (PARTITION BY court_location_code ORDER BY version_number DESC, nch_id DESC) AS rn
                 FROM ${flyway:defaultSchema}.national_court_houses t
-                WHERE t.courthouse_name = r_find_duplicate_nch.courthouse_name
+                WHERE t.court_location_code = r_find_duplicate_nch.court_location_code
             ) as ranked
         WHERE rn = 1;
 
         -- Delete all other duplicates, after moving their existing application_list_entries to the kept record
-        OPEN cur_find_records_by_nch(r_find_duplicate_nch.courthouse_name);
+        OPEN cur_find_records_by_nch(r_find_duplicate_nch.court_location_code);
         LOOP
             FETCH cur_find_records_by_nch INTO r_find_records_by_nch;
             EXIT WHEN NOT FOUND;
@@ -255,7 +255,7 @@ BEGIN
 
         CLOSE cur_find_records_by_nch;
 
-        RAISE NOTICE 'Duplicate national court house: %', r_find_duplicate_nch.courthouse_name;
+        RAISE NOTICE 'Duplicate national court house: %', r_find_duplicate_nch.court_location_code;
         RAISE NOTICE 'Keeping national court house with ID: %', r_nch_id;
     END LOOP;
 
