@@ -30,6 +30,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -167,9 +170,15 @@ class FeeDataIngressProcessorTest {
                 .isEqualTo(sourceRecord);
     }
 
-    @Test
-    void given_processedData_when_apply_then_logsDiffAgainstExistingFees_and_writesComparisonFiles()
-            throws Exception {
+    @ParameterizedTest
+    @CsvSource({"FeeReference,StartDate", "IncomingReference,EffectiveFrom"})
+    void given_processedData_when_apply_then_logsDiffAgainstExistingFees_and_writesComparisonFiles(
+            String referenceField, String startDateField) throws Exception {
+        properties
+                .getProcessors()
+                .getFee()
+                .setBusinessKeys(List.of(referenceField, startDateField));
+        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
         var existingUpdated =
                 new FeeIngressRecord(
                         33L,
@@ -204,6 +213,26 @@ class FeeDataIngressProcessorTest {
         processorLogCaptor.clearLogs();
 
         processor.apply(processor.preProcess(processedData));
+
+        verify(csdsAuditService)
+                .persistSuccessAudits(
+                        eq(CsdsAuditLevel.DEBUG),
+                        argThat(
+                                entries ->
+                                        entries.size() == 2
+                                                && entries.stream()
+                                                        .allMatch(
+                                                                entry ->
+                                                                        entry.csdsJson()
+                                                                                        .contains(
+                                                                                                "\""
+                                                                                                        + referenceField
+                                                                                                        + "\":")
+                                                                                && entry.csdsJson()
+                                                                                        .contains(
+                                                                                                "\""
+                                                                                                        + startDateField
+                                                                                                        + "\":"))));
 
         assertThat(logCaptor.getInfoLogs())
                 .anyMatch(log -> log.contains("incoming=2, existing=2, inserts=1, updates=1"));
@@ -483,8 +512,21 @@ class FeeDataIngressProcessorTest {
         verify(ingressClient).retrieveJson("/count/APPREGISTER/CivilFee/GD");
     }
 
-    @Test
-    void given_duplicateBusinessPair_when_apply_then_throwException() {
+    @ParameterizedTest
+    @CsvSource({"FeeReference,StartDate", "IncomingReference,EffectiveFrom"})
+    void given_duplicateBusinessPair_when_apply_then_throwException(
+            String referenceField, String startDateField) {
+        properties
+                .getProcessors()
+                .getFee()
+                .setBusinessKeys(List.of(referenceField, startDateField));
+        for (var field : List.of(referenceField, startDateField)) {
+            var missingField = createSourceRecord(101L, "FEE", "Description", 1L);
+            missingField.remove(field);
+            assertThatThrownBy(
+                            () -> processor.preProcess(List.of(createPageResponse(missingField))))
+                    .hasMessageContaining(field);
+        }
         var logCaptor = LogCaptor.forClass(FeeDiffService.class);
         logCaptor.clearLogs();
 
@@ -538,10 +580,16 @@ class FeeDataIngressProcessorTest {
         assertThat(source.get("FEE_ID").longValue()).isEqualTo(8888L);
     }
 
-    @Test
-    void sameReferenceWithDifferentStartsIsValidButRepeatedPairAcrossPagesIsNot() {
+    @ParameterizedTest
+    @CsvSource({"FeeReference,StartDate", "IncomingReference,EffectiveFrom"})
+    void sameReferenceWithDifferentStartsIsValidButRepeatedPairAcrossPagesIsNot(
+            String referenceField, String startDateField) {
+        properties
+                .getProcessors()
+                .getFee()
+                .setBusinessKeys(List.of(referenceField, startDateField));
         var first = createSourceRecord(1L, "PAIR", "First", 1L);
-        var second = createSourceRecord(2L, "PAIR", "Second", 1L).put("StartDate", "2021-01-01");
+        var second = createSourceRecord(2L, "PAIR", "Second", 1L).put(startDateField, "2021-01-01");
         assertThat(processor.ingest(List.of(createPageResponse(first, second))).getInserted())
                 .isEqualTo(2);
         assertThatThrownBy(
@@ -606,11 +654,19 @@ class FeeDataIngressProcessorTest {
         assertThat(incomingCollisionDiff.diffRecords()).hasSize(2);
     }
 
-    @Test
-    void ukTodayAndExpiredAreRetainedTomorrowIsWarnedAndExcludedBeforeIdentityChecks() {
-        var today = createSourceRecord(1L, "DATE", "Today", 1L).put("StartDate", "2026-07-02");
+    @ParameterizedTest
+    @ValueSource(strings = {"StartDate", "EffectiveFrom"})
+    void ukTodayAndExpiredAreRetainedTomorrowIsWarnedAndExcludedBeforeIdentityChecks(
+            String startDateField) {
+        properties
+                .getProcessors()
+                .getFee()
+                .setBusinessKeys(List.of("FeeReference", startDateField));
+        var today = createSourceRecord(1L, "DATE", "Today", 1L).put(startDateField, "2026-07-02");
         var future =
-                today.deepCopy().put("StartDate", "2026-07-03").put("CivilFeeID", Long.MAX_VALUE);
+                today.deepCopy()
+                        .put(startDateField, "2026-07-03")
+                        .put("CivilFeeID", Long.MAX_VALUE);
         var expired = createSourceRecord(2L, "OLD", "Expired", 1L).put("EndDate", "2021-01-01");
         try (var logs = LogCaptor.forClass(FeeDataIngressProcessor.class)) {
             var retained =
@@ -730,10 +786,14 @@ class FeeDataIngressProcessorTest {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put("FeeReference", feeReference)
+                        .put(
+                                properties.getProcessors().getFee().getBusinessKeys().getFirst(),
+                                feeReference)
                         .put("Description", description)
                         .put("FeeValue", feeValue)
-                        .put("StartDate", "2020-01-01")
+                        .put(
+                                properties.getProcessors().getFee().getBusinessKeys().get(1),
+                                "2020-01-01")
                         .putNull("EndDate")
                         .putNull("Notes")
                         .put("CurrentRecordIndicator", false)

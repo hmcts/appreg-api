@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -630,8 +633,12 @@ class ResolutionCodeDataIngressProcessorTest {
                         });
     }
 
-    @Test
-    void given_pssResolutionCodeIdPresent_when_apply_then_useItAsTheResolvedKey() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"Code", "IncomingCode"})
+    void given_pssResolutionCodeIdPresent_when_apply_then_useItAsTheResolvedKey(String codeField)
+            throws Exception {
+        properties.getProcessors().getResolutionCodes().setBusinessKeys(List.of(codeField));
+        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper)).thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ResolutionCodeDiffReportingService.class);
@@ -643,6 +650,24 @@ class ResolutionCodeDataIngressProcessorTest {
                                 createPageResponse(
                                         createSourceRecordWithoutResolutionCodeId(
                                                 345L, "R3", "Title 3", "Wording 3", 1L)))));
+
+        verify(csdsAuditService)
+                .persistSuccessAudits(
+                        eq(CsdsAuditLevel.DEBUG),
+                        argThat(
+                                entries ->
+                                        entries.size() == 1
+                                                && entries.getFirst().appregKey().equals(345L)
+                                                && entries.getFirst()
+                                                        .csdsJson()
+                                                        .equals(
+                                                                createSourceRecordWithoutResolutionCodeId(
+                                                                                345L,
+                                                                                "R3",
+                                                                                "Title 3",
+                                                                                "Wording 3",
+                                                                                1L)
+                                                                        .toString())));
 
         assertThat(logCaptor.getInfoLogs())
                 .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
@@ -738,8 +763,14 @@ class ResolutionCodeDataIngressProcessorTest {
         verify(ingressClient).retrieveJson("/count/APPREGISTER/ResolutionCode/GD");
     }
 
-    @Test
-    void given_duplicateCode_when_apply_then_throwException() {
+    @ParameterizedTest
+    @ValueSource(strings = {"Code", "IncomingCode"})
+    void given_duplicateCode_when_apply_then_throwException(String codeField) {
+        properties.getProcessors().getResolutionCodes().setBusinessKeys(List.of(codeField));
+        var missingField = createSourceRecord(101L, "R1", "Title", "Wording", 1L);
+        missingField.remove(codeField);
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(missingField))))
+                .hasMessageContaining(codeField);
         var logCaptor = LogCaptor.forClass(ResolutionCodeDiffService.class);
         logCaptor.clearLogs();
 
@@ -906,7 +937,13 @@ class ResolutionCodeDataIngressProcessorTest {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put("Code", code)
+                        .put(
+                                properties
+                                        .getProcessors()
+                                        .getResolutionCodes()
+                                        .getBusinessKeys()
+                                        .getFirst(),
+                                code)
                         .put("ResultTitle", title)
                         .put("ResultWording", wording)
                         .putNull("Legislation")

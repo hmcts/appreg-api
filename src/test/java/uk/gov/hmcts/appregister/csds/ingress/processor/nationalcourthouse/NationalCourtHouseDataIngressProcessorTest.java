@@ -27,6 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -131,8 +133,12 @@ class NationalCourtHouseDataIngressProcessorTest {
         assertThat(processor.diff(processed).incomingById()).containsOnlyKeys(103802L);
     }
 
-    @Test
-    void given_existingAndNewCourts_when_ingest_then_upsertsAndReturnsSummary() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"CourtName", "IncomingCourtName"})
+    void given_existingAndNewCourts_when_ingest_then_upsertsAndReturnsSummary(String nameField)
+            throws Exception {
+        properties.getProcessors().getNationalCourtHouses().setBusinessKeys(List.of(nameField));
+        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
         var existing =
                 new NationalCourtHouseIngressRecord(
                         3106L,
@@ -154,6 +160,20 @@ class NationalCourtHouseDataIngressProcessorTest {
 
         assertThat(response.getInserted()).isEqualTo(1);
         assertThat(response.getUpdated()).isEqualTo(1);
+        verify(csdsAuditService)
+                .persistSuccessAudits(
+                        eq(CsdsAuditLevel.DEBUG),
+                        argThat(
+                                entries ->
+                                        entries.size() == 2
+                                                && entries.stream()
+                                                        .allMatch(
+                                                                entry ->
+                                                                        entry.csdsJson()
+                                                                                .contains(
+                                                                                        "\""
+                                                                                                + nameField
+                                                                                                + "\":"))));
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("national_court_houses_staging"),
@@ -190,8 +210,15 @@ class NationalCourtHouseDataIngressProcessorTest {
         }
     }
 
-    @Test
-    void given_duplicateNamesAcrossPages_when_ingest_then_rejectsBeforeDatabaseRead() {
+    @ParameterizedTest
+    @ValueSource(strings = {"CourtName", "IncomingCourtName"})
+    void given_duplicateNamesAcrossPages_when_ingest_then_rejectsBeforeDatabaseRead(
+            String nameField) {
+        properties.getProcessors().getNationalCourtHouses().setBusinessKeys(List.of(nameField));
+        var missingField = sourceRecord(3802L, 3106L, "Court", 1L);
+        missingField.remove(nameField);
+        assertThatThrownBy(() -> processor.preProcess(List.of(page(missingField))))
+                .hasMessageContaining(nameField);
         List<JsonNode> processedData =
                 List.of(
                         page(sourceRecord(3802L, 3106L, "Court", 1L)),
@@ -431,7 +458,13 @@ class NationalCourtHouseDataIngressProcessorTest {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put("CourtName", name)
+                        .put(
+                                properties
+                                        .getProcessors()
+                                        .getNationalCourtHouses()
+                                        .getBusinessKeys()
+                                        .getFirst(),
+                                name)
                         .putNull("CourtWelshName")
                         .put("CourtLocationCode", "B01CF00")
                         .put("StartDate", "1900-01-01")

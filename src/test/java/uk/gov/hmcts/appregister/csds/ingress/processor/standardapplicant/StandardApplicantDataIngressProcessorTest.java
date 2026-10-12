@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -125,9 +128,13 @@ class StandardApplicantDataIngressProcessorTest {
         assertThat(fallbackIdRecord.telephoneNumber()).isEqualTo("020 1234 5678");
     }
 
-    @Test
-    void given_reportingDirConfigured_when_apply_then_writesComparisonReports() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"Code", "IncomingCode"})
+    void given_reportingDirConfigured_when_apply_then_writesComparisonReports(String codeField)
+            throws Exception {
         properties.getProcessors().getStandardApplicants().setReportingDir(tempDir.toString());
+        properties.getProcessors().getStandardApplicants().setBusinessKeys(List.of(codeField));
+        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
         processor =
                 new StandardApplicantDataIngressProcessor(
                         properties,
@@ -145,6 +152,22 @@ class StandardApplicantDataIngressProcessorTest {
         processor.apply(
                 processor.preProcess(
                         List.of(createPage(sourceRecord(9659L, 6278L, "Derbyshire")))));
+
+        verify(csdsAuditService)
+                .persistSuccessAudits(
+                        eq(CsdsAuditLevel.DEBUG),
+                        argThat(
+                                entries ->
+                                        entries.size() == 1
+                                                && entries.getFirst().appregKey().equals(42L)
+                                                && entries.getFirst()
+                                                        .csdsJson()
+                                                        .equals(
+                                                                sourceRecord(
+                                                                                9659L,
+                                                                                6278L,
+                                                                                "Derbyshire")
+                                                                        .toString())));
 
         try (var files = Files.list(tempDir)) {
             var reports = files.toList();
@@ -183,8 +206,14 @@ class StandardApplicantDataIngressProcessorTest {
         }
     }
 
-    @Test
-    void duplicateCodesAcrossPagesFailBeforeWrites() {
+    @ParameterizedTest
+    @ValueSource(strings = {"Code", "IncomingCode"})
+    void duplicateCodesAcrossPagesFailBeforeWrites(String codeField) {
+        properties.getProcessors().getStandardApplicants().setBusinessKeys(List.of(codeField));
+        var missingField = sourceRecord(1L, null, "Missing");
+        missingField.remove(codeField);
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPage(missingField))))
+                .hasMessageContaining(codeField);
         var first = sourceRecord(1L, null, "First");
         var second = sourceRecord(2L, null, "Second");
         try (var logs = LogCaptor.forClass(StandardApplicantDiffService.class)) {
@@ -327,7 +356,13 @@ class StandardApplicantDataIngressProcessorTest {
                 OBJECT_MAPPER
                         .createObjectNode()
                         .put("ApplicantID", applicantId)
-                        .put("Code", "DCCMH")
+                        .put(
+                                properties
+                                        .getProcessors()
+                                        .getStandardApplicants()
+                                        .getBusinessKeys()
+                                        .getFirst(),
+                                "DCCMH")
                         .put("OrganisationName", organisationName)
                         .put("StartDate", "2018-08-01")
                         .putNull("EndDate")

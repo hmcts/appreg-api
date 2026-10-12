@@ -28,7 +28,6 @@ public class ApplicationCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ApplicationCodeDiffResult> {
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
-                    "Code",
                     "ApplicationTitle",
                     "ApplicationWording",
                     "Legislation",
@@ -78,7 +77,10 @@ public class ApplicationCodeDataIngressProcessor
                 clock,
                 REQUIRED_RECORD_FIELDS,
                 "application code",
-                record -> record.path("Code").asText());
+                record ->
+                        record.path(applicationCodeProperties.getBusinessKeys().getFirst())
+                                .asText(),
+                "StartDate");
     }
 
     @Override
@@ -188,7 +190,7 @@ public class ApplicationCodeDataIngressProcessor
     private ApplicationCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
                 nullableLong(node, applicationCodeProperties.getCsdsKey()),
-                requiredText(node, "Code"),
+                requiredText(node, applicationCodeProperties.getBusinessKeys().getFirst()),
                 requiredText(node, "ApplicationTitle"),
                 requiredText(node, "ApplicationWording"),
                 nullableText(node, "Legislation"),
@@ -208,7 +210,14 @@ public class ApplicationCodeDataIngressProcessor
                 processedData.stream()
                         .flatMap(page -> extractRecords(page).stream())
                         .collect(
-                                Collectors.toMap(node -> requiredText(node, "Code"), node -> node));
+                                Collectors.toMap(
+                                        node ->
+                                                requiredText(
+                                                        node,
+                                                        applicationCodeProperties
+                                                                .getBusinessKeys()
+                                                                .getFirst()),
+                                        node -> node));
         // Audit keys remain numeric AC_IDs; ingress identity is the application code.
         return diff.diffRecords().stream()
                 .collect(

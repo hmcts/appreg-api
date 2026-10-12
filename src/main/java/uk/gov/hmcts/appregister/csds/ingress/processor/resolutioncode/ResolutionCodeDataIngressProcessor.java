@@ -28,7 +28,6 @@ public class ResolutionCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ResolutionCodeDiffResult> {
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
-                    "Code",
                     "ResultTitle",
                     "ResultWording",
                     "Legislation",
@@ -76,7 +75,9 @@ public class ResolutionCodeDataIngressProcessor
                 clock,
                 REQUIRED_RECORD_FIELDS,
                 "resolution code",
-                record -> record.path("Code").asText());
+                record ->
+                        record.path(resolutionCodeProperties.getBusinessKeys().getFirst()).asText(),
+                "StartDate");
     }
 
     @Override
@@ -182,7 +183,7 @@ public class ResolutionCodeDataIngressProcessor
     private ResolutionCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ResolutionCodeIngressRecord(
                 nullableLong(node, resolutionCodeProperties.getCsdsKey()),
-                requiredText(node, "Code"),
+                requiredText(node, resolutionCodeProperties.getBusinessKeys().getFirst()),
                 requiredText(node, "ResultTitle"),
                 requiredText(node, "ResultWording"),
                 nullableText(node, "Legislation"),
@@ -200,7 +201,14 @@ public class ResolutionCodeDataIngressProcessor
                 processedData.stream()
                         .flatMap(page -> extractRecords(page).stream())
                         .collect(
-                                Collectors.toMap(node -> requiredText(node, "Code"), node -> node));
+                                Collectors.toMap(
+                                        node ->
+                                                requiredText(
+                                                        node,
+                                                        resolutionCodeProperties
+                                                                .getBusinessKeys()
+                                                                .getFirst()),
+                                        node -> node));
         // Audit correlation remains numeric even though matching uses the business code.
         return diff.diffRecords().stream()
                 .collect(

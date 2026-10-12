@@ -27,7 +27,6 @@ public class StandardApplicantDataIngressProcessor
     private static final String MISSING_ADDRESS = "<missing>";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
-                    "Code",
                     "OrganisationName",
                     "StartDate",
                     "EndDate",
@@ -70,7 +69,10 @@ public class StandardApplicantDataIngressProcessor
                 clock,
                 REQUIRED_RECORD_FIELDS,
                 "standard applicant",
-                record -> nullableText(record, "Code"));
+                record ->
+                        nullableText(
+                                record, standardApplicantProperties.getBusinessKeys().getFirst()),
+                "StartDate");
     }
 
     @Override
@@ -175,7 +177,7 @@ public class StandardApplicantDataIngressProcessor
         val address = firstAddress(node);
         return new StandardApplicantIngressRecord(
                 nullableLong(node, standardApplicantProperties.getCsdsKey()),
-                requiredText(node, "Code"),
+                requiredText(node, standardApplicantProperties.getBusinessKeys().getFirst()),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
                 requiredLong(node, "RevisionNumber"),
@@ -227,7 +229,14 @@ public class StandardApplicantDataIngressProcessor
                 processedData.stream()
                         .flatMap(page -> extractRecords(page).stream())
                         .collect(
-                                Collectors.toMap(node -> requiredText(node, "Code"), node -> node));
+                                Collectors.toMap(
+                                        node ->
+                                                requiredText(
+                                                        node,
+                                                        standardApplicantProperties
+                                                                .getBusinessKeys()
+                                                                .getFirst()),
+                                        node -> node));
         // Audit correlation remains numeric even though matching uses the business code.
         return diff.diffRecords().stream()
                 .collect(

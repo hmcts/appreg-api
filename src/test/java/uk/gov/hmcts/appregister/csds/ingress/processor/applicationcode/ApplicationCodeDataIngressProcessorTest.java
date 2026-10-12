@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -482,9 +484,13 @@ class ApplicationCodeDataIngressProcessorTest {
                                         && log.contains("Continuing ingress"));
     }
 
-    @Test
-    void given_reportingDirConfigured_when_apply_then_writesCsvFiles() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"Code", "IncomingCode"})
+    void given_reportingDirConfigured_when_apply_then_writesCsvFiles(String codeField)
+            throws Exception {
         properties.getProcessors().getApplicationCodes().setReportingDir(tempDir.toString());
+        properties.getProcessors().getApplicationCodes().setBusinessKeys(List.of(codeField));
+        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
         diffService = new ApplicationCodeDiffService(tableReadService, rowMapper);
         diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
@@ -546,6 +552,21 @@ class ApplicationCodeDataIngressProcessorTest {
                                                 1L,
                                                 "2020-01-01",
                                                 LocalDate.now().minusDays(1).toString())))));
+
+        verify(csdsAuditService)
+                .persistSuccessAudits(
+                        eq(CsdsAuditLevel.DEBUG),
+                        argThat(
+                                entries ->
+                                        entries.size() == 3
+                                                && entries.stream()
+                                                        .allMatch(
+                                                                entry ->
+                                                                        entry.csdsJson()
+                                                                                .contains(
+                                                                                        "\""
+                                                                                                + codeField
+                                                                                                + "\":"))));
 
         try (var fileStream = Files.list(tempDir)) {
             var createdFiles = fileStream.toList();
@@ -826,8 +847,14 @@ class ApplicationCodeDataIngressProcessorTest {
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
-    @Test
-    void given_duplicateCodeAcrossPages_when_apply_then_throwException() {
+    @ParameterizedTest
+    @ValueSource(strings = {"Code", "IncomingCode"})
+    void given_duplicateCodeAcrossPages_when_apply_then_throwException(String codeField) {
+        properties.getProcessors().getApplicationCodes().setBusinessKeys(List.of(codeField));
+        var missingField = createSourceRecord(101L, "C1", "Title", "Legislation", 1L);
+        missingField.remove(codeField);
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(missingField))))
+                .hasMessageContaining(codeField);
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffService.class);
         logCaptor.clearLogs();
 
@@ -1068,7 +1095,13 @@ class ApplicationCodeDataIngressProcessorTest {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put("Code", code)
+                        .put(
+                                properties
+                                        .getProcessors()
+                                        .getApplicationCodes()
+                                        .getBusinessKeys()
+                                        .getFirst(),
+                                code)
                         .put("ApplicationTitle", title)
                         .put("ApplicationWording", wording)
                         .putNull("Legislation")

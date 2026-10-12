@@ -28,7 +28,6 @@ public class NationalCourtHouseDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, NationalCourtHouseDiffResult> {
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
-                    "CourtName",
                     "CourtWelshName",
                     "CourtLocationCode",
                     "StartDate",
@@ -73,7 +72,10 @@ public class NationalCourtHouseDataIngressProcessor
                 clock,
                 REQUIRED_RECORD_FIELDS,
                 "national courthouse",
-                record -> nullableText(record, "CourtName"));
+                record ->
+                        nullableText(
+                                record, nationalCourtHouseProperties.getBusinessKeys().getFirst()),
+                "StartDate");
     }
 
     @Override
@@ -173,7 +175,7 @@ public class NationalCourtHouseDataIngressProcessor
     private NationalCourtHouseIngressRecord toSourceRecord(JsonNode node) {
         return new NationalCourtHouseIngressRecord(
                 nullableLong(node, nationalCourtHouseProperties.getCsdsKey()),
-                requiredText(node, "CourtName"),
+                requiredText(node, nationalCourtHouseProperties.getBusinessKeys().getFirst()),
                 requiredLong(node, "RevisionNumber"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
@@ -189,7 +191,13 @@ public class NationalCourtHouseDataIngressProcessor
                         .flatMap(page -> extractRecords(page).stream())
                         .collect(
                                 Collectors.toMap(
-                                        node -> requiredText(node, "CourtName"), node -> node));
+                                        node ->
+                                                requiredText(
+                                                        node,
+                                                        nationalCourtHouseProperties
+                                                                .getBusinessKeys()
+                                                                .getFirst()),
+                                        node -> node));
         // Audit IDs stay numeric while raw source records are matched by business name.
         return diff.diffRecords().stream()
                 .collect(

@@ -146,30 +146,29 @@ public class CsdsIngressProperties {
 
         private List<String> primaryKeys;
 
+        // Ordered CSDS field mappings, not additional identity columns. Fees use reference, date.
+        private List<String> businessKeys;
+
+        private final int businessKeyCount;
+
         private String csdsKey;
 
         private String legacyKey;
 
         private String reportingDir;
 
-        protected ProcessorProperties() {
-            // Default constructor for configuration binding.
-        }
-
-        protected ProcessorProperties(
-                String sourceEntityName, String ingressTarget, List<String> primaryKeys) {
-            this.sourceEntityName = sourceEntityName;
-            this.ingressTarget = ingressTarget;
-            this.primaryKeys = primaryKeys;
-        }
-
         protected ProcessorProperties(
                 String sourceEntityName,
                 String ingressTarget,
                 List<String> primaryKeys,
+                List<String> businessKeys,
                 String csdsKey,
                 String legacyKey) {
-            this(sourceEntityName, ingressTarget, primaryKeys);
+            this.sourceEntityName = sourceEntityName;
+            this.ingressTarget = ingressTarget;
+            this.primaryKeys = primaryKeys;
+            this.businessKeys = businessKeys;
+            this.businessKeyCount = businessKeys.size();
             this.csdsKey = csdsKey;
             this.legacyKey = legacyKey;
         }
@@ -180,10 +179,16 @@ public class CsdsIngressProperties {
                             && StringUtils.hasText(ingressTarget)
                             && StringUtils.hasText(csdsKey)
                             && StringUtils.hasText(legacyKey)
-                            && primaryKeys != null
-                            && !primaryKeys.isEmpty()
-                            && primaryKeys.stream().allMatch(StringUtils::hasText)
-                            && primaryKeys.stream().distinct().count() == primaryKeys.size());
+                            && validKeyFields(primaryKeys)
+                            && validKeyFields(businessKeys)
+                            && businessKeys.size() == businessKeyCount);
+        }
+
+        private boolean validKeyFields(List<String> fields) {
+            return fields != null
+                    && !fields.isEmpty()
+                    && fields.stream().allMatch(StringUtils::hasText)
+                    && fields.stream().distinct().count() == fields.size();
         }
 
         protected boolean requiresRemoteAccess() {
@@ -199,6 +204,7 @@ public class CsdsIngressProperties {
                     "ApplicationCode",
                     "application_codes_staging",
                     List.of("application_code"),
+                    List.of("Code"),
                     "ApplicationCodeID",
                     "PSSApplicationCodeID");
         }
@@ -212,6 +218,7 @@ public class CsdsIngressProperties {
                     "ResolutionCode",
                     "resolution_codes_staging",
                     List.of("resolution_code"),
+                    List.of("Code"),
                     "ResolutionCodeID",
                     "PSSResolutionCodeID");
         }
@@ -225,6 +232,7 @@ public class CsdsIngressProperties {
                     "CivilFee",
                     "fee_staging",
                     List.of("fee_reference", "fee_start_date"),
+                    List.of("FeeReference", "StartDate"),
                     "CivilFeeID",
                     "PSSFixedListID");
         }
@@ -238,6 +246,7 @@ public class CsdsIngressProperties {
                     "Court",
                     "national_court_houses_staging",
                     List.of("courthouse_name"),
+                    List.of("CourtName"),
                     "CourtID",
                     "PSSNationalCourthouseID");
         }
@@ -251,6 +260,7 @@ public class CsdsIngressProperties {
                     "GetStandardApplicant",
                     "standard_applicants_staging",
                     List.of("standard_applicant_code"),
+                    List.of("Code"),
                     "ApplicantID",
                     "PSSApplicantID");
         }

@@ -19,10 +19,10 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
     private static final String FEE_ID = "FEE_ID";
     private static final String CSV_HEADER =
             "pssFixedListId,civilFeeId,feeId,reference,description,amount,startDate,endDate,version\n";
-    private final String reportingDir;
+    private final CsdsIngressProperties.Fee processorProperties;
 
     public FeeDiffReportingService(CsdsIngressProperties properties) {
-        this.reportingDir = properties.getProcessors().getFee().getReportingDir();
+        this.processorProperties = properties.getProcessors().getFee();
     }
 
     public void reportDiff(
@@ -57,7 +57,7 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
                                 })
                         .toList();
         super.reportDiff(
-                reportingDir,
+                processorProperties.getReportingDir(),
                 datasetName,
                 targetTable,
                 targetKeyField,
@@ -84,7 +84,7 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
                         .flatMap(page -> recordsExtractor.apply(page).stream())
                         .collect(
                                 Collectors.toMap(
-                                        FeeDiffReportingService::businessKey,
+                                        this::businessKey,
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -94,20 +94,20 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
                                         nullableLong(
                                                 incomingRecordsByKey.get(
                                                         item.intended().businessKey()),
-                                                "PSSFixedListID"),
+                                                processorProperties.getLegacyKey()),
                                         nullableLong(
                                                 incomingRecordsByKey.get(
                                                         item.intended().businessKey()),
-                                                "CivilFeeID"),
+                                                processorProperties.getCsdsKey()),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
     }
 
-    private static FeeIngressRecord.BusinessKey businessKey(JsonNode node) {
+    private FeeIngressRecord.BusinessKey businessKey(JsonNode node) {
         return new FeeIngressRecord.BusinessKey(
-                nullableText(node, "FeeReference"),
-                LocalDate.parse(nullableText(node, "StartDate")));
+                nullableText(node, processorProperties.getBusinessKeys().getFirst()),
+                LocalDate.parse(nullableText(node, processorProperties.getBusinessKeys().get(1))));
     }
 
     @Override
@@ -139,13 +139,15 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, "PSSFixedListID")),
-                        csvValue(nullableLong(node, "CivilFeeID")),
+                        csvValue(nullableLong(node, processorProperties.getLegacyKey())),
+                        csvValue(nullableLong(node, processorProperties.getCsdsKey())),
                         csvValue(nullableLong(node, FEE_ID)),
-                        csvValue(nullableText(node, "FeeReference")),
+                        csvValue(
+                                nullableText(
+                                        node, processorProperties.getBusinessKeys().getFirst())),
                         csvValue(nullableText(node, "Description")),
                         csvValue(nullableText(node, "FeeValue")),
-                        csvValue(nullableText(node, "StartDate")),
+                        csvValue(nullableText(node, processorProperties.getBusinessKeys().get(1))),
                         csvValue(nullableText(node, "EndDate")),
                         csvValue(resolvedVersion(node)))
                 + "\n";

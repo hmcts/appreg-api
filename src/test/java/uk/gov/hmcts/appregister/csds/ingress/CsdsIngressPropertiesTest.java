@@ -33,6 +33,77 @@ class CsdsIngressPropertiesTest {
                 .isEqualTo("PSSNationalCourthouseID");
         assertThat(processors.getStandardApplicants().getCsdsKey()).isEqualTo("ApplicantID");
         assertThat(processors.getStandardApplicants().getLegacyKey()).isEqualTo("PSSApplicantID");
+        assertThat(processors.getApplicationCodes().getBusinessKeys()).containsExactly("Code");
+        assertThat(processors.getResolutionCodes().getBusinessKeys()).containsExactly("Code");
+        assertThat(processors.getStandardApplicants().getBusinessKeys()).containsExactly("Code");
+        assertThat(processors.getNationalCourtHouses().getBusinessKeys())
+                .containsExactly("CourtName");
+        assertThat(processors.getFee().getBusinessKeys())
+                .containsExactly("FeeReference", "StartDate");
+    }
+
+    @Test
+    void businessKeyMappingsBindIncomingFieldsInOrderWithoutChangingDatabaseKeys() {
+        var prefix = "appreg.csds.ingress.processors.";
+        var source =
+                new MapConfigurationPropertySource(
+                        Map.of(
+                                prefix + "application-codes.business-keys[0]", "ApplicationCode",
+                                prefix + "resolution-codes.business-keys[0]", "ResolutionCode",
+                                prefix + "standard-applicants.business-keys[0]", "ApplicantCode",
+                                prefix + "national-court-houses.business-keys[0]",
+                                        "CourtDisplayName",
+                                prefix + "fee.business-keys[0]", "SourceFeeReference",
+                                prefix + "fee.business-keys[1]", "EffectiveFrom"));
+        var processors =
+                new Binder(source)
+                        .bind("appreg.csds.ingress", CsdsIngressProperties.class)
+                        .get()
+                        .getProcessors();
+        assertThat(processors.getApplicationCodes().getBusinessKeys())
+                .containsExactly("ApplicationCode");
+        assertThat(processors.getResolutionCodes().getBusinessKeys())
+                .containsExactly("ResolutionCode");
+        assertThat(processors.getStandardApplicants().getBusinessKeys())
+                .containsExactly("ApplicantCode");
+        assertThat(processors.getNationalCourtHouses().getBusinessKeys())
+                .containsExactly("CourtDisplayName");
+        assertThat(processors.getFee().getBusinessKeys())
+                .containsExactly("SourceFeeReference", "EffectiveFrom");
+        assertThat(processors.getFee().getPrimaryKeys())
+                .containsExactly("fee_reference", "fee_start_date");
+        assertThat(processors.getNationalCourtHouses().getPrimaryKeys())
+                .containsExactly("courthouse_name");
+    }
+
+    @Test
+    void enabledProcessorsRequireNonblankDistinctBusinessFieldsWithTheirFixedKeyShape() {
+        var processors = new CsdsIngressProperties().getProcessors();
+        for (var processor :
+                List.of(
+                        processors.getApplicationCodes(),
+                        processors.getResolutionCodes(),
+                        processors.getFee(),
+                        processors.getNationalCourtHouses(),
+                        processors.getStandardApplicants())) {
+            processor.setEnabled(true);
+            var defaults = processor.getBusinessKeys();
+            List<List<String>> invalidKeys =
+                    Arrays.asList(
+                            null,
+                            List.of(),
+                            List.of(" "),
+                            Arrays.asList((String) null),
+                            List.of("Duplicate", "Duplicate"),
+                            List.of("Name", "Date", "Extra"),
+                            defaults.size() == 1 ? List.of("Name", "Extra") : List.of("Name"));
+            for (var invalid : invalidKeys) {
+                processor.setBusinessKeys(invalid);
+                assertThat(processor.isConfigurationValid()).isFalse();
+            }
+            processor.setBusinessKeys(defaults);
+            assertThat(processor.isConfigurationValid()).isTrue();
+        }
     }
 
     @Test

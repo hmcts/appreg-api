@@ -28,13 +28,7 @@ public class FeeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, FeeDiffResult> {
     private static final long DEFAULT_FEE_VERSION = 1L;
     private static final List<String> REQUIRED_RECORD_FIELDS =
-            List.of(
-                    "FeeReference",
-                    "Description",
-                    "FeeValue",
-                    "StartDate",
-                    "EndDate",
-                    "RevisionNumber");
+            List.of("Description", "FeeValue", "EndDate", "RevisionNumber");
 
     private final CsdsIngressProperties.Fee feeProperties;
     private final FeeDiffService diffService;
@@ -74,7 +68,8 @@ public class FeeDataIngressProcessor
                 clock,
                 REQUIRED_RECORD_FIELDS,
                 "fee",
-                record -> nullableText(record, "FeeReference"));
+                record -> nullableText(record, feeProperties.getBusinessKeys().getFirst()),
+                feeProperties.getBusinessKeys().get(1));
     }
 
     @Override
@@ -176,10 +171,10 @@ public class FeeDataIngressProcessor
     private FeeIngressRecord toSourceRecord(JsonNode node) {
         return new FeeIngressRecord(
                 nullableLong(node, feeProperties.getCsdsKey()),
-                requiredText(node, "FeeReference"),
+                requiredText(node, feeProperties.getBusinessKeys().getFirst()),
                 requiredText(node, "Description"),
                 requiredBigDecimal(node, "FeeValue"),
-                requiredLocalDate(node, "StartDate"),
+                requiredLocalDate(node, feeProperties.getBusinessKeys().get(1)),
                 nullableLocalDate(node, "EndDate"),
                 resolvedVersion(node),
                 nullableLong(node, feeProperties.getLegacyKey()));
@@ -209,8 +204,16 @@ public class FeeDataIngressProcessor
                                 Collectors.toMap(
                                         node ->
                                                 new FeeIngressRecord.BusinessKey(
-                                                        requiredText(node, "FeeReference"),
-                                                        requiredLocalDate(node, "StartDate")),
+                                                        requiredText(
+                                                                node,
+                                                                feeProperties
+                                                                        .getBusinessKeys()
+                                                                        .getFirst()),
+                                                        requiredLocalDate(
+                                                                node,
+                                                                feeProperties
+                                                                        .getBusinessKeys()
+                                                                        .get(1))),
                                         node -> node));
         // Audit IDs stay numeric; source correlation uses the complete business key.
         return diff.diffRecords().stream()

@@ -214,7 +214,8 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
             Clock clock,
             List<String> requiredRecordFields,
             String recordType,
-            Function<JsonNode, String> recordLabel) {
+            Function<JsonNode, String> recordLabel,
+            String startDateField) {
         if (rawJson.isEmpty()) {
             return rawJson;
         }
@@ -223,10 +224,19 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         val retainedRecords =
                 rawJson.stream()
                         .flatMap(page -> extractRecords(page).stream())
-                        .filter(record -> isCurrentRecord(record, today, recordType, recordLabel))
+                        .filter(
+                                record ->
+                                        isCurrentRecord(
+                                                record,
+                                                today,
+                                                recordType,
+                                                recordLabel,
+                                                startDateField))
                         .toList();
         if (!retainedRecords.isEmpty()) {
             validateExpectedFields(retainedRecords.getFirst(), requiredRecordFields);
+            validateExpectedFields(
+                    retainedRecords.getFirst(), processorProperties.getBusinessKeys());
         }
         ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
         val recordsArray = normalisedPage.putArray("records");
@@ -238,16 +248,18 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
             JsonNode record,
             LocalDate today,
             String recordType,
-            Function<JsonNode, String> recordLabel) {
-        val startDate = requiredLocalDate(record, "StartDate");
+            Function<JsonNode, String> recordLabel,
+            String startDateField) {
+        val startDate = requiredLocalDate(record, startDateField);
         if (record.hasNonNull("EndDate")) {
             requiredLocalDate(record, "EndDate");
         }
         if (startDate.isAfter(today)) {
             processorLog.warn(
-                    "Dropping future-dated {} {} with StartDate {} (today {})",
+                    "Dropping future-dated {} {} with {} {} (today {})",
                     recordType,
                     recordLabel.apply(record),
+                    startDateField,
                     startDate,
                     today);
             return false;
