@@ -17,12 +17,14 @@ properties:
   dateFrom:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     description: Inclusive start date (YYYY-MM-DD).
     example: "2025-10-01"
 
   dateTo:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     description: Inclusive end date (YYYY-MM-DD).
     example: "2025-10-31"
 

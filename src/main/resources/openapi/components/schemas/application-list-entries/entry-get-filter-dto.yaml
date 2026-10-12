@@ -6,6 +6,7 @@ properties:
   date:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     description: The date on which the application's hearing is scheduled. This has to be Exact.
     example: "2025-10-07"
 

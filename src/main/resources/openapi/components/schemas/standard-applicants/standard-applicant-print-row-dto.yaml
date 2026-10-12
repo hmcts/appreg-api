@@ -7,6 +7,6 @@ required:
   - useTo
 properties:
   code: { type: string, nullable: true }
-  useFrom: { type: string, format: date, nullable: true }
+  useFrom: { type: string, format: date, nullable: true, x-field-extra-annotation: '@DateValidator' }
   name: { type: string, nullable: true }
-  useTo: { type: string, format: date, nullable: true }
+  useTo: { type: string, format: date, nullable: true, x-field-extra-annotation: '@DateValidator' }

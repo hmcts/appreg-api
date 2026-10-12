@@ -21,11 +21,13 @@ properties:
   startDate:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     description: Date the Result Code became active.
     example: "2025-12-01"
   endDate:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     description: Date the Result Code became inactive. `null` indicates that this row is still active.
     nullable: true
     example: "2025-12-31"

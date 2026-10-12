@@ -15,8 +15,10 @@ properties:
   from:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     nullable: true
   to:
     type: string
     format: date
+    x-field-extra-annotation: '@DateValidator'
     nullable: true
