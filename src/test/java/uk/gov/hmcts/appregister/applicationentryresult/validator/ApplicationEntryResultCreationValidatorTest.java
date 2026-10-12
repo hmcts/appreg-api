@@ -4,8 +4,6 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.instancio.Instancio;
@@ -94,7 +92,7 @@ class ApplicationEntryResultCreationValidatorTest {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(List.of(resolutionCode));
+                .thenReturn(Optional.of(resolutionCode));
     }
 
     @Test
@@ -190,7 +188,7 @@ class ApplicationEntryResultCreationValidatorTest {
     void validate_resolutionCodeDoesNotExist() {
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -211,7 +209,7 @@ class ApplicationEntryResultCreationValidatorTest {
 
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(List.of(resolutionCode));
+                .thenReturn(Optional.of(resolutionCode));
 
         ListEntryResultCreateValidationSuccess success = validator.validate(payload, (v, s) -> s);
 

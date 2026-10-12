@@ -797,11 +797,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
-        // Reuse exact business codes. A keyed query can replace this small fixture-table scan.
-        var existing =
-                resolutionCodeRepository.findAll().stream()
-                        .filter(row -> resultCode.equals(row.getResultCode()))
-                        .findFirst();
+        var existing = resolutionCodeRepository.findByResultCode(resultCode);
         ResolutionCode resolutionCode;
         if (existing.isPresent()) {
             resolutionCode = existing.get();

@@ -739,7 +739,7 @@ class ApplicationEntryServiceImplTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(code));
+                .thenReturn(Optional.of(code));
         when(applicationListEntryEntityMapper.toApplicationListEntry(
                         eq(entryCreateDto),
                         notNull(),

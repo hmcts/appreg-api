@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.applicationcode.validator;
 
 import static org.mockito.Mockito.when;
 
-import java.util.List;
+import java.util.Optional;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -37,7 +37,7 @@ class GetApplicationCodeValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         payloadForGet.getCode(), payloadForGet.getDate()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         GetApplicationCodeValidator validator =
                 new GetApplicationCodeValidator(applicationCodeRepository);
@@ -52,7 +52,7 @@ class GetApplicationCodeValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         payloadForGet.getCode(), payloadForGet.getDate()))
-                .thenReturn(List.of());
+                .thenReturn(Optional.empty());
 
         GetApplicationCodeValidator validator =
                 new GetApplicationCodeValidator(applicationCodeRepository);
@@ -79,7 +79,7 @@ class GetApplicationCodeValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         payloadForGet.getCode(), payloadForGet.getDate()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         GetApplicationCodeValidationSuccess success =
                 validator.validate(

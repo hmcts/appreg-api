@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.standardapplicant.validator;
 
-import java.util.List;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -42,14 +41,14 @@ public class StandardApplicantExistsValidator implements Validator<String, Stand
      * @return The standard applicant
      */
     private StandardApplicant validateId(String code) {
-        List<StandardApplicant> results = repository.findStandardApplicantByCode(code);
+        var standardApplicant = repository.findStandardApplicantByCode(code).orElse(null);
 
-        if (results.isEmpty()) {
+        if (standardApplicant == null) {
             throw new AppRegistryException(
                     StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND,
                     "No standard applicant found for code '%s'".formatted(code));
         }
 
-        return results.getFirst();
+        return standardApplicant;
     }
 }

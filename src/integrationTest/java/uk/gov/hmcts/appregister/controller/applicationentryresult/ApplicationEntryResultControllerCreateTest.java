@@ -292,13 +292,10 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         var preferredId =
                 resolutionCodeRepository
                         .findActiveResolutionCodesByCodeAndDate("DUP1", today)
-                        .stream()
-                        .filter(rc -> rc.getEndDate() == null)
-                        .findFirst()
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
-                                                "Expected active ResolutionCode with null endDate not found"))
+                                                "Expected active ResolutionCode not found"))
                         .getId();
 
         Assertions.assertEquals(

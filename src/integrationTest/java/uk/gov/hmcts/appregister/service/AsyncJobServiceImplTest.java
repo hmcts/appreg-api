@@ -93,22 +93,23 @@ class AsyncJobServiceImplTest extends BaseIntegration {
                         position,
                         (data, ctxt) -> {
                             for (int i = 0; i < data.size(); i++) {
-                                List<ApplicationCode> csvBaseAppCodeLst =
+                                var csvBaseAppCode =
                                         applicationCodeRepository.findByCodeAndDate(
                                                 data.get(i).getCode(),
                                                 LocalDate.now(java.time.ZoneOffset.UTC));
-                                Assertions.assertEquals(1, csvBaseAppCodeLst.size());
+                                Assertions.assertTrue(csvBaseAppCode.isPresent());
                                 Assertions.assertEquals(
-                                        data.get(i).getCode(), csvBaseAppCodeLst.get(0).getCode());
+                                        data.get(i).getCode(),
+                                        csvBaseAppCode.orElseThrow().getCode());
                                 Assertions.assertEquals(
                                         data.get(i).getTitle(),
-                                        csvBaseAppCodeLst.get(0).getTitle());
+                                        csvBaseAppCode.orElseThrow().getTitle());
                                 Assertions.assertEquals(
                                         data.get(i).getFeedue() != null && data.get(i).getFeedue(),
-                                        csvBaseAppCodeLst.get(0).getFeeDue().isYes());
+                                        csvBaseAppCode.orElseThrow().getFeeDue().isYes());
                                 Assertions.assertEquals(
                                         data.get(i).getWording(),
-                                        csvBaseAppCodeLst.get(0).getWording());
+                                        csvBaseAppCode.orElseThrow().getWording());
                             }
                         },
                         jobContext);

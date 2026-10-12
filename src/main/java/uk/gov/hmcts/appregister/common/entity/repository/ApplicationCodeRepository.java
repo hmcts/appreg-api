@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,7 +21,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
      * Finds an ApplicationCode entity by its application code.
      *
      * @param applicationCode the application code to search for
-     * @return the matching code, or an empty list if not found; assumes no case-only code clashes
+     * @return the matching code, or empty if not found; assumes no case-only code clashes
      */
     @Query(
             """
@@ -30,7 +31,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
               AND c.startDate <= :dateTime
               AND (c.endDate IS NULL OR c.endDate >= :dateTime)
             """)
-    List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
+    Optional<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
     /** Returns all application-code rows active on the supplied date. */
     @Query(

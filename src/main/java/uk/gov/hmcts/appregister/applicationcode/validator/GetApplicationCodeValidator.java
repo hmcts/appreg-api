@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationcode.validator;
 
-import java.util.List;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +31,12 @@ public class GetApplicationCodeValidator
             PayloadForGet validatable,
             BiFunction<PayloadForGet, GetApplicationCodeValidationSuccess, R> validateSuccess) {
 
-        final List<ApplicationCode> applicationCodeResults =
-                applicationCodeRepository.findByCodeAndDate(
-                        validatable.getCode(), validatable.getDate());
+        final ApplicationCode applicationCode =
+                applicationCodeRepository
+                        .findByCodeAndDate(validatable.getCode(), validatable.getDate())
+                        .orElse(null);
 
-        if (applicationCodeResults.isEmpty()) {
+        if (applicationCode == null) {
             throw new AppRegistryException(
                     ApplicationCodeError.CODE_NOT_FOUND,
                     "No code found for code %s and date %s"
@@ -45,7 +45,7 @@ public class GetApplicationCodeValidator
 
         GetApplicationCodeValidationSuccess success =
                 GetApplicationCodeValidationSuccess.builder()
-                        .applicationCode(applicationCodeResults.getFirst())
+                        .applicationCode(applicationCode)
                         .build();
         return validateSuccess.apply(validatable, success);
     }

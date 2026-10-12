@@ -161,16 +161,16 @@ public class BulkApplicationEntryResultCreationValidator
 
     private ResolutionCodeContext resolveResolutionCodeContext(String resultCode) {
         var todayUk = businessDateProvider.currentUkDate();
-        var matchingCodes =
-                resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        resultCode, todayUk);
-        if (matchingCodes.isEmpty()) {
+        var resolutionCode =
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate(resultCode, todayUk)
+                        .orElse(null);
+        if (resolutionCode == null) {
             throw new AppRegistryException(
                     ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
                     "No valid resolution code could be found %s".formatted(resultCode));
         }
 
-        var resolutionCode = matchingCodes.getFirst();
         return new ResolutionCodeContext(resolutionCode, resolutionCode.getWording());
     }
 

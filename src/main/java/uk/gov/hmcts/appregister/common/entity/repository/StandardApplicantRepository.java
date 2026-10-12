@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,7 +24,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      *
      * @param code the applicant code to search for
      * @param date The date to check for active status
-     * @return matching active standard applicants, or an empty list if not found
+     * @return the matching active standard applicant, or empty if not found
      */
     @Query(
             """
@@ -33,7 +34,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         AND sa.applicantStartDate <= :date
         AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
         """)
-    List<StandardApplicant> findStandardApplicantByCodeAndDate(
+    Optional<StandardApplicant> findStandardApplicantByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
     /** Returns all standard-applicant rows active on the supplied date. */
@@ -53,7 +54,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      * date-effective lookup failures.
      *
      * @param code the applicant code to search for
-     * @return matching StandardApplicant rows
+     * @return the matching StandardApplicant, or empty if not found
      */
     @Query(
             """
@@ -61,7 +62,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         FROM StandardApplicant sa
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
         """)
-    List<StandardApplicant> findStandardApplicantByCode(@Param("code") String code);
+    Optional<StandardApplicant> findStandardApplicantByCode(@Param("code") String code);
 
     /**
      * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).

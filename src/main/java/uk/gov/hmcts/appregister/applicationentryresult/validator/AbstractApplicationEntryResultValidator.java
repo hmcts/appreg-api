@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -52,15 +51,15 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
         WordingTemplateSentence wordingTemplateCollection = null;
         if (resultCode != null) {
             LocalDate todayUk = businessDateProvider.currentUkDate();
-            List<ResolutionCode> list =
-                    resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                            resultCode, todayUk);
-            if (list.isEmpty()) {
+            code =
+                    resolutionCodeRepository
+                            .findActiveResolutionCodesByCodeAndDate(resultCode, todayUk)
+                            .orElse(null);
+            if (code == null) {
                 throw new AppRegistryException(
                         ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
                         "No valid resolution code could be found %s".formatted(resultCode));
             }
-            code = list.getFirst();
             wordingTemplateCollection = WordingTemplateSentence.with(code.getWording());
             log.debug("Validated the result code {}", resultCode);
         } else {

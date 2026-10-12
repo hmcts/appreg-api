@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,9 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
  * filters.
  */
 public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, Long> {
+    /** Exact business-key lookup, including inactive records. */
+    Optional<ResolutionCode> findByResultCode(String resultCode);
+
     /**
      * Find active Resolution Codes by code on a given date.
      *
@@ -25,7 +29,7 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
      *
      * @param code case-insensitive business code (e.g. "ABC123")
      * @param date local date to check for active codes
-     * @return zero, one, or many rows; service layer enforces uniqueness
+     * @return the matching active row, or empty if not found
      */
     @Query(
             """
@@ -39,7 +43,7 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
                  rc.startDate DESC,
                  rc.id DESC
         """)
-    List<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
+    Optional<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
     /**

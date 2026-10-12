@@ -7,7 +7,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
@@ -28,6 +28,27 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         return LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
     }
 
+    @Test
+    @Transactional
+    void exactBusinessKeyLookupIncludesExpiredRowsAndRejectsPartialOrDifferentCaseMatches() {
+        var expired = new ResolutionCode();
+        expired.setId(9009919L);
+        expired.setResultCode("KEYRC01");
+        expired.setTitle("Expired lookup fixture");
+        expired.setWording("Expired wording");
+        expired.setStartDate(LocalDate.of(1900, 1, 1));
+        expired.setEndDate(LocalDate.of(1901, 1, 1));
+        expired.setChangedBy(1L);
+        expired.setChangedDate(OffsetDateTime.now(clock));
+        repository.saveAndFlush(expired);
+
+        assertThat(repository.findByResultCode("KEYRC01"))
+                .hasValueSatisfying(row -> assertThat(row.getId()).isEqualTo(expired.getId()));
+        assertThat(repository.findByResultCode("keyrc01")).isEmpty();
+        assertThat(repository.findByResultCode("KEYRC")).isEmpty();
+        assertThat(repository.findByResultCode("UNKNOWN")).isEmpty();
+    }
+
     @Nested
     @DisplayName("findActiveResolutionCodesOnDateByCode")
     class FindByCodeOnDate {
@@ -35,13 +56,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns seeded APPC when active on date (case-insensitive code)")
         void returnsAppc() {
-            List<ResolutionCode> result =
-                    repository.findActiveResolutionCodesByCodeAndDate("appc", today());
-
-            assertThat(result)
-                    .hasSize(1)
-                    .first()
-                    .satisfies(
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", today()))
+                    .hasValueSatisfying(
                             rc -> {
                                 assertThat(rc.getResultCode()).isEqualTo("APPC");
                                 assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
@@ -127,13 +143,15 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
         void returnsSeededAppc_prefersNullEndDate() {
-            List<ResolutionCode> result =
-                    repository.findActiveResolutionCodesByCodeAndDate("appc", today());
+            var result = repository.findActiveResolutionCodesByCodeAndDate("appc", today());
 
-            assertThat(result).hasSize(1);
-            assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
-            assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
-            assertThat(result.getFirst().getEndDate()).isNull();
+            assertThat(result)
+                    .hasValueSatisfying(
+                            rc -> {
+                                assertThat(rc.getResultCode()).isEqualTo("APPC");
+                                assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
+                                assertThat(rc.getEndDate()).isNull();
+                            });
         }
 
         @Test
@@ -158,7 +176,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns empty when no active row exists for the given code")
         void returnsEmpty_whenNotFound() {
-            List<ResolutionCode> result =
+            var result =
                     repository.findActiveResolutionCodesByCodeAndDate("DOES_NOT_EXIST", today());
 
             assertThat(result).isEmpty();

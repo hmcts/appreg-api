@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,8 +57,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     /**
      * Retrieve a Result Code by its code and effective date.
      *
-     * <p>Ensures only one active record exists for the given combination of {@code code} and {@code
-     * date}. Throws a domain-specific exception if no record or multiple records are found.
+     * <p>Returns the active record for the given combination of {@code code} and {@code date}.
      *
      * @param code the identifier for the Result Code (case-insensitive)
      * @param date ISO date on which the Result Code must be valid
@@ -72,17 +70,17 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                 ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT,
                 unused -> {
                     log.debug("Start: Find active Result Code using code: {} date: {}", code, date);
-                    final List<ResolutionCode> rows =
-                            repository.findActiveResolutionCodesByCodeAndDate(code, date);
+                    final ResolutionCode selected =
+                            repository
+                                    .findActiveResolutionCodesByCodeAndDate(code, date)
+                                    .orElse(null);
 
-                    if (rows.isEmpty()) {
+                    if (selected == null) {
                         throw new AppRegistryException(
                                 ResultCodeError.RESULT_CODE_NOT_FOUND,
                                 "No result code found for code '%s' on date %s"
                                         .formatted(code, date));
                     }
-
-                    var selected = rows.getFirst();
 
                     log.debug(
                             "Finish: Find active Result Code for code: {} on date: {}", code, date);

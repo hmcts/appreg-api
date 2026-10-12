@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,7 +85,7 @@ class ResultCodeServiceImplTest {
         entity.setWording(wordingTemplate);
 
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
-                .thenReturn(List.of(entity));
+                .thenReturn(Optional.of(entity));
         when(mapper.toDetailDto(entity)).thenReturn(expectedDto);
 
         ResultCodeGetDetailDto actual = service.findByCode(code, date);
@@ -103,7 +104,7 @@ class ResultCodeServiceImplTest {
         final String code = "MISSING";
         final LocalDate date = LocalDate.parse("2025-01-01");
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
-                .thenReturn(List.of());
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -115,15 +116,14 @@ class ResultCodeServiceImplTest {
     }
 
     @Test
-    void findByCode_duplicate_prefersFirstRecord() {
+    void findByCode_returnsMappedRecord() {
         final String code = "DUP";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
         var r1 = new ResolutionCode();
-        var r2 = new ResolutionCode();
         var expectedDto = new ResultCodeGetDetailDto();
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
-                .thenReturn(List.of(r1, r2));
+                .thenReturn(Optional.of(r1));
         when(mapper.toDetailDto(r1)).thenReturn(expectedDto);
 
         ResultCodeGetDetailDto actual = service.findByCode(code, date);
@@ -144,7 +144,7 @@ class ResultCodeServiceImplTest {
         auditEntity.setResultCode(code);
         auditEntity.setStartDate(date);
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
-                .thenReturn(List.of(entity));
+                .thenReturn(Optional.of(entity));
         var expectedDto = new ResultCodeGetDetailDto();
 
         when(mapper.toDetailDto(entity)).thenReturn(expectedDto);

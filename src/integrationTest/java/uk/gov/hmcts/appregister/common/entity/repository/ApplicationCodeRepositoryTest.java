@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -80,10 +79,10 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testGetByCodeAndDate() {
-        List<ApplicationCode> applicationCodeToAssertAgainst =
-                applicationCodeRepository.findByCodeAndDate(
-                        "AD99002", LocalDate.now(java.time.ZoneOffset.UTC));
-        assertThat(applicationCodeToAssertAgainst).isNotEmpty();
+        assertThat(
+                        applicationCodeRepository.findByCodeAndDate(
+                                "AD99002", LocalDate.now(java.time.ZoneOffset.UTC)))
+                .isPresent();
     }
 
     @Test
@@ -114,11 +113,14 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         var applicationCode =
                 saveApplicationCode("ZZ90011", "Open-ended code", today.minusDays(10), null);
 
-        var results = applicationCodeRepository.findByCodeAndDate(applicationCode.getCode(), today);
+        var result = applicationCodeRepository.findByCodeAndDate(applicationCode.getCode(), today);
 
-        Assertions.assertEquals(1, results.size());
-        Assertions.assertEquals(applicationCode.getId(), results.getFirst().getId());
-        Assertions.assertNull(results.getFirst().getEndDate());
+        assertThat(result)
+                .hasValueSatisfying(
+                        found -> {
+                            Assertions.assertEquals(applicationCode.getId(), found.getId());
+                            Assertions.assertNull(found.getEndDate());
+                        });
     }
 
     @Test
@@ -132,6 +134,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         exactMatch.setStartDate(today.minusDays(10));
         exactMatch.setEndDate(today.plusDays(10));
         exactMatch = persistance.save(exactMatch);
+        final var exactMatchId = exactMatch.getId();
 
         ApplicationCode partialMatch = new ApplicationCodeTestData().someComplete();
         partialMatch.setCode("P" + code + "Q");
@@ -140,11 +143,14 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         partialMatch.setEndDate(null);
         persistance.save(partialMatch);
 
-        List<ApplicationCode> results = applicationCodeRepository.findByCodeAndDate(code, today);
+        var result = applicationCodeRepository.findByCodeAndDate(code, today);
 
-        Assertions.assertEquals(1, results.size());
-        Assertions.assertEquals(exactMatch.getId(), results.getFirst().getId());
-        Assertions.assertEquals(code, results.getFirst().getCode());
+        assertThat(result)
+                .hasValueSatisfying(
+                        found -> {
+                            Assertions.assertEquals(exactMatchId, found.getId());
+                            Assertions.assertEquals(code, found.getCode());
+                        });
     }
 
     @Test

@@ -222,13 +222,13 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         LocalDate todayUk = currentBusinessDate();
 
         // validate the standard applicant code if provided
-        List<StandardApplicant> saCode;
         if (standardApplicantCode != null) {
-            saCode =
-                    standardApplicantRepository.findStandardApplicantByCodeAndDate(
-                            standardApplicantCode, todayUk);
+            var standardApplicant =
+                    standardApplicantRepository
+                            .findStandardApplicantByCodeAndDate(standardApplicantCode, todayUk)
+                            .orElse(null);
 
-            if (saCode.isEmpty()) {
+            if (standardApplicant == null) {
                 // throw exception we expect a valid standard applicant code
                 throw new AppRegistryException(
                         AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST,
@@ -238,7 +238,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
             log.debug("Validated standard applicant {}", standardApplicantCode);
 
-            return saCode.getFirst();
+            return standardApplicant;
         }
 
         return null;
@@ -428,18 +428,19 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private ApplicationCode validateApplicationCode(T validatable) {
         LocalDate todayUk = currentBusinessDate();
         // validate that the application code exists and is valid for today
-        List<ApplicationCode> code =
-                applicationCodeRepository.findByCodeAndDate(
-                        getApplicationCode(validatable), todayUk);
+        var applicationCode =
+                applicationCodeRepository
+                        .findByCodeAndDate(getApplicationCode(validatable), todayUk)
+                        .orElse(null);
 
-        if (code.isEmpty()) {
+        if (applicationCode == null) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
                     "No valid code can be found %s".formatted(getApplicationCode(validatable)));
         }
 
         log.debug("Validated the application code {}", getApplicationCode(validatable));
-        return code.getFirst();
+        return applicationCode;
     }
 
     private void validateAccountNumber(T validatable) {

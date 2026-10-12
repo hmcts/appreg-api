@@ -4,7 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,7 @@ class StandardApplicantExistsValidatorTest {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(List.of(standardApplicant));
+                .thenReturn(Optional.of(standardApplicant));
 
         // call the validator. No assertions needed as no exception means success
         validator.validate(code);
@@ -46,7 +46,7 @@ class StandardApplicantExistsValidatorTest {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(List.of(standardApplicant));
+                .thenReturn(Optional.of(standardApplicant));
 
         BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
                 mockCallback();
@@ -61,7 +61,8 @@ class StandardApplicantExistsValidatorTest {
     void successValidationFailNoCallback() {
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
-        when(standardApplicantRepository.findStandardApplicantByCode(code)).thenReturn(List.of());
+        when(standardApplicantRepository.findStandardApplicantByCode(code))
+                .thenReturn(Optional.empty());
 
         BiFunction<String, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
                 mockCallback();
@@ -77,7 +78,8 @@ class StandardApplicantExistsValidatorTest {
     @Test
     void successValidationFailureNotFound() {
         String code = "test";
-        when(standardApplicantRepository.findStandardApplicantByCode(code)).thenReturn(List.of());
+        when(standardApplicantRepository.findStandardApplicantByCode(code))
+                .thenReturn(Optional.empty());
 
         // call the validator. No assertions needed as no exception means success
         AppRegistryException appRegistryException =
@@ -99,7 +101,7 @@ class StandardApplicantExistsValidatorTest {
         StandardApplicant standardApplicant = new StandardApplicant();
         standardApplicant.setApplicantEndDate(LocalDate.of(2020, 1, 1));
         when(standardApplicantRepository.findStandardApplicantByCode(code))
-                .thenReturn(List.of(standardApplicant));
+                .thenReturn(Optional.of(standardApplicant));
 
         StandardApplicant actual = validator.validate(code, (request, applicant) -> applicant);
 

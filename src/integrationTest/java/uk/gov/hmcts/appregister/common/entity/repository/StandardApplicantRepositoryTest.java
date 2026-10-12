@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -122,11 +121,11 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testFindByCodeAndDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    List<StandardApplicant> retrievedApplicant =
+                    var retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP002", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertThat(retrievedApplicant).isNotEmpty();
+                    assertThat(retrievedApplicant).isPresent();
                 });
     }
 
@@ -134,11 +133,11 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testFindByCodeAndDateReturnsDeduplicatedCode() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    List<StandardApplicant> retrievedApplicant =
+                    var retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP003", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertEquals(1, retrievedApplicant.size());
+                    assertThat(retrievedApplicant).isPresent();
                 });
     }
 
@@ -167,11 +166,13 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
 
         StandardApplicant savedHistoricApplicant = persistance.save(historicApplicant);
 
-        List<StandardApplicant> retrievedApplicants = repository.findStandardApplicantByCode(code);
+        var retrievedApplicant = repository.findStandardApplicantByCode(code);
 
-        assertThat(retrievedApplicants)
-                .extracting(StandardApplicant::getId)
-                .containsExactly(savedHistoricApplicant.getId());
+        assertThat(retrievedApplicant)
+                .hasValueSatisfying(
+                        applicant ->
+                                assertThat(applicant.getId())
+                                        .isEqualTo(savedHistoricApplicant.getId()));
     }
 
     @Test

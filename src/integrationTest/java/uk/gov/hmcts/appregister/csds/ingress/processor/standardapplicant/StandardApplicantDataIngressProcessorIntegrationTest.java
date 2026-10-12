@@ -117,7 +117,7 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
         var before =
                 jdbc.queryForList(
                         "SELECT * FROM %s.standard_applicants ORDER BY sa_id".formatted(schema));
-        var existingId = applicants.findStandardApplicantByCode("APP001").getFirst().getId();
+        var existingId = applicants.findStandardApplicantByCode("APP001").orElseThrow().getId();
         var valid = source("CSDSNEW", 890003L, null, "New applicant");
         var duplicate = source("CSDSNEW", 890004L, null, "Duplicate");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(duplicate))))
@@ -160,7 +160,7 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
     @Test
     @Transactional
     void droppedFutureApplicantIsMissingForExistingReconciliationPolicy() {
-        var stored = applicants.findStandardApplicantByCode("APP001").getFirst();
+        var stored = applicants.findStandardApplicantByCode("APP001").orElseThrow();
         var activeIds =
                 applicants.findAll().stream()
                         .filter(item -> item.getApplicantEndDate() == null)
