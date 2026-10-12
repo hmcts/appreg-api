@@ -2,11 +2,14 @@ package uk.gov.hmcts.appregister.csds.ingress.processor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +20,8 @@ import java.util.function.ToLongFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -38,6 +43,8 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIngressProcessor<D> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String VIEW_TYPE = "GD";
+
+    private final Logger processorLog = LoggerFactory.getLogger(getClass());
 
     private final CsdsIngressProperties properties;
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
@@ -200,6 +207,52 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         val records = new ArrayList<JsonNode>();
         recordsNode.forEach(records::add);
         return List.copyOf(records);
+    }
+
+    protected final List<JsonNode> normaliseDateEffectiveRecords(
+            List<JsonNode> rawJson,
+            Clock clock,
+            List<String> requiredRecordFields,
+            String recordType,
+            Function<JsonNode, String> recordLabel) {
+        if (rawJson.isEmpty()) {
+            return rawJson;
+        }
+
+        val today = LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
+        val retainedRecords =
+                rawJson.stream()
+                        .flatMap(page -> extractRecords(page).stream())
+                        .filter(record -> isCurrentRecord(record, today, recordType, recordLabel))
+                        .toList();
+        if (!retainedRecords.isEmpty()) {
+            validateExpectedFields(retainedRecords.getFirst(), requiredRecordFields);
+        }
+        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
+        val recordsArray = normalisedPage.putArray("records");
+        retainedRecords.forEach(recordsArray::add);
+        return List.of(normalisedPage);
+    }
+
+    private boolean isCurrentRecord(
+            JsonNode record,
+            LocalDate today,
+            String recordType,
+            Function<JsonNode, String> recordLabel) {
+        val startDate = requiredLocalDate(record, "StartDate");
+        if (record.hasNonNull("EndDate")) {
+            requiredLocalDate(record, "EndDate");
+        }
+        if (startDate.isAfter(today)) {
+            processorLog.warn(
+                    "Dropping future-dated {} {} with StartDate {} (today {})",
+                    recordType,
+                    recordLabel.apply(record),
+                    startDate,
+                    today);
+            return false;
+        }
+        return true;
     }
 
     private int extractCount(JsonNode response) {

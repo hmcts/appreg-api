@@ -1,10 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -74,38 +71,12 @@ public class ResolutionCodeDataIngressProcessor
 
     @Override
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
-        if (rawJson.isEmpty()) {
-            return rawJson;
-        }
-
-        val today = LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
-        val resolvedRecords =
-                rawJson.stream()
-                        .flatMap(page -> extractRecords(page).stream())
-                        .filter(
-                                record -> {
-                                    val startDate = requiredLocalDate(record, "StartDate");
-                                    if (record.hasNonNull("EndDate")) {
-                                        requiredLocalDate(record, "EndDate");
-                                    }
-                                    if (startDate.isAfter(today)) {
-                                        log.warn(
-                                                "Dropping future-dated resolution code {} with StartDate {} (today {})",
-                                                record.path("Code").asText(),
-                                                startDate,
-                                                today);
-                                        return false;
-                                    }
-                                    return true;
-                                })
-                        .toList();
-        if (!resolvedRecords.isEmpty()) {
-            validateExpectedFields(resolvedRecords.getFirst(), REQUIRED_RECORD_FIELDS);
-        }
-        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
-        val recordsArray = normalisedPage.putArray("records");
-        resolvedRecords.forEach(recordsArray::add);
-        return List.of(normalisedPage);
+        return normaliseDateEffectiveRecords(
+                rawJson,
+                clock,
+                REQUIRED_RECORD_FIELDS,
+                "resolution code",
+                record -> record.path("Code").asText());
     }
 
     @Override

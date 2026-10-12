@@ -1,11 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,35 +65,12 @@ public class StandardApplicantDataIngressProcessor
 
     @Override
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
-        if (rawJson.isEmpty()) {
-            return rawJson;
-        }
-        val today = LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
-        val retainedRecords = new ArrayList<JsonNode>();
-        for (val page : rawJson) {
-            for (val record : extractRecords(page)) {
-                val startDate = requiredLocalDate(record, "StartDate");
-                if (record.hasNonNull("EndDate")) {
-                    requiredLocalDate(record, "EndDate");
-                }
-                if (startDate.isAfter(today)) {
-                    log.warn(
-                            "Dropping future-dated standard applicant {} with StartDate {} (today {})",
-                            nullableText(record, "Code"),
-                            startDate,
-                            today);
-                } else {
-                    retainedRecords.add(record);
-                }
-            }
-        }
-        if (!retainedRecords.isEmpty()) {
-            validateExpectedFields(retainedRecords.getFirst(), REQUIRED_RECORD_FIELDS);
-        }
-        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
-        val recordsArray = normalisedPage.putArray("records");
-        retainedRecords.forEach(recordsArray::add);
-        return List.of(normalisedPage);
+        return normaliseDateEffectiveRecords(
+                rawJson,
+                clock,
+                REQUIRED_RECORD_FIELDS,
+                "standard applicant",
+                record -> nullableText(record, "Code"));
     }
 
     @Override
