@@ -499,7 +499,9 @@ class FeeDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming fee business key");
+                .hasMessageContaining("Duplicate incoming fee business key")
+                .hasMessageContaining("Existing record [")
+                .hasMessageContaining("duplicate record [");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->
@@ -554,10 +556,10 @@ class FeeDataIngressProcessorTest {
     }
 
     @Test
-    void invalidNewIdsAndNumericCollisionsRejectTheWholeBatch() {
+    void invalidNewIdsRejectButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
         var owner =
                 new FeeIngressRecord(
-                        33L,
+                        100033L,
                         "OWNER",
                         "Old",
                         BigDecimal.TEN,
@@ -568,16 +570,11 @@ class FeeDataIngressProcessorTest {
         var valid = createSourceRecord(1L, "VALID", "Valid", 1L);
         var missing = createSourceRecord(null, "MISSING", "Missing", 1L);
         var overflow = createSourceRecord(Long.MAX_VALUE, "OVERFLOW", "Overflow", 1L);
-        var storedCollision = createSourceRecordWithoutCivilFeeId(33L, "OTHER", "Other", 1L, "1");
-        var incomingCollision =
+        var generatedCollision = createSourceRecord(33L, "OTHER", "Other", 1L);
+        final var incomingCollision =
                 createSourceRecordWithoutCivilFeeId(100001L, "OTHER", "Other", 1L, "1");
         for (var invalid :
-                List.of(
-                        missing,
-                        missing.deepCopy().put("CivilFeeID", "invalid"),
-                        overflow,
-                        storedCollision,
-                        incomingCollision)) {
+                List.of(missing, missing.deepCopy().put("CivilFeeID", "invalid"), overflow)) {
             assertThatThrownBy(
                             () ->
                                     processor.ingest(
@@ -590,6 +587,23 @@ class FeeDataIngressProcessorTest {
                                     : AppRegistryException.class);
         }
         verifyNoInteractions(bulkUpsertService);
+
+        assertThatThrownBy(
+                        () ->
+                                processor.diff(
+                                        processor.preProcess(
+                                                List.of(
+                                                        createPageResponse(valid),
+                                                        createPageResponse(generatedCollision)))))
+                .hasMessageContaining("Generated legacy FEE_ID 100033");
+
+        var incomingCollisionDiff =
+                processor.diff(
+                        processor.preProcess(
+                                List.of(
+                                        createPageResponse(valid),
+                                        createPageResponse(incomingCollision))));
+        assertThat(incomingCollisionDiff.diffRecords()).hasSize(2);
     }
 
     @Test

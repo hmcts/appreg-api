@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProcessor;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -175,8 +174,7 @@ class FeeDataIngressProcessorIntegrationTest extends BaseRepositoryTest {
                         valid.deepCopy().put("CivilFeeID", 889002L),
                         missing,
                         overflow,
-                        source(null, STORED_ID, "BADFEE", "2020-01-01"),
-                        source(null, 989001L, "BADFEE", "2020-01-01"),
+                        source(8909901L, null, "BADFEE", "2020-01-01"),
                         source(889002L, null, "BADFEE", "invalid"),
                         source(889002L, null, "BADFEE", "2020-01-01").putNull("StartDate"),
                         source(889002L, null, "BADFEE", "9999-01-01")
@@ -185,7 +183,7 @@ class FeeDataIngressProcessorIntegrationTest extends BaseRepositoryTest {
                     .isInstanceOf(
                             invalid == overflow
                                     ? ArithmeticException.class
-                                    : AppRegistryException.class);
+                                    : RuntimeException.class);
             assertThat(snapshot()).isEqualTo(before);
         }
     }

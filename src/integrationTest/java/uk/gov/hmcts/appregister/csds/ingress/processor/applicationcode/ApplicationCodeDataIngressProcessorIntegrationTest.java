@@ -356,7 +356,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         var count = applicationCodeRepository.count();
 
         assertThatThrownBy(() -> applicationCodeDataIngressProcessor.ingest(List.of(page(source))))
-                .hasMessageContaining("Conflicting AC_ID " + existing.getId());
+                .hasMessageContaining("Generated legacy AC_ID " + existing.getId());
 
         assertThat(applicationCodeRepository.count()).isEqualTo(count);
         assertThat(applicationCodeRepository.findById(existing.getId()).orElseThrow().getCode())

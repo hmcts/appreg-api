@@ -18,6 +18,24 @@ class CsdsIngressPropertiesTest {
     }
 
     @Test
+    void processorDefaultsExposeConfiguredCsdsAndLegacyKeys() {
+        var processors = new CsdsIngressProperties().getProcessors();
+
+        assertThat(processors.getApplicationCodes().getCsdsKey()).isEqualTo("ApplicationCodeID");
+        assertThat(processors.getApplicationCodes().getLegacyKey())
+                .isEqualTo("PSSApplicationCodeID");
+        assertThat(processors.getResolutionCodes().getCsdsKey()).isEqualTo("ResolutionCodeID");
+        assertThat(processors.getResolutionCodes().getLegacyKey()).isEqualTo("PSSResolutionCodeID");
+        assertThat(processors.getFee().getCsdsKey()).isEqualTo("CivilFeeID");
+        assertThat(processors.getFee().getLegacyKey()).isEqualTo("PSSFixedListID");
+        assertThat(processors.getNationalCourtHouses().getCsdsKey()).isEqualTo("CourtID");
+        assertThat(processors.getNationalCourtHouses().getLegacyKey())
+                .isEqualTo("PSSNationalCourthouseID");
+        assertThat(processors.getStandardApplicants().getCsdsKey()).isEqualTo("ApplicantID");
+        assertThat(processors.getStandardApplicants().getLegacyKey()).isEqualTo("PSSApplicantID");
+    }
+
+    @Test
     void given_compositePrimaryKeys_when_bind_then_preserveBothColumnsInOrder() {
         var source =
                 new MapConfigurationPropertySource(

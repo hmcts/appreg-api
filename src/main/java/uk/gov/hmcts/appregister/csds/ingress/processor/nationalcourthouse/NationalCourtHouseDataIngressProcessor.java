@@ -172,14 +172,14 @@ public class NationalCourtHouseDataIngressProcessor
 
     private NationalCourtHouseIngressRecord toSourceRecord(JsonNode node) {
         return new NationalCourtHouseIngressRecord(
-                nullableLong(node, "CourtID"),
+                nullableLong(node, nationalCourtHouseProperties.getCsdsKey()),
                 requiredText(node, "CourtName"),
                 requiredLong(node, "RevisionNumber"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
                 nullableText(node, "CourtLocationCode"),
                 nullableText(node, "CourtWelshName"),
-                nullableLong(node, "PSSNationalCourthouseID"));
+                nullableLong(node, nationalCourtHouseProperties.getLegacyKey()));
     }
 
     private Map<Long, JsonNode> sourceRecordsById(

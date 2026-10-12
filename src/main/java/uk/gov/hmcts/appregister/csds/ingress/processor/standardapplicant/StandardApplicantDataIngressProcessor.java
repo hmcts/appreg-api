@@ -174,7 +174,7 @@ public class StandardApplicantDataIngressProcessor
     private StandardApplicantIngressRecord toSourceRecord(JsonNode node) {
         val address = firstAddress(node);
         return new StandardApplicantIngressRecord(
-                nullableLong(node, "ApplicantID"),
+                nullableLong(node, standardApplicantProperties.getCsdsKey()),
                 requiredText(node, "Code"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
@@ -188,7 +188,7 @@ public class StandardApplicantDataIngressProcessor
                 nestedText(address, "PostCode"),
                 contactValue(node, "Email Address"),
                 contactValue(node, "Telephone"),
-                nullableLong(node, "PSSApplicantID"));
+                nullableLong(node, standardApplicantProperties.getLegacyKey()));
     }
 
     private JsonNode firstAddress(JsonNode node) {

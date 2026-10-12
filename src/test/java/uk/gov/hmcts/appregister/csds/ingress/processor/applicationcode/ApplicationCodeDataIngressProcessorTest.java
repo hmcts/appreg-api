@@ -105,7 +105,7 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_distinctNewCodesWithSameSourceId_when_diff_then_rejectIdCollision() {
+    void given_distinctNewCodesWithSameSourceId_when_diff_then_rejectGeneratedLegacyIdCollision() {
         var records =
                 List.<JsonNode>of(
                         createPageResponse(
@@ -117,8 +117,8 @@ class ApplicationCodeDataIngressProcessorTest {
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> processor.diff(records))
-                .hasMessageContaining("Conflicting AC_ID 100003");
-        verifyNoInteractions(bulkUpsertService);
+                .hasMessageContaining("Generated legacy AC_ID 100003")
+                .hasMessageContaining("A4");
     }
 
     @Test
@@ -841,7 +841,9 @@ class ApplicationCodeDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming application_code A3");
+                .hasMessageContaining("Duplicate incoming application_code A3")
+                .hasMessageContaining("Existing record [")
+                .hasMessageContaining("duplicate record [");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->

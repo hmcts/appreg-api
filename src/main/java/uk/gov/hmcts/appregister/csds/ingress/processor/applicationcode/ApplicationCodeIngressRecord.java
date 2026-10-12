@@ -16,7 +16,41 @@ public record ApplicationCodeIngressRecord(
         LocalDate endDate,
         YesOrNo bulkRespondentAllowed,
         Long version,
-        String feeReference) {
+        String feeReference,
+        Long pssId) {
+
+    public ApplicationCodeIngressRecord(
+            Long id,
+            String code,
+            String title,
+            String wording,
+            String legislation,
+            YesOrNo feeDue,
+            YesOrNo requiresRespondent,
+            LocalDate startDate,
+            LocalDate endDate,
+            YesOrNo bulkRespondentAllowed,
+            Long version,
+            String feeReference) {
+        this(
+                id,
+                code,
+                title,
+                wording,
+                legislation,
+                feeDue,
+                requiresRespondent,
+                startDate,
+                endDate,
+                bulkRespondentAllowed,
+                version,
+                feeReference,
+                null);
+    }
+
+    static Long calculateId(Long pssId, Long csdsId) {
+        return pssId != null ? pssId : csdsId == null ? null : Math.addExact(csdsId, 100000L);
+    }
 
     static ApplicationCodeIngressRecord fromEntity(ApplicationCode applicationCode) {
         return new ApplicationCodeIngressRecord(
@@ -31,7 +65,8 @@ public record ApplicationCodeIngressRecord(
                 applicationCode.getEndDate(),
                 applicationCode.getBulkRespondentAllowed(),
                 applicationCode.getVersion(),
-                applicationCode.getFeeReference());
+                applicationCode.getFeeReference(),
+                null);
     }
 
     public ApplicationCodeIngressRecord withId(Long resolvedId) {
@@ -47,6 +82,7 @@ public record ApplicationCodeIngressRecord(
                 endDate,
                 bulkRespondentAllowed,
                 version,
-                feeReference);
+                feeReference,
+                pssId);
     }
 }

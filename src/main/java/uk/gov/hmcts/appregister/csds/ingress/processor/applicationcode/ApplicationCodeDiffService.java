@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadServic
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
@@ -64,18 +65,33 @@ public class ApplicationCodeDiffService
                         CommonAppError.INTERNAL_SERVER_ERROR,
                         "Missing ApplicationCodeID for new application code " + incoming.code());
             }
+            val usesGeneratedLegacyId = existing == null && incoming.pssId() == null;
             val intendedId =
-                    existing == null ? Math.addExact(incoming.id(), 100000L) : existing.id();
-            val intended = incoming.withId(intendedId);
-            val idOwner = existingById.get(intendedId);
-            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                    || incomingById.putIfAbsent(intendedId, intended) != null) {
+                    existing == null
+                            ? ApplicationCodeIngressRecord.calculateId(
+                                    incoming.pssId(), incoming.id())
+                            : existing.id();
+            if (intendedId == null) {
                 throw new AppRegistryException(
                         CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Conflicting AC_ID "
+                        "Missing source ID for new application code " + incoming.code());
+            }
+            val intended = incoming.withId(intendedId);
+            val idOwner = existingById.get(intendedId);
+            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
+            if (usesGeneratedLegacyId
+                    && ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                            || incomingOwner != null)) {
+                log.error(
+                        "Generated legacy AC_ID {} conflicts for incoming application code [{}]",
+                        intendedId,
+                        describe(intended));
+                throw new CsdsDuplicateRecordException(
+                        "Generated legacy AC_ID "
                                 + intendedId
-                                + " for application code "
-                                + incoming.code());
+                                + " conflicts for incoming application code ["
+                                + describe(intended)
+                                + "]");
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }
@@ -92,18 +108,12 @@ public class ApplicationCodeDiffService
             return;
         }
 
-        log.error(
-                "Duplicate incoming application_code {} detected for {}. Existing record [{}], duplicate record [{}]",
-                item.code(),
-                targetTable,
-                describe(existing),
-                describe(item));
-        throw new AppRegistryException(
-                CommonAppError.INTERNAL_SERVER_ERROR,
-                "Duplicate incoming application_code "
-                        + item.code()
-                        + " detected for "
-                        + targetTable);
+        val message =
+                ("Duplicate incoming application_code %s detected for %s. Existing record [%s], "
+                                + "duplicate record [%s]")
+                        .formatted(item.code(), targetTable, describe(existing), describe(item));
+        log.error(message);
+        throw new CsdsDuplicateRecordException(message);
     }
 
     private IngressDiffRecord<
