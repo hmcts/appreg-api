@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatab
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
@@ -70,14 +71,21 @@ public class ResolutionCodeDiffService
             }
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
-            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                    || incomingById.putIfAbsent(intendedId, intended) != null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Conflicting RC_ID "
+            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
+            if (existing == null
+                    && incoming.pssId() == null
+                    && ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                            || incomingOwner != null)) {
+                log.error(
+                        "Generated legacy RC_ID {} conflicts for incoming resolution code [{}]",
+                        intendedId,
+                        describe(intended));
+                throw new CsdsDuplicateRecordException(
+                        "Generated legacy RC_ID "
                                 + intendedId
-                                + " for resolution code "
-                                + incoming.code());
+                                + " conflicts for incoming resolution code ["
+                                + describe(intended)
+                                + "]");
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }
@@ -100,8 +108,7 @@ public class ResolutionCodeDiffService
                 targetTable,
                 describe(existing),
                 describe(item));
-        throw new AppRegistryException(
-                CommonAppError.INTERNAL_SERVER_ERROR,
+        throw new CsdsDuplicateRecordException(
                 "Duplicate incoming resolution_code "
                         + item.code()
                         + " detected for "

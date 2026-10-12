@@ -63,21 +63,25 @@ class ResolutionCodeDiffServiceTest {
     }
 
     @Test
-    void missingIdsOverflowAndExistingOrIncomingNumericCollisionsFail() {
+    void missingIdsAndOverflowFailButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
         when(reader.loadAll("resolution_codes", rowMapper))
-                .thenReturn(List.of(record(42L, null, "OLD")));
+                .thenReturn(List.of(record(100007L, null, "OLD")));
         assertThatThrownBy(() -> diff(List.of(record(null, null, "NEW"))))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("Missing source ID");
         assertThatThrownBy(() -> diff(List.of(record(Long.MAX_VALUE, null, "NEW"))))
                 .isInstanceOf(ArithmeticException.class);
-        assertThatThrownBy(() -> diff(List.of(record(7L, 42L, "NEW"))))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Conflicting RC_ID 42");
-        assertThatThrownBy(
-                        () -> diff(List.of(record(7L, null, "NEW"), record(8L, 100007L, "OTHER"))))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Conflicting RC_ID 100007");
+
+        assertThatThrownBy(() -> diff(List.of(record(7L, null, "NEW"))))
+                .hasMessageContaining("Generated legacy RC_ID 100007");
+
+        assertThat(diff(List.of(record(7L, 42L, "NEW"))).diffRecords()).hasSize(1);
+
+        when(reader.loadAll("resolution_codes", rowMapper)).thenReturn(List.of());
+        assertThat(
+                        diff(List.of(record(7L, null, "NEW"), record(8L, 100007L, "OTHER")))
+                                .diffRecords())
+                .hasSize(2);
     }
 
     private ResolutionCodeDiffResult diff(List<ResolutionCodeIngressRecord> records) {

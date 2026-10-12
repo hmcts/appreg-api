@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.StandardApplicantIngressDa
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
@@ -66,14 +67,21 @@ public class StandardApplicantDiffService
             }
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
-            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                    || incomingById.putIfAbsent(intendedId, intended) != null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Conflicting SA_ID "
+            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
+            if (existing == null
+                    && incoming.pssId() == null
+                    && ((idOwner != null && !idOwner.code().equals(incoming.code()))
+                            || incomingOwner != null)) {
+                log.error(
+                        "Generated legacy SA_ID {} conflicts for incoming standard applicant [{}]",
+                        intendedId,
+                        describe(intended));
+                throw new CsdsDuplicateRecordException(
+                        "Generated legacy SA_ID "
                                 + intendedId
-                                + " for standard applicant "
-                                + incoming.code());
+                                + " conflicts for incoming standard applicant ["
+                                + describe(intended)
+                                + "]");
             }
             diffRecords.add(
                     new IngressDiffRecord<>(
@@ -93,14 +101,32 @@ public class StandardApplicantDiffService
             String targetTable,
             LinkedHashMap<String, StandardApplicantIngressRecord> incomingByCode,
             StandardApplicantIngressRecord item) {
-        if (incomingByCode.putIfAbsent(item.code(), item) == null) {
+        val existing = incomingByCode.putIfAbsent(item.code(), item);
+        if (existing == null) {
             return;
         }
-        throw new AppRegistryException(
-                CommonAppError.INTERNAL_SERVER_ERROR,
+        log.error(
+                "Duplicate incoming standard_applicant_code {} detected for {}. Existing record "
+                        + "[{}], duplicate record [{}]",
+                item.code(),
+                targetTable,
+                describe(existing),
+                describe(item));
+        throw new CsdsDuplicateRecordException(
                 "Duplicate incoming standard_applicant_code "
                         + item.code()
                         + " detected for "
                         + targetTable);
+    }
+
+    private String describe(StandardApplicantIngressRecord item) {
+        return "applicantId=%s, pssId=%s, code=%s, name=%s, startDate=%s, version=%s"
+                .formatted(
+                        item.id(),
+                        item.pssId(),
+                        item.code(),
+                        item.name(),
+                        item.startDate(),
+                        item.version());
     }
 }

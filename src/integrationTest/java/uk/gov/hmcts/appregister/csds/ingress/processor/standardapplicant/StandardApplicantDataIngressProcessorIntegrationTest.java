@@ -122,9 +122,9 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
         var duplicate = source("CSDSNEW", 890004L, null, "Duplicate");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(duplicate))))
                 .hasMessageContaining("Duplicate incoming standard_applicant_code");
-        var collision = source("CSDSBAD", 1L, existingId, "Collision");
+        var collision = source("CSDSBAD", existingId - 100000L, null, "Collision");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(collision))))
-                .hasMessageContaining("Conflicting SA_ID");
+                .hasMessageContaining("Generated legacy SA_ID " + existingId);
         var noId = source("CSDSBAD", null, null, "Missing source ID");
         assertThatThrownBy(() -> processor.ingest(List.of(page(valid), page(noId))))
                 .hasMessageContaining("Missing source ID");

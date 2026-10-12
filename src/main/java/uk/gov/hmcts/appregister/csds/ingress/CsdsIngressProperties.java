@@ -146,6 +146,10 @@ public class CsdsIngressProperties {
 
         private List<String> primaryKeys;
 
+        private String csdsKey;
+
+        private String legacyKey;
+
         private String reportingDir;
 
         protected ProcessorProperties() {
@@ -159,10 +163,23 @@ public class CsdsIngressProperties {
             this.primaryKeys = primaryKeys;
         }
 
+        protected ProcessorProperties(
+                String sourceEntityName,
+                String ingressTarget,
+                List<String> primaryKeys,
+                String csdsKey,
+                String legacyKey) {
+            this(sourceEntityName, ingressTarget, primaryKeys);
+            this.csdsKey = csdsKey;
+            this.legacyKey = legacyKey;
+        }
+
         protected boolean isConfigurationValid() {
             return !enabled
                     || (StringUtils.hasText(sourceEntityName)
                             && StringUtils.hasText(ingressTarget)
+                            && StringUtils.hasText(csdsKey)
+                            && StringUtils.hasText(legacyKey)
                             && primaryKeys != null
                             && !primaryKeys.isEmpty()
                             && primaryKeys.stream().allMatch(StringUtils::hasText)
@@ -178,7 +195,12 @@ public class CsdsIngressProperties {
     @Setter
     public static class ApplicationCodes extends ProcessorProperties {
         public ApplicationCodes() {
-            super("ApplicationCode", "application_codes_staging", List.of("application_code"));
+            super(
+                    "ApplicationCode",
+                    "application_codes_staging",
+                    List.of("application_code"),
+                    "ApplicationCodeID",
+                    "PSSApplicationCodeID");
         }
     }
 
@@ -186,7 +208,12 @@ public class CsdsIngressProperties {
     @Setter
     public static class ResolutionCodes extends ProcessorProperties {
         public ResolutionCodes() {
-            super("ResolutionCode", "resolution_codes_staging", List.of("resolution_code"));
+            super(
+                    "ResolutionCode",
+                    "resolution_codes_staging",
+                    List.of("resolution_code"),
+                    "ResolutionCodeID",
+                    "PSSResolutionCodeID");
         }
     }
 
@@ -194,7 +221,12 @@ public class CsdsIngressProperties {
     @Setter
     public static class Fee extends ProcessorProperties {
         public Fee() {
-            super("CivilFee", "fee_staging", List.of("fee_reference", "fee_start_date"));
+            super(
+                    "CivilFee",
+                    "fee_staging",
+                    List.of("fee_reference", "fee_start_date"),
+                    "CivilFeeID",
+                    "PSSFixedListID");
         }
     }
 
@@ -202,7 +234,12 @@ public class CsdsIngressProperties {
     @Setter
     public static class NationalCourtHouses extends ProcessorProperties {
         public NationalCourtHouses() {
-            super("Court", "national_court_houses_staging", List.of("courthouse_name"));
+            super(
+                    "Court",
+                    "national_court_houses_staging",
+                    List.of("courthouse_name"),
+                    "CourtID",
+                    "PSSNationalCourthouseID");
         }
     }
 
@@ -213,7 +250,9 @@ public class CsdsIngressProperties {
             super(
                     "GetStandardApplicant",
                     "standard_applicants_staging",
-                    List.of("standard_applicant_code"));
+                    List.of("standard_applicant_code"),
+                    "ApplicantID",
+                    "PSSApplicantID");
         }
     }
 }

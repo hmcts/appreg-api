@@ -314,7 +314,7 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void newIdOverflowAndStoredOrIncomingIdCollisionsFailBeforeWrites() {
+    void newIdOverflowFailsButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
         assertThatThrownBy(
                         () ->
                                 processor.ingest(
@@ -330,7 +330,7 @@ class NationalCourtHouseDataIngressProcessorTest {
                 .thenReturn(
                         List.of(
                                 new NationalCourtHouseIngressRecord(
-                                        100001L,
+                                        100033L,
                                         "Stored",
                                         1L,
                                         LocalDate.parse("1900-01-01"),
@@ -339,24 +339,27 @@ class NationalCourtHouseDataIngressProcessorTest {
                                         null)));
         assertThatThrownBy(
                         () ->
-                                processor.ingest(
-                                        List.of(page(sourceRecord(1L, null, "Collision", 1L)))))
-                .hasMessageContaining("Conflicting NCH_ID");
+                                processor.diff(
+                                        processor.preProcess(
+                                                List.of(
+                                                        page(
+                                                                sourceRecord(
+                                                                        33L,
+                                                                        null,
+                                                                        "Generated collision",
+                                                                        1L))))))
+                .hasMessageContaining("Generated legacy NCH_ID 100033");
+
         when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
                 .thenReturn(List.of());
-        assertThatThrownBy(
-                        () ->
-                                processor.ingest(
-                                        List.of(
-                                                page(
-                                                        sourceRecord(1L, null, "Fallback", 1L),
-                                                        sourceRecord(
-                                                                2L,
-                                                                100001L,
-                                                                "PSS collision",
-                                                                1L)))))
-                .hasMessageContaining("Conflicting NCH_ID");
-        verifyNoInteractions(bulkUpsertService);
+        var incomingCollision =
+                processor.diff(
+                        processor.preProcess(
+                                List.of(
+                                        page(
+                                                sourceRecord(1L, null, "Fallback", 1L),
+                                                sourceRecord(2L, 100001L, "PSS collision", 1L)))));
+        assertThat(incomingCollision.diffRecords()).hasSize(2);
     }
 
     @Test

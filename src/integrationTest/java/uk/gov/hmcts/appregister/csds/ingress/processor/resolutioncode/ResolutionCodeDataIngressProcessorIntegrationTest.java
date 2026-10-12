@@ -112,9 +112,10 @@ class ResolutionCodeDataIngressProcessorIntegrationTest extends BaseRepositoryTe
         var collision =
                 first.deepCopy()
                         .put("Code", "ZZOTHER")
-                        .put("PSSResolutionCodeID", existing.getId());
+                        .put("ResolutionCodeID", existing.getId() - 100000L)
+                        .putNull("PSSResolutionCodeID");
         assertThatThrownBy(() -> processor.ingest(List.of(page(first), page(collision))))
-                .hasMessageContaining("Conflicting RC_ID");
+                .hasMessageContaining("Generated legacy RC_ID " + existing.getId());
         assertThat(repository.count()).isEqualTo(count);
         assertThat(repository.findById(1000001L)).isEmpty();
     }

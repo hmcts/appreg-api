@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressD
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
@@ -72,14 +73,21 @@ public class NationalCourtHouseDiffService
             }
             val intended = incoming.withId(intendedId);
             val idOwner = existingById.get(intendedId);
-            if ((idOwner != null && !idOwner.name().equals(incoming.name()))
-                    || incomingById.putIfAbsent(intendedId, intended) != null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Conflicting NCH_ID "
+            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
+            if (existing == null
+                    && incoming.pssId() == null
+                    && ((idOwner != null && !idOwner.name().equals(incoming.name()))
+                            || incomingOwner != null)) {
+                log.error(
+                        "Generated legacy NCH_ID {} conflicts for incoming national courthouse [{}]",
+                        intendedId,
+                        describe(intended));
+                throw new CsdsDuplicateRecordException(
+                        "Generated legacy NCH_ID "
                                 + intendedId
-                                + " for national courthouse "
-                                + incoming.name());
+                                + " conflicts for incoming national courthouse ["
+                                + describe(intended)
+                                + "]");
             }
             diffRecords.add(determineDiffRecord(existing, intended));
         }
@@ -103,8 +111,7 @@ public class NationalCourtHouseDiffService
                 targetTable,
                 describe(existing),
                 describe(item));
-        throw new AppRegistryException(
-                CommonAppError.INTERNAL_SERVER_ERROR,
+        throw new CsdsDuplicateRecordException(
                 "Duplicate incoming courthouse_name "
                         + item.name()
                         + " detected for "

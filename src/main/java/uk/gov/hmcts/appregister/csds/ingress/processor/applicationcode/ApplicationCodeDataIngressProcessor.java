@@ -187,7 +187,7 @@ public class ApplicationCodeDataIngressProcessor
 
     private ApplicationCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
-                nullableLong(node, "ApplicationCodeID"),
+                nullableLong(node, applicationCodeProperties.getCsdsKey()),
                 requiredText(node, "Code"),
                 requiredText(node, "ApplicationTitle"),
                 requiredText(node, "ApplicationWording"),
@@ -198,7 +198,8 @@ public class ApplicationCodeDataIngressProcessor
                 nullableLocalDate(node, "EndDate"),
                 requiredYesOrNo(node, "BulkRespondentAllowed"),
                 requiredLong(node, "RevisionNumber"),
-                nullableText(node, "FeeReference"));
+                nullableText(node, "FeeReference"),
+                nullableLong(node, applicationCodeProperties.getLegacyKey()));
     }
 
     private Map<Long, JsonNode> sourceRecordsById(

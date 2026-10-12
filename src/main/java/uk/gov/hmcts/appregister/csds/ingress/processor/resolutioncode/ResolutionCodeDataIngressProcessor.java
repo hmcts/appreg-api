@@ -181,7 +181,7 @@ public class ResolutionCodeDataIngressProcessor
 
     private ResolutionCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ResolutionCodeIngressRecord(
-                nullableLong(node, "ResolutionCodeID"),
+                nullableLong(node, resolutionCodeProperties.getCsdsKey()),
                 requiredText(node, "Code"),
                 requiredText(node, "ResultTitle"),
                 requiredText(node, "ResultWording"),
@@ -191,7 +191,7 @@ public class ResolutionCodeDataIngressProcessor
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
                 requiredLong(node, "RevisionNumber"),
-                nullableLong(node, "PSSResolutionCodeID"));
+                nullableLong(node, resolutionCodeProperties.getLegacyKey()));
     }
 
     private Map<Long, JsonNode> sourceRecordsById(

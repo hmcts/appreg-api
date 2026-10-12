@@ -175,14 +175,14 @@ public class FeeDataIngressProcessor
 
     private FeeIngressRecord toSourceRecord(JsonNode node) {
         return new FeeIngressRecord(
-                nullableLong(node, "CivilFeeID"),
+                nullableLong(node, feeProperties.getCsdsKey()),
                 requiredText(node, "FeeReference"),
                 requiredText(node, "Description"),
                 requiredBigDecimal(node, "FeeValue"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
                 resolvedVersion(node),
-                nullableLong(node, "PSSFixedListID"));
+                nullableLong(node, feeProperties.getLegacyKey()));
     }
 
     private Long resolvedVersion(JsonNode node) {

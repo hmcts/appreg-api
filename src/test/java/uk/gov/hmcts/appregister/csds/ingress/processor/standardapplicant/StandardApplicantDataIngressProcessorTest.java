@@ -187,13 +187,22 @@ class StandardApplicantDataIngressProcessorTest {
     void duplicateCodesAcrossPagesFailBeforeWrites() {
         var first = sourceRecord(1L, null, "First");
         var second = sourceRecord(2L, null, "Second");
-        assertThatThrownBy(() -> processor.ingest(List.of(createPage(first), createPage(second))))
-                .hasMessageContaining("Duplicate incoming standard_applicant_code");
+        try (var logs = LogCaptor.forClass(StandardApplicantDiffService.class)) {
+            assertThatThrownBy(
+                            () -> processor.ingest(List.of(createPage(first), createPage(second))))
+                    .hasMessageContaining("Duplicate incoming standard_applicant_code");
+            assertThat(logs.getErrorLogs())
+                    .anyMatch(
+                            log ->
+                                    log.contains("Existing record")
+                                            && log.contains("First")
+                                            && log.contains("Second"));
+        }
         verifyNoInteractions(applyService);
     }
 
     @Test
-    void newRecordsWithoutIdsOverflowOrCollideFailBeforeWrites() {
+    void newRecordsWithoutIdsOrOverflowFailButProvidedLegacyIdsSkipGeneratedCollisionChecks() {
         var missing = sourceRecord(1L, null, "Missing");
         missing.remove(List.of("ApplicantID", "PSSApplicantID"));
         assertThatThrownBy(() -> processor.ingest(List.of(createPage(missing))))
@@ -213,20 +222,24 @@ class StandardApplicantDataIngressProcessorTest {
                 .thenReturn(List.of(existing(100001L, "STORED")));
         assertThatThrownBy(
                         () ->
-                                processor.ingest(
-                                        List.of(createPage(sourceRecord(1L, null, "Collision")))))
-                .hasMessageContaining("Conflicting SA_ID");
+                                processor.diff(
+                                        processor.preProcess(
+                                                List.of(
+                                                        createPage(
+                                                                sourceRecord(
+                                                                        1L, null, "Collision"))))))
+                .hasMessageContaining("Generated legacy SA_ID 100001");
+
         when(tableReadService.loadAll(any(), any())).thenReturn(List.of());
-        var differentCode = sourceRecord(2L, 100001L, "Incoming collision").put("Code", "OTHER");
-        assertThatThrownBy(
-                        () ->
-                                processor.ingest(
-                                        List.of(
-                                                createPage(
-                                                        sourceRecord(1L, null, "Fallback"),
-                                                        differentCode))))
-                .hasMessageContaining("Conflicting SA_ID");
-        verifyNoInteractions(applyService);
+        var differentCode = sourceRecord(2L, 100001L, "Provided legacy key").put("Code", "OTHER");
+        var incomingCollision =
+                processor.diff(
+                        processor.preProcess(
+                                List.of(
+                                        createPage(
+                                                sourceRecord(1L, null, "Fallback"),
+                                                differentCode))));
+        assertThat(incomingCollision.diffRecords()).hasSize(2);
     }
 
     @Test
