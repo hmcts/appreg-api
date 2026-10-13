@@ -204,3 +204,4 @@ appreg:
   report:
     page-size: ${APPREG_REPORT_PAGE_SIZE:2500}
     max-rows: ${APPREG_REPORT_MAX_ROWS:100000}
+    recent-limit: ${APPREG_REPORT_RECENT_LIMIT:7}

@@ -1,0 +1,24 @@
+get:
+  operationId: getRecentReports
+  tags: [reports]
+  summary: List the authenticated user's recent downloadable reports.
+  description: >
+    Returns completed report jobs with non-empty stored CSV output, newest first
+    by completion time, then job sequence for ties. Only the authenticated user's
+    reports are returned; bulk-upload jobs are excluded. The server-configured
+    maximum defaults to 7 (appreg.report.recent-limit, range 1–100).
+    An empty list is returned when no reports are available. Listing or downloading
+    reports does not create a generation job. This endpoint does not change retention
+    or return the original report criteria.
+  responses:
+    '200':
+      description: Recent downloadable reports, possibly empty.
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            type: array
+            items:
+              $ref: '../../components/schemas/reports/recent-report.yaml'
+    '401': { $ref: '../../components/responses/unauthorized-error.yaml' }
+    '403': { $ref: '../../components/responses/forbidden-error.yaml' }
+    '500': { $ref: '../../components/responses/internal-server-error.yaml' }

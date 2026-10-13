@@ -7,6 +7,8 @@ import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JS
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -33,6 +35,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
+import uk.gov.hmcts.appregister.generated.model.RecentReport;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.service.ReportDownload;
@@ -146,6 +149,23 @@ class ReportControllerTest {
 
         verify(reportService).createPrivateProsecutorsIndexReport(filter);
         assertAccepted(response, acknowledgement);
+    }
+
+    @Test
+    void getRecentReports_returnsMetadataWithoutCaching() {
+        var reports =
+                List.of(
+                        new RecentReport(
+                                UUID.randomUUID(),
+                                JobType.FEES_REPORT,
+                                OffsetDateTime.parse("2026-10-07T12:30:00Z")));
+        when(reportService.getRecentReports()).thenReturn(reports);
+        var response = controller.getRecentReports();
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertSame(reports, response.getBody());
+        Assertions.assertEquals("no-store", response.getHeaders().getCacheControl());
+        Assertions.assertEquals(VND_JSON_V1, response.getHeaders().getContentType());
+        Assertions.assertEquals(List.of("Accept"), response.getHeaders().getVary());
     }
 
     @Test

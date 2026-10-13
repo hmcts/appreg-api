@@ -177,6 +177,14 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   Both commands fetch a fresh admin token on every run. Access to deployed environments may require
   the HMCTS VPN.
 
+## Recent reports
+
+`GET /reports/jobs` lists the authenticated user's completed report jobs with available CSV output,
+newest first. Downloads reuse `GET /reports/jobs/{jobId}/download` without generating another job.
+Set `APPREG_REPORT_RECENT_LIMIT` (or `appreg.report.recent-limit`) to control the maximum returned;
+the default is **7**, with valid values **1–100**. This setting does not change retention.
+Report metadata includes the type and completion timestamp, not the original criteria.
+
 ## Authentication and Authorisation Failure Logging
 
 Protected endpoint responses returning `401` or `403` are logged at `WARN` using the existing App

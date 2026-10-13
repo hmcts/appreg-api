@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.report.controller;
 import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.TEXT_CSV;
 import static uk.gov.hmcts.appregister.common.api.ApiConstants.MediaTypes.VND_JSON_V1;
 
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
+import uk.gov.hmcts.appregister.generated.model.RecentReport;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.service.ReportService;
@@ -82,6 +84,15 @@ public class ReportController implements ReportsApi {
                 reportService
                         .createPrivateProsecutorsIndexReport(privateProsecutorsIndexFilterDto)
                         .acknowledgement());
+    }
+
+    @Override
+    public ResponseEntity<List<RecentReport>> getRecentReports() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(reportService.getRecentReports());
     }
 
     @Override
