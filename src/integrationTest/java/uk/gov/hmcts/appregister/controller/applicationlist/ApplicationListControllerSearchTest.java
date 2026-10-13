@@ -1208,7 +1208,7 @@ class ApplicationListControllerSearchTest extends AbstractApplicationListControl
         assertThat(page.getDescription()).startsWith("soft-deleted ::");
         Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
         Assertions.assertEquals(1, page.getEntriesCount());
-        Assertions.assertEquals("CCC003", page.getCourtCode());
+        Assertions.assertEquals(VALID_COURT_CODE, page.getCourtCode());
         Assertions.assertEquals("Cardiff Crown Court", page.getCourtName());
     }
 

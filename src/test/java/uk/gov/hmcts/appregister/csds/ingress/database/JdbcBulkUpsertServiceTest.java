@@ -6,10 +6,13 @@ import static org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode.ApplicationCodeIngressRecord;
+import uk.gov.hmcts.appregister.csds.ingress.processor.fee.FeeIngressRecord;
 
 @ExtendWith(MockitoExtension.class)
 class JdbcBulkUpsertServiceTest {
@@ -58,7 +62,8 @@ class JdbcBulkUpsertServiceTest {
                 .thenReturn(new int[] {1});
 
         var result =
-                service.upsertBatch("application_codes_staging", "ac_id", List.of(item), rowMapper);
+                service.upsertBatch(
+                        "application_codes_staging", List.of("ac_id"), List.of(item), rowMapper);
 
         var sqlCaptor = ArgumentCaptor.forClass(String.class);
         var paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource[].class);
@@ -73,6 +78,51 @@ class JdbcBulkUpsertServiceTest {
         assertThat(paramsCaptor.getValue()[0].getValue("ac_id")).isEqualTo(12L);
         assertThat(paramsCaptor.getValue()[0].getValue("changed_by")).isEqualTo(0L);
         assertThat(paramsCaptor.getValue()[0].getValue("user_name")).isEqualTo("CSDS_INGRESS");
+    }
+
+    @Test
+    void given_compositeKey_when_upsertBatch_then_useBothColumnsWithoutUpdatingEither() {
+        var item =
+                new FeeIngressRecord(
+                        12L, "FEE-1", "Fee", BigDecimal.ONE, LocalDate.of(2026, 1, 1), null, 1L);
+        when(jdbcTemplate.batchUpdate(anyString(), any(MapSqlParameterSource[].class)))
+                .thenReturn(new int[] {1});
+        service.upsertBatch(
+                "fee",
+                List.of("fee_reference", "fee_start_date"),
+                List.of(item),
+                new FeeIngressDatabaseRowMapper());
+        var sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).batchUpdate(sql.capture(), any(MapSqlParameterSource[].class));
+        assertThat(sql.getValue())
+                .contains("ON CONFLICT (fee_reference, fee_start_date) DO UPDATE")
+                .doesNotContain(
+                        "fee_reference = EXCLUDED",
+                        "fee_start_date = EXCLUDED",
+                        "fee_id = EXCLUDED")
+                .contains("fee_value = EXCLUDED.fee_value");
+    }
+
+    @Test
+    void given_invalidKeys_when_upsertBatch_then_rejectBeforeJdbc() {
+        var item =
+                new FeeIngressRecord(
+                        12L, "FEE-1", "Fee", BigDecimal.ONE, LocalDate.of(2026, 1, 1), null, 1L);
+        var mapper = new FeeIngressDatabaseRowMapper();
+        List<List<String>> invalidKeys =
+                Arrays.asList(
+                        null,
+                        List.of(),
+                        List.of("fee_id", "fee_id"),
+                        List.of("missing_column"),
+                        List.of("fee_id; DROP TABLE fee"),
+                        Arrays.asList((String) null));
+        for (var keys : invalidKeys) {
+            assertThatThrownBy(() -> service.upsertBatch("fee", keys, List.of(item), mapper))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+        assertThat(service.upsertBatch("fee", List.of("fee_id"), List.of(), mapper)).isEmpty();
+        verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
@@ -93,7 +143,7 @@ class JdbcBulkUpsertServiceTest {
                         null);
         var tableName = "application-codes-test";
         var rows = List.of(item);
-        assertThatThrownBy(() -> service.upsertBatch(tableName, "ac_id", rows, rowMapper))
+        assertThatThrownBy(() -> service.upsertBatch(tableName, List.of("ac_id"), rows, rowMapper))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid SQL tableName");
     }
@@ -124,7 +174,7 @@ class JdbcBulkUpsertServiceTest {
                 () ->
                         service.upsertBatch(
                                 "application_codes_staging",
-                                "ac_id",
+                                List.of("ac_id"),
                                 List.of(item),
                                 rowMapper,
                                 ApplicationCodeIngressRecord::id);

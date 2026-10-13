@@ -40,9 +40,9 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
     private static final String APPC_WORDING_KEY = "Name of Crown Court";
 
     // --- Seeded reference data ----------------------------------------------------
-    protected static final String VALID_COURT_CODE = "CCC003";
+    protected static final String VALID_COURT_CODE = "C62CR00";
     protected static final String VALID_COURT_NAME = "Cardiff Crown Court";
-    protected static final String VALID_COURT_CODE2 = "BCC006";
+    protected static final String VALID_COURT_CODE2 = "C52BT00";
 
     protected static final String VALID_CJA_CODE = "CD";
     protected static final String VALID_CJA_CODE2 = "CE";

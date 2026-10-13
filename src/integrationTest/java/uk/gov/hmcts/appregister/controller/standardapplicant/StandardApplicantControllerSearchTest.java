@@ -71,7 +71,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     @MockitoBean private Clock clock; // replaces Clock bean in Spring context
 
     // The total standard applicant inserted by flyway scripts. See V6__InitialTestData.sql
-    private static final int TOTAL_STANDARD_APPLICANT_COUNT = 7;
+    private static final int TOTAL_STANDARD_APPLICANT_COUNT = 6;
 
     private static final String APPCODE_CODE = "APP001";
     private static final String APPCODE_CODE_ORGANISATION = "APP005";
@@ -350,12 +350,15 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    void givenDuplicateCode_whenGetStandardApplicantByCode_thenReturnPreferredRecord()
+    void givenDistinctCodes_whenGetStandardApplicantByCode_thenReturnRequestedRecord()
             throws Exception {
         String code = "SANULL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
         saveStandardApplicant(
-                code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
+                "SANULL002",
+                "Time-Bounded Applicant",
+                queryDate.minusDays(2),
+                queryDate.plusDays(5));
         saveStandardApplicant(code, "Open-Ended Applicant", queryDate.minusDays(1), null);
 
         // create the token
@@ -378,12 +381,15 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    void givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
+    void givenDistinctApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
             throws Exception {
         String code = "SANULL001";
         LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
         saveStandardApplicant(
-                code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
+                "SANULL002",
+                "Time-Bounded Applicant",
+                activeDate.minusDays(2),
+                activeDate.plusDays(5));
         saveStandardApplicant(code, "Open-Ended Applicant", activeDate.minusDays(1), null);
 
         TokenGenerator tokenGenerator =
@@ -397,7 +403,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of(code),
+                                Optional.of("SANULL00"),
                                 Optional.empty(),
                                 Optional.empty(),
                                 Optional.empty(),
@@ -408,7 +414,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
 
         Assertions.assertEquals(2, response.getContent().size());
-        Assertions.assertEquals(code, response.getContent().get(0).getCode());
+        Assertions.assertEquals("SANULL002", response.getContent().get(0).getCode());
         Assertions.assertEquals("Time-Bounded Applicant", response.getContent().get(0).getName());
         Assertions.assertEquals(code, response.getContent().get(1).getCode());
         Assertions.assertEquals("Open-Ended Applicant", response.getContent().get(1).getName());
@@ -577,7 +583,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         assertTrue(secondEntry.getEndDate().isPresent());
         assertNull(secondEntry.getEndDate().get());
 
-        StandardApplicantGetSummaryDto org = response.getContent().get(6);
+        StandardApplicantGetSummaryDto org = response.getContent().get(5);
         assertEquals("APP006", org.getCode());
         assertEquals("Organisation 3", org.getName());
 
@@ -806,7 +812,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(200, responseSpec.getStatusCode());
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 4, TOTAL_STANDARD_APPLICANT_COUNT);
+                response, pageSize, pageNumber, 3, TOTAL_STANDARD_APPLICANT_COUNT);
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -916,11 +922,13 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         // assert the response
         responseSpec.then().statusCode(200);
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
-        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 3);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 2);
 
         assertNull(response.getContent().get(0).getName());
         assertNull(response.getContent().get(1).getName());
-        assertNull(response.getContent().get(2).getName());
+        assertThat(response.getContent())
+                .extracting(StandardApplicantGetSummaryDto::getCode)
+                .containsExactlyInAnyOrder("APP002", "APP003");
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -973,9 +981,10 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
         // assert the response
         responseSpec.then().statusCode(200);
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
-        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 2);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 1);
 
         assertNull(response.getContent().get(0).getName());
+        assertEquals("APP003", response.getContent().get(0).getCode());
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
@@ -1374,16 +1383,16 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
 
             // make sure the order response marries with the request data
             responseSpec.then().statusCode(200);
-            Assertions.assertEquals(7, page.getContent().size());
+            Assertions.assertEquals(TOTAL_STANDARD_APPLICANT_COUNT, page.getContent().size());
             Assertions.assertEquals("APP001", page.getContent().get(0).getCode());
             Assertions.assertEquals("APP002", page.getContent().get(1).getCode());
 
-            // we have a duplicate record
+            // V79 retains one row per business code.
             Assertions.assertEquals("APP003", page.getContent().get(2).getCode());
-            Assertions.assertEquals("APP003", page.getContent().get(3).getCode());
 
-            Assertions.assertEquals("APP004", page.getContent().get(4).getCode());
-            Assertions.assertEquals("APP005", page.getContent().get(5).getCode());
+            Assertions.assertEquals("APP004", page.getContent().get(3).getCode());
+            Assertions.assertEquals("APP005", page.getContent().get(4).getCode());
+            Assertions.assertEquals("APP006", page.getContent().get(5).getCode());
 
             // audit assertion
             differenceLogAsserter.assertDataAuditChange(

@@ -18,6 +18,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 class AbstractOperationDurationAspectTest {
 
@@ -107,6 +108,12 @@ class AbstractOperationDurationAspectTest {
                                 aspect,
                                 new AppRegistryException(
                                         CommonAppError.SORT_NOT_SUITABLE, "bad sort")));
+        Assertions.assertTrue(
+                (boolean)
+                        method.invoke(
+                                aspect,
+                                new CsdsDuplicateRecordException(
+                                        "Duplicate incoming application code")));
     }
 
     @Test

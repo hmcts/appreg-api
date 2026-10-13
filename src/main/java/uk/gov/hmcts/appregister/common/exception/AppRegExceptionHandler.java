@@ -46,6 +46,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @RestControllerAdvice
@@ -467,7 +468,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             return;
         }
 
-        log.error("[{}]: {}", httpStatus.value(), detail, exception);
+        if (exception instanceof CsdsDuplicateRecordException) {
+            log.error("[{}]: {}", httpStatus.value(), detail);
+        } else {
+            log.error("[{}]: {}", httpStatus.value(), detail, exception);
+        }
     }
 
     private int resolveStatusCode(HttpStatusCode status, ProblemDetail problemDetail) {
