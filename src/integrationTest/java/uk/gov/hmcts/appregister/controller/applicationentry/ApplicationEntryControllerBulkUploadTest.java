@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -111,6 +112,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         Assertions.assertEquals(
                 JobStatus.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
+        assertThat(completedJob.getCreatedCount()).isEqualTo((long) CSV_ROW_COUNT);
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
         var importedList = applicationListRepository.findByUuid(listId).orElseThrow();
         Assertions.assertEquals(initialList.getVersion() + 1, importedList.getVersion());
@@ -118,6 +120,38 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         Assertions.assertEquals(expectedApiEntries(), apiEntriesForList(listId, token));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
         Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));
+    }
+
+    @Test
+    void givenTwoUploadsToSameList_whenPolling_thenCountRelatesOnlyToEachUpload() throws Exception {
+        var token = createAdminToken().fetchTokenForRole();
+        var listId = createNewApplicationList(token);
+        var jobIds = new ArrayList<UUID>();
+        for (var upload = 0; upload < 2; upload++) {
+            var response =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                            token,
+                            "file",
+                            csvFile(),
+                            "text/csv");
+            response.then().statusCode(202);
+            var jobId = response.as(JobAcknowledgement.class).getId();
+            jobIds.add(jobId);
+            var completed =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient, getLocalUrl("jobs/" + jobId), token);
+            assertThat(completed.getStatus()).isEqualTo(JobStatus.COMPLETED);
+            assertThat(completed.getCreatedCount()).isEqualTo((long) CSV_ROW_COUNT);
+        }
+        assertThat(countEntriesForList(listId)).isEqualTo(2 * CSV_ROW_COUNT);
+        for (var jobId : jobIds) {
+            var completed =
+                    AwaitilityUtil.waitForJobToReachTerminalStatus(
+                            restAssuredClient, getLocalUrl("jobs/" + jobId), token);
+            assertThat(completed.getCreatedCount()).isEqualTo((long) CSV_ROW_COUNT);
+        }
     }
 
     @Test
@@ -135,12 +169,14 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                         "text/csv");
         response.then().statusCode(202);
         assertThat(response.jsonPath().getMap(""))
-                .doesNotContainKeys("mainFeeTotal", "offsiteFeeTotal", "totalFeeValue");
+                .doesNotContainKeys(
+                        "createdCount", "mainFeeTotal", "offsiteFeeTotal", "totalFeeValue");
         var jobId = response.as(JobAcknowledgement.class).getId();
         var completed =
                 AwaitilityUtil.waitForJobToReachTerminalStatus(
                         restAssuredClient, getLocalUrl("jobs/" + jobId), token);
         assertThat(completed.getStatus()).isEqualTo(JobStatus.COMPLETED);
+        assertThat(completed.getCreatedCount()).isEqualTo((long) CSV_ROW_COUNT);
         assertThat(completed.getMainFeeTotal()).isNotNull();
         assertThat(completed.getOffsiteFeeTotal()).isNotNull();
         assertThat(completed.getTotalFeeValue())
@@ -175,6 +211,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                     return null;
                 });
         assertPollingTotals(jobId, token, "20.30", "4.70", "25.00");
+        assertThat(asyncJobAppListEntryRepository.countByAsyncJobId(UUID.randomUUID())).isZero();
         var otherJobTotals = asyncJobAppListEntryRepository.getFeeTotals(UUID.randomUUID());
         assertThat(otherJobTotals.getMainFeeTotal()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(otherJobTotals.getOffsiteFeeTotal()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -201,6 +238,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
         var result =
                 AwaitilityUtil.waitForJobToReachTerminalStatus(
                         restAssuredClient, getLocalUrl("jobs/" + jobId), token);
+        assertThat(result.getCreatedCount()).isEqualTo((long) CSV_ROW_COUNT);
         assertThat(result.getMainFeeTotal()).isEqualByComparingTo(main);
         assertThat(result.getOffsiteFeeTotal()).isEqualByComparingTo(offsite);
         assertThat(result.getTotalFeeValue()).isEqualByComparingTo(total);
@@ -378,6 +416,9 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                         tokenGenerator.fetchTokenForRole());
 
         assertThat(failedJob.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(failedJob.getCreatedCount()).isNull();
+        assertThat(asyncJobAppListEntryRepository.countByAsyncJobId(acknowledgement.getId()))
+                .isZero();
         assertThat(failedJob.getErrorDescription())
                 .isEqualTo(
                         "The application list was changed, closed or deleted while the bulk upload was processing. "
@@ -713,6 +754,7 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                             getLocalUrl("jobs/" + acknowledgement.getId()),
                             token);
             assertThat(completed.getStatus()).isEqualTo(JobStatus.COMPLETED);
+            assertThat(completed.getCreatedCount()).isEqualTo(1050L);
             assertThat(countEntriesForList(listId)).isEqualTo(1050);
         }
     }
@@ -990,6 +1032,8 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
                             restAssuredClient,
                             getLocalUrl("jobs/" + acknowledgement.getId()),
                             tokenGenerator.fetchTokenForRole());
+
+            assertThat(completedJob.getCreatedCount()).isNull();
 
             Response csvResponse =
                     restAssuredClient.executeGetRequest(

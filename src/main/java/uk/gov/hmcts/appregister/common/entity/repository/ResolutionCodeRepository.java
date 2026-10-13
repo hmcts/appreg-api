@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,9 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
  * filters.
  */
 public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, Long> {
+    /** Exact business-key lookup, including inactive records. */
+    Optional<ResolutionCode> findByResultCode(String resultCode);
+
     /**
      * Find active Resolution Codes by code on a given date.
      *
@@ -25,7 +29,7 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
      *
      * @param code case-insensitive business code (e.g. "ABC123")
      * @param date local date to check for active codes
-     * @return zero, one, or many rows; service layer enforces uniqueness
+     * @return matching active rows in deterministic selection order
      */
     @Query(
             """
@@ -69,17 +73,6 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             Pageable pageable);
 
     /**
-     * Finds active {@link ResolutionCode} records for the given result code (case-insensitive),
-     * prioritising open-ended rows where {@code endDate IS NULL}.
-     *
-     * @param resultCode the result code to match (case-insensitive)
-     * @return a list of active resolution codes ordered with open-ended rows first
-     */
-    default List<ResolutionCode> findPrioritisingNullEndDate(String resultCode, LocalDate date) {
-        return findActiveByResultCodeIgnoreCaseOrdered(resultCode, date);
-    }
-
-    /**
      * Finds active {@link ResolutionCode} records for the given result code (case-insensitive).
      *
      * <p>An active resolution code is defined as:
@@ -106,19 +99,4 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             @Param("resultCode") String resultCode,
             @Param("date") LocalDate date,
             Pageable pageable);
-
-    @Query(
-            """
-        select rc
-        from ResolutionCode rc
-        where lower(rc.resultCode) = lower(:resultCode)
-        and rc.startDate <= :date
-        and (rc.endDate is null or rc.endDate >= :date)
-        order by case when rc.endDate is null then 0 else 1 end,
-                 rc.endDate desc,
-                 rc.startDate desc,
-                 rc.id desc
-        """)
-    List<ResolutionCode> findActiveByResultCodeIgnoreCaseOrdered(
-            @Param("resultCode") String resultCode, @Param("date") LocalDate date);
 }

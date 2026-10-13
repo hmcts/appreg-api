@@ -29,7 +29,8 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
         insertOpenStagingApplicant(1L);
         var incoming = record(2L, "County Hall");
 
-        applyService.reconcileAndUpsert("standard_applicants_staging", "sa_id", diffFor(incoming));
+        applyService.reconcileAndUpsert(
+                "standard_applicants_staging", List.of("sa_id"), diffFor(incoming));
 
         assertThat(endDate(1L)).isEqualTo(LocalDate.now());
         assertThat(
@@ -49,7 +50,7 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
                         () ->
                                 applyService.reconcileAndUpsert(
                                         "standard_applicants_staging",
-                                        "sa_id",
+                                        List.of("sa_id"),
                                         diffFor(invalidIncoming)))
                 .isInstanceOf(CsdsBatchUpsertException.class)
                 .hasCauseInstanceOf(DataIntegrityViolationException.class);

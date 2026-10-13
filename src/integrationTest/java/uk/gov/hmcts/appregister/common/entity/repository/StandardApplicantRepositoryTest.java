@@ -1,15 +1,16 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -26,7 +27,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     // Count for the baseline integration test data in the flyway script.
-    private static final int BASELINE_TEST_COUNT = 7;
+    private static final int BASELINE_TEST_COUNT = 6;
 
     @Test
     void testBasicInsertionUpdate() throws Exception {
@@ -120,68 +121,40 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testFindByCodeAndDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    List<StandardApplicant> retrievedApplicant =
+                    var retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP002", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertThat(retrievedApplicant).isNotEmpty();
+                    assertThat(retrievedApplicant).hasSize(1);
                 });
     }
 
     @Test
-    void testFindByCodeAndDateMultiple() throws Exception {
+    void testFindByCodeAndDateReturnsDeduplicatedCode() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    List<StandardApplicant> retrievedApplicant =
+                    var retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP003", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertEquals(2, retrievedApplicant.size());
+                    assertThat(retrievedApplicant).hasSize(1);
                 });
     }
 
     @Test
-    void testFindByCodeAndDatePrefersNullEndDate() throws Exception {
-        transactionalUnitOfWork.inTransaction(
-                () -> {
-                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
-                    String code = "SANULL001";
-
-                    StandardApplicant boundedApplicant =
-                            new StandardApplicantTestData().someComplete();
-                    boundedApplicant.setApplicantCode(code);
-                    boundedApplicant.setName("Bounded Applicant");
-                    boundedApplicant.setApplicantStartDate(activeDate.minusDays(1));
-                    boundedApplicant.setApplicantEndDate(activeDate.plusDays(7));
-
-                    StandardApplicant openEndedApplicant =
-                            new StandardApplicantTestData().someComplete();
-                    openEndedApplicant.setApplicantCode(code);
-                    openEndedApplicant.setName("Open-Ended Applicant");
-                    openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
-                    openEndedApplicant.setApplicantEndDate(null);
-
-                    StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
-                    StandardApplicant savedOpenEndedApplicant =
-                            persistance.save(openEndedApplicant);
-
-                    List<StandardApplicant> retrievedApplicant =
-                            repository.findStandardApplicantByCodeAndDate(code, activeDate);
-
-                    assertThat(retrievedApplicant)
-                            .extracting(StandardApplicant::getId)
-                            .containsExactly(
-                                    savedOpenEndedApplicant.getId(), savedBoundedApplicant.getId());
-                });
+    void rejectsDuplicateBusinessCode() {
+        var duplicate = new StandardApplicantTestData().someComplete();
+        duplicate.setApplicantCode("APP001");
+        assertThatThrownBy(() -> repository.saveAndFlush(duplicate))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
-    void testFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() throws Exception {
-        transactionalUnitOfWork.inTransaction(
-                this::assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord);
+    void testFindByCodeIncludesHistoricRows() throws Exception {
+        transactionalUnitOfWork.inTransaction(this::assertFindByCodeIncludesHistoricRows);
     }
 
-    private void assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() {
+    private void assertFindByCodeIncludesHistoricRows() {
         LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "SACODE001";
 
@@ -191,31 +164,16 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         historicApplicant.setApplicantStartDate(activeDate.minusDays(30));
         historicApplicant.setApplicantEndDate(activeDate.minusDays(10));
 
-        StandardApplicant boundedApplicant = new StandardApplicantTestData().someComplete();
-        boundedApplicant.setApplicantCode(code);
-        boundedApplicant.setName("Bounded Applicant");
-        boundedApplicant.setApplicantStartDate(activeDate.minusDays(5));
-        boundedApplicant.setApplicantEndDate(activeDate.plusDays(7));
-
-        StandardApplicant openEndedApplicant = new StandardApplicantTestData().someComplete();
-        openEndedApplicant.setApplicantCode(code);
-        openEndedApplicant.setName("Open-Ended Applicant");
-        openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
-        openEndedApplicant.setApplicantEndDate(null);
-
         StandardApplicant savedHistoricApplicant = persistance.save(historicApplicant);
-        StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
-        StandardApplicant savedOpenEndedApplicant = persistance.save(openEndedApplicant);
 
-        List<StandardApplicant> retrievedApplicants =
-                repository.findStandardApplicantByCode(code, activeDate);
+        var retrievedApplicant = repository.findStandardApplicantByCode(code, activeDate);
 
-        assertThat(retrievedApplicants)
-                .extracting(StandardApplicant::getId)
-                .containsExactly(
-                        savedOpenEndedApplicant.getId(),
-                        savedBoundedApplicant.getId(),
-                        savedHistoricApplicant.getId());
+        assertThat(retrievedApplicant)
+                .singleElement()
+                .satisfies(
+                        applicant ->
+                                assertThat(applicant.getId())
+                                        .isEqualTo(savedHistoricApplicant.getId()));
     }
 
     @Test
@@ -223,18 +181,18 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
-                    String code = "SABOUND001";
+                    String code = "SABOUND";
 
                     StandardApplicant startsTodayApplicant =
                             new StandardApplicantTestData().someComplete();
-                    startsTodayApplicant.setApplicantCode(code);
+                    startsTodayApplicant.setApplicantCode(code + "A");
                     startsTodayApplicant.setName("Starts Today Applicant");
                     startsTodayApplicant.setApplicantStartDate(activeDate);
                     startsTodayApplicant.setApplicantEndDate(null);
 
                     StandardApplicant endsTodayApplicant =
                             new StandardApplicantTestData().someComplete();
-                    endsTodayApplicant.setApplicantCode(code);
+                    endsTodayApplicant.setApplicantCode(code + "B");
                     endsTodayApplicant.setName("Ends Today Applicant");
                     endsTodayApplicant.setApplicantStartDate(activeDate.minusDays(5));
                     endsTodayApplicant.setApplicantEndDate(activeDate);

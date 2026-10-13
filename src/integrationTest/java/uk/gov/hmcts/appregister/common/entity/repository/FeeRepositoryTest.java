@@ -27,7 +27,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         this.applicationFeeRepository = applicationFeeRepository;
     }
 
-    private static final int BASELINE_TEST_COUNT = 107;
+    private static final int BASELINE_TEST_COUNT = 104;
 
     @Test
     void testBasicInsertionUpdate() {
@@ -85,7 +85,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         preferred.setDescription("Open-ended overlap fee");
         preferred.setAmount(BigDecimal.valueOf(34));
         preferred.setOffsite(false);
-        preferred.setStartDate(today.minusDays(10));
+        preferred.setStartDate(today.minusDays(11));
         preferred.setEndDate(null);
         preferred = persistance.save(preferred);
 
@@ -118,7 +118,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         firstPreferred.setDescription("Open-ended first fee");
         firstPreferred.setAmount(BigDecimal.valueOf(34));
         firstPreferred.setOffsite(false);
-        firstPreferred.setStartDate(today.minusDays(10));
+        firstPreferred.setStartDate(today.minusDays(11));
         firstPreferred.setEndDate(null);
         firstPreferred = persistance.save(firstPreferred);
 

@@ -47,6 +47,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -80,6 +81,7 @@ import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     protected static final String WEB_CONTEXT = "application-list-entries";
     protected static final String CREATE_ENTRY_CONTEXT = "application-lists";
@@ -126,7 +128,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
     protected static final OffsetDateTime TEST_OFFSET_DATE_TIME =
             OffsetDateTime.of(TEST_DATE, TEST_TIME, ZoneOffset.UTC);
-    protected static final String VALID_COURT_CODE = "CCC003";
+    protected static final String VALID_COURT_CODE = "C62CR00";
 
     @BeforeEach
     void setupUser() {
@@ -557,7 +559,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         ApplicationListCreateDto applicationListCreateDto =
                 Instancio.create(ApplicationListCreateDto.class);
         applicationListCreateDto.setStatus(ApplicationListStatus.OPEN);
-        applicationListCreateDto.setCourtLocationCode("CCC003");
+        applicationListCreateDto.setCourtLocationCode(VALID_COURT_CODE);
         applicationListCreateDto.setOtherLocationDescription(null);
         applicationListCreateDto.setDurationHours(1);
         applicationListCreateDto.setDurationMinutes(1);
@@ -756,7 +758,8 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         fee.setDescription(description);
         fee.setAmount(amount);
         fee.setOffsite(offsite);
-        fee.setStartDate(TEST_DATE.minusDays(10));
+        // Overlapping fees remain distinct by reference/start date after V80.
+        fee.setStartDate(TEST_DATE.minusDays(endDate == null ? 11 : 10));
         fee.setEndDate(endDate);
         return persistance.save(fee);
     }
@@ -794,15 +797,21 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
-        ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
-        resolutionCode.setResultCode(resultCode);
-        resolutionCode.setTitle(resultCode + " title");
-        resolutionCode.setWording(resultCode + " wording");
-        resolutionCode.setLegislation("Test legislation");
-        resolutionCode.setStartDate(TEST_DATE);
-        resolutionCode.setChangedBy(1L);
-        resolutionCode.setChangedDate(TEST_OFFSET_DATE_TIME);
-        resolutionCode = persistance.save(resolutionCode);
+        var existing = resolutionCodeRepository.findByResultCode(resultCode);
+        ResolutionCode resolutionCode;
+        if (existing.isPresent()) {
+            resolutionCode = existing.get();
+        } else {
+            resolutionCode = new ResolutionCodeTestData().someComplete();
+            resolutionCode.setResultCode(resultCode);
+            resolutionCode.setTitle(resultCode + " title");
+            resolutionCode.setWording(resultCode + " wording");
+            resolutionCode.setLegislation("Test legislation");
+            resolutionCode.setStartDate(TEST_DATE);
+            resolutionCode.setChangedBy(1L);
+            resolutionCode.setChangedDate(TEST_OFFSET_DATE_TIME);
+            resolutionCode = persistance.save(resolutionCode);
+        }
 
         ApplicationCode persistedCode =
                 applicationCodeRepository

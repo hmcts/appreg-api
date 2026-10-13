@@ -17,6 +17,19 @@ import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 class StabilityTestExtensionTest {
 
     @Test
+    void shouldUseTwoRepetitionsByDefault() throws NoSuchMethodException {
+        var extension = new StabilityTestExtension(name -> null);
+
+        var contexts =
+                extension
+                        .provideTestTemplateInvocationContexts(
+                                mockContext(MethodAnnotatedTest.class, "usesDefaultAnnotation"))
+                        .toList();
+
+        assertEquals(2, contexts.size());
+    }
+
+    @Test
     void shouldUseAnnotationRepeatCountWhenOverrideIsNotSet() throws NoSuchMethodException {
         StabilityTestExtension extension = new StabilityTestExtension(name -> null);
 
@@ -93,6 +106,11 @@ class StabilityTestExtensionTest {
     }
 
     private static final class MethodAnnotatedTest {
+        @StabilityTest
+        void usesDefaultAnnotation() {
+            // no-op
+        }
+
         @StabilityTest(times = 7)
         void usesMethodAnnotation() {
             // no-op

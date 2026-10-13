@@ -28,6 +28,7 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
     public JsonNode retrieveJson(String path) {
         validatePath(path);
         var uri = buildUri(path);
+        log.info("Target url = {}", uri);
 
         RestClientException lastException = null;
         var accessKeys = properties.getAccessKeys();
@@ -47,10 +48,10 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
                 if (response == null) {
                     throw new AppRegistryException(
                             CommonAppError.INTERNAL_SERVER_ERROR,
-                            "CSDS response body was null for path " + path);
+                            "CSDS response body was null. Target url = " + uri);
                 }
 
-                var json = readJson(response, path);
+                var json = readJson(response, uri.toString());
                 if (json != null) {
                     var count = json.path("count");
                     var records = json.path("records");
@@ -63,17 +64,17 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
             } catch (RestClientException ex) {
                 lastException = ex;
                 log.warn(
-                        "Failed to retrieve CSDS JSON, using {}, for path {}: {}",
+                        "Failed to retrieve CSDS JSON, using {}. Target url = {}: {}",
                         "Key " + (index + 1),
-                        path,
+                        uri,
                         ex.getMessage());
-                log.debug("CSDS request failed for path {}", path, ex);
+                log.debug("CSDS request failed. Target url = {}", uri, ex);
             }
         }
 
         throw new AppRegistryException(
                 CommonAppError.INTERNAL_SERVER_ERROR,
-                "Failed to retrieve CSDS data for path " + path,
+                "Failed to retrieve CSDS data. Target url = " + uri,
                 lastException);
     }
 
@@ -81,13 +82,13 @@ class CsdsIngressClientImpl implements CsdsIngressClient {
         return path.startsWith("/") ? path : "/" + path;
     }
 
-    private JsonNode readJson(String responseBody, String path) {
+    private JsonNode readJson(String responseBody, String targetUrl) {
         try {
             return OBJECT_MAPPER.readTree(responseBody);
         } catch (JsonProcessingException ex) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Failed to parse CSDS JSON for path " + path,
+                    "Failed to parse CSDS JSON. Target url = " + targetUrl,
                     ex);
         }
     }

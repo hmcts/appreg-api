@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -26,23 +27,15 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 public class FeeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, FeeDiffResult> {
     private static final long DEFAULT_FEE_VERSION = 1L;
-    private static final String FEE_ID = "FEE_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
-            List.of(
-                    "CivilFeeID",
-                    "FeeReference",
-                    "Description",
-                    "FeeValue",
-                    "StartDate",
-                    "EndDate",
-                    "RevisionNumber",
-                    "PSSFixedListID");
+            List.of("Description", "FeeValue", "EndDate", "RevisionNumber");
 
     private final CsdsIngressProperties.Fee feeProperties;
     private final FeeDiffService diffService;
     private final FeeDiffReportingService diffReportingService;
     private final JdbcBulkUpsertService bulkUpsertService;
     private final FeeIngressDatabaseRowMapper rowMapper;
+    private final Clock clock;
 
     public FeeDataIngressProcessor(
             CsdsIngressProperties properties,
@@ -52,7 +45,8 @@ public class FeeDataIngressProcessor
             FeeDiffService diffService,
             FeeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
-            FeeIngressDatabaseRowMapper rowMapper) {
+            FeeIngressDatabaseRowMapper rowMapper,
+            Clock clock) {
         super(
                 properties,
                 properties.getProcessors().getFee(),
@@ -64,28 +58,18 @@ public class FeeDataIngressProcessor
         this.diffReportingService = diffReportingService;
         this.bulkUpsertService = bulkUpsertService;
         this.rowMapper = rowMapper;
+        this.clock = clock;
     }
 
     @Override
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
-        if (rawJson.isEmpty()) {
-            return rawJson;
-        }
-
-        val firstPageRecords = extractRecords(rawJson.getFirst());
-        if (!firstPageRecords.isEmpty()) {
-            validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
-        }
-
-        val resolvedRecords =
-                rawJson.stream()
-                        .flatMap(page -> extractRecords(page).stream())
-                        .map(this::withResolvedFeeId)
-                        .toList();
-        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
-        val recordsArray = normalisedPage.putArray("records");
-        resolvedRecords.forEach(recordsArray::add);
-        return List.of(normalisedPage);
+        return normaliseDateEffectiveRecords(
+                rawJson,
+                clock,
+                REQUIRED_RECORD_FIELDS,
+                "fee",
+                record -> nullableText(record, feeProperties.getBusinessKeys().getFirst()),
+                feeProperties.getBusinessKeys().get(1));
     }
 
     @Override
@@ -142,14 +126,14 @@ public class FeeDataIngressProcessor
     protected void applyDiff(FeeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
-                targetTable(), targetKeyField(), rows, rowMapper, FeeIngressRecord::id);
+                targetTable(), targetKeyFields(), rows, rowMapper, FeeIngressRecord::id);
     }
 
     @Override
     protected List<CsdsAuditEntry> buildSuccessAudits(
             List<JsonNode> processedData, FeeDiffResult diff) {
         return buildSuccessAuditEntries(
-                diff.diffRecords(), sourceRecordsById(processedData), FeeIngressRecord::id);
+                diff.diffRecords(), sourceRecordsById(processedData, diff), FeeIngressRecord::id);
     }
 
     @Override
@@ -157,7 +141,7 @@ public class FeeDataIngressProcessor
             List<JsonNode> processedData, FeeDiffResult diff, CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 FeeIngressRecord::id,
                 FeeIngressRecord.class,
                 ex);
@@ -186,13 +170,14 @@ public class FeeDataIngressProcessor
 
     private FeeIngressRecord toSourceRecord(JsonNode node) {
         return new FeeIngressRecord(
-                requiredLong(node, FEE_ID),
-                requiredText(node, "FeeReference"),
+                nullableLong(node, feeProperties.getCsdsKey()),
+                requiredText(node, feeProperties.getBusinessKeys().getFirst()),
                 requiredText(node, "Description"),
                 requiredBigDecimal(node, "FeeValue"),
-                requiredLocalDate(node, "StartDate"),
+                requiredLocalDate(node, feeProperties.getBusinessKeys().get(1)),
                 nullableLocalDate(node, "EndDate"),
-                resolvedVersion(node));
+                resolvedVersion(node),
+                nullableLong(node, feeProperties.getLegacyKey()));
     }
 
     private Long resolvedVersion(JsonNode node) {
@@ -210,20 +195,31 @@ public class FeeDataIngressProcessor
         return DEFAULT_FEE_VERSION;
     }
 
-    private JsonNode withResolvedFeeId(JsonNode node) {
-        if (!(node instanceof ObjectNode objectNode)) {
-            return node;
-        }
-
-        val copiedRecord = objectNode.deepCopy();
-        val resolvedId = FeeIngressRecord.resolveId(copiedRecord);
-        if (resolvedId != null) {
-            copiedRecord.put(FEE_ID, resolvedId);
-        }
-        return copiedRecord;
-    }
-
-    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, FEE_ID));
+    private Map<Long, JsonNode> sourceRecordsById(
+            List<JsonNode> processedData, FeeDiffResult diff) {
+        val sourcesByKey =
+                processedData.stream()
+                        .flatMap(page -> extractRecords(page).stream())
+                        .collect(
+                                Collectors.toMap(
+                                        node ->
+                                                new FeeIngressRecord.BusinessKey(
+                                                        requiredText(
+                                                                node,
+                                                                feeProperties
+                                                                        .getBusinessKeys()
+                                                                        .getFirst()),
+                                                        requiredLocalDate(
+                                                                node,
+                                                                feeProperties
+                                                                        .getBusinessKeys()
+                                                                        .get(1))),
+                                        node -> node));
+        // Audit IDs stay numeric; source correlation uses the complete business key.
+        return diff.diffRecords().stream()
+                .collect(
+                        Collectors.toMap(
+                                item -> item.intended().id(),
+                                item -> sourcesByKey.get(item.intended().businessKey())));
     }
 }
