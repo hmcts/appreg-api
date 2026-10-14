@@ -23,7 +23,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      *
      * @param code the applicant code to search for
      * @param date The date to check for active status
-     * @return an Optional containing the found StandardApplicant, or empty if not found
+     * @return matching active rows in deterministic selection order
      */
     @Query(
             """

@@ -15,10 +15,10 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 public class ApplicationCodeDiffReportingService
         extends AbstractIngressDiffReportingService<ApplicationCodeIngressRecord> {
     private static final String AC_ID = "AC_ID";
-    private final String reportingDir;
+    private final CsdsIngressProperties.ApplicationCodes processorProperties;
 
     public ApplicationCodeDiffReportingService(CsdsIngressProperties properties) {
-        this.reportingDir = properties.getProcessors().getApplicationCodes().getReportingDir();
+        this.processorProperties = properties.getProcessors().getApplicationCodes();
     }
 
     public void reportDiff(
@@ -29,7 +29,7 @@ public class ApplicationCodeDiffReportingService
             ApplicationCodeDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         super.reportDiff(
-                reportingDir,
+                processorProperties.getReportingDir(),
                 datasetName,
                 targetTable,
                 targetKeyField,
@@ -55,13 +55,17 @@ public class ApplicationCodeDiffReportingService
                                     ApplicationCodeIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByAcId =
+        var incomingRecordsByCode =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, AC_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, AC_ID),
+                                        item ->
+                                                nullableText(
+                                                        item,
+                                                        processorProperties
+                                                                .getBusinessKeys()
+                                                                .getFirst()),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -69,11 +73,11 @@ public class ApplicationCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByAcId.get(item.intended().id()),
-                                                "PSSApplicationCodeID"),
+                                                incomingRecordsByCode.get(item.intended().code()),
+                                                processorProperties.getLegacyKey()),
                                         nullableLong(
-                                                incomingRecordsByAcId.get(item.intended().id()),
-                                                "ApplicationCodeID"),
+                                                incomingRecordsByCode.get(item.intended().code()),
+                                                processorProperties.getCsdsKey()),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
@@ -114,10 +118,12 @@ public class ApplicationCodeDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, "PSSApplicationCodeID")),
-                        csvValue(nullableLong(node, "ApplicationCodeID")),
+                        csvValue(nullableLong(node, processorProperties.getLegacyKey())),
+                        csvValue(nullableLong(node, processorProperties.getCsdsKey())),
                         csvValue(nullableLong(node, AC_ID)),
-                        csvValue(nullableText(node, "Code")),
+                        csvValue(
+                                nullableText(
+                                        node, processorProperties.getBusinessKeys().getFirst())),
                         csvValue(nullableText(node, "ApplicationTitle")),
                         csvValue(nullableText(node, "ApplicationWording")),
                         csvValue(nullableText(node, "Legislation")),

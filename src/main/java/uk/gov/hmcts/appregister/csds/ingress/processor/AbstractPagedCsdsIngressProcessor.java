@@ -2,11 +2,14 @@ package uk.gov.hmcts.appregister.csds.ingress.processor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +20,8 @@ import java.util.function.ToLongFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -38,6 +43,8 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIngressProcessor<D> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String VIEW_TYPE = "GD";
+
+    private final Logger processorLog = LoggerFactory.getLogger(getClass());
 
     private final CsdsIngressProperties properties;
     private final CsdsIngressProperties.ProcessorProperties processorProperties;
@@ -82,27 +89,42 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         }
 
         val responses = new ArrayList<JsonNode>();
-        for (var offset = 0; offset < totalCount; offset += properties.getPageSize()) {
-            responses.add(
+        // CSDS may cap a response. Advance by records received, not the requested limit.
+        for (var offset = 0; offset < totalCount; ) {
+            val response =
                     reportReceivedJson(
                             ingressClient.retrieveJson(
                                     appendPagingParameters(
                                             appendQueryParameters(queryPath(), queryParameters()),
                                             "%24limit="
-                                                    + properties.getPageSize()
+                                                    + (totalCount - offset)
                                                     + "&%24offset="
                                                     + offset)),
-                            "offset_" + offset));
+                            "offset_" + offset);
+            val received = extractRecords(response).size();
+            if (received == 0 || received > totalCount - offset) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "CSDS record count mismatch for "
+                                + datasetName()
+                                + ": expected "
+                                + totalCount
+                                + ", received "
+                                + received
+                                + " at offset "
+                                + offset);
+            }
+            responses.add(response);
+            offset += received;
         }
         val fetchedRecordCount =
                 responses.stream().mapToInt(response -> extractRecords(response).size()).sum();
 
         log.info(
-                "Retrieved {} CSDS pages for {} using page size {} and reported count {} "
+                "Retrieved {} CSDS pages for {} with reported count {} "
                         + "with actual fetched records {}",
                 responses.size(),
                 datasetName(),
-                properties.getPageSize(),
                 totalCount,
                 fetchedRecordCount);
 
@@ -138,7 +160,11 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
 
     @Override
     public final String targetKeyField() {
-        return processorProperties.getPrimaryKey();
+        return String.join(", ", targetKeyFields());
+    }
+
+    protected final List<String> targetKeyFields() {
+        return processorProperties.getPrimaryKeys();
     }
 
     @Override
@@ -183,9 +209,70 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
         return List.copyOf(records);
     }
 
+    protected final List<JsonNode> normaliseDateEffectiveRecords(
+            List<JsonNode> rawJson,
+            Clock clock,
+            List<String> requiredRecordFields,
+            String recordType,
+            Function<JsonNode, String> recordLabel,
+            String startDateField) {
+        if (rawJson.isEmpty()) {
+            return rawJson;
+        }
+
+        val today = LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
+        val retainedRecords =
+                rawJson.stream()
+                        .flatMap(page -> extractRecords(page).stream())
+                        .filter(
+                                record ->
+                                        isCurrentRecord(
+                                                record,
+                                                today,
+                                                recordType,
+                                                recordLabel,
+                                                startDateField))
+                        .toList();
+        if (!retainedRecords.isEmpty()) {
+            validateExpectedFields(retainedRecords.getFirst(), requiredRecordFields);
+            validateExpectedFields(
+                    retainedRecords.getFirst(), processorProperties.getBusinessKeys());
+        }
+        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
+        val recordsArray = normalisedPage.putArray("records");
+        retainedRecords.forEach(recordsArray::add);
+        return List.of(normalisedPage);
+    }
+
+    private boolean isCurrentRecord(
+            JsonNode record,
+            LocalDate today,
+            String recordType,
+            Function<JsonNode, String> recordLabel,
+            String startDateField) {
+        val startDate = requiredLocalDate(record, startDateField);
+        if (record.hasNonNull("EndDate")) {
+            requiredLocalDate(record, "EndDate");
+        }
+        if (startDate.isAfter(today)) {
+            processorLog.warn(
+                    "Dropping future-dated {} {} with {} {} (today {})",
+                    recordType,
+                    recordLabel.apply(record),
+                    startDateField,
+                    startDate,
+                    today);
+            return false;
+        }
+        return true;
+    }
+
     private int extractCount(JsonNode response) {
         val countNode = response.get("count");
-        if (countNode == null || !countNode.canConvertToInt()) {
+        if (countNode == null
+                || !countNode.isIntegralNumber()
+                || !countNode.canConvertToInt()
+                || countNode.intValue() < 0) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR,
                     "CSDS count response did not contain a numeric count for " + datasetName());

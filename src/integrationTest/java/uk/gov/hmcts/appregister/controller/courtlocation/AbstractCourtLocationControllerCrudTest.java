@@ -8,13 +8,13 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 class AbstractCourtLocationControllerCrudTest extends BaseIntegration {
     protected static final String WEB_CONTEXT = "court-locations";
 
-    protected static final String CARDIFF_CODE = "CCC003";
+    protected static final String CARDIFF_CODE = "C62CR00";
     protected static final String CARDIFF_NAME = "Cardiff Crown Court";
-    protected static final LocalDate CARDIFF_START = LocalDate.of(1904, Month.JANUARY, 1);
+    protected static final LocalDate CARDIFF_START = LocalDate.of(2016, Month.JANUARY, 1);
 
-    protected static final String BRISTOL_CODE = "BCC006";
+    protected static final String BRISTOL_CODE = "C52BT00";
     protected static final String BRISTOL_NAME = "Bristol Crown Court";
-    protected static final LocalDate BRISTOL_START = LocalDate.of(1993, Month.JUNE, 1);
+    protected static final LocalDate BRISTOL_START = LocalDate.of(2016, Month.JANUARY, 1);
 
     // Audit event names
     protected static final String AUDIT_GET_ONE =

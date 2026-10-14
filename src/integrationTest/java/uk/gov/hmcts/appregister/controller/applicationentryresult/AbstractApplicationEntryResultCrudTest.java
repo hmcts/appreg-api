@@ -71,7 +71,7 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
     protected static final LocalDate TEST_DATE = LocalDate.of(2025, Month.OCTOBER, 15);
 
-    protected static final String VALID_COURT_CODE = "CCC003";
+    protected static final String VALID_COURT_CODE = "C62CR00";
 
     @BeforeEach
     void setupUser() {
@@ -196,7 +196,12 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
     }
 
     protected ResolutionCode saveActiveResolutionCode(String code, LocalDate start, LocalDate end) {
-        ResolutionCode rc = new ResolutionCodeTestData().someComplete();
+        var existing = resolutionCodeRepository.findByResultCode(code);
+        // Seeded reference rows are shared; controlled validity tests must use fresh codes.
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        var rc = new ResolutionCodeTestData().someComplete();
         rc.setResultCode(code);
         rc.setStartDate(start);
         rc.setEndDate(end);
@@ -232,9 +237,10 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
         var entry = createEntry(list);
         persistance.save(entry);
 
-        var resolutionCode = new ResolutionCodeTestData().someComplete();
-        resolutionCode.setResultCode(APPC_CODE);
-        persistance.save(resolutionCode);
+        var resolutionCode =
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate(APPC_CODE, TEST_DATE)
+                        .getFirst();
 
         var entryResult = createAndSaveResolution(entry, resolutionCode);
 

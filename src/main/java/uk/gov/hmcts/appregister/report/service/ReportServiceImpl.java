@@ -1,18 +1,22 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
@@ -23,6 +27,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
+import uk.gov.hmcts.appregister.generated.model.RecentReport;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
@@ -54,6 +59,8 @@ public class ReportServiceImpl implements ReportService {
     private final String schema;
     private final int reportPageSize;
     private final int reportMaxRows;
+    private final AsyncJobRepository asyncJobRepository;
+    private final int recentReportLimit;
 
     public ReportServiceImpl(
             AsyncJobService asyncJobService,
@@ -66,7 +73,15 @@ public class ReportServiceImpl implements ReportService {
             ReportLocationValidator reportLocationValidator,
             @Value("${spring.jpa.properties.hibernate.default_schema}") String schema,
             @Value("${appreg.report.page-size}") int reportPageSize,
-            @Value("${appreg.report.max-rows}") int reportMaxRows) {
+            @Value("${appreg.report.max-rows}") int reportMaxRows,
+            AsyncJobRepository asyncJobRepository,
+            @Value("${appreg.report.recent-limit:7}") int recentReportLimit) {
+        if (recentReportLimit < 1 || recentReportLimit > 100) {
+            throw new IllegalArgumentException(
+                    "appreg.report.recent-limit must be between 1 and 100");
+        }
+        this.asyncJobRepository = asyncJobRepository;
+        this.recentReportLimit = recentReportLimit;
         if (reportMaxRows <= 0) {
             throw new IllegalArgumentException("appreg.report.max-rows must be greater than zero");
         }
@@ -307,6 +322,21 @@ public class ReportServiceImpl implements ReportService {
                             acknowledgement,
                             PrivateProsecutorsIndexReportParameterAudit.from(normalisedFilter));
                 });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RecentReport> getRecentReports() {
+        return asyncJobRepository
+                .findRecentReports(userProvider.getUserId(), PageRequest.of(0, recentReportLimit))
+                .stream()
+                .map(
+                        job ->
+                                new RecentReport(
+                                        job.getUuid(),
+                                        JobType.fromValue(job.getJobType()),
+                                        job.getUpdateTime()))
+                .toList();
     }
 
     @Override

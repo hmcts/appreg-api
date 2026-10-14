@@ -1,0 +1,16 @@
+type: object
+description: Metadata identifying a completed report available to download again.
+required: [id, type, completedAt]
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Job identifier used by the existing report download endpoint.
+    example: '9f7b2a35-57ac-4a1c-9c41-83b6c8157af4'
+  type:
+    $ref: '../common/job-type.yaml'
+  completedAt:
+    type: string
+    format: date-time
+    description: Time the job was last updated to completed. Downloads do not change this time.
+    example: '2026-10-07T12:30:00Z'

@@ -33,7 +33,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.10.3'
+  id 'com.diffplug.spotless' version '8.10.4'
   id 'org.openrewrite.rewrite' version '7.39.0'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.4'
@@ -480,8 +480,8 @@ dependencies {
   implementation 'com.opencsv:opencsv:5.12.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.12.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.12.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.13.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.4.13.Final'
 
   // Lombok
   compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
@@ -490,7 +490,7 @@ dependencies {
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
 
   // Database
-  runtimeOnly 'org.postgresql:postgresql:42.7.13'
+  runtimeOnly 'org.postgresql:postgresql:42.7.14'
   localDebugRuntimeOnly 'p6spy:p6spy:3.9.1'
 
   // Testing

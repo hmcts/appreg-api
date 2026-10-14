@@ -14,6 +14,12 @@ class ReportingControllerSecurityTest extends AbstractSecurityControllerTest {
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
                 RestEndpointDescription.builder()
+                        .url(getLocalUrl("reports/jobs"))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
                         .url(
                                 getLocalUrlWithDate(
                                         ReportingControllerGetTest.WEB_CONTEXT.formatted(

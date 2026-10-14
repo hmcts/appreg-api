@@ -56,7 +56,7 @@ class StandardApplicantIngressApplyServiceTest {
                                         record,
                                         "no existing sa_id match")));
 
-        service.reconcileAndUpsert("standard_applicants_staging", "sa_id", diff);
+        service.reconcileAndUpsert("standard_applicants_staging", List.of("sa_id"), diff);
 
         var sqlCaptor = ArgumentCaptor.forClass(String.class);
         verify(jdbcTemplate)
@@ -68,7 +68,7 @@ class StandardApplicantIngressApplyServiceTest {
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("standard_applicants_staging"),
-                        eq("sa_id"),
+                        eq(List.of("sa_id")),
                         eq(List.of(record)),
                         eq(rowMapper),
                         org.mockito.ArgumentMatchers.any());
