@@ -5,6 +5,7 @@ properties:
   date:
     type: string
     format: date
+    x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
     description: Single date of the Application List.
     example: "2025-10-07"
 

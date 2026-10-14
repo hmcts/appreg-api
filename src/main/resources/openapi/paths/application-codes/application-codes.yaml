@@ -25,7 +25,7 @@ get:
     - in: query
       name: date
       required: false
-      schema: { type: string, format: date }
+      schema: { type: string, format: date, x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator' }
       description: |
         ISO date (yyyy-MM-dd) on which returned Application Codes must be valid.
       example: "2021-01-01"

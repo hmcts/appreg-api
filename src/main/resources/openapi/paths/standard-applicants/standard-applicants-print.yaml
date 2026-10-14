@@ -22,11 +22,11 @@ get:
       description: Filter by applicant name.
     - in: query
       name: from
-      schema: { type: string, format: date }
+      schema: { type: string, format: date, x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator' }
       description: Filter by from date.
     - in: query
       name: to
-      schema: { type: string, format: date }
+      schema: { type: string, format: date, x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'}
       description: Filter by to date.
     - in: query
       name: addressLine1

@@ -32,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedConstruction;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
@@ -51,6 +52,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.validator.DateValidatorImpl;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 import uk.gov.hmcts.appregister.generated.model.JobType;
@@ -67,6 +69,8 @@ class BulkUploadAsyncLifecycleTest {
     private UUID listId;
     private MultipartFile csvFile;
 
+    @MockitoBean private DateValidatorImpl dateValidator;
+
     private static AsyncJobPersistenceService persistenceService;
 
     @BeforeEach
@@ -82,6 +86,7 @@ class BulkUploadAsyncLifecycleTest {
         applicationList.setVersion(3L);
         listId = UUID.randomUUID();
         csvFile = mock(MultipartFile.class);
+
         when(csvFile.getBytes())
                 .thenReturn(new ByteArrayInputStream("HEADER\n".getBytes()).readAllBytes());
         persistenceService = mock(AsyncJobPersistenceService.class);

@@ -20,5 +20,6 @@ properties:
   statusDate:
     type: string
     format: date
+    x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
     description: The date when the payment status was updated. Must be today's date or a past date.
     example: "2025-12-01"
