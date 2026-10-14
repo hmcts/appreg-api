@@ -7986,6 +7986,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         paymentReference:
           description: Optional reference used to identify the payment.
           example: PAY-001
@@ -8492,6 +8493,7 @@ components:
             example: 1990-01-01
             format: date
             type: string
+            x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         type: object
     sort_orders_inner:
       properties:
