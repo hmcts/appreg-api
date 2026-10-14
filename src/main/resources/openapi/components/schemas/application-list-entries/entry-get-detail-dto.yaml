@@ -76,7 +76,7 @@ properties:
   lodgementDate:
     type: string
     format: date
-    x-field-extra-annotation: '@DateValidator'
+    x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
     description: The date on which the application was submitted. Will be set to current date if omitted.
     example: "2025-12-01"
 

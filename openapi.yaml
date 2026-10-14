@@ -497,7 +497,7 @@ paths:
         schema:
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       - description: Zero-based page index.
         in: query
         name: pageNumber
@@ -629,7 +629,7 @@ paths:
         schema:
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       responses:
         "200":
           content:
@@ -3838,7 +3838,7 @@ paths:
         schema:
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       responses:
         "200":
           content:
@@ -5025,7 +5025,7 @@ paths:
         schema:
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       responses:
         "200":
           content:
@@ -5293,14 +5293,14 @@ paths:
         schema:
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       - description: Filter by to date.
         in: query
         name: to
         schema:
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       - description: Filter by address line 1.
         in: query
         name: addressLine1
@@ -5893,7 +5893,7 @@ components:
           example: 2025-10-07
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         time:
           description: Single time of the Application List.
           example: 10:30:00
@@ -5946,7 +5946,7 @@ components:
           example: 2025-09-17
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
@@ -6006,7 +6006,7 @@ components:
           example: 2025-09-17
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
@@ -6103,7 +6103,7 @@ components:
           example: 2025-09-17
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
@@ -6146,7 +6146,7 @@ components:
           example: 2025-09-17
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         time:
           description: The time of day at which the Application List is scheduled.
           example: 10:30:00
@@ -6208,7 +6208,7 @@ components:
           example: 2025-10-07
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         courtCode:
           description: Name of the court or session where the application is being
             heard. This has to be Exact.
@@ -6481,7 +6481,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         officials:
           description: "An array of Officials who will decide the outcome of the Application.\
             \ A maximum of 4 officials may be supplied, with no more than 3 MAGISTRATE\
@@ -6555,7 +6555,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         officials:
           description: An array of Officials who will decide the outcome of the Application.
           items:
@@ -6733,7 +6733,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         officials:
           description: An array of Officials who will decide the outcome of the Application.
           items:
@@ -7048,7 +7048,7 @@ components:
           example: 2025-09-17
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         endDate:
           description: Date the Court Location became inactive. `null` indicates that
             this row is still active.
@@ -7056,7 +7056,7 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - endDate
       - locationCode
@@ -7097,13 +7097,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         username:
           description: "Exact display username to audit, normally the user's email\
             \ address."
@@ -7134,13 +7134,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         standardApplicantCode:
           description: Standard applicant code (case-insensitive contains match).
           example: STD-00123
@@ -7172,13 +7172,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         listDescription:
           description: Case-insensitive contains match on the Application List description.
           example: morning session
@@ -7202,13 +7202,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         location:
           $ref: "#/components/schemas/legacy-report-location"
       required:
@@ -7225,13 +7225,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         location:
           $ref: "#/components/schemas/legacy-report-location"
       required:
@@ -7248,13 +7248,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         location:
           $ref: "#/components/schemas/legacy-report-location"
       required:
@@ -7271,13 +7271,13 @@ components:
           example: 2025-10-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         dateTo:
           description: Inclusive end date (YYYY-MM-DD).
           example: 2025-10-31
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         location:
           $ref: "#/components/schemas/legacy-report-location"
         applicantSurname:
@@ -7360,7 +7360,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         endDate:
           description: Date the Result Code became inactive. `null` indicates that
             this row is still active.
@@ -7368,7 +7368,7 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - endDate
       - resultCode
@@ -7427,7 +7427,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         endDate:
           description: Date the applicant became inactive. `null` indicates that this
             row is still active.
@@ -7435,7 +7435,7 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - code
       - endDate
@@ -7571,7 +7571,7 @@ components:
           example: 2025-09-17
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         time:
           description: "The time of day at which the Application List is scheduled,\
             \ seconds are optional."
@@ -7701,7 +7701,7 @@ components:
           example: 2025-10-07
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         sequenceNumber:
           description: The sequence number of the application in the list.
           example: 1
@@ -7833,7 +7833,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - paymentStatus
       - statusDate
@@ -8070,7 +8070,7 @@ components:
           example: 2025-12-01
           format: date
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         endDate:
           description: "Date the applicant record became inactive, or null if still\
             \ active."
@@ -8078,7 +8078,7 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - code
       - endDate
@@ -8097,12 +8097,12 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         to:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - code
       - from
@@ -8120,7 +8120,7 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
         name:
           nullable: true
           type: string
@@ -8128,7 +8128,7 @@ components:
           format: date
           nullable: true
           type: string
-          x-field-extra-annotation: '@DateValidator'
+          x-field-extra-annotation: '@uk.gov.hmcts.appregister.common.validator.DateValidator'
       required:
       - code
       - name

@@ -9,10 +9,10 @@ import java.lang.annotation.Target;
 
 @Documented
 @Constraint(validatedBy = DateValidatorImpl.class)
-@Target({ElementType.FIELD})
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface DateValidator {
-    String message() default "Date must be between {minDate} and {maxDate}";
+    String message() default "Invalid date, date is out of range (1900-01-01 to 3000-12-31)";
 
     Class<?>[] groups() default {};
 

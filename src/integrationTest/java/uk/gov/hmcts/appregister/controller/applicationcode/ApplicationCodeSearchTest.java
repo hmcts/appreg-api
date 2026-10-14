@@ -508,7 +508,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
     }
 
     @Test
-    void givenHistoricDate_whenGetApplicationCodes_thenReturnEmptyPage()
+    void givenHistoricDate_whenGetApplicationCodes_thenReturn400()
             throws JOSEException, ParseException, MalformedURLException {
         String code = "ZZDATE01";
         saveApplicationCodeWithFees(
@@ -534,10 +534,10 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 Optional.of(code), Optional.empty(), Optional.of("1000-01-01")),
                         new OpenApiPageMetaData());
 
-        responseSpec.then().statusCode(200);
-        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 0, 0);
-        assertThat(page.getContent()).isNullOrEmpty();
+        responseSpec.then().statusCode(400);
+        ProblemDetail detail = responseSpec.as(ProblemDetail.class);
+        assertThat(detail.getDetail())
+                .contains("Invalid date, date is out of range (1900-01-01 to 3000-12-31)");
     }
 
     /**
