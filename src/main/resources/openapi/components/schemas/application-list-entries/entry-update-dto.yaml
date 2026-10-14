@@ -19,7 +19,10 @@ properties:
 
   applicationCode:
     type: string
-    description: Code that identifies the Application Code.
+    description: >
+      Code that identifies the Application Code. On an Open Application List, the existing
+      associated code may be retained after expiry, preserving its configuration and Fee Reference.
+      A replacement code must be valid on the current business date.
     example: "APP001"
     maxLength: 10
     minLength: 1
