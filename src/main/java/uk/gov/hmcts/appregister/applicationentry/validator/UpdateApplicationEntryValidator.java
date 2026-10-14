@@ -110,6 +110,17 @@ public class UpdateApplicationEntryValidator
                 applicationList);
     }
 
+    @Override
+    protected ApplicationCode validateApplicationCode(PayloadForUpdateEntry validatable) {
+        var existingCode = validatable.getApplicationListEntry().getApplicationCode();
+        // Retain the associated configuration, even after expiry; replacements must be active.
+        if (existingCode != null
+                && existingCode.getCode().equalsIgnoreCase(getApplicationCode(validatable))) {
+            return existingCode;
+        }
+        return super.validateApplicationCode(validatable);
+    }
+
     private void validateFeeStatusTransition(
             ApplicationCode applicationCode, PayloadForUpdateEntry validatable) {
         if (applicationCode.getFeeDue() == YesOrNo.YES) {

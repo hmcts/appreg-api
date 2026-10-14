@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
@@ -593,6 +594,67 @@ class UpdateApplicationEntryValidatorTest {
                 updateApplicationEntryValidator.validate(payload, (validatable, result) -> result);
 
         Assertions.assertSame(preferredStandardApplicant, success.getSa());
+    }
+
+    @Test
+    void givenExpiredAssociatedCode_whenUpdating_thenRetainsCodeAndFeeReference() {
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.getApplicant().setPerson(null);
+        sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
+        applicationCode.setCode("EXPIRED");
+        applicationCode.setEndDate(TODAY_UK.minusDays(1));
+        applicationListEntry.setApplicationCode(applicationCode);
+        applicationListEntry.setLodgementDate(TODAY_UK.minusDays(2));
+        entryUpdateDto.setApplicationCode("expired");
+        when(feeService.resolveFeePair(
+                        applicationCode.getFeeReference(), applicationListEntry.getLodgementDate()))
+                .thenReturn(new FeePair(fee, null));
+
+        var payload = new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+        var success =
+                updateApplicationEntryValidator.validate(payload, (validatable, result) -> result);
+
+        Assertions.assertSame(applicationCode, success.getApplicationCode());
+        Assertions.assertSame(fee, success.getFee().mainFee());
+        Mockito.verifyNoInteractions(applicationCodeRepository);
+        Mockito.verify(feeService)
+                .resolveFeePair(
+                        applicationCode.getFeeReference(), applicationListEntry.getLodgementDate());
+    }
+
+    @Test
+    void givenExpiredReplacementCode_whenUpdating_thenRejectsCode() {
+        applicationListEntry.setApplicationCode(applicationCode);
+        applicationCode.setCode("ORIGINAL");
+        entryUpdateDto.setApplicationCode("EXPIRED");
+        var payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
+                        .withApplicationListEntry(applicationListEntry);
+        when(applicationCodeRepository.findByCodeAndDate("EXPIRED", TODAY_UK))
+                .thenReturn(List.of());
+        var exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validateApplicationCode(payload));
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, exception.getCode());
+    }
+
+    @Test
+    void givenActiveReplacementCode_whenUpdating_thenResolvesReplacement() {
+        var existingCode = new ApplicationCodeTestData().someComplete();
+        existingCode.setCode("ORIGINAL");
+        existingCode.setEndDate(TODAY_UK.minusDays(1));
+        applicationListEntry.setApplicationCode(existingCode);
+        var payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
+                        .withApplicationListEntry(applicationListEntry);
+        when(applicationCodeRepository.findByCodeAndDate(
+                        entryUpdateDto.getApplicationCode(), TODAY_UK))
+                .thenReturn(List.of(applicationCode));
+        Assertions.assertSame(
+                applicationCode, updateApplicationEntryValidator.validateApplicationCode(payload));
     }
 
     @Test

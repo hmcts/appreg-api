@@ -64,6 +64,66 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     @Autowired private NameAddressRepository nameAddressRepository;
 
     @Test
+    void givenExpiredAssociatedCode_whenUpdating_thenRetainsCodeAndFees() throws Exception {
+        var createdResponse = createListEntryWithAllData();
+        var createdEntry = createdResponse.as(EntryGetDetailDto.class);
+        var updateDto = getCorrectUpdateDataDto();
+        updateDto.setApplicationCode(createdEntry.getApplicationCode());
+        updateDto.setNumberOfRespondents(null);
+        restAssuredClient
+                .executePutRequest(
+                        HeaderUtil.getLocation(createdResponse),
+                        createAdminToken().fetchTokenForRole(),
+                        updateDto)
+                .then()
+                .statusCode(200);
+        var codeId = getSelectedApplicationCodeId(createdEntry.getId());
+        var originalFees = getSelectedFees(createdEntry.getId());
+        Assertions.assertFalse(originalFees.isEmpty());
+        var originalEndDate =
+                unitOfWork.inTransaction(
+                        () -> {
+                            var entry =
+                                    applicationListEntryRepository
+                                            .findByUuid(createdEntry.getId())
+                                            .orElseThrow();
+                            var endDate = entry.getApplicationCode().getEndDate();
+                            entry.getApplicationCode().setEndDate(TEST_DATE.minusDays(1));
+                            return endDate;
+                        });
+        try {
+            var response =
+                    restAssuredClient.executePutRequest(
+                            HeaderUtil.getLocation(createdResponse),
+                            createAdminToken().fetchTokenForRole(),
+                            updateDto);
+
+            response.then().statusCode(200);
+            var updated = response.as(EntryGetDetailDto.class);
+            Assertions.assertEquals(
+                    createdEntry.getApplicationCode(), updated.getApplicationCode());
+            Assertions.assertEquals(updateDto.getNotes(), updated.getNotes());
+            Assertions.assertEquals(codeId, getSelectedApplicationCodeId(createdEntry.getId()));
+            Assertions.assertEquals(
+                    originalFees.stream().map(fee -> fee.getId()).sorted().toList(),
+                    getSelectedFees(createdEntry.getId()).stream()
+                            .map(fee -> fee.getId())
+                            .sorted()
+                            .toList());
+        } finally {
+            unitOfWork.inTransaction(
+                    () -> {
+                        applicationListEntryRepository
+                                .findByUuid(createdEntry.getId())
+                                .orElseThrow()
+                                .getApplicationCode()
+                                .setEndDate(originalEndDate);
+                        return null;
+                    });
+        }
+    }
+
+    @Test
     void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 

@@ -46,6 +46,9 @@ put:
     Full replacement (PUT) of an existing Application List Entry. When `feeStatuses` is supplied,
     the existing fee-status rows for the entry are replaced by the provided list. When
     `feeStatuses` is `null`, fee-status rows are left unchanged.
+    On an Open Application List, the existing associated Application Code may be retained even
+    if expired. Replacement codes must be valid on the current business date.
+    Closed Application List restrictions remain unchanged.
   requestBody:
     required: true
     content:

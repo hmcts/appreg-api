@@ -431,7 +431,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @return The code if validate
      * @throws AppRegistryException In the event of a failure
      */
-    private ApplicationCode validateApplicationCode(T validatable) {
+    protected ApplicationCode validateApplicationCode(T validatable) {
         LocalDate todayUk = currentBusinessDate();
         // validate that the application code exists and is valid for today
         List<ApplicationCode> code =
