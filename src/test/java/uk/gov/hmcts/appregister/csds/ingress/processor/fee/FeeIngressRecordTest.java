@@ -1,13 +1,12 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 class FeeIngressRecordTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
     void given_pssFixedListIdPresent_when_calculateId_then_useIt() {
@@ -20,35 +19,30 @@ class FeeIngressRecordTest {
     }
 
     @Test
-    void overflowIsRejectedOnlyForFallbackAllocation() {
-        assertThatThrownBy(() -> FeeIngressRecord.calculateId(null, Long.MAX_VALUE))
-                .isInstanceOf(ArithmeticException.class);
-        assertThat(FeeIngressRecord.calculateId(77L, Long.MAX_VALUE)).isEqualTo(77L);
+    void given_feeIdPresent_when_resolveId_then_useIt() {
+        var record = OBJECT_MAPPER.createObjectNode().put("FEE_ID", 123L);
+
+        assertThat(FeeIngressRecord.resolveId(record)).isEqualTo(123L);
     }
 
     @Test
-    void absentIdsReturnNull() {
-        assertThat(FeeIngressRecord.calculateId(null, null)).isNull();
+    void given_pssFixedListIdPresent_when_resolveId_then_useIt() {
+        var record = OBJECT_MAPPER.createObjectNode().put("PSSFixedListID", 77L);
+
+        assertThat(FeeIngressRecord.resolveId(record)).isEqualTo(77L);
     }
 
     @Test
-    void businessKeyAndResolvedCopyPreserveAllOtherFields() {
-        var start = LocalDate.parse("2020-01-01");
-        var record =
-                new FeeIngressRecord(
-                        12L, "CO1.1", "Fee", BigDecimal.TEN, start, start.plusYears(1), 2L, 77L);
-        assertThat(record.businessKey())
-                .isEqualTo(new FeeIngressRecord.BusinessKey("CO1.1", start));
-        assertThat(record.withId(33L))
-                .isEqualTo(
-                        new FeeIngressRecord(
-                                33L,
-                                "CO1.1",
-                                "Fee",
-                                BigDecimal.TEN,
-                                start,
-                                start.plusYears(1),
-                                2L,
-                                77L));
+    void given_civilFeeIdPresent_when_resolveId_then_offsetIt() {
+        var record = OBJECT_MAPPER.createObjectNode().put("CivilFeeID", 12L);
+
+        assertThat(FeeIngressRecord.resolveId(record)).isEqualTo(100012L);
+    }
+
+    @Test
+    void given_noIdentifiers_when_resolveId_then_returnNull() {
+        var record = OBJECT_MAPPER.createObjectNode();
+
+        assertThat(FeeIngressRecord.resolveId(record)).isNull();
     }
 }

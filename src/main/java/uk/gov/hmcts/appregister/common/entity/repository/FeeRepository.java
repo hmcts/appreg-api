@@ -56,8 +56,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
     List<Fee> findByReferenceInBetweenDate(Collection<String> references, LocalDate dateTime);
 
     /**
-     * Finds a list of Fee entities by their reference and offsite status. Distinct start dates may
-     * overlap, so preferred-record ordering remains necessary.
+     * <<<<<<< HEAD Finds a list of Fee entities by their reference and offsite status.
      *
      * @param reference the reference to search for
      * @return fee entities matching the reference and offsite status

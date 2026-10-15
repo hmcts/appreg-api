@@ -15,27 +15,25 @@ import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressD
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NationalCourtHouseDiffService
         implements IngressDiffService<NationalCourtHouseDiffRequest, NationalCourtHouseDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH =
-            "no existing court_location_code match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing court_location_code match";
+    private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing nch_id match";
+    private static final String UPDATE_REASON_EXISTING_MATCH = "existing nch_id match";
 
     private final JdbcIngressTableReadService tableReadService;
     private final NationalCourtHouseIngressDatabaseRowMapper rowMapper;
 
     @Override
     public NationalCourtHouseDiffResult diff(NationalCourtHouseDiffRequest request) {
-        val incomingByCode = new LinkedHashMap<String, NationalCourtHouseIngressRecord>();
+        val incomingById = new LinkedHashMap<Long, NationalCourtHouseIngressRecord>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
-                .forEach(item -> addIncomingRecord(request.targetTable(), incomingByCode, item));
+                .forEach(item -> addIncomingRecord(request.targetTable(), incomingById, item));
 
         log.info("Loading existing CSDS comparison rows from {}", request.targetTable());
         val existingById =
@@ -53,42 +51,9 @@ public class NationalCourtHouseDiffService
                                 NationalCourtHouseIngressRecord,
                                 NationalCourtHouseIngressRecord,
                                 NationalCourtHouseIngressRecord>>();
-        val existingByCode =
-                existingById.values().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        NationalCourtHouseIngressRecord::courtLocationCode,
-                                        item -> item));
-        val incomingById = new LinkedHashMap<Long, NationalCourtHouseIngressRecord>();
-        for (val incoming : incomingByCode.values()) {
-            val existing = existingByCode.get(incoming.courtLocationCode());
-            val intendedId =
-                    existing == null
-                            ? NationalCourtHouseIngressRecord.calculateId(
-                                    incoming.pssId(), incoming.id())
-                            : existing.id();
-            if (intendedId == null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Missing source ID for new national courthouse "
-                                + incoming.courtLocationCode());
-            }
-            val intended = incoming.withId(intendedId);
-            val idOwner = existingById.get(intendedId);
-            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if ((idOwner != null
-                            && !idOwner.courtLocationCode().equals(incoming.courtLocationCode()))
-                    || incomingOwner != null) {
-                val message =
-                        "Legacy NCH_ID %s conflicts for incoming national courthouse [%s] with owner [%s]"
-                                .formatted(
-                                        intendedId,
-                                        describe(intended),
-                                        describe(incomingOwner != null ? incomingOwner : idOwner));
-                log.error(message);
-                throw new CsdsDuplicateRecordException(message);
-            }
-            diffRecords.add(determineDiffRecord(existing, intended));
+        for (val incoming : incomingById.values()) {
+            val existing = existingById.get(incoming.id());
+            diffRecords.add(determineDiffRecord(existing, incoming));
         }
 
         return new NationalCourtHouseDiffResult(
@@ -97,23 +62,22 @@ public class NationalCourtHouseDiffService
 
     private void addIncomingRecord(
             String targetTable,
-            LinkedHashMap<String, NationalCourtHouseIngressRecord> incomingByCode,
+            LinkedHashMap<Long, NationalCourtHouseIngressRecord> incomingById,
             NationalCourtHouseIngressRecord item) {
-        val existing = incomingByCode.putIfAbsent(item.courtLocationCode(), item);
+        val existing = incomingById.putIfAbsent(item.id(), item);
         if (existing == null) {
             return;
         }
 
-        val message =
-                ("Duplicate incoming court_location_code %s detected for %s. Existing record [%s], "
-                                + "duplicate record [%s]")
-                        .formatted(
-                                item.courtLocationCode(),
-                                targetTable,
-                                describe(existing),
-                                describe(item));
-        log.error(message);
-        throw new CsdsDuplicateRecordException(message);
+        log.error(
+                "Duplicate incoming NCH_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.id(),
+                targetTable,
+                describe(existing),
+                describe(item));
+        throw new AppRegistryException(
+                CommonAppError.INTERNAL_SERVER_ERROR,
+                "Duplicate incoming NCH_ID " + item.id() + " detected for " + targetTable);
     }
 
     private IngressDiffRecord<
@@ -140,10 +104,9 @@ public class NationalCourtHouseDiffService
     }
 
     private String describe(NationalCourtHouseIngressRecord item) {
-        return "courtId=%s, pssId=%s, name=%s, locationCode=%s, startDate=%s, version=%s"
+        return "nchId=%s, name=%s, locationCode=%s, startDate=%s, version=%s"
                 .formatted(
                         item.id(),
-                        item.pssId(),
                         item.name(),
                         item.courtLocationCode(),
                         item.startDate(),

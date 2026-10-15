@@ -485,7 +485,7 @@ class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTes
 
         ApplicationListUpdateDto updateDto =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode(VALID_COURT_CODE)
+                        .courtLocationCode("CCC003")
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)

@@ -93,22 +93,22 @@ class AsyncJobServiceImplTest extends BaseIntegration {
                         position,
                         (data, ctxt) -> {
                             for (int i = 0; i < data.size(); i++) {
-                                var csvBaseAppCode =
+                                List<ApplicationCode> csvBaseAppCodeLst =
                                         applicationCodeRepository.findByCodeAndDate(
                                                 data.get(i).getCode(),
                                                 LocalDate.now(java.time.ZoneOffset.UTC));
-                                Assertions.assertEquals(1, csvBaseAppCode.size());
+                                Assertions.assertEquals(1, csvBaseAppCodeLst.size());
                                 Assertions.assertEquals(
-                                        data.get(i).getCode(), csvBaseAppCode.getFirst().getCode());
+                                        data.get(i).getCode(), csvBaseAppCodeLst.get(0).getCode());
                                 Assertions.assertEquals(
                                         data.get(i).getTitle(),
-                                        csvBaseAppCode.getFirst().getTitle());
+                                        csvBaseAppCodeLst.get(0).getTitle());
                                 Assertions.assertEquals(
                                         data.get(i).getFeedue() != null && data.get(i).getFeedue(),
-                                        csvBaseAppCode.getFirst().getFeeDue().isYes());
+                                        csvBaseAppCodeLst.get(0).getFeeDue().isYes());
                                 Assertions.assertEquals(
                                         data.get(i).getWording(),
-                                        csvBaseAppCode.getFirst().getWording());
+                                        csvBaseAppCodeLst.get(0).getWording());
                             }
                         },
                         jobContext);

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
 import org.jspecify.annotations.Nullable;
 
@@ -13,49 +14,10 @@ public record ResolutionCodeIngressRecord(
         String recipient2Email,
         LocalDate startDate,
         LocalDate endDate,
-        Long version,
-        Long pssId) {
-    // Database rows have only the resolved ID; incoming rows retain both source IDs until matching.
-    public ResolutionCodeIngressRecord(
-            Long id,
-            String code,
-            String title,
-            String wording,
-            String legislation,
-            String recipient1Email,
-            String recipient2Email,
-            LocalDate startDate,
-            LocalDate endDate,
-            Long version) {
-        this(
-                id,
-                code,
-                title,
-                wording,
-                legislation,
-                recipient1Email,
-                recipient2Email,
-                startDate,
-                endDate,
-                version,
-                null);
-    }
-
-    public ResolutionCodeIngressRecord withId(Long resolvedId) {
-        return new ResolutionCodeIngressRecord(
-                resolvedId,
-                code,
-                title,
-                wording,
-                legislation,
-                recipient1Email,
-                recipient2Email,
-                startDate,
-                endDate,
-                version,
-                pssId);
-    }
-
+        Long version) {
+    private static final String RC_ID_FIELD = "RC_ID";
+    private static final String RESOLUTION_CODE_ID_FIELD = "ResolutionCodeID";
+    private static final String PSS_RESOLUTION_CODE_ID_FIELD = "PSSResolutionCodeID";
     private static final long NEW_RECORD_ID_OFFSET = 100000L;
 
     public static @Nullable Long calculateId(
@@ -64,8 +26,22 @@ public record ResolutionCodeIngressRecord(
             return pssResolutionCodeId;
         }
 
-        return resolutionCodeId == null
-                ? null
-                : Math.addExact(resolutionCodeId, NEW_RECORD_ID_OFFSET);
+        return resolutionCodeId == null ? null : resolutionCodeId + NEW_RECORD_ID_OFFSET;
+    }
+
+    public static @Nullable Long resolveId(JsonNode node) {
+        var resolvedId = nullableLong(node, RC_ID_FIELD);
+        if (resolvedId != null) {
+            return resolvedId;
+        }
+
+        return calculateId(
+                nullableLong(node, PSS_RESOLUTION_CODE_ID_FIELD),
+                nullableLong(node, RESOLUTION_CODE_ID_FIELD));
+    }
+
+    private static @Nullable Long nullableLong(JsonNode node, String fieldName) {
+        var field = node.get(fieldName);
+        return (field == null || !field.canConvertToLong()) ? null : field.longValue();
     }
 }

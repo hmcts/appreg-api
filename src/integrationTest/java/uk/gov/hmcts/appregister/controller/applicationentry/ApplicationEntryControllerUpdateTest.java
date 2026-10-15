@@ -287,12 +287,18 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void givenActiveApplicationCodeAndOverlappingFees_whenUpdateListEntry_thenPreferNullEndDateFee()
-            throws Exception {
+    void
+            givenOverlappingActiveApplicationCodesAndFees_whenUpdateListEntry_thenPreferNullEndDateRecords()
+                    throws Exception {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String applicationCodeValue = "ZZ90002";
         String feeReference = "ZZ2.1";
 
+        saveActiveApplicationCode(
+                applicationCodeValue,
+                feeReference,
+                today.plusDays(30),
+                "Fallback overlapping application code");
         final var preferredCode =
                 saveActiveApplicationCode(
                         applicationCodeValue, feeReference, null, "Preferred application code");
@@ -1820,7 +1826,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // now update to close the list
         var req =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode(VALID_COURT_CODE)
+                        .courtLocationCode("CCC003")
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)
@@ -1930,7 +1936,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // now update to close the list
         var req =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode(VALID_COURT_CODE)
+                        .courtLocationCode("CCC003")
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)
@@ -2169,7 +2175,7 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
         // now update to close the list
         var req =
                 new ApplicationListUpdateDto()
-                        .courtLocationCode(VALID_COURT_CODE)
+                        .courtLocationCode("CCC003")
                         .otherLocationDescription(null)
                         .cjaCode(null)
                         .durationHours(2)

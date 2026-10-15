@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.time.Clock;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -26,8 +25,12 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 @Component
 public class ResolutionCodeDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, ResolutionCodeDiffResult> {
+    private static final String RC_ID = "RC_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
+                    "ResolutionCodeID",
+                    "PSSResolutionCodeID",
+                    "Code",
                     "ResultTitle",
                     "ResultWording",
                     "Legislation",
@@ -42,7 +45,6 @@ public class ResolutionCodeDataIngressProcessor
     private final ResolutionCodeDiffReportingService diffReportingService;
     private final JdbcBulkUpsertService bulkUpsertService;
     private final ResolutionCodeIngressDatabaseRowMapper rowMapper;
-    private final Clock clock;
 
     public ResolutionCodeDataIngressProcessor(
             CsdsIngressProperties properties,
@@ -52,8 +54,7 @@ public class ResolutionCodeDataIngressProcessor
             ResolutionCodeDiffService diffService,
             ResolutionCodeDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
-            ResolutionCodeIngressDatabaseRowMapper rowMapper,
-            Clock clock) {
+            ResolutionCodeIngressDatabaseRowMapper rowMapper) {
         super(
                 properties,
                 properties.getProcessors().getResolutionCodes(),
@@ -65,19 +66,28 @@ public class ResolutionCodeDataIngressProcessor
         this.diffReportingService = diffReportingService;
         this.bulkUpsertService = bulkUpsertService;
         this.rowMapper = rowMapper;
-        this.clock = clock;
     }
 
     @Override
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
-        return normaliseDateEffectiveRecords(
-                rawJson,
-                clock,
-                REQUIRED_RECORD_FIELDS,
-                "resolution code",
-                record ->
-                        record.path(resolutionCodeProperties.getBusinessKeys().getFirst()).asText(),
-                "StartDate");
+        if (rawJson.isEmpty()) {
+            return rawJson;
+        }
+
+        val firstPageRecords = extractRecords(rawJson.getFirst());
+        if (!firstPageRecords.isEmpty()) {
+            validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
+        }
+
+        val resolvedRecords =
+                rawJson.stream()
+                        .flatMap(page -> extractRecords(page).stream())
+                        .map(this::withResolvedRcId)
+                        .toList();
+        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
+        val recordsArray = normalisedPage.putArray("records");
+        resolvedRecords.forEach(recordsArray::add);
+        return List.of(normalisedPage);
     }
 
     @Override
@@ -134,7 +144,7 @@ public class ResolutionCodeDataIngressProcessor
     protected void applyDiff(ResolutionCodeDiffResult diff) {
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
-                targetTable(), targetKeyFields(), rows, rowMapper, ResolutionCodeIngressRecord::id);
+                targetTable(), targetKeyField(), rows, rowMapper, ResolutionCodeIngressRecord::id);
     }
 
     @Override
@@ -142,7 +152,7 @@ public class ResolutionCodeDataIngressProcessor
             List<JsonNode> processedData, ResolutionCodeDiffResult diff) {
         return buildSuccessAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData, diff),
+                sourceRecordsById(processedData),
                 ResolutionCodeIngressRecord::id);
     }
 
@@ -153,7 +163,7 @@ public class ResolutionCodeDataIngressProcessor
             CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData, diff),
+                sourceRecordsById(processedData),
                 ResolutionCodeIngressRecord::id,
                 ResolutionCodeIngressRecord.class,
                 ex);
@@ -182,8 +192,8 @@ public class ResolutionCodeDataIngressProcessor
 
     private ResolutionCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ResolutionCodeIngressRecord(
-                nullableLong(node, resolutionCodeProperties.getCsdsKey()),
-                requiredText(node, resolutionCodeProperties.getBusinessKeys().getFirst()),
+                requiredLong(node, RC_ID),
+                requiredText(node, "Code"),
                 requiredText(node, "ResultTitle"),
                 requiredText(node, "ResultWording"),
                 nullableText(node, "Legislation"),
@@ -191,29 +201,23 @@ public class ResolutionCodeDataIngressProcessor
                 nullableText(node, "Recipient2Email"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                requiredLong(node, "RevisionNumber"),
-                nullableLong(node, resolutionCodeProperties.getLegacyKey()));
+                requiredLong(node, "RevisionNumber"));
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(
-            List<JsonNode> processedData, ResolutionCodeDiffResult diff) {
-        val sourcesByCode =
-                processedData.stream()
-                        .flatMap(page -> extractRecords(page).stream())
-                        .collect(
-                                Collectors.toMap(
-                                        node ->
-                                                requiredText(
-                                                        node,
-                                                        resolutionCodeProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
-                                        node -> node));
-        // Audit correlation remains numeric even though matching uses the business code.
-        return diff.diffRecords().stream()
-                .collect(
-                        Collectors.toMap(
-                                item -> item.intended().id(),
-                                item -> sourcesByCode.get(item.intended().code())));
+    private JsonNode withResolvedRcId(JsonNode node) {
+        if (!(node instanceof ObjectNode objectNode)) {
+            return node;
+        }
+
+        val copiedRecord = objectNode.deepCopy();
+        val resolvedId = ResolutionCodeIngressRecord.resolveId(copiedRecord);
+        if (resolvedId != null) {
+            copiedRecord.put(RC_ID, resolvedId);
+        }
+        return copiedRecord;
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, RC_ID));
     }
 }

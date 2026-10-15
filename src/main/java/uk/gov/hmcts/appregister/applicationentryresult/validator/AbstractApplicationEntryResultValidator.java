@@ -54,8 +54,7 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
         if (resultCode != null) {
             LocalDate todayUk = businessDateProvider.currentUkDate();
             List<ResolutionCode> list =
-                    resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                            resultCode, todayUk);
+                    resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
             if (list.isEmpty()) {
                 throw new AppRegistryException(
                         ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,

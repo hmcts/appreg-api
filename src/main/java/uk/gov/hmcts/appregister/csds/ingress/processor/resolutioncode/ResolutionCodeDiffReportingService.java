@@ -15,10 +15,10 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 public class ResolutionCodeDiffReportingService
         extends AbstractIngressDiffReportingService<ResolutionCodeIngressRecord> {
     private static final String RC_ID = "RC_ID";
-    private final CsdsIngressProperties.ResolutionCodes processorProperties;
+    private final String reportingDir;
 
     public ResolutionCodeDiffReportingService(CsdsIngressProperties properties) {
-        this.processorProperties = properties.getProcessors().getResolutionCodes();
+        this.reportingDir = properties.getProcessors().getResolutionCodes().getReportingDir();
     }
 
     public void reportDiff(
@@ -29,7 +29,7 @@ public class ResolutionCodeDiffReportingService
             ResolutionCodeDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         super.reportDiff(
-                processorProperties.getReportingDir(),
+                reportingDir,
                 datasetName,
                 targetTable,
                 targetKeyField,
@@ -58,14 +58,10 @@ public class ResolutionCodeDiffReportingService
         var incomingRecordsByRcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .filter(item -> nullableLong(item, RC_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item ->
-                                                nullableText(
-                                                        item,
-                                                        processorProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
+                                        item -> nullableLong(item, RC_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -73,11 +69,11 @@ public class ResolutionCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByRcId.get(item.intended().code()),
-                                                processorProperties.getLegacyKey()),
+                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                "PSSResolutionCodeID"),
                                         nullableLong(
-                                                incomingRecordsByRcId.get(item.intended().code()),
-                                                processorProperties.getCsdsKey()),
+                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                "ResolutionCodeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
@@ -117,12 +113,10 @@ public class ResolutionCodeDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, processorProperties.getLegacyKey())),
-                        csvValue(nullableLong(node, processorProperties.getCsdsKey())),
+                        csvValue(nullableLong(node, "PSSResolutionCodeID")),
+                        csvValue(nullableLong(node, "ResolutionCodeID")),
                         csvValue(nullableLong(node, RC_ID)),
-                        csvValue(
-                                nullableText(
-                                        node, processorProperties.getBusinessKeys().getFirst())),
+                        csvValue(nullableText(node, "Code")),
                         csvValue(nullableText(node, "ResultTitle")),
                         csvValue(nullableText(node, "ResultWording")),
                         csvValue(nullableText(node, "Legislation")),

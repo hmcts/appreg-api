@@ -172,8 +172,9 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
     }
 
     @Test
-    void givenActiveCode_whenGetResultCodeByCodeAndDate_thenReturnsRequestedRow() throws Exception {
-        createDistinctActiveRows();
+    void givenDuplicateActiveRows_whenGetResultCodeByCodeAndDate_thenReturnsDeterministicRow()
+            throws Exception {
+        createDuplicateActiveRows();
 
         var token =
                 getATokenWithValidCredentials()
@@ -195,9 +196,9 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
     }
 
     @Test
-    void givenDistinctActiveCodes_whenGetResultCodes_thenCallerSortControlsPageOrder()
+    void givenDuplicateActiveRows_whenGetResultCodes_thenCallerSortControlsPageOrder()
             throws Exception {
-        createDistinctActiveRows();
+        createDuplicateActiveRows();
 
         var token =
                 getATokenWithValidCredentials()
@@ -212,14 +213,14 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
                         List.of("title,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new ResultCodeFilter(Optional.of("DUPTST0"), Optional.empty()),
+                        new ResultCodeFilter(Optional.of(DUPLICATE_CODE), Optional.empty()),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
         assertThat(page.getContent()).hasSize(2);
-        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo("DUPTST02");
+        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo(DUPLICATE_CODE);
         assertThat(page.getContent().getFirst().getTitle()).isEqualTo(DUPLICATE_TITLE_1);
         assertThat(page.getContent().get(1).getTitle()).isEqualTo(DUPLICATE_TITLE_2);
     }
@@ -781,8 +782,8 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
         }
     }
 
-    private void createDistinctActiveRows() throws Exception {
-        createResultCode("DUPTST02", DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
+    private void createDuplicateActiveRows() throws Exception {
+        createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
         createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null);
     }
 

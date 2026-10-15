@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +16,10 @@ public class NationalCourtHouseDiffReportingService
         extends AbstractIngressDiffReportingService<NationalCourtHouseIngressRecord> {
     private static final String NCH_ID = "NCH_ID";
 
-    private final CsdsIngressProperties.NationalCourtHouses processorProperties;
+    private final String reportingDir;
 
     public NationalCourtHouseDiffReportingService(CsdsIngressProperties properties) {
-        processorProperties = properties.getProcessors().getNationalCourtHouses();
+        reportingDir = properties.getProcessors().getNationalCourtHouses().getReportingDir();
     }
 
     public void reportDiff(
@@ -30,41 +29,12 @@ public class NationalCourtHouseDiffReportingService
             List<JsonNode> processedData,
             NationalCourtHouseDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var idsByCode =
-                diffResult.incomingById().values().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        NationalCourtHouseIngressRecord::courtLocationCode,
-                                        NationalCourtHouseIngressRecord::id));
-        // Decorate report copies only: the CSV retains resolved IDs, while source/audit JSON is
-        // untouched.
-        var reportPages =
-                processedData.stream()
-                        .map(
-                                page -> {
-                                    JsonNode copy = page.deepCopy();
-                                    recordsExtractor
-                                            .apply(copy)
-                                            .forEach(
-                                                    record ->
-                                                            ((ObjectNode) record)
-                                                                    .put(
-                                                                            NCH_ID,
-                                                                            idsByCode.get(
-                                                                                    nullableText(
-                                                                                            record,
-                                                                                            processorProperties
-                                                                                                    .getBusinessKeys()
-                                                                                                    .getFirst()))));
-                                    return copy;
-                                })
-                        .toList();
         super.reportDiff(
-                processorProperties.getReportingDir(),
+                reportingDir,
                 datasetName,
                 targetTable,
                 targetKeyField,
-                reportPages,
+                processedData,
                 diffResult.incomingById(),
                 diffResult.existingById(),
                 diffResult.diffRecords(),
@@ -86,17 +56,13 @@ public class NationalCourtHouseDiffReportingService
                                     NationalCourtHouseIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByCode =
+        var incomingRecordsByNchId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .filter(item -> nullableLong(item, NCH_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item ->
-                                                nullableText(
-                                                        item,
-                                                        processorProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
+                                        item -> nullableLong(item, NCH_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -104,13 +70,11 @@ public class NationalCourtHouseDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByCode.get(
-                                                        item.intended().courtLocationCode()),
-                                                processorProperties.getLegacyKey()),
+                                                incomingRecordsByNchId.get(item.intended().id()),
+                                                "PSSNationalCourthouseID"),
                                         nullableLong(
-                                                incomingRecordsByCode.get(
-                                                        item.intended().courtLocationCode()),
-                                                processorProperties.getCsdsKey()),
+                                                incomingRecordsByNchId.get(item.intended().id()),
+                                                "CourtID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
@@ -148,14 +112,12 @@ public class NationalCourtHouseDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, processorProperties.getLegacyKey())),
-                        csvValue(nullableLong(node, processorProperties.getCsdsKey())),
+                        csvValue(nullableLong(node, "PSSNationalCourthouseID")),
+                        csvValue(nullableLong(node, "CourtID")),
                         csvValue(nullableLong(node, NCH_ID)),
                         csvValue(nullableText(node, "CourtName")),
                         csvValue(nullableText(node, "CourtWelshName")),
-                        csvValue(
-                                nullableText(
-                                        node, processorProperties.getBusinessKeys().getFirst())),
+                        csvValue(nullableText(node, "CourtLocationCode")),
                         csvValue(nullableText(node, "StartDate")),
                         csvValue(nullableText(node, "EndDate")),
                         csvValue(nullableLong(node, "RevisionNumber")))

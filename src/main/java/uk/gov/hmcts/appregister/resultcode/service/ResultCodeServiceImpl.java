@@ -59,8 +59,8 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     /**
      * Retrieve a Result Code by its code and effective date.
      *
-     * <p>Selects the first deterministically ordered active record for {@code code} and {@code
-     * date}, logging overlapping matches. Throws a domain-specific exception if no record is found.
+     * <p>Ensures only one active record exists for the given combination of {@code code} and {@code
+     * date}. Throws a domain-specific exception if no record or multiple records are found.
      *
      * @param code the identifier for the Result Code (case-insensitive)
      * @param date ISO date on which the Result Code must be valid

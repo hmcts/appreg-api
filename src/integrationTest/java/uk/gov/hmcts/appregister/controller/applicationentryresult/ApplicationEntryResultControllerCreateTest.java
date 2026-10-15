@@ -260,8 +260,9 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: links the active code with a null end date")
-    void givenActiveResolutionCode_whenCreate_thenPreservesNumericReference() throws Exception {
+    @DisplayName(
+            "Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
+    void givenMultipleActiveResolutionCodes_whenCreate_thenPrefersNullEndDate() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
@@ -269,6 +270,7 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
 
         var token = getToken();
         var payload = buildCreatePayload("DUP1", List.of());
@@ -293,30 +295,32 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
                 resolutionCodeRepository
                         .findActiveResolutionCodesByCodeAndDate("DUP1", today)
                         .stream()
+                        .filter(rc -> rc.getEndDate() == null)
                         .findFirst()
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
-                                                "Expected active ResolutionCode not found"))
+                                                "Expected active ResolutionCode with null endDate not found"))
                         .getId();
 
         Assertions.assertEquals(
                 preferredId,
                 saved.getResolutionCode().getId(),
-                "Should reference the requested ResolutionCode");
+                "Should prefer the ResolutionCode with null endDate");
     }
 
     @Test
     @DisplayName(
-            "Create Application List Entry Result: links the requested code with a bounded end date")
-    void givenBoundedActiveCode_whenCreate_thenLinksRequestedCode() throws Exception {
+            "Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
+    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate()
+            throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
 
         LocalDate date = LocalDate.now(java.time.ZoneOffset.UTC);
 
-        var older = saveActiveResolutionCode("OTHER", date.minusDays(10), date.plusDays(5));
+        var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
         var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
 
         var token = getToken();
@@ -339,12 +343,12 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         Assertions.assertEquals(
                 latest.getId(),
                 chosenResolutionCodeId,
-                "Should reference the requested ResolutionCode");
+                "Should choose the ResolutionCode with the latest endDate");
 
         Assertions.assertNotEquals(
                 older.getId(),
                 chosenResolutionCodeId,
-                "Should not reference a different ResolutionCode");
+                "Should not choose the older ResolutionCode");
     }
 
     private static final String RTC_CODE = "RTC";

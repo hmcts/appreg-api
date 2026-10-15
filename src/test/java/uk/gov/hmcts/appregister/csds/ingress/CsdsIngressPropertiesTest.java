@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.csds.ingress;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -11,136 +10,6 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
 class CsdsIngressPropertiesTest {
-    @Test
-    void feeDefaultsUseBothBusinessKeyColumns() {
-        assertThat(new CsdsIngressProperties().getProcessors().getFee().getPrimaryKeys())
-                .containsExactly("fee_reference", "fee_start_date");
-    }
-
-    @Test
-    void processorDefaultsExposeConfiguredCsdsAndLegacyKeys() {
-        var processors = new CsdsIngressProperties().getProcessors();
-
-        assertThat(processors.getApplicationCodes().getCsdsKey()).isEqualTo("ApplicationCodeID");
-        assertThat(processors.getApplicationCodes().getLegacyKey())
-                .isEqualTo("PSSApplicationCodeID");
-        assertThat(processors.getResolutionCodes().getCsdsKey()).isEqualTo("ResolutionCodeID");
-        assertThat(processors.getResolutionCodes().getLegacyKey()).isEqualTo("PSSResolutionCodeID");
-        assertThat(processors.getFee().getCsdsKey()).isEqualTo("CivilFeeID");
-        assertThat(processors.getFee().getLegacyKey()).isEqualTo("PSSFixedListID");
-        assertThat(processors.getNationalCourtHouses().getCsdsKey()).isEqualTo("CourtID");
-        assertThat(processors.getNationalCourtHouses().getLegacyKey())
-                .isEqualTo("PSSNationalCourthouseID");
-        assertThat(processors.getStandardApplicants().getCsdsKey()).isEqualTo("ApplicantID");
-        assertThat(processors.getStandardApplicants().getLegacyKey()).isEqualTo("PSSApplicantID");
-        assertThat(processors.getApplicationCodes().getBusinessKeys()).containsExactly("Code");
-        assertThat(processors.getResolutionCodes().getBusinessKeys()).containsExactly("Code");
-        assertThat(processors.getStandardApplicants().getBusinessKeys()).containsExactly("Code");
-        assertThat(processors.getNationalCourtHouses().getBusinessKeys())
-                .containsExactly("CourtLocationCode");
-        assertThat(processors.getFee().getBusinessKeys())
-                .containsExactly("FeeReference", "StartDate");
-    }
-
-    @Test
-    void businessKeyMappingsBindIncomingFieldsInOrderWithoutChangingDatabaseKeys() {
-        var prefix = "appreg.csds.ingress.processors.";
-        var source =
-                new MapConfigurationPropertySource(
-                        Map.of(
-                                prefix + "application-codes.business-keys[0]", "ApplicationCode",
-                                prefix + "resolution-codes.business-keys[0]", "ResolutionCode",
-                                prefix + "standard-applicants.business-keys[0]", "ApplicantCode",
-                                prefix + "national-court-houses.business-keys[0]",
-                                        "IncomingLocationCode",
-                                prefix + "fee.business-keys[0]", "SourceFeeReference",
-                                prefix + "fee.business-keys[1]", "EffectiveFrom"));
-        var processors =
-                new Binder(source)
-                        .bind("appreg.csds.ingress", CsdsIngressProperties.class)
-                        .get()
-                        .getProcessors();
-        assertThat(processors.getApplicationCodes().getBusinessKeys())
-                .containsExactly("ApplicationCode");
-        assertThat(processors.getResolutionCodes().getBusinessKeys())
-                .containsExactly("ResolutionCode");
-        assertThat(processors.getStandardApplicants().getBusinessKeys())
-                .containsExactly("ApplicantCode");
-        assertThat(processors.getNationalCourtHouses().getBusinessKeys())
-                .containsExactly("IncomingLocationCode");
-        assertThat(processors.getFee().getBusinessKeys())
-                .containsExactly("SourceFeeReference", "EffectiveFrom");
-        assertThat(processors.getFee().getPrimaryKeys())
-                .containsExactly("fee_reference", "fee_start_date");
-        assertThat(processors.getNationalCourtHouses().getPrimaryKeys())
-                .containsExactly("court_location_code");
-    }
-
-    @Test
-    void enabledProcessorsRequireNonblankDistinctBusinessFieldsWithTheirFixedKeyShape() {
-        var processors = new CsdsIngressProperties().getProcessors();
-        for (var processor :
-                List.of(
-                        processors.getApplicationCodes(),
-                        processors.getResolutionCodes(),
-                        processors.getFee(),
-                        processors.getNationalCourtHouses(),
-                        processors.getStandardApplicants())) {
-            processor.setEnabled(true);
-            var defaults = processor.getBusinessKeys();
-            List<List<String>> invalidKeys =
-                    Arrays.asList(
-                            null,
-                            List.of(),
-                            List.of(" "),
-                            Arrays.asList((String) null),
-                            List.of("Duplicate", "Duplicate"),
-                            List.of("Name", "Date", "Extra"),
-                            defaults.size() == 1 ? List.of("Name", "Extra") : List.of("Name"));
-            for (var invalid : invalidKeys) {
-                processor.setBusinessKeys(invalid);
-                assertThat(processor.isConfigurationValid()).isFalse();
-            }
-            processor.setBusinessKeys(defaults);
-            assertThat(processor.isConfigurationValid()).isTrue();
-        }
-    }
-
-    @Test
-    void given_compositePrimaryKeys_when_bind_then_preserveBothColumnsInOrder() {
-        var source =
-                new MapConfigurationPropertySource(
-                        Map.of(
-                                "appreg.csds.ingress.processors.fee.primary-keys[0]",
-                                        "fee_reference",
-                                "appreg.csds.ingress.processors.fee.primary-keys[1]",
-                                        "fee_start_date"));
-        var properties =
-                new Binder(source).bind("appreg.csds.ingress", CsdsIngressProperties.class).get();
-        assertThat(properties.getProcessors().getFee().getPrimaryKeys())
-                .containsExactly("fee_reference", "fee_start_date");
-        assertThat(properties.getProcessors().getApplicationCodes().getPrimaryKeys())
-                .containsExactly("application_code");
-    }
-
-    @Test
-    void given_invalidPrimaryKeys_when_enabled_then_configurationIsInvalid() {
-        var processor = new CsdsIngressProperties().getProcessors().getFee();
-        processor.setEnabled(true);
-        List<List<String>> invalidKeys =
-                Arrays.asList(
-                        null,
-                        List.of(),
-                        List.of("fee_id", "fee_id"),
-                        List.of(" "),
-                        Arrays.asList((String) null));
-        for (var keys : invalidKeys) {
-            processor.setPrimaryKeys(keys);
-            assertThat(processor.isConfigurationValid()).isFalse();
-        }
-        processor.setPrimaryKeys(List.of("fee_reference", "fee_start_date"));
-        assertThat(processor.isConfigurationValid()).isTrue();
-    }
 
     @Test
     void given_noRawReportingSetting_when_read_then_defaultsToDisabled() {
@@ -228,7 +97,7 @@ class CsdsIngressPropertiesTest {
         var properties = baseProperties();
 
         assertThat(properties.getProcessors().getStandardApplicants().getSourceEntityName())
-                .isEqualTo("GetStandardApplicant");
+                .isEqualTo("DA_GetStandardApplicant");
     }
 
     @Test

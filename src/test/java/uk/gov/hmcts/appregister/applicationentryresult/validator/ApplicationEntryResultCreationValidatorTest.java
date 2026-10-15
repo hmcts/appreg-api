@@ -4,6 +4,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -91,8 +92,7 @@ class ApplicationEntryResultCreationValidatorTest {
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        dto.getResultCode(), TODAY_UK))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
     }
 
@@ -187,9 +187,8 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_resolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        dto.getResultCode(), TODAY_UK))
-                .thenReturn(List.of());
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
+                .thenReturn(Collections.emptyList());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -208,8 +207,7 @@ class ApplicationEntryResultCreationValidatorTest {
         // because it's not "TYPE|REFERENCE|LENGTH" with valid LENGTH etc.
         resolutionCode.setWording("Some text {NOT_A_VALID_TEMPLATE} end.");
 
-        when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        dto.getResultCode(), TODAY_UK))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
 
         ListEntryResultCreateValidationSuccess success = validator.validate(payload, (v, s) -> s);

@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.time.Clock;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -26,15 +25,23 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 @Component
 public class NationalCourtHouseDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, NationalCourtHouseDiffResult> {
+    private static final String NCH_ID = "NCH_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
-            List.of("CourtWelshName", "CourtName", "StartDate", "EndDate", "RevisionNumber");
+            List.of(
+                    "CourtID",
+                    "PSSNationalCourthouseID",
+                    "CourtName",
+                    "CourtWelshName",
+                    "CourtLocationCode",
+                    "StartDate",
+                    "EndDate",
+                    "RevisionNumber");
 
     private final CsdsIngressProperties.NationalCourtHouses nationalCourtHouseProperties;
     private final NationalCourtHouseDiffService diffService;
     private final NationalCourtHouseDiffReportingService diffReportingService;
     private final JdbcBulkUpsertService bulkUpsertService;
     private final NationalCourtHouseIngressDatabaseRowMapper rowMapper;
-    private final Clock clock;
 
     public NationalCourtHouseDataIngressProcessor(
             CsdsIngressProperties properties,
@@ -44,8 +51,7 @@ public class NationalCourtHouseDataIngressProcessor
             NationalCourtHouseDiffService diffService,
             NationalCourtHouseDiffReportingService diffReportingService,
             JdbcBulkUpsertService bulkUpsertService,
-            NationalCourtHouseIngressDatabaseRowMapper rowMapper,
-            Clock clock) {
+            NationalCourtHouseIngressDatabaseRowMapper rowMapper) {
         super(
                 properties,
                 properties.getProcessors().getNationalCourtHouses(),
@@ -57,20 +63,28 @@ public class NationalCourtHouseDataIngressProcessor
         this.diffReportingService = diffReportingService;
         this.bulkUpsertService = bulkUpsertService;
         this.rowMapper = rowMapper;
-        this.clock = clock;
     }
 
     @Override
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
-        return normaliseDateEffectiveRecords(
-                rawJson,
-                clock,
-                REQUIRED_RECORD_FIELDS,
-                "national courthouse",
-                record ->
-                        nullableText(
-                                record, nationalCourtHouseProperties.getBusinessKeys().getFirst()),
-                "StartDate");
+        if (rawJson.isEmpty()) {
+            return rawJson;
+        }
+
+        val firstPageRecords = extractRecords(rawJson.getFirst());
+        if (!firstPageRecords.isEmpty()) {
+            validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
+        }
+
+        val resolvedRecords =
+                rawJson.stream()
+                        .flatMap(page -> extractRecords(page).stream())
+                        .map(this::withResolvedNchId)
+                        .toList();
+        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
+        val recordsArray = normalisedPage.putArray("records");
+        resolvedRecords.forEach(recordsArray::add);
+        return List.of(normalisedPage);
     }
 
     @Override
@@ -120,7 +134,7 @@ public class NationalCourtHouseDataIngressProcessor
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
                 targetTable(),
-                targetKeyFields(),
+                targetKeyField(),
                 rows,
                 rowMapper,
                 NationalCourtHouseIngressRecord::id);
@@ -131,7 +145,7 @@ public class NationalCourtHouseDataIngressProcessor
             List<JsonNode> processedData, NationalCourtHouseDiffResult diff) {
         return buildSuccessAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData, diff),
+                sourceRecordsById(processedData),
                 NationalCourtHouseIngressRecord::id);
     }
 
@@ -142,7 +156,7 @@ public class NationalCourtHouseDataIngressProcessor
             CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData, diff),
+                sourceRecordsById(processedData),
                 NationalCourtHouseIngressRecord::id,
                 NationalCourtHouseIngressRecord.class,
                 ex);
@@ -168,41 +182,26 @@ public class NationalCourtHouseDataIngressProcessor
     }
 
     private NationalCourtHouseIngressRecord toSourceRecord(JsonNode node) {
-        val codeField = nationalCourtHouseProperties.getBusinessKeys().getFirst();
-        val code = requiredText(node, codeField);
-        if (code.isBlank()) {
-            throw invalidField(node, codeField);
-        }
         return new NationalCourtHouseIngressRecord(
-                nullableLong(node, nationalCourtHouseProperties.getCsdsKey()),
+                requiredLong(node, NCH_ID),
                 requiredText(node, "CourtName"),
                 requiredLong(node, "RevisionNumber"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                code,
-                nullableText(node, "CourtWelshName"),
-                nullableLong(node, nationalCourtHouseProperties.getLegacyKey()));
+                nullableText(node, "CourtLocationCode"),
+                nullableText(node, "CourtWelshName"));
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(
-            List<JsonNode> processedData, NationalCourtHouseDiffResult diff) {
-        val sourcesByCode =
-                processedData.stream()
-                        .flatMap(page -> extractRecords(page).stream())
-                        .collect(
-                                Collectors.toMap(
-                                        node ->
-                                                requiredText(
-                                                        node,
-                                                        nationalCourtHouseProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
-                                        node -> node));
-        // Audit IDs stay numeric while raw source records are matched by location code.
-        return diff.diffRecords().stream()
-                .collect(
-                        Collectors.toMap(
-                                item -> item.intended().id(),
-                                item -> sourcesByCode.get(item.intended().courtLocationCode())));
+    private JsonNode withResolvedNchId(JsonNode node) {
+        if (!(node instanceof ObjectNode objectNode)) {
+            return node;
+        }
+        val copiedRecord = objectNode.deepCopy();
+        copiedRecord.put(NCH_ID, NationalCourtHouseIngressRecord.resolveId(copiedRecord));
+        return copiedRecord;
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, NCH_ID));
     }
 }

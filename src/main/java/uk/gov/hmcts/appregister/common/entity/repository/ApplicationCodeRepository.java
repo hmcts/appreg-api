@@ -20,7 +20,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
      * Finds an ApplicationCode entity by its application code.
      *
      * @param applicationCode the application code to search for
-     * @return matching active rows in deterministic selection order
+     * @return an Optional containing the found ApplicationCode, or empty if not found
      */
     @Query(
             """

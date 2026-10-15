@@ -5448,7 +5448,8 @@ paths:
     get:
       description: |
         Returns a Standard Applicant record matching the supplied code without applying
-        lodgement-date effective filtering, including historic records.
+        lodgement-date effective filtering. Where multiple records share the same code,
+        the current active or latest record is selected using deterministic reference-data ordering.
       operationId: getStandardApplicantByCode
       parameters:
       - description: Code used to identify the Standard Applicant (case-insensitive).

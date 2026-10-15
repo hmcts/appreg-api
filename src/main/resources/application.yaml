@@ -133,18 +133,15 @@ appreg:
         minute: ${CSDS_SCHEDULE_MINUTE:0}
         poll-interval: PT10M
       processors:
-        report-raw: true # Setting this to true spits out the raw JSON to the reporting dir for that processor (assuming the dir is set)
+        report-raw: false # Setting this to true spits out the raw JSON to the reporting dir for that processor (assuming the dir is set)
         application-codes:
           enabled: true
           backup-source: application_codes
           backup-target: application_codes_staging
           ingress-target: application_codes
-          primary-keys: [application_code]
-          business-keys: [Code]
-          csds-key: ApplicationCodeID
-          legacy-key: PSSApplicationCodeID
+          primary-key: ac_id
           source-entity-name: ApplicationCode
-          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=UpdateDate&%24orderBy=ApplicationCodeID
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicationCodeID
 #          mock: csds/application_codes.json # ...if specified - this overrides the rest endpoint.  Used for local dev
 #          reporting-dir: ${CSDS_APPLICATION_CODES_REPORTING_DIR:} # ...if set - this writes out data and metadata for this processor
         resolution-codes:
@@ -152,12 +149,9 @@ appreg:
           backup-source: resolution_codes
           backup-target: resolution_codes_staging
           ingress-target: resolution_codes
-          primary-keys: [resolution_code]
-          business-keys: [Code]
-          csds-key: ResolutionCodeID
-          legacy-key: PSSResolutionCodeID
+          primary-key: rc_id
           source-entity-name: ResolutionCode
-          parameters: ?%24f=CurrentRecordIndicator='true'&%24expr=UpdateDate&%24orderBy=ResolutionCodeID
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ResolutionCodeID
 #          mock: csds/resolution_codes.json # ...if specified - this overrides the rest endpoint.  Used for local dev
 #          reporting-dir: ${CSDS_RESOLUTION_CODES_REPORTING_DIR:} # ...if set - this writes out data and metadata for this processor
         fee:
@@ -165,12 +159,9 @@ appreg:
           backup-source: fee
           backup-target: fee_staging
           ingress-target: fee
-          primary-keys: [fee_reference, fee_start_date]
-          business-keys: [FeeReference, StartDate]
-          csds-key: CivilFeeID
-          legacy-key: PSSFixedListID
+          primary-key: fee_id
           source-entity-name: CivilFee
-          parameters: ?%24f=CurrentRecordIndicator='true'&%24expr=UpdateDate&%24orderBy=CivilFeeID
+          parameters: ?%24f=AuthoringStatus='Published'&%24expr=Updator&%24orderBy=CivilFeeID
 #          mock: csds/fee.json # ...if specified - this overrides the rest endpoint.  Used for local dev
 #          reporting-dir: ${CSDS_FEE_REPORTING_DIR:} # ...if set - this writes out data and metadata for this processor
         standard-applicants:
@@ -178,12 +169,9 @@ appreg:
           backup-source: standard_applicants
           backup-target: standard_applicants_staging
           ingress-target: standard_applicants
-          primary-keys: [standard_applicant_code]
-          business-keys: [Code]
-          csds-key: ApplicantID
-          legacy-key: PSSApplicantID
-          source-entity-name: GetStandardApplicant
-          parameters: ?Lifecycle=CurrentPublished&%24orderBy=ApplicantID
+          primary-key: sa_id
+          source-entity-name: DA_GetStandardApplicant
+          parameters: ?%24f=PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24expr=Updator&%24orderBy=ApplicantID
 #          mock: csds/standard_applicants.json # ...if specified - this overrides the rest endpoint.  Used for local dev
 #          reporting-dir: ${CSDS_STANDARD_APPLICANTS_REPORTING_DIR:} # ...if set - this writes out data and metadata for this processor
         national-court-houses:
@@ -191,12 +179,9 @@ appreg:
           backup-source: national_court_houses
           backup-target: national_court_houses_staging
           ingress-target: national_court_houses
-          primary-keys: [court_location_code]
-          business-keys: [CourtLocationCode]
-          csds-key: CourtID
-          legacy-key: PSSNationalCourthouseID
+          primary-key: nch_id
           source-entity-name: Court
-          parameters: ?%24f=CurrentRecordIndicator='true'%20AND%20CourtHearingOperationAreaIndicator='true'&%24expr=UpdateDate&%24orderBy=CourtID
+          parameters: ?%24expr=Updator&%24f=CourtHearingOperationAreaIndicator='true'%20AND%20PublishingStatus='Active'%20AND%20CurrentRecordIndicator='true'&%24orderBy=CourtID
 #          mock: csds/national_court_houses.json # ...if specified - this overrides the rest endpoint.  Used for local dev
 #          reporting-dir: ${CSDS_NATIONAL_COURT_HOUSES_REPORTING_DIR:} # ...if set - this writes out data and metadata for this processor
   job:

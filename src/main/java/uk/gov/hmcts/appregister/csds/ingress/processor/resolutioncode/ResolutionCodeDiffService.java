@@ -15,27 +15,25 @@ import uk.gov.hmcts.appregister.csds.ingress.database.ResolutionCodeIngressDatab
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResolutionCodeDiffService
         implements IngressDiffService<ResolutionCodeDiffRequest, ResolutionCodeDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH =
-            "no existing resolution_code match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing resolution_code match";
+    private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing rc_id match";
+    private static final String UPDATE_REASON_EXISTING_MATCH = "existing rc_id match";
 
     private final JdbcIngressTableReadService tableReadService;
     private final ResolutionCodeIngressDatabaseRowMapper rowMapper;
 
     @Override
     public ResolutionCodeDiffResult diff(ResolutionCodeDiffRequest request) {
-        val incomingByCode = new LinkedHashMap<String, ResolutionCodeIngressRecord>();
+        val incomingById = new LinkedHashMap<Long, ResolutionCodeIngressRecord>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
-                .forEach(item -> addIncomingRecord(request.targetTable(), incomingByCode, item));
+                .forEach(item -> addIncomingRecord(request.targetTable(), incomingById, item));
 
         log.info("Loading existing CSDS comparison rows from {}", request.targetTable());
         val existingById =
@@ -53,37 +51,9 @@ public class ResolutionCodeDiffService
                                 ResolutionCodeIngressRecord,
                                 ResolutionCodeIngressRecord,
                                 ResolutionCodeIngressRecord>>();
-        val existingByCode =
-                existingById.values().stream()
-                        .collect(Collectors.toMap(ResolutionCodeIngressRecord::code, item -> item));
-        val incomingById = new LinkedHashMap<Long, ResolutionCodeIngressRecord>();
-        for (val incoming : incomingByCode.values()) {
-            val existing = existingByCode.get(incoming.code());
-            val intendedId =
-                    existing == null
-                            ? ResolutionCodeIngressRecord.calculateId(
-                                    incoming.pssId(), incoming.id())
-                            : existing.id();
-            if (intendedId == null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Missing source ID for new resolution code " + incoming.code());
-            }
-            val intended = incoming.withId(intendedId);
-            val idOwner = existingById.get(intendedId);
-            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                    || incomingOwner != null) {
-                val message =
-                        "Legacy RC_ID %s conflicts for incoming resolution code [%s] with owner [%s]"
-                                .formatted(
-                                        intendedId,
-                                        describe(intended),
-                                        describe(incomingOwner != null ? incomingOwner : idOwner));
-                log.error(message);
-                throw new CsdsDuplicateRecordException(message);
-            }
-            diffRecords.add(determineDiffRecord(existing, intended));
+        for (val incoming : incomingById.values()) {
+            val existing = existingById.get(incoming.id());
+            diffRecords.add(determineDiffRecord(existing, incoming));
         }
 
         return new ResolutionCodeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
@@ -91,19 +61,22 @@ public class ResolutionCodeDiffService
 
     private void addIncomingRecord(
             String targetTable,
-            LinkedHashMap<String, ResolutionCodeIngressRecord> incomingById,
+            LinkedHashMap<Long, ResolutionCodeIngressRecord> incomingById,
             ResolutionCodeIngressRecord item) {
-        val existing = incomingById.putIfAbsent(item.code(), item);
+        val existing = incomingById.putIfAbsent(item.id(), item);
         if (existing == null) {
             return;
         }
 
-        val message =
-                ("Duplicate incoming resolution_code %s detected for %s. Existing record [%s], "
-                                + "duplicate record [%s]")
-                        .formatted(item.code(), targetTable, describe(existing), describe(item));
-        log.error(message);
-        throw new CsdsDuplicateRecordException(message);
+        log.error(
+                "Duplicate incoming RC_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.id(),
+                targetTable,
+                describe(existing),
+                describe(item));
+        throw new AppRegistryException(
+                CommonAppError.INTERNAL_SERVER_ERROR,
+                "Duplicate incoming RC_ID " + item.id() + " detected for " + targetTable);
     }
 
     private IngressDiffRecord<

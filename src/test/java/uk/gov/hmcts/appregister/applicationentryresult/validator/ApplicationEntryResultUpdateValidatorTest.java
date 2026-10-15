@@ -88,8 +88,7 @@ class ApplicationEntryResultUpdateValidatorTest {
                 .thenReturn(Optional.of(applicationListEntry));
 
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        dto.getResultCode(), TODAY_UK))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
@@ -189,8 +188,7 @@ class ApplicationEntryResultUpdateValidatorTest {
 
     @Test
     void validateResolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        dto.getResultCode(), TODAY_UK))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of());
 
         AppRegistryException ex =

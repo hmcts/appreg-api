@@ -163,8 +163,7 @@ public class BulkApplicationEntryResultCreationValidator
     private ResolutionCodeContext resolveResolutionCodeContext(String resultCode) {
         var todayUk = businessDateProvider.currentUkDate();
         var matchingCodes =
-                resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                        resultCode, todayUk);
+                resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
         if (matchingCodes.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,

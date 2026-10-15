@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.time.Clock;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -25,8 +24,12 @@ import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunne
 public class StandardApplicantDataIngressProcessor
         extends AbstractPagedCsdsIngressProcessor<List<JsonNode>, StandardApplicantDiffResult> {
     private static final String MISSING_ADDRESS = "<missing>";
+    private static final String SA_ID = "SA_ID";
     private static final List<String> REQUIRED_RECORD_FIELDS =
             List.of(
+                    "ApplicantID",
+                    "PSSApplicantID",
+                    "Code",
                     "OrganisationName",
                     "StartDate",
                     "EndDate",
@@ -38,7 +41,6 @@ public class StandardApplicantDataIngressProcessor
     private final StandardApplicantDiffService diffService;
     private final StandardApplicantDiffReportingService diffReportingService;
     private final StandardApplicantIngressApplyService applyService;
-    private final Clock clock;
 
     public StandardApplicantDataIngressProcessor(
             CsdsIngressProperties properties,
@@ -47,8 +49,7 @@ public class StandardApplicantDataIngressProcessor
             JdbcIngressBackupService ingressBackupService,
             StandardApplicantDiffService diffService,
             StandardApplicantDiffReportingService diffReportingService,
-            StandardApplicantIngressApplyService applyService,
-            Clock clock) {
+            StandardApplicantIngressApplyService applyService) {
         super(
                 properties,
                 properties.getProcessors().getStandardApplicants(),
@@ -59,20 +60,26 @@ public class StandardApplicantDataIngressProcessor
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
         this.applyService = applyService;
-        this.clock = clock;
     }
 
     @Override
     public List<JsonNode> preProcess(List<JsonNode> rawJson) {
-        return normaliseDateEffectiveRecords(
-                rawJson,
-                clock,
-                REQUIRED_RECORD_FIELDS,
-                "standard applicant",
-                record ->
-                        nullableText(
-                                record, standardApplicantProperties.getBusinessKeys().getFirst()),
-                "StartDate");
+        if (rawJson.isEmpty()) {
+            return rawJson;
+        }
+        val firstPageRecords = extractRecords(rawJson.getFirst());
+        if (!firstPageRecords.isEmpty()) {
+            validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
+        }
+        val resolvedRecords =
+                rawJson.stream()
+                        .flatMap(page -> extractRecords(page).stream())
+                        .map(this::withResolvedSaId)
+                        .toList();
+        ObjectNode normalisedPage = rawJson.getFirst().deepCopy();
+        val recordsArray = normalisedPage.putArray("records");
+        resolvedRecords.forEach(recordsArray::add);
+        return List.of(normalisedPage);
     }
 
     @Override
@@ -129,7 +136,7 @@ public class StandardApplicantDataIngressProcessor
 
     @Override
     protected void applyDiff(StandardApplicantDiffResult diff) {
-        applyService.reconcileAndUpsert(targetTable(), targetKeyFields(), diff);
+        applyService.reconcileAndUpsert(targetTable(), targetKeyField(), diff);
     }
 
     @Override
@@ -137,7 +144,7 @@ public class StandardApplicantDataIngressProcessor
             List<JsonNode> processedData, StandardApplicantDiffResult diff) {
         return buildSuccessAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData, diff),
+                sourceRecordsById(processedData),
                 StandardApplicantIngressRecord::id);
     }
 
@@ -148,7 +155,7 @@ public class StandardApplicantDataIngressProcessor
             CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData, diff),
+                sourceRecordsById(processedData),
                 StandardApplicantIngressRecord::id,
                 StandardApplicantIngressRecord.class,
                 ex);
@@ -176,8 +183,8 @@ public class StandardApplicantDataIngressProcessor
     private StandardApplicantIngressRecord toSourceRecord(JsonNode node) {
         val address = firstAddress(node);
         return new StandardApplicantIngressRecord(
-                nullableLong(node, standardApplicantProperties.getCsdsKey()),
-                requiredText(node, standardApplicantProperties.getBusinessKeys().getFirst()),
+                requiredLong(node, SA_ID),
+                requiredText(node, "Code"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
                 requiredLong(node, "RevisionNumber"),
@@ -189,8 +196,22 @@ public class StandardApplicantDataIngressProcessor
                 nestedText(address, "AddressLine5"),
                 nestedText(address, "PostCode"),
                 contactValue(node, "Email Address"),
-                contactValue(node, "Telephone"),
-                nullableLong(node, standardApplicantProperties.getLegacyKey()));
+                contactValue(node, "Telephone"));
+    }
+
+    private JsonNode withResolvedSaId(JsonNode node) {
+        if (!(node instanceof ObjectNode objectNode)) {
+            return node;
+        }
+        val copiedRecord = objectNode.deepCopy();
+        val pssApplicantId = nullableLong(copiedRecord, "PSSApplicantID");
+        val applicantId = nullableLong(copiedRecord, "ApplicantID");
+        if (pssApplicantId != null) {
+            copiedRecord.put(SA_ID, pssApplicantId);
+        } else if (applicantId != null) {
+            copiedRecord.put(SA_ID, applicantId + 100000L);
+        }
+        return copiedRecord;
     }
 
     private JsonNode firstAddress(JsonNode node) {
@@ -223,25 +244,7 @@ public class StandardApplicantDataIngressProcessor
         return node == null ? null : nullableText(node, fieldName);
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(
-            List<JsonNode> processedData, StandardApplicantDiffResult diff) {
-        val sourcesByCode =
-                processedData.stream()
-                        .flatMap(page -> extractRecords(page).stream())
-                        .collect(
-                                Collectors.toMap(
-                                        node ->
-                                                requiredText(
-                                                        node,
-                                                        standardApplicantProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
-                                        node -> node));
-        // Audit correlation remains numeric even though matching uses the business code.
-        return diff.diffRecords().stream()
-                .collect(
-                        Collectors.toMap(
-                                item -> item.intended().id(),
-                                item -> sourcesByCode.get(item.intended().code())));
+    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
+        return indexSourceRecords(processedData, node -> nullableLong(node, SA_ID));
     }
 }

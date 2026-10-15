@@ -56,7 +56,6 @@ import uk.gov.hmcts.appregister.common.log.LogPayloads;
 import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
 import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
@@ -166,19 +165,6 @@ class AppRegExceptionHandlerTest {
                                         log.contains(
                                                 "[500]: General unexpected failure"
                                                         + " (Report output file failed)")));
-    }
-
-    @Test
-    void givenCsdsDuplicateFailure_whenHandled_thenDetailIsLoggedWithoutStackTrace() {
-        AppRegistryException exception =
-                new CsdsDuplicateRecordException("Duplicate incoming application code");
-
-        exceptionHandler.handleAppRegisterApiException(exception);
-
-        assertThat(logCaptor.getErrorLogs())
-                .containsExactly(
-                        "[500]: General unexpected failure (Duplicate incoming application code)")
-                .noneMatch(log -> log.contains("CsdsDuplicateRecordException"));
     }
 
     @Test
