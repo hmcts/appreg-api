@@ -65,7 +65,12 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
             if (knownVersions.contains(Map.entry(incoming.csdsId(), incoming.businessKey()))) {
                 continue;
             }
-            val legacy = existingById.get(incoming.id());
+            // Earlier imports also allocated offset IDs without recording the CSDS identity.
+            val legacy =
+                    existingById.get(
+                            incoming.id() != null
+                                    ? incoming.id()
+                                    : FeeIngressRecord.calculateId(null, incoming.csdsId()));
             val enrich =
                     legacy != null
                             && legacy.csdsId() == null

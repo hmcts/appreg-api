@@ -36,6 +36,7 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.NationalCourtHouseIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
@@ -93,7 +94,10 @@ class NationalCourtHouseDataIngressProcessorTest {
                         "?$f=PublishingStatus='Active'&$f=CurrentRecordIndicator='true'"
                                 + "&$f=CourtHearingOperationAreaIndicator='true'&$orderBy=CourtID");
         var count = OBJECT_MAPPER.createObjectNode().put("count", 3);
-        var firstPage = page(sourceRecord(3802L, 3106L, "First Court", 1L));
+        var firstPage =
+                page(
+                        sourceRecord(3802L, 3106L, "First Court", 1L),
+                        sourceRecord(3804L, null, "Third Court", 1L));
         var secondPage = page(sourceRecord(3803L, null, "Second Court", 1L));
         var parameters =
                 "?$f=PublishingStatus='Active'&$f=CurrentRecordIndicator='true'"
@@ -101,9 +105,9 @@ class NationalCourtHouseDataIngressProcessorTest {
         var countPath = "/count/COURT/Court/GD" + parameters;
         var queryPath = "/query/COURT/Court/GD" + parameters;
         when(ingressClient.retrieveJson(countPath)).thenReturn(count);
-        when(ingressClient.retrieveJson(queryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(queryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(queryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(queryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);
@@ -341,6 +345,40 @@ class NationalCourtHouseDataIngressProcessorTest {
                             .orElseThrow();
             assertThat(Files.readString(report)).contains("\"103803\"", "\"3803\"", "\"3106\"");
         }
+    }
+
+    @Test
+    void enrichesUnlinkedOffsetIdWithoutPssIdAndSkipsReplay() {
+        var original =
+                new NationalCourtHouseIngressRecord(
+                        103802L,
+                        null,
+                        "Original",
+                        1L,
+                        LocalDate.of(2020, 1, 1),
+                        null,
+                        "B01CF00",
+                        null);
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(List.of(original));
+        var pages = processor.preProcess(List.of(page(sourceRecord(3802L, null, "Updated", 2L))));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords()).hasSize(1);
+        var change = diff.diffRecords().getFirst();
+        assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(change.existing()).isEqualTo(original);
+        assertThat(change.intended().id()).isEqualTo(103802L);
+        assertThat(change.intended().csdsId()).isEqualTo(3802L);
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(List.of(change.intended()));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(List.of(original));
+        var mismatch = sourceRecord(3802L, null, "Other", 1L).put("CourtLocationCode", "OTHER");
+        assertThatThrownBy(() -> processor.diff(processor.preProcess(List.of(page(mismatch)))))
+                .hasMessageContaining("collides");
     }
 
     @Test

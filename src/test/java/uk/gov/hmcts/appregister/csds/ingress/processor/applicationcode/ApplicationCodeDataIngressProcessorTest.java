@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +23,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -90,20 +93,80 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_countExceedsPageSize_when_retrieve_then_pagesThroughQueryEndpoint() {
+    void given_fullResponse_when_retrieve_then_usesOnlyCountAndFetch() throws Exception {
+        var page = OBJECT_MAPPER.readTree("{\"records\":[{},{},{}]}");
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 3));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0"))
+                .thenReturn(page);
+
+        assertThat(processor.retrieve(ingressClient)).containsExactly(page);
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/ApplicationCode/GD");
+        verify(ingressClient)
+                .retrieveJson("/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0");
+        verifyNoMoreInteractions(ingressClient);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"records\":[]}", "{\"records\":[{},{}]}"})
+    void given_countMismatch_when_retrieve_then_rejectBeforeWrites(String response)
+            throws Exception {
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 1));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=1&%24offset=0"))
+                .thenReturn(OBJECT_MAPPER.readTree(response));
+
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("CSDS record count mismatch");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_emptyFallbackPage_when_retrieve_then_rejectPartialDataset() throws Exception {
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.createObjectNode().put("count", 3));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0"))
+                .thenReturn(OBJECT_MAPPER.readTree("{\"records\":[{}]}"));
+        when(ingressClient.retrieveJson(
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=1"))
+                .thenReturn(OBJECT_MAPPER.readTree("{\"records\":[]}"));
+
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .hasMessageContaining("at offset 1");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "1.5", "2147483648", "null", "\"3\""})
+    void given_invalidCount_when_retrieve_then_reject(String count) throws Exception {
+        when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
+                .thenReturn(OBJECT_MAPPER.readTree("{\"count\":" + count + "}"));
+        assertThatThrownBy(() -> processor.retrieve(ingressClient))
+                .isInstanceOf(AppRegistryException.class);
+        verify(ingressClient).retrieveJson("/count/APPREGISTER/ApplicationCode/GD");
+        verifyNoMoreInteractions(ingressClient);
+    }
+
+    @Test
+    void given_serverCapsResponse_when_retrieve_then_advancesByReceivedRecords() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
+        secondPage.withArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=2"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=1"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -120,18 +183,19 @@ class ApplicationCodeDataIngressProcessorTest {
 
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
+        firstPage.withArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
         var parameterisedCountPath =
                 "/count/APPREGISTER/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
         var parameterisedQueryPath =
                 "/query/APPREGISTER/ApplicationCode/GD?$f=PublishingStatus='Active'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -160,7 +224,9 @@ class ApplicationCodeDataIngressProcessorTest {
                         log ->
                                 log.contains(
                                         "Loaded mock CSDS payload for application_codes "
-                                                + "with 200 records"));
+                                                + "with "
+                                                + retrieved.getFirst().get("records").size()
+                                                + " records"));
     }
 
     @Test
@@ -173,12 +239,12 @@ class ApplicationCodeDataIngressProcessorTest {
         logCaptor.clearLogs();
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 1);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -206,12 +272,12 @@ class ApplicationCodeDataIngressProcessorTest {
         logCaptor.clearLogs();
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 1);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
 
         when(ingressClient.retrieveJson("/count/APPREGISTER/ApplicationCode/GD"))
                 .thenReturn(countResponse);
         when(ingressClient.retrieveJson(
-                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset=0"))
+                        "/query/APPREGISTER/ApplicationCode/GD?%24limit=1&%24offset=0"))
                 .thenReturn(firstPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -288,6 +354,40 @@ class ApplicationCodeDataIngressProcessorTest {
                                 .diff(processor.preProcess(List.of(createPageResponse(original))))
                                 .diffRecords())
                 .isEmpty();
+    }
+
+    @Test
+    void given_unlinkedOffsetIdWithoutPssId_when_diff_then_enrichAndSkipReplay() {
+        var existing =
+                ApplicationCodeIngressRecord.fromEntity(
+                        createApplicationCode(
+                                100217L,
+                                "APPSREG002",
+                                "Legacy",
+                                "Wording",
+                                2L,
+                                LocalDate.of(2026, 10, 14),
+                                LocalDate.of(2026, 10, 14)));
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(existing));
+        var pages =
+                processor.preProcess(
+                        List.of(
+                                createPageResponse(
+                                        createSourceRecord(
+                                                217L, "APPSREG002", "Title", "Wording", 2L))));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords()).hasSize(1);
+        var change = diff.diffRecords().getFirst();
+        assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(change.existing()).isEqualTo(existing);
+        assertThat(change.intended().id()).isEqualTo(100217L);
+        assertThat(change.intended().csdsId()).isEqualTo(217L);
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(change.intended()));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
     }
 
     @Test

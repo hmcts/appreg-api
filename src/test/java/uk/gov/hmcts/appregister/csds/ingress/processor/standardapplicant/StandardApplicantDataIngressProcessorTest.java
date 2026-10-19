@@ -71,6 +71,7 @@ class StandardApplicantDataIngressProcessorTest {
                 .getStandardApplicants()
                 .setParameters("?$f=PublishingStatus='Active'");
         var firstPage = createPage(OBJECT_MAPPER.createObjectNode());
+        firstPage.withArray("records").addObject();
         var secondPage = createPage(OBJECT_MAPPER.createObjectNode());
         var count = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var parameters = "?$f=PublishingStatus='Active'";
@@ -81,12 +82,12 @@ class StandardApplicantDataIngressProcessorTest {
         when(ingressClient.retrieveJson(
                         "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
                                 + parameters
-                                + "&%24limit=2&%24offset=0"))
+                                + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
         when(ingressClient.retrieveJson(
                         "/named-query/APPREGISTER/DA_GetStandardApplicant/GD"
                                 + parameters
-                                + "&%24limit=2&%24offset=2"))
+                                + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         assertThat(processor.retrieve(ingressClient)).containsExactly(firstPage, secondPage);
@@ -181,6 +182,27 @@ class StandardApplicantDataIngressProcessorTest {
         assertThat(diffFor(sourceRecord(3L, 99L, "Missing legacy")).diffRecords())
                 .singleElement()
                 .satisfies(change -> assertThat(change.intended().id()).isEqualTo(100003L));
+    }
+
+    @Test
+    void enrichesUnlinkedOffsetIdWithoutPssIdAndSkipsReplay() {
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(stored(100001L, null, "DCCMH")));
+
+        var diff = diffFor(sourceRecord(1L, null, "Updated"));
+
+        assertThat(diff.diffRecords()).hasSize(1);
+        var change = diff.diffRecords().getFirst();
+        assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(change.intended().id()).isEqualTo(100001L);
+        assertThat(change.intended().csdsId()).isEqualTo(1L);
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(change.intended()));
+        assertThat(diffFor(sourceRecord(1L, null, "Replay")).diffRecords()).isEmpty();
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(stored(100001L, 2L, "DCCMH")));
+        assertThatThrownBy(() -> diffFor(sourceRecord(1L, null, "Different version")))
+                .hasMessageContaining("collides");
     }
 
     @Test

@@ -99,18 +99,19 @@ class FeeDataIngressProcessorTest {
 
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
-        firstPage.putArray("records");
+        firstPage.putArray("records").addObject();
+        firstPage.withArray("records").addObject();
         var secondPage = OBJECT_MAPPER.createObjectNode();
-        secondPage.putArray("records");
+        secondPage.putArray("records").addObject();
         var parameterisedCountPath =
                 "/count/APPREGISTER/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
         var parameterisedQueryPath =
                 "/query/APPREGISTER/CivilFee/GD?$f=AuthoringStatus='Published'&$expr=Updator";
 
         when(ingressClient.retrieveJson(parameterisedCountPath)).thenReturn(countResponse);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=0"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=3&%24offset=0"))
                 .thenReturn(firstPage);
-        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=2&%24offset=2"))
+        when(ingressClient.retrieveJson(parameterisedQueryPath + "&%24limit=1&%24offset=2"))
                 .thenReturn(secondPage);
 
         var retrieved = processor.retrieve(ingressClient);
@@ -700,6 +701,42 @@ class FeeDataIngressProcessorTest {
         when(tableReadService.loadAll("fee_staging", rowMapper))
                 .thenReturn(List.of(legacy, intended));
         assertThat(processor.diff(pages).diffRecords()).isEmpty();
+    }
+
+    @Test
+    void enrichesUnlinkedOffsetIdWithoutPssIdAndSkipsReplay() {
+        var original =
+                new FeeIngressRecord(
+                        100696L,
+                        "CO10.1",
+                        "Original",
+                        BigDecimal.ONE,
+                        LocalDate.of(2024, 3, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(original));
+        var source = createSourceRecord(696L, "co10.1", "Updated", 2L);
+        source.put("StartDate", "2024-03-01");
+        var pages = processor.preProcess(List.of(createPageResponse(source)));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords()).hasSize(1);
+        var change = diff.diffRecords().getFirst();
+        assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(change.existing()).isEqualTo(original);
+        assertThat(change.intended().id()).isEqualTo(100696L);
+        assertThat(change.intended().csdsId()).isEqualTo(696L);
+        when(tableReadService.loadAll("fee_staging", rowMapper))
+                .thenReturn(List.of(change.intended()));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(original));
+        source.put("StartDate", "2025-01-01");
+        assertThatThrownBy(
+                        () ->
+                                processor.diff(
+                                        processor.preProcess(List.of(createPageResponse(source)))))
+                .hasMessageContaining("conflicts");
     }
 
     @Test

@@ -170,7 +170,9 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
 
             stubFor(
                     get(urlEqualTo(
-                                    "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset="
+                                    "/query/APPREGISTER/ApplicationCode/GD?%24limit="
+                                            + (totalCount - offset)
+                                            + "&%24offset="
                                             + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key"))
                             .willReturn(
@@ -208,7 +210,9 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
             verify(
                     getRequestedFor(
                                     urlEqualTo(
-                                            "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset="
+                                            "/query/APPREGISTER/ApplicationCode/GD?%24limit="
+                                                    + (totalCount - offset)
+                                                    + "&%24offset="
                                                     + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key")));
         }

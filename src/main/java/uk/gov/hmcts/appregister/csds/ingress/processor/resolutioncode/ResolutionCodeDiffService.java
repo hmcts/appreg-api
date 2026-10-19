@@ -75,7 +75,13 @@ public class ResolutionCodeDiffService
             if (receivedVersions.contains(Map.entry(incoming.csdsId(), incoming.code()))) {
                 continue;
             }
-            val existing = existingById.get(incoming.id());
+            // Earlier imports also allocated offset IDs without recording the CSDS identity.
+            val existing =
+                    existingById.get(
+                            incoming.id() != null
+                                    ? incoming.id()
+                                    : ResolutionCodeIngressRecord.calculateId(
+                                            null, incoming.csdsId()));
             val legacyMatch =
                     existing != null
                             && existing.csdsId() == null

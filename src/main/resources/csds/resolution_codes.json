@@ -9,7 +9,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -17,7 +16,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -26,8 +25,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 1,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 1
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 2,
     "Code" : "AUTH",
@@ -38,7 +36,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -46,7 +43,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -55,8 +52,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 2,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 2
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 3,
     "Code" : "CASE",
@@ -67,7 +63,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -75,7 +70,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -84,8 +79,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 3,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 3
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 4,
     "Code" : "COL",
@@ -96,7 +90,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -104,7 +97,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -113,8 +106,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 4,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 4
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 5,
     "Code" : "FRB",
@@ -125,7 +117,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -133,7 +124,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -142,8 +133,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 5,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 5
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 6,
     "Code" : "FRO",
@@ -154,7 +144,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -162,7 +151,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -171,8 +160,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 6,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 6
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 7,
     "Code" : "GR",
@@ -183,7 +171,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -191,7 +178,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -200,8 +187,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 7,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 7
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 8,
     "Code" : "LEX",
@@ -212,7 +198,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -220,7 +205,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -229,8 +214,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 8,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 8
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 9,
     "Code" : "REF",
@@ -241,7 +225,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -249,7 +232,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -258,8 +241,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 9,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 9
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 10,
     "Code" : "RESP",
@@ -270,7 +252,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -278,7 +259,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -287,8 +268,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 10,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 10
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 11,
     "Code" : "RSN",
@@ -299,7 +279,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -307,7 +286,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -316,8 +295,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 11,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 11
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 12,
     "Code" : "RTC",
@@ -328,7 +306,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -336,7 +313,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -345,8 +322,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 12,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 12
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 13,
     "Code" : "SDA",
@@ -357,7 +333,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -365,7 +340,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -374,8 +349,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 13,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 13
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 14,
     "Code" : "SSI",
@@ -386,7 +360,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -394,7 +367,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -403,8 +376,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 14,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 14
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 15,
     "Code" : "SSIB",
@@ -415,7 +387,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -423,7 +394,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -432,8 +403,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 15,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 15
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 16,
     "Code" : "TFO",
@@ -444,7 +414,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -452,7 +421,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -461,8 +430,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 16,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 16
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 17,
     "Code" : "TFOS",
@@ -473,7 +441,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -481,7 +448,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -490,8 +457,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 17,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 17
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 18,
     "Code" : "WDN",
@@ -502,7 +468,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -510,7 +475,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -519,8 +484,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 18,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 18
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 19,
     "Code" : "WDNF",
@@ -531,7 +495,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -539,7 +502,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -548,8 +511,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 19,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 19
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 20,
     "Code" : "WOC",
@@ -560,7 +522,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -568,7 +529,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -577,8 +538,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 20,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 20
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 21,
     "Code" : "WTI",
@@ -589,7 +549,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -597,7 +556,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -606,8 +565,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 21,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 21
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 22,
     "Code" : "WTIB",
@@ -618,7 +576,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2016-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -626,7 +583,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2016-01-01",
+    "RevisionDateFrom" : "2016-05-26",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -635,8 +592,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 22,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 22
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 23,
     "Code" : "EIGR",
@@ -647,7 +603,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2017-07-31",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -655,7 +610,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2017-07-31",
+    "RevisionDateFrom" : "2017-07-25",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -664,8 +619,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 23,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 61
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 24,
     "Code" : "APPABANDON",
@@ -676,7 +630,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2023-02-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -684,7 +637,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2023-02-01",
+    "RevisionDateFrom" : "2023-02-28",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -693,8 +646,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 24,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 181
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 25,
     "Code" : "COST",
@@ -705,7 +657,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2018-04-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -713,7 +664,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2018-04-01",
+    "RevisionDateFrom" : "2018-10-30",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -722,8 +673,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 25,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 101
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 26,
     "Code" : "COSTR",
@@ -734,7 +684,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2018-04-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -742,7 +691,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2018-04-01",
+    "RevisionDateFrom" : "2018-10-30",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -751,8 +700,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 26,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 102
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 27,
     "Code" : "RECHC",
@@ -763,7 +711,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -771,7 +718,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2019-01-01",
+    "RevisionDateFrom" : "2019-04-02",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -780,8 +727,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 27,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 141
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 28,
     "Code" : "VEX",
@@ -792,7 +738,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2021-02-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -800,7 +745,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2021-02-01",
+    "RevisionDateFrom" : "2021-02-10",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -809,8 +754,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 28,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 161
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 29,
     "Code" : "ERR",
@@ -821,7 +765,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2017-06-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -829,7 +772,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2017-06-01",
+    "RevisionDateFrom" : "2017-06-13",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -838,8 +781,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 29,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 41
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 30,
     "Code" : "GRSW",
@@ -850,7 +792,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2018-05-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -858,7 +799,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2018-05-01",
+    "RevisionDateFrom" : "2018-05-23",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -867,8 +808,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 30,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 81
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 31,
     "Code" : "PROD",
@@ -879,7 +819,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2003-02-24",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -887,7 +826,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2003-02-24",
+    "RevisionDateFrom" : "2019-02-15",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -896,8 +835,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 31,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 121
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 32,
     "Code" : "PROA",
@@ -908,7 +846,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2003-02-24",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -916,7 +853,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2003-02-24",
+    "RevisionDateFrom" : "2019-02-15",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -925,8 +862,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 32,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 122
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 33,
     "Code" : "GRO",
@@ -937,7 +873,6 @@
     "Recipient2Email" : null,
     "StartDate" : "2019-01-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
@@ -945,7 +880,7 @@
     "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2019-01-01",
+    "RevisionDateFrom" : "2019-02-15",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -954,8 +889,7 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 33,
     "FID_ReleasePackage" : null,
-    "Updator" : "migration",
-    "RC_ID" : 123
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
   }, {
     "ResolutionCodeID" : 34,
     "Code" : "DISM",
@@ -966,15 +900,14 @@
     "Recipient2Email" : null,
     "StartDate" : "2023-02-01",
     "EndDate" : null,
-    "BulkRespondentAllowed" : null,
     "Notes" : null,
     "AuthoringStatus" : "Published",
     "PublishingStatus" : "Active",
     "CurrentRecordIndicator" : true,
-    "DraftFinalExistsIndicator" : true,
+    "DraftFinalExistsIndicator" : false,
     "RevisionNumber" : 1,
     "RevisionType" : "Initial",
-    "RevisionDateFrom" : "2023-02-01",
+    "RevisionDateFrom" : "2023-03-03",
     "RevisionDateTo" : null,
     "ClonedFrom" : null,
     "ClonedCode" : null,
@@ -983,7 +916,60 @@
     "PSSChangeSetItemID" : null,
     "FID_ApplicationRegisterHeader" : 34,
     "FID_ReleasePackage" : null,
-    "Updator" : "tom.blackall@justice.gov.uk",
-    "RC_ID" : 201
+    "UpdateDate" : "2026-10-13T20:11:49.009Z"
+  }, {
+    "ResolutionCodeID" : 39,
+    "Code" : "TEST",
+    "ResultTitle" : "JS Testing RESULTS",
+    "ResultWording" : "Create a new TEST record for RESULTS",
+    "Legislation" : null,
+    "Recipient1Email" : null,
+    "Recipient2Email" : null,
+    "StartDate" : "2026-09-01",
+    "EndDate" : null,
+    "Notes" : "JS : 14/10/2026 : Create a NEW RESULT record as a Test record. JS : 14/10/26 : Amend a Result record : Result Code: TEST : via Edit Revision",
+    "AuthoringStatus" : "Published",
+    "PublishingStatus" : "Active",
+    "CurrentRecordIndicator" : true,
+    "DraftFinalExistsIndicator" : false,
+    "RevisionNumber" : 2,
+    "RevisionType" : "Edit",
+    "RevisionDateFrom" : "2026-10-14",
+    "RevisionDateTo" : null,
+    "ClonedFrom" : "37",
+    "ClonedCode" : null,
+    "PSSResolutionCodeID" : null,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
+    "FID_ApplicationRegisterHeader" : 736,
+    "FID_ReleasePackage" : 6,
+    "UpdateDate" : "2026-10-14T14:37:46.742Z"
+  }, {
+    "ResolutionCodeID" : 40,
+    "Code" : "APPSJS2",
+    "ResultTitle" : "Create a NEW result test record",
+    "ResultWording" : "Create a NEW result test record with a future start date as part of test 50",
+    "Legislation" : "Contrary to section 50 of the test act 2003. ",
+    "Recipient1Email" : null,
+    "Recipient2Email" : null,
+    "StartDate" : "2026-10-20",
+    "EndDate" : null,
+    "Notes" : "JS : 16/10/2026 : Create a NEW Applications and a NEW Results and a NEW Standard Applicant record under Apps Reg with a future start date 20/10/2026",
+    "AuthoringStatus" : "Published",
+    "PublishingStatus" : "Active",
+    "CurrentRecordIndicator" : true,
+    "DraftFinalExistsIndicator" : false,
+    "RevisionNumber" : 1,
+    "RevisionType" : "Initial",
+    "RevisionDateFrom" : "2026-10-16",
+    "RevisionDateTo" : null,
+    "ClonedFrom" : null,
+    "ClonedCode" : null,
+    "PSSResolutionCodeID" : null,
+    "PSSChangeSetHeaderID" : null,
+    "PSSChangeSetItemID" : null,
+    "FID_ApplicationRegisterHeader" : 739,
+    "FID_ReleasePackage" : 14,
+    "UpdateDate" : "2026-10-16T09:46:39.609Z"
   } ]
 }
