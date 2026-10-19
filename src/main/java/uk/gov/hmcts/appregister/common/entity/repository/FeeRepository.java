@@ -33,10 +33,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
           ((f.endDate IS NULL OR  f.endDate >= :dateTime) AND f.isOffsite = false
         AND f.startDate <= :dateTime)
-        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
-                 f.endDate DESC,
-                 f.startDate DESC,
-                 f.id DESC
+        ORDER BY f.id DESC
         """)
     List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
 
@@ -47,11 +44,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE LOWER(f.reference) IN :references
           AND ((f.endDate IS NULL OR f.endDate >= :dateTime) AND f.isOffsite = false
           AND f.startDate <= :dateTime)
-        ORDER BY LOWER(f.reference),
-                 CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
-                 f.endDate DESC,
-                 f.startDate DESC,
-                 f.id DESC
+        ORDER BY LOWER(f.reference), f.id DESC
         """)
     List<Fee> findByReferenceInBetweenDate(Collection<String> references, LocalDate dateTime);
 
@@ -68,10 +61,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
         ((f.endDate IS NULL OR  f.endDate >= :dateTime)
         AND f.startDate <= :dateTime) AND f.isOffsite = :offsiteStatus
-        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
-                 f.endDate DESC,
-                 f.startDate DESC,
-                 f.id DESC
+        ORDER BY f.id DESC
         """)
     List<Fee> findByReferenceBetweenDateWithOffsite(
             String reference, LocalDate dateTime, boolean offsiteStatus);
@@ -110,11 +100,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (f.isOffsite=true AND
           (f.endDate IS NULL OR  f.endDate >= :dateTime)
                   AND f.startDate <= :dateTime)
-        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
-                 f.endDate DESC,
-                 f.startDate DESC,
-                 f.id DESC
-
+        ORDER BY f.id DESC
         """)
     List<Fee> findOffsite(LocalDate dateTime);
 }

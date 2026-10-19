@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +22,8 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 @Service
 @RequiredArgsConstructor
 public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing fee_id match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing fee_id match";
+    private static final String INSERT_REASON_NO_EXISTING_MATCH = "new CSDS fee version";
+    private static final String UPDATE_REASON_EXISTING_MATCH = "enrich legacy fee with CSDS ID";
 
     private final JdbcIngressTableReadService tableReadService;
     private final FeeIngressDatabaseRowMapper rowMapper;
@@ -47,9 +49,40 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
         val diffRecords =
                 new ArrayList<
                         IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>>();
+        val keys = new HashSet<FeeIngressRecord.BusinessKey>();
+        val knownVersions =
+                existingById.values().stream()
+                        .filter(item -> item.csdsId() != null)
+                        .map(item -> Map.entry(item.csdsId(), item.businessKey()))
+                        .collect(Collectors.toSet());
+        val plannedIds = new HashSet<Long>();
         for (val incoming : incomingById.values()) {
-            val existing = existingById.get(incoming.id());
-            diffRecords.add(determineDiffRecord(existing, incoming));
+            if (!keys.add(incoming.businessKey())) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "Duplicate incoming fee business key " + incoming.businessKey());
+            }
+            if (knownVersions.contains(Map.entry(incoming.csdsId(), incoming.businessKey()))) {
+                continue;
+            }
+            val legacy = existingById.get(incoming.id());
+            val enrich =
+                    legacy != null
+                            && legacy.csdsId() == null
+                            && legacy.businessKey().equals(incoming.businessKey());
+            val intended =
+                    incoming.withId(
+                            enrich
+                                    ? legacy.id()
+                                    : FeeIngressRecord.calculateId(null, incoming.csdsId()));
+            if ((!enrich && existingById.containsKey(intended.id()))
+                    || !plannedIds.add(intended.id())) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "FEE_ID %s conflicts for incoming fee %s"
+                                .formatted(intended.id(), incoming.businessKey()));
+            }
+            diffRecords.add(determineDiffRecord(enrich ? legacy : null, incoming, intended));
         }
 
         return new FeeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
@@ -59,30 +92,33 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
             String targetTable,
             LinkedHashMap<Long, FeeIngressRecord> incomingById,
             FeeIngressRecord item) {
-        val existing = incomingById.putIfAbsent(item.id(), item);
+        val existing = incomingById.putIfAbsent(item.csdsId(), item);
         if (existing == null) {
             return;
         }
 
         log.error(
-                "Duplicate incoming FEE_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
-                item.id(),
+                "Duplicate incoming CivilFeeID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.csdsId(),
                 targetTable,
                 describe(existing),
                 describe(item));
         throw new AppRegistryException(
                 CommonAppError.INTERNAL_SERVER_ERROR,
-                "Duplicate incoming FEE_ID " + item.id() + " detected for " + targetTable);
+                "Duplicate incoming CivilFeeID " + item.csdsId() + " detected for " + targetTable);
     }
 
     private IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>
-            determineDiffRecord(FeeIngressRecord existing, FeeIngressRecord incoming) {
+            determineDiffRecord(
+                    FeeIngressRecord existing,
+                    FeeIngressRecord incoming,
+                    FeeIngressRecord intended) {
         if (existing == null) {
             return new IngressDiffRecord<>(
                     IngressOperation.INSERT,
                     incoming,
                     null,
-                    incoming,
+                    intended,
                     INSERT_REASON_NO_EXISTING_MATCH);
         }
 
@@ -90,12 +126,12 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
                 IngressOperation.UPDATE,
                 incoming,
                 existing,
-                incoming,
+                intended,
                 UPDATE_REASON_EXISTING_MATCH);
     }
 
     private String describe(FeeIngressRecord item) {
-        return "feeId=%s, reference=%s, startDate=%s, version=%s"
-                .formatted(item.id(), item.reference(), item.startDate(), item.version());
+        return "feeId=%s, civilFeeId=%s, businessKey=%s, version=%s"
+                .formatted(item.id(), item.csdsId(), item.businessKey(), item.version());
     }
 }

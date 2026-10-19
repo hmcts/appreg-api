@@ -53,13 +53,13 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
             List<IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByFeeId =
+        var incomingRecordsByCsdsId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, FEE_ID) != null)
+                        .filter(item -> nullableLong(item, "CivilFeeID") != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, FEE_ID),
+                                        item -> nullableLong(item, "CivilFeeID"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -67,10 +67,12 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByFeeId.get(item.intended().id()),
+                                                incomingRecordsByCsdsId.get(
+                                                        item.incoming().csdsId()),
                                                 "PSSFixedListID"),
                                         nullableLong(
-                                                incomingRecordsByFeeId.get(item.intended().id()),
+                                                incomingRecordsByCsdsId.get(
+                                                        item.incoming().csdsId()),
                                                 "CivilFeeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
@@ -136,7 +138,7 @@ public class FeeDiffReportingService extends AbstractIngressDiffReportingService
         return String.join(
                         ",",
                         csvValue((Object) null),
-                        csvValue((Object) null),
+                        csvValue(item.csdsId()),
                         csvValue(item.id()),
                         csvValue(item.reference()),
                         csvValue(item.description()),

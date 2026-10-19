@@ -510,7 +510,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         return feeToReturn;
     }
 
-    private FeePair resolveFee(ApplicationCode applicationCode, T validatable) {
+    protected FeePair resolveFee(ApplicationCode applicationCode, T validatable) {
         return feeService.resolveFeePair(
                 applicationCode.getFeeReference(), getLodgementDate(validatable));
     }

@@ -38,6 +38,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -76,6 +77,7 @@ class UpdateApplicationEntryValidatorTest {
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    @Mock private AppListEntryFeeRepository appListEntryFeeRepository;
 
     @InjectMocks private UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -141,6 +143,56 @@ class UpdateApplicationEntryValidatorTest {
                 .thenReturn(Optional.of(applicationListEntry));
         when(appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(appListEntryUuid))
                 .thenReturn(List.of());
+    }
+
+    @Test
+    void unchangedApplicationCodeRetainsExpiredMainAndOffsiteFees() {
+        var code = new ApplicationCodeTestData().someMinimal().build();
+        applicationListEntry.setApplicationCode(code);
+        code.setFeeDue(YesOrNo.YES);
+        entryUpdateDto.setApplicationCode(code.getCode().toLowerCase());
+        var payload = new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+        payload = payload.withApplicationListEntry(applicationListEntry);
+        var main = new FeeTestData().someMinimal().build();
+        main.setEndDate(LocalDate.of(2000, 1, 1));
+        var offsite = new FeeTestData().someMinimal().isOffsite(true).build();
+        offsite.setEndDate(LocalDate.of(2000, 1, 1));
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(main, offsite));
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(main, offsite));
+        Mockito.verifyNoInteractions(feeService);
+    }
+
+    @Test
+    void unchangedApplicationCodeResolvesOnlyMissingFeeSelections() {
+        var code = new ApplicationCodeTestData().someMinimal().build();
+        applicationListEntry.setApplicationCode(code);
+        code.setFeeDue(YesOrNo.YES);
+        entryUpdateDto.setApplicationCode(code.getCode());
+        entryUpdateDto.setHasOffsiteFee(true);
+        var payload = new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+        payload = payload.withApplicationListEntry(applicationListEntry);
+        var main = new FeeTestData().someMinimal().build();
+        var newMain = new FeeTestData().someMinimal().build();
+        var offsite = new FeeTestData().someMinimal().isOffsite(true).build();
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(main));
+        when(feeService.resolveFeePair(
+                        code.getFeeReference(), applicationListEntry.getLodgementDate()))
+                .thenReturn(new FeePair(newMain, offsite));
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(main, offsite));
+        entryUpdateDto.setHasOffsiteFee(false);
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(main, null));
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(offsite));
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(newMain, offsite));
+        entryUpdateDto.setApplicationCode("CHANGED");
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(newMain, offsite));
     }
 
     private static void sanitiseFeeStatusDates(List<FeeStatus> feeStatuses) {

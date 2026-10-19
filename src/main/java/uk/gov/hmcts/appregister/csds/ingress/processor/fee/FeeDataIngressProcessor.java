@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -149,7 +150,7 @@ public class FeeDataIngressProcessor
     protected List<CsdsAuditEntry> buildSuccessAudits(
             List<JsonNode> processedData, FeeDiffResult diff) {
         return buildSuccessAuditEntries(
-                diff.diffRecords(), sourceRecordsById(processedData), FeeIngressRecord::id);
+                diff.diffRecords(), sourceRecordsById(processedData, diff), FeeIngressRecord::id);
     }
 
     @Override
@@ -157,7 +158,7 @@ public class FeeDataIngressProcessor
             List<JsonNode> processedData, FeeDiffResult diff, CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 FeeIngressRecord::id,
                 FeeIngressRecord.class,
                 ex);
@@ -185,8 +186,13 @@ public class FeeDataIngressProcessor
     }
 
     private FeeIngressRecord toSourceRecord(JsonNode node) {
+        val reference = node.get("FeeReference");
+        if (reference == null || !reference.isTextual() || reference.textValue().isBlank()) {
+            throw invalidField(node, "FeeReference");
+        }
         return new FeeIngressRecord(
-                requiredLong(node, FEE_ID),
+                nullableLong(node, "PSSFixedListID"),
+                requiredLong(node, "CivilFeeID"),
                 requiredText(node, "FeeReference"),
                 requiredText(node, "Description"),
                 requiredBigDecimal(node, "FeeValue"),
@@ -216,6 +222,8 @@ public class FeeDataIngressProcessor
         }
 
         val copiedRecord = objectNode.deepCopy();
+        validateId(copiedRecord, "CivilFeeID", false);
+        validateId(copiedRecord, "PSSFixedListID", true);
         val resolvedId = FeeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
             copiedRecord.put(FEE_ID, resolvedId);
@@ -223,7 +231,28 @@ public class FeeDataIngressProcessor
         return copiedRecord;
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, FEE_ID));
+    private void validateId(JsonNode node, String fieldName, boolean nullable) {
+        val field = node.get(fieldName);
+        if (nullable && (field == null || field.isNull())) {
+            return;
+        }
+        if (field == null
+                || !field.isIntegralNumber()
+                || !field.canConvertToLong()
+                || (!nullable && !field.canConvertToInt())
+                || field.longValue() <= 0) {
+            throw invalidField(node, fieldName);
+        }
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(
+            List<JsonNode> processedData, FeeDiffResult diff) {
+        val sourceByCsdsId =
+                indexSourceRecords(processedData, node -> nullableLong(node, "CivilFeeID"));
+        return diff.diffRecords().stream()
+                .collect(
+                        Collectors.toMap(
+                                item -> item.intended().id(),
+                                item -> sourceByCsdsId.get(item.incoming().csdsId())));
     }
 }
