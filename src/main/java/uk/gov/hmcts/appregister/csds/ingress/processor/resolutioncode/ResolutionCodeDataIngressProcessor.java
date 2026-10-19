@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -152,7 +153,7 @@ public class ResolutionCodeDataIngressProcessor
             List<JsonNode> processedData, ResolutionCodeDiffResult diff) {
         return buildSuccessAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 ResolutionCodeIngressRecord::id);
     }
 
@@ -163,7 +164,7 @@ public class ResolutionCodeDataIngressProcessor
             CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 ResolutionCodeIngressRecord::id,
                 ResolutionCodeIngressRecord.class,
                 ex);
@@ -192,7 +193,7 @@ public class ResolutionCodeDataIngressProcessor
 
     private ResolutionCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ResolutionCodeIngressRecord(
-                requiredLong(node, RC_ID),
+                nullableLong(node, "PSSResolutionCodeID"),
                 requiredText(node, "Code"),
                 requiredText(node, "ResultTitle"),
                 requiredText(node, "ResultWording"),
@@ -201,7 +202,8 @@ public class ResolutionCodeDataIngressProcessor
                 nullableText(node, "Recipient2Email"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                requiredLong(node, "RevisionNumber"));
+                requiredLong(node, "RevisionNumber"),
+                requiredLong(node, "ResolutionCodeID"));
     }
 
     private JsonNode withResolvedRcId(JsonNode node) {
@@ -210,6 +212,8 @@ public class ResolutionCodeDataIngressProcessor
         }
 
         val copiedRecord = objectNode.deepCopy();
+        validateId(copiedRecord, "ResolutionCodeID", false);
+        validateId(copiedRecord, "PSSResolutionCodeID", true);
         val resolvedId = ResolutionCodeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
             copiedRecord.put(RC_ID, resolvedId);
@@ -217,7 +221,28 @@ public class ResolutionCodeDataIngressProcessor
         return copiedRecord;
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, RC_ID));
+    private void validateId(JsonNode node, String fieldName, boolean nullable) {
+        val field = node.get(fieldName);
+        if (nullable && (field == null || field.isNull())) {
+            return;
+        }
+        if (field == null
+                || !field.isIntegralNumber()
+                || !field.canConvertToLong()
+                || (!nullable && !field.canConvertToInt())
+                || field.longValue() <= 0) {
+            throw invalidField(node, fieldName);
+        }
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(
+            List<JsonNode> processedData, ResolutionCodeDiffResult diff) {
+        val sourceByCsdsId =
+                indexSourceRecords(processedData, node -> nullableLong(node, "ResolutionCodeID"));
+        return diff.diffRecords().stream()
+                .collect(
+                        Collectors.toMap(
+                                item -> item.intended().id(),
+                                item -> sourceByCsdsId.get(item.incoming().csdsId())));
     }
 }

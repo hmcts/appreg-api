@@ -26,7 +26,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
@@ -162,21 +161,16 @@ public class BulkApplicationEntryResultCreationValidator
 
     private ResolutionCodeContext resolveResolutionCodeContext(String resultCode) {
         var todayUk = businessDateProvider.currentUkDate();
-        var matchingCodes =
-                resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
-        if (matchingCodes.isEmpty()) {
-            throw new AppRegistryException(
-                    ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
-                    "No valid resolution code could be found %s".formatted(resultCode));
-        }
-
         var resolutionCode =
-                ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                        matchingCodes,
-                        "result code",
-                        resultCode,
-                        todayUk,
-                        ResolutionCode::getEndDate);
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate(resultCode, todayUk)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListEntryResultError
+                                                        .RESOLUTION_CODE_DOES_NOT_EXIST,
+                                                "No valid resolution code could be found %s"
+                                                        .formatted(resultCode)));
         return new ResolutionCodeContext(resolutionCode, resolutionCode.getWording());
     }
 

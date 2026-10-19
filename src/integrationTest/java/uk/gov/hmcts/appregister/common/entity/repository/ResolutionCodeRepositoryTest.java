@@ -6,13 +6,13 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
@@ -33,13 +33,10 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns seeded APPC when active on date (case-insensitive code)")
         void returnsAppc() {
-            List<ResolutionCode> result =
-                    repository.findActiveResolutionCodesByCodeAndDate("appc", today());
+            var result = repository.findActiveResolutionCodesByCodeAndDate("appc", today());
 
             assertThat(result)
-                    .hasSize(1)
-                    .first()
-                    .satisfies(
+                    .hasValueSatisfying(
                             rc -> {
                                 assertThat(rc.getResultCode()).isEqualTo("APPC");
                                 assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
@@ -119,53 +116,88 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Nested
-    @DisplayName("findActiveByResultCodeIgnoreCasePreferNullEndDate")
-    class FindActiveByResultCodePreferNullEndDate {
+    @DisplayName("latest date-valid version")
+    class LatestDateValidVersion {
 
         @Test
-        @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
-        void returnsSeededAppc_prefersNullEndDate() {
-            List<ResolutionCode> result = repository.findPrioritisingNullEndDate("appc", today());
-
-            assertThat(result).hasSize(1);
-            assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
-            assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
-            assertThat(result.getFirst().getEndDate()).isNull();
+        void returnsSeededAppc() {
+            var result = repository.findActiveResolutionCodesByCodeAndDate("appc", today());
+            assertThat(result)
+                    .hasValueSatisfying(
+                            rc -> {
+                                assertThat(rc.getResultCode()).isEqualTo("APPC");
+                                assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
+                                assertThat(rc.getEndDate()).isNull();
+                            });
         }
 
         @Test
-        @DisplayName(
-                "when multiple rows are active for the same code, prefers endDate = null over a future endDate")
-        void prefersNullEndDate_whenMultipleActive() {
+        void selectsHighestDateValidIdBeforeTitleFilteringAndPagination() {
             LocalDate t = today();
 
             ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
-            additionalActiveWithEndDate.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+            additionalActiveWithEndDate.setId(900000000L);
             additionalActiveWithEndDate.setResultCode("APPC");
-            additionalActiveWithEndDate.setTitle("Some other APPC title (should not win)");
+            additionalActiveWithEndDate.setTitle("Latest bounded APPC");
             additionalActiveWithEndDate.setWording("Dummy wording");
             additionalActiveWithEndDate.setStartDate(t.minusDays(10));
-            additionalActiveWithEndDate.setEndDate(t.plusDays(10));
+            additionalActiveWithEndDate.setEndDate(t);
             additionalActiveWithEndDate.setChangedBy(1L);
             additionalActiveWithEndDate.setChangedDate(OffsetDateTime.now(clock));
 
-            ResolutionCode savedWithEndDate = repository.saveAndFlush(additionalActiveWithEndDate);
+            final var savedWithEndDate = repository.saveAndFlush(additionalActiveWithEndDate);
 
-            List<ResolutionCode> result = repository.findPrioritisingNullEndDate("APPC", today());
-
-            assertThat(result).hasSize(2);
-
-            assertThat(result.getFirst().getEndDate()).isNull();
-            assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
-            assertThat(result.get(1).getId()).isEqualTo(savedWithEndDate.getId());
-            assertThat(result.get(1).getEndDate()).isEqualTo(t.plusDays(10));
+            var future = new ResolutionCode();
+            future.setId(900000001L);
+            future.setResultCode("APPC");
+            future.setTitle("Future");
+            future.setWording("Future wording");
+            future.setStartDate(t.plusDays(1));
+            future.setChangedBy(1L);
+            future.setChangedDate(OffsetDateTime.now(clock));
+            repository.saveAndFlush(future);
+            var expired = new ResolutionCode();
+            expired.setId(900000002L);
+            expired.setResultCode("APPC");
+            expired.setTitle("Expired");
+            expired.setWording("Expired wording");
+            expired.setStartDate(t.minusDays(10));
+            expired.setEndDate(t.minusDays(1));
+            expired.setChangedBy(1L);
+            expired.setChangedDate(OffsetDateTime.now(clock));
+            repository.saveAndFlush(expired);
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t))
+                    .map(ResolutionCode::getId)
+                    .contains(savedWithEndDate.getId());
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t.minusDays(10)))
+                    .map(ResolutionCode::getId)
+                    .contains(expired.getId());
+            var page = repository.findActiveOnDate("APPC", null, t, PageRequest.of(0, 1));
+            assertThat(page.getContent())
+                    .extracting(ResolutionCode::getId)
+                    .containsExactly(savedWithEndDate.getId());
+            assertThat(page.getTotalElements()).isEqualTo(1);
+            assertThat(
+                            repository.findActiveOnDate(
+                                    "APPC", "Appeal to Crown Court", t, PageRequest.of(0, 10)))
+                    .isEmpty();
+            var first =
+                    repository.findActiveOnDate(
+                            "AP", null, t, PageRequest.of(0, 1, Sort.by("resultCode")));
+            var second =
+                    repository.findActiveOnDate(
+                            "AP", null, t, PageRequest.of(1, 1, Sort.by("resultCode")));
+            assertThat(first.getTotalElements()).isEqualTo(2);
+            assertThat(second.getTotalElements()).isEqualTo(2);
+            assertThat(first.getContent().getFirst().getResultCode())
+                    .isNotEqualTo(second.getContent().getFirst().getResultCode());
         }
 
         @Test
         @DisplayName("returns empty when no active row exists for the given code")
         void returnsEmpty_whenNotFound() {
-            List<ResolutionCode> result =
-                    repository.findPrioritisingNullEndDate("DOES_NOT_EXIST", today());
+            var result =
+                    repository.findActiveResolutionCodesByCodeAndDate("DOES_NOT_EXIST", today());
 
             assertThat(result).isEmpty();
         }

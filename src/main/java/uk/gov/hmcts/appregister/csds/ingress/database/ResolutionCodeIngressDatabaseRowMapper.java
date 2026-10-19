@@ -16,6 +16,7 @@ public class ResolutionCodeIngressDatabaseRowMapper
                 RowMapper<ResolutionCodeIngressRecord> {
     private static final String TECHNICAL_USERNAME = "CSDS_INGRESS";
     private static final String ID = "rc_id";
+    private static final String CSDS_ID = "csds_id";
     private static final String CODE = "resolution_code";
     private static final String TITLE = "resolution_code_title";
     private static final String WORDING = "resolution_code_wording";
@@ -31,6 +32,7 @@ public class ResolutionCodeIngressDatabaseRowMapper
     private static final List<String> COLUMNS =
             List.of(
                     ID,
+                    CSDS_ID,
                     CODE,
                     TITLE,
                     WORDING,
@@ -45,6 +47,7 @@ public class ResolutionCodeIngressDatabaseRowMapper
                     USER_NAME);
     private static final List<String> UPDATABLE_COLUMNS =
             List.of(
+                    CSDS_ID,
                     CODE,
                     TITLE,
                     WORDING,
@@ -82,6 +85,7 @@ public class ResolutionCodeIngressDatabaseRowMapper
     public Map<String, Object> toRow(ResolutionCodeIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
         row.put(ID, item.id());
+        row.put(CSDS_ID, item.csdsId());
         row.put(CODE, item.code());
         row.put(TITLE, item.title());
         row.put(WORDING, item.wording());
@@ -99,6 +103,8 @@ public class ResolutionCodeIngressDatabaseRowMapper
 
     @Override
     public ResolutionCodeIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+        var remoteId = rs.getLong(CSDS_ID);
+        Long csdsId = rs.wasNull() ? null : remoteId;
         return new ResolutionCodeIngressRecord(
                 rs.getLong(ID),
                 rs.getString(CODE),
@@ -109,6 +115,7 @@ public class ResolutionCodeIngressDatabaseRowMapper
                 rs.getString(EMAIL_2),
                 rs.getObject(START_DATE, LocalDate.class),
                 rs.getObject(END_DATE, LocalDate.class),
-                rs.getLong(VERSION));
+                rs.getLong(VERSION),
+                csdsId);
     }
 }

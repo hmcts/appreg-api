@@ -58,10 +58,10 @@ public class ResolutionCodeDiffReportingService
         var incomingRecordsByRcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, RC_ID) != null)
+                        .filter(item -> nullableLong(item, "ResolutionCodeID") != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, RC_ID),
+                                        item -> nullableLong(item, "ResolutionCodeID"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -69,10 +69,10 @@ public class ResolutionCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                incomingRecordsByRcId.get(item.incoming().csdsId()),
                                                 "PSSResolutionCodeID"),
                                         nullableLong(
-                                                incomingRecordsByRcId.get(item.intended().id()),
+                                                incomingRecordsByRcId.get(item.incoming().csdsId()),
                                                 "ResolutionCodeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
@@ -132,7 +132,7 @@ public class ResolutionCodeDiffReportingService
         return String.join(
                         ",",
                         csvValue((Object) null),
-                        csvValue((Object) null),
+                        csvValue(item.csdsId()),
                         csvValue(item.id()),
                         csvValue(item.code()),
                         csvValue(item.title()),

@@ -2,10 +2,11 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
+import lombok.With;
 import org.jspecify.annotations.Nullable;
 
 public record ResolutionCodeIngressRecord(
-        Long id,
+        @With Long id,
         String code,
         String title,
         String wording,
@@ -14,8 +15,8 @@ public record ResolutionCodeIngressRecord(
         String recipient2Email,
         LocalDate startDate,
         LocalDate endDate,
-        Long version) {
-    private static final String RC_ID_FIELD = "RC_ID";
+        Long version,
+        Long csdsId) {
     private static final String RESOLUTION_CODE_ID_FIELD = "ResolutionCodeID";
     private static final String PSS_RESOLUTION_CODE_ID_FIELD = "PSSResolutionCodeID";
     private static final long NEW_RECORD_ID_OFFSET = 100000L;
@@ -26,15 +27,12 @@ public record ResolutionCodeIngressRecord(
             return pssResolutionCodeId;
         }
 
-        return resolutionCodeId == null ? null : resolutionCodeId + NEW_RECORD_ID_OFFSET;
+        return resolutionCodeId == null
+                ? null
+                : Math.addExact(resolutionCodeId, NEW_RECORD_ID_OFFSET);
     }
 
     public static @Nullable Long resolveId(JsonNode node) {
-        var resolvedId = nullableLong(node, RC_ID_FIELD);
-        if (resolvedId != null) {
-            return resolvedId;
-        }
-
         return calculateId(
                 nullableLong(node, PSS_RESOLUTION_CODE_ID_FIELD),
                 nullableLong(node, RESOLUTION_CODE_ID_FIELD));
