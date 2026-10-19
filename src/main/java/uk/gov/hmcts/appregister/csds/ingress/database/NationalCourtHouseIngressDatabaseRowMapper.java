@@ -15,6 +15,7 @@ public class NationalCourtHouseIngressDatabaseRowMapper
         implements IngressDatabaseRowMapper<NationalCourtHouseIngressRecord>,
                 RowMapper<NationalCourtHouseIngressRecord> {
     private static final String ID = "nch_id";
+    private static final String CSDS_ID = "csds_id";
     private static final String NAME = "courthouse_name";
     private static final String VERSION = "version_number";
     private static final String CHANGED_BY = "changed_by";
@@ -30,6 +31,7 @@ public class NationalCourtHouseIngressDatabaseRowMapper
     private static final List<String> COLUMNS =
             List.of(
                     ID,
+                    CSDS_ID,
                     NAME,
                     VERSION,
                     CHANGED_BY,
@@ -59,6 +61,7 @@ public class NationalCourtHouseIngressDatabaseRowMapper
     public Map<String, Object> toRow(NationalCourtHouseIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
         row.put(ID, item.id());
+        row.put(CSDS_ID, item.csdsId());
         row.put(NAME, item.name());
         row.put(VERSION, item.version());
         row.put(CHANGED_BY, 0L);
@@ -78,8 +81,11 @@ public class NationalCourtHouseIngressDatabaseRowMapper
 
     @Override
     public NationalCourtHouseIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+        var csdsId = rs.getLong(CSDS_ID);
+        Long nullableCsdsId = rs.wasNull() ? null : csdsId;
         return new NationalCourtHouseIngressRecord(
                 rs.getLong(ID),
+                nullableCsdsId,
                 rs.getString(NAME),
                 rs.getLong(VERSION),
                 rs.getObject(START_DATE, LocalDate.class),

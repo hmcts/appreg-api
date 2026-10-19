@@ -82,7 +82,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                 0L,
                 "CHOA",
                 LocalDate.of(1900, 1, 1),
-                "OLD");
+                "B01CF00");
     }
 
     @Test
@@ -160,6 +160,47 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                                 resultSet.getString("court_type"),
                                 resultSet.getString("court_location_code"),
                                 resultSet.getString("sl_courthouse_name")));
+    }
+
+    @Autowired private NationalCourtHouseDataIngressProcessor courtHouseProcessor;
+
+    @Test
+    void preservesLegacyAndFutureVersionsAndSkipsReplay() {
+        var source = sourceRecord(3802L, 3106L, "Updated legacy", null, "B01CF00", 2L);
+        var page = OBJECT_MAPPER.createObjectNode();
+        page.putArray("records").add(source);
+        var first = courtHouseProcessor.ingest(List.of(page));
+        assertThat(first.getInserted()).isZero();
+        assertThat(first.getUpdated()).isEqualTo(1);
+        var legacy =
+                jdbcTemplate.queryForMap(
+                        "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 3106"
+                                .formatted(schema));
+        assertThat(legacy.get("csds_id")).isEqualTo(3802);
+        source.put("CourtID", 3804).put("CourtName", "Future").put("StartDate", "2099-01-01");
+        var second = courtHouseProcessor.ingest(List.of(page));
+        assertThat(second.getInserted()).isEqualTo(1);
+        assertThat(second.getUpdated()).isZero();
+        assertThat(
+                        jdbcTemplate.queryForMap(
+                                "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 3106"
+                                        .formatted(schema)))
+                .isEqualTo(legacy);
+        var future =
+                jdbcTemplate.queryForMap(
+                        "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 103804"
+                                .formatted(schema));
+        assertThat(future.get("csds_id")).isEqualTo(3804);
+        assertThat(future.get("start_date").toString()).startsWith("2099-01-01");
+        source.put("CourtName", "Ignored replay");
+        var replay = courtHouseProcessor.ingest(List.of(page));
+        assertThat(replay.getInserted()).isZero();
+        assertThat(replay.getUpdated()).isZero();
+        assertThat(
+                        jdbcTemplate.queryForMap(
+                                "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 103804"
+                                        .formatted(schema)))
+                .isEqualTo(future);
     }
 
     private ObjectNode sourceRecord(

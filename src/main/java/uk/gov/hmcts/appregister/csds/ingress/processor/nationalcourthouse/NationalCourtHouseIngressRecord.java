@@ -2,17 +2,18 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
+import lombok.With;
 import org.jspecify.annotations.Nullable;
 
 public record NationalCourtHouseIngressRecord(
-        Long id,
+        @With Long id,
+        Long csdsId,
         String name,
         Long version,
         LocalDate startDate,
         LocalDate endDate,
         String courtLocationCode,
         String welshName) {
-    private static final String NCH_ID_FIELD = "NCH_ID";
     private static final String COURT_ID_FIELD = "CourtID";
     private static final String PSS_NATIONAL_COURTHOUSE_ID_FIELD = "PSSNationalCourthouseID";
     private static final long NEW_RECORD_ID_OFFSET = 100000L;
@@ -22,14 +23,10 @@ public record NationalCourtHouseIngressRecord(
         if (pssNationalCourtHouseId != null) {
             return pssNationalCourtHouseId;
         }
-        return courtId == null ? null : courtId + NEW_RECORD_ID_OFFSET;
+        return courtId == null ? null : Math.addExact(courtId, NEW_RECORD_ID_OFFSET);
     }
 
     public static @Nullable Long resolveId(JsonNode node) {
-        var resolvedId = nullableLong(node, NCH_ID_FIELD);
-        if (resolvedId != null) {
-            return resolvedId;
-        }
         return calculateId(
                 nullableLong(node, PSS_NATIONAL_COURTHOUSE_ID_FIELD),
                 nullableLong(node, COURT_ID_FIELD));

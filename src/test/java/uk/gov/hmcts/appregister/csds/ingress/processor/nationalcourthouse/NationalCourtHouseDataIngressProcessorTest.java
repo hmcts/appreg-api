@@ -30,6 +30,8 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
@@ -129,11 +131,12 @@ class NationalCourtHouseDataIngressProcessorTest {
         var existing =
                 new NationalCourtHouseIngressRecord(
                         3106L,
+                        null,
                         "Old Court",
                         1L,
                         LocalDate.of(1900, Month.JANUARY, 1),
                         null,
-                        "OLD",
+                        "B01CF00",
                         null);
         when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
                 .thenReturn(List.of(existing));
@@ -143,7 +146,8 @@ class NationalCourtHouseDataIngressProcessorTest {
                         List.of(
                                 page(
                                         sourceRecord(3802L, 3106L, "Updated Court", 2L),
-                                        sourceRecord(3803L, null, "New Court", 1L))));
+                                        sourceRecord(3803L, null, "New Court", 1L)
+                                                .put("CourtLocationCode", "NEW"))));
 
         assertThat(response.getInserted()).isEqualTo(1);
         assertThat(response.getUpdated()).isEqualTo(1);
@@ -184,16 +188,17 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void given_duplicateResolvedId_when_ingest_then_rejectsBeforeDatabaseRead() {
+    void given_duplicateRemoteId_when_ingest_then_rejectsBeforeDatabaseRead() {
         List<JsonNode> processedData =
                 List.of(
                         page(
                                 sourceRecord(3802L, 3106L, "First Court", 1L),
-                                sourceRecord(3803L, 3106L, "Duplicate Court", 1L)));
+                                sourceRecord(3802L, 3106L, "Duplicate Court", 1L)
+                                        .put("CourtLocationCode", "OTHER")));
 
         assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming NCH_ID 3106");
+                .hasMessageContaining("Duplicate incoming CSDS_ID 3802");
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
@@ -216,7 +221,7 @@ class NationalCourtHouseDataIngressProcessorTest {
 
         assertThatThrownBy(() -> processor.ingest(processedData))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("NCH_ID");
+                .hasMessageContaining("CourtID");
     }
 
     @Test
@@ -243,6 +248,143 @@ class NationalCourtHouseDataIngressProcessorTest {
     @Test
     void given_emptyInput_when_preProcess_then_returnsEmptyInput() {
         assertThat(processor.preProcess(List.of())).isEmpty();
+    }
+
+    @Test
+    void rejectsDuplicateCodesAcrossPagesIgnoringCase() {
+        var first = sourceRecord(3802L, 3106L, "First", 1L);
+        var second = sourceRecord(3803L, null, "Second", 1L).put("CourtLocationCode", "b01cf00");
+        assertThatThrownBy(() -> processor.ingest(List.of(page(first), page(second))))
+                .hasMessageContaining("Duplicate incoming CourtLocationCode");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
+    }
+
+    @Test
+    void rejectsMissingBlankAndNonTextCodesBeforeWrites() throws Exception {
+        for (var json : List.of("null", "\"\"", "\"   \"", "123", "true")) {
+            var source = sourceRecord(3802L, null, "Court", 1L);
+            source.set("CourtLocationCode", OBJECT_MAPPER.readTree(json));
+            assertThatThrownBy(() -> processor.ingest(List.of(page(source))))
+                    .hasMessageContaining("CourtLocationCode");
+        }
+        verifyNoInteractions(tableReadService, bulkUpsertService);
+    }
+
+    @Test
+    void rejectsInvalidIdentifiersEvenWithSpoofedLocalId() throws Exception {
+        for (var field : List.of("CourtID", "PSSNationalCourthouseID")) {
+            for (var json : List.of("0", "-1", "1.5", "\"3802\"", "true", "9223372036854775808")) {
+                var source = sourceRecord(3802L, 3106L, "Court", 1L).put("NCH_ID", 1);
+                source.set(field, OBJECT_MAPPER.readTree(json));
+                assertThatThrownBy(() -> processor.ingest(List.of(page(source))))
+                        .hasMessageContaining(field);
+            }
+        }
+        var source = sourceRecord(2147483648L, 3106L, "Court", 1L);
+        assertThatThrownBy(() -> processor.ingest(List.of(page(source))))
+                .hasMessageContaining("CourtID");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
+    }
+
+    @Test
+    void insertsSeparateFutureVersionAndReportsItsFinalId() throws Exception {
+        var original =
+                new NationalCourtHouseIngressRecord(
+                        3106L,
+                        3802L,
+                        "Original",
+                        1L,
+                        LocalDate.of(2020, 1, 1),
+                        null,
+                        "B01CF00",
+                        null);
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(List.of(original));
+        var source =
+                sourceRecord(3803L, 3106L, "Future", 2L)
+                        .put("StartDate", "2099-01-01")
+                        .put("NCH_ID", 999);
+        var pages = processor.preProcess(List.of(page(source)));
+        var diff = processor.diff(pages);
+        assertThat(diff.diffRecords())
+                .singleElement()
+                .satisfies(
+                        item -> {
+                            assertThat(item.intended().id()).isEqualTo(103803L);
+                            assertThat(item.intended().csdsId()).isEqualTo(3803L);
+                            assertThat(item.intended().startDate())
+                                    .isEqualTo(LocalDate.of(2099, 1, 1));
+                            assertThat(item.existing()).isNull();
+                        });
+        assertThat(processor.buildSuccessAudits(pages, diff).toString())
+                .contains("103803", "3803", "Future");
+        var failure =
+                new CsdsBatchUpsertException(
+                        "failed",
+                        null,
+                        List.of(
+                                new FailedUpsertRecord<>(
+                                        diff.diffRecords().getFirst().intended(), "failed row")));
+        assertThat(processor.buildFailureAudits(pages, diff, failure).toString())
+                .contains("103803", "3803", "Future", "failed row");
+        processor.report(pages, diff);
+        try (var files = Files.list(tempDir)) {
+            var report =
+                    files.filter(
+                                    path ->
+                                            path.getFileName()
+                                                            .toString()
+                                                            .startsWith(
+                                                                    "national_court_houses_diff_")
+                                                    && path.toString().endsWith(".csv"))
+                            .findFirst()
+                            .orElseThrow();
+            assertThat(Files.readString(report)).contains("\"103803\"", "\"3803\"", "\"3106\"");
+        }
+    }
+
+    @Test
+    void replayIsIgnoredButOffsetCollisionsAreRejected() {
+        var original =
+                new NationalCourtHouseIngressRecord(
+                        103802L,
+                        3802L,
+                        "Original",
+                        1L,
+                        LocalDate.of(2020, 1, 1),
+                        null,
+                        "B01CF00",
+                        null);
+        when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                .thenReturn(List.of(original));
+        var pages = processor.preProcess(List.of(page(sourceRecord(3802L, null, "Changed", 2L))));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
+        var collision = sourceRecord(3802L, null, "Other", 1L).put("CourtLocationCode", "OTHER");
+        assertThatThrownBy(() -> processor.ingest(List.of(page(collision))))
+                .hasMessageContaining("Generated NCH_ID 103802 collides");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void mismatchedOrUncodedLegacyRowsAreNotOverwritten() {
+        for (var oldCode : new String[] {"OTHER", null}) {
+            var original =
+                    new NationalCourtHouseIngressRecord(
+                            3106L,
+                            null,
+                            "Original",
+                            1L,
+                            LocalDate.of(2020, 1, 1),
+                            null,
+                            oldCode,
+                            null);
+            when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
+                    .thenReturn(List.of(original));
+            var pages = processor.preProcess(List.of(page(sourceRecord(3802L, 3106L, "New", 1L))));
+            assertThat(processor.diff(pages).diffRecords())
+                    .singleElement()
+                    .satisfies(item -> assertThat(item.intended().id()).isEqualTo(103802L));
+        }
     }
 
     private ObjectNode sourceRecord(Long courtId, Long pssId, String name, Long version) {

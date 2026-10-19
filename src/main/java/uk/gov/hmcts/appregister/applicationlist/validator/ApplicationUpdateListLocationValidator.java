@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
@@ -107,15 +108,25 @@ public class ApplicationUpdateListLocationValidator
         }
 
         // validate the location fields
-        return super.validate(
-                dto,
-                (payload, updateLocatedList) -> {
-                    updateLocatedList.setApplicationList(applicationListList.get());
-                    if (createApplicationSupplier != null) {
-                        return createApplicationSupplier.apply(payload, updateLocatedList);
-                    }
-                    return null;
-                });
+        var result = getResult();
+        result.setApplicationList(applicationListList.get());
+        return super.validate(dto, result, createApplicationSupplier);
+    }
+
+    @Override
+    protected void validateCourt(
+            PayloadForUpdate<ApplicationListUpdateDto> dto, ListUpdateValidationSuccess result) {
+        var storedList = result.getApplicationList();
+        if (getCourtLocation().apply(dto).trim().equalsIgnoreCase(storedList.getCourtCode())) {
+            // Lists store code/name snapshots, not courthouse IDs. This mapping input is never
+            // saved.
+            var snapshot = new NationalCourtHouse();
+            snapshot.setCourtLocationCode(storedList.getCourtCode());
+            snapshot.setName(storedList.getCourtName());
+            result.setNationalCourtHouse(snapshot);
+            return;
+        }
+        super.validateCourt(dto, result);
     }
 
     /**

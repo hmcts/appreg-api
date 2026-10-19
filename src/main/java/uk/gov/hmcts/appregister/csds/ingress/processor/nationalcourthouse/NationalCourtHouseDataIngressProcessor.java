@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -145,7 +146,7 @@ public class NationalCourtHouseDataIngressProcessor
             List<JsonNode> processedData, NationalCourtHouseDiffResult diff) {
         return buildSuccessAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 NationalCourtHouseIngressRecord::id);
     }
 
@@ -156,7 +157,7 @@ public class NationalCourtHouseDataIngressProcessor
             CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 NationalCourtHouseIngressRecord::id,
                 NationalCourtHouseIngressRecord.class,
                 ex);
@@ -182,13 +183,18 @@ public class NationalCourtHouseDataIngressProcessor
     }
 
     private NationalCourtHouseIngressRecord toSourceRecord(JsonNode node) {
+        val code = node.get("CourtLocationCode");
+        if (code == null || !code.isTextual() || code.textValue().isBlank()) {
+            throw invalidField(node, "CourtLocationCode");
+        }
         return new NationalCourtHouseIngressRecord(
-                requiredLong(node, NCH_ID),
+                nullableLong(node, "PSSNationalCourthouseID"),
+                requiredLong(node, "CourtID"),
                 requiredText(node, "CourtName"),
                 requiredLong(node, "RevisionNumber"),
                 requiredLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                nullableText(node, "CourtLocationCode"),
+                requiredText(node, "CourtLocationCode"),
                 nullableText(node, "CourtWelshName"));
     }
 
@@ -197,11 +203,34 @@ public class NationalCourtHouseDataIngressProcessor
             return node;
         }
         val copiedRecord = objectNode.deepCopy();
+        validateId(copiedRecord, "CourtID", false);
+        validateId(copiedRecord, "PSSNationalCourthouseID", true);
         copiedRecord.put(NCH_ID, NationalCourtHouseIngressRecord.resolveId(copiedRecord));
         return copiedRecord;
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, NCH_ID));
+    private void validateId(JsonNode node, String fieldName, boolean nullable) {
+        val field = node.get(fieldName);
+        if (nullable && (field == null || field.isNull())) {
+            return;
+        }
+        if (field == null
+                || !field.isIntegralNumber()
+                || !field.canConvertToLong()
+                || (!nullable && !field.canConvertToInt())
+                || field.longValue() <= 0) {
+            throw invalidField(node, fieldName);
+        }
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(
+            List<JsonNode> processedData, NationalCourtHouseDiffResult diff) {
+        val sourceByCsdsId =
+                indexSourceRecords(processedData, node -> nullableLong(node, "CourtID"));
+        return diff.diffRecords().stream()
+                .collect(
+                        Collectors.toMap(
+                                item -> item.intended().id(),
+                                item -> sourceByCsdsId.get(item.incoming().csdsId())));
     }
 }

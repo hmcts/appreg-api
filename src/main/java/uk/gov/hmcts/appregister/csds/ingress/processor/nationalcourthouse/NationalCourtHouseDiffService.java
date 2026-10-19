@@ -1,8 +1,11 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.nationalcourthouse;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,19 +24,29 @@ import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 @RequiredArgsConstructor
 public class NationalCourtHouseDiffService
         implements IngressDiffService<NationalCourtHouseDiffRequest, NationalCourtHouseDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH = "no existing nch_id match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing nch_id match";
-
     private final JdbcIngressTableReadService tableReadService;
     private final NationalCourtHouseIngressDatabaseRowMapper rowMapper;
 
     @Override
     public NationalCourtHouseDiffResult diff(NationalCourtHouseDiffRequest request) {
         val incomingById = new LinkedHashMap<Long, NationalCourtHouseIngressRecord>();
+        val incomingCodes = new HashSet<String>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
-                .forEach(item -> addIncomingRecord(request.targetTable(), incomingById, item));
+                .forEach(
+                        item -> {
+                            if (!incomingCodes.add(
+                                    item.courtLocationCode().toUpperCase(Locale.ROOT))) {
+                                throw new AppRegistryException(
+                                        CommonAppError.INTERNAL_SERVER_ERROR,
+                                        "Duplicate incoming CourtLocationCode "
+                                                + item.courtLocationCode()
+                                                + " detected for "
+                                                + request.targetTable());
+                            }
+                            addIncomingRecord(request.targetTable(), incomingById, item);
+                        });
 
         log.info("Loading existing CSDS comparison rows from {}", request.targetTable());
         val existingById =
@@ -51,9 +64,51 @@ public class NationalCourtHouseDiffService
                                 NationalCourtHouseIngressRecord,
                                 NationalCourtHouseIngressRecord,
                                 NationalCourtHouseIngressRecord>>();
+        val occupiedIds = new HashSet<>(existingById.keySet());
+        val receivedVersions = new HashSet<Map.Entry<Long, String>>();
+        existingById.values().stream()
+                .filter(item -> item.csdsId() != null && item.courtLocationCode() != null)
+                .forEach(
+                        item ->
+                                receivedVersions.add(
+                                        Map.entry(
+                                                item.csdsId(),
+                                                item.courtLocationCode()
+                                                        .toUpperCase(Locale.ROOT))));
         for (val incoming : incomingById.values()) {
+            if (receivedVersions.contains(
+                    Map.entry(
+                            incoming.csdsId(),
+                            incoming.courtLocationCode().toUpperCase(Locale.ROOT)))) {
+                continue;
+            }
             val existing = existingById.get(incoming.id());
-            diffRecords.add(determineDiffRecord(existing, incoming));
+            val legacyMatch =
+                    existing != null
+                            && existing.csdsId() == null
+                            && incoming.courtLocationCode()
+                                    .equalsIgnoreCase(existing.courtLocationCode());
+            val intended =
+                    incoming.withId(
+                            legacyMatch
+                                    ? existing.id()
+                                    : Math.addExact(incoming.csdsId(), 100000L));
+            if (!legacyMatch && !occupiedIds.add(intended.id())) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "Generated NCH_ID "
+                                + intended.id()
+                                + " collides with an existing or planned record");
+            }
+            diffRecords.add(
+                    new IngressDiffRecord<>(
+                            legacyMatch ? IngressOperation.UPDATE : IngressOperation.INSERT,
+                            incoming,
+                            legacyMatch ? existing : null,
+                            intended,
+                            legacyMatch
+                                    ? "first CSDS receipt of legacy record"
+                                    : "new CSDS version"));
         }
 
         return new NationalCourtHouseDiffResult(
@@ -64,43 +119,20 @@ public class NationalCourtHouseDiffService
             String targetTable,
             LinkedHashMap<Long, NationalCourtHouseIngressRecord> incomingById,
             NationalCourtHouseIngressRecord item) {
-        val existing = incomingById.putIfAbsent(item.id(), item);
+        val existing = incomingById.putIfAbsent(item.csdsId(), item);
         if (existing == null) {
             return;
         }
 
         log.error(
-                "Duplicate incoming NCH_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
-                item.id(),
+                "Duplicate incoming CSDS_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.csdsId(),
                 targetTable,
                 describe(existing),
                 describe(item));
         throw new AppRegistryException(
                 CommonAppError.INTERNAL_SERVER_ERROR,
-                "Duplicate incoming NCH_ID " + item.id() + " detected for " + targetTable);
-    }
-
-    private IngressDiffRecord<
-                    NationalCourtHouseIngressRecord,
-                    NationalCourtHouseIngressRecord,
-                    NationalCourtHouseIngressRecord>
-            determineDiffRecord(
-                    NationalCourtHouseIngressRecord existing,
-                    NationalCourtHouseIngressRecord incoming) {
-        if (existing == null) {
-            return new IngressDiffRecord<>(
-                    IngressOperation.INSERT,
-                    incoming,
-                    null,
-                    incoming,
-                    INSERT_REASON_NO_EXISTING_MATCH);
-        }
-        return new IngressDiffRecord<>(
-                IngressOperation.UPDATE,
-                incoming,
-                existing,
-                incoming,
-                UPDATE_REASON_EXISTING_MATCH);
+                "Duplicate incoming CSDS_ID " + item.csdsId() + " detected for " + targetTable);
     }
 
     private String describe(NationalCourtHouseIngressRecord item) {

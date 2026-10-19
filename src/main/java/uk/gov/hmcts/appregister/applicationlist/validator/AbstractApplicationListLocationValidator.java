@@ -111,6 +111,11 @@ public abstract class AbstractApplicationListLocationValidator<
 
     @Override
     public <R> R validate(T dto, BiFunction<T, O, R> createApplicationSupplier) {
+        return validate(dto, getResult(), createApplicationSupplier);
+    }
+
+    protected <R> R validate(
+            T dto, O createApplication, BiFunction<T, O, R> createApplicationSupplier) {
         String court = getCourtLocation().apply(dto);
         String cja = getCjaCode().apply(dto);
         String other = getLocationDescription().apply(dto);
@@ -128,7 +133,6 @@ public abstract class AbstractApplicationListLocationValidator<
                     "Provide either 'courtLocation', or both a 'cja code' and a 'otherLocationDescription'.");
         }
 
-        O createApplication = getResult();
         // validate the court and justice area
         if (hasCourt) {
             // double-check to make sure other description has not been included
@@ -211,7 +215,7 @@ public abstract class AbstractApplicationListLocationValidator<
      *
      * @param dto The dto type top validate
      */
-    private void validateCourt(T dto, O createApplication) {
+    protected void validateCourt(T dto, O createApplication) {
         LocalDate todayUk = businessDateProvider.currentUkDate();
         var courtCode = getCourtLocation().apply(dto).trim();
         final List<NationalCourtHouse> courts =

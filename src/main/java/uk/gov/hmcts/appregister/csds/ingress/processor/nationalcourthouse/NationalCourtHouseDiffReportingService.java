@@ -56,13 +56,13 @@ public class NationalCourtHouseDiffReportingService
                                     NationalCourtHouseIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByNchId =
+        var incomingRecordsByCsdsId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, NCH_ID) != null)
+                        .filter(item -> nullableLong(item, "CourtID") != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, NCH_ID),
+                                        item -> nullableLong(item, "CourtID"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -70,10 +70,12 @@ public class NationalCourtHouseDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByNchId.get(item.intended().id()),
+                                                incomingRecordsByCsdsId.get(
+                                                        item.incoming().csdsId()),
                                                 "PSSNationalCourthouseID"),
                                         nullableLong(
-                                                incomingRecordsByNchId.get(item.intended().id()),
+                                                incomingRecordsByCsdsId.get(
+                                                        item.incoming().csdsId()),
                                                 "CourtID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
@@ -128,7 +130,7 @@ public class NationalCourtHouseDiffReportingService
         return String.join(
                         ",",
                         csvValue((Object) null),
-                        csvValue((Object) null),
+                        csvValue(item.csdsId()),
                         csvValue(item.id()),
                         csvValue(item.name()),
                         csvValue(item.welshName()),

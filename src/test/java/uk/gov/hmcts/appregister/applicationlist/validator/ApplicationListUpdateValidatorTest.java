@@ -102,6 +102,35 @@ class ApplicationListUpdateValidatorTest {
     }
 
     @Test
+    void unchangedCourtKeepsStoredSnapshotWithoutActiveLookup() {
+        var stored = new ApplicationList();
+        stored.setCourtCode("OLD");
+        stored.setCourtName("Historic court name");
+        var id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(stored));
+        var dto = new ApplicationListUpdateDto().courtLocationCode(" old ");
+        var result = validator.validate(new PayloadForUpdate<>(dto, id), (input, output) -> output);
+        assertEquals("OLD", result.getNationalCourtHouse().getCourtLocationCode());
+        assertEquals("Historic court name", result.getNationalCourtHouse().getName());
+        verify(courtHouseRepository, never()).findActiveCourts(any(), any());
+    }
+
+    @Test
+    void changedCourtUsesActiveLookup() {
+        var stored = new ApplicationList();
+        stored.setCourtCode("OLD");
+        var id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(stored));
+        var current = new NationalCourtHouse();
+        current.setCourtLocationCode("NEW");
+        current.setName("Current court");
+        when(courtHouseRepository.findActiveCourts("NEW", TODAY_UK)).thenReturn(List.of(current));
+        var dto = new ApplicationListUpdateDto().courtLocationCode("NEW");
+        var result = validator.validate(new PayloadForUpdate<>(dto, id), (input, output) -> output);
+        Assertions.assertSame(current, result.getNationalCourtHouse());
+    }
+
+    @Test
     void update_noCourtReturnedFromRepository_throwsAppRegException() {
         // given
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
