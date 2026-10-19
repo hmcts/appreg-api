@@ -54,6 +54,7 @@ alter table national_court_houses add constraint nch_pk primary key (nch_id);
 
 alter table national_court_houses add csds_id integer null;
 
+alter table national_court_houses alter column court_location_code DROP NOT NULL;
 
 -- standard_applicants table
 alter table application_list_entries drop constraint ale_sa_fk;   
