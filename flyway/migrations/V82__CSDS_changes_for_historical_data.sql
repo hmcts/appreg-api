@@ -62,4 +62,3 @@ alter table standard_applicants drop constraint standard_applicant_pk;
 alter table standard_applicants add constraint standard_applicant_pk primary key (sa_id);
 
 alter table application_list_entries add constraint ale_sa_fk foreign key (sa_sa_id) references standard_applicants(sa_id);
-
