@@ -15,7 +15,6 @@ alter table application_codes add constraint application_codes_pk primary key (a
 
 alter table application_list_entries add constraint ale_ac_fk foreign key (ac_ac_id) references application_codes(ac_id);
 
-alter table application_codes add csds_id integer null;
 
 
 -- resolution_codes table
@@ -29,7 +28,6 @@ alter table resolution_codes add constraint resolution_codes_pk primary key (rc_
 
 alter table app_list_entry_resolutions add constraint aler_rc_fk foreign key (rc_rc_id) references resolution_codes(rc_id);
 
-alter table resolution_codes add csds_id integer null;
 
 
 -- fee table
@@ -43,7 +41,6 @@ alter table fee add constraint fee_pk primary key (fee_id);
 
 alter table app_list_entry_fee_id add constraint alefi_fee_fk foreign key (fee_fee_id) references fee(fee_id);
 
-alter table fee add csds_id integer null;
 
 -- nch table
 alter table national_court_houses drop constraint nch_id_key;
@@ -52,8 +49,8 @@ alter table national_court_houses drop constraint nch_pk;
 
 alter table national_court_houses add constraint nch_pk primary key (nch_id);
 
-alter table national_court_houses add csds_id integer null;
 
+alter table national_court_houses alter column court_location_code DROP NOT NULL;
 
 -- standard_applicants table
 alter table application_list_entries drop constraint ale_sa_fk;   
@@ -65,5 +62,3 @@ alter table standard_applicants drop constraint standard_applicant_pk;
 alter table standard_applicants add constraint standard_applicant_pk primary key (sa_id);
 
 alter table application_list_entries add constraint ale_sa_fk foreign key (sa_sa_id) references standard_applicants(sa_id);
-
-alter table standard_applicants add csds_id integer null;
