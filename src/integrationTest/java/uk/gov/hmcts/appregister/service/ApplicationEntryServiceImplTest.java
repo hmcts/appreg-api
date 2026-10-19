@@ -278,7 +278,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         assertThat(offsiteFee.getEndDate())
                                 .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
                     }
-                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("29.00"));
+                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("40.00"));
                 });
     }
 

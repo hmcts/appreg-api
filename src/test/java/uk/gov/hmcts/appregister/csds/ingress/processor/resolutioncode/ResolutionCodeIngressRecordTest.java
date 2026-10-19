@@ -19,10 +19,18 @@ class ResolutionCodeIngressRecordTest {
     }
 
     @Test
-    void given_rcIdPresent_when_resolveId_then_useIt() {
+    void given_onlyRcIdPresent_when_resolveId_then_ignoreIt() {
         var record = OBJECT_MAPPER.createObjectNode().put("RC_ID", 123L);
 
-        assertThat(ResolutionCodeIngressRecord.resolveId(record)).isEqualTo(123L);
+        assertThat(ResolutionCodeIngressRecord.resolveId(record)).isNull();
+    }
+
+    @Test
+    void given_rcIdAndRemoteIdPresent_when_resolveId_then_useRemoteId() {
+        var record =
+                OBJECT_MAPPER.createObjectNode().put("RC_ID", 123L).put("ResolutionCodeID", 12L);
+
+        assertThat(ResolutionCodeIngressRecord.resolveId(record)).isEqualTo(100012L);
     }
 
     @Test

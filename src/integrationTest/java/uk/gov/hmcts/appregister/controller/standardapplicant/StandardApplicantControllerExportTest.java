@@ -243,12 +243,15 @@ public class StandardApplicantControllerExportTest
         second.setName("Another Test Organisation");
         repository.saveAndFlush(second);
         var expired = insertStandardApplicant();
+        expired.setApplicantCode("TEST003");
         expired.setApplicantEndDate(LocalDate.now().minusDays(1));
         repository.saveAndFlush(expired);
         var future = insertStandardApplicant();
+        future.setApplicantCode("TEST004");
         future.setApplicantStartDate(LocalDate.now().plusDays(1));
         repository.saveAndFlush(future);
         var nonMatching = insertStandardApplicant();
+        nonMatching.setApplicantCode("TEST005");
         nonMatching.setName("Unrelated");
         nonMatching.setApplicantForename1("Unrelated");
         repository.saveAndFlush(nonMatching);
@@ -311,8 +314,12 @@ public class StandardApplicantControllerExportTest
     @Test
     void printRejectsResultsAboveConfiguredLimit() throws Exception {
         insertStandardApplicant();
-        insertStandardApplicant();
-        insertStandardApplicant();
+        var second = insertStandardApplicant();
+        second.setApplicantCode("TEST002");
+        repository.saveAndFlush(second);
+        var third = insertStandardApplicant();
+        third.setApplicantCode("TEST003");
+        repository.saveAndFlush(third);
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -322,7 +329,7 @@ public class StandardApplicantControllerExportTest
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/reports/print"),
                         token,
-                        rs -> rs.queryParam("code", "TEST001"));
+                        rs -> rs.queryParam("code", "TEST00"));
         response.then().statusCode(400);
         assertThat(response.as(ProblemDetail.class).getDetail())
                 .isEqualTo("Standard Applicant print result limit exceeded");

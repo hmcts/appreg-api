@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
 class StandardApplicantRepositoryTest extends BaseRepositoryTest {
@@ -33,21 +34,21 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                 () -> {
                     var date = LocalDate.of(2026, 1, 1);
                     var old = new StandardApplicantTestData().someComplete();
-                    old.setId(900001L);
+                    old.setId(DatabaseReset.SEQUENCE_START_VALUE + 900001L);
                     old.setApplicantCode("HIST1878");
                     old.setName("Old name");
                     old.setApplicantStartDate(date.minusYears(5));
                     old.setApplicantEndDate(null);
                     persistance.save(old);
                     var latest = new StandardApplicantTestData().someComplete();
-                    latest.setId(900002L);
+                    latest.setId(DatabaseReset.SEQUENCE_START_VALUE + 900002L);
                     latest.setApplicantCode("hist1878");
                     latest.setName("New name");
                     latest.setApplicantStartDate(date.minusDays(1));
                     latest.setApplicantEndDate(date.plusDays(1));
                     persistance.save(latest);
                     var future = new StandardApplicantTestData().someComplete();
-                    future.setId(900003L);
+                    future.setId(DatabaseReset.SEQUENCE_START_VALUE + 900003L);
                     future.setApplicantCode("HIST1878");
                     future.setApplicantStartDate(date.plusDays(2));
                     future.setApplicantEndDate(null);

@@ -174,7 +174,7 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
     @Test
     void givenDuplicateActiveRows_whenGetResultCodeByCodeAndDate_thenReturnsDeterministicRow()
             throws Exception {
-        createDuplicateActiveRows();
+        var expected = createDuplicateActiveRows();
 
         var token =
                 getATokenWithValidCredentials()
@@ -191,14 +191,14 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
         var dto = resp.as(ResultCodeGetDetailDto.class);
         assertThat(dto.getResultCode()).isEqualTo(DUPLICATE_CODE);
-        assertThat(dto.getTitle()).isEqualTo(DUPLICATE_TITLE_2);
-        assertThat(dto.getEndDate().get()).isNull();
+        assertThat(dto.getTitle()).isEqualTo(expected.getTitle());
+        assertThat(dto.getEndDate().get()).isEqualTo(expected.getEndDate());
     }
 
     @Test
     void givenDuplicateActiveRows_whenGetResultCodes_thenCallerSortControlsPageOrder()
             throws Exception {
-        createDuplicateActiveRows();
+        var expected = createDuplicateActiveRows();
 
         var token =
                 getATokenWithValidCredentials()
@@ -219,10 +219,9 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
-        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().getFirst().getResultCode()).isEqualTo(DUPLICATE_CODE);
-        assertThat(page.getContent().getFirst().getTitle()).isEqualTo(DUPLICATE_TITLE_1);
-        assertThat(page.getContent().get(1).getTitle()).isEqualTo(DUPLICATE_TITLE_2);
+        assertThat(page.getContent().getFirst().getTitle()).isEqualTo(expected.getTitle());
     }
 
     @Test
@@ -782,13 +781,15 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
         }
     }
 
-    private void createDuplicateActiveRows() throws Exception {
-        createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
-        createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null);
+    private ResolutionCode createDuplicateActiveRows() throws Exception {
+        var bounded =
+                createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
+        var openEnded = createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null);
+        return bounded.getId() > openEnded.getId() ? bounded : openEnded;
     }
 
-    private void createResultCode(String code, String title, LocalDate startDate, LocalDate endDate)
-            throws Exception {
+    private ResolutionCode createResultCode(
+            String code, String title, LocalDate startDate, LocalDate endDate) throws Exception {
         var jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -801,6 +802,7 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
             resolutionCode.setStartDate(startDate);
             resolutionCode.setEndDate(endDate);
             persistance.save(resolutionCode);
+            return resolutionCode;
         } finally {
             SecurityContextHolder.clearContext();
         }

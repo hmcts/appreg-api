@@ -287,28 +287,29 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
     }
 
     @Test
-    void
-            givenOverlappingActiveApplicationCodesAndFees_whenUpdateListEntry_thenPreferNullEndDateRecords()
-                    throws Exception {
+    void givenOverlappingActiveApplicationCodesAndFees_whenUpdateListEntry_thenSelectHighestIds()
+            throws Exception {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String applicationCodeValue = "ZZ90002";
         String feeReference = "ZZ2.1";
 
-        saveActiveApplicationCode(
-                applicationCodeValue,
-                feeReference,
-                today.plusDays(30),
-                "Fallback overlapping application code");
+        final var boundedCode =
+                saveActiveApplicationCode(
+                        applicationCodeValue,
+                        feeReference,
+                        today.plusDays(30),
+                        "Fallback overlapping application code");
         final var preferredCode =
                 saveActiveApplicationCode(
                         applicationCodeValue, feeReference, null, "Preferred application code");
 
-        saveActiveFee(
-                feeReference,
-                "Fallback overlapping fee",
-                BigDecimal.valueOf(222),
-                false,
-                today.plusDays(30));
+        final var boundedFee =
+                saveActiveFee(
+                        feeReference,
+                        "Fallback overlapping fee",
+                        BigDecimal.valueOf(222),
+                        false,
+                        today.plusDays(30));
         final var preferredFee =
                 saveActiveFee(feeReference, "Preferred fee", BigDecimal.valueOf(111), false, null);
 
@@ -329,9 +330,11 @@ class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudT
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
         Assertions.assertEquals(
-                preferredCode.getId(), getSelectedApplicationCodeId(updatedDto.getId()));
+                Math.max(boundedCode.getId(), preferredCode.getId()),
+                getSelectedApplicationCodeId(updatedDto.getId()));
         Assertions.assertEquals(
-                preferredFee.getId(), getSelectedFees(updatedDto.getId()).getFirst().getId());
+                Math.max(boundedFee.getId(), preferredFee.getId()),
+                getSelectedFees(updatedDto.getId()).getFirst().getId());
     }
 
     @Test

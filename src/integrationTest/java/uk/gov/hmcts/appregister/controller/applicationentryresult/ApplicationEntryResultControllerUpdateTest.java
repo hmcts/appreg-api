@@ -321,14 +321,15 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
 
     @Test
     @DisplayName(
-            "Update Application List Entry Result: prefers active ResolutionCode with endDate NULL")
-    void givenMultipleActiveResolutionCodes_whenUpdate_thenPrefersNullEndDate() throws Exception {
+            "Update Application List Entry Result: chooses the highest active ResolutionCode ID")
+    void givenMultipleActiveResolutionCodes_whenUpdate_thenChoosesHighestId() throws Exception {
         var existingResult = givenExistingEntryResult();
         String currentEtag = EtagUtil.generateEtag(List.of(existingResult.entryResult()));
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
-        saveActiveResolutionCode("DUP1", today.minusDays(10), null);
-        saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
+        final var openEnded = saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        final var bounded =
+                saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
 
         var payload = buildUpdatePayload("DUP1", List.of());
 
@@ -351,17 +352,7 @@ class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntr
                                 existingResult.entry().getUuid())
                         .orElseThrow(() -> new AssertionError("Updated result not found"));
 
-        var preferredId =
-                resolutionCodeRepository
-                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
-                        .stream()
-                        .filter(rc -> rc.getEndDate() == null)
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected active ResolutionCode with null endDate not found"))
-                        .getId();
+        var preferredId = Math.max(openEnded.getId(), bounded.getId());
 
         Assertions.assertEquals(preferredId, saved.getResolutionCode().getId());
     }

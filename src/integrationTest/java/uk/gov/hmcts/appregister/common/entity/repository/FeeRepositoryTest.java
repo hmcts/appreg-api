@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
@@ -36,7 +37,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
             var old =
                     new FeeTestData()
                             .someMinimal()
-                            .id(offsite ? 187810L : 187800L)
+                            .id(DatabaseReset.SEQUENCE_START_VALUE + (offsite ? 187810L : 187800L))
                             .reference(reference)
                             .isOffsite(offsite)
                             .startDate(date.minusDays(5))

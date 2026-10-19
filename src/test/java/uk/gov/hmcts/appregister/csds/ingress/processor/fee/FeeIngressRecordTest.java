@@ -19,10 +19,17 @@ class FeeIngressRecordTest {
     }
 
     @Test
-    void given_feeIdPresent_when_resolveId_then_useIt() {
+    void given_onlyFeeIdPresent_when_resolveId_then_ignoreIt() {
         var record = OBJECT_MAPPER.createObjectNode().put("FEE_ID", 123L);
 
-        assertThat(FeeIngressRecord.resolveId(record)).isEqualTo(123L);
+        assertThat(FeeIngressRecord.resolveId(record)).isNull();
+    }
+
+    @Test
+    void given_feeIdAndRemoteIdPresent_when_resolveId_then_useRemoteId() {
+        var record = OBJECT_MAPPER.createObjectNode().put("FEE_ID", 123L).put("CivilFeeID", 12L);
+
+        assertThat(FeeIngressRecord.resolveId(record)).isEqualTo(100012L);
     }
 
     @Test

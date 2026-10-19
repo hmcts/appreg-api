@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
 class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
@@ -28,7 +29,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     var old =
                             new NationalCourtHouseData()
                                     .someMinimal()
-                                    .id(187801L)
+                                    .id(DatabaseReset.SEQUENCE_START_VALUE + 187801L)
                                     .courtLocationCode("HIST1878")
                                     .name("Original court")
                                     .courtType("CHOA")
@@ -38,7 +39,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     var latest =
                             new NationalCourtHouseData()
                                     .someMinimal()
-                                    .id(187802L)
+                                    .id(DatabaseReset.SEQUENCE_START_VALUE + 187802L)
                                     .courtLocationCode("hist1878")
                                     .name("Latest court")
                                     .courtType("CHOA")
@@ -48,7 +49,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     var future =
                             new NationalCourtHouseData()
                                     .someMinimal()
-                                    .id(187803L)
+                                    .id(DatabaseReset.SEQUENCE_START_VALUE + 187803L)
                                     .courtLocationCode("HIST1878")
                                     .name("Future court")
                                     .courtType("CHOA")
@@ -58,7 +59,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     var otherType =
                             new NationalCourtHouseData()
                                     .someMinimal()
-                                    .id(187804L)
+                                    .id(DatabaseReset.SEQUENCE_START_VALUE + 187804L)
                                     .courtLocationCode("HIST1878")
                                     .name("Other type")
                                     .courtType("OTHER")

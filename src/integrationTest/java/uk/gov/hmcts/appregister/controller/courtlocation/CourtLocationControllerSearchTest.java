@@ -15,6 +15,7 @@ import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -153,8 +154,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
-        saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var older = saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        var newer = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var expected = older.getId() > newer.getId() ? older : newer;
 
         var token =
                 getATokenWithValidCredentials()
@@ -172,9 +174,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationGetDetailDto dto = resp.as(CourtLocationGetDetailDto.class);
-        assertThat(dto.getName()).isEqualTo("Newer Court");
+        assertThat(dto.getName()).isEqualTo(expected.getName());
         assertThat(dto.getLocationCode()).isEqualTo(code);
-        assertThat(dto.getStartDate()).isEqualTo(queryDate.minusDays(1));
+        assertThat(dto.getStartDate()).isEqualTo(expected.getStartDate());
     }
 
     @Test
@@ -348,8 +350,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
-        saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var older = saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        var newer = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var expected = older.getId() > newer.getId() ? older : newer;
 
         var token =
                 getATokenWithValidCredentials()
@@ -370,10 +373,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().get(0).getLocationCode()).isEqualTo(code);
-        assertThat(page.getContent().get(0).getName()).isEqualTo("Older Court");
-        assertThat(page.getContent().get(1).getName()).isEqualTo("Newer Court");
+        assertThat(page.getContent().get(0).getName()).isEqualTo(expected.getName());
     }
 
     @Test
@@ -765,11 +767,11 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         }
     }
 
-    private void saveActiveCourt(String code, String name, LocalDate startDate) {
-        createCourtLocation(code, name, startDate, null);
+    private NationalCourtHouse saveActiveCourt(String code, String name, LocalDate startDate) {
+        return createCourtLocation(code, name, startDate, null);
     }
 
-    private void createCourtLocation(
+    private NationalCourtHouse createCourtLocation(
             String code, String name, LocalDate startDate, LocalDate endDate) {
         var nationalCourtHouse =
                 new NationalCourtHouseData()
@@ -781,6 +783,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         .courtType("CHOA")
                         .build();
         persistance.save(nationalCourtHouse);
+        return nationalCourtHouse;
     }
 
     private void assertExplicitNull(JsonNode root, String fieldName) {
