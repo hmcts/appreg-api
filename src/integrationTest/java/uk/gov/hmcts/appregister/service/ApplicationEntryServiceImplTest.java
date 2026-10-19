@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -21,11 +22,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
@@ -43,15 +46,19 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -83,6 +90,8 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
     @Autowired private TransactionalUnitOfWork unitOfWork;
 
     @Autowired private EntityManager entityManager;
+
+    @Autowired private BusinessDateProvider businessDateProvider;
 
     @Autowired private ApplicationListEntryAssertion applicationListEntryAssertion;
 
@@ -1002,6 +1011,74 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                 assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("50.00"));
             }
         }
+    }
+
+    @Test
+    @Transactional
+    void given_endDatedApplicant_when_updatingOfficialsAndFees_then_retainsApplicantReference() {
+        final var today = businessDateProvider.currentUkDate();
+        val list = applicationListRepository.findAll(Sort.by("id")).getFirst();
+        list.setStatus(Status.OPEN);
+        list.setDeleted(false);
+        val createDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        createDto.setApplicant(null);
+        createDto.setStandardApplicantCode("APP001");
+        createDto.setLodgementDate(today);
+        createDto.setOfficials(List.of());
+        createDto.setFeeStatuses(
+                List.of(new FeeStatus().paymentStatus(PaymentStatus.DUE).statusDate(today)));
+        val created =
+                applicationEntryService.createEntry(
+                        PayloadForCreate.<EntryCreateDto>builder()
+                                .id(list.getUuid())
+                                .data(createDto)
+                                .build());
+        val entryId = created.getPayload().getId();
+        val entry = applicationListEntryRepository.findByUuid(entryId).orElseThrow();
+        final var applicantId = entry.getStandardApplicant().getId();
+        entry.getStandardApplicant().setApplicantStartDate(today.minusDays(2));
+        entry.getStandardApplicant().setApplicantEndDate(today.minusDays(1));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(
+                        applicationEntryService
+                                .getApplicationListEntryDetail(
+                                        PayloadGetEntryInList.builder()
+                                                .listId(list.getUuid())
+                                                .entryId(entryId)
+                                                .build())
+                                .getPayload()
+                                .getStandardApplicantCode())
+                .isEqualTo("APP001");
+
+        val updateDto = new EntryUpdateDto();
+        BeanUtils.copyProperties(createDto, updateDto);
+        updateDto.setOfficials(CreateEntryDtoUtil.validOfficials());
+        val payload = new PayloadForUpdateEntry(updateDto, list.getUuid(), entryId);
+        applicationEntryService.updateEntry(payload);
+        entityManager.flush();
+        entityManager.clear();
+        updateDto.setFeeStatuses(
+                List.of(new FeeStatus().paymentStatus(PaymentStatus.PAID).statusDate(today)));
+        final var updated = applicationEntryService.updateEntry(payload);
+        entityManager.flush();
+        entityManager.clear();
+
+        val saved = applicationListEntryRepository.findByUuid(entryId).orElseThrow();
+        assertThat(saved.getStandardApplicant().getId()).isEqualTo(applicantId);
+        assertThat(saved.getStandardApplicant().getApplicantEndDate())
+                .isEqualTo(today.minusDays(1));
+        assertThat(applicationListEntryOfficialRepository.findByAppListEntryId(saved.getId()))
+                .extracting(AppListEntryOfficial::getSurname)
+                .containsExactlyInAnyOrderElementsOf(
+                        updateDto.getOfficials().stream().map(Official::getSurname).toList());
+        assertThat(appListEntryFeeStatusRepository.findByAppListEntryId(saved.getId()))
+                .extracting(AppListEntryFeeStatus::getAlefsFeeStatus)
+                .containsExactly(FeeStatusType.PAID);
+        assertThat(updated.getPayload().getStandardApplicantCode()).isEqualTo("APP001");
+        assertThat(updated.getPayload().getOfficials()).isEqualTo(updateDto.getOfficials());
+        assertThat(updated.getPayload().getFeeStatuses()).isEqualTo(updateDto.getFeeStatuses());
     }
 
     @Test
