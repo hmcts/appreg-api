@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -25,17 +24,15 @@ import uk.gov.hmcts.appregister.util.DateUtil;
 class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
+    // Version-selection tests need increasing IDs; the shared fixture assigns random IDs.
+    private long nextId = 900_000_000L;
 
     @Autowired private UserProvider loggedInUser;
-
-    // The total app codes inserted by flyway scripts. See V6__InitialTestData.sql
-    private static final int TOTAL_APP_CODES_COUNT = 223;
 
     @Test
     void testBasicInsertionUpdate() {
         // assert that the save has occurred
-        long count = applicationCodeRepository.count();
-        Assertions.assertEquals(TOTAL_APP_CODES_COUNT, count);
+        final var initialCount = applicationCodeRepository.count();
 
         ApplicationCode codeToSave = new ApplicationCodeTestData().someComplete();
 
@@ -43,8 +40,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         ApplicationCode code = persistance.save(codeToSave);
 
         // assert that the save has occurred
-        count = applicationCodeRepository.count();
-        Assertions.assertEquals(TOTAL_APP_CODES_COUNT + 1L, count);
+        Assertions.assertEquals(initialCount + 1L, applicationCodeRepository.count());
 
         // test get
         Optional<ApplicationCode> applicationCodeToAssertAgainst =
@@ -79,37 +75,57 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     void testGetByCodeAndDate() {
-        List<ApplicationCode> applicationCodeToAssertAgainst =
+        var applicationCodeToAssertAgainst =
                 applicationCodeRepository.findByCodeAndDate(
                         "AD99002", LocalDate.now(java.time.ZoneOffset.UTC));
         assertThat(applicationCodeToAssertAgainst).isNotEmpty();
     }
 
     @Test
-    void testGetByCodeAndDatePrefersNullEndDate() {
+    void testAllDateQueriesSelectHighestValidIdWithoutPreferringOpenEndedVersions() {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "ZZ90011";
 
         ApplicationCode bounded = new ApplicationCodeTestData().someComplete();
+        bounded.setId(nextId++);
         bounded.setCode(code);
         bounded.setTitle("Bounded overlap");
         bounded.setStartDate(today.minusDays(10));
-        bounded.setEndDate(today.plusDays(10));
+        bounded.setEndDate(null);
         bounded = persistance.save(bounded);
 
         ApplicationCode preferred = new ApplicationCodeTestData().someComplete();
+        preferred.setId(nextId++);
         preferred.setCode(code);
-        preferred.setTitle("Open-ended overlap");
-        preferred.setStartDate(today.minusDays(10));
-        preferred.setEndDate(null);
+        preferred.setTitle("Latest bounded version");
+        preferred.setStartDate(today.minusDays(20));
+        preferred.setEndDate(today);
         preferred = persistance.save(preferred);
+        saveApplicationCode(code, "Future version", today.plusDays(1), null);
+        saveApplicationCode(code, "Expired version", today.minusDays(20), today.minusDays(1));
 
-        List<ApplicationCode> results = applicationCodeRepository.findByCodeAndDate(code, today);
+        var results = applicationCodeRepository.findByCodeAndDate(code, today);
 
-        Assertions.assertEquals(2, results.size());
-        Assertions.assertEquals(preferred.getId(), results.getFirst().getId());
-        Assertions.assertNull(results.getFirst().getEndDate());
-        Assertions.assertEquals(bounded.getId(), results.get(1).getId());
+        assertThat(results).map(ApplicationCode::getId).contains(preferred.getId());
+        assertThat(applicationCodeRepository.findByCodeAndDate(code.toLowerCase(), today))
+                .map(ApplicationCode::getId)
+                .contains(preferred.getId());
+        assertThat(applicationCodeRepository.findAllByDate(today))
+                .filteredOn(item -> item.getCode().equalsIgnoreCase(code))
+                .extracting(ApplicationCode::getId)
+                .containsExactly(preferred.getId());
+        assertThat(applicationCodeRepository.search(code, null, today, PageRequest.of(0, 10)))
+                .extracting(ApplicationCode::getId)
+                .containsExactly(preferred.getId());
+        assertThat(
+                        applicationCodeRepository.search(
+                                code, "Bounded overlap", today, PageRequest.of(0, 10)))
+                .isEmpty();
+        assertThat(applicationCodeRepository.findByCodeAndDate(code, today.minusDays(20)))
+                .map(ApplicationCode::getTitle)
+                .contains("Expired version");
+        assertThat(applicationCodeRepository.findByCodeAndDate(code, today.minusDays(21)))
+                .isEmpty();
     }
 
     @Test
@@ -131,11 +147,10 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         partialMatch.setEndDate(null);
         persistance.save(partialMatch);
 
-        List<ApplicationCode> results = applicationCodeRepository.findByCodeAndDate(code, today);
+        var results = applicationCodeRepository.findByCodeAndDate(code, today);
 
-        Assertions.assertEquals(1, results.size());
-        Assertions.assertEquals(exactMatch.getId(), results.getFirst().getId());
-        Assertions.assertEquals(code, results.getFirst().getCode());
+        assertThat(results).map(ApplicationCode::getId).contains(exactMatch.getId());
+        assertThat(results).map(ApplicationCode::getCode).contains(code);
     }
 
     @Test
@@ -235,6 +250,8 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                         effectiveDate.minusDays(10),
                         effectiveDate.plusDays(10));
         saveApplicationCode(code, "Date filtered future", effectiveDate.plusDays(1), null);
+        final var otherCode =
+                saveApplicationCode(code + "X", "Date filtered middle", effectiveDate, null);
 
         var results =
                 applicationCodeRepository.search(
@@ -247,11 +264,20 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         Assertions.assertEquals(sortedFirst.getId(), results.getContent().getFirst().getId());
         Assertions.assertEquals(2, results.getTotalElements());
         Assertions.assertEquals(2, results.getTotalPages());
+        var nextPage =
+                applicationCodeRepository.search(
+                        code,
+                        null,
+                        effectiveDate,
+                        PageRequest.of(1, 1, Sort.by(Sort.Direction.DESC, "title")));
+        assertThat(nextPage).extracting(ApplicationCode::getId).containsExactly(otherCode.getId());
+        assertThat(nextPage.getTotalElements()).isEqualTo(2);
     }
 
     private ApplicationCode saveApplicationCode(
             String code, String title, LocalDate startDate, LocalDate endDate) {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setId(nextId++);
         applicationCode.setCode(code);
         applicationCode.setTitle(title);
         applicationCode.setStartDate(startDate);

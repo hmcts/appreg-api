@@ -53,7 +53,8 @@ class JdbcBulkUpsertServiceTest {
                         null,
                         YesOrNo.NO,
                         3L,
-                        "FEE-1");
+                        "FEE-1",
+                        12L);
         when(jdbcTemplate.batchUpdate(anyString(), any(MapSqlParameterSource[].class)))
                 .thenReturn(new int[] {1});
 
@@ -90,7 +91,8 @@ class JdbcBulkUpsertServiceTest {
                         null,
                         YesOrNo.NO,
                         3L,
-                        null);
+                        null,
+                        12L);
         var tableName = "application-codes-test";
         var rows = List.of(item);
         assertThatThrownBy(() -> service.upsertBatch(tableName, "ac_id", rows, rowMapper))
@@ -113,7 +115,8 @@ class JdbcBulkUpsertServiceTest {
                         null,
                         YesOrNo.NO,
                         3L,
-                        null);
+                        null,
+                        12L);
         when(jdbcTemplate.batchUpdate(anyString(), any(MapSqlParameterSource[].class)))
                 .thenThrow(new org.springframework.dao.DataIntegrityViolationException("boom"));
         when(jdbcBatchFailureIsolationService.identifyFailures(

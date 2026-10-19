@@ -434,23 +434,19 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     protected ApplicationCode validateApplicationCode(T validatable) {
         LocalDate todayUk = currentBusinessDate();
         // validate that the application code exists and is valid for today
-        List<ApplicationCode> code =
-                applicationCodeRepository.findByCodeAndDate(
-                        getApplicationCode(validatable), todayUk);
-
-        if (code.isEmpty()) {
-            throw new AppRegistryException(
-                    AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
-                    "No valid code can be found %s".formatted(getApplicationCode(validatable)));
-        }
+        var code =
+                applicationCodeRepository
+                        .findByCodeAndDate(getApplicationCode(validatable), todayUk)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
+                                                "No valid code can be found %s"
+                                                        .formatted(
+                                                                getApplicationCode(validatable))));
 
         log.debug("Validated the application code {}", getApplicationCode(validatable));
-        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                code,
-                "application code",
-                getApplicationCode(validatable),
-                todayUk,
-                ApplicationCode::getEndDate);
+        return code;
     }
 
     private void validateAccountNumber(T validatable) {

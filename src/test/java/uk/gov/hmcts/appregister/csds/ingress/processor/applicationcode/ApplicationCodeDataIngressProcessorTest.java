@@ -229,6 +229,203 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
+    void
+            given_historicalVersionsAcrossBatches_when_diffThenReplay_then_preserveHistoryAndSkipReplay() {
+        var legacy =
+                ApplicationCodeIngressRecord.fromEntity(
+                        createApplicationCode(
+                                42L,
+                                "A1",
+                                "Legacy",
+                                "Wording",
+                                1L,
+                                LocalDate.of(1900, 1, 1),
+                                null));
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(legacy));
+        var original = createSourceRecordWithPssacid(42L, 100L, "A1", "Original", "Wording", 1L);
+        original.put("EndDate", "2020-01-02");
+        var future = createSourceRecord(400L, "A2", "Future", "Wording", 4L);
+        future.put("StartDate", "2099-01-01");
+        var first = processor.diff(processor.preProcess(List.of(createPageResponse(original))));
+        assertThat(first.diffRecords().getFirst().operation()).isEqualTo(IngressOperation.UPDATE);
+        var enriched = first.diffRecords().getFirst().intended();
+        assertThat(enriched.id()).isEqualTo(42L);
+        assertThat(enriched.csdsId()).isEqualTo(100L);
+        assertThat(enriched.endDate()).isEqualTo(LocalDate.of(2020, 1, 2));
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(enriched));
+        var modified = createSourceRecordWithPssacid(42L, 200L, "A1", "Modified", "Wording", 2L);
+        var pages =
+                processor.preProcess(
+                        List.of(createPageResponse(future), createPageResponse(modified)));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords())
+                .extracting(item -> item.operation())
+                .containsExactly(IngressOperation.INSERT, IngressOperation.INSERT);
+        assertThat(diff.diffRecords())
+                .extracting(item -> item.intended().id())
+                .containsExactly(100400L, 100200L);
+        assertThat(diff.diffRecords())
+                .extracting(item -> item.intended().csdsId())
+                .containsExactly(400L, 200L);
+        assertThat(diff.existingById().get(42L)).isEqualTo(enriched);
+        assertThat(processor.buildSuccessAudits(pages, diff).toString())
+                .contains("100200", "\"ApplicationCodeID\":200", "\"PSSApplicationCodeID\":42");
+        var saved =
+                new ArrayList<>(diff.diffRecords().stream().map(item -> item.intended()).toList());
+        saved.add(enriched);
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper)).thenReturn(saved);
+
+        var replay = processor.diff(pages);
+
+        assertThat(replay.diffRecords()).isEmpty();
+        assertThat(processor.buildSuccessAudits(pages, replay)).isEmpty();
+        assertThat(
+                        processor
+                                .diff(processor.preProcess(List.of(createPageResponse(original))))
+                                .diffRecords())
+                .isEmpty();
+    }
+
+    @Test
+    void given_duplicateCodesAcrossPages_when_ingest_then_rejectBeforeDatabaseRead() {
+        var pages =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecordWithPssacid(
+                                        42L, 100L, "A1", "First", "Wording", 1L)),
+                        createPageResponse(
+                                createSourceRecordWithPssacid(
+                                        99L, 200L, "A1", "Second", "Wording", 2L)));
+        assertThatThrownBy(() -> processor.ingest(pages))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Duplicate incoming Code A1");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
+    }
+
+    @Test
+    void given_distinctCodesWithSameLegacyId_when_diff_then_updateMatchingCodeAndInsertOtherCode() {
+        var legacy =
+                ApplicationCodeIngressRecord.fromEntity(
+                        createApplicationCode(
+                                42L,
+                                "A1",
+                                "Legacy",
+                                "Wording",
+                                1L,
+                                LocalDate.of(1900, 1, 1),
+                                null));
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(legacy));
+        var pages =
+                processor.preProcess(
+                        List.of(
+                                createPageResponse(
+                                        createSourceRecordWithPssacid(
+                                                42L, 200L, "A2", "Other", "Wording", 1L),
+                                        createSourceRecordWithPssacid(
+                                                42L, 100L, "A1", "Matching", "Wording", 1L))));
+        var diff = processor.diff(pages);
+        assertThat(diff.diffRecords())
+                .extracting(item -> item.operation())
+                .containsExactly(IngressOperation.INSERT, IngressOperation.UPDATE);
+        assertThat(diff.diffRecords())
+                .extracting(item -> item.intended().id())
+                .containsExactly(100200L, 42L);
+    }
+
+    @Test
+    void given_legacyMismatchOrAbsent_when_diff_then_insertWithoutChangingExistingRows() {
+        var legacy =
+                ApplicationCodeIngressRecord.fromEntity(
+                        createApplicationCode(
+                                42L,
+                                "OLD",
+                                "Legacy",
+                                "Wording",
+                                1L,
+                                LocalDate.of(1900, 1, 1),
+                                null));
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(legacy));
+        var pages =
+                processor.preProcess(
+                        List.of(
+                                createPageResponse(
+                                        createSourceRecordWithPssacid(
+                                                42L, 100L, "NEW", "Title", "Wording", 1L),
+                                        createSourceRecordWithPssacid(
+                                                99L, 200L, "OLD", "Title", "Wording", 1L))));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords())
+                .allSatisfy(
+                        item -> assertThat(item.operation()).isEqualTo(IngressOperation.INSERT));
+        assertThat(diff.diffRecords())
+                .extracting(item -> item.intended().id())
+                .containsExactly(100100L, 100200L);
+        assertThat(diff.existingById()).containsEntry(42L, legacy);
+    }
+
+    @Test
+    void given_generatedIdCollision_when_ingest_then_failBeforeWriting() {
+        var existing =
+                ApplicationCodeIngressRecord.fromEntity(
+                        createApplicationCode(
+                                100100L,
+                                "OLD",
+                                "Legacy",
+                                "Wording",
+                                1L,
+                                LocalDate.of(1900, 1, 1),
+                                null));
+        when(tableReadService.loadAll(processor.targetTable(), rowMapper))
+                .thenReturn(List.of(existing));
+        var pages =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecord(100L, "NEW", "Title", "Wording", 1L)));
+
+        assertThatThrownBy(() -> processor.ingest(pages))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Generated AC_ID 100100 collides");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_invalidIdentifiers_when_preProcess_then_rejectRatherThanTruncateOrOverflow()
+            throws Exception {
+        var invalidValues = List.of("1.5", "-1", "0", "\"42\"", "9223372036854775808");
+        for (var field : List.of("ApplicationCodeID", "PSSApplicationCodeID")) {
+            for (var value : invalidValues) {
+                var source = createSourceRecord(100L, "A1", "Title", "Wording", 1L);
+                source.set(field, OBJECT_MAPPER.readTree(value));
+                var pages = List.<JsonNode>of(createPageResponse(source));
+                assertThatThrownBy(() -> processor.preProcess(pages))
+                        .isInstanceOf(AppRegistryException.class)
+                        .hasMessageContaining(field);
+            }
+        }
+        var overflow =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecord(
+                                        (long) Integer.MAX_VALUE + 1,
+                                        "A1",
+                                        "Title",
+                                        "Wording",
+                                        1L)));
+        assertThatThrownBy(() -> processor.ingest(overflow))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("ApplicationCodeID");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
     void given_processedData_when_apply_then_logsDiffAgainstExistingApplicationCodes() {
         var existingUpdated =
                 createApplicationCode(
@@ -516,7 +713,7 @@ class ApplicationCodeDataIngressProcessorTest {
                     .contains(
                             ",\"3\",\"%s\",\"insert\""
                                     .formatted(ApplicationCodeIngressRecord.calculateId(null, 3L)))
-                    .contains("\"4\",,\"4\",\"update\"");
+                    .contains("\"4\",\"4\",\"4\",\"update\"");
         }
     }
 
@@ -562,31 +759,23 @@ class ApplicationCodeDataIngressProcessorTest {
                         diffRecord -> {
                             assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
                             assertThat(diffRecord.existing()).isNull();
-                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().csdsId()).isEqualTo(3L);
                             assertThat(diffRecord.intended().id())
                                     .isEqualTo(ApplicationCodeIngressRecord.calculateId(null, 3L));
                         });
     }
 
     @Test
-    void given_pssacidPresent_when_apply_then_useItAsTheResolvedKey() {
-        when(tableReadService.loadAll(
-                        properties.getProcessors().getApplicationCodes().getIngressTarget(),
-                        rowMapper))
-                .thenReturn(List.of());
-
-        var logCaptor = LogCaptor.forClass(ApplicationCodeDiffReportingService.class);
-        logCaptor.clearLogs();
-
-        processor.apply(
-                processor.preProcess(
-                        List.of(
-                                createPageResponse(
-                                        createSourceRecordWithoutApplicationCodeId(
-                                                345L, "A3", "Title 3", "Wording 3", 1L)))));
-
-        assertThat(logCaptor.getInfoLogs())
-                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
+    void given_missingRemoteId_when_ingest_then_rejectEvenWithLegacyId() {
+        var pages =
+                List.<JsonNode>of(
+                        createPageResponse(
+                                createSourceRecordWithoutApplicationCodeId(
+                                        345L, "A3", "Title 3", "Wording 3", 1L)));
+        assertThatThrownBy(() -> processor.ingest(pages))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("ApplicationCodeID");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
     @Test
@@ -706,27 +895,25 @@ class ApplicationCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_duplicateResolvedAcId_when_apply_then_throwException() {
+    void given_duplicateRemoteId_when_apply_then_throwException() {
         var logCaptor = LogCaptor.forClass(ApplicationCodeDiffService.class);
         logCaptor.clearLogs();
 
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
-                                createSourceRecordWithoutApplicationCodeId(
-                                        345L, "A3", "Title 3", "Wording 3", 1L),
-                                createSourceRecordWithoutApplicationCodeId(
-                                        345L, "A4", "Title 4", "Wording 4", 2L)));
+                                createSourceRecord(345L, "A3", "Title 3", "Wording 3", 1L),
+                                createSourceRecord(345L, "A4", "Title 4", "Wording 4", 2L)));
         var preProcessed = processor.preProcess(processedData);
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming AC_ID 345");
+                .hasMessageContaining("Duplicate incoming CSDS_ID 345");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->
                                 log.contains(
-                                                "Duplicate incoming AC_ID 345 detected for application_codes")
+                                                "Duplicate incoming CSDS_ID 345 detected for application_codes")
                                         && log.contains("duplicate record"));
     }
 
@@ -951,7 +1138,7 @@ class ApplicationCodeDataIngressProcessorTest {
             String startDate,
             String endDate) {
         var sourceRecord =
-                createSourceRecord(null, code, title, wording, version, startDate, endDate);
+                createSourceRecord(pssacid, code, title, wording, version, startDate, endDate);
         sourceRecord.put("PSSApplicationCodeID", pssacid);
         return sourceRecord;
     }
@@ -965,7 +1152,9 @@ class ApplicationCodeDataIngressProcessorTest {
 
     private ApplicationCodeIngressRecord toIngressRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
-                ApplicationCodeIngressRecord.resolveId(node),
+                node.get("PSSApplicationCodeID").isNull()
+                        ? null
+                        : node.get("PSSApplicationCodeID").longValue(),
                 node.get("Code").asText(),
                 node.get("ApplicationTitle").asText(),
                 node.get("ApplicationWording").asText(),
@@ -976,6 +1165,7 @@ class ApplicationCodeDataIngressProcessorTest {
                 node.get("EndDate").isNull() ? null : LocalDate.parse(node.get("EndDate").asText()),
                 YesOrNo.fromValue(node.get("BulkRespondentAllowed").asText()),
                 node.get("RevisionNumber").longValue(),
-                node.get("FeeReference").isNull() ? null : node.get("FeeReference").asText());
+                node.get("FeeReference").isNull() ? null : node.get("FeeReference").asText(),
+                node.get("ApplicationCodeID").longValue());
     }
 }

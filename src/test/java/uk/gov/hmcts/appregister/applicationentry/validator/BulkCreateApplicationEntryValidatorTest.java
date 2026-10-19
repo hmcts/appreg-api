@@ -100,7 +100,7 @@ class BulkCreateApplicationEntryValidatorTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate("APP001", TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
 
@@ -265,7 +265,7 @@ class BulkCreateApplicationEntryValidatorTest {
                 List.of(new TemplateSubstitution(null, ""), new TemplateSubstitution(null, "")));
 
         when(applicationCodeRepository.findByCodeAndDate(eq("AD99001"), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         CreateApplicationEntryValidationSuccess success =
                 validator.validate(payload(), (validatable, result) -> result);

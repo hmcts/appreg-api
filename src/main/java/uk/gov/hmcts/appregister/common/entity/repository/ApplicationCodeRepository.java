@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,42 +18,43 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode, Long> {
 
     /**
-     * Finds an ApplicationCode entity by its application code.
+     * Finds the highest-ID version of a code valid on the supplied date.
      *
      * @param applicationCode the application code to search for
-     * @return an Optional containing the found ApplicationCode, or empty if not found
+     * @return the selected version, or empty if no version is valid
      */
     @Query(
             """
             SELECT c
             FROM ApplicationCode c
             WHERE LOWER(c.code) = LOWER(CAST(:applicationCode AS string))
-              AND c.startDate <= :dateTime
-              AND (c.endDate IS NULL OR c.endDate >= :dateTime)
-            ORDER BY CASE WHEN c.endDate IS NULL THEN 0 ELSE 1 END,
-                     c.endDate DESC,
-                     c.startDate DESC,
-                     c.id DESC
+              AND c.id = (
+                  SELECT MAX(v.id) FROM ApplicationCode v
+                  WHERE LOWER(v.code) = LOWER(c.code)
+                    AND v.startDate <= :dateTime
+                    AND (v.endDate IS NULL OR v.endDate >= :dateTime)
+              )
             """)
-    List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
+    Optional<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
-    /** Returns all application-code rows active on the supplied date in selection order. */
+    /** Returns the highest-ID date-valid version of each code, ordered by code. */
     @Query(
             """
             SELECT c
             FROM ApplicationCode c
-            WHERE c.startDate <= :date
-              AND (c.endDate IS NULL OR c.endDate >= :date)
-            ORDER BY LOWER(c.code),
-                     CASE WHEN c.endDate IS NULL THEN 0 ELSE 1 END,
-                     c.endDate DESC,
-                     c.startDate DESC,
-                     c.id DESC
+            WHERE c.id = (
+                SELECT MAX(v.id) FROM ApplicationCode v
+                WHERE LOWER(v.code) = LOWER(c.code)
+                  AND v.startDate <= :date
+                  AND (v.endDate IS NULL OR v.endDate >= :date)
+            )
+            ORDER BY LOWER(c.code)
             """)
     List<ApplicationCode> findAllByDate(@Param("date") LocalDate date);
 
     /**
-     * Retrieve a page of active Application Codes filtered by code/title (case-insensitive).
+     * Retrieve a page of the highest-ID date-valid versions, filtered by code/title. Filtering and
+     * pagination apply to selected versions, not superseded history.
      *
      * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)
      *
@@ -68,8 +70,12 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
         FROM ApplicationCode c
         WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER( CAST(:code AS string)), '%')  ESCAPE '\\')
           AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER( CAST(:title AS string)), '%')  ESCAPE '\\')
-          AND c.startDate <= :date
-          AND (c.endDate IS NULL OR c.endDate >= :date)
+          AND c.id = (
+              SELECT MAX(v.id) FROM ApplicationCode v
+              WHERE LOWER(v.code) = LOWER(c.code)
+                AND v.startDate <= :date
+                AND (v.endDate IS NULL OR v.endDate >= :date)
+          )
         """)
     Page<ApplicationCode> search(
             @Param("code") String code,

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
@@ -154,7 +155,7 @@ public class ApplicationCodeDataIngressProcessor
             List<JsonNode> processedData, ApplicationCodeDiffResult diff) {
         return buildSuccessAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 ApplicationCodeIngressRecord::id);
     }
 
@@ -165,7 +166,7 @@ public class ApplicationCodeDataIngressProcessor
             CsdsBatchUpsertException ex) {
         return buildFailureAuditEntries(
                 diff.diffRecords(),
-                sourceRecordsById(processedData),
+                sourceRecordsById(processedData, diff),
                 ApplicationCodeIngressRecord::id,
                 ApplicationCodeIngressRecord.class,
                 ex);
@@ -194,7 +195,7 @@ public class ApplicationCodeDataIngressProcessor
 
     private ApplicationCodeIngressRecord toSourceRecord(JsonNode node) {
         return new ApplicationCodeIngressRecord(
-                requiredLong(node, AC_ID),
+                nullableLong(node, "PSSApplicationCodeID"),
                 requiredText(node, "Code"),
                 requiredText(node, "ApplicationTitle"),
                 requiredText(node, "ApplicationWording"),
@@ -205,7 +206,8 @@ public class ApplicationCodeDataIngressProcessor
                 nullableLocalDate(node, "EndDate"),
                 requiredYesOrNo(node, "BulkRespondentAllowed"),
                 requiredLong(node, "RevisionNumber"),
-                nullableText(node, "FeeReference"));
+                nullableText(node, "FeeReference"),
+                requiredLong(node, "ApplicationCodeID"));
     }
 
     private JsonNode withResolvedAcId(JsonNode node) {
@@ -214,6 +216,8 @@ public class ApplicationCodeDataIngressProcessor
         }
 
         val copiedRecord = objectNode.deepCopy();
+        validateId(copiedRecord, "ApplicationCodeID", false);
+        validateId(copiedRecord, "PSSApplicationCodeID", true);
         val resolvedId = ApplicationCodeIngressRecord.resolveId(copiedRecord);
         if (resolvedId != null) {
             copiedRecord.put(AC_ID, resolvedId);
@@ -221,7 +225,28 @@ public class ApplicationCodeDataIngressProcessor
         return copiedRecord;
     }
 
-    private Map<Long, JsonNode> sourceRecordsById(List<JsonNode> processedData) {
-        return indexSourceRecords(processedData, node -> nullableLong(node, AC_ID));
+    private void validateId(JsonNode node, String fieldName, boolean nullable) {
+        val field = node.get(fieldName);
+        if (nullable && (field == null || field.isNull())) {
+            return;
+        }
+        if (field == null
+                || !field.isIntegralNumber()
+                || !field.canConvertToLong()
+                || (!nullable && !field.canConvertToInt())
+                || field.longValue() <= 0) {
+            throw invalidField(node, fieldName);
+        }
+    }
+
+    private Map<Long, JsonNode> sourceRecordsById(
+            List<JsonNode> processedData, ApplicationCodeDiffResult diff) {
+        val sourceByCsdsId =
+                indexSourceRecords(processedData, node -> nullableLong(node, "ApplicationCodeID"));
+        return diff.diffRecords().stream()
+                .collect(
+                        Collectors.toMap(
+                                item -> item.intended().id(),
+                                item -> sourceByCsdsId.get(item.incoming().csdsId())));
     }
 }

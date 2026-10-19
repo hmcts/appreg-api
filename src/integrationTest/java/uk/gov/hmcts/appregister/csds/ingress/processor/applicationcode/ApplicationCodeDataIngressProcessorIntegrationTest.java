@@ -93,6 +93,44 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
     }
 
     @Test
+    void given_legacyAndModifiedVersions_when_ingestAndReplay_then_preserveHistory() {
+        var legacy = applicationCodeRepository.findAll().getFirst();
+        var remoteId = 1500000000L;
+        var original = toSourceRecordWithPssacid(legacy, remoteId);
+        var modified = toSourceRecordWithPssacid(legacy, remoteId + 1);
+        modified.put("ApplicationTitle", "New historical version");
+        modified.put("EndDate", "2020-02-01");
+
+        var first = applicationCodeDataIngressProcessor.ingest(List.of(page(original)));
+        assertThat(first.getUpdated()).isEqualTo(1);
+        assertThat(first.getInserted()).isZero();
+        var response = applicationCodeDataIngressProcessor.ingest(List.of(page(modified)));
+        assertThat(response.getUpdated()).isZero();
+        assertThat(response.getInserted()).isEqualTo(1);
+        var parameters =
+                new MapSqlParameterSource()
+                        .addValue("legacyId", legacy.getId())
+                        .addValue("newId", remoteId + 100001);
+        var sql =
+                "SELECT * FROM %s.application_codes WHERE ac_id IN (:legacyId, :newId) ORDER BY ac_id"
+                        .formatted(schema);
+        var saved = jdbcTemplate.queryForList(sql, parameters);
+        assertThat(saved).hasSize(2);
+        assertThat(((Number) saved.getFirst().get("csds_id")).longValue()).isEqualTo(remoteId);
+        assertThat(((Number) saved.getLast().get("csds_id")).longValue()).isEqualTo(remoteId + 1);
+        assertThat(saved.getLast())
+                .containsEntry("application_code_title", "New historical version");
+
+        for (var record : List.of(original, modified)) {
+            var replay = applicationCodeDataIngressProcessor.ingest(List.of(page(record)));
+            assertThat(replay.getInserted()).isZero();
+            assertThat(replay.getUpdated()).isZero();
+        }
+        // Includes changed_date: a replay must perform no updates, including audit metadata.
+        assertThat(jdbcTemplate.queryForList(sql, parameters)).isEqualTo(saved);
+    }
+
+    @Test
     void given_applicationCodeProcessorEnabled_when_runIngress_then_logsDiffSummary()
             throws JsonProcessingException {
         var existingApplicationCodes =
@@ -227,6 +265,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                         + 2000;
         var validInsertedRecord = createInsertedRecord(insertedId);
         var failingInsertedRecord = createInsertedRecord(insertedId + 1);
+        failingInsertedRecord.put("Code", "AA99998");
         failingInsertedRecord.put("ApplicationTitle", "X".repeat(501));
 
         assertThatThrownBy(

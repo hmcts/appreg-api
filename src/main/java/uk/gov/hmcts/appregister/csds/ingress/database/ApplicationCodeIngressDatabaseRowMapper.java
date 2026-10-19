@@ -17,6 +17,7 @@ public class ApplicationCodeIngressDatabaseRowMapper
                 RowMapper<ApplicationCodeIngressRecord> {
     private static final String TECHNICAL_USERNAME = "CSDS_INGRESS";
     private static final String AC_ID = "ac_id";
+    private static final String CSDS_ID = "csds_id";
     private static final String APPLICATION_CODE = "application_code";
     private static final String APPLICATION_CODE_TITLE = "application_code_title";
     private static final String APPLICATION_CODE_WORDING = "application_code_wording";
@@ -36,6 +37,7 @@ public class ApplicationCodeIngressDatabaseRowMapper
     private static final List<String> COLUMNS =
             List.of(
                     AC_ID,
+                    CSDS_ID,
                     APPLICATION_CODE,
                     APPLICATION_CODE_TITLE,
                     APPLICATION_CODE_WORDING,
@@ -54,6 +56,7 @@ public class ApplicationCodeIngressDatabaseRowMapper
                     AC_FEE_REFERENCE);
     private static final List<String> UPDATABLE_COLUMNS =
             List.of(
+                    CSDS_ID,
                     APPLICATION_CODE,
                     APPLICATION_CODE_TITLE,
                     APPLICATION_CODE_WORDING,
@@ -95,6 +98,7 @@ public class ApplicationCodeIngressDatabaseRowMapper
     public Map<String, Object> toRow(ApplicationCodeIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
         row.put(AC_ID, item.id());
+        row.put(CSDS_ID, item.csdsId());
         row.put(APPLICATION_CODE, item.code());
         row.put(APPLICATION_CODE_TITLE, item.title());
         row.put(APPLICATION_CODE_WORDING, item.wording());
@@ -116,6 +120,8 @@ public class ApplicationCodeIngressDatabaseRowMapper
 
     @Override
     public ApplicationCodeIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+        var remoteId = rs.getLong(CSDS_ID);
+        Long csdsId = rs.wasNull() ? null : remoteId;
         return new ApplicationCodeIngressRecord(
                 rs.getLong(AC_ID),
                 rs.getString(APPLICATION_CODE),
@@ -128,6 +134,7 @@ public class ApplicationCodeIngressDatabaseRowMapper
                 rs.getObject(APPLICATION_CODE_END_DATE, LocalDate.class),
                 YesOrNo.fromValue(rs.getString(BULK_RESPONDENT_ALLOWED)),
                 rs.getLong(VERSION),
-                rs.getString(AC_FEE_REFERENCE));
+                rs.getString(AC_FEE_REFERENCE),
+                csdsId);
     }
 }

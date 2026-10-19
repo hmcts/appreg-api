@@ -93,22 +93,21 @@ class AsyncJobServiceImplTest extends BaseIntegration {
                         position,
                         (data, ctxt) -> {
                             for (int i = 0; i < data.size(); i++) {
-                                List<ApplicationCode> csvBaseAppCodeLst =
-                                        applicationCodeRepository.findByCodeAndDate(
-                                                data.get(i).getCode(),
-                                                LocalDate.now(java.time.ZoneOffset.UTC));
-                                Assertions.assertEquals(1, csvBaseAppCodeLst.size());
+                                var csvBaseAppCode =
+                                        applicationCodeRepository
+                                                .findByCodeAndDate(
+                                                        data.get(i).getCode(),
+                                                        LocalDate.now(java.time.ZoneOffset.UTC))
+                                                .orElseThrow();
                                 Assertions.assertEquals(
-                                        data.get(i).getCode(), csvBaseAppCodeLst.get(0).getCode());
+                                        data.get(i).getCode(), csvBaseAppCode.getCode());
                                 Assertions.assertEquals(
-                                        data.get(i).getTitle(),
-                                        csvBaseAppCodeLst.get(0).getTitle());
+                                        data.get(i).getTitle(), csvBaseAppCode.getTitle());
                                 Assertions.assertEquals(
                                         data.get(i).getFeedue() != null && data.get(i).getFeedue(),
-                                        csvBaseAppCodeLst.get(0).getFeeDue().isYes());
+                                        csvBaseAppCode.getFeeDue().isYes());
                                 Assertions.assertEquals(
-                                        data.get(i).getWording(),
-                                        csvBaseAppCodeLst.get(0).getWording());
+                                        data.get(i).getWording(), csvBaseAppCode.getWording());
                             }
                         },
                         jobContext);
