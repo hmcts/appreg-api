@@ -1,7 +1,11 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
@@ -147,6 +151,38 @@ class UpdateApplicationEntryValidatorTest {
         feeStatuses.stream()
                 .filter(feeStatus -> feeStatus != null && feeStatus.getStatusDate() != null)
                 .forEach(feeStatus -> feeStatus.setStatusDate(TODAY_UK));
+    }
+
+    @Test
+    void unchangedStandardApplicantRetainsStoredHistoricalVersion() {
+        var historical = new StandardApplicantTestData().someComplete();
+        historical.setApplicantCode("HIST");
+        historical.setApplicantEndDate(TODAY_UK.minusDays(1));
+        applicationListEntry.setStandardApplicant(historical);
+        entryUpdateDto.setStandardApplicantCode("hist");
+        var payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
+                        .withApplicationListEntry(applicationListEntry);
+        assertThat(updateApplicationEntryValidator.validateStandardApplicantCode(payload))
+                .isSameAs(historical);
+        verify(standardApplicantRepository, never())
+                .findStandardApplicantByCodeAndDate(any(), any());
+    }
+
+    @Test
+    void changedStandardApplicantUsesCurrentDateSelection() {
+        var historical = new StandardApplicantTestData().someComplete();
+        historical.setApplicantCode("OLD");
+        applicationListEntry.setStandardApplicant(historical);
+        entryUpdateDto.setStandardApplicantCode("NEW");
+        var replacement = new StandardApplicantTestData().someComplete();
+        when(standardApplicantRepository.findStandardApplicantByCodeAndDate("NEW", TODAY_UK))
+                .thenReturn(List.of(replacement));
+        var payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
+                        .withApplicationListEntry(applicationListEntry);
+        assertThat(updateApplicationEntryValidator.validateStandardApplicantCode(payload))
+                .isSameAs(replacement);
     }
 
     @Test

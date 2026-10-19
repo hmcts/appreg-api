@@ -41,6 +41,7 @@ public class StandardApplicantIngressDatabaseRowMapper
     private static final List<String> COLUMNS =
             List.of(
                     ID,
+                    "csds_id",
                     CODE,
                     START_DATE,
                     END_DATE,
@@ -89,6 +90,7 @@ public class StandardApplicantIngressDatabaseRowMapper
     public Map<String, Object> toRow(StandardApplicantIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
         row.put(ID, item.id());
+        row.put("csds_id", item.csdsId());
         row.put(CODE, item.code());
         row.put(START_DATE, item.startDate());
         row.put(END_DATE, item.endDate());
@@ -116,8 +118,11 @@ public class StandardApplicantIngressDatabaseRowMapper
 
     @Override
     public StandardApplicantIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+        long csdsId = rs.getLong("csds_id");
+        boolean csdsIdNull = rs.wasNull();
         return new StandardApplicantIngressRecord(
                 rs.getLong(ID),
+                csdsIdNull ? null : csdsId,
                 rs.getString(CODE),
                 rs.getObject(START_DATE, LocalDate.class),
                 rs.getObject(END_DATE, LocalDate.class),

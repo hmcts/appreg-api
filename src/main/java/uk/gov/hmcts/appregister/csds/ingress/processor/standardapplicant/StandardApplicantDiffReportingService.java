@@ -65,19 +65,19 @@ public class StandardApplicantDiffReportingService
                                     StandardApplicantIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsBySaId =
+        var incomingRecordsByCsdsId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
-                        .filter(item -> nullableLong(item, SA_ID) != null)
+                        .filter(item -> nullableLong(item, APPLICANT_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item -> nullableLong(item, SA_ID),
+                                        item -> nullableLong(item, APPLICANT_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
                 .<DiffReportCsvRow>map(
                         item -> {
-                            var source = incomingRecordsBySaId.get(item.intended().id());
+                            var source = incomingRecordsByCsdsId.get(item.incoming().csdsId());
                             return new DiffReportRow(
                                     nullableLong(source, PSS_APPLICANT_ID),
                                     nullableLong(source, APPLICANT_ID),
@@ -129,7 +129,7 @@ public class StandardApplicantDiffReportingService
         return String.join(
                         ",",
                         csvValue((Object) null),
-                        csvValue((Object) null),
+                        csvValue(item.csdsId()),
                         csvValue(item.id()),
                         csvValue(item.code()),
                         csvValue(item.name()),

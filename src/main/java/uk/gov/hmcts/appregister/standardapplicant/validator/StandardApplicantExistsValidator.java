@@ -1,8 +1,5 @@
 package uk.gov.hmcts.appregister.standardapplicant.validator;
 
-import java.time.Clock;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +20,6 @@ import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCod
 @RequiredArgsConstructor
 public class StandardApplicantExistsValidator implements Validator<String, StandardApplicant> {
     private final StandardApplicantRepository repository;
-    private final Clock clock;
-    private final ZoneId ukZone;
 
     @Override
     public void validate(String code) {
@@ -48,8 +43,7 @@ public class StandardApplicantExistsValidator implements Validator<String, Stand
      * @return The standard applicant
      */
     private StandardApplicant validateId(String code) {
-        LocalDate todayUk = LocalDate.now(clock.withZone(ukZone));
-        List<StandardApplicant> results = repository.findStandardApplicantByCode(code, todayUk);
+        List<StandardApplicant> results = repository.findStandardApplicantByCode(code);
 
         if (results.isEmpty()) {
             throw new AppRegistryException(

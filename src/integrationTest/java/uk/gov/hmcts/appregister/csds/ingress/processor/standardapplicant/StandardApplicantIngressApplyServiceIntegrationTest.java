@@ -98,6 +98,7 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
     private StandardApplicantIngressRecord record(Long id, String addressLine1) {
         return new StandardApplicantIngressRecord(
                 id,
+                id,
                 "DCCMH",
                 LocalDate.of(2018, 8, 1),
                 null,

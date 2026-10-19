@@ -111,6 +111,19 @@ public class UpdateApplicationEntryValidator
     }
 
     @Override
+    protected StandardApplicant validateStandardApplicantCode(PayloadForUpdateEntry validatable) {
+        var applicant = validatable.getApplicationListEntry().getStandardApplicant();
+        if (applicant != null
+                && applicant
+                        .getApplicantCode()
+                        .equalsIgnoreCase(getStandardApplicantCode(validatable))) {
+            // Preserve the stored version when only other entry details are edited.
+            return applicant;
+        }
+        return super.validateStandardApplicantCode(validatable);
+    }
+
+    @Override
     protected ApplicationCode validateApplicationCode(PayloadForUpdateEntry validatable) {
         var existingCode = validatable.getApplicationListEntry().getApplicationCode();
         // Retain the associated configuration, even after expiry; replacements must be active.

@@ -63,7 +63,7 @@ class StandardApplicantIngressApplyServiceTest {
                 .update(sqlCaptor.capture(), org.mockito.ArgumentMatchers.<Map<String, ?>>any());
         assertThat(sqlCaptor.getValue())
                 .contains("UPDATE appreg.standard_applicants_staging")
-                .contains("sa_id NOT IN (:incomingIds)")
+                .contains("standard_applicant_code NOT IN (:incomingCodes)")
                 .contains("version = version + 1");
         verify(bulkUpsertService)
                 .upsertBatch(
@@ -76,6 +76,7 @@ class StandardApplicantIngressApplyServiceTest {
 
     private StandardApplicantIngressRecord record(Long id) {
         return new StandardApplicantIngressRecord(
+                id,
                 id,
                 "DCCMH",
                 LocalDate.of(2018, 8, 1),

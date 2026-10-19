@@ -218,7 +218,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param validatable The dto payload to validate
      * @return The standard applicant or null if not applicable
      */
-    private StandardApplicant validateStandardApplicantCode(T validatable) {
+    protected StandardApplicant validateStandardApplicantCode(T validatable) {
         String standardApplicantCode = getStandardApplicantCode(validatable);
         LocalDate todayUk = currentBusinessDate();
 

@@ -33,7 +33,7 @@ public class StandardApplicantIngressApplyService {
         val validatedTableName = CsdsSqlIdentifierValidator.requireValid(targetTable, "tableName");
         val validatedPrimaryKey =
                 CsdsSqlIdentifierValidator.requireValid(targetKeyField, "primaryKey");
-        endDateMissingApplicants(validatedTableName, validatedPrimaryKey, diff.incomingById());
+        endDateMissingApplicants(validatedTableName, diff.incomingById());
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
                 validatedTableName,
@@ -44,9 +44,7 @@ public class StandardApplicantIngressApplyService {
     }
 
     private void endDateMissingApplicants(
-            String targetTable,
-            String targetKeyField,
-            Map<Long, StandardApplicantIngressRecord> incomingById) {
+            String targetTable, Map<Long, StandardApplicantIngressRecord> incomingById) {
         val validatedSchema = CsdsSqlIdentifierValidator.requireValid(schema, "schema");
         var sql =
                 """
@@ -63,9 +61,14 @@ public class StandardApplicantIngressApplyService {
         var parameters = new HashMap<String, Object>();
         parameters.put("today", businessDateProvider.currentUkDate());
         if (!incomingById.isEmpty()) {
-            // targetKeyField is a regex-validated SQL identifier.
-            sql += " AND " + targetKeyField + " NOT IN (:incomingIds)"; // NOSONAR
-            parameters.put("incomingIds", incomingById.keySet());
+            // A new version must not end-date older versions of a code still in the feed.
+            sql += " AND standard_applicant_code NOT IN (:incomingCodes)";
+            parameters.put(
+                    "incomingCodes",
+                    incomingById.values().stream()
+                            .map(StandardApplicantIngressRecord::code)
+                            .distinct()
+                            .toList());
         }
         jdbcTemplate.update(sql, parameters);
     }

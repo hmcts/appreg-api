@@ -20,6 +20,7 @@ class StandardApplicantIngressDatabaseRowMapperTest {
 
         assertThat(rowMapper.toRow(standardApplicantRecord))
                 .containsEntry("sa_id", 6278L)
+                .containsEntry("csds_id", 123L)
                 .containsEntry("standard_applicant_code", "DCCMH")
                 .containsEntry("address_l1", "County Hall")
                 .containsEntry("changed_by", 0L)
@@ -31,6 +32,7 @@ class StandardApplicantIngressDatabaseRowMapperTest {
     void given_resultSet_when_mapRow_then_readsStagingFields() throws Exception {
         ResultSet rs = mock(ResultSet.class);
         when(rs.getLong("sa_id")).thenReturn(6278L);
+        when(rs.getLong("csds_id")).thenReturn(123L);
         when(rs.getString("standard_applicant_code")).thenReturn("DCCMH");
         when(rs.getObject("standard_applicant_start_date", LocalDate.class))
                 .thenReturn(LocalDate.of(2018, Month.AUGUST, 1));
@@ -42,6 +44,9 @@ class StandardApplicantIngressDatabaseRowMapperTest {
         var mappedRecord = rowMapper.mapRow(rs, 0);
 
         assertThat(mappedRecord.id()).isEqualTo(6278L);
+        assertThat(mappedRecord.csdsId()).isEqualTo(123L);
+        when(rs.wasNull()).thenReturn(true);
+        assertThat(rowMapper.mapRow(rs, 0).csdsId()).isNull();
         assertThat(mappedRecord.code()).isEqualTo("DCCMH");
         assertThat(mappedRecord.name()).isEqualTo("Derbyshire County Council");
         assertThat(mappedRecord.addressLine1()).isEqualTo("County Hall");
@@ -50,6 +55,7 @@ class StandardApplicantIngressDatabaseRowMapperTest {
     private StandardApplicantIngressRecord standardApplicantRecord() {
         return new StandardApplicantIngressRecord(
                 6278L,
+                123L,
                 "DCCMH",
                 LocalDate.of(2018, Month.AUGUST, 1),
                 null,

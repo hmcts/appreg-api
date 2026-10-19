@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import java.time.LocalDate;
+import lombok.With;
 
 public record StandardApplicantIngressRecord(
-        Long id,
+        @With Long id,
+        Long csdsId,
         String code,
         LocalDate startDate,
         LocalDate endDate,

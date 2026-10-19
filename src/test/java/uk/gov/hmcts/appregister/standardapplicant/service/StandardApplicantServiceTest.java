@@ -766,7 +766,7 @@ class StandardApplicantServiceTest {
         private StandardApplicant success;
 
         public DummyStandardApplicantExistsValidator(StandardApplicantRepository repository) {
-            super(repository, FIXED_CLOCK, ZoneId.of("Europe/London"));
+            super(repository);
         }
 
         @Override

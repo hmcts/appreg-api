@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
@@ -27,6 +30,7 @@ import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadService;
 import uk.gov.hmcts.appregister.csds.ingress.database.StandardApplicantIngressDatabaseRowMapper;
+import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
 import uk.gov.hmcts.appregister.csds.ingress.service.CsdsIngressTransactionRunner;
 
 @ExtendWith(MockitoExtension.class)
@@ -90,8 +94,9 @@ class StandardApplicantDataIngressProcessorTest {
 
     @Test
     void given_incomingApplicants_when_ingest_then_reconcilesAndUpsertsConfiguredStagingTable() {
-        var withPssId = sourceRecord(9659L, 6278L, "Derbyshire County Council");
+        final var withPssId = sourceRecord(9659L, 6278L, "Derbyshire County Council");
         var withoutPssId = sourceRecord(9660L, null, "No address applicant");
+        withoutPssId.put("Code", "OTHER");
         withoutPssId.putArray("Address");
         when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
                 .thenReturn(List.of());
@@ -104,8 +109,8 @@ class StandardApplicantDataIngressProcessorTest {
                         eq("standard_applicants_staging"), eq("sa_id"), diffCaptor.capture());
         assertThat(response.getInserted()).isEqualTo(2);
         assertThat(response.getUpdated()).isZero();
-        assertThat(diffCaptor.getValue().incomingById()).containsKeys(6278L, 109660L);
-        var fallbackIdRecord = diffCaptor.getValue().incomingById().get(109660L);
+        assertThat(diffCaptor.getValue().incomingById()).containsKeys(9659L, 9660L);
+        var fallbackIdRecord = diffCaptor.getValue().incomingById().get(9660L);
         assertThat(fallbackIdRecord.addressLine1()).isEqualTo("<missing>");
         assertThat(fallbackIdRecord.emailAddress()).isEqualTo("email@example.test");
         assertThat(fallbackIdRecord.telephoneNumber()).isEqualTo("020 1234 5678");
@@ -136,7 +141,10 @@ class StandardApplicantDataIngressProcessorTest {
             for (var report : reports) {
                 var name = report.getFileName().toString();
                 if (name.endsWith(".csv") && !name.startsWith("standard_applicants_existing_")) {
-                    assertThat(Files.readString(report)).contains("\"6278\",\"9659\",\"6278\"");
+                    assertThat(Files.readString(report)).contains("\"6278\",\"9659\"");
+                    if (report.getFileName().toString().startsWith("standard_applicants_diff_")) {
+                        assertThat(Files.readString(report)).contains("\"109659\"");
+                    }
                 }
             }
             assertThat(reports.stream().map(path -> path.getFileName().toString()).toList())
@@ -144,6 +152,107 @@ class StandardApplicantDataIngressProcessorTest {
                     .anyMatch(name -> name.startsWith("standard_applicants_existing_"))
                     .anyMatch(name -> name.startsWith("standard_applicants_diff_"));
         }
+    }
+
+    @Test
+    void preservesLegacyIdsSkipsReplaysAndInsertsNewVersions() {
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(stored(6278L, null, "DCCMH")));
+        var diff = diffFor(sourceRecord(1L, 6278L, "New name"));
+        assertThat(diff.diffRecords())
+                .singleElement()
+                .satisfies(
+                        change -> {
+                            assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+                            assertThat(change.intended().id()).isEqualTo(6278L);
+                            assertThat(change.intended().csdsId()).isEqualTo(1L);
+                        });
+        var received = diff.diffRecords().getFirst().intended();
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(received));
+        assertThat(diffFor(sourceRecord(1L, 6278L, "Ignored replay")).diffRecords()).isEmpty();
+        assertThat(diffFor(sourceRecord(2L, 6278L, "Next version")).diffRecords())
+                .singleElement()
+                .satisfies(
+                        change -> {
+                            assertThat(change.operation()).isEqualTo(IngressOperation.INSERT);
+                            assertThat(change.intended().id()).isEqualTo(100002L);
+                        });
+        assertThat(diffFor(sourceRecord(3L, 99L, "Missing legacy")).diffRecords())
+                .singleElement()
+                .satisfies(change -> assertThat(change.intended().id()).isEqualTo(100003L));
+    }
+
+    @Test
+    void duplicateCodesAcrossPagesRemoteIdsAndGeneratedCollisionsFail() {
+        var pages =
+                processor.preProcess(
+                        List.of(
+                                createPage(sourceRecord(1L, null, "One")),
+                                createPage(sourceRecord(2L, null, "Two"))));
+        assertThatThrownBy(() -> processor.diff(pages))
+                .hasMessageContaining("Duplicate incoming Code");
+        var other = sourceRecord(1L, null, "Other").put("Code", "OTHER");
+        assertThatThrownBy(() -> diffFor(sourceRecord(1L, null, "One"), other))
+                .hasMessageContaining("Duplicate incoming CSDS_ID");
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(stored(100001L, null, "OTHER")));
+        assertThatThrownBy(() -> diffFor(sourceRecord(1L, null, "One")))
+                .hasMessageContaining("collides");
+    }
+
+    @Test
+    void mismatchedLegacyCodeIsNotOverwrittenAndFutureDatesAreAccepted() {
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of(stored(6278L, null, "OTHER")));
+        var future = sourceRecord(1L, 6278L, "Future").put("StartDate", "2099-01-01");
+        assertThat(diffFor(future).diffRecords())
+                .singleElement()
+                .satisfies(
+                        change -> {
+                            assertThat(change.intended().id()).isEqualTo(100001L);
+                            assertThat(change.intended().startDate())
+                                    .isEqualTo(LocalDate.of(2099, 1, 1));
+                        });
+    }
+
+    @Test
+    void validatesIdentifiersEvenWhenSourceIncludesSaId() throws Exception {
+        for (var field : List.of("ApplicantID", "PSSApplicantID")) {
+            for (var invalid : List.of("0", "-1", "1.5", "\"123\"", "9223372036854775808")) {
+                var node = sourceRecord(1L, 6278L, "One");
+                node.set(field, OBJECT_MAPPER.readTree(invalid));
+                node.put("SA_ID", 10L);
+                assertThatThrownBy(() -> processor.preProcess(List.of(createPage(node))))
+                        .isInstanceOf(AppRegistryException.class);
+            }
+        }
+        var node = sourceRecord(2147483648L, null, "One");
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPage(node))))
+                .isInstanceOf(AppRegistryException.class);
+    }
+
+    private StandardApplicantDiffResult diffFor(ObjectNode... records) {
+        return processor.diff(processor.preProcess(List.of(createPage(records))));
+    }
+
+    private StandardApplicantIngressRecord stored(Long id, Long csdsId, String code) {
+        return new StandardApplicantIngressRecord(
+                id,
+                csdsId,
+                code,
+                LocalDate.of(2000, 1, 1),
+                null,
+                0L,
+                "Legacy",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     private ObjectNode sourceRecord(
