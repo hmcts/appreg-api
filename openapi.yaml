@@ -2331,7 +2331,7 @@ paths:
       - application-list-entries
     put:
       description: |
-        Full replacement (PUT) of an existing Application List Entry. When `feeStatuses` is supplied, the existing fee-status rows for the entry are replaced by the provided list. When `feeStatuses` is `null`, fee-status rows are left unchanged. On an Open Application List, the existing associated Application Code may be retained even if expired. Replacement codes must be valid on the current business date. Closed Application List restrictions remain unchanged.
+        Full replacement (PUT) of an existing Application List Entry. When `feeStatuses` is supplied, the existing fee-status rows for the entry are replaced by the provided list. When `feeStatuses` is `null`, fee-status rows are left unchanged. On an Open Application List, the existing associated Application Code may be retained even if expired. Replacement codes must be valid on the current business date. Supplying the existing Standard Applicant code (case-insensitive) retains the associated record even after expiry, allowing updates to Officials and Fees. A newly selected or replacement Standard Applicant must be valid on the current business date. Closed Application List restrictions remain unchanged.
       operationId: updateApplicationListEntry
       parameters:
       - description: Public identifier of the Application List.
@@ -6808,7 +6808,8 @@ components:
         Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced. When `feeStatuses` is supplied it replaces the existing fee-status rows for the entry. When `feeStatuses` is `null`, fee-status rows are left unchanged. Blank fields will be rejected, nulls should be used instead.
       properties:
         standardApplicantCode:
-          description: Code that identifies the Standard Applicant.
+          description: |
+            Code that identifies the Standard Applicant. On an Open Application List, supplying the existing associated code (case-insensitive) retains the same Standard Applicant record, even after expiry. A newly selected or replacement applicant must be valid on the current business date.
           example: APP001
           maxLength: 10
           minLength: 1

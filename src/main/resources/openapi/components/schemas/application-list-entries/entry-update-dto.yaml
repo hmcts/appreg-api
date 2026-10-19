@@ -12,7 +12,11 @@ properties:
 
   standardApplicantCode:
     type: string
-    description: Code that identifies the Standard Applicant.
+    description: >
+      Code that identifies the Standard Applicant. On an Open Application List, supplying the
+      existing associated code (case-insensitive) retains the same Standard Applicant record,
+      even after expiry. A newly selected or replacement applicant must be valid on the current
+      business date.
     example: "APP001"
     maxLength: 10
     minLength: 1

@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -121,8 +123,7 @@ class UpdateApplicationEntryValidatorTest {
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
                 .thenReturn(List.of(applicationCode));
-        when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new uk.gov.hmcts.appregister.common.entity.FeePair(fee, null));
+        when(feeService.resolveFeePair(Mockito.notNull())).thenReturn(new FeePair(fee, null));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))
@@ -151,6 +152,7 @@ class UpdateApplicationEntryValidatorTest {
 
     @Test
     void testValidateSuccess() {
+        applicationListEntry.setStandardApplicant(standardApplicant);
         // set the applicant to null for the organisation and standard applicant so we use the
         // person
         entryUpdateDto.getRespondent().setOrganisation(null);
@@ -183,6 +185,7 @@ class UpdateApplicationEntryValidatorTest {
                         });
 
         Assertions.assertSame(applicationListEntry, success.getApplicationEntryId());
+        Assertions.assertNull(success.getSa());
         Mockito.verify(applicationListEntryRepository)
                 .findByEntryUuidWithinListUuid(appListUuid, appListEntryUuid);
         Mockito.verify(applicationListEntryRepository, Mockito.never())
@@ -552,7 +555,9 @@ class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testStandardApplicantNotExist() {
+    void given_inactiveReplacementApplicant_when_updating_then_rejectsApplicant() {
+        standardApplicant.setApplicantCode("ORIGINAL");
+        applicationListEntry.setStandardApplicant(standardApplicant);
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.getApplicant().setPerson(null);
@@ -575,7 +580,9 @@ class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testStandardApplicantMultiple_prefersFirstRecord() {
+    void given_activeReplacementApplicants_when_updating_then_selectsFirstRecord() {
+        standardApplicant.setApplicantCode("ORIGINAL");
+        applicationListEntry.setStandardApplicant(standardApplicant);
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.getApplicant().setPerson(null);
@@ -594,6 +601,26 @@ class UpdateApplicationEntryValidatorTest {
                 updateApplicationEntryValidator.validate(payload, (validatable, result) -> result);
 
         Assertions.assertSame(preferredStandardApplicant, success.getSa());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"APP001", "app001"})
+    void given_expiredAssociatedApplicant_when_updating_then_retainsApplicant(
+            String requestedCode) {
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setApplicant(null);
+        sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
+        standardApplicant.setApplicantCode("APP001");
+        standardApplicant.setApplicantEndDate(TODAY_UK.minusDays(1));
+        applicationListEntry.setStandardApplicant(standardApplicant);
+        entryUpdateDto.setStandardApplicantCode(requestedCode);
+
+        var payload = new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+        var success =
+                updateApplicationEntryValidator.validate(payload, (validatable, result) -> result);
+
+        Assertions.assertSame(standardApplicant, success.getSa());
+        Mockito.verifyNoInteractions(standardApplicantRepository);
     }
 
     @Test
