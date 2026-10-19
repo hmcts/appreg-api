@@ -48,6 +48,9 @@ put:
     `feeStatuses` is `null`, fee-status rows are left unchanged.
     On an Open Application List, the existing associated Application Code may be retained even
     if expired. Replacement codes must be valid on the current business date.
+    Supplying the existing Standard Applicant code (case-insensitive) retains the associated
+    record even after expiry, allowing updates to Officials and Fees. A newly selected or
+    replacement Standard Applicant must be valid on the current business date.
     Closed Application List restrictions remain unchanged.
   requestBody:
     required: true
